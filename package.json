@@ -1,0 +1,27 @@
+{
+  "name": "smart-centr-storefront",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Smart Centr storefront prototype (milestone 01). Demo fixtures only — not connected to 1C, SBonus, banks or payment services.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "next": "16.3.4",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^24.5.2",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "typescript": "^5.9.2",
+    "vitest": "^5.0.0"
+  }
+}

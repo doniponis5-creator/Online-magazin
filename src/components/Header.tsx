@@ -1,0 +1,139 @@
+'use client'
+
+import Link from 'next/link'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { Suspense, useEffect, useState, type FormEvent } from 'react'
+import { categories } from '@/data/categories'
+import { useCart } from '@/lib/cart/CartProvider'
+import { useFavorites } from '@/lib/favorites/FavoritesProvider'
+import { buildCatalogHref, buildLangHref } from '@/lib/links'
+import { otherLang, type Lang } from '@/lib/i18n/config'
+import { useI18n } from '@/lib/i18n/I18nProvider'
+import { IconCart, IconGrid, IconHeart, IconMapPin, IconSearch } from './Icons'
+
+function HeaderInner() {
+  const { t, lang } = useI18n()
+  const pathname = usePathname() || `/${lang}`
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const cart = useCart()
+  const fav = useFavorites()
+  const [mounted, setMounted] = useState(false)
+  // при загрузке сразу на /catalog?q=... поле поиска показывает активный запрос
+  const [query, setQuery] = useState(() => searchParams.get('q') ?? '')
+
+  useEffect(() => setMounted(true), [])
+
+  const onSearch = (e: FormEvent) => {
+    e.preventDefault()
+    router.push(buildCatalogHref(lang, { q: query }))
+  }
+
+  const cartCount = mounted ? cart.itemsCount : 0
+  const favCount = mounted ? fav.ids.length : 0
+  const search = searchParams.toString() ? `?${searchParams.toString()}` : ''
+
+  return (
+    <header className="header">
+      <div className="container">
+        <div className="header__inner">
+          <Link href={`/${lang}`} className="logo" aria-label="Smart Centr">
+            smart&nbsp;<span className="logo__dot">centr</span>
+          </Link>
+
+          <Link href={`/${lang}/catalog`} className="btn btn--primary btn--sm header__catalog-btn">
+            <IconGrid size={18} />
+            {t.nav.openCatalog}
+          </Link>
+
+          <form className="header__search" role="search" onSubmit={onSearch}>
+            <div className="search">
+              <span className="search__icon">
+                <IconSearch size={19} />
+              </span>
+              <input
+                type="search"
+                className="search__input"
+                placeholder={t.nav.searchPlaceholder}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                aria-label={t.nav.searchPlaceholder}
+              />
+            </div>
+          </form>
+
+          <div className="header__actions">
+            <nav className="lang-switch" aria-label={t.a11y.langSwitch}>
+              <Link
+                href={buildLangHref(pathname, search, lang)}
+                className="lang-switch__item"
+                aria-current="true"
+                aria-label={t.a11y.currentLang}
+              >
+                {t.langName}
+              </Link>
+              <Link
+                href={buildLangHref(pathname, search, otherLang[lang])}
+                className="lang-switch__item"
+                aria-label={t.a11y.switchToOther}
+                hrefLang={otherLang[lang]}
+              >
+                {t.otherLangName}
+              </Link>
+            </nav>
+
+            <Link
+              href={`/${lang}/favorites`}
+              className={`icon-btn${favCount > 0 ? ' is-active' : ''}`}
+              aria-label={`${t.nav.toFavorites}${mounted && favCount ? ` (${favCount})` : ''}`}
+            >
+              <IconHeart size={22} />
+              {mounted && favCount > 0 && (
+                <span className="icon-btn__badge" aria-hidden="true">
+                  {favCount}
+                </span>
+              )}
+            </Link>
+
+            <Link
+              href={`/${lang}/cart`}
+              className={`icon-btn${cartCount > 0 ? ' is-active' : ''}`}
+              aria-label={`${t.nav.toCart}${mounted && cartCount ? ` (${cartCount})` : ''}`}
+            >
+              <IconCart size={22} />
+              {mounted && cartCount > 0 && (
+                <span className="icon-btn__badge" aria-hidden="true">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+          </div>
+        </div>
+
+        <nav className="header__subnav" aria-label={t.categories.title}>
+          {categories.map((c) => (
+            <Link
+              key={c.id}
+              href={buildCatalogHref(lang, { cat: c.id })}
+              className="subnav__link"
+            >
+              {lang === 'ky' ? c.nameKy : c.nameRu}
+            </Link>
+          ))}
+          <span className="header__city">
+            <IconMapPin size={16} />
+            {t.city} · {t.common.demo.toLowerCase()}
+          </span>
+        </nav>
+      </div>
+    </header>
+  )
+}
+
+export function Header() {
+  return (
+    <Suspense fallback={<div className="header" aria-hidden="true" />}>
+      <HeaderInner />
+    </Suspense>
+  )
+}

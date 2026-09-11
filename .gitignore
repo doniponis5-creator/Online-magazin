@@ -1,0 +1,27 @@
+# dependencies
+node_modules/
+
+# next.js build output
+.next/
+out/
+
+# generated types
+next-env.d.ts
+*.tsbuildinfo
+
+# misc
+.DS_Store
+*.pem
+
+# env files — keep credentials out of git
+.env
+.env.*
+!.env.example
+
+# logs
+npm-debug.log*
+*.log
+
+# playwright
+test-results/
+playwright-report/
