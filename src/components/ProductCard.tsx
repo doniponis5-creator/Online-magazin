@@ -47,6 +47,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
             altKy={photo?.altKy ?? name}
             priority={priority}
           />
+          {photo && <span className="card__photo-badge">{t.product.photoCategoryBadge}</span>}
         </Link>
       </div>
       <div className="card__body">

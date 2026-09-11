@@ -1,9 +1,10 @@
 'use client'
 
+import Link from 'next/link'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 
 export function Footer() {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   return (
     <footer className="footer">
       <div className="container">
@@ -18,6 +19,9 @@ export function Footer() {
           <div>
             <h3 className="footer__title">{t.footer.contacts}</h3>
             <p className="footer__note">{t.footer.contactsNote}</p>
+            <Link href={`/${lang}/sources`} className="footer__sources-link">
+              {t.footer.sourcesLink}
+            </Link>
           </div>
         </div>
         <div className="footer__bottom">

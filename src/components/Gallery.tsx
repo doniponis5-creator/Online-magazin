@@ -81,7 +81,9 @@ export function Gallery({
         ) : (
           <ProductArt kind={product.art} color={currentHex} />
         )}
+        {photo && <span className="card__photo-badge">{t.product.photoCategoryBadge}</span>}
       </button>
+      <p className="gallery__photo-note">{t.product.photoCategoryNote}</p>
 
       {colorViews.length > 1 && onColorChange && (
         <div className="gallery__thumbs" role="group" aria-label={t.product.color}>
@@ -124,6 +126,7 @@ export function Gallery({
           ) : (
             <ProductArt kind={product.art} color={currentHex} />
           )}
+          {photo && <span className="card__photo-badge">{t.product.photoCategoryBadge}</span>}
         </div>
         <button
           type="button"

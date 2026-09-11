@@ -73,69 +73,73 @@ for (const width of widths) {
   })
 }
 
-test('screenshots: key screens for review', async ({ page }, testInfo) => {
+test('screenshots: full-page key screens for review', async ({ page }, testInfo) => {
   const { writeFileSync, mkdirSync } = await import('node:fs')
-  mkdirSync('review/task-03', { recursive: true })
-  const dir = 'review/task-03'
+  mkdirSync('review/task-03a', { recursive: true })
+  const dir = 'review/task-03a'
 
-  // мобильный RU
+  // перед полноэкранной съёмкой раскрываем reveal-секции: иначе низ страницы
+  // попадёт в снимок ещё прозрачным
+  const revealAll = async () => {
+    await page.evaluate(async () => {
+      await new Promise<void>((resolve) => {
+        let y = 0
+        const step = () => {
+          y += 420
+          window.scrollTo(0, y)
+          if (y < document.documentElement.scrollHeight) setTimeout(step, 110)
+          else resolve()
+        }
+        step()
+      })
+      window.scrollTo(0, 0)
+    })
+    await page.waitForTimeout(650)
+  }
+
+  // мобильный 390: RU и KY, главная и каталог — полностранично (до цен и кнопок)
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto('/ru/')
-  await page.evaluate(() => window.scrollTo(0, 0))
-  await page.waitForTimeout(500)
-  writeFileSync(`${dir}/01-home-ru-390.png`, await page.screenshot())
+  for (const [tag, path] of [
+    ['home-ru-390', '/ru/'],
+    ['home-ky-390', '/ky/'],
+    ['catalog-ru-390', '/ru/catalog'],
+    ['catalog-ky-390', '/ky/catalog'],
+  ] as const) {
+    await page.goto(path)
+    await revealAll()
+    writeFileSync(`${dir}/${tag}-full.png`, await page.screenshot({ fullPage: true }))
+  }
 
-  await page.goto('/ky/')
-  await page.evaluate(() => window.scrollTo(0, 0))
-  await page.waitForTimeout(500)
-  writeFileSync(`${dir}/03-home-ky-390.png`, await page.screenshot())
-
-  // каталог с фильтром
-  await page.goto('/ru/catalog?cat=smartphones')
-  await page.waitForTimeout(400)
-  writeFileSync(`${dir}/04-catalog-filtered-390.png`, await page.screenshot())
-
-  // товар с фото и выбранным вариантом
+  // товар отдельно: вариант выбран, фото целиком
   await page.goto('/ru/product/tabslate-10')
   await page.getByRole('button', { name: 'Тёмный', exact: true }).click()
-  await page.evaluate(() => window.scrollTo(0, 0))
+  await revealAll()
+  writeFileSync(`${dir}/product-ru-390-full.png`, await page.screenshot({ fullPage: true }))
+
+  // зум отдельно: открытый диалог крупным планом (не полностранично)
+  await page.locator('.gallery__main--zoom').click()
+  await expect(page.locator('.zoom-overlay[open]')).toBeVisible()
   await page.waitForTimeout(400)
-  writeFileSync(`${dir}/06-product-variant-390.png`, await page.screenshot())
+  writeFileSync(`${dir}/zoom-ru-390.png`, await page.screenshot())
+  await page.keyboard.press('Escape')
 
-  // корзина
-  await page.evaluate(() =>
-    localStorage.setItem(
-      'sc-cart-v1',
-      JSON.stringify([
-        { productId: 'aura-x5', variantId: 'blue', qty: 1 },
-        { productId: 'tabslate-10', variantId: 'ink-128', qty: 2 },
-      ]),
-    ),
-  )
-  await page.goto('/ru/cart')
-  await page.waitForTimeout(400)
-  writeFileSync(`${dir}/07-cart-390.png`, await page.screenshot())
-
-  // checkout с демо-результатом
-  await page.goto('/ru/checkout')
-  await page.getByRole('textbox', { name: 'Ваше имя' }).fill('Азиз')
-  await page.getByRole('textbox', { name: 'Телефон' }).fill('+996 700 123456')
-  await page.getByRole('button', { name: 'Отправить заявку (демо)' }).click()
-  await page.waitForTimeout(300)
-  writeFileSync(`${dir}/08-checkout-demo-result-390.png`, await page.screenshot())
-
-  // desktop 1440
+  // desktop 1440: RU и KY главная + каталог
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto('/ru/')
-  await page.evaluate(() => window.scrollTo(0, 0))
-  await page.waitForTimeout(500)
-  writeFileSync(`${dir}/09-home-ru-1440.png`, await page.screenshot())
+  for (const [tag, path] of [
+    ['home-ru-1440', '/ru/'],
+    ['home-ky-1440', '/ky/'],
+    ['catalog-ru-1440', '/ru/catalog'],
+  ] as const) {
+    await page.goto(path)
+    await revealAll()
+    writeFileSync(`${dir}/${tag}-full.png`, await page.screenshot({ fullPage: true }))
+  }
 })
 
 test('animation recording: scroll reveals and add-to-cart swap', async ({ browser }) => {
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
-    recordVideo: { dir: 'review/task-03', size: { width: 390, height: 844 } },
+    recordVideo: { dir: 'review/task-03a', size: { width: 390, height: 844 } },
   })
   const page = await context.newPage()
   // чистая корзина: swap «в корзину → количество» произойдёт на карточке

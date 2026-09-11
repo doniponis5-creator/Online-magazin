@@ -1,61 +1,90 @@
 # ASSET_SOURCES — источники и права визуальных материалов
 
-Обновлено: 11.09.2026 (TASK 03). Все фотографии скачаны локально в `public/photos/`
-и используются в витрине. Лицензии проверены: только свободные — Pexels License,
-CC0 / Public Domain, CC BY 2.0 (атрибуция приведена ниже и дублируется в
-`scripts/photo-metadata.json`, лог сборщика — `scripts/fetch-photos.mjs`).
+Обновлено: 11.09.2026 (**TASK 03A** — сверка с ревью). Канонический машинный
+список: `src/data/photo-sources.ts` (используется страницей `/ru|ky/sources`),
+копия — `scripts/photo-metadata.json`. Публичная страница атрибуции доступна
+из footer: `/ru/sources`, `/ky/sources`.
+
+## Что изменилось в TASK 03A и почему
+
+Ревью нашло противоречия между `photos.ts`, этим файлом и metadata.json
+(AbdFams ↔ Zaidan Falaah; hero: Flickr ↔ StockSnap), а страницы Flickr не
+открывались извне — то есть лицензии CC BY оставались неподтверждёнными.
+Принято решение: **весь набор приведён к одному проверяемому источнику —
+Pexels**. Каждая страница фото открыта напрямую, подпись «Photo by … on
+Pexels» и статус «Free to use» зафиксированы 11.09.2026. Неподтверждаемые
+Flickr/rawpixel-снимки (ноутбук, клавиатура, барабан стиральной машины,
+кухня с кофемашинами, наушники timtak, колонка rawpixel) и монохромный
+StockSnap-hero заменены проверенными снимками Pexels. Старый
+Openverse-сборщик `scripts/fetch-photos.mjs` больше не источник набора
+(остаётся как исторический инструмент первого поколения).
 
 ## Важная честная оговорка
 
-Это **категорийные/декоративные снимки**, а не фотографии конкретных продаваемых
-моделей: демо-модели витрины (Aura, Nova, Vega…) намеренно обобщённые, с демо-ценами.
-Фотографии не выдаются за снимок товара, который получит покупатель.
-Реальные фото моделей магазин предоставит после согласования прав с
-производителями/поставщиками (ARCHITECTURE_UZ.md, §12).
+Это **категорийные/декоративные снимки**, а не фотографии конкретных
+продаваемых моделей. Демо-наименования витрины (Aura X5, Vega Pro и т.д.) —
+вымышленные заглушки для дизайн-проверки, фото им не соответствует, что
+подписано на карточках («Иллюстрация категории») и в галерее. Фотографии не
+выдаются за снимок товара, который получит покупатель.
 
 ## Файлы витрины (используются сейчас)
 
-| Файл | Источник (страница) | Автор | Лицензия | Роль на витрине |
-|---|---|---|---|---|
-| `hero.jpg` | [stocksnap.io/photo/top-workspace-ILQA1VXXOJ](https://stocksnap.io/photo/top-workspace-ILQA1VXXOJ) | Top Down Tech | CC0 1.0 | Большое изображение hero-баннера |
-| `phone-dark.jpg` | [pexels.com/photo/…-11934173](https://www.pexels.com/photo/smartphone-with-black-screen-on-blue-background-11934173/) | Zaidan Falaah (Pexels) | Pexels License | Карточки смартфонов Aura X5, Vega Pro |
-| `phone-light.jpg` | [pexels.com/photo/…-8408537](https://www.pexels.com/photo/smartphone-on-a-white-surface-8408537/) | Pexels contributor | Pexels License | Карточка смартфона Nova Lite |
-| `laptop.jpg` | [flickr.com/photos/38305415@N00/6798184016](https://www.flickr.com/photos/38305415@N00/6798184016) | Johan Larsson | CC BY 2.0 | Карточка ноутбука AirBook 14 |
-| `laptop2.jpg` | [flickr.com/photos/51117149@N08/4798822966](https://www.flickr.com/photos/51117149@N08/4798822966) | Lena LeRay | CC BY 2.0 | Карточка ноутбука ProWork 15 (клавиатура) |
-| `tv-living.jpg` | [pexels.com/photo/…-6980724](https://www.pexels.com/photo/television-against-sofa-in-modern-living-room-6980724/) | Pexels contributor | Pexels License | Карточки телевизоров SmartView 43″/55″ |
-| `washer.jpg` | [flickr.com/photos/155403590@N07/47090184431](https://www.flickr.com/photos/155403590@N07/47090184431) | dejankrsmanovic | CC BY 2.0 | Карточка стиральной машины CleanPure 6 |
-| `coffee.jpg` | [flickr.com/photos/202846129@N03/54562327158](https://www.flickr.com/photos/202846129@N03/54562327158) | nenadstojkovicart | CC BY 2.0 | Карточка кофемашины BaristaHome |
-| `robot-vacuum.jpg` | [pexels.com/photo/…-8566426](https://www.pexels.com/photo/robot-vacuum-cleaner-on-wooden-flooring-8566426/) | Kindel Media (Pexels) | Pexels License | Карточка робота-пылесоса CycloneClean |
-| `tablet.jpg` | [pexels.com/photo/black-samsung-tablet-computer-106344](https://www.pexels.com/photo/black-samsung-tablet-computer-106344/) | Pixabay (Pexels) | Pexels License | Карточка планшета TabSlate 10 |
-| `headphones.jpg` | [flickr.com/photos/64015205@N00/46329607](https://www.flickr.com/photos/64015205@N00/46329607) | timtak | CC BY 2.0 | Карточка наушников AirSound Pro |
-| `smartwatch.jpg` | [pexels.com/photo/…-437037](https://www.pexels.com/photo/black-apple-watch-with-black-sports-band-437037/) | Mateusz Dach (Pexels) | Pexels License | Карточка умных часов TimeFit |
-| `speaker.jpg` | [rawpixel.com/image/5975218](https://www.rawpixel.com/image/5975218/closeup-black-bluetooth-speaker) | автор не указан (rawpixel) | CC0 1.0 | Карточка колонки BoomMini |
+Все — Pexels License: <https://www.pexels.com/license/> (свободное
+использование, атрибуция не требуется — приводится добровольно).
 
-Для CC BY 2.0 указание автора (таблица выше) — требуемая атрибуция;
-в продакшене она будет вынесена на страницу «Правообладатели».
+| Файл | Фото Pexels | Автор | Где используется | Проверка |
+|---|---|---|---|---|
+| `hero.jpg` | [#12123389](https://www.pexels.com/photo/12123389/) | Vova Kras | Hero-баннер главной (смартфон на сине-лаймовом градиенте) | страница |
+| `phone-dark.jpg` | [#11934173](https://www.pexels.com/photo/smartphone-with-black-screen-on-blue-background-11934173/) | Zaidan Falaah | Карточки смартфонов (Aura X5, Vega Pro) | страница |
+| `phone-light.jpg` | [#8408537](https://www.pexels.com/photo/smartphone-on-a-white-surface-8408537/) | Sarah Dorweiler | Карточка смартфона (Nova Lite) | страница |
+| `laptop.jpg` | [#4884117](https://www.pexels.com/photo/photo-of-a-laptop-4884117/) | Artem Podrez | Карточка ноутбука (AirBook 14) | страница |
+| `laptop2.jpg` | [#8533587](https://www.pexels.com/photo/8533587/) | Hanna Pad | Карточка ноутбука (ProWork 15) | страница |
+| `tv-living.jpg` | [#6980724](https://www.pexels.com/photo/television-against-sofa-in-modern-living-room-6980724/) | Max Vakhtbovycn | Карточки телевизоров (SmartView 43″/55″) | страница |
+| `washer.jpg` | [#19846397](https://www.pexels.com/photo/interior-of-a-modern-laundry-room-19846397/) | Lisa Anna | Карточка стиральной машины (CleanPure 6) | страница |
+| `coffee.jpg` | [#38317221](https://www.pexels.com/photo/38317221/) | Valentin Ivantsov | Карточка кофемашины (BaristaHome) | страница |
+| `robot-vacuum.jpg` | [#8566426](https://www.pexels.com/photo/robot-vacuum-cleaner-on-wooden-flooring-8566426/) | Kindel Media | Карточка робота-пылесоса (CycloneClean) | страница |
+| `tablet.jpg` | [#1334599](https://www.pexels.com/photo/1334599/) | Josh Sorenson | Карточка планшета (TabSlate 10) | страница |
+| `headphones.jpg` | [#210927](https://www.pexels.com/photo/210927/) | Aleksandar Spasojevic | Карточка наушников (AirSound Pro) | страница |
+| `smartwatch.jpg` | [#437037](https://www.pexels.com/photo/black-apple-watch-with-black-sports-band-437037/) | Torsten Dettlaff | Карточка умных часов (TimeFit) | страница |
+| `speaker.jpg` | [#1034653](https://www.pexels.com/photo/photo-of-white-portable-bluetooth-speaker-1034653/) | Tom Swinnen | Карточка колонки (BoomMini) | страница + зеркала* |
+
+\* Страница #1034653 при автоматическом открытии отдавала бот-защиту;
+автор Tom Swinnen подтверждён выдачей поиска Pexels и зеркалом
+[Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Audio-blur-close-up-1034653.jpg).
+На странице `/sources` это помечено отдельно.
+
+Изменения изображений: только ресайз/сжатие (sharp, JPEG q82, ширина
+≤1200 px) — без ретуши, перекраски и склейки.
 
 ## Плейсхолдеры (ProductArt SVG)
 
-- `src/components/ProductArt.tsx` — оригинальные схематичные SVG, нарисованные
-  для проекта; используются как помеченный демо-плейсхолдер там, где фото пока нет
-  (аэрогриль AeroChef) и как иконки категорий. Лицензия — собственная графика проекта.
+- `src/components/ProductArt.tsx` — оригинальные схематичные SVG проекта:
+  помеченный демо-плейсхолдер там, где фото ещё нет (аэрогриль), и иконки
+  категорий. Лицензия — собственная графика проекта.
 
-## Чего не хватает (запрос магазину — конкретный список)
+## Запрос магазину: фото для будущего каталога 1С
 
-1. **Смартфоны (3 модели):** прямые product-shot каждого цвета на светлом фоне
-   (фронт + ракурс 3/4), без логотипов чужих брендов — для Aura X5 / Nova Lite / Vega Pro.
-2. **Телевизоры (2 диагонали):** фронтальный снимок включённого и выключенного экрана.
-3. **Аэрогриль AeroChef 5 л:** товарный снимок на белом фоне (сейчас — SVG-плейсхолдер).
-4. **Ноутбуки (2 модели):** раскрытый ноутбук фронтально, экран чистый.
-5. **Стиральная машина:** фронтальный снимок целиком (сейчас — крупный план барабана).
-6. **Кофемашина:** отдельно стоящая машина на светлом фоне (сейчас — кухня с рядом машин).
-7. **Смарт-часы / колонка / планшет:** нейтральные product-shot без брендовых элементов.
+Когда каталог товаров появится в 1С, для дизайн-проверки и запуска нужны
+фотографии **реальных моделей/артикулов из этого будущего каталога 1С**
+(согласованные с поставщиками/производителями права) — по каждому товару:
+
+1. Прямой товарный снимок на светлом фоне: фронт + ракурс 3/4, без чужих
+   логотипов на упаковке, читаемые артикулы из 1С.
+2. Для вариантов (цвет/память) — снимок каждого варианта; фото должно
+   соответствовать выбранной модификации.
+3. Телевизоры — фронтальный снимок включённого и выключенного экрана.
+4. Крупная бытовая техника — снимок целиком, не крупный план детали.
+5. Одинаковый масштаб/фон для всей карточной сетки.
+
+Просить фотографии вымышленных Aura/Vega/AeroChef как «реальных товаров»
+нельзя — эти имена только демо-заглушки и исчезнут вместе с 1С-каталогом.
 
 ## Технические заметки
 
-- Хранение: локальные файлы в `public/photos` (без внешнего CDN на рантайме).
-- Выдача: `next/image` — автоматический responsive resize, WebP/AVIF по Accept,
-  `sizes` задан на каждом месте использования, lazy-load ниже первого экрана,
-  `priority` только для hero и первых карточек.
-- Пересборка набора: `node scripts/fetch-photos.mjs --force` (Openverse API);
-  Pexels-файлы скачаны вручную по прямым ссылкам из этого отчёта.
+- Хранение: локальные файлы в `public/photos` (внешнего CDN на рантайме нет).
+- Выдача: `next/image` — responsive resize, WebP/AVIF по Accept, `sizes`
+  на каждом месте использования, lazy-load ниже первого экрана, `priority`
+  только для hero и первых карточек.
+- Актуальный набор собран вручную из проверенных страниц Pexels
+  (CDN `images.pexels.com`) и сжат sharp; `scripts/fetch-photos.mjs`
+  (Openverse) — исторический, набор им не воспроизводится.

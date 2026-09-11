@@ -555,7 +555,10 @@ main#content {
   align-items: stretch;
   overflow: hidden;
   border-radius: 24px;
-  background: linear-gradient(115deg, #eef3ff 0%, #f1f5ff 45%, #e3ecff 100%);
+  /* светлая сине-лаймовая подложка перекликается с градиентом hero-фото */
+  background:
+    radial-gradient(120% 90% at 88% 8%, rgba(217, 248, 109, 0.4) 0%, rgba(217, 248, 109, 0) 55%),
+    linear-gradient(115deg, #f1f5ff 0%, #e7efff 42%, #e9fbdd 100%);
   min-height: 380px;
 }
 
@@ -586,7 +589,7 @@ main#content {
 }
 
 .hero__title {
-  font-size: clamp(28px, 4.6vw, 52px);
+  font-size: clamp(26px, 4.6vw, 52px);
   font-weight: 800;
   line-height: 1.08;
   letter-spacing: -0.8px;
@@ -611,19 +614,35 @@ main#content {
 
 .hero__media .product-photo {
   object-fit: cover;
+  /* смартфон в кадре смещён вниз — держим его в поле зрения */
+  object-position: 50% 62%;
 }
 
 @media (max-width: 900px) {
+  .hero {
+    margin-top: 12px;
+  }
   .hero__banner {
     grid-template-columns: 1fr;
     min-height: 0;
   }
   .hero__text {
-    padding: 24px 20px;
+    padding: 20px 18px 22px;
   }
   .hero__media {
     order: -1;
-    min-height: 220px;
+    /* ниже hero — ассортимент виден раньше */
+    min-height: 176px;
+    max-height: 220px;
+  }
+  .hero__media .product-photo {
+    object-position: 50% 58%;
+  }
+  .hero__subtitle {
+    margin-top: 10px;
+  }
+  .hero__cta {
+    margin-top: 18px;
   }
 }
 
@@ -2041,6 +2060,81 @@ main#content {
   margin-top: 10px;
 }
 
+.footer__sources-link {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.footer__sources-link:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Страница источников фото ---------- */
+.sources-page__intro,
+.sources-page__license,
+.sources-page__note {
+  margin-top: 14px;
+  color: var(--color-ink-soft);
+  font-size: 14.5px;
+  line-height: 1.65;
+  max-width: 72ch;
+}
+
+.sources-page__note {
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+.sources-page .table-wrap {
+  margin-top: 20px;
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.sources-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  min-width: 640px;
+}
+
+.sources-table th,
+.sources-table td {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.sources-table th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--color-muted);
+  background: var(--color-surface);
+}
+
+.sources-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.sources-table td code {
+  font-size: 12.5px;
+  background: var(--color-surface);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.sources-table__note {
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
 .footer__bottom {
   margin-top: 28px;
   padding-top: 16px;
@@ -2270,6 +2364,32 @@ html.dialog-open {
   font-weight: 800;
 }
 
+/* явная подпись категорийного фото (не снимок конкретной модели) */
+.card__photo-badge {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--color-ink-soft);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  pointer-events: none;
+}
+
+.gallery__photo-note {
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: var(--color-muted);
+  line-height: 1.45;
+}
+
 /* ---------- Появление секций (однократное, мягкое) ---------- */
 .reveal {
   opacity: 0;
@@ -2302,3 +2422,8 @@ html.dialog-open {
     transform: scale(1);
   }
 }
+
+/* ---------- Reduced motion ----------
+   Правило намеренно в конце файла: каскад должен побеждать обычные
+   .reveal и keyframes выше, чтобы движение выключалось полностью,
+   а контент оставался видимым. */
