@@ -6,8 +6,8 @@ import { unitPrice } from '@/lib/cart/logic'
 import { getProduct, colorHexOf } from '@/data/products'
 import { variantLabel } from '@/lib/cart/sku'
 import { formatSom } from '@/lib/format'
+import { ProductImage } from '@/components/ProductImage'
 import { useI18n } from '@/lib/i18n/I18nProvider'
-import { ProductArt } from '@/components/ProductArt'
 import { QuantityStepper } from '@/components/QuantityStepper'
 import { IconCart, IconTrash } from '@/components/Icons'
 
@@ -25,12 +25,30 @@ export default function CartPage() {
     )
   }
 
+  const noticeText =
+    cart.restoreNotice === 'corrupted' ? t.cart.corruptedNotice : t.cart.restoredNotice
+
+  const noticeBlock = cart.restoreNotice ? (
+    <div className="notice" role="status">
+      <span>{noticeText}</span>
+      <button
+        type="button"
+        className="notice__close"
+        onClick={cart.dismissRestoreNotice}
+        aria-label={t.cart.restoreDismiss}
+      >
+        ✕
+      </button>
+    </div>
+  ) : null
+
   if (cart.lines.length === 0) {
     return (
       <div className="container">
         <div className="page-head">
           <h1 className="page-head__title">{t.cart.title}</h1>
         </div>
+        {noticeBlock}
         <div className="empty">
           <span className="empty__icon">
             <IconCart size={36} />
@@ -54,14 +72,7 @@ export default function CartPage() {
         <p className="page-head__sub">{t.cart.demoNote}</p>
       </div>
 
-      {cart.restoreNotice && (
-        <div className="notice" role="status">
-          <span>{t.cart.restoredNotice}</span>
-          <button type="button" className="notice__close" onClick={cart.dismissRestoreNotice} aria-label={t.cart.restoreDismiss}>
-            ✕
-          </button>
-        </div>
-      )}
+      {noticeBlock}
 
       <div className="cart-layout">
         <div>
@@ -80,7 +91,14 @@ export default function CartPage() {
                     className="cart-line__media"
                     aria-label={lang === 'ky' ? product.nameKy : product.nameRu}
                   >
-                    <ProductArt kind={product.art} color={colorHexOf(product, variant)} />
+                    <ProductImage
+                      productId={product.id}
+                      kind={product.art}
+                      colorHex={colorHexOf(product, variant)}
+                      altRu={product.nameRu}
+                      altKy={product.nameKy}
+                      sizes="104px"
+                    />
                   </Link>
                   <div>
                     <Link href={`/${lang}/product/${product.id}`} className="cart-line__name">

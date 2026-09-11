@@ -1,8 +1,10 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { categories } from '@/data/categories'
 import { getNew, getPopular } from '@/data/products'
+import { heroPhoto } from '@/data/photos'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { ProductArt } from '@/components/ProductArt'
 import { ProductCard } from '@/components/ProductCard'
@@ -23,6 +25,7 @@ function Hero() {
     <section className="hero" aria-labelledby="hero-title">
       <div className="hero__banner">
         <div className="hero__text">
+          <span className="hero__eyebrow">{t.hero.badge}</span>
           <h1 className="hero__title" id="hero-title">
             {t.hero.title}
           </h1>
@@ -31,21 +34,16 @@ function Hero() {
             {t.hero.cta}
             <IconChevronRight size={18} />
           </Link>
-          <span className="hero__badge">
-            <IconTruck size={17} />
-            {t.hero.badge}
-          </span>
         </div>
-        <div className="hero__art" aria-hidden="true">
-          <span className="hero__art-item hero__art-item--phone">
-            <ProductArt kind="phone" color="#5A8BF0" />
-          </span>
-          <span className="hero__art-item hero__art-item--headphones">
-            <ProductArt kind="headphones" color="#3B6FE8" />
-          </span>
-          <span className="hero__art-item hero__art-item--watch">
-            <ProductArt kind="watch" color="#245BEB" />
-          </span>
+        <div className="hero__media">
+          <Image
+            src={heroPhoto.src}
+            alt={lang === 'ky' ? heroPhoto.altKy : heroPhoto.altRu}
+            fill
+            priority
+            sizes="(max-width: 900px) 92vw, 46vw"
+            className="product-photo"
+          />
         </div>
       </div>
     </section>
@@ -55,7 +53,7 @@ function Hero() {
 function CategoryTiles() {
   const { t, lang } = useI18n()
   return (
-    <section className="section" aria-labelledby="cats-title">
+    <section className="section" aria-labelledby="cats-title" data-reveal>
       <div className="section__head">
         <h2 className="section__title" id="cats-title">
           {t.categories.title}
@@ -92,7 +90,7 @@ function ProductSection({
   const { t, lang } = useI18n()
   if (products.length === 0) return null
   return (
-    <section className="section" aria-labelledby={`sec-${titleKey}`}>
+    <section className="section" aria-labelledby={`sec-${titleKey}`} data-reveal>
       <div className="section__head">
         <h2 className="section__title" id={`sec-${titleKey}`}>
           {t.home[titleKey]}
@@ -103,8 +101,8 @@ function ProductSection({
         </Link>
       </div>
       <div className="product-grid">
-        {products.map((p) => (
-          <ProductCard key={p.id} product={p} />
+        {products.map((p, i) => (
+          <ProductCard key={p.id} product={p} priority={titleKey === 'popular' && i < 2} />
         ))}
       </div>
     </section>
@@ -114,7 +112,7 @@ function ProductSection({
 function PromoSection() {
   const { t } = useI18n()
   return (
-    <section className="section" aria-label={t.home.sbonusTitle}>
+    <section className="section" aria-label={t.home.sbonusTitle} data-reveal>
       <div className="promo-grid">
         <div className="promo promo--lime">
           <h2 className="promo__title">
@@ -140,7 +138,7 @@ function PromoSection() {
 function NightBanner() {
   const { t } = useI18n()
   return (
-    <section className="section" aria-labelledby="night-title">
+    <section className="section" aria-labelledby="night-title" data-reveal>
       <div className="night-banner">
         <span className="night-banner__icon">
           <IconMoon size={26} />
@@ -165,7 +163,7 @@ function InfoStrip() {
     { icon: <IconHeadset size={22} />, title: t.home.care, note: t.home.careNote },
   ]
   return (
-    <section className="section" aria-label={t.home.delivery}>
+    <section className="section" aria-label={t.home.delivery} data-reveal>
       <div className="info-strip">
         {items.map((item) => (
           <div className="info-item" key={item.title}>

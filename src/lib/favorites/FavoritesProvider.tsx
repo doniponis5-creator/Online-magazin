@@ -52,6 +52,27 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     }
   }, [ids, hydrated])
 
+  // Синхронизация между вкладками: storage приходит только из ДРУГИХ вкладок,
+  // поэтому цикла записи не возникает. Восстанавливаем только валидные id.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== STORAGE_KEY) return
+      let parsed: unknown = null
+      try {
+        parsed = e.newValue ? JSON.parse(e.newValue) : null
+      } catch {
+        parsed = null
+      }
+      if (Array.isArray(parsed)) {
+        setIds(parsed.filter((v): v is string => typeof v === 'string'))
+      } else {
+        setIds([])
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
+
   const toggle = useCallback((productId: string) => {
     setIds((prev) =>
       prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId],

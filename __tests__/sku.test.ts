@@ -8,9 +8,10 @@ import {
   getProduct,
 } from '@/data/products'
 import {
+  colorExists,
   isComboPurchasable,
-  pickColorForMemory,
-  pickMemoryForColor,
+  memoryExists,
+  suggestCombos,
   variantLabel,
 } from '@/lib/cart/sku'
 
@@ -21,13 +22,12 @@ const vega = getProduct('vega-pro')!
 describe('comboVariant — вариант это конкретная комбинация, без fallback', () => {
   it('finds exact color+memory combination', () => {
     expect(comboVariant(tabslate, 'blue', '128')?.id).toBe('blue-128')
-    expect(comboVariant(tabslate, 'ink', '256')?.id).toBe('ink-256')
   })
 
-  it('returns undefined for a combination that does not exist (no silent substitute)', () => {
-    // комбинация существует, но в данных её нет — подменять нельзя
-    const ghost = { ...tabslate, variants: tabslate.variants.filter((v) => v.id !== 'ink-256') }
-    expect(comboVariant(ghost, 'ink', '256')).toBeUndefined()
+  it('returns undefined for a missing combination — no silent substitute', () => {
+    // «Тёмный · 256 ГБ» намеренно отсутствует в демо-каталоге
+    expect(comboVariant(tabslate, 'ink', '256')).toBeUndefined()
+    expect(comboVariant(tabslate, 'green', '128')).toBeUndefined()
   })
 
   it('single-dimension products match on the existing dimension only', () => {
@@ -35,6 +35,23 @@ describe('comboVariant — вариант это конкретная комби
     expect(comboVariant(aura, 'green', null)).toBeUndefined()
     expect(comboVariant(vega, null, '12-512')?.id).toBe('12-512')
     expect(comboVariant(vega, null, '64')).toBeUndefined()
+  })
+})
+
+describe('suggestCombos — явные предложения вместо молчаливой подмены', () => {
+  it('offers in-stock combos, prioritising the chosen color', () => {
+    const suggestions = suggestCombos(tabslate, 'ink', '256')
+    // ink+256 в наличии нет; первый предложенный — совпадает по цвету (ink) и в наличии
+    expect(suggestions[0]?.colorKey).toBe('ink')
+    expect(suggestions[0]?.stock).toBeGreaterThan(0)
+    // предложения не включают выбранную (отсутствующую) комбинацию
+    expect(suggestions.some((v) => v.colorKey === 'ink' && v.memoryKey === '256')).toBe(false)
+  })
+
+  it('never suggests out-of-stock combos', () => {
+    for (const v of suggestCombos(tabslate, 'blue', '999')) {
+      expect(v.stock).toBeGreaterThan(0)
+    }
   })
 })
 
@@ -49,18 +66,12 @@ describe('isComboPurchasable — недоступный SKU не продаёт�
   })
 })
 
-describe('pickMemoryForColor / pickColorForMemory — согласование выбора', () => {
-  it('keeps preferred memory when the combination exists', () => {
-    expect(pickMemoryForColor(tabslate, 'blue', '256')).toBe('256')
-  })
-
-  it('falls back to an existing memory for the color when combination is missing', () => {
-    // blue + 512 не существует → вернём существующую память для blue
-    expect(pickMemoryForColor(tabslate, 'blue', '512')).toBe('128')
-  })
-
-  it('prefers in-stock fallback', () => {
-    expect(pickMemoryForColor(tabslate, 'ink', '256')).toBe('128') // ink+256 stock 0 → 128
+describe('existence checks — чипы опций отключаются только для несуществующих', () => {
+  it('ink color exists for tabslate even though one memory is out of stock', () => {
+    expect(colorExists(tabslate, 'ink')).toBe(true)
+    expect(memoryExists(tabslate, '256')).toBe(true)
+    expect(colorExists(tabslate, 'red')).toBe(false)
+    expect(memoryExists(tabslate, '512')).toBe(false)
   })
 })
 

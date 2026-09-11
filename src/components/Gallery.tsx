@@ -1,46 +1,63 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '@/lib/i18n/I18nProvider'
-import type { Product, ProductVariant } from '@/data/products'
-import { colorHexOf } from '@/data/products'
+import type { Product } from '@/data/products'
+import { colorHexOfKey } from '@/data/products'
+import { productPhotos } from '@/data/photos'
 import { ProductArt } from './ProductArt'
 
 /**
- * Галерея читает тот же выбранный SKU, что и блок покупки.
- * Миниатюры — выбор цвета (клавиатуродоступный), зум — диалог
- * с Escape, кнопкой закрытия и возвратом фокуса.
+ * Галерея показывает выбранный цвет того же SKU, что и блок покупки.
+ * Если у товара есть фото — крупный снимок + зум в нативном <dialog>
+ * (фон инертен, Tab остаётся в диалоге, Escape закрывает, фокус
+ * возвращается, прокрутка фона блокируется). Без фото — цветные
+ * схематичные плейсхолдеры ProductArt с явной демо-маркировкой.
  */
 export function Gallery({
   product,
-  variant,
+  colorKey,
   onColorChange,
 }: {
   product: Product
-  variant: ProductVariant
+  colorKey: string | null
   onColorChange?: (colorKey: string) => void
 }) {
   const { t, lang } = useI18n()
   const [zoomOpen, setZoomOpen] = useState(false)
   const openerRef = useRef<HTMLButtonElement>(null)
-  const closeRef = useRef<HTMLButtonElement>(null)
+  const dialogRef = useRef<HTMLDialogElement>(null)
 
   const name = lang === 'ky' ? product.nameKy : product.nameRu
-  const colorViews = product.colorOptions ?? []
-  const currentHex = colorHexOf(product, variant)
+  const photo = productPhotos[product.id]
+  const colorViews = photo ? [] : (product.colorOptions ?? [])
+  const currentHex = colorHexOfKey(product, colorKey)
+  const alt = lang === 'ky' ? (photo?.altKy ?? name) : (photo?.altRu ?? name)
 
+  // нативный модальный режим + блокировка прокрутки фона
   useEffect(() => {
-    if (!zoomOpen) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setZoomOpen(false)
+    const dialog = dialogRef.current
+    if (!dialog) return
+    if (zoomOpen && !dialog.open) {
+      dialog.showModal()
+      document.documentElement.classList.add('dialog-open')
     }
-    document.addEventListener('keydown', onKey)
-    closeRef.current?.focus()
+    if (!zoomOpen && dialog.open) {
+      dialog.close()
+    }
     return () => {
-      document.removeEventListener('keydown', onKey)
-      openerRef.current?.focus()
+      if (dialog.open) dialog.close()
+      document.documentElement.classList.remove('dialog-open')
     }
   }, [zoomOpen])
+
+  const onDialogClose = () => {
+    // синхронно снимаем блокировку прокрутки (эффект — страховка)
+    document.documentElement.classList.remove('dialog-open')
+    setZoomOpen(false)
+    openerRef.current?.focus()
+  }
 
   return (
     <div className="gallery">
@@ -49,10 +66,21 @@ export function Gallery({
         ref={openerRef}
         className="gallery__main gallery__main--zoom"
         onClick={() => setZoomOpen(true)}
-        aria-label={`${t.product.zoomOpen}: ${name} — ${lang === 'ky' ? product.nameKy : product.nameRu}`}
+        aria-label={`${t.product.zoomOpen}: ${name}`}
         title={t.product.zoomOpen}
       >
-        <ProductArt kind={product.art} color={currentHex} />
+        {photo ? (
+          <Image
+            src={photo.src}
+            alt={alt}
+            fill
+            sizes="(max-width: 960px) 92vw, 46vw"
+            priority
+            className="product-photo gallery-photo"
+          />
+        ) : (
+          <ProductArt kind={product.art} color={currentHex} />
+        )}
       </button>
 
       {colorViews.length > 1 && onColorChange && (
@@ -64,7 +92,7 @@ export function Gallery({
                 key={c.key}
                 type="button"
                 className="gallery__thumb"
-                aria-pressed={c.key === variant.colorKey}
+                aria-pressed={c.key === colorKey}
                 aria-label={`${t.product.color}: ${lang === 'ky' ? c.labelKy : c.labelRu}`}
                 title={lang === 'ky' ? c.labelKy : c.labelRu}
                 disabled={!exists}
@@ -77,22 +105,35 @@ export function Gallery({
         </div>
       )}
 
-      {zoomOpen && (
-        <div className="zoom-overlay" role="dialog" aria-modal="true" aria-label={t.a11y.mainGallery}>
-          <button
-            type="button"
-            ref={closeRef}
-            className="zoom-overlay__close"
-            onClick={() => setZoomOpen(false)}
-            aria-label={t.product.zoomClose}
-          >
-            ✕
-          </button>
-          <div className="zoom-overlay__stage">
+      {/* нативный модальный dialog: backdrop и inert-фон обеспечивает браузер */}
+      <dialog
+        ref={dialogRef}
+        className="zoom-overlay"
+        aria-label={t.a11y.mainGallery}
+        onClose={onDialogClose}
+      >
+        <div className="zoom-overlay__stage">
+          {photo ? (
+            <Image
+              src={photo.src}
+              alt={alt}
+              fill
+              sizes="92vw"
+              className="product-photo gallery-photo"
+            />
+          ) : (
             <ProductArt kind={product.art} color={currentHex} />
-          </div>
+          )}
         </div>
-      )}
+        <button
+          type="button"
+          className="zoom-overlay__close"
+          onClick={() => dialogRef.current?.close()}
+          aria-label={t.product.zoomClose}
+        >
+          ✕
+        </button>
+      </dialog>
     </div>
   )
 }

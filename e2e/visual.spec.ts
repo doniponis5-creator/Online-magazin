@@ -73,31 +73,34 @@ for (const width of widths) {
   })
 }
 
-test('screenshots: key screens for review', async ({ page }) => {
-  const { writeFileSync } = await import('node:fs')
+test('screenshots: key screens for review', async ({ page }, testInfo) => {
+  const { writeFileSync, mkdirSync } = await import('node:fs')
+  mkdirSync('review/task-03', { recursive: true })
+  const dir = 'review/task-03'
 
   // мобильный RU
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/ru/')
   await page.evaluate(() => window.scrollTo(0, 0))
-  await page.waitForTimeout(300)
-  writeFileSync('review/01-home-ru-390.png', await page.screenshot())
+  await page.waitForTimeout(500)
+  writeFileSync(`${dir}/01-home-ru-390.png`, await page.screenshot())
 
   await page.goto('/ky/')
   await page.evaluate(() => window.scrollTo(0, 0))
-  await page.waitForTimeout(300)
-  writeFileSync('review/03-home-ky-390.png', await page.screenshot())
+  await page.waitForTimeout(500)
+  writeFileSync(`${dir}/03-home-ky-390.png`, await page.screenshot())
 
   // каталог с фильтром
   await page.goto('/ru/catalog?cat=smartphones')
-  await page.waitForTimeout(300)
-  writeFileSync('review/04-catalog-filtered-390.png', await page.screenshot())
+  await page.waitForTimeout(400)
+  writeFileSync(`${dir}/04-catalog-filtered-390.png`, await page.screenshot())
 
-  // товар с выбранным вариантом (комбинация)
+  // товар с фото и выбранным вариантом
   await page.goto('/ru/product/tabslate-10')
   await page.getByRole('button', { name: 'Тёмный', exact: true }).click()
-  await page.waitForTimeout(300)
-  writeFileSync('review/06-product-variant-390.png', await page.screenshot())
+  await page.evaluate(() => window.scrollTo(0, 0))
+  await page.waitForTimeout(400)
+  writeFileSync(`${dir}/06-product-variant-390.png`, await page.screenshot())
 
   // корзина
   await page.evaluate(() =>
@@ -110,8 +113,8 @@ test('screenshots: key screens for review', async ({ page }) => {
     ),
   )
   await page.goto('/ru/cart')
-  await page.waitForTimeout(300)
-  writeFileSync('review/07-cart-390.png', await page.screenshot())
+  await page.waitForTimeout(400)
+  writeFileSync(`${dir}/07-cart-390.png`, await page.screenshot())
 
   // checkout с демо-результатом
   await page.goto('/ru/checkout')
@@ -119,12 +122,36 @@ test('screenshots: key screens for review', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Телефон' }).fill('+996 700 123456')
   await page.getByRole('button', { name: 'Отправить заявку (демо)' }).click()
   await page.waitForTimeout(300)
-  writeFileSync('review/08-checkout-demo-result-390.png', await page.screenshot())
+  writeFileSync(`${dir}/08-checkout-demo-result-390.png`, await page.screenshot())
 
   // desktop 1440
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/ru/')
   await page.evaluate(() => window.scrollTo(0, 0))
-  await page.waitForTimeout(300)
-  writeFileSync('review/09-home-ru-1440.png', await page.screenshot())
+  await page.waitForTimeout(500)
+  writeFileSync(`${dir}/09-home-ru-1440.png`, await page.screenshot())
+})
+
+test('animation recording: scroll reveals and add-to-cart swap', async ({ browser }) => {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    recordVideo: { dir: 'review/task-03', size: { width: 390, height: 844 } },
+  })
+  const page = await context.newPage()
+  // чистая корзина: swap «в корзину → количество» произойдёт на карточке
+  await page.addInitScript(() => localStorage.removeItem('sc-cart-v1'))
+  await page.goto('/ru/')
+  await page.waitForTimeout(600)
+  // прокрутка: секции получают однократное появление (reveal)
+  await page.evaluate(() => window.scrollBy(0, 500))
+  await page.waitForTimeout(500)
+  await page.evaluate(() => window.scrollBy(0, 600))
+  await page.waitForTimeout(500)
+  // добавление из каталога: кнопка превращается в количество
+  await page.goto('/ru/catalog')
+  await page.waitForTimeout(400)
+  await page.locator('.card').first().getByRole('button', { name: 'В корзину' }).click()
+  await page.waitForTimeout(600)
+  await expect(page.locator('.card').first().locator('.stepper')).toBeVisible()
+  await context.close()
 })

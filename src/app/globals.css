@@ -31,6 +31,15 @@
   --shadow-card: 0 1px 2px rgba(20, 35, 52, 0.05), 0 8px 24px rgba(20, 35, 52, 0.06);
   --shadow-pop: 0 4px 12px rgba(20, 35, 52, 0.1), 0 16px 40px rgba(20, 35, 52, 0.12);
 
+  /* ---------- Система движения (TASK 03) ---------- */
+  --dur-hover: 160ms;   /* hover кнопки/карточки 140–180ms */
+  --dur-press: 140ms;   /* press scale 120–160ms */
+  --dur-swap: 240ms;    /* смена состояния (добавлено→количество) 200–280ms */
+  --dur-reveal: 320ms;  /* появление секций 250–400ms */
+  --dur-img: 180ms;     /* смена изображения SKU 150–220ms */
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', 'Noto Sans',
     'Noto Sans Cyrillic', Arial, sans-serif;
 
@@ -541,119 +550,80 @@ main#content {
 
 .hero__banner {
   position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 44%);
+  align-items: stretch;
   overflow: hidden;
   border-radius: 24px;
   background: linear-gradient(115deg, #eef3ff 0%, #f1f5ff 45%, #e3ecff 100%);
-  padding: 32px 24px 24px;
-  min-height: 300px;
+  min-height: 380px;
 }
 
 .hero__text {
   position: relative;
   z-index: 2;
-  max-width: 55%;
+  padding: clamp(24px, 4vw, 56px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+}
+
+.hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: var(--color-primary);
+  background: #fff;
+  border: 1px solid var(--color-border);
+  padding: 8px 14px;
+  border-radius: 999px;
+  margin-bottom: 18px;
 }
 
 .hero__title {
-  font-size: clamp(26px, 5vw, 44px);
+  font-size: clamp(28px, 4.6vw, 52px);
   font-weight: 800;
-  line-height: 1.12;
-  letter-spacing: -0.5px;
+  line-height: 1.08;
+  letter-spacing: -0.8px;
+  max-width: 14ch;
 }
 
 .hero__subtitle {
-  margin-top: 10px;
+  margin-top: 14px;
   color: var(--color-ink-soft);
-  font-size: clamp(14px, 2vw, 17px);
-  max-width: 34ch;
+  font-size: clamp(15px, 1.6vw, 18px);
+  max-width: 36ch;
 }
 
 .hero__cta {
-  margin-top: 20px;
+  margin-top: 26px;
 }
 
-.hero__badge {
-  margin-top: 16px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--color-ink-soft);
+.hero__media {
+  position: relative;
+  min-height: 260px;
 }
 
-.hero__art {
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 46%;
-  z-index: 1;
-  pointer-events: none;
+.hero__media .product-photo {
+  object-fit: cover;
 }
 
-.hero__art-item {
-  position: absolute;
-  filter: drop-shadow(0 18px 22px rgba(20, 35, 52, 0.16));
-}
-
-.hero__art-item svg {
-  width: 100%;
-  height: auto;
-}
-
-.hero__art-item--phone {
-  top: 6%;
-  right: 52%;
-  width: 31%;
-}
-
-.hero__art-item--headphones {
-  bottom: 8%;
-  right: 16%;
-  width: 42%;
-}
-
-.hero__art-item--watch {
-  top: 30%;
-  right: 2%;
-  width: 34%;
-}
-
-@media (max-width: 640px) {
-  .hero__text {
-    max-width: 100%;
-  }
-  /* мобильный hero: текст сверху, декоративная полоса техники снизу */
+@media (max-width: 900px) {
   .hero__banner {
-    padding-bottom: 170px;
+    grid-template-columns: 1fr;
+    min-height: 0;
   }
-  .hero__art {
-    opacity: 1;
-    width: 100%;
-    top: auto;
-    height: 150px;
-    bottom: 0;
+  .hero__text {
+    padding: 24px 20px;
   }
-  .hero__art-item {
-    filter: none;
-  }
-  .hero__art-item--phone {
-    top: 0;
-    right: auto;
-    left: 4%;
-    width: 88px;
-  }
-  .hero__art-item--headphones {
-    bottom: 0;
-    right: auto;
-    left: 33%;
-    width: 116px;
-  }
-  .hero__art-item--watch {
-    top: 8px;
-    right: 5%;
-    width: 74px;
+  .hero__media {
+    order: -1;
+    min-height: 220px;
   }
 }
 
@@ -739,17 +709,45 @@ main#content {
 .card:hover {
   box-shadow: var(--shadow-card);
   border-color: var(--color-border-strong);
+  transform: translateY(-2px);
 }
 
 .card__media {
   position: relative;
   background: var(--color-surface);
-  padding: 14px;
+  overflow: hidden;
 }
 
+/* единая высота изображения карточки, пропорции не искажаются */
 .card__media-link {
   display: block;
-  border-radius: 12px;
+  aspect-ratio: 1 / 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.product-photo {
+  object-fit: cover;
+  transition: transform var(--dur-hover) var(--ease-out), opacity var(--dur-img) var(--ease-out);
+}
+
+.card:hover .card__media-link .product-photo {
+  transform: scale(1.03);
+}
+
+/* schemатичный плейсхолдер (когда фото нет) центрируется */
+.card__media-link .product-art {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  padding: 14px;
+  width: 100%;
+  height: 100%;
+  transition: transform var(--dur-hover) var(--ease-out);
+}
+
+.card:hover .card__media-link .product-art {
+  transform: scale(1.03);
 }
 
 .card__badges {
@@ -855,7 +853,7 @@ main#content {
   color: var(--color-primary);
 }
 
-/* favorite heart button */
+/* favorite heart button — мягкий однократный «пружинный» отклик */
 .fav-btn {
   display: inline-flex;
   align-items: center;
@@ -868,8 +866,8 @@ main#content {
   backdrop-filter: blur(6px);
   color: var(--color-muted);
   border: 1px solid var(--color-border);
-  transition: color var(--speed) var(--ease), transform var(--speed) var(--ease),
-    border-color var(--speed) var(--ease), background-color var(--speed) var(--ease);
+  transition: color var(--dur-hover) var(--ease-out), transform var(--dur-press) var(--ease-out),
+    border-color var(--dur-hover) var(--ease-out), background-color var(--dur-hover) var(--ease-out);
 }
 
 .fav-btn:active {
@@ -880,6 +878,19 @@ main#content {
   color: var(--color-primary);
   border-color: var(--color-primary);
   background: var(--color-primary-soft);
+  animation: fav-pop 320ms var(--ease-spring);
+}
+
+@keyframes fav-pop {
+  0% {
+    transform: scale(0.86);
+  }
+  55% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .fav-btn--plain {
@@ -1098,10 +1109,12 @@ main#content {
 
 .select-field__label {
   position: absolute;
+  top: 6px;
   left: 14px;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--color-muted);
   pointer-events: none;
+  z-index: 1;
 }
 
 .select-field select {
@@ -1111,8 +1124,8 @@ main#content {
   border: 1px solid var(--color-border);
   border-radius: 13px;
   background: #fff;
-  padding: 14px 32px 0 14px;
-  font-size: 14px;
+  padding: 16px 32px 2px 14px;
+  font-size: 13.5px;
   font-weight: 600;
   color: var(--color-ink);
   cursor: pointer;
@@ -1192,20 +1205,40 @@ main#content {
 }
 
 .gallery__main {
+  position: relative;
   background: var(--color-surface);
   border-radius: 24px;
   aspect-ratio: 1 / 0.9;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: 0;
   overflow: hidden;
 }
 
-.gallery__main svg {
+.gallery__main .product-art {
   width: min(100%, 380px);
   height: auto;
   filter: drop-shadow(0 24px 28px rgba(20, 35, 52, 0.14));
+  transition: transform var(--dur-img) var(--ease-out), opacity var(--dur-img) var(--ease-out);
+  animation: img-in var(--dur-img) var(--ease-out);
+}
+
+/* фото товара: целиком, без искажения пропорций */
+.gallery-photo {
+  object-fit: contain;
+  animation: img-in var(--dur-img) var(--ease-out);
+}
+
+@keyframes img-in {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .gallery__thumbs {
@@ -1549,12 +1582,20 @@ main#content {
 }
 
 .cart-line__media {
+  position: relative;
+  overflow: hidden;
   border-radius: 14px;
   background: var(--color-surface);
-  padding: 10px;
+  aspect-ratio: 1 / 1;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.cart-line__media .product-art {
+  width: 100%;
+  height: 100%;
+  padding: 10px;
 }
 
 .cart-line__name {
@@ -2029,7 +2070,7 @@ main#content {
   margin-top: 6px;
 }
 
-/* ---------- Reduced motion ---------- */
+/* ---------- Reduced motion: движение выключается, действия остаются понятными ---------- */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -2038,6 +2079,11 @@ main#content {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
   }
 }
 
@@ -2049,31 +2095,52 @@ main#content {
 }
 
 .zoom-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 300;
+  border: none;
+  padding: 24px;
+  background: transparent;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  align-items: center;
+  justify-content: center;
+  overscroll-behavior: contain;
+}
+
+.zoom-overlay[open] {
+  display: flex;
+}
+
+/* затемнение и лёгкое стекло за нативным диалогом */
+.zoom-overlay::backdrop {
   background: rgba(20, 35, 52, 0.55);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
+}
+
+/* фон не прокручивается, пока открыт диалог */
+html.dialog-open {
+  overflow: hidden;
 }
 
 .zoom-overlay__stage {
+  position: relative;
   background: var(--color-surface);
   border-radius: 28px;
-  padding: 32px;
+  padding: 16px;
   width: min(560px, 92vw);
-  max-height: 86vh;
+  height: min(70vh, 560px);
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: var(--shadow-pop);
 }
 
-.zoom-overlay__stage svg {
+.zoom-overlay__stage .product-photo {
+  object-fit: contain;
+}
+
+.zoom-overlay__stage .product-art {
   width: min(100%, 420px);
   height: auto;
 }
@@ -2095,6 +2162,42 @@ main#content {
 
 .zoom-overlay__close:active {
   transform: scale(0.94);
+}
+
+/* ---------- Недоступная комбинация: явное состояние + предложения ---------- */
+.combo-missing {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #fdeeec;
+  border: 1px solid #f3c1ba;
+  color: var(--color-ink);
+  font-size: 14.5px;
+}
+
+.combo-missing strong {
+  font-size: 15px;
+}
+
+.combo-missing p {
+  color: var(--color-ink-soft);
+  line-height: 1.5;
+}
+
+.combo-missing__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.combo-missing__list .swatch {
+  background: #fff;
+}
+
+.purchase__price--muted {
+  color: var(--color-muted);
 }
 
 /* ---------- Cart restore notice ---------- */
@@ -2165,4 +2268,37 @@ main#content {
 .install-demo__form-title {
   font-size: 15px;
   font-weight: 800;
+}
+
+/* ---------- Появление секций (однократное, мягкое) ---------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity var(--dur-reveal) var(--ease-out), transform var(--dur-reveal) var(--ease-out);
+  will-change: opacity, transform;
+}
+
+.reveal.is-in {
+  opacity: 1;
+  transform: none;
+  will-change: auto;
+}
+
+/* добавление в корзину: кнопка превращается в количество */
+.card__stepper {
+  animation: swap-in var(--dur-swap) var(--ease-out);
+  display: inline-flex;
+  justify-content: center;
+  width: 100%;
+}
+
+@keyframes swap-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }

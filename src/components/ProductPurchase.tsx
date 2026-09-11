@@ -4,7 +4,7 @@ import { useI18n } from '@/lib/i18n/I18nProvider'
 import type { Product, ProductVariant } from '@/data/products'
 import { unitPrice } from '@/lib/cart/logic'
 import { formatSom } from '@/lib/format'
-import { variantLabel } from '@/lib/cart/sku'
+import { suggestCombos, variantLabel } from '@/lib/cart/sku'
 import { categoryName } from '@/data/categories'
 import { AddToCartButton } from './AddToCartButton'
 import { FavoriteButton } from './FavoriteButton'
@@ -44,7 +44,8 @@ export function ProductPurchase({
   onMemoryChange,
 }: {
   product: Product
-  variant: ProductVariant
+  /** Комбинация выбрана точно; null — выбранной комбинации нет в каталоге */
+  variant: ProductVariant | null
   colorKey: string | null
   memoryKey: string | null
   onColorChange: (colorKey: string | null) => void
@@ -52,10 +53,13 @@ export function ProductPurchase({
 }) {
   const { t, lang } = useI18n()
   const name = lang === 'ky' ? product.nameKy : product.nameRu
-  const price = unitPrice(product, variant.id) ?? product.price
+  const price = variant ? (unitPrice(product, variant.id) ?? product.price) : null
   const colorOptions = product.colorOptions ?? []
   const memoryOptions = product.memoryOptions ?? []
-  const label = variantLabel(product, variant, lang)
+  const label = variant ? variantLabel(product, variant, lang) : null
+  const suggestions = variant ? [] : suggestCombos(product, colorKey, memoryKey)
+  const chosenColorLabel = colorOptions.find((c) => c.key === colorKey)
+  const chosenMemoryLabel = memoryOptions.find((m) => m.key === memoryKey)
 
   return (
     <div className="purchase">
@@ -71,40 +75,57 @@ export function ProductPurchase({
         </span>
       )}
 
-      <div className="purchase__prices">
-        <span className="purchase__price">{formatSom(price)}</span>
-        {product.oldPrice && <span className="purchase__old">{formatSom(product.oldPrice)}</span>}
-      </div>
+      {variant && price !== null ? (
+        <div className="purchase__prices">
+          <span className="purchase__price">{formatSom(price)}</span>
+          {product.oldPrice && <span className="purchase__old">{formatSom(product.oldPrice)}</span>}
+        </div>
+      ) : null}
 
-      <div>
-        <StockLine stock={variant.stock} />
-        <p className="stock-note">{t.product.stockNote}</p>
-      </div>
+      {variant ? (
+        <div>
+          <StockLine stock={variant.stock} />
+          <p className="stock-note">{t.product.stockNote}</p>
+        </div>
+      ) : (
+        <div className="combo-missing" role="status">
+          <strong>{t.product.comboMissing}</strong>
+          <p>{t.product.comboMissingNote}</p>
+          <div className="combo-missing__list">
+            {suggestions.map((v) => (
+              <button
+                key={v.id}
+                type="button"
+                className="swatch"
+                onClick={() => {
+                  if (product.colorOptions && v.colorKey) onColorChange(v.colorKey)
+                  if (product.memoryOptions && v.memoryKey) onMemoryChange(v.memoryKey)
+                }}
+              >
+                {variantLabel(product, v, lang)}
+                {v.priceDelta ? ` · +${formatSom(v.priceDelta)}` : ''}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {colorOptions.length > 1 && (
         <div className="option-group">
           <span className="option-group__label">
             {t.product.color}
             {': '}
-            <span>
-              {variant.colorKey
-                ? (() => {
-                    const c = colorOptions.find((o) => o.key === variant.colorKey)
-                    return c ? (lang === 'ky' ? c.labelKy : c.labelRu) : ''
-                  })()
-                : ''}
-            </span>
+            <span>{chosenColorLabel ? (lang === 'ky' ? chosenColorLabel.labelKy : chosenColorLabel.labelRu) : '—'}</span>
           </span>
           <div className="swatch-row">
             {colorOptions.map((c) => {
               const exists = product.variants.some((v) => v.colorKey === c.key)
-              const active = colorKey === c.key
               return (
                 <button
                   key={c.key}
                   type="button"
                   className="swatch"
-                  aria-pressed={active}
+                  aria-pressed={colorKey === c.key}
                   disabled={!exists}
                   onClick={() => onColorChange(c.key)}
                 >
@@ -119,28 +140,24 @@ export function ProductPurchase({
 
       {memoryOptions.length > 1 && (
         <div className="option-group">
-          <span className="option-group__label">{t.product.memory}</span>
+          <span className="option-group__label">
+            {t.product.memory}
+            {': '}
+            <span>{chosenMemoryLabel ? (lang === 'ky' ? chosenMemoryLabel.labelKy : chosenMemoryLabel.labelRu) : '—'}</span>
+          </span>
           <div className="swatch-row">
             {memoryOptions.map((m) => {
               const exists = product.variants.some((v) => v.memoryKey === m.key)
-              const active = memoryKey === m.key
-              const comboVariantRow = product.variants.find(
-                (v) =>
-                  v.memoryKey === m.key &&
-                  (!product.colorOptions || v.colorKey === colorKey),
-              )
-              const delta = comboVariantRow?.priceDelta
               return (
                 <button
                   key={m.key}
                   type="button"
                   className="swatch"
-                  aria-pressed={active}
+                  aria-pressed={memoryKey === m.key}
                   disabled={!exists}
                   onClick={() => onMemoryChange(m.key)}
                 >
                   {lang === 'ky' ? m.labelKy : m.labelRu}
-                  {delta ? ` · +${formatSom(delta)}` : ''}
                 </button>
               )
             })}
@@ -149,11 +166,17 @@ export function ProductPurchase({
       )}
 
       <div className="purchase__actions">
-        <AddToCartButton
-          productId={product.id}
-          variantId={variant.id}
-          disabled={variant.stock <= 0}
-        />
+        {variant ? (
+          <AddToCartButton
+            productId={product.id}
+            variantId={variant.id}
+            disabled={variant.stock <= 0}
+          />
+        ) : (
+          <button type="button" className="btn btn--primary" disabled aria-live="polite">
+            {t.product.comboMissing}
+          </button>
+        )}
         <FavoriteButton productId={product.id} variant="floating" />
       </div>
 

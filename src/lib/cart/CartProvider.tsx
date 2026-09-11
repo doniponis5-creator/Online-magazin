@@ -21,13 +21,15 @@ import { products as demoProducts } from '@/data/products'
 
 const STORAGE_KEY = 'sc-cart-v1'
 
+type RestoreNotice = 'adjusted' | 'corrupted'
+
 type CartContextValue = {
   lines: CartLine[]
   itemsCount: number
   subtotal: number
   hydrated: boolean
-  /** Корзина была скорректирована при восстановлении (недоступные товары/лимиты) */
-  restoreNotice: boolean
+  /** Корзина была скорректирована/повреждена при восстановлении */
+  restoreNotice: RestoreNotice | null
   dismissRestoreNotice: () => void
   add: (productId: string, variantId: string, qty?: number) => void
   changeQty: (productId: string, variantId: string, qty: number) => void
@@ -40,23 +42,27 @@ const CartContext = createContext<CartContextValue | null>(null)
 export function CartProvider({ children }: { children: ReactNode }) {
   const [lines, setLines] = useState<CartLine[]>([])
   const [hydrated, setHydrated] = useState(false)
-  const [restoreNotice, setRestoreNotice] = useState(false)
+  const [restoreNotice, setRestoreNotice] = useState<RestoreNotice | null>(null)
 
   // Восстановление корзины с нормализацией: неизвестные ids, дробные/отрицательные
-  // qty, дубликаты SKU и повреждённый JSON не должны ломать суммы.
+  // qty, дубликаты SKU и повреждённый JSON не должны ломать суммы. Сообщение
+  // показывается и когда исправлены отдельные строки, и когда удалены все,
+  // и когда хранилище повреждено (флаг ошибки не теряется).
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY)
       if (raw !== null) {
         let parsed: unknown = null
+        let corrupted = false
         try {
           parsed = JSON.parse(raw)
         } catch {
-          parsed = null // повреждённый JSON — считаем изменением
+          corrupted = true // повреждённый JSON — отдельное понятное сообщение
         }
         const { lines: normalized, changed } = normalizeLines(parsed, demoProducts)
         setLines(normalized)
-        setRestoreNotice(changed && normalized.length > 0)
+        if (corrupted) setRestoreNotice('corrupted')
+        else if (changed) setRestoreNotice('adjusted')
       }
     } catch {
       // localStorage недоступен — корзина работает в памяти
@@ -75,7 +81,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [lines, hydrated])
 
   // Синхронизация между вкладками: storage приходит только из ДРУГИХ вкладок,
-  // поэтому цикла записи не возникает.
+  // поэтому цикла записи не возникает. Повторно нормализуем входящие данные.
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key !== STORAGE_KEY) return
@@ -114,7 +120,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       subtotal: totals.subtotal,
       hydrated,
       restoreNotice,
-      dismissRestoreNotice: () => setRestoreNotice(false),
+      dismissRestoreNotice: () => setRestoreNotice(null),
       add,
       changeQty,
       remove,

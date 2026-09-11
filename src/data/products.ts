@@ -411,8 +411,9 @@ export const products: Product[] = [
     variants: [
       { id: 'blue-128', colorKey: 'blue', memoryKey: '128', stock: 6 },
       { id: 'blue-256', colorKey: 'blue', memoryKey: '256', stock: 2, priceDelta: 3000 },
+      // комбинация «Тёмный · 256 ГБ» намеренно отсутствует в каталоге —
+      // для проверки явного состояния отсутствия комбинации (TASK 03)
       { id: 'ink-128', colorKey: 'ink', memoryKey: '128', stock: 3 },
-      { id: 'ink-256', colorKey: 'ink', memoryKey: '256', stock: 0, priceDelta: 3000 },
     ],
   },
 
@@ -565,4 +566,10 @@ export function defaultMemoryKey(product: Product, colorKey: string | null): str
 export function colorHexOf(product: Product, variant: ProductVariant | undefined): string {
   if (!variant?.colorKey) return product.baseColor
   return product.colorOptions?.find((c) => c.key === variant.colorKey)?.hex ?? product.baseColor
+}
+
+/** Цвет выбранного ключа (для галереи, даже когда комбинации ещё нет). */
+export function colorHexOfKey(product: Product, colorKey: string | null): string {
+  if (!colorKey) return product.baseColor
+  return product.colorOptions?.find((c) => c.key === colorKey)?.hex ?? product.baseColor
 }
