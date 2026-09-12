@@ -61,11 +61,11 @@ def make_mat(name, base, rough, metallic=0.0, aniso=0.0, emission=None, emis_str
             pass
     return m
 
-m_silver = make_mat('BodySilver', (0.88, 0.89, 0.92), 0.28, 1.0, 0.35)
+m_silver = make_mat('BodySilver', (0.90, 0.91, 0.94), 0.26, 1.0, 0.32)
 m_silver_side = make_mat('BodySilverDark', (0.74, 0.76, 0.80), 0.36, 1.0, 0.3)
-m_black = make_mat('PanelBlack', (0.015, 0.015, 0.02), 0.22, 0.25)
+m_black = make_mat('PanelBlack', (0.02, 0.02, 0.028), 0.16, 0.3)
 m_chrome = make_mat('Chrome', (0.90, 0.91, 0.94), 0.06, 1.0)
-m_glass = make_mat('DoorGlass', (0.03, 0.04, 0.06), 0.04, 0.55)
+m_glass = make_mat('DoorGlass', (0.035, 0.045, 0.065), 0.05, 0.6)
 m_drum_dark = make_mat('DrumDark', (0.03, 0.035, 0.045), 0.35)
 m_plastic = make_mat('DarkPlastic', (0.05, 0.05, 0.06), 0.5)
 m_seam = make_mat('Seam', (0.01, 0.01, 0.012), 0.6)
@@ -119,32 +119,41 @@ add_cyl('KnobRim', 0.047, 0.008, (0.0, FRONT + 0.001, knob_z), m_black, rot=(mat
 # метка на переключателе
 add_box('KnobTick', (0.005, 0.003, 0.016), (0.0, FRONT + 0.015, knob_z + 0.017), m_seam, bevel=0.0)
 
-# дисплей (слева)
-add_box('Display', (0.115, 0.004, 0.040), (-0.185, FRONT + 0.004, knob_z), m_display, bevel=0.002)
-# кнопки (справа, ряд) — оси тоже вдоль Y
+# дисплей — СПРАВА от переключателя (по компоновке владельца)
+add_box('Display', (0.115, 0.004, 0.040), (0.185, FRONT + 0.004, knob_z), m_display, bevel=0.002)
+# кнопки — компактный ряд ПОД дисплеем (та же правая зона, без пересечений)
 for i in range(4):
-    add_cyl('Btn%d' % i, 0.008, 0.008,
-            (0.13 + i * 0.038, FRONT + 0.006, knob_z), m_plastic, rot=(math.pi / 2, 0, 0))
+    add_cyl('Btn%d' % i, 0.007, 0.008,
+            (0.135 + i * 0.033, FRONT + 0.006, knob_z - 0.033), m_plastic, rot=(math.pi / 2, 0, 0))
 
 # ---------- дверца ----------
-# кольцо-тор: реальное отверстие, стекло видно сквозь него
+# основная рамка дверцы — ШИРОКОЕ ЧЁРНОЕ кольцо (как на официальном фото);
+# хромовый тор не является главной рамкой
 bpy.ops.mesh.primitive_torus_add(
-    major_radius=DOOR_R - 0.024, minor_radius=0.024,
-    location=(0, FRONT + 0.018, DOOR_Z), rotation=(math.pi / 2, 0, 0),
+    major_radius=DOOR_R - 0.030, minor_radius=0.038,
+    location=(0, FRONT + 0.014, DOOR_Z), rotation=(math.pi / 2, 0, 0),
     major_segments=64, minor_segments=24)
-ring = bpy.context.active_object
-ring.name = 'DoorRingTorus'
-ring.data.materials.append(m_chrome)
-# стекло утоплено ВНУТРИ кольца (за плоскостью тора), видно через отверстие
-add_cyl('DoorGlass', DOOR_R - 0.030, 0.012, (0, FRONT - 0.002, DOOR_Z), m_glass,
-        rot=(math.pi / 2, 0, 0))
-# барабан в глубине — через стекло читается тёмный барабан
-add_cyl('DrumBehind', DOOR_R - 0.045, 0.012, (0, FRONT - 0.045, DOOR_Z), m_drum_dark,
-        rot=(math.pi / 2, 0, 0))
-# тонкое внутреннее обрамление стекла (бортик барабана)
+black_ring = bpy.context.active_object
+black_ring.name = 'DoorRingBlack'
+black_ring.data.materials.append(m_black)
+# тонкий хромовый акцент по внутреннему краю чёрной рамки
 bpy.ops.mesh.primitive_torus_add(
-    major_radius=DOOR_R - 0.030, minor_radius=0.007,
-    location=(0, FRONT - 0.008, DOOR_Z), rotation=(math.pi / 2, 0, 0),
+    major_radius=DOOR_R - 0.068, minor_radius=0.006,
+    location=(0, FRONT + 0.008, DOOR_Z), rotation=(math.pi / 2, 0, 0),
+    major_segments=48, minor_segments=16)
+trim = bpy.context.active_object
+trim.name = 'DoorTrimChrome'
+trim.data.materials.append(m_chrome)
+# стекло за рамкой — видно через реальное отверстие
+add_cyl('DoorGlass', DOOR_R - 0.074, 0.012, (0, FRONT - 0.004, DOOR_Z), m_glass,
+        rot=(math.pi / 2, 0, 0))
+# барабан в глубине
+add_cyl('DrumBehind', DOOR_R - 0.080, 0.012, (0, FRONT - 0.045, DOOR_Z), m_drum_dark,
+        rot=(math.pi / 2, 0, 0))
+# бортик барабана у стекла
+bpy.ops.mesh.primitive_torus_add(
+    major_radius=DOOR_R - 0.074, minor_radius=0.006,
+    location=(0, FRONT - 0.010, DOOR_Z), rotation=(math.pi / 2, 0, 0),
     major_segments=48, minor_segments=16)
 bore = bpy.context.active_object
 bore.name = 'DrumBore'
@@ -155,9 +164,9 @@ add_box('DoorHandle', (0.022, 0.030, 0.125),
 
 # ---------- выдвижной лоток — внутри чёрной панели, слева от переключателя ----------
 dz = knob_z
-add_box('Detergent', (0.115, 0.014, 0.062), (-0.215, FRONT + 0.002, dz), m_black, bevel=0.003)
-add_box('DeterrentSeam', (0.122, 0.004, 0.068), (-0.215, FRONT - 0.002, dz), m_seam, bevel=0.001)
-add_box('DetergentHandle', (0.075, 0.012, 0.011), (-0.215, FRONT + 0.008, dz - 0.020), m_silver_side, bevel=0.003)
+add_box('Detergent', (0.105, 0.014, 0.062), (-0.225, FRONT + 0.002, dz), m_black, bevel=0.003)
+add_box('DeterrentSeam', (0.112, 0.004, 0.068), (-0.225, FRONT - 0.002, dz), m_seam, bevel=0.001)
+add_box('DetergentHandle', (0.068, 0.012, 0.011), (-0.225, FRONT + 0.008, dz - 0.020), m_silver_side, bevel=0.003)
 
 # ---------- сервисная крышка (внизу справа) ----------
 add_box('ServiceFlap', (0.205, 0.010, 0.150), (0.155, FRONT - 0.001, FEET + 0.16), m_silver_side, bevel=0.004)
@@ -195,8 +204,8 @@ def add_light(name, kind, size, energy, loc, color=(1, 1, 1), target=(0, 0, 0.5)
     look_at(l, target)
     return l
 
-add_light('Key', 'AREA', 2.8, 680, (0.9, 2.3, 2.7), (1.0, 0.98, 0.95))
-add_light('Fill', 'AREA', 2.2, 210, (-2.6, 1.5, 1.7))
+add_light('Key', 'AREA', 2.8, 740, (0.9, 2.3, 2.7), (1.0, 0.98, 0.95))
+add_light('Fill', 'AREA', 2.4, 250, (-2.6, 1.5, 1.7))
 add_light('RimBlue', 'AREA', 1.2, 90, (2.6, -1.3, 1.9), (0.62, 0.74, 1.0))
 add_light('AccentLime', 'AREA', 0.9, 40, (-2.2, -1.7, 0.5), (0.85, 1.0, 0.55))
 
@@ -225,7 +234,7 @@ QUICK = '--quick' in sys.argv
 
 if QUICK:
     # быстрый фронтальный кадр для сверки с официальным фото (низкие сэмплы)
-    scene.cycles.samples = 32
+    scene.cycles.samples = 48
     scene.render.resolution_x = 1000
     scene.render.resolution_y = 750
     scene.camera = cam_front
