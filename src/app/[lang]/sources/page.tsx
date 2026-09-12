@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: 'Источники изображений — Smart Centr (демо)',
 }
 
-// Статическая страница: кто автор фото, откуда они и по какой лицензии.
+// Статическая страница: активные баннерные фото + честный архив прежних.
 export default async function SourcesPage({
   params,
 }: {
@@ -18,6 +18,8 @@ export default async function SourcesPage({
   if (!isLang(raw)) notFound()
   const lang: Lang = (isLang(raw) ? raw : defaultLang) as Lang
   const t = getDictionary(lang).sources
+  const active = photoSources.filter((s) => s.inUse)
+  const archived = photoSources.filter((s) => !s.inUse)
 
   return (
     <section className="section sources-page">
@@ -31,47 +33,80 @@ export default async function SourcesPage({
           </a>{' '}
           — {t.licenseNote}
         </p>
-        <div className="table-wrap">
-          <table className="sources-table">
-            <thead>
-              <tr>
-                <th scope="col">{t.file}</th>
-                <th scope="col">{t.author}</th>
-                <th scope="col">{t.role}</th>
-                <th scope="col">{t.source}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {photoSources.map((s) => (
-                <tr key={s.file}>
-                  <td>
-                    <code>photos/{s.file}</code>
-                  </td>
-                  <td>{s.author}</td>
-                  <td>{lang === 'ky' ? s.roleKy : s.roleRu}</td>
-                  <td>
-                    <a
-                      href={s.page}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Pexels #{s.pexelsId}
-                    </a>
-                    {s.verify === 'page+mirrors' && (
-                      <span className="sources-table__note">
-                        {' '}
-                        ({t.verifiedMirrors})
-                      </span>
-                    )}
-                  </td>
+        {active.length > 0 ? (
+          <div className="table-wrap">
+            <table className="sources-table">
+              <thead>
+                <tr>
+                  <th scope="col">{t.file}</th>
+                  <th scope="col">{t.author}</th>
+                  <th scope="col">{t.role}</th>
+                  <th scope="col">{t.source}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {active.map((s) => (
+                  <tr key={s.file}>
+                    <td>
+                      <code>{s.file}</code>
+                    </td>
+                    <td>{s.author}</td>
+                    <td>{lang === 'ky' ? s.roleKy : s.roleRu}</td>
+                    <td>
+                      <a href={s.page} target="_blank" rel="noopener noreferrer">
+                        Pexels #{s.pexelsId}
+                      </a>
+                      {s.verify === 'page+mirrors' && (
+                        <span className="sources-table__note">
+                          {' '}
+                          ({t.verifiedMirrors})
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="sources-page__license">{t.noActive}</p>
+        )}
         <p className="sources-page__note">
           {t.verified} {t.placeholderNote}
         </p>
+
+        <details className="sources-page__archive">
+          <summary>{t.archivedTitle}</summary>
+          <p className="sources-page__note">{t.archivedNote}</p>
+          <div className="table-wrap">
+            <table className="sources-table">
+              <thead>
+                <tr>
+                  <th scope="col">{t.file}</th>
+                  <th scope="col">{t.author}</th>
+                  <th scope="col">{t.role}</th>
+                  <th scope="col">{t.source}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {archived.map((s) => (
+                  <tr key={s.file}>
+                    <td>
+                      <code>{s.file}</code>
+                    </td>
+                    <td>{s.author}</td>
+                    <td>{lang === 'ky' ? s.roleKy : s.roleRu}</td>
+                    <td>
+                      <a href={s.page} target="_blank" rel="noopener noreferrer">
+                        Pexels #{s.pexelsId}
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
       </div>
     </section>
   )

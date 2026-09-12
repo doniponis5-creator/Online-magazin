@@ -1,120 +1,210 @@
 import { expect, test } from '@playwright/test'
 
 /**
- * TASK 03A регрессии (только ошибки из дизайн-ревью):
- * 1) alt реальных изображений следует языку страницы (KY, а не всегда RU);
- * 2) видимая маркировка «Иллюстрация категории» на карточке, в галерее и в зуме;
- * 3) reveal-анимация регистрируется после клиентских переходов, cleanup
- *    оставляет контент видимым, reduced-motion уважается — включая смену
- *    системной настройки уже после загрузки страницы;
- * 4) страница источников фото доступна из footer.
+ * TASK 03A REVIEW FIXES — регрессии нового контракта (решение владельца 12.09):
+ * 1) товарных фото в витрине нет: единый плейсхолдер, подпись локализована;
+ * 2) фотозум без снимка не предлагается (проверка dialog — отдельная фикстура
+ *    в product-zoom.spec.ts);
+ * 3) reveal регистрируется после клиентских переходов; reduced-motion
+ *    уважается с загрузки и при смене настройки на лету; исправление
+ *    каскада проверяется computed-стилями, а не только классами;
+ * 4) страница источников: ровно один активный баннер + честный архив.
  */
 
-test('alt: KY pages show Kyrgyz alt text for real photos', async ({ page }) => {
-  await page.goto('/ky/')
-  // карточки с фото: alt на кыргызском
-  await expect(
-    page.locator('.card__media-link img[alt*="демо сүрөтү"]').first(),
-  ).toBeVisible()
-  // русской подписи на кыргызской странице быть не должно
-  await expect(
-    page.locator('.card__media-link img[alt*="демо-изображение категории"]'),
-  ).toHaveCount(0)
-  // каталог — тот же продукт, тот же язык
-  await page.goto('/ky/catalog')
-  await expect(
-    page.locator('.card__media-link img[alt*="демо сүрөтү"]').first(),
-  ).toBeVisible()
-})
-
-test('alt: RU pages show Russian alt text for real photos', async ({ page }) => {
-  await page.goto('/ru/')
-  await expect(
-    page.locator('.card__media-link img[alt*="демо-изображение категории"]').first(),
-  ).toBeVisible()
-  await expect(
-    page.locator('.card__media-link img[alt*="демо сүрөтү"]'),
-  ).toHaveCount(0)
-})
-
-test('badge: «Иллюстрация категории» visible on card, in gallery and in zoom', async ({
+test('placeholder: RU cards show single localized placeholder, no product photos', async ({
   page,
 }) => {
   await page.goto('/ru/')
-  const cardBadge = page.locator('.card__photo-badge').first()
-  await expect(cardBadge).toBeVisible()
-  await expect(cardBadge).toHaveText('Иллюстрация категории')
+  const card = page.locator('.card').first()
+  await expect(card.locator('.product-placeholder')).toBeVisible()
+  await expect(card.locator('.product-placeholder__label')).toHaveText('Фото скоро появится')
+  // товарных <img> в карточках больше нет
+  await expect(page.locator('.card__media-link img')).toHaveCount(0)
+  // каталог — то же самое
+  await page.goto('/ru/catalog')
+  await expect(
+    page.locator('.card .product-placeholder__label').first(),
+  ).toHaveText('Фото скоро появится')
+})
 
-  // страница товара: бейдж у главной фото и заметка о соответствии цвету
+test('placeholder: KY cards show Kyrgyz label', async ({ page }) => {
+  await page.goto('/ky/')
+  await expect(page.locator('.card .product-placeholder__label').first()).toHaveText(
+    'Сүрөт жакында чыгат',
+  )
+  await page.goto('/ky/catalog')
+  await expect(page.locator('.card .product-placeholder__label').first()).toHaveText(
+    'Сүрөт жакында чыгат',
+  )
+})
+
+test('product page: placeholder instead of photo, no zoom and no photo badges', async ({ page }) => {
   await page.goto('/ru/product/tabslate-10')
-  await expect(page.locator('.gallery .card__photo-badge').first()).toBeVisible()
-  await expect(page.locator('.gallery__photo-note')).toBeVisible()
-  await expect(page.locator('.gallery__photo-note')).toContainText('не совпадать')
+  await expect(page.locator('.gallery__main .product-placeholder')).toBeVisible()
+  await expect(page.locator('.gallery__main--zoom')).toHaveCount(0)
+  await expect(page.locator('dialog.zoom-overlay')).toHaveCount(0)
+  // прежние подписи «Иллюстрация категории» ушли вместе с фото
+  await expect(page.locator('.card__photo-badge')).toHaveCount(0)
+  await expect(page.locator('.gallery__photo-note')).toHaveCount(0)
+})
 
-  // зум: бейдж остаётся внутри диалога
-  await page.locator('.gallery__main--zoom').click()
-  await expect(page.locator('.zoom-overlay[open]')).toBeVisible()
-  await expect(page.locator('.zoom-overlay .card__photo-badge')).toBeVisible()
-  await page.keyboard.press('Escape')
-  await expect(page.locator('.zoom-overlay[open]')).toHaveCount(0)
+test('hero: CSS scene with model text, no photos, CTA to home-appliances catalog', async ({
+  page,
+}) => {
+  await page.goto('/ru/')
+  // модель владельца и подтверждённая характеристика
+  await expect(page.locator('.hero3d__title')).toHaveText('LG F4X5ES5SB')
+  await expect(page.locator('.hero3d__subtitle.hero3d__ph--intro')).toContainText('11 кг')
+  // сцена — авторская CSS-графика: тегов img в hero нет вовсе
+  await expect(page.locator('.hero3d img')).toHaveCount(0)
+  await expect(page.locator('.wm__machine').first()).toBeVisible()
+  // один CTA ведёт в существующий каталог техники для дома
+  const cta = page.locator('.hero3d__cta')
+  await expect(cta).toHaveText(/Смотреть стиральные машины/)
+  await expect(cta).toHaveAttribute('href', '/ru/catalog?cat=home')
 })
 
 test('motion: reveal sections register after client-side navigation', async ({ page }) => {
   await page.goto('/ru/')
-  // клиентский переход главная → каталог → главная (без полной перезагрузки)
   await page.getByRole('link', { name: 'Каталог' }).first().click()
   await expect(page).toHaveURL(/\/ru\/catalog/)
   await page.getByRole('link', { name: 'Smart Centr' }).click()
   await expect(page).toHaveURL(/\/ru\/?$/)
 
-  // после повторного входа секции снова зарегистрированы: есть .reveal,
-  // и при попадании в вьюпорт получают .is-in (контент не застревает скрытым)
+  // секции зарегистрированы заново (без перезагрузки): ждём готовности, не снулём
+  await page.waitForFunction(
+    () => document.querySelectorAll('main [data-reveal].reveal:not(.is-in)').length > 0,
+  )
   const sections = page.locator('main [data-reveal]')
-  const count = await sections.count()
-  expect(count).toBeGreaterThan(3)
-  const registered = await page
-    .locator('main [data-reveal].reveal:not(.is-in)')
-    .count()
-  expect(registered).toBeGreaterThan(0)
+  expect(await sections.count()).toBeGreaterThan(3)
 
-  // прокрутка до последней секции: все зарегистрированные раскрываются
+  // прокрутка до последней секции: она раскрывается (контент не застревает скрытым)
   await sections.last().scrollIntoViewIfNeeded()
   await expect(sections.last()).toHaveClass(/is-in/, { timeout: 5000 })
 })
 
-test('motion: reduced-motion at load keeps all sections visible', async ({ browser }) => {
+test('motion: reduced-motion at load — sections visible, hero scene static (computed)', async ({
+  browser,
+}) => {
   const context = await browser.newContext({ reducedMotion: 'reduce' })
   const page = await context.newPage()
   await page.goto('/ru/')
-  // при reduce эффект не вешает .reveal вовсе — контент виден без JS-анимации
+
+  // при reduce эффект не вешает .reveal вовсе — контент видим без JS-анимации
   await expect(page.locator('main [data-reveal].reveal')).toHaveCount(0)
   const sections = page.locator('main [data-reveal]')
   expect(await sections.count()).toBeGreaterThan(3)
+  // computed-проверка: секция ниже экрана непрозрачной не прячется
+  const belowFold = sections.last()
+  const opacity = await belowFold.evaluate((el) => getComputedStyle(el).opacity)
+  expect(opacity).toBe('1')
+
+  // hero-сцена статична: прокрутка не меняет computed transform группы машины
+  const machine = page.locator('.wm')
+  await page.evaluate(() => window.scrollTo(0, 400))
+  await page.waitForTimeout(150)
+  const t1 = await machine.evaluate((el) => getComputedStyle(el).transform)
+  await page.evaluate(() => window.scrollTo(0, 800))
+  await page.waitForTimeout(150)
+  const t2 = await machine.evaluate((el) => getComputedStyle(el).transform)
+  expect(t1).toBe(t2)
+  // и сцена не наклонена указателем (transform stage — none)
+  const stageTransform = await page
+    .locator('.hero3d__stage')
+    .evaluate((el) => getComputedStyle(el).transform)
+  expect(stageTransform).toBe('none')
   await context.close()
 })
 
-test('motion: switching to reduced-motion after load reveals everything', async ({ page }) => {
+test('motion: reduced-motion CSS cascade wins over .reveal (computed opacity)', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({ reducedMotion: 'reduce' })
+  const page = await context.newPage()
   await page.goto('/ru/')
-  // часть секций ещё не в вьюпорте и ждёт reveal
-  const pending = page.locator('main [data-reveal].reveal:not(.is-in)')
-  expect(await pending.count()).toBeGreaterThan(0)
-
-  // смена системной настройки после загрузки: слушатель показывает всё сразу
-  await page.emulateMedia({ reducedMotion: 'reduce' })
-  await expect(page.locator('main [data-reveal].reveal:not(.is-in)')).toHaveCount(0)
+  // каскадная проверка: даже если элемент имеет .reveal без .is-in,
+  // блок reduce в конце globals.css должен держать computed opacity = 1.
+  // Класс добавляем сами — это проверка CSS-каскада, а не подделка анимации.
+  const opacity = await page.evaluate(() => {
+    const el = document.querySelector('main [data-reveal]') as HTMLElement | null
+    if (!el) return 'no-section'
+    el.classList.add('reveal')
+    const op = getComputedStyle(el).opacity
+    el.classList.remove('reveal')
+    return op
+  })
+  expect(opacity).toBe('1')
+  await context.close()
 })
 
-test('sources: footer link opens photo attribution page in both languages', async ({ page }) => {
+test('motion: switching to reduced-motion after load reveals everything', async ({ browser }) => {
+  // явный no-preference: раньше контекст наследовал настройки машины и
+  // проверка выполнялась до регистрации наблюдателя — причина нестабильности
+  const context = await browser.newContext({ reducedMotion: 'no-preference' })
+  const page = await context.newPage()
+  await page.goto('/ru/')
+  await page.evaluate(() => window.scrollTo(0, 0))
+  // ждём готовности наблюдателя: секции зарегистрированы и ждут вьюпорта
+  await page.waitForFunction(
+    () => document.querySelectorAll('main [data-reveal].reveal:not(.is-in)').length > 0,
+  )
+  // смена системной настройки после загрузки: слушатель показывает всё сразу
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await expect
+    .poll(() =>
+      page.evaluate(() => document.querySelectorAll('main [data-reveal].reveal:not(.is-in)').length),
+    )
+    .toBe(0)
+  await context.close()
+})
+
+test('hero scroll: geometry of the scene actually changes while scrolling', async ({ browser }) => {
+  // сцена управляется прокруткой без reduce — проверяем мобильную и desktop
+  // компоновки: группа машины меняет computed transform на каждой из них
+  for (const viewport of [
+    { width: 390, height: 844 },
+    { width: 1440, height: 900 },
+  ]) {
+    const context = await browser.newContext({ reducedMotion: 'no-preference', viewport })
+    const page = await context.newPage()
+    await page.goto('/ru/')
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await page.waitForTimeout(120)
+    const machine = page.locator('.wm')
+    const tStart = await machine.evaluate((el) => getComputedStyle(el).transform)
+
+    // обычная прокрутка пользователями — без принудительных классов
+    await page.mouse.wheel(0, 250)
+    await page.waitForTimeout(220)
+    const tMid = await machine.evaluate((el) => getComputedStyle(el).transform)
+
+    await page.mouse.wheel(0, 800)
+    await page.waitForTimeout(220)
+    const tEnd = await machine.evaluate((el) => getComputedStyle(el).transform)
+
+    expect(tStart, `${viewport.width}px: start vs middle`).not.toBe(tMid)
+    expect(tMid, `${viewport.width}px: middle vs end`).not.toBe(tEnd)
+    await context.close()
+  }
+})
+
+test('sources: no active photos (CSS scene), honest archive, both languages', async ({ page }) => {
   await page.goto('/ru/')
   await page.getByRole('link', { name: 'Источники фото' }).click()
   await expect(page).toHaveURL(/\/ru\/sources/)
   await expect(page.getByRole('heading', { name: 'Источники изображений' })).toBeVisible()
-  // авторы из проверенного списка, включая исправленные после ревью
-  await expect(page.locator('.sources-table')).toContainText('Zaidan Falaah')
-  await expect(page.locator('.sources-table')).toContainText('Vova Kras')
-  await expect(page.locator('.sources-table tbody tr')).toHaveCount(13)
+  // активной таблицы нет (архивная живёт внутри <details>) — честное пояснение
+  await expect(page.locator('.sources-page .container > .table-wrap')).toHaveCount(0)
+  await expect(page.getByText('Активных фотографий сейчас нет')).toBeVisible()
+
+  // архив раскрыт честно: прежние снимки перечислены, но не «активны»
+  await page.locator('.sources-page__archive summary').click()
+  const archiveRows = page.locator('.sources-page__archive .sources-table tbody tr')
+  await expect(archiveRows.first()).toBeVisible()
+  expect(await archiveRows.count()).toBeGreaterThanOrEqual(14)
+  await expect(page.locator('.sources-page__archive .sources-table')).toContainText('Vova Kras')
 
   await page.goto('/ky/sources')
   await expect(page.getByRole('heading', { name: 'Сүрөт булактары' })).toBeVisible()
-  await expect(page.locator('.sources-table')).toContainText('Torsten Dettlaff')
+  await expect(page.getByText('Азыр активдүү сүрөт жок')).toBeVisible()
 })

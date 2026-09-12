@@ -62,7 +62,7 @@ const widths = [360, 390, 768, 1440]
 for (const width of widths) {
   test(`overflow: no horizontal page scroll at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
-    const pages = ['/ru/', '/ru/catalog', '/ru/product/tabslate-10', '/ru/cart', '/ru/checkout']
+    const pages = ['/ru/', '/ru/catalog', '/ru/product/tabslate-10', '/ru/cart', '/ru/checkout', '/ru/sources']
     for (const path of pages) {
       await page.goto(path)
       const overflow = await page.evaluate(
@@ -73,7 +73,49 @@ for (const width of widths) {
   })
 }
 
-test('screenshots: full-page key screens for review', async ({ page }, testInfo) => {
+
+/**
+ * Доказательства для TASK 03A REVIEW FIXES:
+ * - hero в начале/середине/конце его scroll-участка (desktop и mobile),
+ *   прокрутка обычная (mouse.wheel), классы вручную не навешиваются;
+ * - полностраничные RU/KY снимки главной и каталога, товар с плейсхолдером;
+ * - зум — только на изолированной фикстуре;
+ * - короткая запись нормальной прокрутки и покупки (видео переименовываем,
+ *   черновые page@*.webm не остаются).
+ */
+test('screenshots: hero scene at start/middle/end of its scroll range', async ({ page }) => {
+  const { writeFileSync, mkdirSync } = await import('node:fs')
+  mkdirSync('review/task-03a', { recursive: true })
+  const dir = 'review/task-03a'
+
+  for (const [width, height] of [
+    [1440, 900],
+    [390, 844],
+  ] as const) {
+    await page.setViewportSize({ width, height })
+    await page.goto('/ru/')
+    // нормальные позиции прокрутки внутри sticky-участка hero:
+    // начало (машина 3/4), середина (TurboWash™360°), конец (машина собрана)
+    const range = await page.evaluate(() => {
+      const root = document.querySelector('.hero3d') as HTMLElement | null
+      const sticky = document.querySelector('.hero3d__sticky') as HTMLElement | null
+      return root && sticky ? root.offsetHeight - sticky.offsetHeight : 400
+    })
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await page.waitForTimeout(350)
+    writeFileSync(`${dir}/hero-${width}-start.png`, await page.screenshot())
+
+    await page.evaluate((r) => window.scrollTo(0, Math.round(r * 0.4)), range)
+    await page.waitForTimeout(350)
+    writeFileSync(`${dir}/hero-${width}-middle.png`, await page.screenshot())
+
+    await page.evaluate((r) => window.scrollTo(0, Math.round(r)), range)
+    await page.waitForTimeout(350)
+    writeFileSync(`${dir}/hero-${width}-end.png`, await page.screenshot())
+  }
+})
+
+test('screenshots: full-page key screens for review', async ({ page }) => {
   const { writeFileSync, mkdirSync } = await import('node:fs')
   mkdirSync('review/task-03a', { recursive: true })
   const dir = 'review/task-03a'
@@ -97,7 +139,7 @@ test('screenshots: full-page key screens for review', async ({ page }, testInfo)
     await page.waitForTimeout(650)
   }
 
-  // мобильный 390: RU и KY, главная и каталог — полностранично (до цен и кнопок)
+  // мобильный 390: RU и KY, главная и каталог — полностранично
   await page.setViewportSize({ width: 390, height: 844 })
   for (const [tag, path] of [
     ['home-ru-390', '/ru/'],
@@ -110,17 +152,18 @@ test('screenshots: full-page key screens for review', async ({ page }, testInfo)
     writeFileSync(`${dir}/${tag}-full.png`, await page.screenshot({ fullPage: true }))
   }
 
-  // товар отдельно: вариант выбран, фото целиком
+  // товар с плейсхолдером и выбранным вариантом
   await page.goto('/ru/product/tabslate-10')
   await page.getByRole('button', { name: 'Тёмный', exact: true }).click()
   await revealAll()
   writeFileSync(`${dir}/product-ru-390-full.png`, await page.screenshot({ fullPage: true }))
 
-  // зум отдельно: открытый диалог крупным планом (не полностранично)
+  // зум доступного dialog — снимок с изолированной фикстуры
+  await page.goto('/ru/dev/gallery?fixture=zoom')
   await page.locator('.gallery__main--zoom').click()
   await expect(page.locator('.zoom-overlay[open]')).toBeVisible()
   await page.waitForTimeout(400)
-  writeFileSync(`${dir}/zoom-ru-390.png`, await page.screenshot())
+  writeFileSync(`${dir}/zoom-fixture-390.png`, await page.screenshot())
   await page.keyboard.press('Escape')
 
   // desktop 1440: RU и KY главная + каталог
@@ -136,26 +179,39 @@ test('screenshots: full-page key screens for review', async ({ page }, testInfo)
   }
 })
 
-test('animation recording: scroll reveals and add-to-cart swap', async ({ browser }) => {
+test('video: normal scroll through hero + add to cart', async ({ browser }) => {
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     recordVideo: { dir: 'review/task-03a', size: { width: 390, height: 844 } },
   })
   const page = await context.newPage()
-  // чистая корзина: swap «в корзину → количество» произойдёт на карточке
   await page.addInitScript(() => localStorage.removeItem('sc-cart-v1'))
   await page.goto('/ru/')
   await page.waitForTimeout(600)
-  // прокрутка: секции получают однократное появление (reveal)
-  await page.evaluate(() => window.scrollBy(0, 500))
-  await page.waitForTimeout(500)
-  await page.evaluate(() => window.scrollBy(0, 600))
-  await page.waitForTimeout(500)
-  // добавление из каталога: кнопка превращается в количество
+  // нормальная прокрутка пользователя через hero к ассортименту
+  for (let i = 0; i < 6; i++) {
+    await page.mouse.wheel(0, 260)
+    await page.waitForTimeout(320)
+  }
+  // покупка: добавление из каталога, кнопка превращается в количество
   await page.goto('/ru/catalog')
   await page.waitForTimeout(400)
   await page.locator('.card').first().getByRole('button', { name: 'В корзину' }).click()
-  await page.waitForTimeout(600)
   await expect(page.locator('.card').first().locator('.stepper')).toBeVisible()
   await context.close()
+
+  // черновые page@*.webm не оставляем: видео фиксируем осмысленным именем
+  const { readdirSync, renameSync } = await import('node:fs')
+  const drafts = readdirSync('review/task-03a').filter((f) => f.startsWith('page@'))
+  if (drafts.length > 0) {
+    drafts.sort()
+    renameSync(`review/task-03a/${drafts[drafts.length - 1]}`, 'review/task-03a/scroll-hero-purchase.webm')
+    for (const d of drafts.slice(0, -1)) {
+      try {
+        renameSync(`review/task-03a/${d}`, `review/task-03a/_draft-${d}`)
+      } catch {
+        // уже переименован
+      }
+    }
+  }
 })

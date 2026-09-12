@@ -5,24 +5,32 @@ import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import type { Product } from '@/data/products'
 import { colorHexOfKey } from '@/data/products'
-import { productPhotos } from '@/data/photos'
+import type { ProductPhoto } from '@/data/photos'
 import { ProductArt } from './ProductArt'
+import { ProductImage } from './ProductImage'
 
 /**
- * Галерея показывает выбранный цвет того же SKU, что и блок покупки.
- * Если у товара есть фото — крупный снимок + зум в нативном <dialog>
- * (фон инертен, Tab остаётся в диалоге, Escape закрывает, фокус
- * возвращается, прокрутка фона блокируется). Без фото — цветные
- * схематичные плейсхолдеры ProductArt с явной демо-маркировкой.
+ * Галерея товара. Решение владельца 12.09: реальных фотографий моделей в
+ * витрине пока нет — показываем единый нейтральный плейсхолдер
+ * («Фото скоро появится») и НЕ открываем фотозум без снимка.
+ *
+ * Доступный зум в нативном <dialog> (фон инертен, Tab внутри, Escape
+ * закрывает, фокус возвращается, прокрутка фона блокируется) сохранён для
+ * будущих реальных фото и проверяется отдельной фикстурой
+ * (/dev/gallery?fixture=zoom), не входящей в публичную витрину:
+ * свойство photo намеренно передаётся только фикстурой.
  */
 export function Gallery({
   product,
   colorKey,
   onColorChange,
+  photo,
 }: {
   product: Product
   colorKey: string | null
   onColorChange?: (colorKey: string) => void
+  /** реальный снимок; в публичной витрине не передаётся (только фикстура) */
+  photo?: ProductPhoto
 }) {
   const { t, lang } = useI18n()
   const [zoomOpen, setZoomOpen] = useState(false)
@@ -30,8 +38,6 @@ export function Gallery({
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   const name = lang === 'ky' ? product.nameKy : product.nameRu
-  const photo = productPhotos[product.id]
-  const colorViews = photo ? [] : (product.colorOptions ?? [])
   const currentHex = colorHexOfKey(product, colorKey)
   const alt = lang === 'ky' ? (photo?.altKy ?? name) : (photo?.altRu ?? name)
 
@@ -59,35 +65,39 @@ export function Gallery({
     openerRef.current?.focus()
   }
 
+  const mainView = photo ? (
+    <Image
+      src={photo.src}
+      alt={alt}
+      fill
+      sizes="(max-width: 960px) 92vw, 46vw"
+      priority
+      className="product-photo gallery-photo"
+    />
+  ) : (
+    <ProductImage kind={product.art} colorHex={currentHex} variant="gallery" />
+  )
+
   return (
     <div className="gallery">
-      <button
-        type="button"
-        ref={openerRef}
-        className="gallery__main gallery__main--zoom"
-        onClick={() => setZoomOpen(true)}
-        aria-label={`${t.product.zoomOpen}: ${name}`}
-        title={t.product.zoomOpen}
-      >
-        {photo ? (
-          <Image
-            src={photo.src}
-            alt={alt}
-            fill
-            sizes="(max-width: 960px) 92vw, 46vw"
-            priority
-            className="product-photo gallery-photo"
-          />
-        ) : (
-          <ProductArt kind={product.art} color={currentHex} />
-        )}
-        {photo && <span className="card__photo-badge">{t.product.photoCategoryBadge}</span>}
-      </button>
-      <p className="gallery__photo-note">{t.product.photoCategoryNote}</p>
+      {photo ? (
+        <button
+          type="button"
+          ref={openerRef}
+          className="gallery__main gallery__main--zoom"
+          onClick={() => setZoomOpen(true)}
+          aria-label={`${t.product.zoomOpen}: ${name}`}
+          title={t.product.zoomOpen}
+        >
+          {mainView}
+        </button>
+      ) : (
+        <div className="gallery__main">{mainView}</div>
+      )}
 
-      {colorViews.length > 1 && onColorChange && (
+      {(product.colorOptions ?? []).length > 1 && onColorChange && (
         <div className="gallery__thumbs" role="group" aria-label={t.product.color}>
-          {colorViews.map((c) => {
+          {(product.colorOptions ?? []).map((c) => {
             const exists = product.variants.some((v) => v.colorKey === c.key)
             return (
               <button
@@ -108,14 +118,14 @@ export function Gallery({
       )}
 
       {/* нативный модальный dialog: backdrop и inert-фон обеспечивает браузер */}
-      <dialog
-        ref={dialogRef}
-        className="zoom-overlay"
-        aria-label={t.a11y.mainGallery}
-        onClose={onDialogClose}
-      >
-        <div className="zoom-overlay__stage">
-          {photo ? (
+      {photo && (
+        <dialog
+          ref={dialogRef}
+          className="zoom-overlay"
+          aria-label={t.a11y.mainGallery}
+          onClose={onDialogClose}
+        >
+          <div className="zoom-overlay__stage">
             <Image
               src={photo.src}
               alt={alt}
@@ -123,20 +133,17 @@ export function Gallery({
               sizes="92vw"
               className="product-photo gallery-photo"
             />
-          ) : (
-            <ProductArt kind={product.art} color={currentHex} />
-          )}
-          {photo && <span className="card__photo-badge">{t.product.photoCategoryBadge}</span>}
-        </div>
-        <button
-          type="button"
-          className="zoom-overlay__close"
-          onClick={() => dialogRef.current?.close()}
-          aria-label={t.product.zoomClose}
-        >
-          ✕
-        </button>
-      </dialog>
+          </div>
+          <button
+            type="button"
+            className="zoom-overlay__close"
+            onClick={() => dialogRef.current?.close()}
+            aria-label={t.product.zoomClose}
+          >
+            ✕
+          </button>
+        </dialog>
+      )}
     </div>
   )
 }

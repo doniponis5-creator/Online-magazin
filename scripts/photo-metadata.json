@@ -1,21 +1,110 @@
 {
-  "_note": "Актуальный список источников фотографий витрины (TASK 03A, 11.09.2026). Канонические данные для сайта — src/data/photo-sources.ts; этот файл — машинная копия для скриптов. Все снимки — Pexels License, проверены открытием страницы фото (подпись «Photo by … on Pexels», «Free to use»). Локальные копии сжаты sharp (JPEG q82, ширина ≤1200px) без правки содержания. Прежние записи Openverse/Flickr удалены: внешняя проверка страниц Flickr была недоступна, лицензии не подтверждены.",
+  "_note": "Контракт после brief LG F4X5ES5SB (12.09): активных фотографий в витрине нет — hero построен как авторская CSS-сцена (стиральная машина, фазы TurboWash360/Inverter Direct Drive), товарные места занимает единый плейсхолдер «Фото скоро появится». Все прежние снимки — архив: файлы сохранены как исходные материалы. Канонические данные — src/data/photo-sources.ts. Все позиции Pexels License, проверены 11.09.2026 открытием страниц фото.",
   "license": "Pexels License",
   "license_url": "https://www.pexels.com/license/",
   "verified": "2026-09-11",
-  "photos": [
-    { "file": "hero.jpg", "id": 12123389, "author": "Vova Kras", "page": "https://www.pexels.com/photo/12123389/", "verify": "page" },
-    { "file": "phone-dark.jpg", "id": 11934173, "author": "Zaidan Falaah", "page": "https://www.pexels.com/photo/smartphone-with-black-screen-on-blue-background-11934173/", "verify": "page" },
-    { "file": "phone-light.jpg", "id": 8408537, "author": "Sarah Dorweiler", "page": "https://www.pexels.com/photo/smartphone-on-a-white-surface-8408537/", "verify": "page" },
-    { "file": "laptop.jpg", "id": 4884117, "author": "Artem Podrez", "page": "https://www.pexels.com/photo/photo-of-a-laptop-4884117/", "verify": "page" },
-    { "file": "laptop2.jpg", "id": 8533587, "author": "Hanna Pad", "page": "https://www.pexels.com/photo/8533587/", "verify": "page" },
-    { "file": "tv-living.jpg", "id": 6980724, "author": "Max Vakhtbovycn", "page": "https://www.pexels.com/photo/television-against-sofa-in-modern-living-room-6980724/", "verify": "page" },
-    { "file": "washer.jpg", "id": 19846397, "author": "Lisa Anna", "page": "https://www.pexels.com/photo/interior-of-a-modern-laundry-room-19846397/", "verify": "page" },
-    { "file": "coffee.jpg", "id": 38317221, "author": "Valentin Ivantsov", "page": "https://www.pexels.com/photo/38317221/", "verify": "page" },
-    { "file": "robot-vacuum.jpg", "id": 8566426, "author": "Kindel Media", "page": "https://www.pexels.com/photo/robot-vacuum-cleaner-on-wooden-flooring-8566426/", "verify": "page" },
-    { "file": "tablet.jpg", "id": 1334599, "author": "Josh Sorenson", "page": "https://www.pexels.com/photo/1334599/", "verify": "page" },
-    { "file": "headphones.jpg", "id": 210927, "author": "Aleksandar Spasojevic", "page": "https://www.pexels.com/photo/210927/", "verify": "page" },
-    { "file": "smartwatch.jpg", "id": 437037, "author": "Torsten Dettlaff", "page": "https://www.pexels.com/photo/black-apple-watch-with-black-sports-band-437037/", "verify": "page" },
-    { "file": "speaker.jpg", "id": 1034653, "author": "Tom Swinnen", "page": "https://www.pexels.com/photo/photo-of-white-portable-bluetooth-speaker-1034653/", "verify": "page+mirrors" }
+  "active": [],
+  "archived": [
+    {
+      "file": "src/assets/hero-blue-lime.jpg",
+      "id": 12123389,
+      "author": "Vova Kras",
+      "page": "https://www.pexels.com/photo/12123389/",
+      "verify": "page",
+      "role": "архив: декоративный баннер hero до сцены LG F4X5ES5SB (сцена теперь — авторский CSS)",
+      "note": "не используется в витрине"
+    },
+    {
+      "file": "public/photos/hero.jpg",
+      "id": 12123389,
+      "author": "Vova Kras",
+      "page": "https://www.pexels.com/photo/12123389/",
+      "verify": "page"
+    },
+    {
+      "file": "public/photos/phone-dark.jpg",
+      "id": 11934173,
+      "author": "Zaidan Falaah",
+      "page": "https://www.pexels.com/photo/smartphone-with-black-screen-on-blue-background-11934173/",
+      "verify": "page"
+    },
+    {
+      "file": "public/photos/phone-light.jpg",
+      "id": 8408537,
+      "author": "Sarah Dorweiler",
+      "page": "https://www.pexels.com/photo/smartphone-on-a-white-surface-8408537/",
+      "verify": "page"
+    },
+    {
+      "file": "public/photos/laptop.jpg",
+      "id": 4884117,
+      "author": "Artem Podrez",
+      "page": "https://www.pexels.com/photo/photo-of-a-laptop-4884117/",
+      "verify": "page"
+    },
+    {
+      "file": "public/photos/laptop2.jpg",
+      "id": 8533587,
+      "author": "Hanna Pad",
+      "page": "https://www.pexels.com/photo/8533587/",
+      "verify": "page"
+    },
+    {
+      "file": "public/photos/tv-living.jpg",
+      "id": 6980724,
+      "author": "Max Vakhtbovycn",
+      "page": "https://www.pexels.com/photo/television-against-sofa-in-modern-living-room-6980724/",
+      "verify": "page"
+    },
+    {
+      "file": "public/photos/washer.jpg",
+      "id": 19846397,
+      "author": "Lisa Anna",
+      "page": "https://www.pexels.com/photo/interior-of-a-modern-laundry-room-19846397/",
+      "verify": "page"
+    },
+    {
+      "file": "public/photos/coffee.jpg",
+      "id": 38317221,
+      "author": "Valentin Ivantsov",
+      "page": "https://www.pexels.com/photo/38317221/",
+      "verify": "page"
+    },
+    {
+      "file": "public/photos/robot-vacuum.jpg",
+      "id": 8566426,
+      "author": "Kindel Media",
+      "page": "https://www.pexels.com/photo/robot-vacuum-cleaner-on-wooden-flooring-8566426/",
+      "verify": "page"
+    },
+    {
+      "file": "public/photos/tablet.jpg",
+      "id": 1334599,
+      "author": "Josh Sorenson",
+      "page": "https://www.pexels.com/photo/1334599/",
+      "verify": "page",
+      "note": "на снимке смарт-часы, а не планшет — снят с витрины"
+    },
+    {
+      "file": "public/photos/headphones.jpg",
+      "id": 210927,
+      "author": "Aleksandar Spasojevic",
+      "page": "https://www.pexels.com/photo/210927/",
+      "verify": "page"
+    },
+    {
+      "file": "public/photos/smartwatch.jpg",
+      "id": 437037,
+      "author": "Torsten Dettlaff",
+      "page": "https://www.pexels.com/photo/black-apple-watch-with-black-sports-band-437037/",
+      "verify": "page"
+    },
+    {
+      "file": "public/photos/speaker.jpg",
+      "id": 1034653,
+      "author": "Tom Swinnen",
+      "page": "https://www.pexels.com/photo/photo-of-white-portable-bluetooth-speaker-1034653/",
+      "verify": "page+mirrors"
+    }
   ]
 }

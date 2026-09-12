@@ -1,24 +1,40 @@
 import { expect, test } from '@playwright/test'
 
 /**
- * Сценарий: галерея товара — зум (нативный dialog).
- * 1) клик по .gallery__main--zoom
- * 2) dialog виден, фокус внутри
- * 3) Tab/Shift+Tab не покидают диалог
- * 4) Escape закрывает, фокус возвращается на opener
- * 5) прокрутка фона блокируется на время открытия и восстанавливается
+ * Новый контракт (решение владельца 12.09): в публичной витрине товарных
+ * фото нет, поэтому фотозум на странице товара недоступен. Доступный
+ * dialog-зум сохранён для будущих реальных снимков и проверяется на
+ * изолированной фикстуре /dev/gallery?fixture=zoom (без параметра — 404,
+ * из витрины не связана).
  */
-test('product gallery zoom: focus trap, Escape, focus return, scroll lock', async ({ page }) => {
+
+test('public product page: placeholder shown, no photo zoom available', async ({ page }) => {
   await page.goto('/ru/product/tabslate-10')
   await expect(page.locator('h1')).toHaveText('Планшет TabSlate 10')
 
+  // единый нейтральный плейсхолдер с локализованной подписью
+  await expect(page.locator('.gallery__main .product-placeholder')).toBeVisible()
+  await expect(page.locator('.gallery__main .product-placeholder__label')).toHaveText(
+    'Фото скоро появится',
+  )
+  // зум не предлагается без реального снимка
+  await expect(page.locator('.gallery__main--zoom')).toHaveCount(0)
+  await expect(page.locator('dialog.zoom-overlay')).toHaveCount(0)
+})
+
+test('dev fixture: hidden without the fixture param (404)', async ({ page }) => {
+  const res = await page.goto('/ru/dev/gallery')
+  expect(res?.status()).toBe(404)
+})
+
+test('dev fixture zoom dialog: focus trap, Escape, focus return, scroll lock', async ({ page }) => {
+  await page.goto('/ru/dev/gallery?fixture=zoom')
   const opener = page.locator('.gallery__main--zoom')
   await expect(opener).toBeVisible()
 
   // фон прокручивается до открытия
   await page.evaluate(() => window.scrollTo(0, 200))
-  const scrollBefore = await page.evaluate(() => window.scrollY)
-  expect(scrollBefore).toBeGreaterThan(0)
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
 
   await opener.click()
   const dialog = page.locator('dialog.zoom-overlay')
@@ -26,10 +42,9 @@ test('product gallery zoom: focus trap, Escape, focus return, scroll lock', asyn
   await expect(page.locator('.zoom-overlay__close')).toBeFocused()
 
   // прокрутка фона заблокирована, пока диалог открыт (html.dialog-open)
-  const overflowWhileOpen = await page.evaluate(
-    () => getComputedStyle(document.documentElement).overflowX,
-  )
-  expect(overflowWhileOpen).toBe('hidden')
+  expect(
+    await page.evaluate(() => getComputedStyle(document.documentElement).overflowX),
+  ).toBe('hidden')
 
   // Tab/Shift+Tab остаются внутри диалога (нативная модальность)
   for (let i = 0; i < 5; i++) await page.keyboard.press('Tab')
@@ -47,19 +62,12 @@ test('product gallery zoom: focus trap, Escape, focus return, scroll lock', asyn
   // фокус вернулся на opener, прокрутка фона восстановлена
   await expect(opener).toBeFocused()
   await expect
-    .poll(() =>
-      page.evaluate(() => getComputedStyle(document.documentElement).overflowX),
-    )
+    .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).overflowX))
     .not.toBe('hidden')
-  const scrollRestored = await page.evaluate(() => {
-    window.scrollTo(0, 400)
-    return window.scrollY
-  })
-  expect(scrollRestored).toBeGreaterThan(0)
 })
 
-test('product gallery zoom: close button also closes and returns focus', async ({ page }) => {
-  await page.goto('/ru/product/tabslate-10')
+test('dev fixture zoom: close button also closes and returns focus', async ({ page }) => {
+  await page.goto('/ru/dev/gallery?fixture=zoom')
   const opener = page.locator('.gallery__main--zoom')
   await opener.click()
   const dialog = page.locator('dialog.zoom-overlay')

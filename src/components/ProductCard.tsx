@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { categoryName } from '@/data/categories'
 import { colorHexOf } from '@/data/products'
-import { productPhotos } from '@/data/photos'
 import { formatSom } from '@/lib/format'
 import type { Product } from '@/data/products'
 import { useCart } from '@/lib/cart/CartProvider'
@@ -13,14 +12,13 @@ import { FavoriteButton } from './FavoriteButton'
 import { ProductImage } from './ProductImage'
 import { QuantityStepper } from './QuantityStepper'
 
-export function ProductCard({ product, priority = false }: { product: Product; priority?: boolean }) {
+export function ProductCard({ product }: { product: Product }) {
   const { t, lang } = useI18n()
   const cart = useCart()
   const name = lang === 'ky' ? product.nameKy : product.nameRu
   const variant = product.variants[0]
   const inStock = variant.stock > 0
   const href = `/${lang}/product/${product.id}`
-  const photo = productPhotos[product.id]
 
   // если товар уже в корзине — кнопка превращается в количество
   const line = cart.lines.find(
@@ -39,15 +37,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
           <FavoriteButton productId={product.id} variant="floating" />
         </div>
         <Link href={href} className="card__media-link" aria-label={name} tabIndex={-1}>
-          <ProductImage
-            productId={product.id}
-            kind={product.art}
-            colorHex={colorHexOf(product, variant)}
-            altRu={photo?.altRu ?? name}
-            altKy={photo?.altKy ?? name}
-            priority={priority}
-          />
-          {photo && <span className="card__photo-badge">{t.product.photoCategoryBadge}</span>}
+          <ProductImage kind={product.art} colorHex={colorHexOf(product, variant)} />
         </Link>
       </div>
       <div className="card__body">

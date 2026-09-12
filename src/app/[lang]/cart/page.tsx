@@ -92,12 +92,8 @@ export default function CartPage() {
                     aria-label={lang === 'ky' ? product.nameKy : product.nameRu}
                   >
                     <ProductImage
-                      productId={product.id}
                       kind={product.art}
                       colorHex={colorHexOf(product, variant)}
-                      altRu={product.nameRu}
-                      altKy={product.nameKy}
-                      sizes="104px"
                     />
                   </Link>
                   <div>

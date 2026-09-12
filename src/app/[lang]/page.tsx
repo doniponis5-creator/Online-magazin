@@ -1,11 +1,10 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { categories } from '@/data/categories'
 import { getNew, getPopular } from '@/data/products'
-import { heroPhoto } from '@/data/photos'
 import { useI18n } from '@/lib/i18n/I18nProvider'
+import { Hero3D } from '@/components/Hero3D'
 import { ProductArt } from '@/components/ProductArt'
 import { ProductCard } from '@/components/ProductCard'
 import { InstallmentDemo } from '@/components/InstallmentDemo'
@@ -18,37 +17,6 @@ import {
   IconShield,
   IconTruck,
 } from '@/components/Icons'
-
-function Hero() {
-  const { t, lang } = useI18n()
-  return (
-    <section className="hero" aria-labelledby="hero-title">
-      <div className="hero__banner">
-        <div className="hero__text">
-          <span className="hero__eyebrow">{t.hero.badge}</span>
-          <h1 className="hero__title" id="hero-title">
-            {t.hero.title}
-          </h1>
-          <p className="hero__subtitle">{t.hero.subtitle}</p>
-          <Link href={`/${lang}/catalog`} className="btn btn--primary hero__cta">
-            {t.hero.cta}
-            <IconChevronRight size={18} />
-          </Link>
-        </div>
-        <div className="hero__media">
-          <Image
-            src={heroPhoto.src}
-            alt={lang === 'ky' ? heroPhoto.altKy : heroPhoto.altRu}
-            fill
-            priority
-            sizes="(max-width: 900px) 92vw, 46vw"
-            className="product-photo"
-          />
-        </div>
-      </div>
-    </section>
-  )
-}
 
 function CategoryTiles() {
   const { t, lang } = useI18n()
@@ -101,8 +69,8 @@ function ProductSection({
         </Link>
       </div>
       <div className="product-grid">
-        {products.map((p, i) => (
-          <ProductCard key={p.id} product={p} priority={titleKey === 'popular' && i < 2} />
+        {products.map((p) => (
+          <ProductCard key={p.id} product={p} />
         ))}
       </div>
     </section>
@@ -182,7 +150,7 @@ function InfoStrip() {
 export default function HomePage() {
   return (
     <div className="container">
-      <Hero />
+      <Hero3D />
       <CategoryTiles />
       <ProductSection titleKey="popular" ctaKey="popularCta" products={getPopular()} />
       <PromoSection />
