@@ -62,16 +62,31 @@ def make_mat(name, base, rough, metallic=0.0, aniso=0.0, emission=None, emis_str
     return m
 
 m_silver = make_mat('BodySilver', (0.86, 0.87, 0.90), 0.30, 1.0, 0.32)
+# тонкая сатиновая «расчёска»: вытянутый шум -> Bump -> Normal
+_bsdf = m_silver.node_tree.nodes['Principled BSDF']
+_tex = m_silver.node_tree.nodes.new('ShaderNodeTexNoise')
+_map = m_silver.node_tree.nodes.new('ShaderNodeMapping')
+_co = m_silver.node_tree.nodes.new('ShaderNodeTexCoord')
+_bump = m_silver.node_tree.nodes.new('ShaderNodeBump')
+_tex.inputs['Scale'].default_value = 150.0
+_tex.inputs['Detail'].default_value = 2.0
+_map.inputs['Scale'].default_value = (1.0, 80.0, 1.0)
+_bump.inputs['Strength'].default_value = 0.18
+_bump.inputs['Distance'].default_value = 0.0012
+_nt = m_silver.node_tree
+_nt.links.new(_co.outputs['Object'], _map.inputs['Vector'])
+_nt.links.new(_map.outputs['Vector'], _tex.inputs['Vector'])
+_nt.links.new(_tex.outputs['Fac'], _bump.inputs['Height'])
+_nt.links.new(_bump.outputs['Normal'], _bsdf.inputs['Normal'])
 m_silver_side = make_mat('BodySilverDark', (0.74, 0.76, 0.80), 0.36, 1.0, 0.3)
 m_black = make_mat('PanelBlack', (0.02, 0.02, 0.028), 0.16, 0.3)
 m_chrome = make_mat('Chrome', (0.90, 0.91, 0.94), 0.06, 1.0)
 m_glass = make_mat('DoorGlass', (0.035, 0.045, 0.065), 0.05, 0.6)
-m_drum_dark = make_mat('DrumDark', (0.03, 0.035, 0.045), 0.35)
+m_drum_dark = make_mat('DrumDark', (0.32, 0.33, 0.36), 0.42, 1.0)
 m_plastic = make_mat('DarkPlastic', (0.05, 0.05, 0.06), 0.5)
 m_seam = make_mat('Seam', (0.01, 0.01, 0.012), 0.6)
 m_floor = make_mat('Floor', (0.86, 0.87, 0.89), 0.6)
-m_display = make_mat('Display', (0.025, 0.03, 0.04), 0.2, 0.1,
-                     emission=(0.45, 0.55, 0.75), emis_strength=0.7)
+
 
 # ---------- помощники ----------
 def add_box(name, size, loc, mat, bevel=0.008, rot=(0, 0, 0)):
@@ -119,8 +134,23 @@ add_cyl('KnobRim', 0.047, 0.008, (0.0, FRONT + 0.001, knob_z), m_black, rot=(mat
 # метка на переключателе
 add_box('KnobTick', (0.005, 0.003, 0.016), (0.0, FRONT + 0.015, knob_z + 0.017), m_seam, bevel=0.0)
 
-# дисплей — СПРАВА от переключателя (по компоновке владельца)
-add_box('Display', (0.115, 0.004, 0.040), (-0.185, FRONT + 0.004, knob_z), m_display, bevel=0.002)
+# дисплей — СПРАВА (компоновка принята): қора фон + рақамлар текстурадан
+add_box('DisplayBack', (0.120, 0.006, 0.046), (-0.185, FRONT + 0.002, knob_z), m_black, bevel=0.002)
+bpy.ops.mesh.primitive_plane_add(size=1, location=(-0.185, FRONT + 0.0055, knob_z))
+disp = bpy.context.active_object
+disp.name = 'Display'
+disp.rotation_euler = (math.pi / 2, 0, 0)
+disp.dimensions = (0.112, 0.038, 0)
+_img = bpy.data.images.load(os.path.join(os.path.dirname(BLEND_OUT), 'display.png'))
+_dm = bpy.data.materials.new('DisplayTex')
+_dm.use_nodes = True
+_dbsdf = _dm.node_tree.nodes['Principled BSDF']
+_dtex = _dm.node_tree.nodes.new('ShaderNodeTexImage')
+_dtex.image = _img
+_dm.node_tree.links.new(_dtex.outputs['Color'], _dbsdf.inputs['Emission Color'])
+_dbsdf.inputs['Emission Strength'].default_value = 1.4
+_dbsdf.inputs['Roughness'].default_value = 0.25
+disp.data.materials.append(_dm)
 # кнопки — компактный ряд ПОД дисплеем (та же правая зона, без пересечений)
 for i in range(4):
     add_cyl('Btn%d' % i, 0.007, 0.008,
@@ -151,6 +181,25 @@ bev_ring.segments = 3
 for poly in ring_outer.data.polygons:
     poly.use_smooth = True
 ring_outer.name = 'DoorRingBlack'
+# нормали плоских граней кольца — консистентно + авто-сглаживание
+bpy.context.view_layer.objects.active = ring_outer
+bpy.ops.object.mode_set(mode='EDIT')
+bpy.ops.mesh.select_all(action='SELECT')
+bpy.ops.mesh.normals_make_consistent(inside=False)
+bpy.ops.object.mode_set(mode='OBJECT')
+
+def smooth_auto(o, angle_deg=35):
+    try:
+        bpy.ops.object.select_all(action='DESELECT')
+        o.select_set(True)
+        bpy.context.view_layer.objects.active = o
+        bpy.ops.object.shade_auto_smooth(angle=math.radians(angle_deg))
+    except Exception:
+        for poly in o.data.polygons:
+            poly.use_smooth = True
+
+smooth_auto(ring_outer)
+
 # тонкий хромовый акцент по внутреннему краю чёрной рамки
 bpy.ops.mesh.primitive_torus_add(
     major_radius=DOOR_R - 0.068, minor_radius=0.006,
@@ -160,28 +209,34 @@ trim = bpy.context.active_object
 trim.name = 'DoorTrimChrome'
 trim.data.materials.append(m_chrome)
 # стекло за рамкой — видно через реальное отверстие
-add_cyl('DoorGlass', DOOR_R - 0.074, 0.012, (0, FRONT - 0.004, DOOR_Z), m_glass,
+add_cyl('DoorGlass', DOOR_R - 0.074, 0.012, (0, FRONT - 0.020, DOOR_Z), m_glass,
         rot=(math.pi / 2, 0, 0))
-# барабан в глубине
-add_cyl('DrumBehind', DOOR_R - 0.080, 0.012, (0, FRONT - 0.045, DOOR_Z), m_drum_dark,
+# барабан в глубине: нержавеющий, чуть светлее — читается сквозь стекло
+add_cyl('DrumBehind', DOOR_R - 0.084, 0.012, (0, FRONT - 0.065, DOOR_Z), m_drum_dark,
+        rot=(math.pi / 2, 0, 0))
+add_cyl('DrumHub', 0.030, 0.008, (0, FRONT - 0.058, DOOR_Z), m_silver_side,
         rot=(math.pi / 2, 0, 0))
 # бортик барабана у стекла
 bpy.ops.mesh.primitive_torus_add(
-    major_radius=DOOR_R - 0.074, minor_radius=0.006,
-    location=(0, FRONT - 0.010, DOOR_Z), rotation=(math.pi / 2, 0, 0),
+    major_radius=DOOR_R - 0.078, minor_radius=0.006,
+    location=(0, FRONT - 0.018, DOOR_Z), rotation=(math.pi / 2, 0, 0),
     major_segments=48, minor_segments=16)
 bore = bpy.context.active_object
 bore.name = 'DrumBore'
 bore.data.materials.append(m_silver_side)
+
+for _o in bpy.data.objects.get('DoorTrimChrome'), bpy.data.objects.get('DoorGlass'), bore, bpy.data.objects.get('DrumBehind'), bpy.data.objects.get('DrumHub'):
+    if _o:
+        smooth_auto(_o)
 # ручка дверцы (справа на кольце)
 add_box('DoorHandle', (0.022, 0.030, 0.125),
         (DOOR_R - 0.014, FRONT + 0.028, DOOR_Z + 0.022), m_chrome, bevel=0.009)
 
 # ---------- выдвижной лоток — внутри чёрной панели, слева от переключателя ----------
 dz = knob_z
-add_box('Detergent', (0.105, 0.014, 0.062), (0.225, FRONT + 0.002, dz), m_black, bevel=0.003)
-add_box('DeterrentSeam', (0.112, 0.004, 0.068), (0.225, FRONT - 0.002, dz), m_seam, bevel=0.001)
-add_box('DetergentHandle', (0.068, 0.012, 0.011), (0.225, FRONT + 0.008, dz - 0.020), m_silver_side, bevel=0.003)
+add_box('Detergent', (0.140, 0.014, 0.040), (0.205, FRONT + 0.002, dz), m_black, bevel=0.003)
+add_box('DeterrentSeam', (0.148, 0.004, 0.047), (0.205, FRONT - 0.002, dz), m_seam, bevel=0.001)
+add_box('DetergentHandle', (0.095, 0.012, 0.009), (0.205, FRONT + 0.008, dz), m_silver_side, bevel=0.003)
 
 # ---------- сервисная крышка (внизу справа) ----------
 add_box('ServiceFlap', (0.205, 0.010, 0.150), (-0.155, FRONT - 0.001, FEET + 0.16), m_silver_side, bevel=0.004)
@@ -234,9 +289,9 @@ def add_cam(name, loc, target, lens=62):
     look_at(cam, target)
     return cam
 
-cam_front = add_cam('CamFront', (0.0, 2.55, FEET + H * 0.52),
+cam_front = add_cam('CamFront', (0.0, 3.12, FEET + H * 0.52),
                     (0, 0, FEET + H * 0.49), lens=66)
-cam_quarter = add_cam('CamQuarter', (1.52, 1.95, FEET + 0.58),
+cam_quarter = add_cam('CamQuarter', (1.86, 2.40, FEET + 0.58),
                       (0, 0, FEET + H * 0.42), lens=62)
 
 # ---------- сохранение и рендеры ----------
