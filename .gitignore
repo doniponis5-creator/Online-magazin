@@ -25,3 +25,4 @@ npm-debug.log*
 # playwright
 test-results/
 playwright-report/
+.tools/
