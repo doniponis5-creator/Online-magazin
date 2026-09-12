@@ -8,20 +8,32 @@ import { IconChevronRight } from './Icons'
 /**
  * Объёмный hero «LG F4X5ES5SB» (brief владельца 12.09, код F4X5ES5SB).
  *
- * Сцена — чистый CSS 3D (perspective + transform), без WebGL и библиотек:
- * короткий sticky-участок прокрутки управляет прогрессом --p (0…1) в rAF,
- * события wheel/touch не перехватываются. Фазы: машина 3/4 → TurboWash™360°
- * (барабан + четыре потока) → Inverter Direct Drive (схема привода) →
- * машина собирается снова. Подтверждены только характеристики с страницы LG;
- * цена/остаток/покупка для LG не имитируются — CTA ведёт в существующий
- * каталог техники для дома.
+ * Одна CSS-3D модель машины вращается реальными ракурсами от прокрутки
+ * (без WebGL и библиотек): короткий sticky-участок задаёт прогресс --p
+ * в rAF; из него в том же кадре считаются кусочные величины —
+ *   --spin    поворот корпуса: ¾ → фас (TurboWash™360°, корпус
+ *             полупрозрачный, камера приближается к барабану) → вид сзади
+ *             (схема Inverter Direct Drive) → собранный чистый ракурс;
+ *   --body-op прозрачность корпуса, --zoom наезд на барабан,
+ *   --flow-op четыре потока, --schem-op задняя схема.
+ * События wheel/touch не перехватываются; амплитуда ограничена.
  *
- * prefers-reduced-motion или отсутствие JS: --p не задаётся, каскад
- * показывает собранную статичную машину со всеми текстами и CTA
- * (в конце globals.css reduce-блок фиксирует фазы и останавливает вращение).
+ * prefers-reduced-motion или отсутствие JS: переменные не заданы —
+ * каскад показывает собранную статичную машину со всеми текстами и CTA
+ * (reduce-блок в конце globals.css фиксирует модель и глушит вращение).
  * Pointer-tilt — только тонкий указатель и только декоративная сцена;
  * текст и кнопки не наклоняются. На touch tilt выключен.
+ * Подтверждены только характеристики с официальной страницы LG; цена,
+ * остаток и покупка для LG не имитируются — CTA ведёт в существующий
+ * каталог техники для дома.
  */
+
+/** отрезок [a,b] → 0..1 */
+const seg = (p: number, a: number, b: number) =>
+  Math.min(1, Math.max(0, (p - a) / (b - a)))
+/** сглаживание рампы */
+const smooth = (t: number) => t * t * (3 - 2 * t)
+
 export function Hero3D() {
   const { t, lang } = useI18n()
   const rootRef = useRef<HTMLElement>(null)
@@ -42,7 +54,30 @@ export function Hero3D() {
       const top = root.getBoundingClientRect().top
       const range = Math.max(1, root.offsetHeight - stage.offsetHeight)
       const p = Math.min(1, Math.max(0, -top / range))
+
+      // непрерывное вращение одной модели: ¾(-26°) → фас(0°) → зад(180°) → ¾(334°)
+      let spin = -26
+      spin += smooth(seg(p, 0, 0.22)) * 26
+      spin += smooth(seg(p, 0.52, 0.8)) * 180
+      spin += smooth(seg(p, 0.8, 1)) * 154
+
+      // корпус: полупрозрачен, пока «внутри» (турбо) и на виде сзади
+      const bodyOp = 1 - 0.86 * smooth(seg(p, 0.2, 0.3)) * (1 - smooth(seg(p, 0.78, 0.86)))
+      // наезд камеры на барабан
+      const zoom = 1 + 1.05 * smooth(seg(p, 0.2, 0.34)) * (1 - smooth(seg(p, 0.5, 0.62)))
+      // внутренний барабан и потоки — фаза TurboWash™360°
+      const coreOp = smooth(seg(p, 0.2, 0.3)) * (1 - smooth(seg(p, 0.5, 0.6)))
+      const flowOp = smooth(seg(p, 0.22, 0.32)) * (1 - smooth(seg(p, 0.5, 0.58)))
+      // задняя схема привода
+      const schemOp = smooth(seg(p, 0.58, 0.68)) * (1 - smooth(seg(p, 0.78, 0.82)))
+
       root.style.setProperty('--p', p.toFixed(4))
+      root.style.setProperty('--spin', spin.toFixed(2))
+      root.style.setProperty('--body-op', bodyOp.toFixed(3))
+      root.style.setProperty('--zoom', zoom.toFixed(3))
+      root.style.setProperty('--core-op', coreOp.toFixed(3))
+      root.style.setProperty('--flow-op', flowOp.toFixed(3))
+      root.style.setProperty('--schem-op', schemOp.toFixed(3))
     }
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(update)
@@ -54,7 +89,9 @@ export function Hero3D() {
       stage.style.setProperty('--my', ((e.clientY - r.top) / r.height - 0.5).toFixed(3))
     }
     const resetVars = () => {
-      root.style.removeProperty('--p')
+      for (const v of ['--p', '--spin', '--body-op', '--zoom', '--core-op', '--flow-op', '--schem-op']) {
+        root.style.removeProperty(v)
+      }
       stage.style.removeProperty('--mx')
       stage.style.removeProperty('--my')
     }
@@ -89,79 +126,55 @@ export function Hero3D() {
           <div className="hero3d__orb hero3d__orb--lime" />
           <div className="hero3d__orb hero3d__orb--blue" />
 
+          {/* одна модель: корпус + внутренний барабан + задняя схема */}
           <div className="wm">
-            {/* фаза 1 (0–~22%): машина в ракурсе 3/4 */}
-            <div className="wm__scene wm__scene--intro">
-              <div className="wm__machine">
-                <span className="wm__shadow" />
-                <span className="wm__top" />
-                <span className="wm__front">
-                  <span className="wm__panel">
-                    <i />
-                    <i />
-                    <i />
-                  </span>
-                  <span className="wm__door">
-                    <span className="wm__door-ring" />
-                    <span className="wm__glass">
-                      <span className="wm__drum" />
-                    </span>
+            <div className="wm__machine">
+              <span className="wm__shadow" />
+              <span className="wm__top" />
+              <span className="wm__side" />
+              <span className="wm__front">
+                <span className="wm__panel">
+                  <i />
+                  <i />
+                  <i />
+                </span>
+                <span className="wm__door">
+                  <span className="wm__door-ring" />
+                  <span className="wm__glass">
+                    <span className="wm__drum" />
                   </span>
                 </span>
-                <span className="wm__side" />
-              </div>
-            </div>
+              </span>
 
-            {/* фаза 2 (~22–52%): барабан крупно + четыре потока TurboWash™360° */}
-            <div className="wm__scene wm__scene--turbo">
-              <span className="wm__drum-big">
-                <span className="wm__laundry">
+              {/* барабан изнутри: виден, когда корпус прозрачен */}
+              <span className="wm__core">
+                <span className="wm__drum-big">
+                  <span className="wm__laundry">
+                    <i />
+                    <i />
+                    <i />
+                  </span>
+                </span>
+                <span className="wm__flows">
+                  <i />
                   <i />
                   <i />
                   <i />
                 </span>
               </span>
-              <span className="wm__flows">
-                <i />
-                <i />
-                <i />
-                <i />
-              </span>
-            </div>
 
-            {/* фаза 3 (~54–80%): схема прямого привода сзади */}
-            <div className="wm__scene wm__scene--drive">
-              <span className="wm__drum-back" />
-              <span className="wm__shaft" />
-              <span className="wm__motor">
-                <i />
-                <i />
-                <i />
-              </span>
-              <span className="wm__schem-line wm__schem-line--a" />
-              <span className="wm__schem-line wm__schem-line--b" />
-            </div>
-
-            {/* фаза 4 (~80–100%): машина собрана, чистый ракурс */}
-            <div className="wm__scene wm__scene--final">
-              <div className="wm__machine wm__machine--final">
-                <span className="wm__shadow" />
-                <span className="wm__top" />
-                <span className="wm__front">
-                  <span className="wm__panel">
-                    <i />
-                    <i />
-                    <i />
-                  </span>
-                  <span className="wm__door">
-                    <span className="wm__door-ring" />
-                    <span className="wm__glass">
-                      <span className="wm__drum" />
-                    </span>
-                  </span>
+              {/* вид сзади: схематичный прямой привод (не заводской CAD) */}
+              <span className="wm__back">
+                <span className="wm__drum-back" />
+                <span className="wm__shaft" />
+                <span className="wm__motor">
+                  <i />
+                  <i />
+                  <i />
                 </span>
-                <span className="wm__side" />
-              </div>
+                <span className="wm__schem-line wm__schem-line--a" />
+                <span className="wm__schem-line wm__schem-line--b" />
+              </span>
             </div>
           </div>
         </div>

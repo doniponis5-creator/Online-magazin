@@ -623,30 +623,27 @@ main#content {
   transform: translate3d(0, calc(var(--p, 0) * -34px), 0);
 }
 
-/* ----- машина: общая группа фаз ----- */
+/* ----- одна 3D-модель машины: ракурсами управляет --spin от прокрутки -----
+   Корпус (front/top/side) гасится --body-op, открывая внутренний барабан
+   .wm__core (--zoom — наезд камеры, --core-op/--flow-op — фаза TurboWash);
+   на виде сзади показывается .wm__back (--schem-op) — схематичный привод.
+   Без JS переменные не заданы: собранная машина в ракурсе ¾. */
 .wm {
-  position: absolute;
-  inset: 0;
-  transform: scale(calc(1 - var(--p, 0) * 0.03));
-}
-
-.wm__scene {
   position: absolute;
   left: 52%;
   top: 50%;
   width: min(420px, 46vw);
   aspect-ratio: 1;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(calc(1 - var(--p, 0) * 0.03));
 }
 
-/* серебристый корпус: 3/4 через лёгкий поворот и боковую грань */
 .wm__machine {
   position: absolute;
   left: 50%;
   top: 50%;
   width: 58%;
   aspect-ratio: 0.66;
-  transform: translate(-50%, -50%) rotateX(2deg) rotateY(-26deg);
+  transform: translate(-50%, -50%) rotateX(2deg) rotateY(var(--spin, -26deg));
   transform-style: preserve-3d;
 }
 
@@ -660,6 +657,13 @@ main#content {
   background: radial-gradient(50% 50% at 50% 50%, rgba(20, 35, 52, 0.35), rgba(20, 35, 52, 0) 70%);
   border-radius: 50%;
   filter: blur(6px);
+}
+
+/* корпус гасится вместе (--body-op), когда «камера» уходит внутрь */
+.wm__front,
+.wm__top,
+.wm__side {
+  opacity: var(--body-op, 1);
 }
 
 .wm__front {
@@ -809,14 +813,24 @@ main#content {
   animation: wm-spin 9s linear infinite;
 }
 
-/* фаза 2: барабан крупно, бельё, четыре потока */
+/* внутренний барабан: камера приближается (--zoom), корпус прозрачен */
+.wm__core {
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  width: 84%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%) scale(var(--zoom, 1));
+  opacity: var(--core-op, 0);
+}
+
 .wm__drum-big {
   position: absolute;
   left: 50%;
   top: 50%;
   width: 72%;
   aspect-ratio: 1;
-  transform: translate(-50%, -50%) scale(calc(0.9 + var(--p, 0) * 0.12));
+  transform: translate(-50%, -50%);
   border-radius: 50%;
   border: 10px solid #c3cdd8;
   overflow: hidden;
@@ -861,6 +875,7 @@ main#content {
 .wm__flows {
   position: absolute;
   inset: 0;
+  opacity: var(--flow-op, 0);
   animation: wm-orbit 6s linear infinite;
 }
 
@@ -914,16 +929,27 @@ main#content {
   border-right-color: rgba(217, 248, 109, 0.5);
 }
 
-/* фаза 3: схема прямого привода (вид сзади) */
-.wm__scene--drive {
-  background: radial-gradient(60% 60% at 50% 46%, rgba(255, 255, 255, 0.9), rgba(241, 245, 255, 0) 75%);
+/* вид сзади: схематичный прямой привод (не заводской CAD) */
+.wm__back {
+  position: absolute;
+  inset: -6%;
+  transform: rotateY(180deg);
+  opacity: var(--schem-op, 0);
+}
+
+.wm__back::before {
+  content: '';
+  position: absolute;
+  inset: 8%;
+  border-radius: 26px;
+  background: radial-gradient(60% 60% at 50% 42%, rgba(255, 255, 255, 0.94), rgba(241, 245, 255, 0) 78%);
 }
 
 .wm__drum-back {
   position: absolute;
   left: 50%;
-  top: 46%;
-  width: 56%;
+  top: 40%;
+  width: 92%;
   aspect-ratio: 1;
   transform: translate(-50%, -50%);
   border-radius: 50%;
@@ -935,9 +961,9 @@ main#content {
 .wm__shaft {
   position: absolute;
   left: 50%;
-  top: 46%;
-  width: 5%;
-  height: 34%;
+  top: 40%;
+  width: 9%;
+  height: 26%;
   transform: translate(-50%, 0) rotate(18deg);
   transform-origin: top center;
   border-radius: 6px;
@@ -948,8 +974,8 @@ main#content {
 .wm__motor {
   position: absolute;
   left: 50%;
-  top: 74%;
-  width: 34%;
+  top: 72%;
+  width: 58%;
   aspect-ratio: 1;
   transform: translate(-50%, -50%);
   border-radius: 50%;
@@ -991,16 +1017,16 @@ main#content {
 }
 
 .wm__schem-line--a {
-  left: 22%;
-  top: 60%;
-  width: 24%;
+  left: 16%;
+  top: 56%;
+  width: 30%;
   transform: rotate(28deg);
 }
 
 .wm__schem-line--b {
-  right: 22%;
-  top: 60%;
-  width: 24%;
+  right: 16%;
+  top: 56%;
+  width: 30%;
   transform: rotate(-28deg);
 }
 
@@ -1014,31 +1040,6 @@ main#content {
   to {
     transform: rotate(-360deg);
   }
-}
-
-/* видимость фаз — рампы от --p (без JS --p не задан → видна только интро) */
-.wm__scene--intro {
-  opacity: clamp(0, calc((0.24 - var(--p, 0)) * 10), 1);
-  transform: translate(-50%, -50%) translateY(calc(var(--p, 0) * -18px)) rotateY(calc(var(--p, 0) * 8deg));
-}
-
-.wm__scene--turbo {
-  opacity: clamp(0, min(calc((var(--p, 0) - 0.2) * 11), calc((0.56 - var(--p, 0)) * 11)), 1);
-  transform: translate(-50%, -50%) scale(calc(0.94 + var(--p, 0) * 0.1));
-}
-
-.wm__scene--drive {
-  opacity: clamp(0, min(calc((var(--p, 0) - 0.54) * 11), calc((0.82 - var(--p, 0)) * 11)), 1);
-  transform: translate(-50%, -50%) scale(calc(1.02 - var(--p, 0) * 0.05));
-}
-
-.wm__scene--final {
-  opacity: clamp(0, calc((var(--p, 0) - 0.8) * 12), 1);
-  transform: translate(-50%, -50%) translateY(calc((1 - var(--p, 0)) * 26px)) rotateY(-18deg);
-}
-
-.wm__machine--final {
-  transform: translate(-50%, -50%) rotateX(2deg) rotateY(-14deg);
 }
 
 /* ----- контент: вне сцены, не наклоняется; фазы текста — те же рампы ----- */
@@ -1180,7 +1181,7 @@ main#content {
     border-radius: 20px;
   }
 
-  .wm__scene {
+  .wm {
     left: 50%;
     top: 34%;
     width: min(320px, 84vw);
@@ -1244,8 +1245,8 @@ main#content {
     --scene-h: 480px;
   }
 
-  .wm__scene {
-    top: 34%;
+  .wm {
+    top: 32%;
   }
 }
 
@@ -3096,8 +3097,7 @@ html.dialog-open {
   .hero3d__sky,
   .hero3d__grid,
   .hero3d__orb--lime,
-  .hero3d__orb--blue,
-  .wm {
+  .hero3d__orb--blue {
     transition: none !important;
     transform: none !important;
   }
@@ -3106,27 +3106,32 @@ html.dialog-open {
     transform: rotateX(62deg) !important;
   }
 
-  .wm__scene,
-  .wm__scene--intro,
-  .wm__scene--turbo,
-  .wm__scene--drive,
-  .wm__scene--final {
+  /* сцена-бокс без ambient-масштаба, модель в статичном ракурсе ¾ */
+  .wm {
     transform: translate(-50%, -50%) !important;
     transition: none !important;
   }
 
-  .wm__scene--turbo,
-  .wm__scene--drive,
-  .wm__scene--final {
-    opacity: 0 !important;
+  .wm__machine {
+    transform: translate(-50%, -50%) rotateX(2deg) rotateY(-26deg) !important;
+    transition: none !important;
   }
 
-  .wm__scene--intro {
+  /* корпус собран, внутренности и схема скрыты */
+  .wm__front,
+  .wm__top,
+  .wm__side {
     opacity: 1 !important;
   }
 
-  .wm__machine {
-    transform: translate(-50%, -50%) rotateX(2deg) rotateY(-26deg) !important;
+  .wm__core {
+    transform: translate(-50%, -50%) !important;
+    opacity: 0 !important;
+  }
+
+  .wm__flows,
+  .wm__back {
+    opacity: 0 !important;
   }
 
   .wm__drum,
