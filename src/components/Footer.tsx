@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useI18n } from '@/lib/i18n/I18nProvider'
+import { Brand } from './Brand'
 
 export function Footer() {
   const { t, lang } = useI18n()
@@ -11,7 +12,7 @@ export function Footer() {
         <div className="footer__grid">
           <div>
             <span className="logo">
-              smart&nbsp;<span className="logo__dot">centr</span>
+              <Brand />
             </span>
             <p className="footer__text">{t.footer.about}</p>
             <p className="footer__text">{t.footer.integration}</p>

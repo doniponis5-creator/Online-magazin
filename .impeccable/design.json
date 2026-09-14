@@ -1,0 +1,225 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-14T11:40:43.9859570Z",
+  "title": "Design System: Smart Centr",
+  "extensions": {
+    "colorMeta": {
+      "lemon-action": {
+        "role": "primary",
+        "displayName": "Сигнальный лимон",
+        "canonical": "#eaf500",
+        "tonalRamp": ["oklch(24% 0.08 112)", "oklch(34% 0.11 112)", "oklch(46% 0.15 112)", "oklch(58% 0.19 112)", "oklch(70% 0.22 112)", "oklch(82% 0.24 112)", "oklch(91% 0.22 112)", "oklch(96% 0.10 112)"]
+      },
+      "lemon-hover": {
+        "role": "primary",
+        "displayName": "Зрелый лимон",
+        "canonical": "#dce600",
+        "tonalRamp": ["oklch(23% 0.07 112)", "oklch(33% 0.10 112)", "oklch(45% 0.14 112)", "oklch(57% 0.18 112)", "oklch(69% 0.21 112)", "oklch(80% 0.22 112)", "oklch(89% 0.20 112)", "oklch(95% 0.09 112)"]
+      },
+      "lemon-soft": {
+        "role": "primary",
+        "displayName": "Лимонная дымка",
+        "canonical": "#f9fbdc",
+        "tonalRamp": ["oklch(20% 0.03 112)", "oklch(32% 0.04 112)", "oklch(44% 0.05 112)", "oklch(56% 0.06 112)", "oklch(68% 0.07 112)", "oklch(80% 0.07 112)", "oklch(90% 0.06 112)", "oklch(97% 0.04 112)"]
+      },
+      "white-canvas": {
+        "role": "neutral",
+        "displayName": "Белый холст",
+        "canonical": "#ffffff",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(40% 0 0)", "oklch(53% 0 0)", "oklch(66% 0 0)", "oklch(78% 0 0)", "oklch(90% 0 0)", "oklch(100% 0 0)"]
+      },
+      "cloud-surface": {
+        "role": "neutral",
+        "displayName": "Облачная поверхность",
+        "canonical": "#f7f9fc",
+        "tonalRamp": ["oklch(15% 0.01 250)", "oklch(28% 0.01 250)", "oklch(41% 0.01 250)", "oklch(54% 0.01 250)", "oklch(67% 0.01 250)", "oklch(80% 0.01 250)", "oklch(90% 0.01 250)", "oklch(98% 0.01 250)"]
+      },
+      "ice-surface": {
+        "role": "secondary",
+        "displayName": "Ледяной голубой",
+        "canonical": "#eaf3ff",
+        "tonalRamp": ["oklch(15% 0.03 250)", "oklch(28% 0.04 250)", "oklch(41% 0.05 250)", "oklch(54% 0.06 250)", "oklch(67% 0.06 250)", "oklch(80% 0.05 250)", "oklch(90% 0.04 250)", "oklch(96% 0.03 250)"]
+      },
+      "cobalt-control": {
+        "role": "secondary",
+        "displayName": "Уверенный кобальт",
+        "canonical": "#2563eb",
+        "tonalRamp": ["oklch(22% 0.11 260)", "oklch(31% 0.15 260)", "oklch(42% 0.20 260)", "oklch(53% 0.24 260)", "oklch(64% 0.20 260)", "oklch(75% 0.15 260)", "oklch(86% 0.09 260)", "oklch(95% 0.03 260)"]
+      },
+      "cobalt-hover": {
+        "role": "secondary",
+        "displayName": "Глубокий кобальт",
+        "canonical": "#1d4ed8",
+        "tonalRamp": ["oklch(20% 0.10 260)", "oklch(29% 0.15 260)", "oklch(39% 0.20 260)", "oklch(49% 0.23 260)", "oklch(61% 0.20 260)", "oklch(73% 0.15 260)", "oklch(85% 0.09 260)", "oklch(95% 0.03 260)"]
+      },
+      "midnight-ink": {
+        "role": "neutral",
+        "displayName": "Полуночный графит",
+        "canonical": "#263244",
+        "tonalRamp": ["oklch(15% 0.025 250)", "oklch(24% 0.035 250)", "oklch(34% 0.04 250)", "oklch(46% 0.04 250)", "oklch(59% 0.035 250)", "oklch(72% 0.03 250)", "oklch(85% 0.02 250)", "oklch(95% 0.01 250)"]
+      },
+      "slate-soft": {
+        "role": "neutral",
+        "displayName": "Мягкий сланец",
+        "canonical": "#4b5b70",
+        "tonalRamp": ["oklch(15% 0.025 250)", "oklch(27% 0.035 250)", "oklch(39% 0.04 250)", "oklch(51% 0.04 250)", "oklch(63% 0.035 250)", "oklch(75% 0.03 250)", "oklch(87% 0.02 250)", "oklch(95% 0.01 250)"]
+      },
+      "slate-muted": {
+        "role": "neutral",
+        "displayName": "Сдержанный сланец",
+        "canonical": "#5d6d7e",
+        "tonalRamp": ["oklch(16% 0.02 245)", "oklch(29% 0.03 245)", "oklch(42% 0.035 245)", "oklch(54% 0.035 245)", "oklch(66% 0.03 245)", "oklch(77% 0.025 245)", "oklch(88% 0.015 245)", "oklch(95% 0.008 245)"]
+      },
+      "mist-border": {
+        "role": "neutral",
+        "displayName": "Туманная граница",
+        "canonical": "#e3e8ee",
+        "tonalRamp": ["oklch(15% 0.015 245)", "oklch(28% 0.018 245)", "oklch(41% 0.02 245)", "oklch(54% 0.02 245)", "oklch(67% 0.018 245)", "oklch(79% 0.015 245)", "oklch(89% 0.012 245)", "oklch(94% 0.009 245)"]
+      },
+      "steel-border": {
+        "role": "neutral",
+        "displayName": "Стальная граница",
+        "canonical": "#c4cdd8",
+        "tonalRamp": ["oklch(15% 0.018 245)", "oklch(28% 0.025 245)", "oklch(41% 0.03 245)", "oklch(54% 0.03 245)", "oklch(67% 0.027 245)", "oklch(78% 0.023 245)", "oklch(87% 0.017 245)", "oklch(95% 0.009 245)"]
+      },
+      "success": {
+        "role": "tertiary",
+        "displayName": "Подтверждение",
+        "canonical": "#1e9e5a",
+        "tonalRamp": ["oklch(20% 0.07 150)", "oklch(30% 0.10 150)", "oklch(42% 0.13 150)", "oklch(54% 0.15 150)", "oklch(66% 0.13 150)", "oklch(77% 0.10 150)", "oklch(87% 0.06 150)", "oklch(95% 0.025 150)"]
+      },
+      "danger": {
+        "role": "tertiary",
+        "displayName": "Ошибка",
+        "canonical": "#d33b2e",
+        "tonalRamp": ["oklch(20% 0.08 28)", "oklch(30% 0.12 28)", "oklch(42% 0.17 28)", "oklch(54% 0.20 28)", "oklch(66% 0.16 28)", "oklch(77% 0.11 28)", "oklch(87% 0.07 28)", "oklch(95% 0.03 28)"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Главный заголовок товарной сцены." },
+      "headline": { "displayName": "Headline", "purpose": "Заголовки страниц и секций." },
+      "title": { "displayName": "Title", "purpose": "Названия товаров и блоков." },
+      "body": { "displayName": "Body", "purpose": "Основной текст и формы на русском и кыргызском." },
+      "label": { "displayName": "Label", "purpose": "Навигация, характеристики и короткие статусы." }
+    },
+    "shadows": [
+      { "name": "button-response", "value": "0 4px 12px rgb(38 50 68 / 8%)", "purpose": "Лёгкий ответ главной кнопки при наведении." },
+      { "name": "surface-low", "value": "0 6px 24px rgb(38 50 68 / 6%)", "purpose": "Редкая мягкая глубина поверхности, когда одной границы недостаточно." },
+      { "name": "overlay", "value": "0 10px 32px rgb(38 50 68 / 12%)", "purpose": "Диалоги, zoom и временные верхние слои." }
+    ],
+    "motion": [
+      { "name": "state-fast", "value": "160ms", "purpose": "Hover и смена цвета кнопок, карточек и контролов." },
+      { "name": "press", "value": "140ms", "purpose": "Короткое физическое подтверждение нажатия." },
+      { "name": "image-change", "value": "180ms", "purpose": "Смена изображения выбранного SKU." },
+      { "name": "cart-swap", "value": "240ms", "purpose": "Переход кнопки покупки в управление количеством." },
+      { "name": "ease-out", "value": "cubic-bezier(.16, 1, .3, 1)", "purpose": "Спокойное завершение интерфейсных переходов." },
+      { "name": "favorite-spring", "value": "cubic-bezier(0.34, 1.56, 0.64, 1)", "purpose": "Единственный пружинный отклик — добавление в избранное." }
+    ],
+    "breakpoints": [
+      { "name": "compact-phone", "value": "370px" },
+      { "name": "wide-phone", "value": "540px" },
+      { "name": "tablet", "value": "768px" },
+      { "name": "mobile-shell", "value": "900px" },
+      { "name": "commerce-grid", "value": "960px" },
+      { "name": "compact-desktop", "value": "1150px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Главное действие покупки или перехода к каталогу.",
+      "html": "<button class=\"ds-btn-primary\">Выбрать технику</button>",
+      "css": ".ds-btn-primary { height: 50px; padding: 0 24px; border: 0; border-radius: var(--radius-btn, 12px); background: var(--color-lemon, #eaf500); color: var(--color-ink, #263244); font: 750 14px/1 Manrope, 'Segoe UI', sans-serif; transition: background-color 160ms, transform 160ms, box-shadow 160ms; cursor: pointer; } .ds-btn-primary:hover { background: var(--color-lemon-hover, #dce600); box-shadow: 0 4px 12px rgb(38 50 68 / 8%); } .ds-btn-primary:focus-visible { outline: 3px solid var(--color-primary, #2563eb); outline-offset: 4px; } .ds-btn-primary:active { transform: scale(.98); }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Вторичное действие без конкуренции с лимонной кнопкой.",
+      "html": "<button class=\"ds-btn-outline\">Подробнее</button>",
+      "css": ".ds-btn-outline { height: 50px; padding: 0 24px; border: 1px solid var(--color-border-strong, #c4cdd8); border-radius: var(--radius-btn, 12px); background: #fff; color: var(--color-ink, #263244); font: 700 14px/1 Manrope, 'Segoe UI', sans-serif; transition: border-color 160ms, transform 160ms; cursor: pointer; } .ds-btn-outline:hover { border-color: var(--color-ink, #263244); } .ds-btn-outline:focus-visible { outline: 3px solid var(--color-primary, #2563eb); outline-offset: 4px; } .ds-btn-outline:active { transform: scale(.98); }"
+    },
+    {
+      "name": "Search Field",
+      "kind": "input",
+      "refersTo": "search-field",
+      "description": "Основной поиск в шапке и каталоге.",
+      "html": "<label class=\"ds-search\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"7\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/><path d=\"m16.5 16.5 4 4\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg><input placeholder=\"Поиск товаров\" /></label>",
+      "css": ".ds-search { position: relative; display: block; color: var(--color-muted, #5d6d7e); font-family: Manrope, 'Segoe UI', sans-serif; } .ds-search svg { position: absolute; left: 16px; top: 13px; width: 20px; height: 20px; pointer-events: none; } .ds-search input { width: 100%; height: 46px; padding: 0 16px 0 46px; border: 1px solid var(--color-border, #e3e8ee); border-radius: var(--radius-input, 12px); background: var(--color-surface, #f7f9fc); color: var(--color-ink, #263244); font: 450 14px/1.5 Manrope, 'Segoe UI', sans-serif; outline: none; transition: border-color 160ms, background-color 160ms; } .ds-search input:focus { border-color: var(--color-primary, #2563eb); background: #fff; box-shadow: 0 0 0 3px rgb(37 99 235 / 14%); }"
+    },
+    {
+      "name": "Filter Chip",
+      "kind": "chip",
+      "refersTo": "filter-chip",
+      "description": "Категорийный или сортировочный фильтр.",
+      "html": "<button class=\"ds-chip\" aria-pressed=\"false\">Смартфоны</button>",
+      "css": ".ds-chip { height: 40px; padding: 0 16px; border: 1px solid var(--color-border, #e3e8ee); border-radius: 20px; background: #fff; color: var(--color-ink-soft, #4b5b70); font: 600 14px/1 Manrope, 'Segoe UI', sans-serif; transition: background-color 160ms, color 160ms, border-color 160ms, transform 160ms; cursor: pointer; } .ds-chip:hover { border-color: var(--color-primary, #2563eb); color: var(--color-primary, #2563eb); } .ds-chip:focus-visible { outline: 3px solid var(--color-primary, #2563eb); outline-offset: 3px; } .ds-chip:active { transform: scale(.97); } .ds-chip[aria-pressed='true'] { background: var(--color-primary, #2563eb); border-color: var(--color-primary, #2563eb); color: #fff; }"
+    },
+    {
+      "name": "Product Card",
+      "kind": "card",
+      "refersTo": "product-card",
+      "description": "Плоская товарная карточка с нейтральным placeholder до получения реального фото.",
+      "html": "<article class=\"ds-product-card\"><div class=\"ds-product-media\"><svg viewBox=\"0 0 80 64\" aria-hidden=\"true\"><rect x=\"17\" y=\"8\" width=\"46\" height=\"36\" rx=\"4\"/><path d=\"M33 54h14M40 44v10\"/></svg><span>Фото скоро появится</span></div><div class=\"ds-product-body\"><small>Техника для дома</small><strong>Название товара</strong><b>24 900 сом</b><button>В корзину</button></div></article>",
+      "css": ".ds-product-card { overflow: hidden; border: 1px solid var(--color-border, #e3e8ee); border-radius: var(--radius-card, 16px); background: #fff; color: var(--color-ink, #263244); font-family: Manrope, 'Segoe UI', sans-serif; transition: border-color 160ms, transform 160ms; } .ds-product-card:hover { border-color: #b6c2d1; transform: translateY(-3px); } .ds-product-card:focus-within { outline: 3px solid var(--color-primary, #2563eb); outline-offset: 3px; } .ds-product-media { aspect-ratio: 1.15; display: grid; place-content: center; gap: 10px; text-align: center; background: var(--color-surface, #f7f9fc); color: var(--color-muted, #5d6d7e); font-size: 11px; } .ds-product-media svg { width: 64px; margin: auto; fill: #cfddff; stroke: #4d7cf3; stroke-width: 3; } .ds-product-body { display: grid; gap: 9px; padding: 19px; } .ds-product-body small { color: var(--color-muted, #5d6d7e); font-size: 11px; } .ds-product-body strong { font-size: 15px; line-height: 1.5; } .ds-product-body b { font-size: 22px; } .ds-product-body button { height: 42px; border: 0; border-radius: var(--radius-btn, 12px); background: var(--color-lemon, #eaf500); color: var(--color-ink, #263244); font-weight: 750; cursor: pointer; } .ds-product-body button:hover { background: var(--color-lemon-hover, #dce600); }"
+    },
+    {
+      "name": "Category Tile",
+      "kind": "card",
+      "refersTo": "category-tile",
+      "description": "Компактный вход в категорию на главной.",
+      "html": "<a class=\"ds-category\" href=\"#\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"5\" y=\"3\" width=\"14\" height=\"18\" rx=\"3\"/><circle cx=\"12\" cy=\"17\" r=\"1\"/></svg><span>Смартфоны</span></a>",
+      "css": ".ds-category { display: grid; justify-items: center; gap: 16px; padding: 22px 12px; border-radius: var(--radius-tile, 14px); background: var(--color-surface, #f7f9fc); color: var(--color-ink, #263244); font: 600 13px/1.4 Manrope, 'Segoe UI', sans-serif; text-decoration: none; transition: background-color 160ms, transform 160ms; } .ds-category svg { width: 56px; height: 56px; fill: none; stroke: var(--color-primary, #2563eb); stroke-width: 1.6; } .ds-category:hover { background: #eef3f9; transform: translateY(-2px); } .ds-category:focus-visible { outline: 3px solid var(--color-primary, #2563eb); outline-offset: 4px; }"
+    },
+    {
+      "name": "Mobile Bottom Navigation",
+      "kind": "nav",
+      "refersTo": "mobile-navigation",
+      "description": "Четыре постоянных направления для покупки с телефона.",
+      "html": "<nav class=\"ds-bottom-nav\" aria-label=\"Основная навигация\"><a class=\"is-active\" href=\"#\"><svg viewBox=\"0 0 24 24\"><path d=\"M3 11 12 4l9 7v9h-6v-6H9v6H3Z\"/></svg><span>Главная</span></a><a href=\"#\"><svg viewBox=\"0 0 24 24\"><path d=\"M4 4h6v6H4Zm10 0h6v6h-6ZM4 14h6v6H4Zm10 0h6v6h-6Z\"/></svg><span>Каталог</span></a><a href=\"#\"><svg viewBox=\"0 0 24 24\"><path d=\"M3 4h2l2 11h10l2-8H6m3 12h.01M17 19h.01\"/></svg><span>Корзина</span></a><a href=\"#\"><svg viewBox=\"0 0 24 24\"><path d=\"M12 20S4 15 4 9a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 6-6 11-6 11Z\"/></svg><span>Избранное</span></a></nav>",
+      "css": ".ds-bottom-nav { display: grid; grid-template-columns: repeat(4, 1fr); height: 64px; border-top: 1px solid var(--color-border, #e3e8ee); background: #fff; font-family: Manrope, 'Segoe UI', sans-serif; } .ds-bottom-nav a { display: grid; place-items: center; align-content: center; gap: 5px; color: var(--color-muted, #5d6d7e); font-size: 10px; text-decoration: none; } .ds-bottom-nav svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; } .ds-bottom-nav a:hover { color: var(--color-primary, #2563eb); } .ds-bottom-nav a:focus-visible { outline: 3px solid var(--color-primary, #2563eb); outline-offset: -3px; } .ds-bottom-nav a.is-active { background: #fafce3; color: var(--color-ink, #263244); } .ds-bottom-nav a.is-active svg { fill: var(--color-lemon, #eaf500); stroke: var(--color-ink, #263244); }"
+    },
+    {
+      "name": "Demo Status Strip",
+      "kind": "custom",
+      "refersTo": "demo-status",
+      "description": "Честно отделяет демонстрационные цены и интеграции от подтверждённых данных.",
+      "html": "<aside class=\"ds-demo-strip\">SBonus и рассрочка подключаются позже — в демо не применяются</aside>",
+      "css": ".ds-demo-strip { padding: 10px 14px; border: 1px dashed #b8d94a; border-radius: var(--radius-tile, 14px); background: var(--color-lime-soft, #f9fbdc); color: var(--color-ink-soft, #4b5b70); font: 450 13px/1.5 Manrope, 'Segoe UI', sans-serif; } .ds-demo-strip:focus-within { outline: 3px solid var(--color-primary, #2563eb); outline-offset: 3px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Светлая витрина уверенного выбора",
+    "overview": "Smart Centr выглядит как просторный, честный магазин техники: белый холст, спокойные ледяные поверхности и один яркий лимонный сигнал ведут покупателя к действию. Интерфейс остаётся деловым и понятным, а крупная техника и характеристики получают больше внимания, чем декоративные эффекты.\n\nСистема рассчитана на русскую и кыргызскую кириллицу, плотную магазинную навигацию и свободные товарные секции. Голубой поддерживает поиск, выбор и фокус; лимонный связывает фирменную ленточную S с главными действиями. Движение короткое и функциональное, за исключением одной товарной 3D-сцены на главной.",
+    "keyCharacteristics": [
+      "Светлая бело-лимонная идентичность без крупных тёмных полотен.",
+      "Ледяные голубые зоны для поиска, промо и нейтральных товарных placeholders.",
+      "Чёткая Manrope-типографика с сильными заголовками и спокойным служебным текстом.",
+      "Плоские карточки с тонкими границами и редкой, ответной глубиной.",
+      "Одна выразительная 3D-сцена; остальной интерфейс реагирует сдержанно."
+    ],
+    "rules": [
+      { "name": "The Lemon Signal Rule", "body": "Лимон отмечает главное действие и фирменную принадлежность; он не становится фоном всей страницы.", "section": "colors" },
+      { "name": "The Honest Status Rule", "body": "Зелёный и красный появляются только там, где интерфейс сообщает реальное состояние, ошибку или доступность.", "section": "colors" },
+      { "name": "The One-Family Rule", "body": "Сохраняйте Manrope во всех ролях; иерархию создают размер, вес и свободное пространство.", "section": "typography" },
+      { "name": "The Compact Commerce Rule", "body": "Навигация и метаданные компактны, но названия и цены никогда не уменьшаются ради декоративной плотности.", "section": "typography" },
+      { "name": "The Flat-First Rule", "body": "Карточки и секции остаются плоскими в покое; тень сообщает состояние или уровень, а не украшает каждый блок.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do используйте лимон для главного действия, фирменного знака и небольших активных маркеров.",
+      "Do сохраняйте белые поля и ледяные поверхности вокруг техники, чтобы товар оставался главным.",
+      "Do проверяйте каждый экран на русском и кыргызском при ширинах 390px, 1280px и 1440px.",
+      "Do используйте нейтральные placeholders, пока магазин не передал реальные модели и фотографии.",
+      "Do отключайте необязательное движение при prefers-reduced-motion и сохраняйте читаемый no-JS результат."
+    ],
+    "donts": [
+      "Don't вводите крупные чёрные поверхности, золото или неоновые декоративные фоны.",
+      "Don't заливайте лимонным большие области: его редкость обеспечивает заметность действия.",
+      "Don't добавляйте случайные товарные фотографии, неподтверждённые цены, остатки, отзывы или гарантии.",
+      "Don't разбрасывайте тени по всем карточкам и секциям.",
+      "Don't добавляйте конкурирующую крупную анимацию рядом с 3D-товаром."
+    ]
+  }
+}

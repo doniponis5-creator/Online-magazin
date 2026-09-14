@@ -10,6 +10,7 @@ import { buildCatalogHref, buildLangHref } from '@/lib/links'
 import { otherLang, type Lang } from '@/lib/i18n/config'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { IconCart, IconGrid, IconHeart, IconMapPin, IconSearch } from './Icons'
+import { Brand } from './Brand'
 
 function HeaderInner() {
   const { t, lang } = useI18n()
@@ -36,9 +37,13 @@ function HeaderInner() {
   return (
     <header className="header">
       <div className="container">
+        <div className="header__utility">
+          <span><IconMapPin size={14} />{lang === 'ky' ? 'Бүт Кыргызстан боюнча' : 'По всему Кыргызстану'}</span>
+          <span className="header__prototype">{t.common.demo}</span>
+        </div>
         <div className="header__inner">
           <Link href={`/${lang}`} className="logo" aria-label="Smart Centr">
-            smart&nbsp;<span className="logo__dot">centr</span>
+            <Brand />
           </Link>
 
           <Link href={`/${lang}/catalog`} className="btn btn--primary btn--sm header__catalog-btn">
@@ -88,6 +93,7 @@ function HeaderInner() {
               aria-label={`${t.nav.toFavorites}${mounted && favCount ? ` (${favCount})` : ''}`}
             >
               <IconHeart size={22} />
+              <span className="header__action-label">{t.nav.favorites}</span>
               {mounted && favCount > 0 && (
                 <span className="icon-btn__badge" aria-hidden="true">
                   {favCount}
@@ -101,6 +107,7 @@ function HeaderInner() {
               aria-label={`${t.nav.toCart}${mounted && cartCount ? ` (${cartCount})` : ''}`}
             >
               <IconCart size={22} />
+              <span className="header__action-label">{t.nav.cart}</span>
               {mounted && cartCount > 0 && (
                 <span className="icon-btn__badge" aria-hidden="true">
                   {cartCount}

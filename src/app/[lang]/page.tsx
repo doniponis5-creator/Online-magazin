@@ -4,14 +4,14 @@ import Link from 'next/link'
 import { categories } from '@/data/categories'
 import { getNew, getPopular } from '@/data/products'
 import { useI18n } from '@/lib/i18n/I18nProvider'
-import { Hero3D } from '@/components/Hero3D'
+import { StorefrontHero } from '@/components/StorefrontHero'
+import { Brand } from '@/components/Brand'
 import { ProductArt } from '@/components/ProductArt'
 import { ProductCard } from '@/components/ProductCard'
 import { InstallmentDemo } from '@/components/InstallmentDemo'
 import {
   IconCard,
   IconChevronRight,
-  IconGift,
   IconHeadset,
   IconMoon,
   IconShield,
@@ -84,14 +84,13 @@ function PromoSection() {
       <div className="promo-grid">
         <div className="promo promo--lime">
           <h2 className="promo__title">
-            <IconGift size={26} />
-            {t.home.sbonusTitle}
+            <Brand bonus />
           </h2>
+          <h3 className="promo__subheading">
+            {t.home.sbonusTitle}
+          </h3>
           <p className="promo__note">{t.home.sbonusNote}</p>
           <span className="badge promo__tag">{t.common.demo} · SBonus</span>
-          <span className="promo__art" aria-hidden="true">
-            <ProductArt kind="phone" color="#ffffff" />
-          </span>
         </div>
         <div className="promo promo--soft">
           <h2 className="promo__title">{t.home.installmentTitle}</h2>
@@ -150,7 +149,7 @@ function InfoStrip() {
 export default function HomePage() {
   return (
     <div className="container">
-      <Hero3D />
+      <StorefrontHero />
       <CategoryTiles />
       <ProductSection titleKey="popular" ctaKey="popularCta" products={getPopular()} />
       <PromoSection />

@@ -1,0 +1,106 @@
+[
+  {
+    "name": "desktop",
+    "width": 1440,
+    "height": 1000,
+    "overflow": false,
+    "heading": "Техника, с которой дома лучше",
+    "primary": {
+      "color": "rgb(38, 50, 68)",
+      "background": "rgb(234, 245, 0)"
+    },
+    "font": "Manrope, \"Segoe UI\", sans-serif",
+    "errors": []
+  },
+  {
+    "name": "mobile",
+    "width": 390,
+    "height": 844,
+    "overflow": false,
+    "heading": "Техника, с которой дома лучше",
+    "primary": {
+      "color": "rgb(38, 50, 68)",
+      "background": "rgb(234, 245, 0)"
+    },
+    "font": "Manrope, \"Segoe UI\", sans-serif",
+    "errors": []
+  },
+  {
+    "name": "desktop-ky",
+    "width": 1440,
+    "height": 1000,
+    "overflow": false,
+    "heading": "Үйүңүзгө ылайыктуу техника",
+    "primary": {
+      "color": "rgb(38, 50, 68)",
+      "background": "rgb(234, 245, 0)"
+    },
+    "font": "Manrope, \"Segoe UI\", sans-serif",
+    "errors": []
+  },
+  {
+    "name": "mobile-ky",
+    "width": 390,
+    "height": 844,
+    "overflow": false,
+    "heading": "Үйүңүзгө ылайыктуу техника",
+    "primary": {
+      "color": "rgb(38, 50, 68)",
+      "background": "rgb(234, 245, 0)"
+    },
+    "font": "Manrope, \"Segoe UI\", sans-serif",
+    "errors": []
+  },
+  {
+    "name": "user-1280",
+    "width": 1280,
+    "height": 800,
+    "overflow": false,
+    "heading": "Техника, с которой дома лучше",
+    "primary": {
+      "color": "rgb(38, 50, 68)",
+      "background": "rgb(234, 245, 0)"
+    },
+    "font": "Manrope, \"Segoe UI\", sans-serif",
+    "errors": []
+  },
+  {
+    "name": "catalog-mobile",
+    "width": 390,
+    "height": 844,
+    "overflow": false,
+    "heading": "Каталог",
+    "primary": {
+      "color": "rgb(38, 50, 68)",
+      "background": "rgb(234, 245, 0)"
+    },
+    "font": "Manrope, \"Segoe UI\", sans-serif",
+    "errors": []
+  },
+  {
+    "name": "product-desktop",
+    "width": 1440,
+    "height": 1000,
+    "overflow": false,
+    "heading": "Смартфон Aura X5",
+    "primary": {
+      "color": "rgb(38, 50, 68)",
+      "background": "rgb(234, 245, 0)"
+    },
+    "font": "Manrope, \"Segoe UI\", sans-serif",
+    "errors": []
+  },
+  {
+    "name": "cart-mobile",
+    "width": 390,
+    "height": 844,
+    "overflow": false,
+    "heading": "Корзина",
+    "primary": {
+      "color": "rgb(38, 50, 68)",
+      "background": "rgb(234, 245, 0)"
+    },
+    "font": "Manrope, \"Segoe UI\", sans-serif",
+    "errors": []
+  }
+]
