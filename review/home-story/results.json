@@ -1,0 +1,122 @@
+[
+  {
+    "label": "desktop",
+    "p": 0,
+    "title": "Дом просыпается.",
+    "overflow": false,
+    "cta": 595.1875,
+    "stage": 883
+  },
+  {
+    "label": "desktop",
+    "p": 0.45,
+    "title": "Для каждого дела — свой помощник.",
+    "overflow": false,
+    "cta": 595.1875,
+    "stage": 883
+  },
+  {
+    "label": "desktop",
+    "p": 1,
+    "title": "Комфорт начинается дома.",
+    "overflow": false,
+    "cta": 595.1875,
+    "stage": 883
+  },
+  {
+    "label": "desktop",
+    "p": 0.45,
+    "title": "Для каждого дела — свой помощник.",
+    "overflow": false,
+    "cta": 595.1875,
+    "stage": 883
+  },
+  {
+    "label": "desktop",
+    "p": 0,
+    "title": "Дом просыпается.",
+    "overflow": false,
+    "cta": 595.1875,
+    "stage": 883
+  },
+  {
+    "label": "mobile",
+    "p": 0,
+    "title": "Дом просыпается.",
+    "overflow": false,
+    "cta": 344.28125,
+    "stage": 768
+  },
+  {
+    "label": "mobile",
+    "p": 0.45,
+    "title": "Для каждого дела — свой помощник.",
+    "overflow": false,
+    "cta": 344.28125,
+    "stage": 768
+  },
+  {
+    "label": "mobile",
+    "p": 1,
+    "title": "Комфорт начинается дома.",
+    "overflow": false,
+    "cta": 344.28125,
+    "stage": 768
+  },
+  {
+    "label": "mobile",
+    "p": 0.45,
+    "title": "Для каждого дела — свой помощник.",
+    "overflow": false,
+    "cta": 344.28125,
+    "stage": 768
+  },
+  {
+    "label": "mobile",
+    "p": 0,
+    "title": "Дом просыпается.",
+    "overflow": false,
+    "cta": 344.28125,
+    "stage": 768
+  },
+  {
+    "label": "small-ky",
+    "p": 0,
+    "title": "Үй ойгонот.",
+    "overflow": false,
+    "cta": 344.28125,
+    "stage": 564
+  },
+  {
+    "label": "small-ky",
+    "p": 0.45,
+    "title": "Ар бир ишке — өз жардамчысы.",
+    "overflow": false,
+    "cta": 344.28125,
+    "stage": 564
+  },
+  {
+    "label": "small-ky",
+    "p": 1,
+    "title": "Ыңгайлуулук үйдөн башталат.",
+    "overflow": false,
+    "cta": 344.28125,
+    "stage": 564
+  },
+  {
+    "label": "small-ky",
+    "p": 0.45,
+    "title": "Ар бир ишке — өз жардамчысы.",
+    "overflow": false,
+    "cta": 344.28125,
+    "stage": 564
+  },
+  {
+    "label": "small-ky",
+    "p": 0,
+    "title": "Үй ойгонот.",
+    "overflow": false,
+    "cta": 344.28125,
+    "stage": 564
+  }
+]
