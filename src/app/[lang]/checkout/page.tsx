@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useCart } from '@/lib/cart/CartProvider'
 import { unitPrice } from '@/lib/cart/logic'
 import { getProduct } from '@/data/products'
@@ -36,6 +36,19 @@ export default function CheckoutPage() {
   }>({})
   const [orderNumber, setOrderNumber] = useState<string | null>(null)
 
+  const resultTitle = useRef<HTMLHeadingElement>(null)
+  useEffect(() => {
+    const first = ['name', 'phone', 'region', 'address'].find(key => errors[key as keyof typeof errors])
+    if (first) {
+      const field = document.getElementById(`co-${first}`)
+      field?.focus({ preventScroll: true })
+      field?.scrollIntoView({ block: 'center', behavior: 'instant' })
+    }
+  }, [errors])
+  useEffect(() => {
+    if (orderNumber) resultTitle.current?.focus()
+  }, [orderNumber])
+
   // До восстановления корзины не показываем ни форму, ни ложное «пусто».
   if (!cart.hydrated) {
     return (
@@ -53,7 +66,7 @@ export default function CheckoutPage() {
         <div className="demo-result">
           <div className="demo-result__card">
             <span className="demo-result__ok">✓</span>
-            <h1 className="demo-result__title">{t.demoOrder.title}</h1>
+            <h1 ref={resultTitle} tabIndex={-1} className="demo-result__title">{t.demoOrder.title}</h1>
             <span className="demo-result__number">
               {t.demoOrder.orderLabel}: DEMO-{orderNumber}
             </span>
@@ -122,6 +135,9 @@ export default function CheckoutPage() {
 
       <form className="checkout-layout" onSubmit={submit} noValidate>
         <div className="form-card">
+          {Object.keys(errors).length > 0 && <p role="alert" className="field__error">
+            {lang === 'ky' ? 'Белгиленген талааларды текшериңиз.' : 'Проверьте отмеченные поля.'}
+          </p>}
           <section aria-labelledby="contact-title">
             <h2 className="form-section__title" id="contact-title">
               {t.checkout.contact}
@@ -129,36 +145,40 @@ export default function CheckoutPage() {
             <div className="form-grid-2">
               <div className="field">
                 <label className="field__label" htmlFor="co-name">
-                  {t.checkout.name}
+                  {t.checkout.name} <span aria-hidden="true">*</span>
                 </label>
                 <input
                   id="co-name"
+                  required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder={t.checkout.namePlaceholder}
                   aria-invalid={Boolean(errors.name)}
+                  aria-describedby={errors.name ? 'co-name-error' : undefined}
                   autoComplete="name"
                   style={errors.name ? { borderColor: 'var(--color-danger)' } : undefined}
                 />
-                {errors.name && <span className="field__error">{errors.name}</span>}
+                {errors.name && <span id="co-name-error" className="field__error">{errors.name}</span>}
               </div>
               <div className="field">
                 <label className="field__label" htmlFor="co-phone">
-                  {t.checkout.phone}
+                  {t.checkout.phone} <span aria-hidden="true">*</span>
                 </label>
                 <input
                   id="co-phone"
+                  required
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder={t.checkout.phonePlaceholder}
                   inputMode="tel"
                   aria-invalid={Boolean(errors.phone)}
+                  aria-describedby={errors.phone ? 'co-phone-error' : 'co-phone-hint'}
                   autoComplete="tel"
                 />
                 {errors.phone ? (
-                  <span className="field__error">{errors.phone}</span>
+                  <span id="co-phone-error" className="field__error">{errors.phone}</span>
                 ) : (
-                  <span className="field__hint">{t.checkout.phoneHint}</span>
+                  <span id="co-phone-hint" className="field__hint">{t.checkout.phoneHint}</span>
                 )}
               </div>
             </div>
@@ -206,7 +226,7 @@ export default function CheckoutPage() {
               <div className="form-grid-2">
                 <div className="field">
                   <label className="field__label" htmlFor="co-region">
-                    {t.checkout.region}
+                    {t.checkout.region} <span aria-hidden="true">*</span>
                   </label>
                   <input
                     id="co-region"
@@ -214,22 +234,25 @@ export default function CheckoutPage() {
                     onChange={(e) => setRegion(e.target.value)}
                     placeholder={t.city}
                     aria-invalid={Boolean(errors.region)}
+                  aria-describedby={errors.region ? 'co-region-error' : undefined}
                     required
                   />
-                  {errors.region && <span className="field__error">{errors.region}</span>}
+                  {errors.region && <span id="co-region-error" className="field__error">{errors.region}</span>}
                 </div>
                 <div className="field">
                   <label className="field__label" htmlFor="co-address">
-                    {t.checkout.address}
+                    {t.checkout.address} <span aria-hidden="true">*</span>
                   </label>
                   <input
                     id="co-address"
+                  required
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     placeholder={t.checkout.addressPlaceholder}
                     aria-invalid={Boolean(errors.address)}
+                  aria-describedby={errors.address ? 'co-address-error' : undefined}
                   />
-                  {errors.address && <span className="field__error">{errors.address}</span>}
+                  {errors.address && <span id="co-address-error" className="field__error">{errors.address}</span>}
                 </div>
               </div>
             )}

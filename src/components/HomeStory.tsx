@@ -58,7 +58,7 @@ export function HomeStory() {
   return <section ref={root} className="home-story" aria-label={ky ? 'Үйүңүз үчүн техника' : 'Техника для вашего дома'}>
     <div className="home-story__stage">
       <div className="home-story__scene" aria-hidden="true">
-        <img className="home-story__image" src="/home-story/home-awakens.png" alt="" width="1672" height="941" fetchPriority="high" />
+        <img className="home-story__image" src="/home-story/home-awakens-1672.webp" srcSet="/home-story/home-awakens-640.webp 640w, /home-story/home-awakens-1024.webp 1024w, /home-story/home-awakens-1672.webp 1672w" sizes="(max-width: 600px) 100vw, (max-width: 900px) 150vw, 1672px" alt="" width="1672" height="941" fetchPriority="high" />
       </div>
       <div className="home-story__wash" aria-hidden="true" />
       <div className="home-story__copy">

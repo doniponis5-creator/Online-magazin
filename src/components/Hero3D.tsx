@@ -6,176 +6,221 @@ import { useI18n } from '@/lib/i18n/I18nProvider'
 import { IconChevronRight } from './Icons'
 
 /**
- * Объёмный hero «LG F4X5ES5SB» (brief владельца 12.09, код F4X5ES5SB).
+ * Hero «LG F4X5ES5SB» — скролл-анимация из настоящих 3D-рендеров (TASK_05).
  *
- * Одна CSS-3D модель машины вращается реальными ракурсами от прокрутки
- * (без WebGL и библиотек): короткий sticky-участок задаёт прогресс --p
- * в rAF; из него в том же кадре считаются кусочные величины —
- *   --spin    поворот корпуса: ¾ → фас (TurboWash™360°, корпус
- *             полупрозрачный, камера приближается к барабану) → вид сзади
- *             (схема Inverter Direct Drive) → собранный чистый ракурс;
- *   --body-op прозрачность корпуса, --zoom наезд на барабан,
- *   --flow-op четыре потока, --schem-op задняя схема.
- * События wheel/touch не перехватываются; амплитуда ограничена.
+ * Blender-сцена v7 (без изменений модели) отрендерена в 60 кадров
+ * поворота ¾ → фронт → противоположные ¾ (assets-src/lg-f4x5es5sb/
+ * render_turntable.py); оптимизированные серии WebP лежат в public/lg/.
  *
- * prefers-reduced-motion или отсутствие JS: переменные не заданы —
- * каскад показывает собранную статичную машину со всеми текстами и CTA
- * (reduce-блок в конце globals.css фиксирует модель и глушит вращение).
- * Pointer-tilt — только тонкий указатель и только декоративная сцена;
- * текст и кнопки не наклоняются. На touch tilt выключен.
- * Подтверждены только характеристики с официальной страницы LG; цена,
- * остаток и покупка для LG не имитируются — CTA ведёт в существующий
- * каталог техники для дома.
+ * Поведение:
+ * - постер (первый кадр) — обычный <img> из серверного HTML: страница,
+ *   тексты и CTA работают без JavaScript;
+ * - возле вьюпорта постепенно загружается ОДНА серия — mobile или desktop
+ * (по ширине экрана; смена точки перехода подгружает другую серию);
+ * - прокрутка обычная (wheel/touch не перехватываются, без scrollTo):
+ *   sticky-участок ~210vh задаёт прогресс --p, из него берётся кадр;
+ * - на быстром скролле показывается ближайший готовый кадр, пока не
+ *   декодируется нужный; после декодирования кадр обновляется;
+ * - canvas перерисовывается только при смене кадра; rAF — только по
+ *   событию скролла; внутреннее разрешение ограничено 2×DPR;
+ * - prefers-reduced-motion: серия не загружается, остаётся статичный
+ *   постер (reduce-блок в globals.css убирает скролл-диапазон);
+ * - ошибка загрузки кадров оставляет постер, тексты и кнопку на месте.
+ * Цена/остаток/покупка для LG не имитируются: CTA — в существующий каталог.
  */
 
-/** отрезок [a,b] → 0..1 */
-const seg = (p: number, a: number, b: number) =>
-  Math.min(1, Math.max(0, (p - a) / (b - a)))
-/** сглаживание рампы */
-const smooth = (t: number) => t * t * (3 - 2 * t)
+const FRAMES = 60
+const MOBILE_DIR = '/lg/turntable/mobile'
+const DESKTOP_DIR = '/lg/turntable/desktop'
+const MOBILE_W = 900
+
+const frameUrl = (dir: string, i: number) =>
+  `${dir}/f${String(i).padStart(3, '0')}.webp`
 
 export function Hero3D() {
   const { t, lang } = useI18n()
   const rootRef = useRef<HTMLElement>(null)
-  const stageRef = useRef<HTMLDivElement>(null)
+  const stickyRef = useRef<HTMLDivElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
     const root = rootRef.current
-    const stage = stageRef.current
-    if (!root || !stage) return
+    const sticky = stickyRef.current
+    const canvas = canvasRef.current
+    if (!root || !sticky || !canvas) return
     const reduceMq = window.matchMedia('(prefers-reduced-motion: reduce)')
-    const coarseMq = window.matchMedia('(pointer: coarse)')
     if (reduceMq.matches) return
+    if (!canvas.getContext('2d')) return
 
+    const ctx = canvas.getContext('2d')!
+    // кэш серий: смена mobile↔desktop не перекачивает уже загруженное
+    const cache = new Map<string, (HTMLImageElement | null)[]>()
+    let series = window.innerWidth <= MOBILE_W ? MOBILE_DIR : DESKTOP_DIR
+    let loadingSeries = ''
+    let destroyed = false
     let raf = 0
+    let drawn = -1 // индекс кадра на canvas
+
+    // ---- геометрия canvas: CSS-размер × min(DPR, 2) ----
+    const sizeCanvas = () => {
+      const r = canvas.getBoundingClientRect()
+      if (r.width === 0) return
+      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      const w = Math.max(1, Math.round(r.width * dpr))
+      if (canvas.width !== w) {
+        canvas.width = w
+        canvas.height = w // кадры квадратные
+        drawn = -1 // перерисовать текущий кадр в новом размере
+      }
+    }
+
+    const drawFrame = (idx: number) => {
+      const imgs = cache.get(series)
+      const img = imgs?.[idx]
+      if (!img || idx === drawn) return
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+      drawn = idx
+      canvas.dataset.frame = String(idx)
+      canvas.classList.add('is-live')
+    }
+
+    // ближайший готовый кадр к целевому (для быстрого скролла)
+    const nearestReady = (target: number): number => {
+      const imgs = cache.get(series)
+      if (!imgs) return -1
+      for (let d = 0; d < FRAMES; d++) {
+        if (target - d >= 0 && imgs[target - d]) return target - d
+        if (target + d < FRAMES && imgs[target + d]) return target + d
+      }
+      return -1
+    }
+
+    // ---- прогресс sticky-участка → кадр (в rAF, только по скроллу) ----
     const update = () => {
       raf = 0
-      // прогресс sticky-участка: 0 — начало, 1 — сцена прокручена
       const top = root.getBoundingClientRect().top
-      const range = Math.max(1, root.offsetHeight - stage.offsetHeight)
+      const range = Math.max(1, root.offsetHeight - sticky.offsetHeight)
       const p = Math.min(1, Math.max(0, -top / range))
-
-      // непрерывное вращение одной модели: ¾(-26°) → фас(0°) → зад(180°) → ¾(334°)
-      let spin = -26
-      spin += smooth(seg(p, 0, 0.22)) * 26
-      spin += smooth(seg(p, 0.52, 0.8)) * 180
-      spin += smooth(seg(p, 0.8, 1)) * 154
-
-      // корпус: полупрозрачен, пока «внутри» (турбо) и на виде сзади
-      const bodyOp = 1 - 0.86 * smooth(seg(p, 0.2, 0.3)) * (1 - smooth(seg(p, 0.78, 0.86)))
-      // наезд камеры на барабан
-      const zoom = 1 + 1.05 * smooth(seg(p, 0.2, 0.34)) * (1 - smooth(seg(p, 0.5, 0.62)))
-      // внутренний барабан и потоки — фаза TurboWash™360°
-      const coreOp = smooth(seg(p, 0.2, 0.3)) * (1 - smooth(seg(p, 0.5, 0.6)))
-      const flowOp = smooth(seg(p, 0.22, 0.32)) * (1 - smooth(seg(p, 0.5, 0.58)))
-      // задняя схема привода
-      const schemOp = smooth(seg(p, 0.58, 0.68)) * (1 - smooth(seg(p, 0.78, 0.82)))
-
       root.style.setProperty('--p', p.toFixed(4))
-      root.style.setProperty('--spin', spin.toFixed(2))
-      root.style.setProperty('--body-op', bodyOp.toFixed(3))
-      root.style.setProperty('--zoom', zoom.toFixed(3))
-      root.style.setProperty('--core-op', coreOp.toFixed(3))
-      root.style.setProperty('--flow-op', flowOp.toFixed(3))
-      root.style.setProperty('--schem-op', schemOp.toFixed(3))
+      const target = Math.round(p * (FRAMES - 1))
+      const imgs = cache.get(series)
+      drawFrame(imgs?.[target] ? target : nearestReady(target))
     }
-    const onScroll = () => {
+    const schedule = () => {
       if (!raf) raf = requestAnimationFrame(update)
     }
-    const onMove = (e: PointerEvent) => {
-      const r = stage.getBoundingClientRect()
-      if (r.width === 0) return
-      stage.style.setProperty('--mx', ((e.clientX - r.left) / r.width - 0.5).toFixed(3))
-      stage.style.setProperty('--my', ((e.clientY - r.top) / r.height - 0.5).toFixed(3))
-    }
-    const resetVars = () => {
-      for (const v of ['--p', '--spin', '--body-op', '--zoom', '--core-op', '--flow-op', '--schem-op']) {
-        root.style.removeProperty(v)
+
+    // ---- постепенная загрузка серии возле вьюпорта ----
+    const loadSeries = (dir: string) => {
+      if (loadingSeries === dir || cache.has(dir)) return
+      loadingSeries = dir
+      const imgs: (HTMLImageElement | null)[] = new Array(FRAMES).fill(null)
+      cache.set(dir, imgs)
+      // 4 кадра параллельно: постер и первый кадр не ждут всей серии
+      let next = 0
+      const worker = async () => {
+        while (!destroyed) {
+          const i = next++
+          if (i >= FRAMES) return
+          const img = new Image()
+          img.decoding = 'async'
+          img.src = frameUrl(dir, i)
+          try {
+            await img.decode()
+          } catch {
+            continue // кадр недоступен: остаётся ближайший готовый/постер
+          }
+          if (destroyed) return
+          imgs[i] = img
+          schedule() // после декодирования обновить кадр под текущий скролл
+        }
       }
-      stage.style.removeProperty('--mx')
-      stage.style.removeProperty('--my')
-    }
-    const onReduceChange = () => {
-      if (reduceMq.matches) resetVars()
+      void Promise.all([worker(), worker(), worker(), worker()]).then(() => {
+        if (loadingSeries === dir) loadingSeries = ''
+      })
     }
 
-    update()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    let tiltBound = false
-    if (!coarseMq.matches) {
-      stage.addEventListener('pointermove', onMove, { passive: true })
-      tiltBound = true
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          loadSeries(series)
+          io.disconnect()
+        }
+      },
+      { rootMargin: '300px' },
+    )
+    io.observe(sticky)
+
+    // sticky-бокс прилипает НИЖЕ шапки: высоту шапки измеряем фактически —
+    // на 390px поиск переносится и шапка выше --header-h
+    const measureHeader = () => {
+      const header = document.querySelector('.header') as HTMLElement | null
+      root.style.setProperty('--hero-pin-top', `${header?.offsetHeight ?? 0}px`)
     }
-    reduceMq.addEventListener('change', onReduceChange)
+
+    const narrowMq = window.matchMedia(`(max-width: ${MOBILE_W}px)`)
+    const onNarrowChange = () => {
+      const next = narrowMq.matches ? MOBILE_DIR : DESKTOP_DIR
+      if (next === series) return
+      series = next
+      drawn = -1 // кадры другой серии могут отличаться размером
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      canvas.classList.remove('is-live')
+      if (cache.has(series)) {
+        schedule()
+      } else {
+        loadSeries(series)
+      }
+    }
+    const onResize = () => {
+      measureHeader()
+      sizeCanvas()
+      schedule()
+    }
+
+    sizeCanvas()
+    measureHeader()
+    update()
+    window.addEventListener('scroll', schedule, { passive: true })
+    window.addEventListener('resize', onResize, { passive: true })
+    narrowMq.addEventListener('change', onNarrowChange)
     return () => {
-      window.removeEventListener('scroll', onScroll)
-      if (tiltBound) stage.removeEventListener('pointermove', onMove)
-      reduceMq.removeEventListener('change', onReduceChange)
+      destroyed = true
+      io.disconnect()
+      window.removeEventListener('scroll', schedule)
+      window.removeEventListener('resize', onResize)
+      narrowMq.removeEventListener('change', onNarrowChange)
       if (raf) cancelAnimationFrame(raf)
-      resetVars()
+      root.style.removeProperty('--p')
+      root.style.removeProperty('--hero-pin-top')
+      cache.clear()
     }
   }, [])
 
   return (
     <section className="hero3d" ref={rootRef} aria-labelledby="hero-title">
-      <div className="hero3d__sticky">
-        {/* декоративная сцена: не перехватывает клики */}
-        <div className="hero3d__stage" ref={stageRef} aria-hidden="true">
+      <div className="hero3d__sticky" ref={stickyRef}>
+        {/* декоративная сцена: фон и кадры машины, клики не перехватывает */}
+        <div className="hero3d__stage" aria-hidden="true">
           <div className="hero3d__sky" />
           <div className="hero3d__grid" />
           <div className="hero3d__orb hero3d__orb--lime" />
           <div className="hero3d__orb hero3d__orb--blue" />
 
-          {/* одна модель: корпус + внутренний барабан + задняя схема */}
-          <div className="wm">
-            <div className="wm__machine">
-              <span className="wm__shadow" />
-              <span className="wm__top" />
-              <span className="wm__side" />
-              <span className="wm__front">
-                <span className="wm__panel">
-                  <i />
-                  <i />
-                  <i />
-                </span>
-                <span className="wm__door">
-                  <span className="wm__door-ring" />
-                  <span className="wm__glass">
-                    <span className="wm__drum" />
-                  </span>
-                </span>
-              </span>
-
-              {/* барабан изнутри: виден, когда корпус прозрачен */}
-              <span className="wm__core">
-                <span className="wm__drum-big">
-                  <span className="wm__laundry">
-                    <i />
-                    <i />
-                    <i />
-                  </span>
-                </span>
-                <span className="wm__flows">
-                  <i />
-                  <i />
-                  <i />
-                  <i />
-                </span>
-              </span>
-
-              {/* вид сзади: схематичный прямой привод (не заводской CAD) */}
-              <span className="wm__back">
-                <span className="wm__drum-back" />
-                <span className="wm__shaft" />
-                <span className="wm__motor">
-                  <i />
-                  <i />
-                  <i />
-                </span>
-                <span className="wm__schem-line wm__schem-line--a" />
-                <span className="wm__schem-line wm__schem-line--b" />
-              </span>
-            </div>
+          {/* постер = первый кадр серии (¾): без JS и до готовности canvas */}
+          <div className="hero3d__frame">
+            <img
+              className="hero3d__poster"
+              src="/lg/poster-960.webp"
+              srcSet="/lg/poster-640.webp 640w, /lg/poster-960.webp 960w"
+              sizes="(max-width: 900px) 88vw, 460px"
+              alt=""
+              width={960}
+              height={960}
+              decoding="async"
+              fetchPriority="high"
+            />
+            <canvas ref={canvasRef} className="hero3d__canvas" />
           </div>
         </div>
 
@@ -185,24 +230,21 @@ export function Hero3D() {
             {t.hero.title}
           </h1>
 
-          {/* фазы занимают одну ячейку стека и меняются кроссфейдом */}
+          {/* фазы занимают одну ячейку стека и меняются кроссфейдом;
+              intro — один блок: подзаголовок и подсказка не перекрываются */}
           <div className="hero3d__phases">
-            <p className="hero3d__subtitle hero3d__ph hero3d__ph--intro">{t.hero.subtitle}</p>
-            <p className="hero3d__hint hero3d__ph hero3d__ph--intro">{t.hero.scrollHint} ↓</p>
-
-            <div className="hero3d__ph hero3d__ph--turbo">
-              <p className="hero3d__phase-label">{t.hero.turboLabel}</p>
-              <p className="hero3d__phase-note">{t.hero.turboNote}</p>
+            <div className="hero3d__ph hero3d__ph--intro">
+              <p className="hero3d__subtitle">{t.hero.subtitle}</p>
+              <p className="hero3d__hint">{t.hero.scrollHint} ↓</p>
             </div>
 
-            <div className="hero3d__ph hero3d__ph--drive">
-              <p className="hero3d__phase-label">{t.hero.driveLabel}</p>
-              <p className="hero3d__phase-note">{t.hero.driveNote}</p>
+            <div className="hero3d__ph hero3d__ph--front">
+              <p className="hero3d__phase-label">{t.hero.frontLabel}</p>
+              <p className="hero3d__phase-note">{t.hero.frontNote}</p>
             </div>
 
-            <p className="hero3d__subtitle hero3d__ph hero3d__ph--final">{t.hero.finalNote}</p>
-            <p className="hero3d__schematic hero3d__ph hero3d__ph--schematic">
-              {t.hero.schematic}
+            <p className="hero3d__subtitle hero3d__ph hero3d__ph--final">
+              {t.hero.finalNote}
             </p>
           </div>
 

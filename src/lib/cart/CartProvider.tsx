@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -31,7 +32,7 @@ type CartContextValue = {
   /** Корзина была скорректирована/повреждена при восстановлении */
   restoreNotice: RestoreNotice | null
   dismissRestoreNotice: () => void
-  add: (productId: string, variantId: string, qty?: number) => void
+  add: (productId: string, variantId: string, qty?: number) => boolean
   changeQty: (productId: string, variantId: string, qty: number) => void
   remove: (productId: string, variantId: string) => void
   clear: () => void
@@ -41,6 +42,12 @@ const CartContext = createContext<CartContextValue | null>(null)
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [lines, setLines] = useState<CartLine[]>([])
+  const linesRef = useRef<CartLine[]>([])
+  // Синхронный снимок защищает от нескольких добавлений до следующего рендера.
+  const commitLines = useCallback((next: CartLine[]) => {
+    linesRef.current = next
+    setLines(next)
+  }, [])
   const [hydrated, setHydrated] = useState(false)
   const [restoreNotice, setRestoreNotice] = useState<RestoreNotice | null>(null)
 
@@ -60,7 +67,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           corrupted = true // повреждённый JSON — отдельное понятное сообщение
         }
         const { lines: normalized, changed } = normalizeLines(parsed, demoProducts)
-        setLines(normalized)
+        commitLines(normalized)
         if (corrupted) setRestoreNotice('corrupted')
         else if (changed) setRestoreNotice('adjusted')
       }
@@ -68,7 +75,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       // localStorage недоступен — корзина работает в памяти
     }
     setHydrated(true)
-  }, [])
+  }, [commitLines])
 
   // Запись только после hydration и без «пустой» перезаписи при первом рендере.
   useEffect(() => {
@@ -92,25 +99,31 @@ export function CartProvider({ children }: { children: ReactNode }) {
         parsed = null
       }
       const { lines: normalized } = normalizeLines(parsed, demoProducts)
-      setLines(normalized)
+      commitLines(normalized)
     }
     window.addEventListener('storage', onStorage)
     return () => window.removeEventListener('storage', onStorage)
-  }, [])
+  }, [commitLines])
 
   const add = useCallback((productId: string, variantId: string, qty?: number) => {
-    setLines((prev) => addItem(prev, { productId, variantId, qty }, demoProducts))
-  }, [])
+    const before = linesRef.current
+    const next = addItem(before, { productId, variantId, qty }, demoProducts)
+    const quantity = (items: CartLine[]) => items.find((line) =>
+      line.productId === productId && line.variantId === variantId)?.qty ?? 0
+    if (quantity(next) <= quantity(before)) return false
+    commitLines(next)
+    return true
+  }, [commitLines])
 
   const changeQty = useCallback((productId: string, variantId: string, qty: number) => {
-    setLines((prev) => setQty(prev, { productId, variantId }, qty, demoProducts))
-  }, [])
+    commitLines(setQty(linesRef.current, { productId, variantId }, qty, demoProducts))
+  }, [commitLines])
 
   const remove = useCallback((productId: string, variantId: string) => {
-    setLines((prev) => removeLine(prev, { productId, variantId }))
-  }, [])
+    commitLines(removeLine(linesRef.current, { productId, variantId }))
+  }, [commitLines])
 
-  const clear = useCallback(() => setLines([]), [])
+  const clear = useCallback(() => commitLines([]), [commitLines])
 
   const value = useMemo<CartContextValue>(() => {
     const totals = cartTotals(lines, demoProducts)

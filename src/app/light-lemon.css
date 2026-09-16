@@ -51,7 +51,7 @@ input, textarea { caret-color: var(--color-primary); }
 
 /* Фирменный знак и общая навигация. */
 .brand { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; }
-.brand__mark { flex: none; color: #deea00; width: 27px; height: 36px; }
+.brand__mark { object-fit: contain; flex: none; color: #deea00; width: 27px; height: 36px; }
 .brand__name { font-size: 23px; line-height: 1.2; font-weight: 800; letter-spacing: -.035em; color: var(--color-ink); }
 .logo { font-family: var(--font); letter-spacing: normal; flex-shrink: 0; }
 .header { background: #fff; box-shadow: none; border-bottom: 1px solid var(--color-border); }
@@ -237,4 +237,18 @@ input, textarea { caret-color: var(--color-primary); }
   .hero3d__frame { transform: none; }
   .btn, .card, .cat-tile { transition: none; }
   .card:hover, .cat-tile:hover, .btn:active:not(:disabled) { transform: none; }
+}
+
+/* Доступные размеры элементов управления и нативный выбор клиента. */
+:root { --h-btn-sm: 44px; --color-story-surface: #f3f2ed; --color-story-mobile: #f7f8f5; --color-story-copy: #435064; }
+.lang-switch__item { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+.chip, .swatch, .icon-btn, .fav-btn { min-height: 44px; min-width: 44px; }
+.btn { min-height: 44px; }
+.section__cta { min-height: 44px; display: inline-flex; align-items: center; }
+.install-demo__choice { cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
+.install-demo__choice input { accent-color: var(--color-primary); }
+.install-demo__choice:has(:checked) { border-color: var(--color-primary); background: var(--color-primary-soft); }
+.install-demo__choice:has(:focus-visible) { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+@media (max-width: 900px) {
+  .field input, .field textarea, .field select { font-size: 16px; min-height: 44px; }
 }

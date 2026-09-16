@@ -58,6 +58,7 @@ export type Product = {
   price: number // сом, целое число
   oldPrice?: number
   art: ArtKind
+  image?: string
   baseColor: string
   descRu: string
   descKy: string
@@ -295,6 +296,35 @@ export const products: Product[] = [
   },
 
   // ── Техника для дома ─────────────────────────────────────────────────────
+  {
+    id: 'midea-mdrb521mge220dm',
+    brand: 'Midea',
+    categoryId: 'home',
+    nameRu: 'Холодильник Midea MDRB521MGE220DM (Black Glass)',
+    nameKy: 'Midea MDRB521MGE220DM муздаткычы (Black Glass)',
+    price: 96000,
+    oldPrice: 108000,
+    art: 'washer',
+    image: '/products/midea-mdrb521mge220dm.png',
+    baseColor: '#121214',
+    descRu: 'Премиальный двухкамерный холодильник с фасадом из закалённого чёрного стекла (Black Glass). Оснащён системой Total No Frost, равномерным распределением холода Multi Air Flow, зоной Metal Cooling и интуитивным сенсорным дисплеем.',
+    descKy: 'Чыңалган кара айнектүү премиум фасаддуу эки камералуу муздаткыч (Black Glass). Total No Frost системасы, бир калыптагы Multi Air Flow муздатуусу, Metal Cooling зонасы жана сенсордук дисплей менен жабдылган.',
+    specs: [
+      plain('Тип', 'Түрү', 'Двухкамерный, нижняя морозильная камера', 'Эки камералуу, төмөнкү тоңдургуч'),
+      plain('Цвет фасада', 'Фасаддын түсү', 'Чёрное стекло (Black Glass)', 'Кара айнек (Black Glass)'),
+      plain('Общий полезный объем', 'Жалпы пайдалуу көлөмү', '386 л (холодильная 263 л / морозильная 123 л)', '386 л (муздаткыч 263 л / тоңдургуч 123 л)'),
+      plain('Система разморозки', 'Эритүү системасы', 'Total No Frost', 'Total No Frost'),
+      plain('Технологии охлаждения', 'Муздатуу технологиясы', 'Multi Air Flow + Metal Cooling', 'Multi Air Flow + Metal Cooling'),
+      plain('Управление', 'Башкаруу', 'Электронное, внешний сенсорный дисплей', 'Электрондук, тышкы сенсордук дисплей'),
+      plain('Класс энергопотребления', 'Энергия натыйжалуулугу', 'A++', 'A++'),
+      plain('Уровень шума', 'Ызы-чуу деңгээли', '38 дБ', '38 дБ'),
+      plain('Габариты (Ш×В×Г)', 'Өлчөмдөрү (Т×Б×Т)', '59.5 × 201.8 × 66 см', '59.5 × 201.8 × 66 см'),
+    ],
+    warrantyMonths: 24,
+    badge: 'hit',
+    colorOptions: [{ key: 'black-glass', labelRu: 'Чёрное стекло', labelKy: 'Кара айнек', hex: '#121214' }],
+    variants: [{ id: 'black-glass', colorKey: 'black-glass', stock: 4 }],
+  },
   {
     id: 'cleanpure-6',
     brand: 'CleanPure',

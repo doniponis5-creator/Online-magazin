@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useId, useState, type FormEvent } from 'react'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 
 /**
@@ -10,6 +10,7 @@ import { useI18n } from '@/lib/i18n/I18nProvider'
  */
 export function InstallmentDemo() {
   const { t } = useI18n()
+  const groupName = useId()
   const [customerType, setCustomerType] = useState<'new' | 'existing'>('new')
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -27,31 +28,15 @@ export function InstallmentDemo() {
     <div className="install-demo">
       <fieldset className="install-demo__types">
         <legend className="option-group__label">{t.installmentDemo.customerType}</legend>
-        <div className="swatch-row" role="radiogroup" aria-label={t.installmentDemo.customerType}>
-          <button
-            type="button"
-            role="radio"
-            aria-checked={customerType === 'new'}
-            className="swatch"
-            onClick={() => {
-              setCustomerType('new')
-              setSubmitted(false)
-            }}
-          >
-            {t.installmentDemo.newClient}
-          </button>
-          <button
-            type="button"
-            role="radio"
-            aria-checked={customerType === 'existing'}
-            className="swatch"
-            onClick={() => {
-              setCustomerType('existing')
-              setSubmitted(false)
-            }}
-          >
-            {t.installmentDemo.existing}
-          </button>
+        <div className="swatch-row">
+          {(['new', 'existing'] as const).map(type => (
+            <label key={type} className="swatch install-demo__choice">
+              <input type="radio" name={groupName} value={type}
+                checked={customerType === type}
+                onChange={() => { setCustomerType(type); setSubmitted(false) }} />
+              {type === 'new' ? t.installmentDemo.newClient : t.installmentDemo.existing}
+            </label>
+          ))}
         </div>
       </fieldset>
 

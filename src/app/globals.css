@@ -148,7 +148,7 @@ main#content {
   padding-bottom: calc(var(--bottomnav-h) + 32px);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 901px) {
   main#content {
     padding-bottom: 64px;
   }
@@ -504,7 +504,7 @@ main#content {
   text-align: center;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 901px) {
   .bottom-nav {
     display: none;
   }
@@ -559,7 +559,8 @@ main#content {
 
 .hero3d__sticky {
   position: sticky;
-  top: 0;
+  /* прилипание НИЖЕ шапки (высоту измеряет Hero3D); без JS — 0 */
+  top: var(--hero-pin-top, 0px);
   height: var(--scene-h);
   overflow: hidden;
   border-radius: 26px;
@@ -623,425 +624,37 @@ main#content {
   transform: translate3d(0, calc(var(--p, 0) * -34px), 0);
 }
 
-/* ----- одна 3D-модель машины: ракурсами управляет --spin от прокрутки -----
-   Корпус (front/top/side) гасится --body-op, открывая внутренний барабан
-   .wm__core (--zoom — наезд камеры, --core-op/--flow-op — фаза TurboWash);
-   на виде сзади показывается .wm__back (--schem-op) — схематичный привод.
-   Без JS переменные не заданы: собранная машина в ракурсе ¾. */
-.wm {
+/* ----- машина: кадры настоящих 3D-рендеров (TASK_05) -----
+   .hero3d__frame держит постер (первый кадр, обычный <img> из серверного
+   HTML) и canvas, в который Hero3D рисует кадр по прогрессу --p.
+   Пропорции и фон совпадают с серией: переход постер→canvas без скачка;
+   место под изображение резервируется aspect-ratio (нет сдвигов-layout). */
+.hero3d__frame {
   position: absolute;
-  left: 52%;
+  left: 53%;
   top: 50%;
-  width: min(420px, 46vw);
+  width: min(460px, 44vw);
   aspect-ratio: 1;
   transform: translate(-50%, -50%) scale(calc(1 - var(--p, 0) * 0.03));
 }
 
-.wm__machine {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 58%;
-  aspect-ratio: 0.66;
-  transform: translate(-50%, -50%) rotateX(2deg) rotateY(var(--spin, -26deg));
-  transform-style: preserve-3d;
-}
-
-.wm__shadow {
-  position: absolute;
-  left: 50%;
-  bottom: -7%;
-  width: 108%;
-  height: 12%;
-  transform: translateX(-50%) rotateX(90deg) translateZ(-1px);
-  background: radial-gradient(50% 50% at 50% 50%, rgba(20, 35, 52, 0.35), rgba(20, 35, 52, 0) 70%);
-  border-radius: 50%;
-  filter: blur(6px);
-}
-
-/* корпус гасится вместе (--body-op), когда «камера» уходит внутрь */
-.wm__front,
-.wm__top,
-.wm__side {
-  opacity: var(--body-op, 1);
-}
-
-.wm__front {
+.hero3d__poster,
+.hero3d__canvas {
   position: absolute;
   inset: 0;
-  border-radius: 16px;
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0) 34%),
-    linear-gradient(200deg, #f8fafc 0%, #d3dbe4 42%, #eef2f7 88%);
-  box-shadow:
-    inset 0 2px 4px rgba(255, 255, 255, 0.95),
-    inset -8px 0 16px rgba(20, 35, 52, 0.16),
-    inset 0 -10px 18px rgba(20, 35, 52, 0.08),
-    0 24px 44px rgba(20, 35, 52, 0.28);
-  border: 1px solid rgba(255, 255, 255, 0.75);
-  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
-/* фрезерованная линия под панелью — «сборность» корпуса */
-.wm__front::after {
-  content: '';
-  position: absolute;
-  left: 6%;
-  right: 6%;
-  top: 21%;
-  height: 2px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, transparent, rgba(20, 35, 52, 0.22), transparent);
+/* canvas оживает только когда первый кадр декодирован (класс is-live) */
+.hero3d__canvas {
+  opacity: 0;
 }
 
-.wm__front::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 4%;
-  height: 6%;
-  background: linear-gradient(180deg, rgba(20, 35, 52, 0.08), transparent);
+.hero3d__canvas.is-live {
+  opacity: 1;
 }
-
-.wm__side {
-  position: absolute;
-  top: 3%;
-  right: -12%;
-  width: 13%;
-  height: 94%;
-  border-radius: 5px;
-  background: linear-gradient(90deg, #aab6c3 0%, #d5dde5 60%, #eef2f7 100%);
-  box-shadow: inset 0 0 8px rgba(20, 35, 52, 0.18);
-  transform: rotateY(66deg);
-  transform-origin: left center;
-}
-
-.wm__top {
-  position: absolute;
-  left: 2%;
-  top: -7%;
-  width: 96%;
-  height: 8%;
-  border-radius: 6px;
-  background: linear-gradient(180deg, #2b3340, #171d26);
-  transform: rotateX(66deg);
-  transform-origin: bottom center;
-}
-
-.wm__panel {
-  position: absolute;
-  left: 8%;
-  top: 4%;
-  width: 84%;
-  height: 13%;
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  border-radius: 8px;
-  background: linear-gradient(180deg, #f8fafc, #dde4ec);
-  box-shadow: inset 0 -2px 5px rgba(20, 35, 52, 0.14);
-}
-
-.wm__panel i {
-  width: 12%;
-  height: 42%;
-  border-radius: 3px;
-  background: #245beb;
-  opacity: 0.75;
-}
-
-.wm__panel i:last-child {
-  width: 26%;
-  border-radius: 4px;
-  background: #142334;
-  opacity: 0.85;
-}
-
-.wm__door {
-  position: absolute;
-  left: 50%;
-  top: 58%;
-  width: 80%;
-  aspect-ratio: 1;
-  transform: translate(-50%, -50%);
-}
-
-.wm__door-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 6% solid #b6c1cd;
-  box-shadow:
-    0 14px 26px rgba(20, 35, 52, 0.34),
-    inset 0 0 12px rgba(255, 255, 255, 0.6),
-    inset 0 -6px 12px rgba(20, 35, 52, 0.22);
-  background: linear-gradient(135deg, #eef2f7 8%, #b3bfcb 55%, #d8dfe7 95%);
-}
-
-.wm__glass {
-  position: absolute;
-  inset: 10%;
-  border-radius: 50%;
-  overflow: hidden;
-  background: radial-gradient(circle at 32% 26%, #5a6c85 0%, #1a2331 48%, #0b1017 100%);
-  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.9), inset -4px -6px 14px rgba(90, 108, 133, 0.35);
-}
-
-/* стеклянный блик поверх люка */
-.wm__glass::after {
-  content: '';
-  position: absolute;
-  left: 12%;
-  top: 6%;
-  width: 44%;
-  height: 26%;
-  border-radius: 50%;
-  background: linear-gradient(115deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0));
-  transform: rotate(-18deg);
-  filter: blur(1px);
-}
-
-.wm__drum {
-  position: absolute;
-  inset: 16%;
-  border-radius: 50%;
-  background:
-    repeating-conic-gradient(rgba(255, 255, 255, 0.16) 0 3deg, transparent 3deg 26deg),
-    radial-gradient(circle at 40% 36%, #3c4b60, #1a2331 75%);
-  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.7);
-  animation: wm-spin 9s linear infinite;
-}
-
-/* внутренний барабан: камера приближается (--zoom), корпус прозрачен */
-.wm__core {
-  position: absolute;
-  left: 50%;
-  top: 58%;
-  width: 84%;
-  aspect-ratio: 1;
-  transform: translate(-50%, -50%) scale(var(--zoom, 1));
-  opacity: var(--core-op, 0);
-}
-
-.wm__drum-big {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 72%;
-  aspect-ratio: 1;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  border: 10px solid #c3cdd8;
-  overflow: hidden;
-  background: radial-gradient(circle at 38% 30%, #46566c 0%, #131a24 66%, #0b1017 100%);
-  box-shadow: 0 26px 50px rgba(20, 35, 52, 0.35), inset 0 0 34px rgba(0, 0, 0, 0.85);
-}
-
-.wm__laundry {
-  position: absolute;
-  inset: 12%;
-  border-radius: 50%;
-  animation: wm-spin 7s linear infinite;
-}
-
-.wm__laundry i {
-  position: absolute;
-  width: 34%;
-  height: 30%;
-  border-radius: 30%;
-}
-
-.wm__laundry i:nth-child(1) {
-  left: 12%;
-  top: 26%;
-  background: #d9f86d;
-}
-
-.wm__laundry i:nth-child(2) {
-  right: 14%;
-  top: 18%;
-  background: #f4f7ff;
-  opacity: 0.9;
-}
-
-.wm__laundry i:nth-child(3) {
-  left: 30%;
-  bottom: 12%;
-  background: #245beb;
-  opacity: 0.85;
-}
-
-.wm__flows {
-  position: absolute;
-  inset: 0;
-  opacity: var(--flow-op, 0);
-  animation: wm-orbit 6s linear infinite;
-}
-
-.wm__flows i {
-  position: absolute;
-  width: 47%;
-  height: 47%;
-  border-radius: 50%;
-  border: 6px solid transparent;
-  filter: drop-shadow(0 0 6px rgba(36, 91, 235, 0.35));
-}
-
-/* капля на дуге потока */
-.wm__flows i::after {
-  content: '';
-  position: absolute;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #d9f86d;
-  box-shadow: 0 0 8px rgba(217, 248, 109, 0.9);
-  top: -6px;
-  left: 50%;
-}
-
-.wm__flows i:nth-child(1) {
-  left: 4%;
-  top: 4%;
-  border-top-color: #245beb;
-  border-right-color: rgba(36, 91, 235, 0.4);
-}
-
-.wm__flows i:nth-child(2) {
-  right: 4%;
-  top: 4%;
-  border-top-color: #6d8ef5;
-  border-left-color: rgba(36, 91, 235, 0.4);
-}
-
-.wm__flows i:nth-child(3) {
-  right: 4%;
-  bottom: 4%;
-  border-bottom-color: #d9f86d;
-  border-left-color: rgba(217, 248, 109, 0.5);
-}
-
-.wm__flows i:nth-child(4) {
-  left: 4%;
-  bottom: 4%;
-  border-bottom-color: #b3e04f;
-  border-right-color: rgba(217, 248, 109, 0.5);
-}
-
-/* вид сзади: схематичный прямой привод (не заводской CAD) */
-.wm__back {
-  position: absolute;
-  inset: -6%;
-  transform: rotateY(180deg);
-  opacity: var(--schem-op, 0);
-}
-
-.wm__back::before {
-  content: '';
-  position: absolute;
-  inset: 8%;
-  border-radius: 26px;
-  background: radial-gradient(60% 60% at 50% 42%, rgba(255, 255, 255, 0.94), rgba(241, 245, 255, 0) 78%);
-}
-
-.wm__drum-back {
-  position: absolute;
-  left: 50%;
-  top: 40%;
-  width: 92%;
-  aspect-ratio: 1;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  border: 3px dashed #9fb2d8;
-  background: radial-gradient(circle at 42% 36%, #eef2f8 0%, #c7d1dd 70%);
-  box-shadow: inset 0 0 20px rgba(20, 35, 52, 0.18);
-}
-
-.wm__shaft {
-  position: absolute;
-  left: 50%;
-  top: 40%;
-  width: 9%;
-  height: 26%;
-  transform: translate(-50%, 0) rotate(18deg);
-  transform-origin: top center;
-  border-radius: 6px;
-  background: linear-gradient(90deg, #b8c3cf, #e8edf3);
-  box-shadow: 0 4px 10px rgba(20, 35, 52, 0.25);
-}
-
-.wm__motor {
-  position: absolute;
-  left: 50%;
-  top: 72%;
-  width: 58%;
-  aspect-ratio: 1;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  border: 4px solid #245beb;
-  background: radial-gradient(circle at 40% 34%, #ffffff 0 18%, #e7edff 60%);
-  box-shadow: 0 14px 28px rgba(36, 91, 235, 0.25);
-  animation: wm-orbit 10s linear infinite;
-}
-
-.wm__motor i {
-  position: absolute;
-  width: 30%;
-  height: 30%;
-  border-radius: 50%;
-  border: 3px solid transparent;
-}
-
-.wm__motor i:nth-child(1) {
-  left: 6%;
-  top: 10%;
-  border-top-color: #245beb;
-}
-
-.wm__motor i:nth-child(2) {
-  right: 6%;
-  top: 22%;
-  border-right-color: #245beb;
-}
-
-.wm__motor i:nth-child(3) {
-  left: 35%;
-  bottom: 4%;
-  border-bottom-color: #d9f86d;
-}
-
-.wm__schem-line {
-  position: absolute;
-  border-top: 2px dashed #9fb2d8;
-}
-
-.wm__schem-line--a {
-  left: 16%;
-  top: 56%;
-  width: 30%;
-  transform: rotate(28deg);
-}
-
-.wm__schem-line--b {
-  right: 16%;
-  top: 56%;
-  width: 30%;
-  transform: rotate(-28deg);
-}
-
-@keyframes wm-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes wm-orbit {
-  to {
-    transform: rotate(-360deg);
-  }
-}
-
 /* ----- контент: вне сцены, не наклоняется; фазы текста — те же рампы ----- */
 .hero3d__content {
   position: relative;
@@ -1107,12 +720,6 @@ main#content {
   max-width: 36ch;
 }
 
-.hero3d__schematic {
-  margin-top: 8px;
-  font-size: 12.5px;
-  color: var(--color-muted);
-}
-
 .hero3d__cta {
   margin-top: 22px;
 }
@@ -1141,39 +748,26 @@ main#content {
 }
 
 .hero3d__ph--intro {
-  opacity: clamp(0, calc((0.24 - var(--p, 0)) * 10), 1);
+  opacity: clamp(0, calc((0.22 - var(--p, 0)) * 10), 1);
   visibility: visible;
 }
 
-.hero3d__ph--turbo {
-  opacity: clamp(0, min(calc((var(--p, 0) - 0.2) * 11), calc((0.56 - var(--p, 0)) * 11)), 1);
-  visibility: visible;
-}
-
-.hero3d__ph--drive {
-  opacity: clamp(0, min(calc((var(--p, 0) - 0.54) * 11), calc((0.82 - var(--p, 0)) * 11)), 1);
+/* фронтальный вид — в середине дуги (кадр 30 из 59 ≈ p 0.51) */
+.hero3d__ph--front {
+  opacity: clamp(0, min(calc((var(--p, 0) - 0.3) * 11), calc((0.72 - var(--p, 0)) * 11)), 1);
   visibility: visible;
 }
 
 .hero3d__ph--final {
-  opacity: clamp(0, calc((var(--p, 0) - 0.8) * 12), 1);
+  opacity: clamp(0, calc((var(--p, 0) - 0.78) * 12), 1);
   visibility: visible;
 }
 
-.hero3d__ph--schematic {
-  opacity: clamp(
-    0,
-    min(calc((var(--p, 0) - 0.2) * 11), calc((0.82 - var(--p, 0)) * 11)),
-    1
-  );
-  visibility: visible;
-}
-
-/* мобильная компоновка: сцена сверху, текст снизу, короткий диапазон */
+/* мобильная компоновка: сцена сверху, текст снизу; sticky-участок ~210vh */
 @media (max-width: 900px) {
   .hero3d {
-    --scene-h: 500px;
-    --scroll-range: 340px;
+    --scene-h: min(78svh, 640px);
+    --scroll-range: 130vh;
     margin-top: 8px;
   }
 
@@ -1181,14 +775,10 @@ main#content {
     border-radius: 20px;
   }
 
-  .wm {
+  .hero3d__frame {
     left: 50%;
-    top: 34%;
-    width: min(320px, 84vw);
-  }
-
-  .wm__machine {
-    width: 68%;
+    top: 35%;
+    width: min(330px, 88vw);
   }
 
   .hero3d__content {
@@ -1241,12 +831,9 @@ main#content {
 }
 
 @media (max-width: 400px) {
-  .hero3d {
-    --scene-h: 480px;
-  }
-
-  .wm {
-    top: 32%;
+  .hero3d__frame {
+    top: 33%;
+    width: min(300px, 90vw);
   }
 }
 
@@ -1285,6 +872,22 @@ main#content {
 
 .product-placeholder--gallery .product-placeholder__label {
   font-size: 13.5px;
+}
+
+.product-placeholder--photo {
+  background: #ffffff;
+  padding: 8px;
+}
+
+.product-image-photo {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: transform 0.2s ease;
+}
+
+.card:hover .product-placeholder--photo .product-image-photo {
+  transform: scale(1.04);
 }
 
 
@@ -2047,7 +1650,8 @@ main#content {
   transform: scale(0.97);
 }
 
-.swatch[aria-pressed='true'] {
+.swatch[aria-pressed='true'],
+.swatch[aria-checked='true'] {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 1px var(--color-primary);
 }
@@ -3083,8 +2687,8 @@ html.dialog-open {
     transform: none;
   }
 
-  /* объёмный hero замирает в статичном кадре:
-     собранная машина, все тексты и CTA, без скролл-диапазона */
+  /* hero замирает статичным постером (первый кадр серии):
+     вся серия при reduce не загружается (Hero3D выходит до загрузки) */
   .hero3d {
     height: var(--scene-h);
   }
@@ -3097,7 +2701,8 @@ html.dialog-open {
   .hero3d__sky,
   .hero3d__grid,
   .hero3d__orb--lime,
-  .hero3d__orb--blue {
+  .hero3d__orb--blue,
+  .hero3d__frame {
     transition: none !important;
     transform: none !important;
   }
@@ -3106,39 +2711,9 @@ html.dialog-open {
     transform: rotateX(62deg) !important;
   }
 
-  /* сцена-бокс без ambient-масштаба, модель в статичном ракурсе ¾ */
-  .wm {
-    transform: translate(-50%, -50%) !important;
-    transition: none !important;
-  }
-
-  .wm__machine {
-    transform: translate(-50%, -50%) rotateX(2deg) rotateY(-26deg) !important;
-    transition: none !important;
-  }
-
-  /* корпус собран, внутренности и схема скрыты */
-  .wm__front,
-  .wm__top,
-  .wm__side {
-    opacity: 1 !important;
-  }
-
-  .wm__core {
-    transform: translate(-50%, -50%) !important;
+  /* постер остаётся, canvas не показывается */
+  .hero3d__canvas {
     opacity: 0 !important;
-  }
-
-  .wm__flows,
-  .wm__back {
-    opacity: 0 !important;
-  }
-
-  .wm__drum,
-  .wm__laundry,
-  .wm__flows,
-  .wm__motor {
-    animation: none !important;
   }
 
   .hero3d__ph--intro {
@@ -3146,10 +2721,8 @@ html.dialog-open {
     visibility: visible !important;
   }
 
-  .hero3d__ph--turbo,
-  .hero3d__ph--drive,
-  .hero3d__ph--final,
-  .hero3d__ph--schematic {
+  .hero3d__ph--front,
+  .hero3d__ph--final {
     opacity: 0 !important;
     visibility: hidden !important;
   }

@@ -1,0 +1,52 @@
+[
+  {
+    "route": "/ru",
+    "initialHtmlLang": "ru",
+    "title": "Smart Centr — техника для вашего дня"
+  },
+  {
+    "route": "/ru/cart",
+    "initialHtmlLang": "ru",
+    "title": "Корзина — Smart Centr"
+  },
+  {
+    "route": "/ru/checkout",
+    "initialHtmlLang": "ru",
+    "title": "Оформление заказа — Smart Centr"
+  },
+  {
+    "route": "/ru/favorites",
+    "initialHtmlLang": "ru",
+    "title": "Избранное — Smart Centr"
+  },
+  {
+    "route": "/ru/product/vega-pro",
+    "initialHtmlLang": "ru",
+    "title": "Смартфон Vega Pro — Smart Centr"
+  },
+  {
+    "route": "/ky",
+    "initialHtmlLang": "ky",
+    "title": "Smart Centr — сиздин күнүңүз үчүн техника"
+  },
+  {
+    "route": "/ky/cart",
+    "initialHtmlLang": "ky",
+    "title": "Себет — Smart Centr"
+  },
+  {
+    "route": "/ky/checkout",
+    "initialHtmlLang": "ky",
+    "title": "Буйрутманы берүү — Smart Centr"
+  },
+  {
+    "route": "/ky/favorites",
+    "initialHtmlLang": "ky",
+    "title": "Сүйүктүүлөр — Smart Centr"
+  },
+  {
+    "route": "/ky/product/vega-pro",
+    "initialHtmlLang": "ky",
+    "title": "Vega Pro смартфону — Smart Centr"
+  }
+]

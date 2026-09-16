@@ -1,0 +1,34 @@
+{
+  "date": "2026-09-15",
+  "target": "http://localhost:3100/ru",
+  "sourceRoot": "D:/Projects/Online-magazin",
+  "head": "920029a",
+  "buildId": "y3e6WhncaP0g4uYnBdj33",
+  "score": {"accessibility": 2, "performance": 2, "responsive": 2, "theming": 3, "integrity": 2, "total": 11},
+  "findings": {"P0": 1, "P1": 2, "P2": 8, "P3": 0},
+  "navigationBoundaries": [
+    {"width": 767, "visibleCartLinks": 1, "visibleFavoriteLinks": 1, "bottomNavDisplay": "flex"},
+    {"width": 768, "visibleCartLinks": 0, "visibleFavoriteLinks": 0, "bottomNavDisplay": "none"},
+    {"width": 844, "visibleCartLinks": 0, "visibleFavoriteLinks": 0, "bottomNavDisplay": "none"},
+    {"width": 900, "visibleCartLinks": 0, "visibleFavoriteLinks": 0, "bottomNavDisplay": "none"},
+    {"width": 901, "visibleCartLinks": 1, "visibleFavoriteLinks": 1, "bottomNavDisplay": "none"}
+  ],
+  "checkoutValidation": {
+    "route": "/ky/checkout", "viewport": [320, 640], "focusAfterInvalidSubmit": "BUTTON",
+    "nameErrorTop": -679, "phoneErrorTop": -564.5,
+    "inputAriaInvalid": true, "inputAriaDescribedby": null, "errorAriaLive": null
+  },
+  "addAtLimit": {"product": "vega-pro", "variant": "8/256", "stock": 3, "cartQuantityBefore": 3, "cartQuantityAfter": 3, "buttonMessage": "Кошулду", "buttonDisabled": false},
+  "cardKeyboardAdd": {"product": "aura-x5", "key": "Enter", "focusAfter": "BODY", "quantityAfter": 1},
+  "radioKeyboard": {"key": "ArrowRight", "before": "new", "after": "new", "radioTabIndexes": [0, 0]},
+  "searchMismatch": {"url": "/ru/catalog?q=Vega", "catalogInput": "Vega", "headerInput": "", "resultCount": 1},
+  "touchTargets390": {"langRu": [27.1875, 36], "langKy": [35.71875, 36], "favorite": [40, 40], "cardAdd": [140, 42], "filterHeight": 40},
+  "heroImage": {"path": "public/home-story/home-awakens.png", "bytes": 2025201, "dimensions": [1672, 941], "srcset": false, "fetchPriority": "high"},
+  "contrastSample": {"checkoutChecked": 42, "homeChecked": 102, "failures": 0, "complexBackgroundSkipped": 8},
+  "detector": {"total": 178, "advisory": 176, "warning": 2, "fontSize": 111, "color": 34, "radius": 31, "bounceEasing": 2},
+  "validation": {"typecheck": "pass", "unitTestFiles": 5, "unitTestsPassed": 49, "unitTestsTotal": 49, "e2eSuiteRerun": false},
+  "initialKyHtmlLang": "ru",
+  "hydratedKyHtmlLang": "ky",
+  "notMeasured": ["Core Web Vitals", "throttled network", "physical touch devices", "Safari/WebKit", "screen reader audio", "200 percent text resize"],
+  "cleanup": {"auditDemoCartItemsRemoved": true, "cartEmpty": true, "viewportReset": true, "applicationSourceEdited": false}
+}

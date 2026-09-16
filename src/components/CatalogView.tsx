@@ -7,6 +7,7 @@ import { brands, products } from '@/data/products'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { buildCatalogHref } from '@/lib/links'
 import { ProductCard } from '@/components/ProductCard'
+import { FilterSelect } from '@/components/FilterSelect'
 import { IconSearch } from '@/components/Icons'
 
 type SortKey = 'popular' | 'price-asc' | 'price-desc'
@@ -138,28 +139,16 @@ function CatalogViewInner() {
           </div>
 
           <div className="catalog-toolbar">
-            <label className="select-field">
-              <span className="select-field__label">{t.catalog.brand}</span>
-              <select value={brand} onChange={(e) => update({ brand: e.target.value || null })}>
-                <option value="all">{t.catalog.brandAll}</option>
-                {brands.map((b) => (
-                  <option key={b} value={b}>
-                    {b}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="select-field">
-              <span className="select-field__label">{t.catalog.sort}</span>
-              <select
-                value={sort}
-                onChange={(e) => update({ sort: e.target.value === 'popular' ? null : e.target.value })}
-              >
-                <option value="popular">{t.catalog.sortPopular}</option>
-                <option value="price-asc">{t.catalog.sortPriceAsc}</option>
-                <option value="price-desc">{t.catalog.sortPriceDesc}</option>
-              </select>
-            </label>
+            <FilterSelect label={t.catalog.brand} value={brand}
+              onChange={value => update({ brand: value === 'all' ? null : value })}
+              options={[{ value: 'all', label: t.catalog.brandAll }, ...brands.map(b => ({ value: b, label: b }))]} />
+            <FilterSelect label={t.catalog.sort} value={sort}
+              onChange={value => update({ sort: value === 'popular' ? null : value })}
+              options={[
+                { value: 'popular', label: t.catalog.sortPopular },
+                { value: 'price-asc', label: t.catalog.sortPriceAsc },
+                { value: 'price-desc', label: t.catalog.sortPriceDesc },
+              ]} />
           </div>
         </div>
       </div>

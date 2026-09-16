@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useCart } from '@/lib/cart/CartProvider'
 import { unitPrice } from '@/lib/cart/logic'
-import { getProduct, colorHexOf } from '@/data/products'
+import { getProduct } from '@/data/products'
 import { variantLabel } from '@/lib/cart/sku'
 import { formatSom } from '@/lib/format'
 import { ProductImage } from '@/components/ProductImage'
@@ -91,10 +91,7 @@ export default function CartPage() {
                     className="cart-line__media"
                     aria-label={lang === 'ky' ? product.nameKy : product.nameRu}
                   >
-                    <ProductImage
-                      kind={product.art}
-                      colorHex={colorHexOf(product, variant)}
-                    />
+                    <ProductImage kind={product.art} image={product.image} alt={lang === 'ky' ? product.nameKy : product.nameRu} />
                   </Link>
                   <div>
                     <Link href={`/${lang}/product/${product.id}`} className="cart-line__name">

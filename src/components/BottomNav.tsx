@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useCart } from '@/lib/cart/CartProvider'
 import { useI18n } from '@/lib/i18n/I18nProvider'
-import { IconCart, IconGrid, IconHeart, IconHome } from './Icons'
+import { IconCart, IconGrid, IconHeart, IconHome, IconUser } from './Icons'
 
 export function BottomNav() {
   const { t, lang } = useI18n()
@@ -31,6 +31,7 @@ export function BottomNav() {
       icon: <IconHeart size={22} />,
       match: (p: string) => p.startsWith(`/${lang}/favorites`),
     },
+    { href: `/${lang}/account`, label: lang === 'ky' ? 'Кабинет' : 'Кабинет', icon: <IconUser size={22} />, match: (p: string) => p.startsWith(`/${lang}/account`) },
   ]
 
   return (

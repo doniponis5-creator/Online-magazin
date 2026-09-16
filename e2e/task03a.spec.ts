@@ -48,16 +48,17 @@ test('product page: placeholder instead of photo, no zoom and no photo badges', 
   await expect(page.locator('.gallery__photo-note')).toHaveCount(0)
 })
 
-test('hero: CSS scene with model text, no photos, CTA to home-appliances catalog', async ({
+test('hero: 3D render poster, model text, CTA to home-appliances catalog', async ({
   page,
 }) => {
   await page.goto('/ru/')
   // модель владельца и подтверждённая характеристика
   await expect(page.locator('.hero3d__title')).toHaveText('LG F4X5ES5SB')
   await expect(page.locator('.hero3d__subtitle.hero3d__ph--intro')).toContainText('11 кг')
-  // сцена — авторская CSS-графика: тегов img в hero нет вовсе
-  await expect(page.locator('.hero3d img')).toHaveCount(0)
-  await expect(page.locator('.wm__machine').first()).toBeVisible()
+  // постер — первый кадр 3D-серии из серверного HTML, работает без JS
+  await expect(page.locator('.hero3d__poster')).toBeVisible()
+  await expect(page.locator('.hero3d__poster')).toHaveAttribute('src', '/lg/poster-960.webp')
+  await expect(page.locator('.hero3d__canvas')).toHaveCount(1)
   // один CTA ведёт в существующий каталог техники для дома
   const cta = page.locator('.hero3d__cta')
   await expect(cta).toHaveText(/Смотреть стиральные машины/)
@@ -99,15 +100,16 @@ test('motion: reduced-motion at load — sections visible, hero scene static (co
   const opacity = await belowFold.evaluate((el) => getComputedStyle(el).opacity)
   expect(opacity).toBe('1')
 
-  // hero-сцена статична: прокрутка не меняет computed transform группы машины
-  const machine = page.locator('.wm')
+  // hero-сцена статична: постер остаётся на месте, серия не загружается
+  // (canvas без класса is-live — кадры при reduce не рисуются)
+  const poster = page.locator('.hero3d__poster')
+  await expect(poster).toBeVisible()
   await page.evaluate(() => window.scrollTo(0, 400))
   await page.waitForTimeout(150)
-  const t1 = await machine.evaluate((el) => getComputedStyle(el).transform)
   await page.evaluate(() => window.scrollTo(0, 800))
   await page.waitForTimeout(150)
-  const t2 = await machine.evaluate((el) => getComputedStyle(el).transform)
-  expect(t1).toBe(t2)
+  await expect(poster).toBeVisible()
+  await expect(page.locator('.hero3d__canvas')).not.toHaveClass(/is-live/)
   // и сцена не наклонена указателем (transform stage — none)
   const stageTransform = await page
     .locator('.hero3d__stage')
@@ -158,9 +160,8 @@ test('motion: switching to reduced-motion after load reveals everything', async 
   await context.close()
 })
 
-test('hero scroll: geometry of the scene actually changes while scrolling', async ({ browser }) => {
-  // сцена управляется прокруткой без reduce — проверяем мобильную и desktop
-  // компоновки: группа машины меняет computed transform на каждой из них
+test('hero scroll: rendered frame actually changes while scrolling', async ({ browser }) => {
+  // серия кадров из Blender: прогресс прокрутки рисует другой кадр canvas
   for (const viewport of [
     { width: 390, height: 844 },
     { width: 1440, height: 900 },
@@ -169,21 +170,30 @@ test('hero scroll: geometry of the scene actually changes while scrolling', asyn
     const page = await context.newPage()
     await page.goto('/ru/')
     await page.evaluate(() => window.scrollTo(0, 0))
-    await page.waitForTimeout(120)
-    const machine = page.locator('.wm')
-    const tStart = await machine.evaluate((el) => getComputedStyle(el).transform)
+    // ждём, пока серия начнёт грузиться и первый кадр будет нарисован
+    await page.waitForFunction(
+      () => document.querySelector('.hero3d__canvas')?.classList.contains('is-live'),
+      undefined,
+      { timeout: 10000 },
+    )
+    const frameOf = () =>
+      page
+        .locator('.hero3d__canvas')
+        .evaluate((el) => Number((el as HTMLElement).dataset.frame ?? '-1'))
+    const fStart = await frameOf()
 
     // обычная прокрутка пользователями — без принудительных классов
-    await page.mouse.wheel(0, 250)
-    await page.waitForTimeout(220)
-    const tMid = await machine.evaluate((el) => getComputedStyle(el).transform)
+    await page.mouse.wheel(0, 300)
+    await page.waitForTimeout(250)
+    const fMid = await frameOf()
 
-    await page.mouse.wheel(0, 800)
-    await page.waitForTimeout(220)
-    const tEnd = await machine.evaluate((el) => getComputedStyle(el).transform)
+    await page.mouse.wheel(0, 900)
+    await page.waitForTimeout(250)
+    const fEnd = await frameOf()
 
-    expect(tStart, `${viewport.width}px: start vs middle`).not.toBe(tMid)
-    expect(tMid, `${viewport.width}px: middle vs end`).not.toBe(tEnd)
+    expect(fStart, `${viewport.width}px: start frame`).toBeGreaterThanOrEqual(0)
+    expect(fEnd, `${viewport.width}px: frame changes with scroll`).toBeGreaterThan(fMid)
+    expect(fMid, `${viewport.width}px: frame changes from start`).toBeGreaterThan(fStart)
     await context.close()
   }
 })

@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import type { Product } from '@/data/products'
-import { colorHexOfKey } from '@/data/products'
+
 import type { ProductPhoto } from '@/data/photos'
 import { ProductArt } from './ProductArt'
 import { ProductImage } from './ProductImage'
@@ -38,7 +38,6 @@ export function Gallery({
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   const name = lang === 'ky' ? product.nameKy : product.nameRu
-  const currentHex = colorHexOfKey(product, colorKey)
   const alt = lang === 'ky' ? (photo?.altKy ?? name) : (photo?.altRu ?? name)
 
   // нативный модальный режим + блокировка прокрутки фона
@@ -75,7 +74,7 @@ export function Gallery({
       className="product-photo gallery-photo"
     />
   ) : (
-    <ProductImage kind={product.art} colorHex={currentHex} variant="gallery" />
+    <ProductImage kind={product.art} variant="gallery" image={product.image} alt={name} />
   )
 
   return (

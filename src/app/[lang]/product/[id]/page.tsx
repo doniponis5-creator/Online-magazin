@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getProduct, products } from '@/data/products'
@@ -104,4 +105,14 @@ export default async function ProductPage({
       )}
     </div>
   )
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ lang: string; id: string }> }): Promise<Metadata> {
+  const { lang, id } = await params
+  const product = getProduct(id)
+  if (!product) notFound()
+  return {
+    title: `${lang === 'ky' ? product.nameKy : product.nameRu} — Smart Centr`,
+    description: lang === 'ky' ? product.descKy : product.descRu,
+  }
 }

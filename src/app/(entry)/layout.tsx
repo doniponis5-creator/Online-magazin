@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
-import './globals.css'
-import './light-lemon.css'
+import '../globals.css'
+import '../light-lemon.css'
 
 export const metadata: Metadata = {
   title: 'Smart Centr — демо-прототип',

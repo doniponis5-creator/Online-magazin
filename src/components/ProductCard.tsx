@@ -1,9 +1,9 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { categoryName } from '@/data/categories'
-import { colorHexOf } from '@/data/products'
 import { formatSom } from '@/lib/format'
 import type { Product } from '@/data/products'
 import { useCart } from '@/lib/cart/CartProvider'
@@ -25,6 +25,15 @@ export function ProductCard({ product }: { product: Product }) {
     (l) => l.productId === product.id && l.variantId === variant.id,
   )
   const mounted = cart.hydrated
+  const actions = useRef<HTMLDivElement>(null)
+  const focusAfterAdd = useRef(false)
+  const [announcement, setAnnouncement] = useState('')
+  useEffect(() => {
+    if (!line || !focusAfterAdd.current) return
+    focusAfterAdd.current = false
+    const target = actions.current?.querySelector<HTMLElement>('button:not(:disabled)') ?? actions.current
+    target?.focus({ preventScroll: true })
+  }, [line])
 
   return (
     <article className="card">
@@ -37,7 +46,7 @@ export function ProductCard({ product }: { product: Product }) {
           <FavoriteButton productId={product.id} variant="floating" />
         </div>
         <Link href={href} className="card__media-link" aria-label={name} tabIndex={-1}>
-          <ProductImage kind={product.art} colorHex={colorHexOf(product, variant)} />
+          <ProductImage kind={product.art} image={product.image} alt={name} />
         </Link>
       </div>
       <div className="card__body">
@@ -49,7 +58,7 @@ export function ProductCard({ product }: { product: Product }) {
           <span className="card__price">{formatSom(product.price)}</span>
           {product.oldPrice && <span className="card__old-price">{formatSom(product.oldPrice)}</span>}
         </div>
-        <div className="card__actions">
+        <div className="card__actions" ref={actions} tabIndex={-1} aria-label={`${t.cart.quantity}: ${name}`}>
           {!inStock ? (
             <button type="button" className="btn btn--outline btn--sm btn--block" disabled>
               {t.catalog.outOfStock}
@@ -64,9 +73,13 @@ export function ProductCard({ product }: { product: Product }) {
               />
             </div>
           ) : (
-            <AddToCartButton productId={product.id} variantId={variant.id} block small />
+            <AddToCartButton productId={product.id} variantId={variant.id} block small onAdded={(keyboard) => {
+              focusAfterAdd.current = keyboard
+              setAnnouncement(`${name}: ${t.catalog.added}`)
+            }} />
           )}
         </div>
+        <span className="visually-hidden" role="status">{announcement}</span>
       </div>
     </article>
   )

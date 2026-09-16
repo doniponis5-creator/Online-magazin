@@ -1,0 +1,2608 @@
+[
+  {
+    "antipattern": "bounce-easing",
+    "name": "Bounce or elastic easing",
+    "description": "Bounce and elastic easing feel dated and tacky. Real objects decelerate smoothly — use exponential easing (ease-out-quart/quint/expo) instead.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1129,
+    "snippet": "animation: var(--ease-spring)",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "bounce-easing",
+    "name": "Bounce or elastic easing",
+    "description": "Bounce and elastic easing feel dated and tacky. Real objects decelerate smoothly — use exponential easing (ease-out-quart/quint/expo) instead.",
+    "severity": "warning",
+    "category": "slop",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 41,
+    "snippet": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 235,
+    "snippet": "Undocumented color #cdf25a is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "#cdf25a",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 251,
+    "snippet": "font-size: 14px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "14px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 252,
+    "snippet": "border-radius: 13px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 286,
+    "snippet": "font-size: 22px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "22px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 327,
+    "snippet": "font-size: 14px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "14px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 368,
+    "snippet": "border-radius: 9px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "9px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 371,
+    "snippet": "font-size: 11px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "11px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 381,
+    "snippet": "border-radius: 13px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 389,
+    "snippet": "border-radius: 10px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "10px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 390,
+    "snippet": "font-size: 13px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 406,
+    "snippet": "border-radius: 10px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "10px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 407,
+    "snippet": "font-size: 14px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "14px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 445,
+    "snippet": "Undocumented color rgba(36, 91, 235, 0.15) is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "rgba(36, 91, 235, 0.15)",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 480,
+    "snippet": "font-size: 11px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "11px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 498,
+    "snippet": "border-radius: 8px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "8px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 501,
+    "snippet": "font-size: 10px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "10px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 527,
+    "snippet": "font-size: clamp(20px, 3.5vw, 26px) has fluid endpoints 20px and 26px off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "20px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 566,
+    "snippet": "border-radius: 26px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "26px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 568,
+    "snippet": "Undocumented color #e9fadf is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "#e9fadf",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 583,
+    "snippet": "Undocumented color rgba(217, 248, 109, 0.5) is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "rgba(217, 248, 109, 0.5)",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 584,
+    "snippet": "Undocumented color rgba(36, 91, 235, 0.24) is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "rgba(36, 91, 235, 0.24)",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 595,
+    "snippet": "Undocumented color rgba(36, 91, 235, 0.14) is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "rgba(36, 91, 235, 0.14)",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 613,
+    "snippet": "Undocumented color #eaffac is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "#eaffac",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 613,
+    "snippet": "Undocumented color #d9f86d is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "#d9f86d",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 622,
+    "snippet": "Undocumented color #dbe6ff is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "#dbe6ff",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 622,
+    "snippet": "Undocumented color #245beb is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "#245beb",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 675,
+    "snippet": "font-size: 13px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 682,
+    "snippet": "border-radius: 999px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "999px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 688,
+    "snippet": "font-size: clamp(30px, 4.6vw, 54px) has fluid endpoints 30px and 54px off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "30px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 697,
+    "snippet": "font-size: clamp(15px, 1.6vw, 18px) has fluid endpoint 18px off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "18px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 703,
+    "snippet": "font-size: 13.5px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13.5px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 710,
+    "snippet": "font-size: clamp(20px, 2.2vw, 26px) has fluid endpoints 20px and 26px off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "20px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 719,
+    "snippet": "font-size: clamp(14px, 1.5vw, 16.5px) has fluid endpoint 14px off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "14px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 775,
+    "snippet": "border-radius: 20px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "20px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 807,
+    "snippet": "font-size: clamp(24px, 7.4vw, 30px) has fluid endpoint 30px off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "30px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 811,
+    "snippet": "font-size: 14px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "14px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 816,
+    "snippet": "font-size: 18px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "18px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 820,
+    "snippet": "font-size: 13.5px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13.5px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 829,
+    "snippet": "font-size: 11px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "11px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 874,
+    "snippet": "font-size: 13.5px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13.5px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1032,
+    "snippet": "font-size: 14px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "14px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1050,
+    "snippet": "font-size: 18px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "18px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1057,
+    "snippet": "font-size: 13px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1073,
+    "snippet": "font-size: 11px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "11px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1111,
+    "snippet": "border-radius: 13px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1163,
+    "snippet": "border-radius: 24px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "24px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1180,
+    "snippet": "font-size: clamp(18px, 2.6vw, 24px) has fluid endpoint 18px off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "18px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1190,
+    "snippet": "font-size: 14px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "14px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1248,
+    "snippet": "font-size: 14px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "14px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1260,
+    "snippet": "border-radius: 24px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "24px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1273,
+    "snippet": "border-radius: 18px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "18px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1282,
+    "snippet": "font-size: 18px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "18px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1317,
+    "snippet": "border-radius: 20px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "20px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1320,
+    "snippet": "font-size: 14px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "14px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1362,
+    "snippet": "font-size: 11px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "11px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1373,
+    "snippet": "border-radius: 13px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1376,
+    "snippet": "font-size: 13.5px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13.5px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1407,
+    "snippet": "font-size: 14px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "14px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1435,
+    "snippet": "font-size: 13px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1458,
+    "snippet": "border-radius: 24px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "24px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1532,
+    "snippet": "font-size: 14px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "14px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1539,
+    "snippet": "font-size: clamp(22px, 3.4vw, 30px) has fluid endpoints 22px and 30px off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "22px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1552,
+    "snippet": "font-size: clamp(26px, 4vw, 34px) has fluid endpoints 26px and 34px off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "26px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1558,
+    "snippet": "font-size: 18px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "18px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1567,
+    "snippet": "font-size: 14px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "14px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1579,
+    "snippet": "Undocumented color #e8a13a is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "#e8a13a",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1587,
+    "snippet": "font-size: 13px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1599,
+    "snippet": "font-size: 14px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "14px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1620,
+    "snippet": "border-radius: 13px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1623,
+    "snippet": "font-size: 14px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "14px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1675,
+    "snippet": "Undocumented color #b8d94a is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "#b8d94a",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1677,
+    "snippet": "font-size: 13px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1695,
+    "snippet": "font-size: 17px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "17px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1765,
+    "snippet": "border-radius: 11px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "11px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1861,
+    "snippet": "font-size: 13px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1867,
+    "snippet": "font-size: 13px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1887,
+    "snippet": "font-size: 17px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "17px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1897,
+    "snippet": "font-size: 13px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1899,
+    "snippet": "border-radius: 10px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "10px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1905,
+    "snippet": "Undocumented color #fdeeec is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "#fdeeec",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1911,
+    "snippet": "border-radius: 20px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "20px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1933,
+    "snippet": "font-size: 18px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "18px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1938,
+    "snippet": "font-size: 13px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1956,
+    "snippet": "border-radius: 28px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "28px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1966,
+    "snippet": "font-size: 19px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "19px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 1999,
+    "snippet": "border-radius: 20px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "20px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2019,
+    "snippet": "font-size: 14px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "14px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2053,
+    "snippet": "Undocumented color rgba(36, 91, 235, 0.15) is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "rgba(36, 91, 235, 0.15)",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2068,
+    "snippet": "font-size: 13px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2116,
+    "snippet": "font-size: 13px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2159,
+    "snippet": "border-radius: 24px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "24px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2171,
+    "snippet": "border-radius: 22px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "22px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2222,
+    "snippet": "border-radius: 10px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "10px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2226,
+    "snippet": "font-size: 14px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "14px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2233,
+    "snippet": "font-size: 13px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2236,
+    "snippet": "Undocumented color #b8d94a is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "#b8d94a",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2275,
+    "snippet": "font-size: 13.5px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13.5px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2283,
+    "snippet": "font-size: 14px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "14px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2288,
+    "snippet": "font-size: 13.5px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13.5px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2296,
+    "snippet": "font-size: 13.5px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13.5px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2318,
+    "snippet": "font-size: 13px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2332,
+    "snippet": "font-size: 13.5px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13.5px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2438,
+    "snippet": "border-radius: 28px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "28px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2466,
+    "snippet": "font-size: 20px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "20px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2483,
+    "snippet": "Undocumented color #fdeeec is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "#fdeeec",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2484,
+    "snippet": "Undocumented color #f3c1ba is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "#f3c1ba",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2521,
+    "snippet": "Undocumented color #b8d94a is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "#b8d94a",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2523,
+    "snippet": "font-size: 14px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "14px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2531,
+    "snippet": "border-radius: 10px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "10px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2547,
+    "snippet": "font-size: 14px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "14px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2551,
+    "snippet": "border-radius: 10px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "10px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2592,
+    "snippet": "border-radius: 8px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "8px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\globals.css",
+    "line": 2595,
+    "snippet": "font-size: 10.5px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "10.5px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 55,
+    "snippet": "font-size: 23px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "23px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 58,
+    "snippet": "font-size: 11px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "11px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 64,
+    "snippet": "font-size: 14px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "14px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 69,
+    "snippet": "font-size: 10px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "10px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 72,
+    "snippet": "font-size: 11px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "11px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 86,
+    "snippet": "Undocumented color #182b43 is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "#182b43",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 88,
+    "snippet": "font-size: 17px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "17px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 89,
+    "snippet": "Undocumented color #285493 is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "#285493",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 93,
+    "snippet": "font-size: 11px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "11px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 99,
+    "snippet": "font-size: 13px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 106,
+    "snippet": "Undocumented color #b6c2d1 is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "#b6c2d1",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 110,
+    "snippet": "font-size: 11px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "11px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 112,
+    "snippet": "font-size: 22px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "22px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 115,
+    "snippet": "font-size: 13px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 117,
+    "snippet": "Undocumented color #344000 is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "#344000",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 118,
+    "snippet": "Undocumented color #24508c is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "#24508c",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 125,
+    "snippet": "font-size: 21px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "21px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 127,
+    "snippet": "Undocumented color #435235 is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "#435235",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 127,
+    "snippet": "font-size: 14px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "14px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 129,
+    "snippet": "Undocumented color #eaf0b6 is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "#eaf0b6",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 129,
+    "snippet": "Undocumented color #344000 is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "#344000",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 131,
+    "snippet": "Undocumented color #285493 is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "#285493",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 132,
+    "snippet": "font-size: 19px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "19px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 133,
+    "snippet": "Undocumented color #405878 is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "#405878",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 133,
+    "snippet": "font-size: 14px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "14px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 136,
+    "snippet": "Undocumented color #f8facf is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "#f8facf",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 136,
+    "snippet": "border-radius: 8px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "8px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 137,
+    "snippet": "font-size: 13px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 142,
+    "snippet": "font-size: 11px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "11px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-color",
+    "name": "Color outside DESIGN.md",
+    "description": "A literal color is outside the DESIGN.md palette and sidecar tonal ramps. This may be legitimate, but it should be an intentional design-system addition rather than drift.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 144,
+    "snippet": "Undocumented color #fafce3 is outside DESIGN.md colors",
+    "advisory": true,
+    "ignoreValue": "#fafce3",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 146,
+    "snippet": "font-size: 10px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "10px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 154,
+    "snippet": "font-size: 20px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "20px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 164,
+    "snippet": "font-size: 10px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "10px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 167,
+    "snippet": "font-size: 22px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "22px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 173,
+    "snippet": "font-size: 13px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 178,
+    "snippet": "font-size: 36px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "36px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 180,
+    "snippet": "font-size: 13px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 181,
+    "snippet": "font-size: 10px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "10px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 182,
+    "snippet": "font-size: 17px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "17px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 183,
+    "snippet": "font-size: 13px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 185,
+    "snippet": "font-size: 10px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "10px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 189,
+    "snippet": "font-size: 25px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "25px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 190,
+    "snippet": "font-size: 11px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "11px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 199,
+    "snippet": "font-size: 10px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "10px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 200,
+    "snippet": "font-size: 17px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "17px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 202,
+    "snippet": "font-size: 10px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "10px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 204,
+    "snippet": "font-size: 11px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "11px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 207,
+    "snippet": "font-size: 22px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "22px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 208,
+    "snippet": "font-size: 13px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 210,
+    "snippet": "font-size: 17px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "17px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 211,
+    "snippet": "font-size: 13px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\app\\light-lemon.css",
+    "line": 228,
+    "snippet": "font-size: 20px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "20px",
+    "importedBy": [
+      "layout.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-radius",
+    "name": "Radius outside DESIGN.md",
+    "description": "A border-radius value is outside the DESIGN.md rounded scale. Use a documented radius token or update the design system if the new shape is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\components\\home-story.css",
+    "line": 3,
+    "snippet": "border-radius: 18px is outside the DESIGN.md rounded scale",
+    "advisory": true,
+    "ignoreValue": "18px",
+    "importedBy": [
+      "HomeStory.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\components\\home-story.css",
+    "line": 9,
+    "snippet": "font-size: clamp(34px, 3.7vw, 58px) has fluid endpoints 34px and 58px off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "34px",
+    "importedBy": [
+      "HomeStory.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\components\\home-story.css",
+    "line": 11,
+    "snippet": "font-size: 14px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "14px",
+    "importedBy": [
+      "HomeStory.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\components\\home-story.css",
+    "line": 13,
+    "snippet": "font-size: 10px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "10px",
+    "importedBy": [
+      "HomeStory.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\components\\home-story.css",
+    "line": 21,
+    "snippet": "font-size: clamp(28px, 6.8vw, 40px) has fluid endpoints 28px and 40px off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "28px",
+    "importedBy": [
+      "HomeStory.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\components\\home-story.css",
+    "line": 22,
+    "snippet": "font-size: 13px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "13px",
+    "importedBy": [
+      "HomeStory.tsx"
+    ]
+  },
+  {
+    "antipattern": "design-system-font-size",
+    "name": "Font size outside DESIGN.md",
+    "description": "A literal font-size is off the type ramp documented in DESIGN.md typography. Use a documented size step or update the design system if the new step is intentional.",
+    "severity": "advisory",
+    "category": "quality",
+    "file": "D:\\Projects\\Online-magazin\\src\\components\\home-story.css",
+    "line": 28,
+    "snippet": "font-size: 9px is off the DESIGN.md type ramp",
+    "advisory": true,
+    "ignoreValue": "9px",
+    "importedBy": [
+      "HomeStory.tsx"
+    ]
+  }
+]

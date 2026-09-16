@@ -9,7 +9,7 @@ import { useFavorites } from '@/lib/favorites/FavoritesProvider'
 import { buildCatalogHref, buildLangHref } from '@/lib/links'
 import { otherLang, type Lang } from '@/lib/i18n/config'
 import { useI18n } from '@/lib/i18n/I18nProvider'
-import { IconCart, IconGrid, IconHeart, IconMapPin, IconSearch } from './Icons'
+import { IconCart, IconGrid, IconHeart, IconMapPin, IconSearch, IconUser } from './Icons'
 import { Brand } from './Brand'
 
 function HeaderInner() {
@@ -24,6 +24,9 @@ function HeaderInner() {
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '')
 
   useEffect(() => setMounted(true), [])
+
+  const activeQuery = searchParams.get('q') ?? ''
+  useEffect(() => setQuery(activeQuery), [activeQuery])
 
   const onSearch = (e: FormEvent) => {
     e.preventDefault()
@@ -68,6 +71,9 @@ function HeaderInner() {
           </form>
 
           <div className="header__actions">
+            <Link href={`/${lang}/account`} className="icon-btn" aria-label={lang === 'ky' ? 'Жеке кабинет' : 'Личный кабинет'}>
+              <IconUser size={22} /><span className="header__action-label">{lang === 'ky' ? 'Кабинет' : 'Кабинет'}</span>
+            </Link>
             <nav className="lang-switch" aria-label={t.a11y.langSwitch}>
               <Link
                 href={buildLangHref(pathname, search, lang)}

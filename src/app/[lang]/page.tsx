@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { categories } from '@/data/categories'
 import { getNew, getPopular } from '@/data/products'
 import { useI18n } from '@/lib/i18n/I18nProvider'
+import { DailySelection, CampaignBanner, HitMosaic, BrandStrip, SaleSection, SocialAndAccount } from '@/components/HomeMerchandising'
 import { StorefrontHero } from '@/components/StorefrontHero'
 import { Brand } from '@/components/Brand'
 import { ProductArt } from '@/components/ProductArt'
@@ -151,10 +152,15 @@ export default function HomePage() {
     <div className="container">
       <StorefrontHero />
       <CategoryTiles />
-      <ProductSection titleKey="popular" ctaKey="popularCta" products={getPopular()} />
+      <DailySelection />
+      <CampaignBanner />
+      <HitMosaic />
+      <BrandStrip />
+      <SaleSection />
       <PromoSection />
       <NightBanner />
       <ProductSection titleKey="newList" ctaKey="newCta" products={getNew()} />
+      <SocialAndAccount />
       <InfoStrip />
     </div>
   )

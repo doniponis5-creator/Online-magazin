@@ -1,3 +1,5 @@
+import '../globals.css'
+import '../light-lemon.css'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { defaultLang, isLang, type Lang } from '@/lib/i18n/config'
@@ -28,7 +30,7 @@ export default async function LangLayout({
   const dict = getDictionary(lang)
 
   return (
-    <I18nProvider lang={lang} dict={dict}>
+    <html lang={lang}><body><I18nProvider lang={lang} dict={dict}>
       <CartProvider>
         <FavoritesProvider>
           <HtmlLang lang={lang} />
@@ -43,7 +45,7 @@ export default async function LangLayout({
           <BottomNav />
         </FavoritesProvider>
       </CartProvider>
-    </I18nProvider>
+    </I18nProvider></body></html>
   )
 }
 
