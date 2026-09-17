@@ -3,6 +3,9 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useCustomer } from '@/components/AccountView'
+import { CustomerLogin } from '@/components/CustomerLogin'
+import '@/components/account.css'
 import { useCart } from '@/lib/cart/CartProvider'
 import { unitPrice } from '@/lib/cart/logic'
 import { getProduct, type Product } from '@/data/products'
@@ -45,6 +48,19 @@ export default function CheckoutPage() {
   const deliveryCost = delivery === 'delivery' ? courierPrice : 0
   const total = cart.subtotal + deliveryCost
 
+  // Покупатель входит по коду WhatsApp; телефон берётся из входа, бонусы — с его счёта SBonus.
+  const { customer, reload: reloadCustomer, logout } = useCustomer(total)
+  const [useBonus, setUseBonus] = useState(false)
+  const [bonusInput, setBonusInput] = useState('')
+  const maxBonus = customer?.maxSpend ?? 0
+  const bonus = useBonus ? Math.max(0, Math.min(maxBonus, Math.floor(Number(bonusInput) || 0))) : 0
+  const payTotal = total - bonus
+
+  useEffect(() => {
+    if (customer && !name) setName(customer.name)
+    if (customer) setPhone(customer.phone)
+  }, [customer]) // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!cart.hydrated) {
     return (
       <div className="container">
@@ -83,6 +99,8 @@ export default function CheckoutPage() {
       else if (code === 'out-of-stock') next.form = t.checkout.errorStock
       else if (code === 'product-missing') next.form = t.checkout.errorProduct
       else if (code === 'cart-empty') next.form = t.checkout.errorCart
+      else if (code === 'login') next.form = t.checkout.errorLogin
+      else if (code === 'bonus') next.form = t.checkout.errorBonus
       else next.form = t.checkout.errorServer
     }
     return next
@@ -91,6 +109,10 @@ export default function CheckoutPage() {
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     if (sending) return
+    if (!customer) {
+      setErrors({ form: t.checkout.errorLogin })
+      return
+    }
     const next: FieldErrors = {}
     if (name.trim().length < 2) next.name = t.checkout.errorName
     if (!normalizePhone(phone)) next.phone = t.checkout.errorPhone
@@ -109,12 +131,14 @@ export default function CheckoutPage() {
           delivery: { method: delivery, city: region, address },
           comment,
           lines: cart.lines,
+          bonus,
           lang,
         }),
       })
       const data = await response.json().catch(() => ({ ok: false, errors: ['server'] }))
       if (!data.ok) {
         setErrors(serverErrorText(data.errors ?? ['server']))
+        if (data.errors?.includes('login') || data.errors?.includes('bonus')) reloadCustomer()
         setSending(false)
         return
       }
@@ -140,12 +164,32 @@ export default function CheckoutPage() {
         <p className="page-head__sub">{t.checkout.subtitle}</p>
       </div>
 
+      {customer === null && (
+        <section className="form-card checkout-login" aria-labelledby="login-title">
+          <h2 className="form-section__title" id="login-title">{t.checkout.loginTitle}</h2>
+          <p>{t.checkout.loginText}</p>
+          <CustomerLogin onDone={() => reloadCustomer()} />
+        </section>
+      )}
+
       <form className="checkout-layout" onSubmit={submit} noValidate>
         <div className="form-card">
           <section aria-labelledby="contact-title">
             <h2 className="form-section__title" id="contact-title">
               {t.checkout.contact}
             </h2>
+            {customer === null ? (
+              <p className="field__hint">{t.checkout.errorLogin}</p>
+            ) : customer ? (
+            <>
+            <div className="checkout-user">
+              <span>
+                {t.checkout.loggedAs} <strong>{customer.phone}</strong>
+              </span>
+              <button type="button" className="link-btn" onClick={logout}>
+                {t.checkout.notYou}
+              </button>
+            </div>
             <div className="form-grid-2">
               <div className="field">
                 <label className="field__label" htmlFor="co-name">
@@ -170,8 +214,8 @@ export default function CheckoutPage() {
                 <input
                   id="co-phone"
                   required
+                  readOnly
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
                   placeholder={t.checkout.phonePlaceholder}
                   inputMode="tel"
                   aria-invalid={Boolean(errors.phone)}
@@ -185,6 +229,8 @@ export default function CheckoutPage() {
                 )}
               </div>
             </div>
+            </>
+            ) : null}
           </section>
 
           <section aria-labelledby="delivery-title">
@@ -284,13 +330,58 @@ export default function CheckoutPage() {
             <span>{t.checkout.deliveryCost}</span>
             <strong>{deliveryCost > 0 ? formatSom(deliveryCost) : t.checkout.courierFree}</strong>
           </div>
+          {customer && (
+            <div className="checkout-bonus">
+              <div className="checkout-bonus__head">
+                <span>{t.checkout.bonusTitle}</span>
+                <span>{formatSom(customer.balance)}</span>
+              </div>
+              {maxBonus > 0 ? (
+                <>
+                  <p>{t.checkout.bonusMax.replace('{max}', formatSom(maxBonus)).replace('{pct}', String(customer.maxSpendPct))}</p>
+                  <div className="checkout-bonus__row">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={useBonus}
+                        onChange={(e) => {
+                          setUseBonus(e.target.checked)
+                          if (e.target.checked && !bonusInput) setBonusInput(String(maxBonus))
+                        }}
+                      />
+                      {t.checkout.bonusUse}
+                    </label>
+                    {useBonus && (
+                      <input
+                        type="number"
+                        min={1}
+                        max={maxBonus}
+                        step={1}
+                        value={bonusInput}
+                        onChange={(e) => setBonusInput(e.target.value)}
+                        aria-label={t.checkout.bonusUse}
+                      />
+                    )}
+                  </div>
+                </>
+              ) : (
+                <p>{customer.balance > 0 ? t.checkout.bonusBalance.replace('{balance}', formatSom(customer.balance)) : t.checkout.bonusNone}</p>
+              )}
+            </div>
+          )}
+          {bonus > 0 && (
+            <div className="order-row order-row--bonus">
+              <span>{t.checkout.bonusLine}</span>
+              <strong>−{formatSom(bonus)}</strong>
+            </div>
+          )}
           <div className="summary-card__total">
             <span>{t.checkout.total}</span>
-            <span>{formatSom(total)}</span>
+            <span>{formatSom(payTotal)}</span>
           </div>
           {errors.form && <p role="alert" className="field__error">{errors.form}</p>}
-          <button type="submit" className="btn btn--primary btn--block checkout-pay" disabled={sending} aria-busy={sending}>
-            {sending ? t.checkout.paying : `${t.checkout.pay} ${formatSom(total)} ${t.checkout.payVia}`}
+          <button type="submit" className="btn btn--primary btn--block checkout-pay" disabled={sending || !customer} aria-busy={sending}>
+            {sending ? t.checkout.paying : `${t.checkout.pay} ${formatSom(payTotal)} ${t.checkout.payVia}`}
           </button>
           <p className="summary-card__note">{t.checkout.payNote}</p>
         </aside>

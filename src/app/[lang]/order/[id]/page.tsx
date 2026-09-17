@@ -7,6 +7,7 @@ import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import type { PublicOrder } from '@/lib/orders/gateway'
 import { readLastOrder } from '@/lib/orders/storage'
+import '@/components/account.css'
 
 const POLL_MS = 5000
 
@@ -81,6 +82,8 @@ function OrderView() {
   }
 
   const paid = order.status === 'paid' || order.status === 'in_1c'
+  const bonusSpend = order.bonusSpend ?? 0
+  const payAmount = order.payAmount ?? order.total
   const isTest = orderId.startsWith('TEST-')
 
   return (
@@ -105,12 +108,12 @@ function OrderView() {
               <div className="order-page__actions">
                 {order.payUrl && (
                   <a href={order.payUrl} className="btn btn--primary">
-                    {t.order.payNow} {formatSom(order.total)}
+                    {t.order.payNow} {formatSom(payAmount)}
                   </a>
                 )}
                 {isTest && (
                   <button type="button" className="btn btn--primary" onClick={mockPay} disabled={paying}>
-                    {t.order.mockPay} {formatSom(order.total)}
+                    {t.order.mockPay} {formatSom(payAmount)}
                   </button>
                 )}
               </div>
@@ -148,10 +151,22 @@ function OrderView() {
             <span>{order.deliveryMethod === 'delivery' ? t.checkout.courier : t.checkout.pickup}</span>
             <strong>{order.deliveryPrice > 0 ? formatSom(order.deliveryPrice) : t.checkout.courierFree}</strong>
           </div>
+          {bonusSpend > 0 && (
+            <div className="order-row order-row--bonus">
+              <span>{t.order.bonusPaid}</span>
+              <strong>−{formatSom(bonusSpend)}</strong>
+            </div>
+          )}
           <div className="summary-card__total">
-            <span>{t.checkout.total}</span>
-            <span>{formatSom(order.total)}</span>
+            <span>{paid ? t.order.moneyPaid : t.checkout.total}</span>
+            <span>{formatSom(payAmount)}</span>
           </div>
+          {(order.bonusEarned ?? 0) > 0 && (
+            <div className="order-row order-row--bonus">
+              <span>{t.order.bonusEarned}</span>
+              <strong>+{formatSom(order.bonusEarned ?? 0)}</strong>
+            </div>
+          )}
         </aside>
       </div>
     </div>

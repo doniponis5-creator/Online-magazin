@@ -72,7 +72,7 @@ def _shop_callback_url() -> str:
 
 
 def _site_base_url() -> str:
-    return _cfg("shop_site_base_url", "https://smartcentr.store").rstrip("/")
+    return _cfg("shop_site_base_url", "https://shop.smartcentr.store").rstrip("/")
 
 
 def _money(value) -> str:
@@ -154,6 +154,7 @@ class SiteOrderCreate(BaseModel):
     lines: List[SiteLine]
     goodsTotal: float
     total: float
+    bonus: int = 0          # сколько бонусов SBonus клиент списывает (целые сомы)
     lang: str = "ru"
 
 
@@ -177,6 +178,8 @@ def _check_site_order(order: SiteOrderCreate) -> None:
         problems.append("сумма товаров")
     if abs(goods + Decimal(str(order.delivery.price)) - Decimal(str(order.total))) > Decimal("0.01"):
         problems.append("итог")
+    if order.bonus < 0 or order.bonus >= order.total:
+        problems.append("бонусы")
     if problems:
         raise ValueError(", ".join(problems))
 
@@ -186,6 +189,7 @@ class MarkDone(BaseModel):
     pko_number_1c: str = ""
     rtu_number_1c: str = ""
     realized: bool = False
+    bonus_earned: float = 0
     note: str = ""
 
 
@@ -209,6 +213,17 @@ async def site_create_order(request: Request, db: AsyncSession = Depends(get_db)
     except Exception as error:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"заказ не прошёл проверку: {error}")
 
+    bonus = Decimal(payload.bonus)
+    if bonus > 0:
+        from .shop_customers import _customer, _account, max_spend, max_spend_pct
+        customer = await _customer(db, payload.customer.phone)
+        if not customer or not customer.is_active:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "бонусы: клиент не найден в SBonus")
+        account = await _account(db, customer)
+        allowed = max_spend(Decimal(str(account.balance or 0)), Decimal(str(payload.total)), await max_spend_pct(db))
+        if bonus > allowed:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"бонусы: можно списать не больше {allowed} сом")
+
     order = ShopOrder(
         order_id=_new_order_id(),
         token=secrets.token_hex(16),
@@ -219,17 +234,19 @@ async def site_create_order(request: Request, db: AsyncSession = Depends(get_db)
         lines=[l.dict() for l in payload.lines],
         goods_total=Decimal(str(payload.goodsTotal)),
         total=Decimal(str(payload.total)),
+        bonus_spend=bonus,
+        pay_amount=Decimal(str(payload.total)) - bonus,
         lang="ky" if payload.lang == "ky" else "ru",
     )
     db.add(order)
     await db.commit()
-    await _log(db, order, "created", {"total": payload.total}, _client_ip(request))
+    await _log(db, order, "created", {"total": payload.total, "bonus": payload.bonus}, _client_ip(request))
 
     try:
         data = {
             "order_id": order.order_id,
             "desc": f"Заказ {order.order_id} — Smart Centr"[:1000],
-            "amount": obank._to_kopecks(order.total),  # КОПЕЙКИ (тыйын)
+            "amount": obank._to_kopecks(order.money_amount()),  # КОПЕЙКИ (тыйын); бонусы уже вычтены
             "currency": "KGS",
             "test": int(_cfg("obank_test", "0") or "0"),
             "long_term": 0,
@@ -281,8 +298,8 @@ async def _check_and_confirm(db: AsyncSession, order: ShopOrder, by: str, raw: d
     if not st.get("approved"):
         return False
     paid_amount = Decimal(str(st.get("amount") or 0))
-    if paid_amount and paid_amount + Decimal("1") < Decimal(str(order.total)):
-        order.note = f"⚠ оплачено {paid_amount} меньше суммы заказа {order.total}"
+    if paid_amount and paid_amount + Decimal("1") < Decimal(str(order.money_amount())):
+        order.note = f"⚠ оплачено {paid_amount} меньше суммы к оплате {order.money_amount()}"
         await db.commit()
         await _log(db, order, "amount_mismatch", {"paid": float(paid_amount)})
         return False
@@ -295,6 +312,22 @@ async def _check_and_confirm(db: AsyncSession, order: ShopOrder, by: str, raw: d
         order.obank_raw = raw
     await db.commit()
     await _log(db, order, "paid", {"by": by, "trans_id": order.obank_trans_id})
+
+    if Decimal(str(order.bonus_spend or 0)) > 0:
+        try:
+            from .shop_customers import spend_for_order
+            spent = await spend_for_order(db, order)
+            order.bonus_spent = spent
+            if spent < Decimal(str(order.bonus_spend)):
+                order.note = f"⚠ бонусов списано {spent} из {order.bonus_spend} — баланс уменьшился после оформления"
+            await db.commit()
+            await _log(db, order, "bonus_spent", {"planned": float(order.bonus_spend), "spent": float(spent)})
+        except Exception as error:
+            await db.rollback()
+            logger.error(f"shop bonus spend failed {order.order_id}: {error}")
+            order.note = f"⚠ бонусы не списаны: {error}"[:1000]
+            await db.commit()
+            await _log(db, order, "bonus_failed", {"error": str(error)})
     _notify_paid(order)
     return True
 
@@ -302,12 +335,16 @@ async def _check_and_confirm(db: AsyncSession, order: ShopOrder, by: str, raw: d
 def _notify_paid(order: ShopOrder) -> None:
     delivery = order.delivery or {}
     lines = "\n".join(f"• {l.get('name')} × {l.get('qty')} — {_money(l.get('sum'))}" for l in order.lines or [])
+    planned = Decimal(str(order.bonus_spend or 0))
+    spent = Decimal(str(order.bonus_spent or 0))
+    money = f"{_money(order.money_amount())} (O!Деньги)" + (f" + {_money(spent)} бонусами" if spent > 0 else "")
+    bonus_warn = (f"\n⚠ Бонусов списано {_money(spent)} вместо {_money(planned)} — проверьте скидку" if spent < planned else "")
     how = (f"🚚 Доставка: {delivery.get('city', '')}, {delivery.get('address', '')}"
            if delivery.get("method") == "delivery" else "🏬 Самовывоз из магазина")
     try:
         wa.send_text(order.customer_phone, (
             f"Здравствуйте, {order.customer_name.split()[0]}!\n"
-            f"Оплата заказа {order.order_id} на {_money(order.total)} получена ✅\n\n"
+            f"Оплата заказа {order.order_id} получена ✅\n💵 {money}\n\n"
             f"{lines}\n{how}\n\n"
             f"Сотрудник Smart Centr свяжется с вами. Статус заказа:\n"
             f"{_site_base_url()}/{order.lang}/order/{order.order_id}?token={order.token}"
@@ -317,7 +354,7 @@ def _notify_paid(order: ShopOrder) -> None:
     try:
         wa.send_text(_admin_phone(), (
             f"🛒 НОВЫЙ ОПЛАЧЕННЫЙ ЗАКАЗ С САЙТА\n━━━━━━━━━━━━━━━━━━━\n"
-            f"№ {order.order_id}\n💵 {_money(order.total)} (O!Деньги)\n"
+            f"№ {order.order_id}\n💵 {money}{bonus_warn}\n"
             f"👤 {order.customer_name}\n📱 {order.customer_phone}\n{how}\n"
             f"{('💬 ' + order.comment) if order.comment else ''}\n━━━━━━━━━━━━━━━━━━━\n{lines}\n\n"
             f"Заказ клиента и ПКО 1С создаст автоматически в течение 5 минут."
@@ -401,6 +438,8 @@ async def mark_done(order_id: str, request: Request, db: AsyncSession = Depends(
     order.pko_number_1c = payload.pko_number_1c[:32]
     order.rtu_number_1c = payload.rtu_number_1c[:32]
     order.realized = payload.realized
+    if payload.bonus_earned:
+        order.bonus_earned = Decimal(str(payload.bonus_earned))
     order.synced_at = datetime.utcnow()
     order.note = payload.note[:1000] or order.note
     await db.commit()

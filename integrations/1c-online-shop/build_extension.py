@@ -807,7 +807,7 @@ def build_configuration(out, variant):
           '<v8:Value xsi:type="app:ApplicationUsePurpose">PlatformApplication</v8:Value></UsePurposes>'
           "<ScriptVariant>Russian</ScriptVariant><DefaultRoles>"
           f'<xr:Item xsi:type="xr:MDObjectRef">Role.{ROLE}</xr:Item></DefaultRoles>'
-          "<Vendor>Smart Centr</Vendor><Version>1.4.0.1</Version>"
+          "<Vendor>Smart Centr</Vendor><Version>1.5.0.1</Version>"
           f"<DefaultLanguage>Language.{variant['default_language']}</DefaultLanguage>"
           "<BriefInformation/><DetailedInformation/><Copyright/><VendorInformationAddress/>"
           "<ConfigurationInformationAddress/><InterfaceCompatibilityMode>TaxiEnableVersion8_2</InterfaceCompatibilityMode>"

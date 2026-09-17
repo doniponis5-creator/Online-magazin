@@ -18,6 +18,7 @@
 # ════════════════════════════════════════════════════════════════════════════
 set -u
 DOMAIN=${1:-shop.smartcentr.store}
+NAMES="${*:-$DOMAIN}"   # все имена сайта: bash install_site.sh whitefitpro.com www.whitefitpro.com
 API_HOST=api.smartcentr.store
 SITE=/opt/smartcentr-site
 ARCHIVE=/tmp/smartcentr-site.tar.gz
@@ -40,7 +41,10 @@ command -v nginx >/dev/null || fail "Нет nginx"
 grep -q '^SHOP_SITE_SECRET=' "$SBONUS_ENV" || fail "В $SBONUS_ENV нет SHOP_SITE_SECRET — сначала deploy_shop.sh"
 curl -s -m 10 https://$API_HOST/health | grep -q healthy || fail "$API_HOST не отвечает healthy"
 # Домен не должен уже обслуживаться чужим конфигом — иначе будет конфликт, а чужое мы не трогаем.
-BUSY=$(grep -lE "server_name[^;]*[[:space:]]${DOMAIN//./\\.}([[:space:]]|;)" /etc/nginx/sites-enabled/* /etc/nginx/conf.d/*.conf 2>/dev/null | grep -v smartcentr-shop.conf || true)
+BUSY=""
+for n in $NAMES; do
+    BUSY="$BUSY$(grep -lE "server_name[^;]*[[:space:]]${n//./\\.}([[:space:]]|;)" /etc/nginx/sites-enabled/* /etc/nginx/conf.d/*.conf 2>/dev/null | grep -v smartcentr-shop.conf || true)"
+done
 [ -z "$BUSY" ] || fail "$DOMAIN уже есть в другом конфиге nginx: $BUSY — пришлите этот вывод в чат"
 echo "✓ всё на месте"
 
@@ -123,14 +127,14 @@ if [ -f "$CERT" ] && [ -f "$KEY" ]; then
 server {
     listen 80;
     listen [::]:80;
-    server_name $DOMAIN;
+    server_name $NAMES;
     location /.well-known/acme-challenge/ { root /var/www/html; }
     location / { return 301 https://$DOMAIN\$request_uri; }
 }
 server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
-    server_name $DOMAIN;
+    server_name $NAMES;
     ssl_certificate $CERT;
     ssl_certificate_key $KEY;
 $SSL_OPTS
@@ -144,7 +148,7 @@ else
 server {
     listen 80;
     listen [::]:80;
-    server_name $DOMAIN;
+    server_name $NAMES;
     location /.well-known/acme-challenge/ { root /var/www/html; }
 $PROXY
 }
@@ -175,7 +179,7 @@ if [ ! -f "$CERT" ]; then
         echo "⚠ DNS $DOMAIN → '${DNS_IP:-нет записи}', а этот сервер — $MY_IP. certbot пропущен."
         echo "  Добавьте A-запись и запустите скрипт ещё раз."
     elif command -v certbot >/dev/null; then
-        certbot --nginx -d $DOMAIN --non-interactive --agree-tos --redirect --keep-until-expiring \
+        certbot --nginx --cert-name $DOMAIN $(for n in $NAMES; do printf -- "-d %s " "$n"; done) --non-interactive --agree-tos --redirect --keep-until-expiring \
             || echo "⚠ HTTPS не получен. Сайт работает по HTTP."
     else
         echo "⚠ certbot не установлен — сайт работает по HTTP"

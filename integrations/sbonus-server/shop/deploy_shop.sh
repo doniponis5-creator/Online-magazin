@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ════════════════════════════════════════════════════════════════════════════
-# Деплой: заказы интернет-магазина (сайт → O!Деньги → 1С) на сервер SBonus.
+# Деплой: интернет-магазин (заказы, каталог, вход покупателя, бонусы) на сервер SBonus.
 # Добавляет пакет app/shop и 2 новые таблицы. Оплату рассрочки (app/payments)
 # НЕ меняет — только использует её модули O!Деньги и WhatsApp.
 # Пересобирается ТОЛЬКО api, как в deploy_balance_update.sh. Есть бэкап и откат.
@@ -20,14 +20,15 @@ SRC="$(cd "$(dirname "$0")" && pwd)"
 API=sbonus_api
 DB=sbonus_db
 TS=$(date +%Y%m%d_%H%M%S)
-FILES="__init__.py shop_models.py shop_router.py shop_catalog.py"
+FILES="__init__.py shop_models.py shop_router.py shop_catalog.py shop_customers.py"
+MIGRATIONS="001_shop_orders_migration.sql 002_shop_catalog_migration.sql 003_shop_bonus_migration.sql"
 
-echo "=== Деплой: интернет-магазин (заказы + каталог из 1С) ==="
+echo "=== Деплой: интернет-магазин (заказы + каталог + вход и бонусы) ==="
 
 # ── 0. Проверки ──────────────────────────────────────────────────────────────
 [ -d "$APP/payments" ] || { echo "❌ Нет $APP/payments — модуль O!Деньги не найден"; exit 1; }
 [ -f "$APP/main.py" ] || { echo "❌ Нет $APP/main.py"; exit 1; }
-for f in $FILES 001_shop_orders_migration.sql 002_shop_catalog_migration.sql; do [ -f "$SRC/$f" ] || { echo "❌ Нет файла: $SRC/$f"; exit 1; }; done
+for f in $FILES $MIGRATIONS; do [ -f "$SRC/$f" ] || { echo "❌ Нет файла: $SRC/$f"; exit 1; }; done
 docker ps --format '{{.Names}}' | grep -qx "$API" || { echo "❌ Контейнер $API не запущен"; exit 1; }
 echo "✓ Файлы и контейнеры на месте"
 
@@ -44,8 +45,13 @@ missing = [n for n in need if not hasattr(o, n)] + ([] if hasattr(w, 'send_text'
 assert not missing, 'нет функций: %s' % missing
 import app.shop_precheck.shop_router as r
 import app.shop_precheck.shop_catalog as c
+import app.shop_precheck.shop_customers as cu
+from app.models import Branch, BonusAccount, Customer, Setting, Tier, Transaction, TransactionType
+from app.core.redis import check_rate_limit, redis_client
+assert cu.max_spend(__import__('decimal').Decimal('5000'), __import__('decimal').Decimal('20000'), __import__('decimal').Decimal('10')) == 2000
 paths = [x.path for x in r.router_site.routes + r.router_obank_shop.routes + r.router_1c_shop.routes
-         + c.router_1c_catalog.routes + c.router_site_catalog.routes + c.router_public_photos.routes]
+         + c.router_1c_catalog.routes + c.router_site_catalog.routes + c.router_public_photos.routes
+         + cu.router_site_customer.routes]
 print('OK: модуль импортируется, маршрутов:', len(paths))
 "
 PRECHECK=$?
@@ -121,6 +127,28 @@ print("✓ main.py: роутеры каталога подключены")
 PYEOF
 [ $? -eq 0 ] || { cp "$APP/main.py.bak_$TS" "$APP/main.py"; echo "↩️ main.py восстановлен"; exit 1; }
 
+python3 - "$APP/main.py" <<'PYEOF'
+import sys
+p = sys.argv[1]
+s = open(p, encoding="utf-8").read()
+if "app.shop.shop_customers" in s:
+    print("• main.py уже подключает вход покупателя — пропуск")
+    raise SystemExit(0)
+anchor = 'app.include_router(router_public_photos, prefix="/api/v1")'
+idx = s.find(anchor)
+if idx < 0:
+    raise SystemExit("❌ В main.py нет роутеров каталога — не к чему подключить вход покупателя")
+end = s.find("\n", idx)
+end = len(s) if end < 0 else end
+block = """
+from app.shop.shop_customers import router_site_customer
+app.include_router(router_site_customer, prefix="/api/v1")  # /api/v1/webhook/site/customer/*"""
+s = s[:end] + block + s[end:]
+open(p, "w", encoding="utf-8").write(s)
+print("✓ main.py: роутер входа покупателя и бонусов подключён")
+PYEOF
+[ $? -eq 0 ] || { cp "$APP/main.py.bak_$TS" "$APP/main.py"; echo "↩️ main.py восстановлен"; exit 1; }
+
 # ── 4. Синтаксис ─────────────────────────────────────────────────────────────
 for f in $FILES; do
     python3 -c "import ast; ast.parse(open('$DST/$f', encoding='utf-8').read())" \
@@ -137,13 +165,17 @@ docker cp "$SRC/002_shop_catalog_migration.sql" "$DB:/tmp/002_shop_catalog_migra
 docker exec "$DB" psql -U sbonus -d sbonus_db -v ON_ERROR_STOP=1 -f /tmp/002_shop_catalog_migration.sql \
     && echo "✓ Таблицы shop_catalog, shop_photos" \
     || { echo "❌ Миграция каталога не прошла — стоп (код не пересобран)"; exit 1; }
+docker cp "$SRC/003_shop_bonus_migration.sql" "$DB:/tmp/003_shop_bonus_migration.sql"
+docker exec "$DB" psql -U sbonus -d sbonus_db -v ON_ERROR_STOP=1 -f /tmp/003_shop_bonus_migration.sql \
+    && echo "✓ Колонки бонусов в shop_orders, настройки SITE_WELCOME_BONUS_AMOUNT и SITE_BONUS_MAX_PCT" \
+    || { echo "❌ Миграция бонусов не прошла — стоп (код не пересобран)"; exit 1; }
 
 # ── 6. Секрет сайта в .env (создаётся один раз) ──────────────────────────────
 if grep -q '^SHOP_SITE_SECRET=' "$ENV_FILE" 2>/dev/null; then
     echo "• SHOP_SITE_SECRET уже есть в $ENV_FILE"
 else
     cp "$ENV_FILE" "$ENV_FILE.bak_$TS" 2>/dev/null
-    printf '\n# Интернет-магазин: общий секрет сайта и сервера\nSHOP_SITE_SECRET=%s\nSHOP_SITE_BASE_URL=https://smartcentr.store\n' \
+    printf '\n# Интернет-магазин: общий секрет сайта и сервера\nSHOP_SITE_SECRET=%s\nSHOP_SITE_BASE_URL=https://shop.smartcentr.store\n' \
         "$(openssl rand -hex 32)" >> "$ENV_FILE"
     echo "✓ SHOP_SITE_SECRET создан в $ENV_FILE (тот же секрет нужно указать сайту как SHOP_API_SECRET)"
 fi
@@ -152,7 +184,7 @@ fi
 cd "$CD" || exit 1
 docker compose -f "$COMPOSE" build api \
     || { echo "❌ build не удался — старый контейнер работает. Откат: cp $APP/main.py.bak_$TS $APP/main.py"; exit 1; }
-docker compose -f "$COMPOSE" up -d api
+docker compose -f "$COMPOSE" up -d --no-deps api
 echo "Жду 15 сек..."; sleep 15
 
 # ── 7.1 Автооткат, если api не поднялся ──────────────────────────────────────
@@ -163,7 +195,7 @@ if ! echo "$HEALTH" | grep -q '"healthy"'; then
     cp "$APP/main.py.bak_$TS" "$APP/main.py"
     rm -rf "$DST"
     [ -d "$DST.bak_$TS" ] && mv "$DST.bak_$TS" "$DST"
-    docker compose -f "$COMPOSE" build api && docker compose -f "$COMPOSE" up -d api
+    docker compose -f "$COMPOSE" build api && docker compose -f "$COMPOSE" up -d --no-deps api
     sleep 15
     echo "После отката: $(curl -s -m 10 https://api.smartcentr.store/health)"
     echo "Таблицы shop_* остались (они пустые и никому не мешают). Пришлите вывод в чат."
@@ -182,6 +214,8 @@ echo "--- рассрочка по-прежнему на месте (ожидае
 curl -s -o /dev/null -w "  HTTP %{http_code}\n" -X POST https://api.smartcentr.store/api/v1/webhook/1c/payment/create
 echo "--- каталог сайта без подписи (ожидается 401) ---"
 curl -s -o /dev/null -w "  HTTP %{http_code}\n" https://api.smartcentr.store/api/v1/webhook/site/catalog
+echo "--- вход покупателя без подписи (ожидается 401) ---"
+curl -s -o /dev/null -w "  HTTP %{http_code}\n" -X POST https://api.smartcentr.store/api/v1/webhook/site/customer/send-code
 echo "--- ошибки запуска ---"
 docker logs "$API" --since 30s 2>&1 | grep -i -E "error|traceback" | tail -10 || echo "  (ошибок нет)"
 
@@ -189,6 +223,6 @@ echo ""
 echo "=== ГОТОВО ==="
 echo "Секрет для сайта (SHOP_API_SECRET) — показать:  grep SHOP_SITE_SECRET $ENV_FILE"
 echo ""
-echo "ОТКАТ:"
-echo "  cp $APP/main.py.bak_$TS $APP/main.py && rm -rf $DST"
-echo "  cd $CD && docker compose -f $COMPOSE build api && docker compose -f $COMPOSE up -d api"
+echo "ОТКАТ КОДА (данные заказов и бонусов остаются в БД):"
+echo "  cp $APP/main.py.bak_$TS $APP/main.py && rm -rf $DST && { [ -d $DST.bak_$TS ] && cp -r $DST.bak_$TS $DST; }"
+echo "  cd $CD && docker compose -f $COMPOSE build api && docker compose -f $COMPOSE up -d --no-deps api"

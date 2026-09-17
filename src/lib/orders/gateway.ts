@@ -23,6 +23,12 @@ export type PublicOrder = {
   status: OrderStatus
   total: number
   goodsTotal: number
+  /** списано бонусов SBonus */
+  bonusSpend?: number
+  /** оплачено деньгами через O!Деньги */
+  payAmount?: number
+  /** начислено бонусов за покупку (после реализации в 1С) */
+  bonusEarned?: number
   deliveryPrice: number
   deliveryMethod: 'pickup' | 'delivery'
   lines: { name: string; qty: number; price: number; sum: number }[]
@@ -48,7 +54,7 @@ function sign(body: string): string {
   return createHmac('sha256', API_SECRET ?? '').update(body, 'utf8').digest('hex')
 }
 
-async function callServer<T>(path: string, init: { method: 'GET' | 'POST'; body?: unknown }): Promise<T> {
+export async function callServer<T>(path: string, init: { method: 'GET' | 'POST'; body?: unknown }): Promise<T> {
   if (!API_URL || !API_SECRET) throw new Error('Сервер заказов не настроен (SHOP_API_URL, SHOP_API_SECRET)')
   const body = init.body === undefined ? undefined : JSON.stringify(init.body)
   const response = await fetch(`${API_URL}${path}`, {
@@ -81,6 +87,9 @@ function toPublic(orderId: string, entry: MockEntry, payUrl: string | null): Pub
     status: entry.status,
     total: entry.order.total,
     goodsTotal: entry.order.goodsTotal,
+    bonusSpend: entry.order.bonus,
+    payAmount: entry.order.total - entry.order.bonus,
+    bonusEarned: 0,
     deliveryPrice: entry.order.delivery.price,
     deliveryMethod: entry.order.delivery.method,
     lines: entry.order.lines.map((l) => ({ name: l.name, qty: l.qty, price: l.price, sum: l.sum })),
@@ -122,11 +131,11 @@ export async function getOrder(orderId: string, token: string): Promise<PublicOr
   }
 }
 
-/** Только тестовый режим: имитация успешной оплаты. */
-export function mockPay(orderId: string, token: string): boolean {
-  if (paymentMode() !== 'mock') return false
+/** Только тестовый режим: имитация успешной оплаты. Возвращает оплаченный заказ (повторно — null). */
+export function mockPay(orderId: string, token: string): ValidatedOrder | null {
+  if (paymentMode() !== 'mock') return null
   const entry = mockOrders.get(orderId)
-  if (!entry || entry.token !== token) return false
+  if (!entry || entry.token !== token || entry.status !== 'awaiting_payment') return null
   entry.status = 'paid'
-  return true
+  return entry.order
 }

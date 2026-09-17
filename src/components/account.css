@@ -1,0 +1,44 @@
+/* Вход по коду WhatsApp, кабинет покупателя и бонусы в оформлении заказа */
+
+.login-card { display: grid; gap: 14px; max-width: 420px; }
+.login-card form { display: grid; gap: 14px; }
+.login-card__title { font-size: 20px; margin: 0; }
+.login-card__hint { margin: 0; color: var(--color-ink-soft); line-height: 1.6; }
+.login-card__code { font-size: 26px; letter-spacing: 0.4em; text-align: center; font-variant-numeric: tabular-nums; }
+.login-card__welcome { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--color-lime-soft); font-weight: 650; }
+.login-card__links { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+
+.link-btn { background: none; border: 0; padding: 6px 0; color: var(--color-ink-soft); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.link-btn:hover { color: var(--color-ink); }
+.link-btn:disabled { opacity: 0.5; cursor: default; }
+
+.account-welcome { margin-top: 20px; padding: 14px 16px; border-radius: 12px; background: var(--color-surface); font-weight: 700; color: var(--color-ink); }
+.account-welcome__note { font-size: 14px; margin-top: 8px; }
+.account-balance { display: grid; gap: 4px; margin: 20px 0 12px; }
+.account-balance__label { color: var(--color-ink-soft); font-weight: 600; }
+.account-balance__value { font-size: clamp(34px, 5vw, 48px); line-height: 1.05; font-variant-numeric: tabular-nums; }
+.account-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+.account-actions .btn { margin-top: 0; }
+.account-access__second { margin-top: 36px; }
+
+.account-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.account-list li > a,
+.account-list li > div { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px 14px; border: 1px solid var(--color-border); border-radius: 12px; }
+.account-list li > a:hover { border-color: var(--color-border-strong); }
+.account-list span { display: grid; gap: 2px; min-width: 0; }
+.account-list small { color: var(--color-muted); font-size: 13px; overflow-wrap: anywhere; }
+.account-list__sum { text-align: right; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.account-list__sum.is-plus { color: var(--color-success); }
+.account-list__sum.is-minus { color: var(--color-ink); }
+
+/* Оформление заказа */
+.checkout-login { display: grid; gap: 12px; margin-bottom: 24px; }
+.checkout-login p { margin: 0; color: var(--color-ink-soft); }
+.checkout-user { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; color: var(--color-ink-soft); }
+.checkout-bonus { display: grid; gap: 10px; padding: 16px; border-radius: 12px; background: var(--color-lime-soft); }
+.checkout-bonus__head { display: flex; justify-content: space-between; gap: 12px; font-weight: 700; }
+.checkout-bonus p { margin: 0; color: var(--color-ink-soft); }
+.checkout-bonus__row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.checkout-bonus__row label { display: inline-flex; align-items: center; gap: 8px; font-weight: 650; cursor: pointer; }
+.checkout-bonus__row input[type='number'] { width: 130px; }
+.order-row--bonus strong { color: var(--color-success); }

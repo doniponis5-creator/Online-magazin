@@ -1,7 +1,7 @@
 # Smart Centr — онлайн-магазин: что уже сделано
 
 > Файл для нового чата. Сначала прочитайте этот файл, потом [TODO_NEXT.md](TODO_NEXT.md).
-> Дата: 2026-09-17. Ветка git: `feature/milestone-01-02-storefront` (изменения **не закоммичены**).
+> Обновлено: 2026-09-17 (вечер). Ветка git: `feature/milestone-01-02-storefront`, всё закоммичено и отправлено в GitHub.
 
 ## 0. Правила работы (обязательно)
 
@@ -9,7 +9,7 @@
 - **Пароли, ключи, секреты сам не вводить** (пароль 1С, секреты сервера, пароль VPS), даже если владелец присылает их в чат. Пароли владелец пишет сам в `.env.local`. Скрипты, которым нужен пароль 1С, запускает владелец.
 - **Рабочая база 1С:** основную конфигурацию не менять, только расширение «Онлайн магазин». Сначала проверка на тестовой копии.
 - **SBonus на сервере не ломать.** Любое изменение сервера — скриптом с бэкапом и автооткатом. Скрипт запускает владелец или (только с явного разрешения) я по SSH-ключу. Без разрешения на сервере — только чтение.
-- **Главный сайт smartcentr.store не трогать.** Магазин будет на **shop.smartcentr.store**.
+- **Главный сайт smartcentr.store не трогать.** Магазин временно на **https://whitefitpro.com** (потом свой домен).
 - Главную страницу сайта не менять (кроме блока «Бренды»).
 - Коммит и push в GitHub — только по просьбе владельца. Репозиторий: https://github.com/doniponis5-creator/Online-magazin
 
@@ -29,6 +29,15 @@
 
 Проверено реальной оплатой 1 сом: сайт → сервер → O!Деньги → WhatsApp → 1С (тестовая копия).
 
+**Бонусы SBonus на сайте (установлено на сервер и сайт 2026-09-17):**
+```
+покупатель → телефон → код в WhatsApp → вход (cookie sc_customer)
+   новый номер → имя → клиент в SBonus + 1000 сом (только новым)
+оформление → бонусы до SITE_BONUS_MAX_PCT% заказа → O!Деньги на (сумма − бонусы)
+   оплата подтверждена → сервер списывает бонусы (чек СП-SC-…)
+1С → заказ со скидкой бонусами по строкам, ПКО = деньги → РТУ → начисление бонуса (чек РТУ-<номер>)
+```
+
 ## 2. Сайт (папка `D:\Projects\Online-magazin`)
 
 Next.js 16 (App Router), React 19, TypeScript. Тесты: `npm test` (vitest, 57 тестов), e2e — Playwright через msedge.
@@ -42,9 +51,13 @@ Next.js 16 (App Router), React 19, TypeScript. Тесты: `npm test` (vitest, 5
 | «Цена по запросу» (цена 0) | `ProductCard.tsx`, `ProductPurchase.tsx`, `AddToCartButton.tsx` |
 | Новые иконки товаров | `src/components/ProductArt.tsx` (fridge, stove, fan, battery, box) |
 | Оформление заказа + оплата O!Деньги | `src/app/[lang]/checkout/page.tsx`, `src/lib/orders/order.ts` (проверка заказа, телефон +996, доставка), `src/lib/orders/gateway.ts` (связь с сервером, подпись HMAC), `src/app/api/orders/route.ts`, `src/app/api/orders/[id]/route.ts`, `src/app/api/orders/[id]/mock-pay/route.ts` |
+| Вход покупателя по коду WhatsApp, сессия | `src/lib/customer/session.ts` (подписанная cookie `sc_customer`, 30 дней), `src/lib/customer/gateway.ts`, API `src/app/api/customer/{send-code,verify,register,me}`, `src/app/api/customer/route-helpers.ts` |
+| Кабинет покупателя | `src/app/[lang]/account/page.tsx`, `src/components/AccountView.tsx` (баланс, уровень, история, заказы; хук `useCustomer`), `src/components/CustomerLogin.tsx`, `src/components/account.css` |
+| Бонусы в оформлении заказа | `src/app/[lang]/checkout/page.tsx` (без входа заказ нельзя; галочка «Оплатить бонусами»), `src/app/api/orders/route.ts` (телефон из сессии, `applyBonus`), `src/lib/orders/order.ts` (`bonus`, `applyBonus`) |
+| Тестовый режим без сервера | `.claude/launch.json` → `storefront-mock` (`SHOP_PAYMENT_MODE=mock`): код входа **1234**, бонусы в памяти |
 | Страница статуса заказа (опрос каждые 5 с) | `src/app/[lang]/order/[id]/page.tsx`, `layout.tsx` (noindex) |
 | Тексты | `src/lib/i18n/dictionaries.ts` (блоки `checkout`, `order`, `catalog.*`) |
-| Тесты | `__tests__/orders.test.ts`, `__tests__/sku.test.ts` |
+| Тесты | `__tests__/orders.test.ts`, `__tests__/sku.test.ts`, `__tests__/customer.test.ts` (всего 62) |
 | Настройки | `.env.local` (заполнен владельцем, не в git), `.env.example` |
 | Режим оплаты | `paymentMode()`: `live`, если заданы `SHOP_API_URL` и `SHOP_API_SECRET`; иначе тестовый mock |
 
@@ -53,7 +66,7 @@ Next.js 16 (App Router), React 19, TypeScript. Тесты: `npm test` (vitest, 5
 ## 3. Расширение 1С «Онлайн магазин» (`integrations/1c-online-shop/`)
 
 - База: 1С УТ 11.5.17.234 (не BAS), платформа 8.3.27, файловая. Рабочая: `D:\doonni\1С Предприятие\Базы\Смарт центр база`. Есть тестовая копия.
-- Расширение собирается из XML скриптом `build_extension.py`. Версия **1.4.0.1**. Установлено в тестовую копию и в **рабочую базу**.
+- Расширение собирается из XML скриптом `build_extension.py ut`. Версия **1.5.0.1** (бонусы) — установлена в **тестовую копию**. В **рабочей базе пока 1.4** → ⚠ до первого заказа с бонусами поставить 1.5 (`manage.py install prod`), иначе ПКО запишется на полную сумму.
 - Управление: `python integrations/1c-online-shop/manage.py copy | install test | install prod | open`. Для `install prod` надо напечатать `УСТАНОВИТЬ`, делается бэкап .cfe. Перед установкой закрыть все сеансы 1С (иначе «исключительная блокировка»).
 - Логин 1С берётся из `.env.local` через `scripts/local_env.py`.
 
@@ -63,6 +76,7 @@ Next.js 16 (App Router), React 19, TypeScript. Тесты: `npm test` (vitest, 5
 - Настройки заказов: организация, склад, касса (по умолчанию «О! Business»), соглашение, услуга доставки, адрес сервера, ключ API. Кнопки «Проверить связь», «Загрузить сейчас», «Отправить каталог».
 - Регламентные задания: `ИМ_ЗагрузкаЗаказовСайта` — каждые 300 с; `ИМ_ОтправкаКаталогаНаСайт` — каждые 600 с.
 - Загрузка заказа: партнёр по телефону (последние 9 цифр) или новый → контрагент → ЗаказКлиента → ПКО в кассу → РеализацияТоваровУслуг, если товар в наличии. Защита от повторов: метка `САЙТ:<order_id>` в комментарии.
+- Бонусы (1.5): `bonus_spent` → ручная скидка по строкам товаров (`РаспределитьСкидкуБонусами`, `ПроцентРучнойСкидки`/`СуммаРучнойСкидки`, этап оплаты = сумма после скидки), комментарий `SBonus+ скидка: N сом` (как кнопка SBonusPlus). ПКО = `pay_amount`. После проведённой РТУ — `НачислитьБонусЗаРеализацию`: `POST /api/v1/webhook/1c/purchase`, `branch_id` из константы `SB_BranchID`, чек `РТУ-<номер>`, комментарий `SBonus+ начислено`; 409 = уже начислено. `bonus_earned` уходит в mark-done.
 
 Файлы модулей: `src/ФормаМодуль.bsl`, `src/КарточкаТовараМодуль.bsl`, `src/РедакторФотоМодуль.bsl`, `src/РедакторФото.html`, `src/ОбщийМодульСервер.bsl` (ИМ_ОнлайнМагазинСервер), `src/ЗаказыСайтаСервер.bsl` (ИМ_ЗаказыСайтаСервер), `src/НастройкиМагазинаМодуль.bsl`.
 
@@ -87,23 +101,29 @@ Next.js 16 (App Router), React 19, TypeScript. Тесты: `npm test` (vitest, 5
 | `shop_router.py` | `POST /api/v1/webhook/site/orders` (создать заказ + счёт O!Деньги), `GET /api/v1/webhook/site/orders/{id}?token=`, `/api/v1/webhook/obank/shop-callback`, для 1С: `GET .../pending`, `POST .../{id}/mark-done`, `.../{id}/mark-failed`; WhatsApp клиенту и админу (996557100505) |
 | `shop_catalog.py` | приём каталога и фото из 1С, `GET /api/v1/webhook/site/catalog`, публичные фото `GET /api/v1/shop/photos/{key}.jpg` |
 | `deploy_shop.sh` | установка: бэкап БД и main.py, миграции, сборка только api, автооткат |
+| `shop_customers.py` | вход покупателя: `POST /api/v1/webhook/site/customer/send-code`, `/verify`, `/register`, `GET /api/v1/webhook/site/customer/{996XXXXXXXXX}?amount=&full=1`; `spend_for_order` (списание после оплаты, чек `СП-<order_id>`); welcome — транзакция PROMO с чеком `WELCOME-SITE-<phone>` (уникально) |
+| `003_shop_bonus_migration.sql` | колонки `bonus_spend, bonus_spent, pay_amount, bonus_earned` в `shop_orders`; настройки `SITE_WELCOME_BONUS_AMOUNT=1000`, `SITE_BONUS_MAX_PCT=10` в таблице `settings` SBonus |
 | `inspect_server.sh` | проверка сервера только на чтение |
 
 Подписи: сайт ↔ сервер — HMAC-SHA256 секретом `SHOP_SITE_SECRET` (у сайта `SHOP_API_SECRET`). 1С ↔ сервер — секрет `webhook_1c_secret` (в 1С константа `SB_WebhookSecret`), GET — заголовок `X-Api-Key`.
 
-⚠️ **Не запускать** команду «ОТКАТ», которую печатает `deploy_shop.sh`: сейчас она удалит и заказы.
+- Последняя установка сервера: 2026-09-17 13:48 (бэкап БД `/opt/sbonus/backups/before_shop_20260917_134821.sql.gz`). Команда «ОТКАТ КОДА» из вывода `deploy_shop.sh` возвращает только код, данные остаются.
+- Поменять бонусы сайта (без перезапуска): `docker exec sbonus_db psql -U sbonus -d sbonus_db -c "update settings set value='15' where key='SITE_BONUS_MAX_PCT'"` (аналогично `SITE_WELCOME_BONUS_AMOUNT`).
+- В SBonus один филиал «Смарт Центр» (`36eccf64-521e-4d37-a301-0b1fd6d10a4f`). Уровни: Bronze 1%, Silver 2%, Gold 3%, Platinum 5%, platinum 7% — ⚠ у Gold порог 15000 меньше Silver 90000 и два Platinum (сообщено владельцу, не трогали).
 
-### 4.2 Сайт на сервере (развёрнут, но на временном домене)
+### 4.2 Сайт на сервере — https://whitefitpro.com (временный домен)
 
 - Файлы: `/opt/smartcentr-site`. Контейнер `smartcentr_site`, порт `127.0.0.1:18820`. Проект compose: `deploy/site/docker-compose.yml`.
 - Каталог: cron `/etc/cron.d/smartcentr-site` → `deploy/site/update_catalog.sh` (каждые 10 мин; при изменении пересборка, при ошибке возврат к образу `:previous`). Лог: `/var/log/smartcentr-site.log`.
-- Установка: `deploy/site/pack.ps1` (архив 5,2 МБ) → `scp` → `deploy/site/install_site.sh`.
-- ⚠️ `install_site.sh` сейчас жёстко настроен на `smartcentr.store`. Он отключил nginx-конфиги `landing.conf` и `smartcentr.store` и добавил `smartcentr-shop.conf`. Бэкап: `/opt/smartcentr-site-backups/20260917_124103`, откат: `restore_previous_site.sh` в этой папке. certbot не сработал (DNS указывает на другой хостинг). **Это надо исправить — см. TODO_NEXT.md, задача 1.**
+- Обновление сайта: `deploy/site/pack.ps1` (запускать через **PowerShell**, не Git Bash — там другой tar) → `scp smartcentr-site.tar.gz deploy/site/install_site.sh root@145.223.100.16:/tmp/` → `bash /tmp/install_site.sh whitefitpro.com www.whitefitpro.com` (все имена домена через пробел).
+- Сменить домен: `deploy/site/set_shop_domain.sh <домен> [www.домен]` — выключает чужой конфиг этого домена, certbot, `SHOP_SITE_BASE_URL`, отмена `undo.sh` в папке бэкапа.
+- smartcentr.store — снова прежняя страница (landing). Старая программа WhiteFit (порт 3000) работает, но без домена (владелец разрешил).
+- Последняя установка сайта: 2026-09-17 13:50, бэкап `/opt/smartcentr-site-backups/20260917_135015`.
 
 ## 5. Известные проблемы
 
 - В каталоге на сервере только 1–2 товара, остатки видны как 0. Причина не найдена. Владелец ещё не прислал результат кнопки «Отправить каталог сейчас» в рабочей базе.
-- Все изменения в git не закоммичены.
+- Бонусы сайта не проверены реальным входом/заказом (нужен телефон владельца). В локальном каталоге нет товаров с ценой — заказ с бонусами на localhost не пройти.
 
 ## 6. Память Claude
 

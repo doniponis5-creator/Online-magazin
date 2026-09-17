@@ -35,6 +35,10 @@ class ShopOrder(Base):
     lines = Column(JSONB, nullable=False)          # [{productId, oneCId, code, name, price, qty, sum}]
     goods_total = Column(Numeric(14, 2), nullable=False)
     total = Column(Numeric(14, 2), nullable=False)
+    bonus_spend = Column(Numeric(14, 2), default=0)    # бонусы, которые клиент выбрал при оформлении
+    bonus_spent = Column(Numeric(14, 2), default=0)    # фактически списано после оплаты
+    pay_amount = Column(Numeric(14, 2))                # деньгами через O!Деньги = total − bonus_spend
+    bonus_earned = Column(Numeric(14, 2), default=0)   # начислено 1С при реализации
     lang = Column(String(4), default="ru")
 
     status = Column(String(20), default="awaiting_payment", index=True)
@@ -60,6 +64,10 @@ class ShopOrder(Base):
 
     events = relationship("ShopOrderEvent", back_populates="order", cascade="all, delete-orphan")
 
+    def money_amount(self):
+        """Сколько клиент платит деньгами (для старых заказов без бонусов — total)."""
+        return self.pay_amount if self.pay_amount is not None else self.total
+
     def to_site_dict(self) -> dict:
         """Для страницы заказа на сайте: без телефона и адреса."""
         delivery = self.delivery or {}
@@ -68,6 +76,9 @@ class ShopOrder(Base):
             "status": self.status,
             "total": float(self.total),
             "goodsTotal": float(self.goods_total),
+            "bonusSpend": float(self.bonus_spent or self.bonus_spend or 0),
+            "payAmount": float(self.money_amount()),
+            "bonusEarned": float(self.bonus_earned or 0),
             "deliveryPrice": float(delivery.get("price") or 0),
             "deliveryMethod": delivery.get("method") or "pickup",
             "lines": [
@@ -92,6 +103,8 @@ class ShopOrder(Base):
             "lines": self.lines,
             "goods_total": float(self.goods_total),
             "total": float(self.total),
+            "bonus_spent": float(self.bonus_spent or 0),   # скидка по строкам товаров в 1С
+            "pay_amount": float(self.money_amount()),      # сумма ПКО
             "obank_trans_id": self.obank_trans_id or "",
         }
 

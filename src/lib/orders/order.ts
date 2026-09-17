@@ -16,6 +16,8 @@ export type OrderRequest = {
   delivery: { method: DeliveryMethod; city?: string; address?: string }
   comment?: string
   lines: { productId: string; variantId: string; qty: number }[]
+  /** сколько бонусов SBonus списать (проверяется по балансу на сервере) */
+  bonus?: number
   lang?: 'ru' | 'ky'
 }
 
@@ -37,6 +39,8 @@ export type ValidatedOrder = {
   lines: OrderLine[]
   goodsTotal: number
   total: number
+  /** бонусы SBonus, целые сомы; деньгами платится total − bonus */
+  bonus: number
   lang: 'ru' | 'ky'
 }
 
@@ -49,6 +53,8 @@ export type OrderError =
   | 'product-missing'
   | 'price-missing'
   | 'out-of-stock'
+  | 'login'
+  | 'bonus'
 
 const MAX_QTY = 99
 
@@ -140,7 +146,19 @@ export function validateOrder(
       lines,
       goodsTotal,
       total: goodsTotal + deliveryPrice,
+      bonus: 0,
       lang: request.lang === 'ky' ? 'ky' : 'ru',
     },
   }
+}
+
+/**
+ * Бонусы к заказу: целые сомы, не больше разрешённого максимума.
+ * Возвращает null, если просят больше, чем можно (баланс мог измениться с момента показа).
+ */
+export function applyBonus(order: ValidatedOrder, requested: unknown, maxAllowed: number): ValidatedOrder | null {
+  const bonus = Math.floor(Number(requested) || 0)
+  if (bonus <= 0) return { ...order, bonus: 0 }
+  if (bonus > maxAllowed || bonus >= order.total) return null
+  return { ...order, bonus }
 }
