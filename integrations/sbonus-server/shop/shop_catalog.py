@@ -36,6 +36,27 @@ MAX_PHOTO_BYTES = 5 * 1024 * 1024
 MAX_ITEMS = 20000
 
 
+def _as_jpeg(body: bytes) -> bytes:
+    """JPEG оставляем как есть; PNG, WebP, BMP, GIF переводим в JPEG (прозрачность — на белом фоне)."""
+    if body[:3] == b"\xff\xd8\xff":
+        return body
+    from io import BytesIO
+    from PIL import Image
+
+    image = Image.open(BytesIO(body))
+    image.load()
+    if image.mode in ("RGBA", "LA", "P"):
+        image = image.convert("RGBA")
+        background = Image.new("RGB", image.size, (255, 255, 255))
+        background.paste(image, mask=image.split()[-1])
+        image = background
+    elif image.mode != "RGB":
+        image = image.convert("RGB")
+    out = BytesIO()
+    image.save(out, "JPEG", quality=90, optimize=True)
+    return out.getvalue()
+
+
 @router_1c_catalog.get("/photos-index")
 async def photos_index(_=Depends(_verify_1c_key), db: AsyncSession = Depends(get_db)):
     rows = (await db.execute(text("SELECT key, md5 FROM shop_photos"))).all()
@@ -47,15 +68,20 @@ async def upload_photo(key: str, request: Request, db: AsyncSession = Depends(ge
     body = await _verify_1c_body(request)
     if not KEY_RE.match(key):
         raise HTTPException(422, "неверный ключ фото")
-    if not body or len(body) > MAX_PHOTO_BYTES or body[:3] != b"\xff\xd8\xff":
-        raise HTTPException(422, "ожидается JPEG до 5 МБ")
+    if not body or len(body) > MAX_PHOTO_BYTES:
+        raise HTTPException(422, "ожидается картинка до 5 МБ")
+    # md5 — от присланных байт: 1С сравнивает его в photos-index и не шлёт фото повторно.
     md5 = hashlib.md5(body).hexdigest()
+    try:
+        content = _as_jpeg(body)
+    except Exception:
+        raise HTTPException(422, "не удалось прочитать картинку (нужен JPEG, PNG, WebP, BMP или GIF)")
     await db.execute(
         text(
             "INSERT INTO shop_photos (key, content, md5, size_bytes, updated_at) VALUES (:k, :c, :m, :s, NOW()) "
             "ON CONFLICT (key) DO UPDATE SET content = :c, md5 = :m, size_bytes = :s, updated_at = NOW()"
         ),
-        {"k": key, "c": body, "m": md5, "s": len(body)},
+        {"k": key, "c": content, "m": md5, "s": len(content)},
     )
     await db.commit()
     return {"ok": True, "key": key, "md5": md5}
