@@ -42,7 +42,6 @@ function HeaderInner() {
       <div className="container">
         <div className="header__utility">
           <span><IconMapPin size={14} />{lang === 'ky' ? 'Бүт Кыргызстан боюнча' : 'По всему Кыргызстану'}</span>
-          <span className="header__prototype">{t.common.demo}</span>
         </div>
         <div className="header__inner">
           <Link href={`/${lang}`} className="logo" aria-label="Smart Centr">
@@ -135,7 +134,7 @@ function HeaderInner() {
           ))}
           <span className="header__city">
             <IconMapPin size={16} />
-            {t.city} · {t.common.demo.toLowerCase()}
+            {t.city}
           </span>
         </nav>
       </div>

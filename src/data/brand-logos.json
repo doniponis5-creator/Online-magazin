@@ -1,0 +1,132 @@
+{
+  "ТЕХНОМИР": {
+    "src": "/brands/tehnomir.webp",
+    "w": 354,
+    "h": 120
+  },
+  "ARISTON": {
+    "src": "/brands/ariston.webp",
+    "w": 420,
+    "h": 64
+  },
+  "ARNICA": {
+    "src": "/brands/arnica.webp",
+    "w": 160,
+    "h": 120
+  },
+  "ARSHIA": {
+    "src": "/brands/arshia.webp",
+    "w": 420,
+    "h": 67
+  },
+  "ASKO": {
+    "src": "/brands/asko.webp",
+    "w": 420,
+    "h": 88
+  },
+  "AVEST-LOGO-USER": {
+    "src": "/brands/avest.webp",
+    "w": 420,
+    "h": 81
+  },
+  "BAOYU": {
+    "src": "/brands/baoyu.webp",
+    "w": 420,
+    "h": 95
+  },
+  "BEKO": {
+    "src": "/brands/beko.webp",
+    "w": 343,
+    "h": 120
+  },
+  "BOSCH": {
+    "src": "/brands/bosch.webp",
+    "w": 420,
+    "h": 94
+  },
+  "BRUCE": {
+    "src": "/brands/bruce.webp",
+    "w": 420,
+    "h": 82
+  },
+  "CHANGHONG": {
+    "src": "/brands/changhong.webp",
+    "w": 420,
+    "h": 67
+  },
+  "EMIN": {
+    "src": "/brands/emin.webp",
+    "w": 334,
+    "h": 120
+  },
+  "FERRE": {
+    "src": "/brands/ferre.webp",
+    "w": 420,
+    "h": 118
+  },
+  "GORENJE": {
+    "src": "/brands/gorenje.webp",
+    "w": 420,
+    "h": 116
+  },
+  "HISENSE": {
+    "src": "/brands/hisense.webp",
+    "w": 420,
+    "h": 75
+  },
+  "HITACHI": {
+    "src": "/brands/hitachi.webp",
+    "w": 295,
+    "h": 120
+  },
+  "ITIMAT": {
+    "src": "/brands/itimat.webp",
+    "w": 420,
+    "h": 84
+  },
+  "LEVO": {
+    "src": "/brands/levo.webp",
+    "w": 420,
+    "h": 119
+  },
+  "LG": {
+    "src": "/brands/lg.webp",
+    "w": 420,
+    "h": 63
+  },
+  "MIDEA": {
+    "src": "/brands/midea.webp",
+    "w": 312,
+    "h": 120
+  },
+  "PHILIPS": {
+    "src": "/brands/philips.webp",
+    "w": 420,
+    "h": 77
+  },
+  "SAMSUNG": {
+    "src": "/brands/samsung.webp",
+    "w": 420,
+    "h": 64
+  },
+  "SHIVAKI": {
+    "src": "/brands/shivaki.webp",
+    "w": 420,
+    "h": 54
+  },
+  "TOEAR": {
+    "src": "/brands/toear.webp",
+    "w": 420,
+    "h": 116
+  },
+  "UAKEEN": {
+    "src": "/brands/uakeen.webp",
+    "w": 194,
+    "h": 120
+  },
+  "VELBERG": {
+    "src": "/brands/velberg.webp",
+    "w": 420,
+    "h": 71
+  }
+}

@@ -1,0 +1,17 @@
+# Сайт Smart Centr на сервере. Отдельный проект docker compose: SBonus и другие контейнеры не затрагиваются.
+# Наружу сайт отдаёт nginx (smartcentr.store → 127.0.0.1:18820).
+name: smartcentr-site
+
+services:
+  site:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: smartcentr-site:latest
+    container_name: smartcentr_site
+    restart: unless-stopped
+    env_file:
+      - ../../.env.production
+    ports:
+      - "127.0.0.1:18820:3000"
+    mem_limit: 768m

@@ -29,15 +29,10 @@ function CategoryTiles() {
         </h2>
       </div>
       <div className="cat-tiles">
-        {categories.map((c, i) => (
+        {categories.map((c) => (
           <Link key={c.id} href={`/${lang}/catalog?cat=${c.id}`} className="cat-tile">
             <span className="cat-tile__icon">
-              <ProductArt
-                kind={
-                  (['phone', 'laptop', 'tv', 'washer', 'tablet', 'headphones'] as const)[i]
-                }
-                color="#245BEB"
-              />
+              <ProductArt kind={c.art} color="#245BEB" />
             </span>
             {lang === 'ky' ? c.nameKy : c.nameRu}
           </Link>

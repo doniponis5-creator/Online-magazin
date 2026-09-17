@@ -26,3 +26,9 @@ npm-debug.log*
 test-results/
 playwright-report/
 .tools/
+scripts/1c-export/output/
+integrations/1c-online-shop/build/
+smartcentr-site.tar.gz
+
+__pycache__/
+*.pyc

@@ -15,7 +15,6 @@ export function Footer() {
               <Brand />
             </span>
             <p className="footer__text">{t.footer.about}</p>
-            <p className="footer__text">{t.footer.integration}</p>
           </div>
           <div>
             <h3 className="footer__title">{t.footer.contacts}</h3>

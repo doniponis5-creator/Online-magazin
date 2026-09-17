@@ -41,8 +41,17 @@
 .hit-mosaic__rail a:hover { background: var(--color-primary-soft); }
 .hit-mosaic__rail svg { width: 68px; height: 68px; }
 .brand-strip__grid { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); border-top: 1px solid var(--color-border); border-left: 1px solid var(--color-border); }
-.brand-strip__grid a { min-width: 0; min-height: 88px; padding: 12px; display: flex; align-items: center; justify-content: center; font-size: clamp(14px,1.8vw,22px); font-weight: 800; letter-spacing: -.025em; border-right: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
-.brand-strip__grid a:hover { color: var(--color-primary); background: var(--color-primary-soft); }
+.brand-strip__grid a { min-width: 0; min-height: 88px; padding: 12px; display: flex; align-items: center; justify-content: center; font-size: clamp(14px,1.5vw,21px); border-right: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
+.brand-strip__grid a { color: #5d6d7e; transition: background-color 160ms ease-out, color 160ms ease-out; }
+.brand-strip__grid a:hover { background: var(--color-surface); }
+.brand-strip__grid a:hover .brand-logo { color: var(--brand-color); }
+.brand-strip__grid a:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+.brand-logo { display: inline-flex; align-items: center; gap: .4em; max-width: 100%; color: inherit; font-size: inherit; line-height: 1; white-space: nowrap; transition: color 160ms ease-out; }
+.brand-logo__mark { width: 1.25em; height: 1.25em; flex: none; }
+.brand-logo__word { overflow: hidden; text-overflow: ellipsis; letter-spacing: -.02em; }
+.brand-logo__word-light { font-weight: 450; }
+.brand-logo--image img { display: block; max-width: 100%; height: auto; transition: transform 160ms ease-out; }
+.brand-strip__grid a:hover .brand-logo--image img { transform: scale(1.04); }
 .sale-section__grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 20px; }
 .sale-section__item { position: relative; }
 .sale-section__item .card { height: 100%; }
@@ -96,7 +105,9 @@
  .hit-mosaic__rail a { font-size: 10px; padding: 12px 4px; }
  .hit-mosaic__rail svg { width: 44px; height: 44px; }
  .brand-strip__grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
- .brand-strip__grid a { min-height: 72px; font-size: 14px; padding: 8px; }
+ .brand-strip__grid a { min-height: 76px; font-size: 13px; padding: 8px; }
+ .brand-strip__grid .brand-logo { flex-direction: column; gap: 7px; }
+ .brand-strip__grid .brand-logo__mark { width: 20px; height: 20px; }
  .sale-section__grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
  .social-account, .account-layout { grid-template-columns: 1fr; }
  .account-loyalty { padding: 26px; }

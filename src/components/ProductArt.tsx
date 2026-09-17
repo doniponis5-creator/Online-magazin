@@ -28,6 +28,11 @@ export function ProductArt({
       {kind === 'robot' && <RobotArt color={color} />}
       {kind === 'watch' && <WatchArt color={color} />}
       {kind === 'speaker' && <SpeakerArt color={color} />}
+      {kind === 'fridge' && <FridgeArt color={color} />}
+      {kind === 'stove' && <StoveArt color={color} />}
+      {kind === 'fan' && <FanArt color={color} />}
+      {kind === 'battery' && <BatteryArt color={color} />}
+      {kind === 'box' && <BoxArt color={color} />}
     </svg>
   )
 }
@@ -215,6 +220,66 @@ function SpeakerArt({ color }: { color: string }) {
         <circle cx="116" cy="112" r="4" />
       </g>
       <rect x="84" y="138" width="32" height="10" rx="5" fill="#fff" opacity="0.35" />
+    </g>
+  )
+}
+
+function FridgeArt({ color }: { color: string }) {
+  return (
+    <g>
+      <rect x="58" y="18" width="84" height="160" rx="14" fill="#FDFEFF" stroke={edge} strokeWidth="2" />
+      <path d="M58 76h84" stroke={edge} strokeWidth="2" />
+      <rect x="126" y="34" width="6" height="28" rx="3" fill={color} />
+      <rect x="126" y="92" width="6" height="44" rx="3" fill={color} />
+      <rect x="70" y="30" width="44" height="34" rx="8" fill={color} opacity="0.14" />
+    </g>
+  )
+}
+
+function StoveArt({ color }: { color: string }) {
+  return (
+    <g>
+      <rect x="40" y="42" width="120" height="134" rx="14" fill="#FDFEFF" stroke={edge} strokeWidth="2" />
+      <rect x="40" y="42" width="120" height="30" rx="14" fill={color} />
+      <circle cx="68" cy="57" r="6" fill="#fff" opacity="0.85" />
+      <circle cx="92" cy="57" r="6" fill="#fff" opacity="0.6" />
+      <rect x="58" y="90" width="84" height="66" rx="10" fill={light} stroke={edge} strokeWidth="2" />
+      <rect x="72" y="104" width="56" height="8" rx="4" fill={color} opacity="0.35" />
+    </g>
+  )
+}
+
+function FanArt({ color }: { color: string }) {
+  return (
+    <g>
+      <circle cx="100" cy="84" r="58" fill="#FDFEFF" stroke={edge} strokeWidth="2" />
+      <path d="M100 84c-4-26 4-44 20-44 12 0 14 18-20 44Z" fill={color} />
+      <path d="M100 84c24 10 36 26 28 40-6 10-22 4-28-40Z" fill={color} opacity="0.7" />
+      <path d="M100 84c-20 16-40 18-46 4-4-12 12-18 46-4Z" fill={color} opacity="0.45" />
+      <circle cx="100" cy="84" r="8" fill={light} stroke={edge} strokeWidth="2" />
+      <rect x="94" y="142" width="12" height="24" fill={edge} />
+      <rect x="66" y="164" width="68" height="12" rx="6" fill={color} />
+    </g>
+  )
+}
+
+function BatteryArt({ color }: { color: string }) {
+  return (
+    <g>
+      <rect x="44" y="52" width="112" height="112" rx="14" fill="#FDFEFF" stroke={edge} strokeWidth="2" />
+      <rect x="64" y="38" width="22" height="14" rx="4" fill={edge} />
+      <rect x="114" y="38" width="22" height="14" rx="4" fill={edge} />
+      <path d="M108 74 80 116h22l-10 32 30-44H100l8-30Z" fill={color} />
+    </g>
+  )
+}
+
+function BoxArt({ color }: { color: string }) {
+  return (
+    <g>
+      <path d="M100 30 164 62v76l-64 32-64-32V62Z" fill="#FDFEFF" stroke={edge} strokeWidth="2" strokeLinejoin="round" />
+      <path d="M36 62 100 94l64-32M100 94v76" fill="none" stroke={edge} strokeWidth="2" strokeLinejoin="round" />
+      <path d="M68 46 132 78v22" fill="none" stroke={color} strokeWidth="6" strokeLinecap="round" opacity="0.7" />
     </g>
   )
 }

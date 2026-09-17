@@ -34,6 +34,10 @@ export function Gallery({
 }) {
   const { t, lang } = useI18n()
   const [zoomOpen, setZoomOpen] = useState(false)
+  // Несколько фото из 1С: выбранное показывается крупно, остальные — миниатюрами.
+  const images = product.images ?? []
+  const [imageIndex, setImageIndex] = useState(0)
+  const currentImage = images[imageIndex] ?? product.image
   const openerRef = useRef<HTMLButtonElement>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
 
@@ -74,7 +78,7 @@ export function Gallery({
       className="product-photo gallery-photo"
     />
   ) : (
-    <ProductImage kind={product.art} variant="gallery" image={product.image} alt={name} />
+    <ProductImage kind={product.art} variant="gallery" image={currentImage} alt={name} />
   )
 
   return (
@@ -92,6 +96,24 @@ export function Gallery({
         </button>
       ) : (
         <div className="gallery__main">{mainView}</div>
+      )}
+
+      {images.length > 1 && (
+        <div className="gallery__thumbs" role="group" aria-label={t.a11y.mainGallery}>
+          {images.map((src, i) => (
+            <button
+              key={src}
+              type="button"
+              className="gallery__thumb gallery__thumb--photo"
+              aria-pressed={i === imageIndex}
+              aria-label={`${name}: ${i + 1} / ${images.length}`}
+              onClick={() => setImageIndex(i)}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={src} alt="" loading="lazy" />
+            </button>
+          ))}
+        </div>
       )}
 
       {(product.colorOptions ?? []).length > 1 && onColorChange && (

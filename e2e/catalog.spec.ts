@@ -45,7 +45,7 @@ test('catalog: header search twice → category → back/forward → reload', as
   await expect(page.getByRole('searchbox', { name: 'Поиск товаров' })).toHaveValue('AirSound')
 })
 
-test('catalog: category chip alone, sorting and brand select write into URL', async ({ page }) => {
+test('catalog: category chip alone, sorting and brand filter write into URL', async ({ page }) => {
   await page.goto('/ru/catalog')
 
   await page.locator('.chip', { hasText: 'Ноутбуки' }).click()
@@ -53,12 +53,13 @@ test('catalog: category chip alone, sorting and brand select write into URL', as
   await expect(page.locator('.card')).toHaveCount(2)
 
   // сортировка: сначала дешевле
-  await page.locator('.select-field select').last().selectOption('price-asc')
+  await page.locator('.catalog-meta__sort .filter-select__trigger').click()
+  await page.getByRole('option', { name: 'Сначала дешевле' }).click()
   await expect(page).toHaveURL('http://localhost:3100/ru/catalog?cat=laptops&sort=price-asc')
   await expect(page.locator('.card__price').first()).toHaveText('52 900 сом')
 
-  // бренд
-  await page.locator('.select-field select').first().selectOption('ProWork')
+  // бренд — флажок в панели фильтров
+  await page.locator('.filter-panel .check', { hasText: 'ProWork' }).click()
   await expect(page).toHaveURL('http://localhost:3100/ru/catalog?cat=laptops&sort=price-asc&brand=ProWork')
   await expect(page.locator('.card')).toHaveCount(1)
 
@@ -86,4 +87,23 @@ test('catalog: empty state offers reset, no dead ends', async ({ page }) => {
   await expect(page.getByText('Ничего не найдено')).toBeVisible()
   await page.locator('.empty').getByRole('button', { name: 'Сбросить фильтры' }).click()
   await expect(page.locator('.card').first()).toBeVisible()
+})
+
+test('catalog: price, stock and sale filters combine in URL and survive reload', async ({ page }) => {
+  await page.goto('/ru/catalog')
+
+  await page.locator('.filter-panel .check', { hasText: 'Со скидкой' }).click()
+  await expect(page).toHaveURL('http://localhost:3100/ru/catalog?sale=1')
+  await expect(page.locator('.card')).toHaveCount(3)
+
+  await page.locator('.price-range__field input').nth(1).fill('50000')
+  await expect(page).toHaveURL('http://localhost:3100/ru/catalog?sale=1&max=50000')
+  await expect(page.locator('.card')).toHaveCount(2)
+
+  await page.reload()
+  await expect(page.locator('.price-range__field input').nth(1)).toHaveValue('50000')
+  await expect(page.locator('.card')).toHaveCount(2)
+
+  await page.locator('.filter-panel__reset').click()
+  await expect(page).toHaveURL('http://localhost:3100/ru/catalog')
 })

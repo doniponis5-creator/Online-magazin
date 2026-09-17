@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { products } from '@/data/products'
 import {
   comboVariant,
   colorHexOf,
   defaultColorKey,
   defaultMemoryKey,
-  getProduct,
+  demoProducts as products,
 } from '@/data/products'
 import {
   colorExists,
@@ -14,6 +13,9 @@ import {
   suggestCombos,
   variantLabel,
 } from '@/lib/cart/sku'
+
+// Проверки вариантов работают на демо-каталоге: в нём есть цвета и память.
+const getProduct = (id: string) => products.find((p) => p.id === id)
 
 const tabslate = getProduct('tabslate-10')!
 const aura = getProduct('aura-x5')!

@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-font",
+        "value": "*",
+        "files": [
+          "integrations/1c-online-shop/src/РедакторФото.html"
+        ],
+        "createdAt": "2026-09-17T09:45:03.694Z",
+        "reason": "Claude: editor runs inside 1C client window, not the storefront; uses the 1C/Windows UI font on purpose"
+      }
+    ]
+  }
+}

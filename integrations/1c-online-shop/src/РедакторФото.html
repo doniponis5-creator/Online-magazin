@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>Редактор фото</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; font: 13px/1.35 "Segoe UI", Arial, sans-serif; color: #263244; background: #eef1f5; user-select: none; }
+  #app { display: flex; flex-direction: column; height: 100%; }
+  #bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 8px 12px; background: #fff; border-bottom: 1px solid #dde3ea; }
+  .grp { display: flex; align-items: center; gap: 6px; }
+  .lbl { color: #5d6d7e; }
+  button, select { font: inherit; height: 30px; padding: 0 10px; border: 1px solid #c4cdd8; border-radius: 6px; background: #fff; color: #263244; cursor: pointer; }
+  button:hover, select:hover { border-color: #2563eb; }
+  button.on { background: #2563eb; border-color: #2563eb; color: #fff; }
+  input[type=range] { width: 150px; }
+  #zoomVal { min-width: 44px; text-align: right; font-variant-numeric: tabular-nums; }
+  #stage { position: relative; flex: 1; min-height: 0; cursor: grab; }
+  #stage.drag { cursor: grabbing; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #info { padding: 6px 12px; background: #fff; border-top: 1px solid #dde3ea; color: #5d6d7e; display: flex; justify-content: space-between; gap: 12px; }
+  #err { display: none; position: absolute; inset: 0; align-items: center; justify-content: center; padding: 24px; text-align: center; color: #d33b2e; font-size: 15px; }
+  #im-out { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="bar">
+    <div class="grp">
+      <span class="lbl">Рамка:</span>
+      <select id="aspect" title="Форма рамки обрезки">
+        <option value="1">Квадрат 1:1</option>
+        <option value="1.3333">4:3</option>
+        <option value="0.75">3:4</option>
+        <option value="1.7778">16:9</option>
+        <option value="0">Как у фото</option>
+      </select>
+    </div>
+    <div class="grp">
+      <button id="zoomOut" title="Уменьшить">−</button>
+      <input id="zoom" type="range" min="0" max="1000" value="0" title="Масштаб">
+      <button id="zoomIn" title="Увеличить">+</button>
+      <span id="zoomVal">100%</span>
+    </div>
+    <div class="grp">
+      <button id="fit" title="Всё фото целиком внутри рамки, по краям белый фон">Вписать</button>
+      <button id="fill" title="Фото заполняет всю рамку, лишнее обрезается">Заполнить</button>
+      <button id="center" title="Поставить фото по центру">По центру</button>
+    </div>
+    <div class="grp">
+      <button id="rotL" title="Повернуть влево">⟲ 90°</button>
+      <button id="rotR" title="Повернуть вправо">⟳ 90°</button>
+    </div>
+    <div class="grp">
+      <span class="lbl">Размер файла:</span>
+      <select id="size" title="Длинная сторона готового фото">
+        <option value="800">800 px</option>
+        <option value="1200" selected>1200 px</option>
+        <option value="1600">1600 px</option>
+      </select>
+    </div>
+  </div>
+  <div id="stage">
+    <canvas id="cv"></canvas>
+    <div id="err"></div>
+  </div>
+  <div id="info">
+    <span>Перетаскивайте фото мышью, колёсико — масштаб. Всё за рамкой будет обрезано.</span>
+    <span id="dims"></span>
+  </div>
+</div>
+<textarea id="im-out"></textarea>
+<script>
+(function () {
+  var SRC = "%IMAGE_DATA_URL%";
+  var stage = document.getElementById("stage");
+  var cv = document.getElementById("cv");
+  var ctx = cv.getContext("2d");
+  var img = new Image();
+  var ready = false;
+  // Состояние: поворот (0..3 × 90°), масштаб фото относительно рамки, центр фото в долях рамки.
+  var st = { rot: 0, scale: 1, cx: 0.5, cy: 0.5, aspect: 1, minScale: 0.05, maxScale: 8 };
+  var frame = { x: 0, y: 0, w: 1, h: 1 };
+  var W = 0, H = 0, dpr = 1;
+
+  function $(id) { return document.getElementById(id); }
+
+  function rotatedSize() {
+    return st.rot % 2 === 0 ? { w: img.naturalWidth, h: img.naturalHeight } : { w: img.naturalHeight, h: img.naturalWidth };
+  }
+
+  function aspectValue() {
+    if (st.aspect > 0) return st.aspect;
+    var s = rotatedSize();
+    return s.w / s.h;
+  }
+
+  function layout() {
+    dpr = window.devicePixelRatio || 1;
+    W = stage.clientWidth; H = stage.clientHeight;
+    cv.width = Math.max(1, Math.round(W * dpr)); cv.height = Math.max(1, Math.round(H * dpr));
+    var a = aspectValue(), pad = 36;
+    var fw = W - pad * 2, fh = fw / a;
+    if (fh > H - pad * 2) { fh = H - pad * 2; fw = fh * a; }
+    frame = { x: (W - fw) / 2, y: (H - fh) / 2, w: Math.max(10, fw), h: Math.max(10, fh) };
+  }
+
+  // Масштаб «заполнить» и «вписать» в единицах: пикселей рамки на пиксель фото.
+  function coverScale() { var s = rotatedSize(); return Math.max(frame.w / s.w, frame.h / s.h); }
+  function containScale() { var s = rotatedSize(); return Math.min(frame.w / s.w, frame.h / s.h); }
+
+  function drawImage(c, k) {
+    // k — пикселей холста на пиксель рамки; рамка начинается в (0,0).
+    c.save();
+    c.scale(k, k);
+    c.translate(st.cx * frame.w, st.cy * frame.h);
+    c.rotate(st.rot * Math.PI / 2);
+    var sc = st.scale * frameUnit();
+    c.scale(sc, sc);
+    c.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
+    c.restore();
+  }
+
+  // Масштаб хранится относительно ширины рамки, чтобы не зависеть от размера окна.
+  function frameUnit() { return frame.w / 1000; }
+
+  function render() {
+    if (!ready) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = "#eef1f5"; ctx.fillRect(0, 0, W, H);
+    // Белый фон рамки — таким будет фон готового фото.
+    ctx.fillStyle = "#fff"; ctx.fillRect(frame.x, frame.y, frame.w, frame.h);
+    ctx.save();
+    ctx.translate(frame.x, frame.y);
+    drawImage(ctx, 1);
+    ctx.restore();
+    // Затемнение всего, что за рамкой.
+    ctx.fillStyle = "rgba(38,50,68,0.55)";
+    ctx.beginPath();
+    ctx.rect(0, 0, W, H);
+    ctx.rect(frame.x + frame.w, frame.y, -frame.w, frame.h);
+    ctx.fill("evenodd");
+    // Рамка и сетка третей.
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
+    ctx.strokeRect(frame.x, frame.y, frame.w, frame.h);
+    ctx.strokeStyle = "rgba(255,255,255,0.45)"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (var i = 1; i < 3; i++) {
+      ctx.moveTo(frame.x + frame.w * i / 3, frame.y); ctx.lineTo(frame.x + frame.w * i / 3, frame.y + frame.h);
+      ctx.moveTo(frame.x, frame.y + frame.h * i / 3); ctx.lineTo(frame.x + frame.w, frame.y + frame.h * i / 3);
+    }
+    ctx.stroke();
+    updateInfo();
+  }
+
+  // Ползунок: логарифмическая шкала от «вписать»/4 до «заполнить»×6.
+  function sliderRange() {
+    var lo = containScale() / frameUnit() * 0.25, hi = coverScale() / frameUnit() * 6;
+    return { lo: lo, hi: hi };
+  }
+  function syncSlider() {
+    var r = sliderRange();
+    var t = (Math.log(st.scale) - Math.log(r.lo)) / (Math.log(r.hi) - Math.log(r.lo));
+    $("zoom").value = Math.round(Math.max(0, Math.min(1, t)) * 1000);
+    var pct = Math.round(st.scale * frameUnit() / coverScale() * 100);
+    $("zoomVal").textContent = pct + "%";
+  }
+
+  function setScale(newScale, px, py) {
+    // px, py — точка в долях рамки, которая остаётся на месте при масштабировании.
+    var r = sliderRange();
+    newScale = Math.max(r.lo, Math.min(r.hi, newScale));
+    if (px === undefined) { px = 0.5; py = 0.5; }
+    var f = newScale / st.scale;
+    st.cx = px + (st.cx - px) * f;
+    st.cy = py + (st.cy - py) * f;
+    st.scale = newScale;
+    syncSlider(); render();
+  }
+
+  function fill() { st.scale = coverScale() / frameUnit(); st.cx = 0.5; st.cy = 0.5; syncSlider(); render(); }
+  function fit() { st.scale = containScale() / frameUnit(); st.cx = 0.5; st.cy = 0.5; syncSlider(); render(); }
+
+  function outputSize() {
+    var longSide = parseInt($("size").value, 10) || 1200;
+    var a = aspectValue();
+    return a >= 1 ? { w: longSide, h: Math.round(longSide / a) } : { w: Math.round(longSide * a), h: longSide };
+  }
+
+  function updateInfo() {
+    var o = outputSize();
+    $("dims").textContent = "Готовое фото: " + o.w + " × " + o.h + " px, белый фон";
+  }
+
+  function showError(text) {
+    var e = $("err"); e.textContent = text; e.style.display = "flex";
+  }
+
+  // ── Мышь ──
+  var drag = null;
+  stage.addEventListener("mousedown", function (e) {
+    if (!ready) return;
+    drag = { x: e.clientX, y: e.clientY, cx: st.cx, cy: st.cy };
+    stage.className = "drag";
+    e.preventDefault();
+  });
+  window.addEventListener("mousemove", function (e) {
+    if (!drag) return;
+    st.cx = drag.cx + (e.clientX - drag.x) / frame.w;
+    st.cy = drag.cy + (e.clientY - drag.y) / frame.h;
+    render();
+  });
+  window.addEventListener("mouseup", function () { drag = null; stage.className = ""; });
+  stage.addEventListener("wheel", function (e) {
+    if (!ready) return;
+    e.preventDefault();
+    var rect = stage.getBoundingClientRect();
+    var px = (e.clientX - rect.left - frame.x) / frame.w, py = (e.clientY - rect.top - frame.y) / frame.h;
+    setScale(st.scale * (e.deltaY < 0 ? 1.1 : 1 / 1.1), px, py);
+  }, { passive: false });
+
+  // ── Кнопки ──
+  $("zoom").addEventListener("input", function () {
+    var r = sliderRange(), t = this.value / 1000;
+    setScale(Math.exp(Math.log(r.lo) + t * (Math.log(r.hi) - Math.log(r.lo))));
+  });
+  $("zoomIn").onclick = function () { setScale(st.scale * 1.15); };
+  $("zoomOut").onclick = function () { setScale(st.scale / 1.15); };
+  $("fit").onclick = fit;
+  $("fill").onclick = fill;
+  $("center").onclick = function () { st.cx = 0.5; st.cy = 0.5; render(); };
+  function rotate(d) {
+    var coverBefore = st.scale * frameUnit() / coverScale();
+    st.rot = (st.rot + d + 4) % 4;
+    layout();
+    st.scale = coverBefore * coverScale() / frameUnit();
+    st.cx = 0.5; st.cy = 0.5;
+    syncSlider(); render();
+  }
+  $("rotL").onclick = function () { rotate(-1); };
+  $("rotR").onclick = function () { rotate(1); };
+  $("aspect").onchange = function () {
+    var coverBefore = st.scale * frameUnit() / coverScale();
+    st.aspect = parseFloat(this.value);
+    layout();
+    st.scale = coverBefore * coverScale() / frameUnit();
+    syncSlider(); render();
+  };
+  $("size").onchange = updateInfo;
+  window.addEventListener("resize", function () { if (ready) { layout(); syncSlider(); render(); } });
+
+  // ── Экспорт для 1С: пишет data URL JPEG в скрытое поле im-out ──
+  window.imExport = function () {
+    var out = $("im-out");
+    out.value = "";
+    if (!ready) return "";
+    var o = outputSize();
+    var c = document.createElement("canvas");
+    c.width = o.w; c.height = o.h;
+    var x = c.getContext("2d");
+    x.fillStyle = "#fff"; x.fillRect(0, 0, o.w, o.h);
+    x.imageSmoothingEnabled = true;
+    if ("imageSmoothingQuality" in x) x.imageSmoothingQuality = "high";
+    drawImage(x, o.w / frame.w);
+    out.value = c.toDataURL("image/jpeg", 0.9);
+    return out.value.length;
+  };
+  window.imReady = function () { return ready; };
+
+  img.onload = function () {
+    ready = true;
+    layout(); fill();
+  };
+  img.onerror = function () {
+    showError("Не удалось открыть фото. Сохраните его в формате JPG или PNG и добавьте снова.");
+  };
+  img.src = SRC;
+})();
+</script>
+</body>
+</html>

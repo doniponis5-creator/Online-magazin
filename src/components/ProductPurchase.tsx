@@ -65,7 +65,6 @@ export function ProductPurchase({
     <div className="purchase">
       <span className="purchase__cat">
         {categoryName(product.categoryId, lang)}
-        <span className="badge badge--demo">{t.product.demoBadge}</span>
       </span>
       <h1 className="purchase__name">{name}</h1>
 
@@ -75,7 +74,11 @@ export function ProductPurchase({
         </span>
       )}
 
-      {variant && price !== null ? (
+      {variant && price !== null && product.price <= 0 ? (
+        <div className="purchase__prices">
+          <span className="purchase__price purchase__price--request">{t.catalog.priceOnRequest}</span>
+        </div>
+      ) : variant && price !== null ? (
         <div className="purchase__prices">
           <span className="purchase__price">{formatSom(price)}</span>
           {product.oldPrice && <span className="purchase__old">{formatSom(product.oldPrice)}</span>}

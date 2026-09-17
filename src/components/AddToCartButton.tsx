@@ -28,7 +28,10 @@ export function AddToCartButton({
   const cart = useCart()
   const [added, setAdded] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const variant = getProduct(productId)?.variants.find((item) => item.id === variantId)
+  const product = getProduct(productId)
+  const variant = product?.variants.find((item) => item.id === variantId)
+  // Товар без цены (цена 0 в 1С) не продаётся через корзину — цену сообщит магазин.
+  const noPrice = !product || product.price <= 0
   const qty = cart.lines.find((line) => line.productId === productId && line.variantId === variantId)?.qty ?? 0
   const atLimit = Boolean(variant && variant.stock > 0 && qty >= variant.stock)
   const unavailable = !variant || variant.stock < 1
@@ -49,7 +52,7 @@ export function AddToCartButton({
     'btn',
     small ? 'btn--sm' : '',
     block ? 'btn--block' : '',
-    added ? 'btn--lime' : 'btn--primary',
+    noPrice ? 'btn--outline' : added ? 'btn--lime' : 'btn--primary',
   ]
     .filter(Boolean)
     .join(' ')
@@ -59,11 +62,11 @@ export function AddToCartButton({
       type="button"
       className={cls}
       onClick={onClick}
-      disabled={disabled || !cart.hydrated || unavailable || atLimit}
+      disabled={disabled || !cart.hydrated || unavailable || atLimit || noPrice}
       aria-live="polite"
     >
-      {added ? <IconCheck size={18} /> : <IconCart size={18} />}
-      {unavailable ? t.catalog.outOfStock : atLimit ? t.cart.maxStock : added ? t.catalog.added : (label ?? t.catalog.addToCart)}
+      {noPrice ? null : added ? <IconCheck size={18} /> : <IconCart size={18} />}
+      {noPrice ? t.catalog.priceOnRequest : unavailable ? t.catalog.outOfStock : atLimit ? t.cart.maxStock : added ? t.catalog.added : (label ?? t.catalog.addToCart)}
     </button>
   )
 }

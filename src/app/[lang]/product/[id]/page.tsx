@@ -46,6 +46,7 @@ export default async function ProductPage({
       <ProductDetail product={product} />
 
       <div className="details">
+          {(lang === 'ky' ? product.descKy : product.descRu) && (
           <section className="details-card" aria-labelledby="desc-title">
             <h2 className="details-card__title" id="desc-title">
               {dict.product.description}
@@ -54,6 +55,7 @@ export default async function ProductPage({
               {lang === 'ky' ? product.descKy : product.descRu}
             </p>
           </section>
+          )}
 
           <section className="details-card" aria-labelledby="specs-title">
             <h2 className="details-card__title" id="specs-title">
@@ -67,12 +69,14 @@ export default async function ProductPage({
                     <td>{lang === 'ky' ? s.valueKy : s.valueRu}</td>
                   </tr>
                 ))}
-                <tr>
-                  <th scope="row">{dict.product.warranty}</th>
-                  <td>
-                    {product.warrantyMonths} {dict.product.warrantyMonths}
-                  </td>
-                </tr>
+                {product.warrantyMonths > 0 && (
+                  <tr>
+                    <th scope="row">{dict.product.warranty}</th>
+                    <td>
+                      {product.warrantyMonths} {dict.product.warrantyMonths}
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </section>

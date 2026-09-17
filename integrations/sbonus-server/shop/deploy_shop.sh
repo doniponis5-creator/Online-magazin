@@ -1,0 +1,194 @@
+#!/usr/bin/env bash
+# ════════════════════════════════════════════════════════════════════════════
+# Деплой: заказы интернет-магазина (сайт → O!Деньги → 1С) на сервер SBonus.
+# Добавляет пакет app/shop и 2 новые таблицы. Оплату рассрочки (app/payments)
+# НЕ меняет — только использует её модули O!Деньги и WhatsApp.
+# Пересобирается ТОЛЬКО api, как в deploy_balance_update.sh. Есть бэкап и откат.
+#
+# ПЕРЕД запуском (с Windows, из папки проекта сайта):
+#   scp -r integrations/sbonus-server/shop root@145.223.100.16:/tmp/sb_shop
+#
+# Запуск на сервере:  bash /tmp/sb_shop/deploy_shop.sh
+# ════════════════════════════════════════════════════════════════════════════
+set -u
+CD=/opt/sbonus
+COMPOSE="$CD/docker-compose.prod.yml"
+APP="$CD/sbonus-backend/app"
+DST="$APP/shop"
+ENV_FILE="$CD/.env.production"
+SRC="$(cd "$(dirname "$0")" && pwd)"
+API=sbonus_api
+DB=sbonus_db
+TS=$(date +%Y%m%d_%H%M%S)
+FILES="__init__.py shop_models.py shop_router.py shop_catalog.py"
+
+echo "=== Деплой: интернет-магазин (заказы + каталог из 1С) ==="
+
+# ── 0. Проверки ──────────────────────────────────────────────────────────────
+[ -d "$APP/payments" ] || { echo "❌ Нет $APP/payments — модуль O!Деньги не найден"; exit 1; }
+[ -f "$APP/main.py" ] || { echo "❌ Нет $APP/main.py"; exit 1; }
+for f in $FILES 001_shop_orders_migration.sql 002_shop_catalog_migration.sql; do [ -f "$SRC/$f" ] || { echo "❌ Нет файла: $SRC/$f"; exit 1; }; done
+docker ps --format '{{.Names}}' | grep -qx "$API" || { echo "❌ Контейнер $API не запущен"; exit 1; }
+echo "✓ Файлы и контейнеры на месте"
+
+# ── 0.1 Пробный импорт ВНУТРИ работающего api (ничего не меняет в работе) ────
+# Копируем пакет во временную папку контейнера и импортируем: ловим ошибки импорта,
+# несовместимость с pydantic/sqlalchemy и отсутствующие функции O!Деньги ДО пересборки.
+docker exec "$API" rm -rf /app/app/shop_precheck
+docker exec "$API" mkdir -p /app/app/shop_precheck
+for f in $FILES; do docker cp "$SRC/$f" "$API:/app/app/shop_precheck/$f"; done
+docker exec "$API" python3 -c "
+from app.payments import obank_service as o, payments_greenapi as w
+need = ['_request', '_to_kopecks', 'check_status', 'is_api_mode', 'verify_callback', 'parse_callback', 'callback_ack']
+missing = [n for n in need if not hasattr(o, n)] + ([] if hasattr(w, 'send_text') else ['send_text'])
+assert not missing, 'нет функций: %s' % missing
+import app.shop_precheck.shop_router as r
+import app.shop_precheck.shop_catalog as c
+paths = [x.path for x in r.router_site.routes + r.router_obank_shop.routes + r.router_1c_shop.routes
+         + c.router_1c_catalog.routes + c.router_site_catalog.routes + c.router_public_photos.routes]
+print('OK: модуль импортируется, маршрутов:', len(paths))
+"
+PRECHECK=$?
+docker exec "$API" rm -rf /app/app/shop_precheck
+[ $PRECHECK -eq 0 ] || { echo "❌ Пробный импорт не прошёл — ничего не установлено, сервер работает как раньше"; exit 1; }
+echo "✓ Пробный импорт прошёл"
+
+# ── 1. Бэкап БД и main.py ────────────────────────────────────────────────────
+mkdir -p "$CD/backups"
+docker exec "$DB" pg_dump -U sbonus sbonus_db | gzip > "$CD/backups/before_shop_$TS.sql.gz" \
+    && echo "✓ Бэкап БД: $CD/backups/before_shop_$TS.sql.gz" \
+    || { echo "❌ Бэкап БД не сделан — стоп"; exit 1; }
+cp "$APP/main.py" "$APP/main.py.bak_$TS"
+[ -d "$DST" ] && cp -r "$DST" "$DST.bak_$TS"
+echo "✓ Бэкап main.py${DST:+ и app/shop}: .bak_$TS"
+
+# ── 2. Пакет shop в исходник образа ──────────────────────────────────────────
+mkdir -p "$DST"
+for f in $FILES; do cp "$SRC/$f" "$DST/$f"; done
+echo "✓ app/shop обновлён"
+
+# ── 3. Подключить роутеры в main.py (один раз) ───────────────────────────────
+python3 - "$APP/main.py" <<'PYEOF'
+import sys
+p = sys.argv[1]
+s = open(p, encoding="utf-8").read()
+if "app.shop.shop_router" in s:
+    print("• main.py уже подключает заказы сайта — пропуск")
+    raise SystemExit(0)
+block = '''
+
+# ── Интернет-магазин: заказы с сайта (O!Деньги → 1С) ──
+from app.shop.shop_router import router_site as shop_site_router, router_obank_shop, router_1c_shop
+app.include_router(shop_site_router, prefix="/api/v1")   # /api/v1/webhook/site/orders
+app.include_router(router_obank_shop, prefix="/api/v1")  # /api/v1/webhook/obank/shop-callback
+app.include_router(router_1c_shop, prefix="/api/v1")     # /api/v1/webhook/1c/shop/*
+'''
+for anchor in ("app.include_router(payments_admin_router)", "app.include_router(api_v2_router)"):
+    idx = s.find(anchor)
+    if idx >= 0:
+        end = s.find("\n", idx)
+        end = len(s) if end < 0 else end
+        s = s[:end] + block + s[end:]
+        open(p, "w", encoding="utf-8").write(s)
+        print("✓ main.py: роутеры заказов подключены после", anchor)
+        break
+else:
+    raise SystemExit("❌ В main.py не найдено место для подключения роутеров")
+PYEOF
+[ $? -eq 0 ] || { cp "$APP/main.py.bak_$TS" "$APP/main.py"; echo "↩️ main.py восстановлен"; exit 1; }
+
+python3 - "$APP/main.py" <<'PYEOF'
+import sys
+p = sys.argv[1]
+s = open(p, encoding="utf-8").read()
+if "app.shop.shop_catalog" in s:
+    print("• main.py уже подключает каталог сайта — пропуск")
+    raise SystemExit(0)
+anchor = 'app.include_router(router_1c_shop, prefix="/api/v1")'
+idx = s.find(anchor)
+if idx < 0:
+    raise SystemExit("❌ В main.py нет роутеров заказов — не к чему подключить каталог")
+end = s.find("\n", idx)
+end = len(s) if end < 0 else end
+block = """
+from app.shop.shop_catalog import router_1c_catalog, router_site_catalog, router_public_photos
+app.include_router(router_1c_catalog, prefix="/api/v1")     # /api/v1/webhook/1c/shop/catalog, photos
+app.include_router(router_site_catalog, prefix="/api/v1")   # /api/v1/webhook/site/catalog
+app.include_router(router_public_photos, prefix="/api/v1")  # /api/v1/shop/photos/{key}.jpg"""
+s = s[:end] + block + s[end:]
+open(p, "w", encoding="utf-8").write(s)
+print("✓ main.py: роутеры каталога подключены")
+PYEOF
+[ $? -eq 0 ] || { cp "$APP/main.py.bak_$TS" "$APP/main.py"; echo "↩️ main.py восстановлен"; exit 1; }
+
+# ── 4. Синтаксис ─────────────────────────────────────────────────────────────
+for f in $FILES; do
+    python3 -c "import ast; ast.parse(open('$DST/$f', encoding='utf-8').read())" \
+        || { echo "❌ Синтаксис $f — откат"; cp "$APP/main.py.bak_$TS" "$APP/main.py"; exit 1; }
+done
+echo "✓ Синтаксис OK"
+
+# ── 5. Таблицы ───────────────────────────────────────────────────────────────
+docker cp "$SRC/001_shop_orders_migration.sql" "$DB:/tmp/001_shop_orders_migration.sql"
+docker exec "$DB" psql -U sbonus -d sbonus_db -v ON_ERROR_STOP=1 -f /tmp/001_shop_orders_migration.sql \
+    && echo "✓ Таблицы shop_orders, shop_order_events" \
+    || { echo "❌ Миграция не прошла — стоп (код не пересобран)"; exit 1; }
+docker cp "$SRC/002_shop_catalog_migration.sql" "$DB:/tmp/002_shop_catalog_migration.sql"
+docker exec "$DB" psql -U sbonus -d sbonus_db -v ON_ERROR_STOP=1 -f /tmp/002_shop_catalog_migration.sql \
+    && echo "✓ Таблицы shop_catalog, shop_photos" \
+    || { echo "❌ Миграция каталога не прошла — стоп (код не пересобран)"; exit 1; }
+
+# ── 6. Секрет сайта в .env (создаётся один раз) ──────────────────────────────
+if grep -q '^SHOP_SITE_SECRET=' "$ENV_FILE" 2>/dev/null; then
+    echo "• SHOP_SITE_SECRET уже есть в $ENV_FILE"
+else
+    cp "$ENV_FILE" "$ENV_FILE.bak_$TS" 2>/dev/null
+    printf '\n# Интернет-магазин: общий секрет сайта и сервера\nSHOP_SITE_SECRET=%s\nSHOP_SITE_BASE_URL=https://smartcentr.store\n' \
+        "$(openssl rand -hex 32)" >> "$ENV_FILE"
+    echo "✓ SHOP_SITE_SECRET создан в $ENV_FILE (тот же секрет нужно указать сайту как SHOP_API_SECRET)"
+fi
+
+# ── 7. Пересборка ТОЛЬКО api ─────────────────────────────────────────────────
+cd "$CD" || exit 1
+docker compose -f "$COMPOSE" build api \
+    || { echo "❌ build не удался — старый контейнер работает. Откат: cp $APP/main.py.bak_$TS $APP/main.py"; exit 1; }
+docker compose -f "$COMPOSE" up -d api
+echo "Жду 15 сек..."; sleep 15
+
+# ── 7.1 Автооткат, если api не поднялся ──────────────────────────────────────
+HEALTH=$(curl -s -m 10 https://api.smartcentr.store/health)
+if ! echo "$HEALTH" | grep -q '"healthy"'; then
+    echo "❌ api не ответил healthy: $HEALTH"
+    echo "↩️ АВТООТКАТ: возвращаю main.py, убираю app/shop, пересобираю прежнюю версию..."
+    cp "$APP/main.py.bak_$TS" "$APP/main.py"
+    rm -rf "$DST"
+    [ -d "$DST.bak_$TS" ] && mv "$DST.bak_$TS" "$DST"
+    docker compose -f "$COMPOSE" build api && docker compose -f "$COMPOSE" up -d api
+    sleep 15
+    echo "После отката: $(curl -s -m 10 https://api.smartcentr.store/health)"
+    echo "Таблицы shop_* остались (они пустые и никому не мешают). Пришлите вывод в чат."
+    exit 1
+fi
+echo "✓ api healthy"
+
+# ── 8. Проверка ──────────────────────────────────────────────────────────────
+echo "=== ПРОВЕРКА ==="
+curl -s https://api.smartcentr.store/health; echo
+echo "--- заказ сайта без подписи (ожидается 401) ---"
+curl -s -o /dev/null -w "  HTTP %{http_code}\n" -X POST https://api.smartcentr.store/api/v1/webhook/site/orders
+echo "--- очередь 1С без ключа (ожидается 401) ---"
+curl -s -o /dev/null -w "  HTTP %{http_code}\n" https://api.smartcentr.store/api/v1/webhook/1c/shop/pending
+echo "--- рассрочка по-прежнему на месте (ожидается 401) ---"
+curl -s -o /dev/null -w "  HTTP %{http_code}\n" -X POST https://api.smartcentr.store/api/v1/webhook/1c/payment/create
+echo "--- каталог сайта без подписи (ожидается 401) ---"
+curl -s -o /dev/null -w "  HTTP %{http_code}\n" https://api.smartcentr.store/api/v1/webhook/site/catalog
+echo "--- ошибки запуска ---"
+docker logs "$API" --since 30s 2>&1 | grep -i -E "error|traceback" | tail -10 || echo "  (ошибок нет)"
+
+echo ""
+echo "=== ГОТОВО ==="
+echo "Секрет для сайта (SHOP_API_SECRET) — показать:  grep SHOP_SITE_SECRET $ENV_FILE"
+echo ""
+echo "ОТКАТ:"
+echo "  cp $APP/main.py.bak_$TS $APP/main.py && rm -rf $DST"
+echo "  cd $CD && docker compose -f $COMPOSE build api && docker compose -f $COMPOSE up -d api"

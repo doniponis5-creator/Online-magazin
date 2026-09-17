@@ -9,7 +9,7 @@ import { useI18n } from '@/lib/i18n/I18nProvider'
  * не отправляется и персональные данные не сохраняются.
  */
 export function InstallmentDemo() {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const groupName = useId()
   const [customerType, setCustomerType] = useState<'new' | 'existing'>('new')
   const [name, setName] = useState('')
@@ -44,7 +44,7 @@ export function InstallmentDemo() {
         <p className="promo__note">{t.installmentDemo.newNote}</p>
       ) : submitted ? (
         <p className="promo__note" role="status">
-          <strong>{t.demoOrder.title}.</strong> {t.installmentDemo.resultNote}
+          {t.installmentDemo.resultNote}
         </p>
       ) : (
         <form className="install-demo__form" onSubmit={onSubmit} noValidate>
@@ -72,7 +72,7 @@ export function InstallmentDemo() {
             </label>
           </div>
           <button type="submit" className="btn btn--primary" disabled={!valid}>
-            {t.checkout.submit}
+            {lang === 'ky' ? 'Арыз жөнөтүү' : 'Отправить заявку'}
           </button>
           <span className="demo-strip">{t.installmentDemo.resultNote}</span>
         </form>

@@ -3,9 +3,9 @@ import '../globals.css'
 import '../light-lemon.css'
 
 export const metadata: Metadata = {
-  title: 'Smart Centr — демо-прототип',
+  title: 'Smart Centr — техника для вашего дня',
   description:
-    'Демонстрационный прототип витрины Smart Centr. Не подключён к 1С, SBonus и платёжным сервисам.',
+    'Онлайн-магазин электроники и техники Smart Centr с доставкой по всему Кыргызстану.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

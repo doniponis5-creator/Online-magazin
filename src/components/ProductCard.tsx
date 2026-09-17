@@ -55,11 +55,21 @@ export function ProductCard({ product }: { product: Product }) {
           {name}
         </Link>
         <div className="card__prices">
-          <span className="card__price">{formatSom(product.price)}</span>
-          {product.oldPrice && <span className="card__old-price">{formatSom(product.oldPrice)}</span>}
+          {product.price > 0 ? (
+            <>
+              <span className="card__price">{formatSom(product.price)}</span>
+              {product.oldPrice && <span className="card__old-price">{formatSom(product.oldPrice)}</span>}
+            </>
+          ) : (
+            <span className="card__price card__price--request">{t.catalog.priceOnRequest}</span>
+          )}
         </div>
         <div className="card__actions" ref={actions} tabIndex={-1} aria-label={`${t.cart.quantity}: ${name}`}>
-          {!inStock ? (
+          {product.price <= 0 ? (
+            <button type="button" className="btn btn--outline btn--sm btn--block" disabled>
+              {t.catalog.priceOnRequest}
+            </button>
+          ) : !inStock ? (
             <button type="button" className="btn btn--outline btn--sm btn--block" disabled>
               {t.catalog.outOfStock}
             </button>

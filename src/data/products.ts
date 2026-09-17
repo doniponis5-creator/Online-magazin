@@ -12,6 +12,8 @@
  */
 
 import type { CategoryId } from './categories'
+import oneCCatalog from './1c/catalog.json'
+import { productsFromOneC, type OneCCatalog } from './1c/adapter'
 
 export type ArtKind =
   | 'phone'
@@ -25,6 +27,11 @@ export type ArtKind =
   | 'robot'
   | 'watch'
   | 'speaker'
+  | 'fridge'
+  | 'stove'
+  | 'fan'
+  | 'battery'
+  | 'box'
 
 export type ColorOption = { key: string; labelRu: string; labelKy: string; hex: string }
 export type MemoryOption = { key: string; labelRu: string; labelKy: string }
@@ -59,6 +66,8 @@ export type Product = {
   oldPrice?: number
   art: ArtKind
   image?: string
+  /** все фото товара по порядку (каталог 1С); image — первое из них */
+  images?: string[]
   baseColor: string
   descRu: string
   descKy: string
@@ -68,6 +77,14 @@ export type Product = {
   memoryOptions?: MemoryOption[]
   variants: ProductVariant[]
   badge?: 'hit' | 'new'
+  /** отметки из 1С: «Распродажа» и «Товар дня» */
+  sale?: boolean
+  dealOfDay?: boolean
+  /** стоимость доставки товара, сом (0 или нет — бесплатно) */
+  deliveryPrice?: number
+  /** ссылка (GUID) и код номенклатуры в 1С — для создания заказа */
+  oneCId?: string
+  oneCCode?: string
 }
 
 const screen = (value: string): SpecRow => ({
@@ -105,7 +122,7 @@ const plain = (labelRu: string, labelKy: string, valueRu: string, valueKy = valu
   valueKy,
 })
 
-export const products: Product[] = [
+export const demoProducts: Product[] = [
   // ── Смартфоны ────────────────────────────────────────────────────────────
   {
     id: 'aura-x5',
@@ -117,14 +134,14 @@ export const products: Product[] = [
     oldPrice: 27900,
     art: 'phone',
     baseColor: '#3B6FE8',
-    descRu: 'Демо-модель: смартфон с ярким AMOLED-экраном и ёмкой батареей для работы и развлечений.',
-    descKy: 'Демо-модель: жаркын AMOLED экраны жана узак кызмат этүүчү батарейкасы бар смартфон.',
+    descRu: 'Смартфон с ярким AMOLED-экраном и ёмкой батареей для работы и развлечений.',
+    descKy: 'Жаркын AMOLED экраны жана узак кызмат этүүчү батарейкасы бар смартфон.',
     specs: [
       screen('6,6″ AMOLED, 90 Гц'),
       memorySpec('8 ГБ', '128 ГБ'),
       cameraSpec('основная 50 Мп, фронтальная 16 Мп'),
       batterySpec('5000 мА·ч, быстрая зарядка 33 Вт'),
-      plain('Операционная система', 'Операциялык система', 'Android (демо)'),
+      plain('Операционная система', 'Операциялык система', 'Android'),
     ],
     warrantyMonths: 12,
     badge: 'hit',
@@ -148,8 +165,8 @@ export const products: Product[] = [
     price: 12900,
     art: 'phone',
     baseColor: '#5A8BF0',
-    descRu: 'Демо-модель: недорогой смартфон для повседневных задач — звонки, мессенджеры, фото.',
-    descKy: 'Демо-модель: арзан смартфон — чалуулар, мессенджерлер жана сүрөт үчүн.',
+    descRu: 'Недорогой смартфон для повседневных задач — звонки, мессенджеры, фото.',
+    descKy: 'Арзан смартфон — чалуулар, мессенджерлер жана сүрөт үчүн.',
     specs: [
       screen('6,5″ IPS, 60 Гц'),
       memorySpec('4 ГБ', '64 ГБ'),
@@ -175,13 +192,13 @@ export const products: Product[] = [
     price: 41500,
     art: 'phone',
     baseColor: '#142334',
-    descRu: 'Демо-модель: флагманский смартфон с большим объёмом памяти.',
-    descKy: 'Демо-модель: чоң эс тийини бар флагман смартфон.',
+    descRu: 'Флагманский смартфон с большим объёмом памяти.',
+    descKy: 'Чоң эс тийини бар флагман смартфон.',
     specs: [
       screen('6,7″ AMOLED, 120 Гц'),
       cameraSpec('основная 108 Мп'),
       batterySpec('5200 мА·ч, 45 Вт'),
-      plain('Бренд', 'Бренд', 'Vega (демо)'),
+      plain('Бренд', 'Бренд', 'Vega'),
     ],
     warrantyMonths: 12,
     badge: 'new',
@@ -205,12 +222,12 @@ export const products: Product[] = [
     price: 52900,
     art: 'laptop',
     baseColor: '#D7DEEA',
-    descRu: 'Демо-модель: лёгкий ноутбук для учёбы и офисных задач.',
-    descKy: 'Демо-модель: окуу жана кеңсе иштери үчүн жеңил ноутбук.',
+    descRu: 'Лёгкий ноутбук для учёбы и офисных задач.',
+    descKy: 'Окуу жана кеңсе иштери үчүн жеңил ноутбук.',
     specs: [
       screen('14″ IPS, Full HD'),
       memorySpec('16 ГБ', '512 ГБ SSD'),
-      plain('Процессор', 'Процессор', '4-ядерный (демо)'),
+      plain('Процессор', 'Процессор', '4-ядерный'),
       plain('Вес', 'Салмагы', '1,3 кг'),
     ],
     warrantyMonths: 24,
@@ -232,12 +249,12 @@ export const products: Product[] = [
     price: 68400,
     art: 'laptop',
     baseColor: '#1E2C3C',
-    descRu: 'Демо-модель: производительный ноутбук для работы с графикой и многозадачности.',
-    descKy: 'Демо-модель: графика жана көп тапшырма үчүн кубаттуу ноутбук.',
+    descRu: 'Производительный ноутбук для работы с графикой и многозадачности.',
+    descKy: 'Графика жана көп тапшырма үчүн кубаттуу ноутбук.',
     specs: [
       screen('15,6″ IPS, Full HD'),
       memorySpec('16 ГБ', '512 ГБ SSD'),
-      plain('Процессор', 'Процессор', '8-ядерный (демо)'),
+      plain('Процессор', 'Процессор', '8-ядерный'),
       plain('Вес', 'Салмагы', '1,9 кг'),
     ],
     warrantyMonths: 24,
@@ -261,8 +278,8 @@ export const products: Product[] = [
     price: 27800,
     art: 'tv',
     baseColor: '#142334',
-    descRu: 'Демо-модель: 43-дюймовый 4K-телевизор со Smart-функциями.',
-    descKy: 'Демо-модель: Smart функциялуу 43 дюймдук 4K телевизор.',
+    descRu: '43-дюймовый 4K-телевизор со Smart-функциями.',
+    descKy: 'Smart функциялуу 43 дюймдук 4K телевизор.',
     specs: [
       screen('43″, 4K UHD'),
       plain('Smart TV', 'Smart TV', 'есть', 'бар'),
@@ -282,8 +299,8 @@ export const products: Product[] = [
     oldPrice: 45900,
     art: 'tv',
     baseColor: '#142334',
-    descRu: 'Демо-модель: большой 4K-телевизор для гостиной.',
-    descKy: 'Демо-модель: конуш үчүн чоң 4K телевизор.',
+    descRu: 'Большой 4K-телевизор для гостиной.',
+    descKy: 'Конуш үчүн чоң 4K телевизор.',
     specs: [
       screen('55″, 4K UHD'),
       plain('Smart TV', 'Smart TV', 'есть', 'бар'),
@@ -334,12 +351,12 @@ export const products: Product[] = [
     price: 38900,
     art: 'washer',
     baseColor: '#E9EDF5',
-    descRu: 'Демо-модель: узкая стиральная машина на 6 кг для квартиры.',
-    descKy: 'Демо-модель: пәтер үчүн 6 кг сыйымдуулуктагы кууш жуугуч машина.',
+    descRu: 'Узкая стиральная машина на 6 кг для квартиры.',
+    descKy: 'Пәтер үчүн 6 кг сыйымдуулуктагы кууш жуугуч машина.',
     specs: [
       plain('Загрузка', 'Сыйымдуулук', '6 кг'),
       plain('Отжим', 'Айлануусу', '1200 об/мин'),
-      plain('Класс энергопотребления', 'Энергия классы', 'A+ (демо)'),
+      plain('Класс энергопотребления', 'Энергия классы', 'A+'),
       plain('Габариты (Ш×В×Г)', 'Өлчөмү (Т×Б×Т)', '60×85×42 см'),
     ],
     warrantyMonths: 24,
@@ -355,8 +372,8 @@ export const products: Product[] = [
     price: 12900,
     art: 'coffee',
     baseColor: '#1E2C3C',
-    descRu: 'Демо-модель: автоматическая кофемашина для дома.',
-    descKy: 'Демо-модель: үй үчүн автоматтык кофе машинасы.',
+    descRu: 'Автоматическая кофемашина для дома.',
+    descKy: 'Үй үчүн автоматтык кофе машинасы.',
     specs: [
       plain('Тип', 'Тиби', 'автоматическая', 'автоматтык'),
       plain('Давление', 'Басым', '15 бар'),
@@ -376,13 +393,13 @@ export const products: Product[] = [
     price: 7400,
     art: 'fryer',
     baseColor: '#E9EDF5',
-    descRu: 'Демо-модель: аэрогриль 5 литров с сенсорной панелью.',
-    descKy: 'Демо-модель: сенсордук панели бар 5 литрлик аэрогриль.',
+    descRu: 'Аэрогриль 5 литров с сенсорной панелью.',
+    descKy: 'Сенсордук панели бар 5 литрлик аэрогриль.',
     specs: [
       plain('Объём', 'Көлөмү', '5 л'),
       plain('Мощность', 'Куаттуулугу', '1400 Вт'),
       plain('Управление', 'Башкаруу', 'сенсорное', 'сенсордук'),
-      plain('Программы', 'Программалар', '8 (демо)'),
+      plain('Программы', 'Программалар', '8'),
     ],
     warrantyMonths: 12,
     badge: 'new',
@@ -398,8 +415,8 @@ export const products: Product[] = [
     price: 19800,
     art: 'robot',
     baseColor: '#3B6FE8',
-    descRu: 'Демо-модель: робот-пылесос с влажной уборкой.',
-    descKy: 'Демо-модель: нымдуу тазалоочу робот чаңсоргуч.',
+    descRu: 'Робот-пылесос с влажной уборкой.',
+    descKy: 'Нымдуу тазалоочу робот чаңсоргуч.',
     specs: [
       plain('Тип', 'Тиби', 'робот-пылесос', 'робот чаңсоргуч'),
       plain('Уборка', 'Тазалоо', 'сухая и влажная', 'кургак жана нымдуу'),
@@ -421,8 +438,8 @@ export const products: Product[] = [
     price: 19700,
     art: 'tablet',
     baseColor: '#5A8BF0',
-    descRu: 'Демо-модель: планшет 10 дюймов для учёбы и чтения.',
-    descKy: 'Демо-модель: окуу жана окуу үчүн 10 дюймдук планшет.',
+    descRu: 'Планшет 10 дюймов для учёбы и чтения.',
+    descKy: 'Окуу жана окуу үчүн 10 дюймдук планшет.',
     specs: [
       screen('10,1″ IPS, Full HD'),
       memorySpec('4 ГБ', '128 ГБ'),
@@ -457,12 +474,12 @@ export const products: Product[] = [
     price: 5900,
     art: 'headphones',
     baseColor: '#F4F6FA',
-    descRu: 'Демо-модель: беспроводные наушники с шумоподавлением.',
-    descKy: 'Демо-модель: ызы-чууну азайтуучу зымсыз кулакчын.',
+    descRu: 'Беспроводные наушники с шумоподавлением.',
+    descKy: 'Ызы-чууну азайтуучу зымсыз кулакчын.',
     specs: [
       plain('Тип', 'Тиби', 'накладные, Bluetooth', 'баш кийимдүү, Bluetooth'),
       plain('Автономность', 'Батареясы', 'до 30 ч с кейсом', 'кутусу менен 30 саатка чейин'),
-      plain('Шумоподавление', 'Ызы-чуу азайтуу', 'активное (демо)', 'активдүү (демо)'),
+      plain('Шумоподавление', 'Ызы-чуу азайтуу', 'активное', 'активдүү'),
       plain('Вес', 'Салмагы', '220 г'),
     ],
     warrantyMonths: 12,
@@ -485,13 +502,13 @@ export const products: Product[] = [
     price: 8200,
     art: 'watch',
     baseColor: '#3B6FE8',
-    descRu: 'Демо-модель: умные часы с пульсометром и уведомлениями.',
-    descKy: 'Демо-модель: тамыр кагуусун жана билдирмелерди көрсөтүүчү акылм саат.',
+    descRu: 'Умные часы с пульсометром и уведомлениями.',
+    descKy: 'Тамыр кагуусун жана билдирмелерди көрсөтүүчү акылм саат.',
     specs: [
       screen('1,8″ IPS'),
       plain('Датчики', 'Сенсорлору', 'пульс, шагомер', 'тамыр, кадам өлчөгүч'),
       plain('Автономность', 'Батареясы', 'до 7 дней', '7 күнгө чейин'),
-      plain('Защита', 'Коргоо', 'IP67 (демо)'),
+      plain('Защита', 'Коргоо', 'IP67'),
     ],
     warrantyMonths: 12,
     colorOptions: [
@@ -512,12 +529,12 @@ export const products: Product[] = [
     price: 4300,
     art: 'speaker',
     baseColor: '#3B6FE8',
-    descRu: 'Демо-модель: портативная Bluetooth-колонка с защитой от брызг.',
-    descKy: 'Демо-модель: чачыроодон корголгон портативтик Bluetooth колонка.',
+    descRu: 'Портативная Bluetooth-колонка с защитой от брызг.',
+    descKy: 'Чачыроодон корголгон портативтик Bluetooth колонка.',
     specs: [
       plain('Мощность', 'Куаттуулугу', '10 Вт'),
       plain('Автономность', 'Батареясы', 'до 12 ч', '12 саатка чейин'),
-      plain('Защита', 'Коргоо', 'IPX5 (демо)'),
+      plain('Защита', 'Коргоо', 'IPX5'),
       plain('Вес', 'Салмагы', '340 г'),
     ],
     warrantyMonths: 12,
@@ -526,24 +543,75 @@ export const products: Product[] = [
   },
 ]
 
+/** Откуда витрина берёт товары: из выгрузки 1С, если она не пустая, иначе демо-каталог. */
+export const catalogSource: 'demo' | '1c' = (oneCCatalog as OneCCatalog).items.length > 0 ? '1c' : 'demo'
+
+export const products: Product[] =
+  catalogSource === '1c' ? productsFromOneC(oneCCatalog as OneCCatalog) : demoProducts
+
 export function getProduct(id: string): Product | undefined {
   return products.find((p) => p.id === id)
 }
 
-/** Все уникальные бренды демо-каталога */
-export const brands: string[] = [...new Set(products.map((p) => p.brand))].sort((a, b) =>
+/** Все уникальные бренды каталога */
+export const brands: string[] = [...new Set(products.map((p) => p.brand).filter(Boolean))].sort((a, b) =>
   a.localeCompare(b),
 )
 
 export const popularProductIds = ['aura-x5', 'airsound-pro', 'smartview-55', 'cleanpure-6']
 export const newProductIds = ['vega-pro', 'aerochef-5', 'tabslate-10', 'boommini']
 
+const purchasable = (p: Product) => p.price > 0 && p.variants.some((v) => v.stock > 0)
+
+function byIds(ids: string[]): Product[] {
+  return ids.map((id) => getProduct(id)).filter((p): p is Product => Boolean(p))
+}
+
+/** Отмеченные в 1С товары; если отметок меньше нужного — добираем товарами с ценой и в наличии. */
+function pick(flagged: Product[], count: number, exclude: Product[] = []): Product[] {
+  const taken = new Set(exclude.map((p) => p.id))
+  const result = flagged.filter((p) => !taken.has(p.id)).slice(0, count)
+  result.forEach((p) => taken.add(p.id))
+  for (const p of products) {
+    if (result.length >= count) break
+    if (!taken.has(p.id) && purchasable(p)) {
+      result.push(p)
+      taken.add(p.id)
+    }
+  }
+  return result
+}
+
 export function getPopular(): Product[] {
-  return popularProductIds.map((id) => getProduct(id)).filter((p): p is Product => Boolean(p))
+  return catalogSource === '1c' ? pick(products.filter((p) => p.badge === 'hit'), 4) : byIds(popularProductIds)
 }
 
 export function getNew(): Product[] {
-  return newProductIds.map((id) => getProduct(id)).filter((p): p is Product => Boolean(p))
+  return catalogSource === '1c' ? products.filter((p) => p.badge === 'new').slice(0, 8) : byIds(newProductIds)
+}
+
+/** «Товар дня»: отметка из 1С, иначе товар со скидкой, иначе первый товар с ценой. */
+export function getDailyProduct(demoId: string): Product | undefined {
+  if (catalogSource === 'demo') return getProduct(demoId)
+  return (
+    products.find((p) => p.dealOfDay) ??
+    products.find((p) => p.oldPrice && purchasable(p)) ??
+    products.find(purchasable)
+  )
+}
+
+export function getHits(demoIds: string[]): Product[] {
+  return catalogSource === '1c' ? pick(products.filter((p) => p.badge === 'hit'), 7) : byIds(demoIds)
+}
+
+export function getRecommended(demoIds: string[], exclude: Product[] = []): Product[] {
+  if (catalogSource === 'demo') return byIds(demoIds)
+  return pick(products.filter((p) => p.image && purchasable(p)), 3, exclude)
+}
+
+/** Распродажа: отметка «Распродажа» или старая цена выше текущей. */
+export function getSale(): Product[] {
+  return products.filter((p) => (p.sale || (p.oldPrice && p.oldPrice > p.price)) && p.price > 0)
 }
 
 // ── Варианты: подбор комбинаций ────────────────────────────────────────────
