@@ -32,6 +32,8 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
   const [password, setPassword] = useState('')
   const [password2, setPassword2] = useState('')
   const [hadPassword, setHadPassword] = useState(false)
+  // Куда ушёл код — иначе человек ищет его не в том приложении
+  const [channel, setChannel] = useState<'telegram' | 'whatsapp'>('whatsapp')
   // Клиент уже вошёл (cookie стоит) — отдаём его наверх, когда закончим с паролем
   const [pending, setPending] = useState<{ customer: CustomerProfile; welcomeBonus: number } | null>(null)
 
@@ -73,6 +75,7 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
     setBusy(false)
     if (!data?.ok) return setError(status === 422 ? a.errorPhone : serverError(status, data))
     setNormalized(value)
+    setChannel(data.channel === 'telegram' ? 'telegram' : 'whatsapp')
     setCode('')
     setStep('code')
   }
@@ -214,10 +217,12 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
       {step === 'code' && (
         <form onSubmit={verify} noValidate>
           <p className="login-card__hint">
-            {a.codeSent} <strong>{normalized}</strong>
+            {channel === 'telegram' ? a.codeSentTelegram : a.codeSent} <strong>{normalized}</strong>
           </p>
           <div className="field">
-            <label className="field__label" htmlFor="login-code">{a.code}</label>
+            <label className="field__label" htmlFor="login-code">
+              {channel === 'telegram' ? a.codeTelegram : a.code}
+            </label>
             <input
               id="login-code"
               className="login-card__code"

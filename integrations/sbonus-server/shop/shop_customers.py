@@ -1,7 +1,9 @@
 """
 Интернет-магазин Smart Centr — вход покупателя на сайт и бонусы SBonus.
 
-Вход: телефон → пароль (если покупатель его задал) или 4-значный код в WhatsApp.
+Вход: телефон → пароль (если покупатель его задал) или 4-значный код.
+Код идёт сначала в Telegram (дешевле, мгновенно, без риска блокировки номера),
+и только если Telegram на этом номере нет — в WhatsApp.
 Пароль необязателен и хранится отдельно (таблица shop_passwords); ключ клиента — телефон.
 Новый номер → сайт спрашивает имя → клиент создаётся в SBonus + приветственный бонус сайта
 (только тем, кого ещё не было в SBonus; один раз на телефон — уникальный receipt_number).
@@ -9,7 +11,7 @@
 Эндпоинты (все под /api/v1, подпись HMAC сайта — секрет SHOP_SITE_SECRET):
   POST /webhook/site/customer/start        {phone, ip}          есть ли у номера пароль
   POST /webhook/site/customer/login        {phone, password, ip} вход по паролю → профиль
-  POST /webhook/site/customer/send-code    {phone, ip}          отправить код
+  POST /webhook/site/customer/send-code    {phone, ip}          отправить код → channel
   POST /webhook/site/customer/verify       {phone, code, ip}    проверить код → профиль или needName+ticket
   POST /webhook/site/customer/register     {ticket, name}       создать клиента + приветственный бонус
   POST /webhook/site/customer/set-password {pwTicket, password} задать или сменить пароль
@@ -42,6 +44,7 @@ from app.core.security import hash_password, verify_password
 from app.models import BonusAccount, Customer, Setting, Tier, Transaction, TransactionType
 from app.payments import payments_greenapi as wa  # type: ignore
 
+from . import shop_telegram as tg
 from .shop_models import ShopOrder, ShopPassword
 from .shop_router import _money, _site_secret, _verify_site_body, _verify_site_path
 
@@ -143,11 +146,14 @@ async def _phone_by_ticket(ticket: str) -> str:
     return phone
 
 
-async def _send_wa(phone: str, text: str) -> None:
+async def _send_wa(phone: str, text: str) -> bool:
+    """True — WhatsApp принял сообщение. Ошибку не поднимаем: решает вызывающий."""
     try:
         await asyncio.to_thread(wa.send_text, phone, text)
+        return True
     except Exception as error:
         logger.error(f"site customer WhatsApp failed ...{phone[-4:]}: {error}")
+        return False
 
 
 async def _customer(db: AsyncSession, phone: str) -> Customer | None:
@@ -261,11 +267,21 @@ async def send_code(request: Request, db: AsyncSession = Depends(get_db)):
     code = f"{secrets.randbelow(9000) + 1000}"
     await redis_client.setex(f"shop_otp:{phone}", CODE_TTL, _code_hash(phone, code))
     await redis_client.delete(f"shop_otp_attempts:{phone}")
-    await _send_wa(phone, (
+
+    # Сначала Telegram (дешевле и без риска блокировки), иначе WhatsApp
+    if await tg.send_code(phone, code, CODE_TTL):
+        return {"ok": True, "channel": "telegram"}
+    sent = await _send_wa(phone, (
         f"*{code}* — код для входа на сайт Smart Centr\n\n"
         f"⏱ Код действует 5 минут.\n⚠️ Никому не сообщайте код."
     ))
-    return {"ok": True}
+    if not sent:
+        # Раньше сайт писал «код отправлен», даже когда он никуда не ушёл,
+        # и покупатель ждал впустую. Теперь говорим правду.
+        await redis_client.delete(f"shop_otp:{phone}")
+        logger.error(f"site code not delivered ...{phone[-4:]}")
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Не удалось отправить код. Попробуйте через минуту.")
+    return {"ok": True, "channel": "whatsapp"}
 
 
 @router_site_customer.post("/verify")

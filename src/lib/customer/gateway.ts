@@ -178,12 +178,20 @@ export async function dropPassword(pwTicket: PasswordTicket): Promise<void> {
   await call('/api/v1/webhook/site/customer/drop-password', { method: 'POST', body: { pwTicket } })
 }
 
-export async function sendCode(phone: string, ip: string): Promise<void> {
+/** Куда ушёл код: сервер сначала пробует Telegram, потом WhatsApp. */
+export type CodeChannel = 'telegram' | 'whatsapp'
+
+export async function sendCode(phone: string, ip: string): Promise<CodeChannel> {
   if (paymentMode() === 'mock') {
     console.info(`[customer] тестовый код для ${phone}: ${MOCK_CODE}`)
-    return
+    return 'whatsapp'
   }
-  await call('/api/v1/webhook/site/customer/send-code', { method: 'POST', body: { phone, ip } })
+  const result = await call<{ channel?: CodeChannel }>('/api/v1/webhook/site/customer/send-code', {
+    method: 'POST',
+    body: { phone, ip },
+  })
+  // Старый сервер канал не возвращает — тогда это WhatsApp
+  return result.channel === 'telegram' ? 'telegram' : 'whatsapp'
 }
 
 export async function verifyCode(phone: string, code: string, ip: string): Promise<VerifyResult> {
