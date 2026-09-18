@@ -120,3 +120,18 @@ class ShopOrderEvent(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     order = relationship("ShopOrder", back_populates="events")
+
+
+class ShopPassword(Base):
+    """
+    Необязательный пароль покупателя для входа на сайт.
+
+    Телефон остаётся единственным ключом клиента: запись здесь только ускоряет вход
+    (без кода в WhatsApp). Нет записи — вход по коду, как раньше. Таблица customers
+    SBonus не меняется, поэтому касса и 1С работают как прежде.
+    """
+    __tablename__ = "shop_passwords"
+
+    phone = Column(String(20), primary_key=True)          # +996XXXXXXXXX, тот же номер, что в customers
+    password_hash = Column(String(255), nullable=False)    # bcrypt; сам пароль не хранится
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

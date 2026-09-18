@@ -1,14 +1,19 @@
 """
 Интернет-магазин Smart Centr — вход покупателя на сайт и бонусы SBonus.
 
-Вход без пароля: телефон → 4-значный код в WhatsApp → проверка кода.
+Вход: телефон → пароль (если покупатель его задал) или 4-значный код в WhatsApp.
+Пароль необязателен и хранится отдельно (таблица shop_passwords); ключ клиента — телефон.
 Новый номер → сайт спрашивает имя → клиент создаётся в SBonus + приветственный бонус сайта
 (только тем, кого ещё не было в SBonus; один раз на телефон — уникальный receipt_number).
 
 Эндпоинты (все под /api/v1, подпись HMAC сайта — секрет SHOP_SITE_SECRET):
-  POST /webhook/site/customer/send-code   {phone, ip}          отправить код
-  POST /webhook/site/customer/verify      {phone, code, ip}    проверить код → профиль или needName+ticket
-  POST /webhook/site/customer/register    {ticket, name}       создать клиента + приветственный бонус
+  POST /webhook/site/customer/start        {phone, ip}          есть ли у номера пароль
+  POST /webhook/site/customer/login        {phone, password, ip} вход по паролю → профиль
+  POST /webhook/site/customer/send-code    {phone, ip}          отправить код
+  POST /webhook/site/customer/verify       {phone, code, ip}    проверить код → профиль или needName+ticket
+  POST /webhook/site/customer/register     {ticket, name}       создать клиента + приветственный бонус
+  POST /webhook/site/customer/set-password {pwTicket, password} задать или сменить пароль
+  POST /webhook/site/customer/drop-password {pwTicket}          убрать пароль (вернуться к входу по коду)
   GET  /webhook/site/customer/{996XXXXXXXXX}?amount=&full=1    профиль, баланс, максимум списания, история
 
 Настройки (таблица settings SBonus, меняются без перезапуска):
@@ -33,10 +38,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.redis import check_rate_limit, redis_client
+from app.core.security import hash_password, verify_password
 from app.models import BonusAccount, Customer, Setting, Tier, Transaction, TransactionType
 from app.payments import payments_greenapi as wa  # type: ignore
 
-from .shop_models import ShopOrder
+from .shop_models import ShopOrder, ShopPassword
 from .shop_router import _money, _site_secret, _verify_site_body, _verify_site_path
 
 logger = logging.getLogger("sbonus.shop.customer")
@@ -46,6 +52,9 @@ router_site_customer = APIRouter(prefix="/webhook/site/customer", tags=["Сай�
 CODE_TTL = 300          # код действует 5 минут
 TICKET_TTL = 900        # 15 минут, чтобы ввести имя
 MAX_ATTEMPTS = 5
+PW_TICKET_TTL = 900     # 15 минут, чтобы задать пароль после входа по коду
+MIN_PASSWORD = 6
+MAX_PASSWORD = 72       # предел bcrypt: всё, что длиннее, молча обрезается
 DEFAULT_WELCOME = Decimal("1000")
 DEFAULT_MAX_PCT = Decimal("10")
 PHONE_RE = re.compile(r"\+996\d{9}")
@@ -103,6 +112,37 @@ def _phone(value: str) -> str:
     return value
 
 
+def _password(value: str) -> str:
+    value = (value or "").strip()
+    if not (MIN_PASSWORD <= len(value.encode()) <= MAX_PASSWORD):
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            f"Пароль — от {MIN_PASSWORD} до {MAX_PASSWORD} символов",
+        )
+    return value
+
+
+async def _pw_row(db: AsyncSession, phone: str) -> ShopPassword | None:
+    return (await db.execute(select(ShopPassword).where(ShopPassword.phone == phone))).scalar_one_or_none()
+
+
+async def _pw_ticket(phone: str) -> str:
+    """Короткий пропуск: номер только что подтверждён кодом, можно задать или убрать пароль."""
+    ticket = secrets.token_urlsafe(24)
+    await redis_client.setex(f"shop_pwt:{ticket}", PW_TICKET_TTL, phone)
+    return ticket
+
+
+async def _phone_by_ticket(ticket: str) -> str:
+    phone = await redis_client.get(f"shop_pwt:{(ticket or '')[:120]}")
+    if isinstance(phone, bytes):
+        phone = phone.decode()
+    if not phone:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Время вышло. Войдите заново.")
+    await redis_client.delete(f"shop_pwt:{ticket}")
+    return phone
+
+
 async def _send_wa(phone: str, text: str) -> None:
     try:
         await asyncio.to_thread(wa.send_text, phone, text)
@@ -132,6 +172,7 @@ async def profile(db: AsyncSession, customer: Customer, amount: Decimal = Decima
     pct = await max_spend_pct(db)
     balance = Decimal(str(account.balance or 0))
     data = {
+        "hasPassword": bool(await _pw_row(db, customer.phone)),
         "phone": customer.phone,
         "name": customer.full_name,
         "balance": float(balance),
@@ -183,6 +224,26 @@ class VerifyCode(BaseModel):
 class Register(BaseModel):
     ticket: str
     name: str
+
+
+class Start(BaseModel):
+    phone: str
+    ip: str = ""
+
+
+class LoginPassword(BaseModel):
+    phone: str
+    password: str
+    ip: str = ""
+
+
+class SetPassword(BaseModel):
+    pwTicket: str
+    password: str
+
+
+class DropPassword(BaseModel):
+    pwTicket: str
 
 
 # ── Эндпоинты ───────────────────────────────────────────────────────────────
@@ -238,7 +299,13 @@ async def verify_code(request: Request, db: AsyncSession = Depends(get_db)):
     if customer:
         if not customer.is_active:
             raise HTTPException(status.HTTP_403_FORBIDDEN, "Номер заблокирован. Обратитесь в магазин.")
-        return {"ok": True, "needName": False, "customer": await profile(db, customer)}
+        # pwTicket: сайт сразу предложит задать пароль, чтобы в следующий раз обойтись без кода
+        return {
+            "ok": True,
+            "needName": False,
+            "customer": await profile(db, customer),
+            "pwTicket": await _pw_ticket(phone),
+        }
 
     ticket = secrets.token_urlsafe(24)
     await redis_client.setex(f"shop_reg:{ticket}", TICKET_TTL, phone)
@@ -261,7 +328,8 @@ async def register(request: Request, db: AsyncSession = Depends(get_db)):
 
     customer = await _customer(db, phone)
     if customer:  # успел зарегистрироваться в магазине — приветственный бонус сайта не положен
-        return {"ok": True, "customer": await profile(db, customer), "welcomeBonus": 0}
+        return {"ok": True, "customer": await profile(db, customer), "welcomeBonus": 0,
+                "pwTicket": await _pw_ticket(phone)}
 
     tier = (await db.execute(select(Tier).order_by(Tier.sort_order.asc()).limit(1))).scalar_one_or_none()
     customer = Customer(
@@ -297,7 +365,85 @@ async def register(request: Request, db: AsyncSession = Depends(get_db)):
         + (f"🎁 Вам начислено *{_money(bonus)}* приветственных бонусов.\n"
            f"Оплачивайте ими часть покупки на сайте.\n" if bonus > 0 else "")
     ))
-    return {"ok": True, "customer": await profile(db, customer), "welcomeBonus": float(bonus)}
+    return {"ok": True, "customer": await profile(db, customer), "welcomeBonus": float(bonus),
+            "pwTicket": await _pw_ticket(phone)}
+
+
+@router_site_customer.post("/start")
+async def start(request: Request, db: AsyncSession = Depends(get_db)):
+    """
+    Первый шаг входа: задан ли у номера пароль.
+
+    Есть пароль → сайт покажет поле пароля и код в WhatsApp НЕ отправляется.
+    Нет пароля → сайт отправит код, как раньше.
+    """
+    payload = Start.parse_raw(await _verify_site_body(request))
+    phone = _phone(payload.phone)
+    ip = (payload.ip or "")[:45]
+    if ip and not await check_rate_limit(f"shop_start_ip:{ip}", max_attempts=60, window_seconds=3600):
+        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Слишком много запросов. Попробуйте позже.")
+    customer = await _customer(db, phone)
+    has_password = bool(customer and customer.is_active and await _pw_row(db, phone))
+    return {"ok": True, "hasPassword": has_password}
+
+
+@router_site_customer.post("/login")
+async def login_password(request: Request, db: AsyncSession = Depends(get_db)):
+    """Вход по телефону и паролю — без кода в WhatsApp."""
+    payload = LoginPassword.parse_raw(await _verify_site_body(request))
+    phone = _phone(payload.phone)
+    ip = (payload.ip or "")[:45]
+    if not await check_rate_limit(f"shop_pw_try:{phone}", max_attempts=10, window_seconds=900):
+        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS,
+                            "Слишком много попыток. Войдите по коду из WhatsApp.")
+    if ip and not await check_rate_limit(f"shop_pw_ip:{ip}", max_attempts=30, window_seconds=3600):
+        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Слишком много попыток. Попробуйте позже.")
+
+    customer = await _customer(db, phone)
+    row = await _pw_row(db, phone) if customer else None
+    # Один и тот же текст на «нет такого номера» и «пароль не тот»: номера не перебрать.
+    if not customer or not customer.is_active or not row:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Неверный номер или пароль")
+    if not await asyncio.to_thread(verify_password, payload.password or "", row.password_hash):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Неверный номер или пароль")
+
+    logger.info(f"site login by password ...{phone[-4:]}")
+    return {"ok": True, "needName": False, "customer": await profile(db, customer)}
+
+
+@router_site_customer.post("/set-password")
+async def set_password(request: Request, db: AsyncSession = Depends(get_db)):
+    """Задать или сменить пароль. pwTicket выдаётся после входа по коду — он и есть подтверждение номера."""
+    payload = SetPassword.parse_raw(await _verify_site_body(request))
+    password = _password(payload.password)
+    phone = await _phone_by_ticket(payload.pwTicket)
+    customer = await _customer(db, phone)
+    if not customer:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "клиент не найден")
+
+    hashed = await asyncio.to_thread(hash_password, password)
+    row = await _pw_row(db, phone)
+    if row:
+        row.password_hash = hashed
+    else:
+        db.add(ShopPassword(phone=phone, password_hash=hashed))
+    await db.commit()
+    await redis_client.delete(f"rate:shop_pw_try:{phone}")   # снять счётчик неудачных попыток
+    logger.info(f"site password set ...{phone[-4:]}")
+    return {"ok": True, "hasPassword": True}
+
+
+@router_site_customer.post("/drop-password")
+async def drop_password(request: Request, db: AsyncSession = Depends(get_db)):
+    """Убрать пароль — покупатель снова входит по коду из WhatsApp."""
+    payload = DropPassword.parse_raw(await _verify_site_body(request))
+    phone = await _phone_by_ticket(payload.pwTicket)
+    row = await _pw_row(db, phone)
+    if row:
+        await db.delete(row)
+        await db.commit()
+    logger.info(f"site password dropped ...{phone[-4:]}")
+    return {"ok": True, "hasPassword": False}
 
 
 @router_site_customer.get("/{digits}")
