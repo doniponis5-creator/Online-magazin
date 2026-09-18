@@ -7,3 +7,9 @@ graphify-out/graph.json        -merge -diff
 graphify-out/manifest.json     -merge -diff
 graphify-out/GRAPH_REPORT.md   -merge -diff
 graphify-out/cache/**          -merge -diff
+# Эту строку добавил `graphify hook install`. Она умнее правила выше:
+# graph.json не просто «оставь свою версию», а честно объединяется
+# (union merge) из двух компьютеров. Строка ниже перебивает -merge.
+# ВАЖНО: на втором компьютере тоже нужно один раз выполнить
+# `graphify hook install`, иначе git не знает этого объединителя.
+graphify-out/graph.json merge=graphify
