@@ -21,20 +21,33 @@ if (-not (Test-Path $RemoteScript)) {
 
 Write-Host 'Telegram Gateway — настройка токена' -ForegroundColor Cyan
 Write-Host 'Токен со страницы gateway.telegram.org (вводится скрыто, на экране не видно).'
+Write-Host 'Вставьте ТОЛЬКО токен, одной строкой, и нажмите Enter.'
+# Если в терминале остался вставленный ранее текст, он попал бы в поле токена
+$Host.UI.RawUI.FlushInputBuffer()
 $secure = Read-Host 'Токен' -AsSecureString
 $ptr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
 $token = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)
 [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)
 
+$token = $token.Trim()
 if ([string]::IsNullOrWhiteSpace($token) -or $token.Length -lt 20) {
     Write-Host 'Токен слишком короткий — похоже, скопировался не полностью. Запустите скрипт заново.' -ForegroundColor Red
+    exit 1
+}
+# Пробелы, путь к файлу или слово PS означают, что вставился не токен,
+# а кусок прошлого вывода терминала. До Telegram такое доводить незачем.
+if ($token -match '\s' -or $token -match '\.ps1' -or $token -match '^PS ' -or $token -match '^[A-Za-z]:') {
+    Write-Host 'Это не похоже на токен — похоже, в поле попал текст из терминала.' -ForegroundColor Red
+    Write-Host 'Очистите экран командой  cls  и запустите скрипт заново, вставив только токен.'
     exit 1
 }
 
 Write-Host ''
 Write-Host 'Канал-отправитель — необязательно. Это проверенный Telegram-канал магазина,'
 Write-Host 'от имени которого придёт код. Нет такого — просто нажмите Enter.'
+$Host.UI.RawUI.FlushInputBuffer()
 $sender = (Read-Host 'Username канала без @ (можно пропустить)').Trim().TrimStart('@')
+if ($sender -match '\s' -or $sender -match '\.ps1') { $sender = '' }
 
 # Серверную часть кладём отдельным файлом: длинный многострочный текст
 # PowerShell при передаче в ssh портит. Windows-переводы строк bash не понимает,
