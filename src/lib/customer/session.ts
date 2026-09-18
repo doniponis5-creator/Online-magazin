@@ -41,7 +41,7 @@ export function decodeSession(value: string | undefined, now = Date.now()): Cust
   if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) return null
   try {
     const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as CustomerSession
-    if (!/^\+996\d{9}$/.test(data.phone) || typeof data.exp !== 'number' || data.exp < now) return null
+    if (!/^\+(?:996\d{9}|7\d{10})$/.test(data.phone) || typeof data.exp !== 'number' || data.exp < now) return null
     return data
   } catch {
     return null

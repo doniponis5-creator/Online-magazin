@@ -163,7 +163,7 @@ def _check_site_order(order: SiteOrderCreate) -> None:
     problems = []
     if not (2 <= len(order.customer.name.strip()) <= 160):
         problems.append("имя")
-    if not re.fullmatch(r"\+996\d{9}", order.customer.phone):
+    if not re.fullmatch(r"\+(?:996\d{9}|7\d{10})", order.customer.phone):
         problems.append("телефон")
     if order.delivery.price < 0:
         problems.append("доставка")

@@ -14,15 +14,23 @@ const base: OrderRequest = {
   lines: [{ productId: 'smartview-55', variantId: 'std', qty: 1 }],
 }
 
-describe('normalizePhone — кыргызские номера', () => {
+describe('normalizePhone — кыргызские и российские номера', () => {
   it('приводит разные записи к +996XXXXXXXXX', () => {
     expect(normalizePhone('0700 123 456')).toBe('+996700123456')
     expect(normalizePhone('+996 (700) 12-34-56')).toBe('+996700123456')
     expect(normalizePhone('996700123456')).toBe('+996700123456')
   })
-  it('отклоняет короткие и чужие номера', () => {
+  // Сотня действующих клиентов SBonus записана с российскими номерами
+  it('приводит российские записи к +7XXXXXXXXXX', () => {
+    expect(normalizePhone('+7 900 123 45 67')).toBe('+79001234567')
+    expect(normalizePhone('8 (900) 123-45-67')).toBe('+79001234567')
+    expect(normalizePhone('79001234567')).toBe('+79001234567')
+  })
+  it('отклоняет короткие, длинные и чужие номера', () => {
     expect(normalizePhone('12345')).toBeNull()
-    expect(normalizePhone('+7 900 123 45 67')).toBeNull()
+    expect(normalizePhone('+996 700 12-34-5')).toBeNull()
+    expect(normalizePhone('+7 900 123 45')).toBeNull()
+    expect(normalizePhone('+44 20 7946 0958')).toBeNull()
   })
 })
 

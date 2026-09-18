@@ -51,7 +51,8 @@ TICKET_TTL = 900        # 15 минут, чтобы ввести имя
 MAX_ATTEMPTS = 5
 DEFAULT_WELCOME = Decimal("1000")
 DEFAULT_MAX_PCT = Decimal("10")
-PHONE_RE = re.compile(r"\+996\d{9}")
+# Кыргызстан и Россия: часть действующих клиентов SBonus записана с номерами +7
+PHONE_RE = re.compile(r"\+(?:996\d{9}|7\d{10})")
 
 
 # ── Настройки ────────────────────────────────────────────────────────────────
@@ -102,7 +103,7 @@ def _code_hash(phone: str, code: str) -> str:
 def _phone(value: str) -> str:
     value = (value or "").strip()
     if not PHONE_RE.fullmatch(value):
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "телефон должен быть +996XXXXXXXXX")
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "телефон должен быть +996XXXXXXXXX или +7XXXXXXXXXX")
     return value
 
 

@@ -58,12 +58,32 @@ export type OrderError =
 
 const MAX_QTY = 99
 
-/** +996 XXX XXX XXX → +996XXXXXXXXX; null, если номер не кыргызский мобильный/городской. */
+/**
+ * Телефон покупателя к единому виду: +996XXXXXXXXX или +7XXXXXXXXXX.
+ *
+ * Кыргызстан — основной рынок. Российские номера принимаем потому, что сотня
+ * действующих клиентов SBonus записана именно с ними: без этого они не смогут
+ * войти на сайт и увидеть свои бонусы. Код входа и Telegram, и WhatsApp
+ * доставляют на +7 так же, как на +996.
+ */
 export function normalizePhone(value: string): string | null {
   const digits = value.replace(/[^\d+]/g, '')
-  const local = digits.startsWith('+996') ? digits.slice(4) : digits.startsWith('996') ? digits.slice(3) : digits.startsWith('0') ? digits.slice(1) : null
-  if (!local || !/^\d{9}$/.test(local)) return null
-  return `+996${local}`
+
+  // Кыргызстан: +996XXXXXXXXX, 996XXXXXXXXX, 0XXXXXXXXX
+  const kg = digits.startsWith('+996')
+    ? digits.slice(4)
+    : digits.startsWith('996')
+      ? digits.slice(3)
+      : digits.startsWith('0')
+        ? digits.slice(1)
+        : null
+  if (kg && /^\d{9}$/.test(kg)) return `+996${kg}`
+
+  // Россия: +7XXXXXXXXXX, 7XXXXXXXXXX, 8XXXXXXXXXX
+  const ru = digits.startsWith('+7') ? digits.slice(2) : /^[78]\d{10}$/.test(digits) ? digits.slice(1) : null
+  if (ru && /^\d{10}$/.test(ru)) return `+7${ru}`
+
+  return null
 }
 
 /** Стоимость доставки заказа: самая дорогая доставка среди товаров. */

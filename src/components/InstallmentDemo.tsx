@@ -2,6 +2,7 @@
 
 import { useId, useState, type FormEvent } from 'react'
 import { useI18n } from '@/lib/i18n/I18nProvider'
+import { normalizePhone } from '@/lib/orders/order'
 
 /**
  * Демо-состояние рассрочки: различаем нового клиента и существующего
@@ -16,7 +17,7 @@ export function InstallmentDemo() {
   const [phone, setPhone] = useState('')
   const [submitted, setSubmitted] = useState(false)
 
-  const valid = name.trim().length >= 2 && /^\+996\d{9}$/.test(phone.replace(/[\s()-]/g, ''))
+  const valid = name.trim().length >= 2 && normalizePhone(phone) !== null
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
