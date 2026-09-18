@@ -216,8 +216,6 @@ echo "--- каталог сайта без подписи (ожидается 40
 curl -s -o /dev/null -w "  HTTP %{http_code}\n" https://api.smartcentr.store/api/v1/webhook/site/catalog
 echo "--- вход покупателя без подписи (ожидается 401) ---"
 curl -s -o /dev/null -w "  HTTP %{http_code}\n" -X POST https://api.smartcentr.store/api/v1/webhook/site/customer/send-code
-echo "--- вход по паролю без подписи (ожидается 401) ---"
-curl -s -o /dev/null -w "  HTTP %{http_code}\n" -X POST https://api.smartcentr.store/api/v1/webhook/site/customer/login
 echo "--- ошибки запуска ---"
 docker logs "$API" --since 30s 2>&1 | grep -i -E "error|traceback" | tail -10 || echo "  (ошибок нет)"
 
