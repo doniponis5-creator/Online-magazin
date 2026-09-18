@@ -103,6 +103,30 @@ async function call<T>(path: string, init: { method: 'GET' | 'POST'; body?: unkn
 
 // ── API ───────────────────────────────────────────────────────────────────────
 
+/**
+ * Настройки сайта, которыми владелец управляет из 1С («Панель сайта»).
+ * Меняются на сервере и действуют сразу, поэтому спрашиваем их, а не держим в коде.
+ */
+export type SiteSettings = { guestCheckout: boolean; bonusMaxPct: number; welcomeBonus: number }
+
+const SITE_SETTINGS_FALLBACK: SiteSettings = { guestCheckout: true, bonusMaxPct: 10, welcomeBonus: 1000 }
+
+export async function getSiteSettings(): Promise<SiteSettings> {
+  if (paymentMode() === 'mock') return SITE_SETTINGS_FALLBACK
+  try {
+    const data = await call<Partial<SiteSettings>>('/api/v1/webhook/site/settings', { method: 'GET' })
+    return {
+      guestCheckout: data.guestCheckout !== false,
+      bonusMaxPct: Number(data.bonusMaxPct ?? SITE_SETTINGS_FALLBACK.bonusMaxPct),
+      welcomeBonus: Number(data.welcomeBonus ?? SITE_SETTINGS_FALLBACK.welcomeBonus),
+    }
+  } catch (error) {
+    // Сервер не ответил — не запираем магазин: заказ важнее настройки
+    console.error('[settings] не удалось получить настройки сайта:', error)
+    return SITE_SETTINGS_FALLBACK
+  }
+}
+
 /** Куда ушёл код: сервер сначала пробует Telegram, потом WhatsApp. */
 export type CodeChannel = 'telegram' | 'whatsapp'
 

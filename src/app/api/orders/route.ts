@@ -1,5 +1,5 @@
 import { getProduct } from '@/data/products'
-import { getProfile } from '@/lib/customer/gateway'
+import { getProfile, getSiteSettings } from '@/lib/customer/gateway'
 import { createOrder } from '@/lib/orders/gateway'
 import { applyBonus, validateOrder, type OrderRequest } from '@/lib/orders/order'
 import { currentSession, errorResponse } from '../customer/route-helpers'
@@ -22,6 +22,10 @@ export async function POST(request: Request) {
   }
 
   const session = await currentSession()
+  // Владелец может выключить заказ без входа в 1С — «Панель сайта»
+  if (!session && !(await getSiteSettings()).guestCheckout) {
+    return Response.json({ ok: false, errors: ['login'] }, { status: 401 })
+  }
   const customer = session
     ? { name: body.customer?.name ?? session.name, phone: session.phone }
     : { name: body.customer?.name ?? '', phone: body.customer?.phone ?? '' }

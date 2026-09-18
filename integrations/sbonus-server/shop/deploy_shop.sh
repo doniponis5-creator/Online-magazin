@@ -20,7 +20,7 @@ SRC="$(cd "$(dirname "$0")" && pwd)"
 API=sbonus_api
 DB=sbonus_db
 TS=$(date +%Y%m%d_%H%M%S)
-FILES="__init__.py shop_models.py shop_router.py shop_catalog.py shop_telegram.py shop_customers.py"
+FILES="__init__.py shop_models.py shop_router.py shop_catalog.py shop_telegram.py shop_customers.py shop_admin.py"
 MIGRATIONS="001_shop_orders_migration.sql 002_shop_catalog_migration.sql 003_shop_bonus_migration.sql"
 
 echo "=== Деплой: интернет-магазин (заказы + каталог + вход и бонусы) ==="
@@ -46,12 +46,14 @@ assert not missing, 'нет функций: %s' % missing
 import app.shop_precheck.shop_router as r
 import app.shop_precheck.shop_catalog as c
 import app.shop_precheck.shop_customers as cu
+import app.shop_precheck.shop_admin as ad
+assert len(ad.SETTINGS) >= 3
 from app.models import Branch, BonusAccount, Customer, Setting, Tier, Transaction, TransactionType
 from app.core.redis import check_rate_limit, redis_client
 assert cu.max_spend(__import__('decimal').Decimal('5000'), __import__('decimal').Decimal('20000'), __import__('decimal').Decimal('10')) == 2000
 paths = [x.path for x in r.router_site.routes + r.router_obank_shop.routes + r.router_1c_shop.routes
          + c.router_1c_catalog.routes + c.router_site_catalog.routes + c.router_public_photos.routes
-         + cu.router_site_customer.routes]
+         + cu.router_site_customer.routes + ad.router_1c_admin.routes + ad.router_site_admin.routes]
 print('OK: модуль импортируется, маршрутов:', len(paths))
 "
 PRECHECK=$?
@@ -147,6 +149,29 @@ s = s[:end] + block + s[end:]
 open(p, "w", encoding="utf-8").write(s)
 print("✓ main.py: роутер входа покупателя и бонусов подключён")
 PYEOF
+[ $? -eq 0 ] || { cp "$APP/main.py.bak_$TS" "$APP/main.py"; echo "↩️ main.py восстановлен"; exit 1; }
+
+python3 - "$APP/main.py" <<'PYEOF2'
+import sys
+p = sys.argv[1]
+s = open(p, encoding="utf-8").read()
+if "app.shop.shop_admin" in s:
+    print("• main.py уже подключает панель сайта — пропуск")
+    raise SystemExit(0)
+anchor = 'app.include_router(router_site_customer, prefix="/api/v1")'
+idx = s.find(anchor)
+if idx < 0:
+    raise SystemExit("❌ В main.py нет роутера входа покупателя — не к чему подключить панель сайта")
+end = s.find(chr(10), idx)
+end = len(s) if end < 0 else end
+block = """
+from app.shop.shop_admin import router_1c_admin, router_site_admin
+app.include_router(router_1c_admin, prefix="/api/v1")    # /api/v1/webhook/1c/shop/settings, dashboard
+app.include_router(router_site_admin, prefix="/api/v1")  # /api/v1/webhook/site/settings"""
+s = s[:end] + block + s[end:]
+open(p, "w", encoding="utf-8").write(s)
+print("✓ main.py: панель сайта (настройки и сводка) подключена")
+PYEOF2
 [ $? -eq 0 ] || { cp "$APP/main.py.bak_$TS" "$APP/main.py"; echo "↩️ main.py восстановлен"; exit 1; }
 
 # ── 4. Синтаксис ─────────────────────────────────────────────────────────────
