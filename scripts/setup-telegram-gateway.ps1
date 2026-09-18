@@ -5,13 +5,19 @@
 # Запуск (PowerShell, из папки проекта):
 #   powershell -ExecutionPolicy Bypass -File scripts\setup-telegram-gateway.ps1
 #
-# Токен берётся на gateway.telegram.org → Account → API token.
+# Токен берётся на gateway.telegram.org в настройках аккаунта.
 # Скрипт спрашивает токен скрытым вводом: он не показывается на экране,
 # не попадает в историю команд и не сохраняется на этом компьютере.
 # Пароль сервера спрашивает ssh; скрипт его не видит.
 # ════════════════════════════════════════════════════════════════════════════
 $ErrorActionPreference = 'Stop'
 $Server = 'root@145.223.100.16'
+$RemoteScript = Join-Path $PSScriptRoot 'telegram-gateway-remote.sh'
+
+if (-not (Test-Path $RemoteScript)) {
+    Write-Host "Не найден $RemoteScript — обновите проект из git." -ForegroundColor Red
+    exit 1
+}
 
 Write-Host 'Telegram Gateway — настройка токена' -ForegroundColor Cyan
 Write-Host 'Токен со страницы gateway.telegram.org (вводится скрыто, на экране не видно).'
@@ -30,28 +36,18 @@ Write-Host 'Канал-отправитель — необязательно. Э
 Write-Host 'от имени которого придёт код. Нет такого — просто нажмите Enter.'
 $sender = (Read-Host 'Username канала без @ (можно пропустить)').Trim().TrimStart('@')
 
-# Токен и канал уходят на сервер через stdin: в списке процессов их не видно.
-# Сначала проверяем токен у Telegram и только потом записываем в .env.production.
-$remote = @'
-set -u
-ENV=/opt/sbonus/.env.production
-read -r TOKEN
-read -r SENDER || SENDER=""
-[ -f "$ENV" ] || { echo NOENV; exit 1; }
-CHECK=$(curl -s -m 20 -X POST https://gatewayapi.telegram.org/checkSendAbility -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d "{\"phone_number\":\"+999999999999\"}")
-case "$CHECK" in
-    *ACCESS_TOKEN_INVALID*|*ACCESS_TOKEN_REQUIRED*) echo BADTOKEN; exit 1 ;;
-    "") echo NOANSWER; exit 1 ;;
-esac
-cp "$ENV" "$ENV.bak_$(date +%Y%m%d_%H%M%S)"
-sed -i "/^TELEGRAM_GATEWAY_TOKEN=/d; /^TELEGRAM_GATEWAY_SENDER=/d" "$ENV"
-printf "\n# Telegram Gateway: коды входа на сайт\nTELEGRAM_GATEWAY_TOKEN=%s\nTELEGRAM_GATEWAY_SENDER=%s\n" "$TOKEN" "$SENDER" >> "$ENV"
-echo TOKENOK
-'@
+# Серверную часть кладём отдельным файлом: длинный многострочный текст
+# PowerShell при передаче в ssh портит. Windows-переводы строк bash не понимает,
+# поэтому убираем CR. Секретов в этом файле нет — токен идёт через stdin.
+$tmp = [System.IO.Path]::GetTempFileName()
+$body = [System.IO.File]::ReadAllText($RemoteScript) -replace "`r", ''
+[System.IO.File]::WriteAllText($tmp, $body, (New-Object System.Text.UTF8Encoding $false))
 
 Write-Host ''
 Write-Host 'Проверяю токен и записываю его на сервер...' -ForegroundColor Cyan
-$text = ("$token`n$sender" | ssh $Server $remote 2>&1 | Out-String)
+scp -q $tmp "${Server}:/tmp/tg_setup.sh"
+Remove-Item $tmp -Force
+$text = ("$token`n$sender" | ssh $Server 'bash /tmp/tg_setup.sh; rm -f /tmp/tg_setup.sh' | Out-String)
 $token = $null
 $secure = $null
 
