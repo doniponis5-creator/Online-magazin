@@ -2,9 +2,18 @@
    Smart Centr — дизайн-токены и базовые стили (milestone 01)
    Палитра: white #FFFFFF · blue #245BEB · lime #D9F86D (SBonus)
             pale blue #F1F5FF · ink #142334. Без чёрно-золотого.
+
+   ВНИМАНИЕ. Цвета и радиусы ниже на сайте НЕ действуют.
+   Каждый layout подключает этот файл, а сразу после него —
+   light-lemon.css (TASK 05, палитра лимон #EAF500 + кобальт #2563EB
+   из DESIGN.md). Он переопределяет тот же :root, и побеждает он.
+   Менять цвета витрины нужно в src/app/light-lemon.css.
+   Порядок подключения: src/app/[lang]/layout.tsx:1-2,
+   src/app/(entry)/layout.tsx:2-3, src/app/global-not-found.tsx:1-2.
    ============================================================ */
 
 :root {
+  /* Перекрывается light-lemon.css — всё до --color-danger не видно на сайте. */
   --color-bg: #ffffff;
   --color-ink: #142334;
   --color-ink-soft: #46566b;
@@ -17,9 +26,11 @@
   --color-surface: #f1f5ff;
   --color-border: #dfe6f2;
   --color-border-strong: #c6d2e6;
+  /* Ниже — единственные два цвета, которые light-lemon.css не трогает. */
   --color-danger: #d33b2e;
   --color-success: #1e9e5a;
 
+  /* Радиусы тоже перекрываются light-lemon.css (12/16/14/12 px). */
   --radius-btn: 16px;
   --radius-card: 20px;
   --radius-tile: 18px;

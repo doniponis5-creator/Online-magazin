@@ -51,3 +51,4 @@ graphify-out/cache/last_query_stamp
 graphify-out/cost.json
 graphify-out/.graphify_python
 graphify-out/.graphify_root
+graphify-out/20*/
