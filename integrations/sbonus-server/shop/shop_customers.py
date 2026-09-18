@@ -39,7 +39,7 @@ from app.models import BonusAccount, Customer, Setting, Tier, Transaction, Trans
 from app.payments import payments_greenapi as wa  # type: ignore
 
 from . import shop_telegram as tg
-from .shop_models import ShopOrder
+from .shop_models import ShopEvent, ShopOrder
 from .shop_router import _money, _site_secret, _verify_site_body, _verify_site_path
 
 logger = logging.getLogger("sbonus.shop.customer")
@@ -115,6 +115,15 @@ async def _send_wa(phone: str, text: str) -> bool:
     except Exception as error:
         logger.error(f"site customer WhatsApp failed ...{phone[-4:]}: {error}")
         return False
+
+
+async def _track(db: AsyncSession, kind: str, phone: str, channel: str | None = None) -> None:
+    """Счётчик для «Панели сайта». Никакая ошибка здесь не должна мешать человеку войти."""
+    try:
+        db.add(ShopEvent(kind=kind, channel=channel, phone_tail=(phone or "")[-4:]))
+        await db.commit()
+    except Exception as error:
+        logger.warning(f"shop event {kind} не записан: {error}")
 
 
 async def _customer(db: AsyncSession, phone: str) -> Customer | None:
@@ -210,6 +219,7 @@ async def send_code(request: Request, db: AsyncSession = Depends(get_db)):
 
     # Сначала Telegram (дешевле и без риска блокировки), иначе WhatsApp
     if await tg.send_code(phone, code, CODE_TTL):
+        await _track(db, "code_sent", phone, "telegram")
         return {"ok": True, "channel": "telegram"}
     sent = await _send_wa(phone, (
         f"*{code}* — код для входа на сайт Smart Centr\n\n"
@@ -221,6 +231,7 @@ async def send_code(request: Request, db: AsyncSession = Depends(get_db)):
         await redis_client.delete(f"shop_otp:{phone}")
         logger.error(f"site code not delivered ...{phone[-4:]}")
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Не удалось отправить код. Попробуйте через минуту.")
+    await _track(db, "code_sent", phone, "whatsapp")
     return {"ok": True, "channel": "whatsapp"}
 
 
@@ -255,6 +266,7 @@ async def verify_code(request: Request, db: AsyncSession = Depends(get_db)):
     if customer:
         if not customer.is_active:
             raise HTTPException(status.HTTP_403_FORBIDDEN, "Номер заблокирован. Обратитесь в магазин.")
+        await _track(db, "login", phone)
         return {"ok": True, "needName": False, "customer": await profile(db, customer)}
 
     ticket = secrets.token_urlsafe(24)
@@ -314,6 +326,7 @@ async def register(request: Request, db: AsyncSession = Depends(get_db)):
         + (f"🎁 Вам начислено *{_money(bonus)}* приветственных бонусов.\n"
            f"Оплачивайте ими часть покупки на сайте.\n" if bonus > 0 else "")
     ))
+    await _track(db, "register", phone)
     return {"ok": True, "customer": await profile(db, customer), "welcomeBonus": float(bonus)}
 
 

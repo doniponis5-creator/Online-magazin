@@ -12,6 +12,7 @@ import { BottomNav } from '@/components/BottomNav'
 import { Footer } from '@/components/Footer'
 import { HtmlLang } from '@/components/HtmlLang'
 import { MotionProvider } from '@/components/MotionProvider'
+import { VisitCounter } from '@/components/VisitCounter'
 
 export function generateStaticParams() {
   return [{ lang: 'ru' }, { lang: 'ky' }]
@@ -35,6 +36,7 @@ export default async function LangLayout({
         <FavoritesProvider>
           <HtmlLang lang={lang} />
           <MotionProvider />
+          <VisitCounter />
           <a href="#content" className="skip-link">
             {dict.nav.skipToContent}
           </a>

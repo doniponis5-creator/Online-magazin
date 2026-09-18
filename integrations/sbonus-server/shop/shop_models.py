@@ -120,3 +120,32 @@ class ShopOrderEvent(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     order = relationship("ShopOrder", back_populates="events")
+
+
+class ShopEvent(Base):
+    """
+    Вход покупателя и отправленный код — для счётчиков в «Панели сайта».
+
+    От телефона остаются только четыре последние цифры: для статистики этого
+    хватает, а для опознания человека — нет.
+    """
+    __tablename__ = "shop_events"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    kind = Column(String(16), nullable=False, index=True)    # code_sent | login | register
+    channel = Column(String(16))                             # telegram | whatsapp
+    phone_tail = Column(String(4))
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+
+class ShopVisit(Base):
+    """
+    Посещение страницы сайта. visitor — необратимый отпечаток случайного
+    идентификатора из браузера: считать людей можно, узнать человека нельзя.
+    """
+    __tablename__ = "shop_visits"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    visitor = Column(String(32), nullable=False, index=True)
+    path = Column(String(200), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)

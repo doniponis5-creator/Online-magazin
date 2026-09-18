@@ -9,6 +9,7 @@
   POST /webhook/1c/shop/settings    подпись 1С       сохранить значения
   GET  /webhook/1c/shop/dashboard   ключ 1С          сводка по заказам, каталогу, каналам
   GET  /webhook/site/settings       подпись сайта    настройки, нужные самому сайту
+  POST /webhook/site/visit          подпись сайта    отметка о посещении страницы
 
 Настройки лежат в таблице settings SBonus и действуют сразу, без перезапуска.
 Значения проверяются здесь: из 1С может прийти что угодно, а в базе должно
@@ -19,6 +20,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timedelta, timezone
 
+import hashlib
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
@@ -26,10 +28,12 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.redis import redis_client
 from app.models import Setting
 
 from . import shop_telegram as tg
-from .shop_router import _cfg, _verify_1c_body, _verify_1c_key, _verify_site_path
+from .shop_models import ShopVisit
+from .shop_router import _cfg, _site_secret, _verify_1c_body, _verify_1c_key, _verify_site_body, _verify_site_path
 
 logger = logging.getLogger("sbonus.shop.admin")
 
@@ -151,6 +155,40 @@ async def site_settings(request: Request, db: AsyncSession = Depends(get_db)):
     }
 
 
+# ── Посещения сайта ──────────────────────────────────────────────────────────
+
+class Visit(BaseModel):
+    visitor: str = ""
+    path: str = "/"
+
+
+@router_site_admin.post("/visit")
+async def visit(request: Request, db: AsyncSession = Depends(get_db)):
+    """
+    Отметка о том, что человек открыл страницу.
+
+    Идентификатор из браузера сразу превращается в необратимый отпечаток:
+    считать людей нужно, узнавать человека — нет. Одна и та же страница у
+    одного посетителя записывается не чаще раза в 10 минут, иначе таблица
+    распухнет от перелистываний.
+    """
+    payload = Visit.parse_raw(await _verify_site_body(request))
+    if not payload.visitor:
+        return {"ok": True, "counted": False}
+
+    fingerprint = hashlib.sha256(f"{_site_secret()}:{payload.visitor}".encode()).hexdigest()[:32]
+    path = (payload.path or "/")[:200]
+    try:
+        if not await redis_client.set(f"shop_visit:{fingerprint}:{path}", "1", ex=600, nx=True):
+            return {"ok": True, "counted": False}
+        db.add(ShopVisit(visitor=fingerprint, path=path))
+        await db.commit()
+    except Exception as error:
+        logger.warning(f"visit не записан: {error}")
+        return {"ok": True, "counted": False}
+    return {"ok": True, "counted": True}
+
+
 # ── Сводка ───────────────────────────────────────────────────────────────────
 
 ORDERS_SQL = text("""
@@ -179,6 +217,28 @@ SELECT
 FROM shop_catalog c, jsonb_array_elements(c.data->'items') AS i
 WHERE c.id = 1
 GROUP BY c.items_count, c.updated_at
+""")
+
+PEOPLE_SQL = text("""
+SELECT
+  count(*) FILTER (WHERE kind = 'login'     AND created_at >= :today) AS logins_today,
+  count(*) FILTER (WHERE kind = 'login'     AND created_at >= :week)  AS logins_week,
+  count(*) FILTER (WHERE kind = 'register'  AND created_at >= :today) AS new_today,
+  count(*) FILTER (WHERE kind = 'register'  AND created_at >= :week)  AS new_week,
+  count(*) FILTER (WHERE kind = 'code_sent' AND channel = 'telegram' AND created_at >= :today) AS tg_today,
+  count(*) FILTER (WHERE kind = 'code_sent' AND channel = 'telegram' AND created_at >= :week)  AS tg_week,
+  count(*) FILTER (WHERE kind = 'code_sent' AND channel = 'whatsapp' AND created_at >= :today) AS wa_today,
+  count(*) FILTER (WHERE kind = 'code_sent' AND channel = 'whatsapp' AND created_at >= :week)  AS wa_week
+FROM shop_events
+""")
+
+VISITS_SQL = text("""
+SELECT
+  count(DISTINCT visitor) FILTER (WHERE created_at >= :today) AS people_today,
+  count(DISTINCT visitor) FILTER (WHERE created_at >= :week)  AS people_week,
+  count(*)                FILTER (WHERE created_at >= :today) AS views_today,
+  count(*)                FILTER (WHERE created_at >= :week)  AS views_week
+FROM shop_visits
 """)
 
 CUSTOMERS_SQL = text("""
@@ -214,9 +274,12 @@ async def dashboard(_=Depends(_verify_1c_key), db: AsyncSession = Depends(get_db
     today = now.replace(hour=0, minute=0, second=0, microsecond=0)
     week = now - timedelta(days=7)
 
-    o = (await db.execute(ORDERS_SQL, {"today": today.replace(tzinfo=None), "week": week.replace(tzinfo=None)})).mappings().one_or_none()
+    period = {"today": today.replace(tzinfo=None), "week": week.replace(tzinfo=None)}
+    o = (await db.execute(ORDERS_SQL, period)).mappings().one_or_none()
     c = (await db.execute(CATALOG_SQL)).mappings().one_or_none()
     u = (await db.execute(CUSTOMERS_SQL)).mappings().one_or_none()
+    p = (await db.execute(PEOPLE_SQL, period)).mappings().one_or_none()
+    v = (await db.execute(VISITS_SQL, period)).mappings().one_or_none()
 
     return {
         "ok": True,
@@ -244,6 +307,22 @@ async def dashboard(_=Depends(_verify_1c_key), db: AsyncSession = Depends(get_db
         "customers": {
             "active": int(u["active"]) if u else 0,
             "fromSite": int(u["from_site"]) if u else 0,
+            "loginsToday": int(p["logins_today"]) if p else 0,
+            "loginsWeek": int(p["logins_week"]) if p else 0,
+            "newToday": int(p["new_today"]) if p else 0,
+            "newWeek": int(p["new_week"]) if p else 0,
+        },
+        "visits": {
+            "peopleToday": int(v["people_today"]) if v else 0,
+            "peopleWeek": int(v["people_week"]) if v else 0,
+            "viewsToday": int(v["views_today"]) if v else 0,
+            "viewsWeek": int(v["views_week"]) if v else 0,
+        },
+        "codes": {
+            "telegramToday": int(p["tg_today"]) if p else 0,
+            "telegramWeek": int(p["tg_week"]) if p else 0,
+            "whatsappToday": int(p["wa_today"]) if p else 0,
+            "whatsappWeek": int(p["wa_week"]) if p else 0,
         },
         "channels": {
             "telegram": "работает" if tg.enabled() else "выключен — нет токена",

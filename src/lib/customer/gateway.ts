@@ -127,6 +127,12 @@ export async function getSiteSettings(): Promise<SiteSettings> {
   }
 }
 
+/** Отметка о посещении страницы — для счётчика людей в «Панели сайта». */
+export async function recordVisit(visitor: string, path: string): Promise<void> {
+  if (paymentMode() === 'mock') return
+  await call('/api/v1/webhook/site/visit', { method: 'POST', body: { visitor, path } })
+}
+
 /** Куда ушёл код: сервер сначала пробует Telegram, потом WhatsApp. */
 export type CodeChannel = 'telegram' | 'whatsapp'
 
