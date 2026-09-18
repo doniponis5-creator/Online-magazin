@@ -107,3 +107,14 @@ Rules:
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+
+### Две машины (MacBook и PC)
+
+Владелец работает на двух компьютерах. Карта лежит в git, поэтому:
+
+1. **Перед работой всегда `git pull`.** Иначе на втором компьютере карта старая.
+2. **Конфликт в `graphify-out/` руками не чинят.** Если git сказал
+   «conflict» про `graph.json`, `manifest.json`, `GRAPH_REPORT.md` или
+   `cache/` — выполни `graphify update .` и закоммить результат. Файлы
+   помечены в `.gitattributes` как несклеиваемые, git их не портит.
+3. `graph.html` в git нет намеренно. Нужна картинка — `graphify export html`.

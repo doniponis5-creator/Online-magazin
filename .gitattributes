@@ -1,0 +1,9 @@
+# Карта проекта (graphify) — эти файлы пишет программа, не человек.
+# Склеивать их построчно нельзя: получится каша.
+# -merge = при расхождении git не склеивает, оставляет твою версию.
+# -diff  = не показывать простыню из 45 000 строк в diff.
+# Правило: конфликт здесь руками НЕ чинят — перестраивают картой.
+graphify-out/graph.json        -merge -diff
+graphify-out/manifest.json     -merge -diff
+graphify-out/GRAPH_REPORT.md   -merge -diff
+graphify-out/cache/**          -merge -diff
