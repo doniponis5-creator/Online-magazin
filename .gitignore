@@ -41,3 +41,13 @@ __pycache__/
 .cursor/
 .gemini/
 .zcode/
+
+# карта проекта (graphify): в git идёт только граф и отчёт.
+# Всё остальное каждый компьютер строит сам за пару минут.
+graphify-out/graph.html
+graphify-out/cache/ast/
+graphify-out/cache/stat-index.json
+graphify-out/cache/last_query_stamp
+graphify-out/cost.json
+graphify-out/.graphify_python
+graphify-out/.graphify_root
