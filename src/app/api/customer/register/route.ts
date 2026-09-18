@@ -10,12 +10,7 @@ export async function POST(request: Request) {
   try {
     const result = await register(body.ticket, name)
     await startSession(result.customer.phone, result.customer.name)
-    return Response.json({
-      ok: true,
-      customer: result.customer,
-      welcomeBonus: result.welcomeBonus,
-      pwTicket: result.pwTicket,
-    })
+    return Response.json({ ok: true, customer: result.customer, welcomeBonus: result.welcomeBonus })
   } catch (error) {
     return errorResponse(error)
   }

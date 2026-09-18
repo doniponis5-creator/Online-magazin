@@ -1,8 +1,8 @@
 /**
  * Покупатель и бонусы SBonus: связь сайта с сервером (api.smartcentr.store).
  *
- * Вход: телефон → пароль (если покупатель его задал) или код в WhatsApp.
- * Пароль необязателен; ключ клиента всегда телефон — он же в кассе и в 1С.
+ * Вход без пароля: телефон → код (сначала Telegram, потом WhatsApp).
+ * Ключ клиента всегда телефон — он же в кассе и в 1С.
  *
  * Боевой режим: запросы подписываются тем же секретом, что и заказы (SHOP_API_SECRET).
  * Тестовый режим (localhost без сервера): код всегда 1234, клиенты и бонусы — в памяти процесса.
@@ -31,20 +31,12 @@ export type CustomerProfile = {
   maxSpendPct: number
   /** сколько бонусов можно списать для переданной суммы */
   maxSpend: number
-  /** задан ли пароль для входа без кода */
-  hasPassword?: boolean
   history?: BonusHistoryItem[]
   orders?: CustomerOrderItem[]
 }
 
-/**
- * Короткий пропуск на смену пароля. Сервер выдаёт его после входа по коду:
- * значит, номер только что подтверждён и паролем можно распоряжаться.
- */
-export type PasswordTicket = string
-
 export type VerifyResult =
-  | { ok: true; needName: false; customer: CustomerProfile; pwTicket?: PasswordTicket }
+  | { ok: true; needName: false; customer: CustomerProfile }
   | { ok: true; needName: true; ticket: string; welcomeBonus: number }
 
 export class CustomerApiError extends Error {
@@ -67,28 +59,13 @@ export function maxBonusSpend(balance: number, amount: number, pct: number): num
 const MOCK_CODE = '1234'
 const MOCK_WELCOME = 1000
 const MOCK_PCT = 10
-type MockCustomer = { name: string; balance: number; password?: string }
+type MockCustomer = { name: string; balance: number }
 const store = globalThis as unknown as {
   __scMockCustomers?: Map<string, MockCustomer>
   __scMockTickets?: Map<string, string>
-  __scMockPwTickets?: Map<string, string>
 }
 const mockCustomers = (store.__scMockCustomers ??= new Map())
 const mockTickets = (store.__scMockTickets ??= new Map())
-const mockPwTickets = (store.__scMockPwTickets ??= new Map())
-
-function mockPwTicket(phone: string): PasswordTicket {
-  const ticket = `mockpw-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-  mockPwTickets.set(ticket, phone)
-  return ticket
-}
-
-function mockPhoneByTicket(ticket: string): string {
-  const phone = mockPwTickets.get(ticket)
-  if (!phone) throw new CustomerApiError(401, 'Время вышло. Войдите заново.')
-  mockPwTickets.delete(ticket)
-  return phone
-}
 
 function mockProfile(phone: string, amount = 0): CustomerProfile {
   const c = mockCustomers.get(phone)!
@@ -100,7 +77,6 @@ function mockProfile(phone: string, amount = 0): CustomerProfile {
     tierPercent: 1,
     maxSpendPct: MOCK_PCT,
     maxSpend: maxBonusSpend(c.balance, amount, MOCK_PCT),
-    hasPassword: Boolean(c.password),
     history: [],
     orders: [],
   }
@@ -127,57 +103,6 @@ async function call<T>(path: string, init: { method: 'GET' | 'POST'; body?: unkn
 
 // ── API ───────────────────────────────────────────────────────────────────────
 
-/** Пароль короче не принимаем — та же проверка стоит на сервере. */
-export const MIN_PASSWORD = 6
-export const MAX_PASSWORD = 72
-
-/**
- * Первый шаг входа: задан ли у номера пароль.
- * Есть пароль — сайт спросит его и код в WhatsApp не отправляется.
- */
-export async function startLogin(phone: string, ip: string): Promise<{ hasPassword: boolean }> {
-  if (paymentMode() === 'mock') {
-    return { hasPassword: Boolean(mockCustomers.get(phone)?.password) }
-  }
-  return call('/api/v1/webhook/site/customer/start', { method: 'POST', body: { phone, ip } })
-}
-
-/** Вход по паролю — без кода в WhatsApp. */
-export async function loginWithPassword(phone: string, password: string, ip: string): Promise<CustomerProfile> {
-  if (paymentMode() === 'mock') {
-    const c = mockCustomers.get(phone)
-    if (!c?.password || c.password !== password) throw new CustomerApiError(401, 'Неверный номер или пароль')
-    return mockProfile(phone)
-  }
-  const result = await call<{ customer: CustomerProfile }>('/api/v1/webhook/site/customer/login', {
-    method: 'POST',
-    body: { phone, password, ip },
-  })
-  return result.customer
-}
-
-/** Задать или сменить пароль. pwTicket выдаётся после входа по коду. */
-export async function setPassword(pwTicket: PasswordTicket, password: string): Promise<void> {
-  if (paymentMode() === 'mock') {
-    const phone = mockPhoneByTicket(pwTicket)
-    const c = mockCustomers.get(phone)
-    if (c) c.password = password
-    return
-  }
-  await call('/api/v1/webhook/site/customer/set-password', { method: 'POST', body: { pwTicket, password } })
-}
-
-/** Убрать пароль — покупатель снова входит по коду. */
-export async function dropPassword(pwTicket: PasswordTicket): Promise<void> {
-  if (paymentMode() === 'mock') {
-    const phone = mockPhoneByTicket(pwTicket)
-    const c = mockCustomers.get(phone)
-    if (c) delete c.password
-    return
-  }
-  await call('/api/v1/webhook/site/customer/drop-password', { method: 'POST', body: { pwTicket } })
-}
-
 /** Куда ушёл код: сервер сначала пробует Telegram, потом WhatsApp. */
 export type CodeChannel = 'telegram' | 'whatsapp'
 
@@ -197,9 +122,7 @@ export async function sendCode(phone: string, ip: string): Promise<CodeChannel> 
 export async function verifyCode(phone: string, code: string, ip: string): Promise<VerifyResult> {
   if (paymentMode() === 'mock') {
     if (code !== MOCK_CODE) throw new CustomerApiError(401, 'Неверный код. Тестовый код: 1234')
-    if (mockCustomers.has(phone)) {
-      return { ok: true, needName: false, customer: mockProfile(phone), pwTicket: mockPwTicket(phone) }
-    }
+    if (mockCustomers.has(phone)) return { ok: true, needName: false, customer: mockProfile(phone) }
     const ticket = `mock-${Date.now()}`
     mockTickets.set(ticket, phone)
     return { ok: true, needName: true, ticket, welcomeBonus: MOCK_WELCOME }
@@ -210,13 +133,13 @@ export async function verifyCode(phone: string, code: string, ip: string): Promi
 export async function register(
   ticket: string,
   name: string,
-): Promise<{ customer: CustomerProfile; welcomeBonus: number; pwTicket?: PasswordTicket }> {
+): Promise<{ customer: CustomerProfile; welcomeBonus: number }> {
   if (paymentMode() === 'mock') {
     const phone = mockTickets.get(ticket)
     if (!phone) throw new CustomerApiError(401, 'Время вышло. Войдите заново.')
     mockTickets.delete(ticket)
     if (!mockCustomers.has(phone)) mockCustomers.set(phone, { name, balance: MOCK_WELCOME })
-    return { customer: mockProfile(phone), welcomeBonus: MOCK_WELCOME, pwTicket: mockPwTicket(phone) }
+    return { customer: mockProfile(phone), welcomeBonus: MOCK_WELCOME }
   }
   return call('/api/v1/webhook/site/customer/register', { method: 'POST', body: { ticket, name } })
 }

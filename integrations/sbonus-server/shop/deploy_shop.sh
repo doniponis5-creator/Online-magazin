@@ -21,7 +21,7 @@ API=sbonus_api
 DB=sbonus_db
 TS=$(date +%Y%m%d_%H%M%S)
 FILES="__init__.py shop_models.py shop_router.py shop_catalog.py shop_telegram.py shop_customers.py"
-MIGRATIONS="001_shop_orders_migration.sql 002_shop_catalog_migration.sql 003_shop_bonus_migration.sql 004_shop_password_migration.sql"
+MIGRATIONS="001_shop_orders_migration.sql 002_shop_catalog_migration.sql 003_shop_bonus_migration.sql"
 
 echo "=== Деплой: интернет-магазин (заказы + каталог + вход и бонусы) ==="
 
@@ -169,10 +169,6 @@ docker cp "$SRC/003_shop_bonus_migration.sql" "$DB:/tmp/003_shop_bonus_migration
 docker exec "$DB" psql -U sbonus -d sbonus_db -v ON_ERROR_STOP=1 -f /tmp/003_shop_bonus_migration.sql \
     && echo "✓ Колонки бонусов в shop_orders, настройки SITE_WELCOME_BONUS_AMOUNT и SITE_BONUS_MAX_PCT" \
     || { echo "❌ Миграция бонусов не прошла — стоп (код не пересобран)"; exit 1; }
-docker cp "$SRC/004_shop_password_migration.sql" "$DB:/tmp/004_shop_password_migration.sql"
-docker exec "$DB" psql -U sbonus -d sbonus_db -v ON_ERROR_STOP=1 -f /tmp/004_shop_password_migration.sql \
-    && echo "✓ Таблица shop_passwords (необязательный пароль покупателя)" \
-    || { echo "❌ Миграция пароля не прошла — стоп (код не пересобран)"; exit 1; }
 
 # ── 6. Секрет сайта в .env (создаётся один раз) ──────────────────────────────
 if grep -q '^SHOP_SITE_SECRET=' "$ENV_FILE" 2>/dev/null; then

@@ -15,8 +15,7 @@ export async function POST(request: Request) {
       return Response.json({ ok: true, needName: true, ticket: result.ticket, welcomeBonus: result.welcomeBonus })
     }
     await startSession(result.customer.phone, result.customer.name)
-    // pwTicket — чтобы сразу предложить задать пароль и в следующий раз обойтись без кода
-    return Response.json({ ok: true, needName: false, customer: result.customer, pwTicket: result.pwTicket })
+    return Response.json({ ok: true, needName: false, customer: result.customer })
   } catch (error) {
     return errorResponse(error)
   }
