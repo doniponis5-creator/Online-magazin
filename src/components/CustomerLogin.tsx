@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from 'react'
 import { formatSom } from '@/lib/format'
-import { IconTelegram, IconWhatsApp } from '@/components/Icons'
+import { IconTelegram } from '@/components/Icons'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { normalizePhone } from '@/lib/orders/order'
 import type { CustomerProfile } from '@/lib/customer/gateway'
@@ -11,8 +11,11 @@ type Step = 'phone' | 'code' | 'name'
 
 /**
  * Вход без пароля: телефон → код → (новый номер) имя.
- * Код приходит в Telegram; если Telegram на этом номере нет — в WhatsApp.
- * Экран кода подписан по месту, чтобы человек не искал код не в том приложении.
+ *
+ * Основной канал — Telegram, и на экранах показан только его знак.
+ * WhatsApp остаётся запасным: если Telegram на номере нет, код уходит туда,
+ * и тогда экран так и пишет — без значка, но прямым текстом, чтобы человек
+ * не искал код не в том приложении.
  */
 export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, welcomeBonus: number) => void }) {
   const { t } = useI18n()
@@ -117,14 +120,14 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
       {step === 'code' && (
         <form onSubmit={verify} noValidate>
           <p className="login-card__hint login-card__channel">
-            {channel === 'whatsapp' ? <IconWhatsApp size={20} /> : <IconTelegram size={20} />}
+            {channel === 'telegram' && <IconTelegram size={20} />}
             <span>
-              {channel === 'whatsapp' ? a.codeSent : a.codeSentTelegram} <strong>{normalized}</strong>
+              {channel === 'telegram' ? a.codeSentTelegram : a.codeSent} <strong>{normalized}</strong>
             </span>
           </p>
           <div className="field">
             <label className="field__label" htmlFor="login-code">
-              {channel === 'whatsapp' ? a.code : a.codeTelegram}
+              {channel === 'telegram' ? a.codeTelegram : a.code}
             </label>
             <input
               id="login-code"
