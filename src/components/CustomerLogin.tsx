@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from 'react'
 import { formatSom } from '@/lib/format'
+import { IconTelegram, IconWhatsApp } from '@/components/Icons'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { normalizePhone } from '@/lib/orders/order'
 import type { CustomerProfile } from '@/lib/customer/gateway'
@@ -102,7 +103,10 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
               aria-describedby="login-phone-hint"
               aria-invalid={Boolean(error)}
             />
-            <p className="field__hint" id="login-phone-hint">{a.phoneHint}</p>
+            <p className="field__hint login-card__channel" id="login-phone-hint">
+              <IconTelegram size={18} />
+              <span>{a.phoneHint}</span>
+            </p>
           </div>
           <button type="submit" className="btn btn--primary btn--block" disabled={busy} aria-busy={busy}>
             {busy ? a.sending : a.sendCode}
@@ -112,8 +116,11 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
 
       {step === 'code' && (
         <form onSubmit={verify} noValidate>
-          <p className="login-card__hint">
-            {channel === 'whatsapp' ? a.codeSent : a.codeSentTelegram} <strong>{normalized}</strong>
+          <p className="login-card__hint login-card__channel">
+            {channel === 'whatsapp' ? <IconWhatsApp size={20} /> : <IconTelegram size={20} />}
+            <span>
+              {channel === 'whatsapp' ? a.codeSent : a.codeSentTelegram} <strong>{normalized}</strong>
+            </span>
           </p>
           <div className="field">
             <label className="field__label" htmlFor="login-code">

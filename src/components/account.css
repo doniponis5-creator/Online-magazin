@@ -4,6 +4,9 @@
 .login-card form { display: grid; gap: 14px; }
 .login-card__title { font-size: 20px; margin: 0; }
 .login-card__hint { margin: 0; color: var(--color-ink-soft); line-height: 1.6; }
+/* Значок Telegram или WhatsApp рядом с подсказкой: видно, где искать код */
+.login-card__channel { display: flex; align-items: flex-start; gap: 8px; }
+.login-card__channel svg { flex: 0 0 auto; margin-top: 2px; }
 .login-card__code { font-size: 26px; letter-spacing: 0.4em; text-align: center; font-variant-numeric: tabular-nums; }
 .login-card__welcome { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--color-lime-soft); font-weight: 650; }
 .login-card__links { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
