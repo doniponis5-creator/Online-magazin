@@ -12,6 +12,10 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/ios": "^8.5.2",
+    "@capacitor/push-notifications": "^8.1.2",
     "next": "16.3.4",
     "react": "19.3.0",
     "react-dom": "19.3.0"

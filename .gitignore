@@ -32,3 +32,12 @@ smartcentr-site.tar.gz
 
 __pycache__/
 *.pyc
+
+# папки агентов — у каждого свои, в общий репозиторий не идут
+.agent/
+.agents/
+.claude/
+.codex/
+.cursor/
+.gemini/
+.zcode/

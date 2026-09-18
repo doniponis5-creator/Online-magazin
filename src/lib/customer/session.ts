@@ -54,6 +54,47 @@ export function decodeSession(value: string | undefined, now = Date.now()): Cust
   }
 }
 
+
+/**
+ * Ключ для входа по Face ID в приложении.
+ *
+ * После обычного входа по коду приложение просит такой ключ и кладёт его в Keychain
+ * телефона под защиту Face ID. Когда вход закончился, покупатель прикладывает лицо —
+ * приложение отдаёт ключ обратно, и сайт снова пускает его без кода из Telegram.
+ *
+ * Ключ подписан тем же секретом, но в своём «пространстве» (native:), поэтому его
+ * нельзя подставить вместо cookie сессии и наоборот.
+ */
+export const NATIVE_KEY_DAYS = 365
+
+function signNative(payload: string): string {
+  return createHmac('sha256', secret()).update(`native:${payload}`, 'utf8').digest('base64url')
+}
+
+export function encodeNativeKey(phone: string, name: string, now = Date.now()): string {
+  const payload = Buffer.from(
+    JSON.stringify({ phone, name, exp: now + NATIVE_KEY_DAYS * 24 * 3600 * 1000 } satisfies CustomerSession),
+    'utf8',
+  ).toString('base64url')
+  return `${payload}.${signNative(payload)}`
+}
+
+export function decodeNativeKey(value: string | undefined, now = Date.now()): CustomerSession | null {
+  if (!value) return null
+  const [payload, signature] = value.split('.')
+  if (!payload || !signature) return null
+  const expected = Buffer.from(signNative(payload))
+  const actual = Buffer.from(signature)
+  if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) return null
+  try {
+    const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as CustomerSession
+    if (!/^\+(?:996\d{9}|7\d{10})$/.test(data.phone) || typeof data.exp !== 'number' || data.exp < now) return null
+    return data
+  } catch {
+    return null
+  }
+}
+
 export const sessionCookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',

@@ -328,8 +328,23 @@ async def _check_and_confirm(db: AsyncSession, order: ShopOrder, by: str, raw: d
             order.note = f"⚠ бонусы не списаны: {error}"[:1000]
             await db.commit()
             await _log(db, order, "bonus_failed", {"error": str(error)})
+    await _push(db, order, "Заказ оплачен",
+                f"Заказ {order.order_id} оплачен. Мы свяжемся с вами.")
     _notify_paid(order)
     return True
+
+
+async def _push(db: AsyncSession, order: ShopOrder, title: str, body: str) -> None:
+    """
+    Уведомление в приложении на телефоне. Если приложения нет или ключ Apple
+    не задан — просто ничего не произойдёт. Заказ от этого не страдает.
+    """
+    try:
+        from .shop_push import send
+        await send(db, order.customer_phone, title, body,
+                   {"orderId": order.order_id, "token": order.token})
+    except Exception as error:
+        logger.info(f"push не отправлен {order.order_id}: {error}")
 
 
 def _notify_paid(order: ShopOrder) -> None:
@@ -446,6 +461,13 @@ async def mark_done(order_id: str, request: Request, db: AsyncSession = Depends(
     await _log(db, order, "synced", payload.dict())
 
     if first_time:
+        earned = Decimal(str(order.bonus_earned or 0))
+        await _push(db, order,
+                    "Заказ готов" if payload.realized else "Заказ принят",
+                    (f"Заказ {order.order_id} собран, ждём вас в магазине."
+                     if payload.realized else
+                     f"Заказ {order.order_id} принят, товар везём на склад.")
+                    + (f" Начислено бонусов: {earned:.0f}" if earned > 0 else ""))
         try:
             state = ("✅ Реализация проведена — товар списан со склада"
                      if payload.realized else "⚠ Товара нет в наличии — заказ ждёт поступления, нужно привезти")

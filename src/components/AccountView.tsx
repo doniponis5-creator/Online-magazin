@@ -7,6 +7,9 @@ import { CustomerLogin } from '@/components/CustomerLogin'
 import { IconCart, IconHeart } from '@/components/Icons'
 import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
+import { forgetFaceId, hasLockKey, lockKind, loginWithFaceId, rememberForFaceId } from '@/lib/native/appLock'
+import { clearBonusCard, inNativeApp, saveBonusCard, showBonusCard } from '@/lib/native/bonusCard'
+import { enablePush, pushState, resumePush } from '@/lib/native/push'
 import type { CustomerProfile } from '@/lib/customer/gateway'
 
 const CABINET_URL = 'https://cabinet.smartcentr.store'
@@ -49,6 +52,60 @@ export function AccountView() {
   const a = t.account
   const { customer, failed, reload, logout } = useCustomer(0, true)
   const [welcome, setWelcome] = useState(0)
+  const [nativeApp] = useState(inNativeApp)
+  // 'none' — телефон не умеет или ключ ещё не сохранён; иначе 'face' или 'touch'.
+  const [faceId, setFaceId] = useState<'face' | 'touch' | 'passcode' | 'none'>('none')
+  const [faceIdFailed, setFaceIdFailed] = useState(false)
+  // 'ask' — можно предложить включить уведомления; иначе кнопку не показываем.
+  const [push, setPush] = useState<'granted' | 'denied' | 'ask' | 'none'>('none')
+
+  // Уведомления уже разрешены — тихо обновляем адрес телефона на сервере.
+  useEffect(() => {
+    if (!customer) return
+    resumePush()
+    pushState().then(setPush)
+  }, [customer])
+
+  // Вход закончился, но на телефоне остался ключ — предлагаем войти по лицу.
+  useEffect(() => {
+    if (customer !== null) return
+    let alive = true
+    Promise.all([lockKind(), hasLockKey()]).then(([kind, saved]) => {
+      if (alive) setFaceId(saved && kind !== 'none' ? kind : 'none')
+    })
+    return () => {
+      alive = false
+    }
+  }, [customer])
+
+  // Внутри приложения для телефона храним карту на самом телефоне:
+  // на кассе она откроется и без интернета.
+  useEffect(() => {
+    if (!customer) return
+    rememberForFaceId()
+    saveBonusCard({
+      qrCode: customer.qrCode,
+      name: customer.name,
+      phone: customer.phone,
+      balance: customer.balance,
+      tier: customer.tier,
+      lang,
+    })
+  }, [customer, lang])
+
+  const leave = useCallback(async () => {
+    await clearBonusCard()
+    await forgetFaceId()
+    await logout()
+  }, [logout])
+
+  const unlock = useCallback(async () => {
+    const reason = 'Вход в личный кабинет S Маркет'
+    if (await loginWithFaceId(reason)) {
+      setFaceIdFailed(false)
+      reload()
+    } else setFaceIdFailed(true)
+  }, [reload])
 
   const links = (
     <div className="account-links">
@@ -73,6 +130,14 @@ export function AccountView() {
         </section>
         <section className="account-access">
           <h2>{a.loginTitle}</h2>
+          {faceId !== 'none' && (
+            <div className="account-faceid">
+              <button type="button" className="btn btn--primary" onClick={unlock}>
+                {faceId === 'touch' ? a.touchIdLogin : a.faceIdLogin}
+              </button>
+              {faceIdFailed && <p className="field__error">{a.faceIdFailed}</p>}
+            </div>
+          )}
           <p>{a.loginText}</p>
           <CustomerLogin
             onDone={(_, bonus) => {
@@ -101,8 +166,20 @@ export function AccountView() {
         </p>
         <p>{a.bonusRule.replace('{pct}', String(customer.maxSpendPct))}</p>
         <div className="account-actions">
+          {nativeApp && customer.qrCode && (
+            <button type="button" className="btn btn--primary" onClick={showBonusCard}>{a.bonusCard}</button>
+          )}
+          {push === 'ask' && (
+            <button
+              type="button"
+              className="btn btn--outline"
+              onClick={() => enablePush().then((ok) => setPush(ok ? 'granted' : 'denied'))}
+            >
+              🔔 {a.pushOn}
+            </button>
+          )}
           <a href={CABINET_URL} className="btn btn--outline" target="_blank" rel="noopener noreferrer">{a.cabinetLink}</a>
-          <button type="button" className="btn btn--ghost" onClick={logout}>{a.logout}</button>
+          <button type="button" className="btn btn--ghost" onClick={leave}>{a.logout}</button>
         </div>
       </section>
 

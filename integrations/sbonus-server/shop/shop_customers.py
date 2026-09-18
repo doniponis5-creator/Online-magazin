@@ -155,6 +155,8 @@ async def profile(db: AsyncSession, customer: Customer, amount: Decimal = Decima
         "tierPercent": float(tier.bonus_percent) if tier else 1.0,
         "maxSpendPct": float(pct),
         "maxSpend": max_spend(balance, amount, pct),
+        # Код клиента для кассы: приложение рисует из него QR и показывает без интернета.
+        "qrCode": customer.qr_code or "",
     }
     if full:
         txns = (await db.execute(

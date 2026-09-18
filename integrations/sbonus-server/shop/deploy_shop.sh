@@ -20,8 +20,8 @@ SRC="$(cd "$(dirname "$0")" && pwd)"
 API=sbonus_api
 DB=sbonus_db
 TS=$(date +%Y%m%d_%H%M%S)
-FILES="__init__.py shop_models.py shop_router.py shop_catalog.py shop_telegram.py shop_customers.py shop_admin.py"
-MIGRATIONS="001_shop_orders_migration.sql 002_shop_catalog_migration.sql 003_shop_bonus_migration.sql 004_shop_stats_migration.sql"
+FILES="__init__.py shop_models.py shop_router.py shop_catalog.py shop_telegram.py shop_customers.py shop_admin.py shop_push.py"
+MIGRATIONS="001_shop_orders_migration.sql 002_shop_catalog_migration.sql 003_shop_bonus_migration.sql 004_shop_stats_migration.sql 005_shop_push_migration.sql"
 
 echo "=== Деплой: интернет-магазин (заказы + каталог + вход и бонусы) ==="
 
@@ -198,6 +198,10 @@ docker cp "$SRC/004_shop_stats_migration.sql" "$DB:/tmp/004_shop_stats_migration
 docker exec "$DB" psql -U sbonus -d sbonus_db -v ON_ERROR_STOP=1 -f /tmp/004_shop_stats_migration.sql \
     && echo "✓ Таблицы shop_events и shop_visits (счётчики панели сайта)" \
     || { echo "❌ Миграция счётчиков не прошла — стоп (код не пересобран)"; exit 1; }
+docker cp "$SRC/005_shop_push_migration.sql" "$DB:/tmp/005_shop_push_migration.sql"
+docker exec "$DB" psql -U sbonus -d sbonus_db -v ON_ERROR_STOP=1 -f /tmp/005_shop_push_migration.sql \
+    && echo "✓ Таблица shop_push_devices (уведомления в приложении)" \
+    || { echo "❌ Миграция уведомлений не прошла — стоп (код не пересобран)"; exit 1; }
 
 # ── 6. Секрет сайта в .env (создаётся один раз) ──────────────────────────────
 if grep -q '^SHOP_SITE_SECRET=' "$ENV_FILE" 2>/dev/null; then
@@ -207,6 +211,18 @@ else
     printf '\n# Интернет-магазин: общий секрет сайта и сервера\nSHOP_SITE_SECRET=%s\nSHOP_SITE_BASE_URL=https://shop.smartcentr.store\n' \
         "$(openssl rand -hex 32)" >> "$ENV_FILE"
     echo "✓ SHOP_SITE_SECRET создан в $ENV_FILE (тот же секрет нужно указать сайту как SHOP_API_SECRET)"
+fi
+
+# ── 6.1 Библиотека HTTP/2 для Apple push ─────────────────────────────────────
+# Apple принимает уведомления только по HTTP/2, а httpx умеет его лишь с пакетом h2.
+# Пакет чистый python, ничего не ломает; добавляем один раз и с бэкапом.
+REQ="$CD/sbonus-backend/requirements.txt"
+if grep -qi '^h2[=<>]' "$REQ" 2>/dev/null; then
+    echo "• h2 уже в requirements.txt"
+else
+    cp "$REQ" "$REQ.bak_$TS"
+    printf '\nh2==4.1.0\n' >> "$REQ"
+    echo "✓ h2 добавлен в requirements.txt (бэкап: $REQ.bak_$TS)"
 fi
 
 # ── 7. Пересборка ТОЛЬКО api ─────────────────────────────────────────────────
@@ -222,6 +238,7 @@ if ! echo "$HEALTH" | grep -q '"healthy"'; then
     echo "❌ api не ответил healthy: $HEALTH"
     echo "↩️ АВТООТКАТ: возвращаю main.py, убираю app/shop, пересобираю прежнюю версию..."
     cp "$APP/main.py.bak_$TS" "$APP/main.py"
+    [ -f "$REQ.bak_$TS" ] && cp "$REQ.bak_$TS" "$REQ"
     rm -rf "$DST"
     [ -d "$DST.bak_$TS" ] && mv "$DST.bak_$TS" "$DST"
     docker compose -f "$COMPOSE" build api && docker compose -f "$COMPOSE" up -d --no-deps api

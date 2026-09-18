@@ -31,6 +31,8 @@ export type CustomerProfile = {
   maxSpendPct: number
   /** сколько бонусов можно списать для переданной суммы */
   maxSpend: number
+  /** код клиента в SBonus — то, что кассир сканирует с экрана телефона */
+  qrCode?: string
   history?: BonusHistoryItem[]
   orders?: CustomerOrderItem[]
 }
@@ -77,6 +79,7 @@ function mockProfile(phone: string, amount = 0): CustomerProfile {
     tierPercent: 1,
     maxSpendPct: MOCK_PCT,
     maxSpend: maxBonusSpend(c.balance, amount, MOCK_PCT),
+    qrCode: `SB-${phone.replace(/\D/g, '').slice(-10).padStart(10, '0')}`,
     history: [],
     orders: [],
   }
@@ -125,6 +128,20 @@ export async function getSiteSettings(): Promise<SiteSettings> {
     console.error('[settings] не удалось получить настройки сайта:', error)
     return SITE_SETTINGS_FALLBACK
   }
+}
+
+/**
+ * Адрес телефона для push-уведомлений.
+ *
+ * Сервер хранит адреса и рассылает по ним сообщения о заказах. В тестовом режиме
+ * просто пишем в консоль: сервера нет, отправлять некуда.
+ */
+export async function registerPushDevice(token: string, phone: string | null): Promise<void> {
+  if (paymentMode() === 'mock') {
+    console.log('[push] тестовый режим, адрес телефона получен:', token.slice(0, 12) + '…', phone ?? 'без входа')
+    return
+  }
+  await call('/api/v1/webhook/site/push-device', { method: 'POST', body: { token, platform: 'ios', phone } })
 }
 
 /** Отметка о посещении страницы — для счётчика людей в «Панели сайта». */

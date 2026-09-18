@@ -161,6 +161,34 @@ class Visit(BaseModel):
     visitor: str = ""
     path: str = "/"
 
+class PushDevice(BaseModel):
+    token: str
+    platform: str = "ios"
+    phone: str | None = None
+
+
+
+@router_site_admin.post("/push-device")
+async def push_device(request: Request, db: AsyncSession = Depends(get_db)):
+    """
+    Приложение прислало «адрес» телефона для уведомлений о заказах.
+
+    Адрес выдаёт Apple, он ничего не говорит о человеке. Телефон покупателя
+    пишем рядом, если он вошёл: иначе некому будет отправить «заказ готов».
+    """
+    payload = PushDevice.parse_raw(await _verify_site_body(request))
+    token = (payload.token or "").strip()
+    if not token or len(token) > 200:
+        return {"ok": True, "saved": False}
+    try:
+        from .shop_push import save_device
+        await save_device(db, token, payload.platform or "ios", payload.phone)
+    except Exception as error:
+        # Уведомления — не повод ломать сайт.
+        logger.warning(f"push-device не записан: {error}")
+        return {"ok": True, "saved": False}
+    return {"ok": True, "saved": True}
+
 
 @router_site_admin.post("/visit")
 async def visit(request: Request, db: AsyncSession = Depends(get_db)):

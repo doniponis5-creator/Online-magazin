@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Smart Centr</title>
+<style>
+  :root {
+    --surface: #f7f9fc;
+    --card: #ffffff;
+    --ink: #263244;
+    --muted: #5d6d7e;
+    --border: #e3e8ee;
+    --action: #eaf500;
+    --action-hover: #dce600;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #171c24;
+      --card: #202834;
+      --ink: #f2f5f9;
+      --muted: #a8b4c4;
+      --border: #2e3846;
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--surface);
+    color: var(--ink);
+    font: 400 17px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px calc(16px + env(safe-area-inset-left)) calc(24px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-right));
+  }
+  main {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px 24px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+  }
+  .mark {
+    font: 700 22px/1 -apple-system, system-ui, sans-serif;
+    letter-spacing: -0.02em;
+    margin: 0 0 24px;
+  }
+  .icon { font-size: 40px; line-height: 1; margin-bottom: 16px; }
+  h1 { font-size: 21px; font-weight: 600; margin: 0 0 8px; letter-spacing: -0.01em; }
+  p { color: var(--muted); margin: 0 0 6px; font-size: 15px; }
+  p.ky { margin-bottom: 28px; }
+  button {
+    appearance: none;
+    border: 0;
+    width: 100%;
+    padding: 15px 20px;
+    border-radius: 14px;
+    background: var(--action);
+    color: #263244;
+    font: 600 17px/1 -apple-system, system-ui, sans-serif;
+    cursor: pointer;
+  }
+  button:active { background: var(--action-hover); }
+  button.secondary {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--border);
+    margin-top: 10px;
+  }
+  button.secondary:active { background: var(--surface); }
+  button.secondary[hidden] { display: none; }
+</style>
+</head>
+<body>
+  <main>
+    <p class="mark">S Маркет</p>
+    <div class="icon" aria-hidden="true">📡</div>
+    <h1>Нет связи</h1>
+    <p>Проверьте интернет и попробуйте ещё раз.</p>
+    <p class="ky">Интернетти текшериңиз да, кайра аракет кылыңыз.</p>
+    <button type="button" id="retry">Повторить · Кайталоо</button>
+    <button type="button" class="secondary" id="card" hidden>Бонусная карта · Бонус картасы</button>
+  </main>
+<script>
+  document.getElementById('retry').addEventListener('click', function () {
+    location.replace('https://smarket.kg');
+  });
+
+  // Карта лежит в самом телефоне, поэтому открывается и сейчас, без связи.
+  // Кнопку показываем только если карта уже сохранена.
+  var card = document.getElementById('card');
+  var plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.BonusCard;
+  if (plugin) {
+    plugin.state().then(function (state) {
+      if (state && state.saved) card.hidden = false;
+    }).catch(function () {});
+    card.addEventListener('click', function () {
+      plugin.show().catch(function () {});
+    });
+  }
+</script>
+</body>
+</html>
