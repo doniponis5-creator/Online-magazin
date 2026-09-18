@@ -48,7 +48,8 @@ export default function CheckoutPage() {
   const deliveryCost = delivery === 'delivery' ? courierPrice : 0
   const total = cart.subtotal + deliveryCost
 
-  // Покупатель входит по коду WhatsApp; телефон берётся из входа, бонусы — с его счёта SBonus.
+  // Вход нужен только для бонусов: телефон тогда берётся из входа, а не из формы.
+  // Без входа заказ тоже оформляется — имя и телефон покупатель вводит сам.
   const { customer, reload: reloadCustomer, logout } = useCustomer(total)
   const [useBonus, setUseBonus] = useState(false)
   const [bonusInput, setBonusInput] = useState('')
@@ -109,10 +110,6 @@ export default function CheckoutPage() {
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     if (sending) return
-    if (!customer) {
-      setErrors({ form: t.checkout.errorLogin })
-      return
-    }
     const next: FieldErrors = {}
     if (name.trim().length < 2) next.name = t.checkout.errorName
     if (!normalizePhone(phone)) next.phone = t.checkout.errorPhone
@@ -165,11 +162,11 @@ export default function CheckoutPage() {
       </div>
 
       {customer === null && (
-        <section className="form-card checkout-login" aria-labelledby="login-title">
-          <h2 className="form-section__title" id="login-title">{t.checkout.loginTitle}</h2>
+        <details className="form-card checkout-login">
+          <summary className="form-section__title">{t.checkout.loginTitle}</summary>
           <p>{t.checkout.loginText}</p>
           <CustomerLogin onDone={() => reloadCustomer()} />
-        </section>
+        </details>
       )}
 
       <form className="checkout-layout" onSubmit={submit} noValidate>
@@ -178,18 +175,16 @@ export default function CheckoutPage() {
             <h2 className="form-section__title" id="contact-title">
               {t.checkout.contact}
             </h2>
-            {customer === null ? (
-              <p className="field__hint">{t.checkout.errorLogin}</p>
-            ) : customer ? (
-            <>
-            <div className="checkout-user">
-              <span>
-                {t.checkout.loggedAs} <strong>{customer.phone}</strong>
-              </span>
-              <button type="button" className="link-btn" onClick={logout}>
-                {t.checkout.notYou}
-              </button>
-            </div>
+            {customer && (
+              <div className="checkout-user">
+                <span>
+                  {t.checkout.loggedAs} <strong>{customer.phone}</strong>
+                </span>
+                <button type="button" className="link-btn" onClick={logout}>
+                  {t.checkout.notYou}
+                </button>
+              </div>
+            )}
             <div className="form-grid-2">
               <div className="field">
                 <label className="field__label" htmlFor="co-name">
@@ -214,8 +209,9 @@ export default function CheckoutPage() {
                 <input
                   id="co-phone"
                   required
-                  readOnly
+                  readOnly={Boolean(customer)}
                   value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   placeholder={t.checkout.phonePlaceholder}
                   inputMode="tel"
                   aria-invalid={Boolean(errors.phone)}
@@ -229,8 +225,6 @@ export default function CheckoutPage() {
                 )}
               </div>
             </div>
-            </>
-            ) : null}
           </section>
 
           <section aria-labelledby="delivery-title">

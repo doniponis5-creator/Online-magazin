@@ -35,7 +35,11 @@
 .account-list__sum.is-minus { color: var(--color-ink); }
 
 /* Оформление заказа */
-.checkout-login { display: grid; gap: 12px; margin-bottom: 24px; }
+/* Вход при оформлении заказа — сворачиваемое предложение: заказать можно и без него */
+.checkout-login { margin-bottom: 24px; }
+.checkout-login[open] { display: grid; gap: 12px; }
+.checkout-login summary { cursor: pointer; }
+.checkout-login summary::marker { color: var(--color-ink-soft); }
 .checkout-login p { margin: 0; color: var(--color-ink-soft); }
 .checkout-user { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; color: var(--color-ink-soft); }
 .checkout-bonus { display: grid; gap: 10px; padding: 16px; border-radius: 12px; background: var(--color-lime-soft); }

@@ -5,9 +5,13 @@ import { applyBonus, validateOrder, type OrderRequest } from '@/lib/orders/order
 import { currentSession, errorResponse } from '../customer/route-helpers'
 
 /**
- * Создать заказ: вход покупателя → проверка корзины по каталогу → бонусы SBonus
+ * Создать заказ: проверка корзины по каталогу → бонусы SBonus (если покупатель вошёл)
  * → сервер заказов → ссылка на оплату O!Деньги.
- * Телефон берётся из подписанной сессии, а не из формы: бонусы списываются только со своего счёта.
+ *
+ * Заказать можно и без входа: имя и телефон берутся из формы. Так покупатель,
+ * которому бонусы не нужны, не ждёт код — а именно ожидание кода отсекало людей.
+ * Списать бонусы без входа нельзя: для них телефон берётся только из подписанной
+ * сессии, иначе чужим счётом мог бы распорядиться кто угодно.
  */
 export async function POST(request: Request) {
   let body: OrderRequest
@@ -18,15 +22,18 @@ export async function POST(request: Request) {
   }
 
   const session = await currentSession()
-  if (!session) return Response.json({ ok: false, errors: ['login'] }, { status: 401 })
+  const customer = session
+    ? { name: body.customer?.name ?? session.name, phone: session.phone }
+    : { name: body.customer?.name ?? '', phone: body.customer?.phone ?? '' }
 
-  const result = validateOrder({ ...body, customer: { name: body.customer?.name ?? session.name, phone: session.phone } }, getProduct)
+  const result = validateOrder({ ...body, customer }, getProduct)
   if (!result.ok) {
     return Response.json({ ok: false, errors: result.errors, details: result.details }, { status: 422 })
   }
 
   let order = result.order
   if (Number(body.bonus) > 0) {
+    if (!session) return Response.json({ ok: false, errors: ['login'] }, { status: 401 })
     try {
       const profile = await getProfile(session.phone, order.total)
       const withBonus = applyBonus(order, body.bonus, profile?.maxSpend ?? 0)

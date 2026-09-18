@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('server-only', () => ({}))
 
 import { maxBonusSpend } from '@/lib/customer/gateway'
-import { decodeSession, encodeSession } from '@/lib/customer/session'
+import { SESSION_DAYS, decodeSession, encodeSession } from '@/lib/customer/session'
 import { applyBonus, type ValidatedOrder } from '@/lib/orders/order'
 
 const order: ValidatedOrder = {
@@ -52,7 +52,10 @@ describe('сессия покупателя', () => {
       'utf8',
     ).toString('base64url')
     expect(decodeSession(`${forged}.${signature}`)).toBeNull()
-    expect(decodeSession(value, Date.now() + 31 * 24 * 3600 * 1000)).toBeNull()
+    // срок жизни входа берём из настройки: он будет меняться, тест не должен от этого падать
+    const day = 24 * 3600 * 1000
+    expect(decodeSession(value, Date.now() + (SESSION_DAYS - 1) * day)).not.toBeNull()
+    expect(decodeSession(value, Date.now() + (SESSION_DAYS + 1) * day)).toBeNull()
     expect(decodeSession('мусор')).toBeNull()
     expect(decodeSession(undefined)).toBeNull()
   })

@@ -9,7 +9,13 @@ import 'server-only'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 
 export const SESSION_COOKIE = 'sc_customer'
-export const SESSION_DAYS = 30
+/**
+ * Сколько живёт вход. Раньше было 30 дней без продления: покупатель, заходивший
+ * каждую неделю, всё равно выкидывался на 31-й день и снова ждал код.
+ * Теперь срок длинный и продлевается при каждом обращении к профилю,
+ * так что постоянный покупатель кода больше не ждёт.
+ */
+export const SESSION_DAYS = 180
 
 export type CustomerSession = { phone: string; name: string; exp: number }
 
