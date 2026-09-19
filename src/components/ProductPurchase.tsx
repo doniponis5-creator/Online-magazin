@@ -8,6 +8,7 @@ import { suggestCombos, variantLabel } from '@/lib/cart/sku'
 import { categoryName } from '@/data/categories'
 import { AddToCartButton } from './AddToCartButton'
 import { FavoriteButton } from './FavoriteButton'
+import { PromoCountdown } from './PromoCountdown'
 
 function StockLine({ stock }: { stock: number }) {
   const { t } = useI18n()
@@ -82,6 +83,8 @@ export function ProductPurchase({
         <div className="purchase__prices">
           <span className={`purchase__price${product.oldPrice ? ' purchase__price--sale' : ''}`}>{formatSom(price)}</span>
           {product.oldPrice && <span className="purchase__old">{formatSom(product.oldPrice)}</span>}
+          {/* Отсчёт рядом с ценой: решение о покупке принимают здесь */}
+          {product.promoUntil && <PromoCountdown until={product.promoUntil} />}
         </div>
       ) : null}
 

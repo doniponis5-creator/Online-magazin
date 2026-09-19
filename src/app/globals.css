@@ -1695,7 +1695,14 @@ main#content {
 .purchase__prices {
   display: flex;
   align-items: baseline;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+/* Цена не должна переноситься посреди числа, когда рядом встаёт отсчёт */
+.purchase__price,
+.purchase__old {
+  white-space: nowrap;
 }
 
 .purchase__price {
@@ -2666,6 +2673,13 @@ main#content {
 .promo-timer--inline {
   padding: 5px 12px;
   font-size: 13px;
+}
+
+/* Рядом с ценой на странице товара — на своей строке, чтобы не жать цену */
+.purchase__prices .promo-timer--inline {
+  flex-basis: 100%;
+  max-width: max-content;
+  margin-top: 4px;
 }
 
 .promo-timer--inline .promo-timer__label {

@@ -13,11 +13,7 @@ import { ProductImage } from './ProductImage'
 import { PromoCountdown } from './PromoCountdown'
 import { QuantityStepper } from './QuantityStepper'
 
-/**
- * promoUntil — срок акции для этого товара. Отсчёт рисуется поверх картинки:
- * так он виден на самом товаре, а не отдельной строкой где-то сверху.
- */
-export function ProductCard({ product, promoUntil }: { product: Product; promoUntil?: string | null }) {
+export function ProductCard({ product }: { product: Product }) {
   const { t, lang } = useI18n()
   const cart = useCart()
   const name = lang === 'ky' ? product.nameKy : product.nameRu
@@ -50,7 +46,8 @@ export function ProductCard({ product, promoUntil }: { product: Product; promoUn
         <div className="card__fav">
           <FavoriteButton productId={product.id} variant="floating" />
         </div>
-        {promoUntil && <PromoCountdown until={promoUntil} variant="card" />}
+        {/* Срок акции задаёт владелец у самого товара в 1С; нет срока — нет наклейки */}
+        {product.promoUntil && <PromoCountdown until={product.promoUntil} variant="card" />}
         <Link href={href} className="card__media-link" aria-label={name} tabIndex={-1}>
           <ProductImage kind={product.art} image={product.image} alt={name} />
         </Link>

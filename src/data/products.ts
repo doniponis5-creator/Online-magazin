@@ -82,6 +82,8 @@ export type Product = {
   dealOfDay?: boolean
   /** стоимость доставки товара, сом (0 или нет — бесплатно) */
   deliveryPrice?: number
+  /** до какого момента идёт акция; бишкекское время, без него отсчёта нет */
+  promoUntil?: string
   /** ссылка (GUID) и код номенклатуры в 1С — для создания заказа */
   oneCId?: string
   oneCCode?: string

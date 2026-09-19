@@ -32,6 +32,8 @@ export type OneCItem = {
   photos?: string[]
   /** стоимость доставки, сом; 0 — бесплатно */
   deliveryPrice?: number
+  /** срок акции из 1С: «2026-09-25T18:00:00», бишкекское время */
+  promoUntil?: string
 }
 
 export type OneCCatalog = { exportedAt?: string | null; items: OneCItem[] }
@@ -138,6 +140,7 @@ export function productFromOneC(item: OneCItem): Product {
     sale: Boolean(item.sale),
     dealOfDay: Boolean(item.dealOfDay),
     deliveryPrice: Math.max(0, Math.round(item.deliveryPrice || 0)),
+    promoUntil: item.promoUntil,
     oneCId: item.id,
     oneCCode: item.code,
   }
