@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { brands, products, getDailyProduct, getHits, getRecommended, getSale } from '@/data/products'
 import { categories } from '@/data/categories'
@@ -12,9 +13,10 @@ import { BrandLogo, hasBrandImage } from './BrandLogo'
 import { IconArrowUpRight, IconChevronRight, IconInstagram, IconUser } from './Icons'
 import './home-merchandising.css'
 
-function Heading({ title, href, id }: { title: string; href?: string; id: string }) {
+function Heading({ title, href, id, extra }: { title: string; href?: string; id: string; extra?: React.ReactNode }) {
   const { lang } = useI18n()
   return <div className="section__head"><h2 className="section__title" id={id}>{title}</h2>
+    {extra}
     {href && <Link className="section__cta" href={href}>{lang === 'ky' ? 'Баарын көрүү' : 'Смотреть все'}<IconChevronRight size={16} /></Link>}
   </div>
 }
@@ -22,6 +24,16 @@ function Heading({ title, href, id }: { title: string; href?: string; id: string
 export function DailySelection() {
   const { lang } = useI18n()
   const ky = lang === 'ky'
+  // Срок акции задаёт владелец в 1С; пока ответа нет — таймера просто нет.
+  const [promoUntil, setPromoUntil] = useState<string | null>(null)
+  useEffect(() => {
+    let alive = true
+    fetch('/api/site-settings', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((d) => { if (alive && d?.ok) setPromoUntil(d.promoUntil ?? null) })
+      .catch(() => {})
+    return () => { alive = false }
+  }, [])
   const daily = getDailyProduct(storefront.dailyProduct)
   if (!daily) return null
   const recommended = getRecommended(storefront.recommended, [daily])
@@ -32,7 +44,10 @@ export function DailySelection() {
     </section>
     <section aria-labelledby="personal-title" className="daily-selection__personal">
       <Heading id="personal-title" title={ky ? 'Сиз үчүн атайын' : 'Специально для вас'} href={`/${lang}/catalog`} />
-      <div className="daily-selection__cards">{recommended.map(product => <ProductCard key={product.id} product={product} />)}</div>
+      {/* Отсчёт стоит на каждом товаре: так видно, что кончается именно это предложение */}
+      <div className="daily-selection__cards">
+        {recommended.map(product => <ProductCard key={product.id} product={product} promoUntil={promoUntil} />)}
+      </div>
     </section>
   </div>
 }

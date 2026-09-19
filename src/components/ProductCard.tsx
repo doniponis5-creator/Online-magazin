@@ -10,9 +10,14 @@ import { useCart } from '@/lib/cart/CartProvider'
 import { AddToCartButton } from './AddToCartButton'
 import { FavoriteButton } from './FavoriteButton'
 import { ProductImage } from './ProductImage'
+import { PromoCountdown } from './PromoCountdown'
 import { QuantityStepper } from './QuantityStepper'
 
-export function ProductCard({ product }: { product: Product }) {
+/**
+ * promoUntil — срок акции для этого товара. Отсчёт рисуется поверх картинки:
+ * так он виден на самом товаре, а не отдельной строкой где-то сверху.
+ */
+export function ProductCard({ product, promoUntil }: { product: Product; promoUntil?: string | null }) {
   const { t, lang } = useI18n()
   const cart = useCart()
   const name = lang === 'ky' ? product.nameKy : product.nameRu
@@ -45,6 +50,7 @@ export function ProductCard({ product }: { product: Product }) {
         <div className="card__fav">
           <FavoriteButton productId={product.id} variant="floating" />
         </div>
+        {promoUntil && <PromoCountdown until={promoUntil} variant="card" />}
         <Link href={href} className="card__media-link" aria-label={name} tabIndex={-1}>
           <ProductImage kind={product.art} image={product.image} alt={name} />
         </Link>

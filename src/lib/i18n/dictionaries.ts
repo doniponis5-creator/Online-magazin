@@ -366,6 +366,8 @@ export const ru = {
     installmentStep2: 'Приходите в магазин с документом.',
     installmentStep3: 'Сотрудник оформляет рассрочку и выдаёт технику.',
     askWhatsapp: 'Спросить в WhatsApp',
+    endsIn: 'До конца акции',
+    days: 'д',
   },
   contactWidget: {
     title: 'Связаться с магазином',
@@ -804,6 +806,8 @@ export const ky: Dict = {
     installmentStep2: 'Документиңиз менен дүкөнгө келиңиз.',
     installmentStep3: 'Кызматкер бөлүп төлөөнү тариздеп, техниканы берет.',
     askWhatsapp: 'WhatsApp аркылуу суроо',
+    endsIn: 'Акциянын аякташына',
+    days: 'к',
   },
   contactWidget: {
     title: 'Дүкөн менен байланыш',

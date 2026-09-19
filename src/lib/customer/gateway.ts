@@ -170,9 +170,20 @@ function demoProfile(_amount = 0): CustomerProfile {
  * Настройки сайта, которыми владелец управляет из 1С («Панель сайта»).
  * Меняются на сервере и действуют сразу, поэтому спрашиваем их, а не держим в коде.
  */
-export type SiteSettings = { guestCheckout: boolean; bonusMaxPct: number; welcomeBonus: number }
+export type SiteSettings = {
+  guestCheckout: boolean
+  bonusMaxPct: number
+  welcomeBonus: number
+  /** Когда кончается акция «Специально для вас», бишкекское время. null — акции нет. */
+  promoUntil: string | null
+}
 
-const SITE_SETTINGS_FALLBACK: SiteSettings = { guestCheckout: true, bonusMaxPct: 10, welcomeBonus: 1000 }
+const SITE_SETTINGS_FALLBACK: SiteSettings = {
+  guestCheckout: true,
+  bonusMaxPct: 10,
+  welcomeBonus: 1000,
+  promoUntil: null,
+}
 
 export async function getSiteSettings(): Promise<SiteSettings> {
   if (paymentMode() === 'mock') return SITE_SETTINGS_FALLBACK
@@ -182,6 +193,7 @@ export async function getSiteSettings(): Promise<SiteSettings> {
       guestCheckout: data.guestCheckout !== false,
       bonusMaxPct: Number(data.bonusMaxPct ?? SITE_SETTINGS_FALLBACK.bonusMaxPct),
       welcomeBonus: Number(data.welcomeBonus ?? SITE_SETTINGS_FALLBACK.welcomeBonus),
+      promoUntil: data.promoUntil ?? null,
     }
   } catch (error) {
     // Сервер не ответил — не запираем магазин: заказ важнее настройки

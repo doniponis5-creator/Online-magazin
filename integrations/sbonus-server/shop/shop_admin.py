@@ -71,6 +71,14 @@ SETTINGS: list[dict] = [
         "type": "bool",
         "default": "1",
     },
+    {
+        "key": "SITE_PROMO_UNTIL",
+        "title": "Акция «Специально для вас» идёт до",
+        "hint": "Дата и время окончания: на сайте пойдёт обратный отсчёт. "
+                "Пусто — акции нет и отсчёта не будет. Время бишкекское.",
+        "type": "datetime",
+        "default": "",
+    },
 ]
 
 BY_KEY = {s["key"]: s for s in SETTINGS}
@@ -79,6 +87,19 @@ BY_KEY = {s["key"]: s for s in SETTINGS}
 def _clean(spec: dict, raw) -> str:
     """Привести значение к тому, что можно положить в базу. Мусор — ошибка, а не тихая замена."""
     value = str(raw).strip()
+    if spec["type"] == "datetime":
+        # Пусто = акции нет. Иначе принимаем «2026-09-25T18:00:00» и хранением
+        # считаем бишкекское время: владелец в 1С мыслит своими часами.
+        if not value or value.startswith("0001"):
+            return ""
+        try:
+            parsed = datetime.fromisoformat(value.replace(" ", "T")[:19])
+        except ValueError:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                f"{spec['title']}: нужна дата и время, например 2026-09-25 18:00",
+            )
+        return parsed.strftime("%Y-%m-%dT%H:%M:%S")
     if spec["type"] == "bool":
         if value.lower() in ("1", "true", "да", "истина", "yes", "on"):
             return "1"
@@ -152,6 +173,8 @@ async def site_settings(request: Request, db: AsyncSession = Depends(get_db)):
         "guestCheckout": current["SITE_GUEST_CHECKOUT"] == "1",
         "bonusMaxPct": int(current["SITE_BONUS_MAX_PCT"]),
         "welcomeBonus": int(current["SITE_WELCOME_BONUS_AMOUNT"]),
+        # Время бишкекское: сайт сам покажет, сколько осталось.
+        "promoUntil": current["SITE_PROMO_UNTIL"] or None,
     }
 
 

@@ -721,6 +721,7 @@ def panel_form():
     f.attribute("ПриветственныйБонус", t_num(6, 0), title="Приветственный бонус новому покупателю, сом", saved_data=True)
     f.attribute("МаксимумБонусами", t_num(3, 0), title="Можно оплатить бонусами, % от заказа", saved_data=True)
     f.attribute("ЗаказБезВхода", t_bool(), title="Разрешить заказ без входа", saved_data=True)
+    f.attribute("АкцияДо", t_date(), title="Акция «Специально для вас» идёт до", saved_data=True)
     f.attribute("Состояние", t_str(0), title="Состояние")
 
     for name, title, tip in [
@@ -737,6 +738,8 @@ def panel_form():
                 f.input("ПриветственныйБонус", "ПриветственныйБонус", width=10),
                 f.input("МаксимумБонусами", "МаксимумБонусами", width=10),
                 f.check("ЗаказБезВхода", "ЗаказБезВхода", title_location="Right"),
+                f.input("АкцияДо", "АкцияДо", width=18,
+                        hint="пусто — акции нет"),
                 f.button("КнопкаСохранить", "СохранитьНастройки"),
             ], direction="AlwaysHorizontal"),
         ], title="Настройки сайта (действуют сразу)"),

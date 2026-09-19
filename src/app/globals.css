@@ -583,8 +583,15 @@ main#content {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 16px;
+  gap: 10px 16px;
   margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+/* Заголовок занимает строку целиком, таймер и «смотреть все» жмутся вправо */
+.section__head .promo-timer {
+  margin-left: auto;
+  align-self: center;
 }
 
 .section__title {
@@ -2631,6 +2638,124 @@ main#content {
   outline: 3px solid var(--color-primary);
   outline-offset: 4px;
   border-radius: 40px;
+}
+
+/* ---------- Обратный отсчёт акции ---------- */
+/* Красный и моноширинные цифры: время не должно дёргаться каждую секунду */
+.promo-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  background: #fbe9e7;
+  color: var(--color-danger);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.promo-timer svg {
+  flex: none;
+}
+
+.promo-timer__value {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.promo-timer--inline {
+  padding: 5px 12px;
+  font-size: 13px;
+}
+
+.promo-timer--inline .promo-timer__label {
+  font-weight: 600;
+}
+
+/* Наклейка поверх картинки товара. Подпись «До конца акции» тут не нужна:
+   место дорогое, а красные тикающие цифры и так читаются однозначно. */
+.promo-timer--card {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  z-index: 2;
+  padding: 6px 10px;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.92);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 2px 10px rgba(38, 50, 68, 0.12);
+  animation: promo-timer-in 280ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+.promo-timer--card .promo-timer__label {
+  display: none;
+}
+
+/* Живая точка: показывает, что время идёт прямо сейчас, и не мешает читать */
+.promo-timer__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-danger);
+  animation: promo-timer-pulse 1s ease-in-out infinite;
+}
+
+/* Меньше часа — наклейка чуть плотнее по цвету, точка бьётся заметнее */
+.promo-timer--card.is-soon {
+  background: var(--color-danger);
+  color: #fff;
+}
+
+.promo-timer--card.is-soon .promo-timer__dot {
+  background: #fff;
+  animation-duration: 0.7s;
+}
+
+.card:hover .promo-timer--card {
+  transform: translateY(-1px);
+}
+
+.promo-timer--card {
+  transition: transform 160ms ease-out;
+}
+
+@keyframes promo-timer-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes promo-timer-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.45; transform: scale(0.78); }
+}
+
+/* Кому движение мешает — тому его нет. Отсчёт при этом работает. */
+@media (prefers-reduced-motion: reduce) {
+  .promo-timer--card,
+  .promo-timer__dot {
+    animation: none;
+  }
+
+  .card:hover .promo-timer--card {
+    transform: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .promo-timer--inline .promo-timer__label {
+    display: none;
+  }
+
+  .promo-timer {
+    font-size: 12px;
+  }
+
+  .promo-timer--card {
+    left: 8px;
+    top: 8px;
+    padding: 5px 9px;
+  }
 }
 
 /* ---------- Empty states ---------- */
