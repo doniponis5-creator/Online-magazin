@@ -1,6 +1,6 @@
 import '../globals.css'
 import '../light-lemon.css'
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { notFound } from 'next/navigation'
 import { defaultLang, isLang, type Lang } from '@/lib/i18n/config'
 import { getDictionary } from '@/lib/i18n/dictionaries'
@@ -13,6 +13,21 @@ import { Footer } from '@/components/Footer'
 import { HtmlLang } from '@/components/HtmlLang'
 import { MotionProvider } from '@/components/MotionProvider'
 import { VisitCounter } from '@/components/VisitCounter'
+import { OfflineCatalogSync } from '@/components/OfflineCatalogSync'
+
+/**
+ * viewportFit: 'cover' — страница занимает экран телефона целиком, вместе с
+ * полоской под часами и овалом жеста «домой».
+ *
+ * Без этой строки iPhone отвечает, что отступов у краёв нет (env(...) = 0), и
+ * подписи нижней панели упираются в овал, а товары видно сквозь часы. С ней
+ * отступы становятся настоящими, и CSS отводит под них место.
+ */
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+}
 
 export function generateStaticParams() {
   return [{ lang: 'ru' }, { lang: 'ky' }]
@@ -37,6 +52,7 @@ export default async function LangLayout({
           <HtmlLang lang={lang} />
           <MotionProvider />
           <VisitCounter />
+          <OfflineCatalogSync />
           <a href="#content" className="skip-link">
             {dict.nav.skipToContent}
           </a>

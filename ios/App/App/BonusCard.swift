@@ -341,5 +341,6 @@ class MainViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         bridge?.registerPluginInstance(BonusCardPlugin())
         bridge?.registerPluginInstance(AppLockPlugin())
+        bridge?.registerPluginInstance(OfflineCatalogPlugin())
     }
 }

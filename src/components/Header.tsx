@@ -23,7 +23,37 @@ function HeaderInner() {
   // при загрузке сразу на /catalog?q=... поле поиска показывает активный запрос
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '')
 
+  // Шапка уезжает вверх, когда человек листает вниз, и возвращается, когда
+  // он листает обратно. На маленьком экране это отдаёт витрине две строки
+  // высоты, а поиск всегда в одном движении пальца.
+  const [hidden, setHidden] = useState(false)
+
   useEffect(() => setMounted(true), [])
+
+  useEffect(() => {
+    // Телефон умеет отдавать сотни событий прокрутки в секунду. Считаем не
+    // чаще, чем рисуется кадр, иначе листание становится рваным.
+    let last = window.scrollY
+    let frame = 0
+    const onScroll = () => {
+      if (frame) return
+      frame = requestAnimationFrame(() => {
+        frame = 0
+        const y = window.scrollY
+        const delta = y - last
+        // Дрожание пальца и «резиновый» отскок в конце страницы не считаем.
+        if (Math.abs(delta) < 8) return
+        last = y
+        // У самого верха шапка всегда на месте: прятать нечего.
+        setHidden(y > 140 && delta > 0)
+      })
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (frame) cancelAnimationFrame(frame)
+    }
+  }, [])
 
   const activeQuery = searchParams.get('q') ?? ''
   useEffect(() => setQuery(activeQuery), [activeQuery])
@@ -38,7 +68,11 @@ function HeaderInner() {
   const search = searchParams.toString() ? `?${searchParams.toString()}` : ''
 
   return (
-    <header className="header">
+    <>
+      {/* Полоса под часами и значком батареи. Без неё товары видно сквозь них,
+          когда шапка уехала вверх. На компьютере её высота — ноль. */}
+      <div className="safe-top" aria-hidden="true" />
+      <header className={`header${hidden ? ' is-hidden' : ''}`}>
       <div className="container">
         <div className="header__utility">
           <span><IconMapPin size={14} />{lang === 'ky' ? 'Бүт Кыргызстан боюнча' : 'По всему Кыргызстану'}</span>
@@ -138,7 +172,8 @@ function HeaderInner() {
           </span>
         </nav>
       </div>
-    </header>
+      </header>
+    </>
   )
 }
 

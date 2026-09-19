@@ -58,12 +58,60 @@ export function AccountView() {
   const [faceIdFailed, setFaceIdFailed] = useState(false)
   // 'ask' — можно предложить включить уведомления; иначе кнопку не показываем.
   const [push, setPush] = useState<'granted' | 'denied' | 'ask' | 'none'>('none')
+  // Быстрый вход в «Кабинете»: что умеет телефон и лежит ли уже ключ.
+  const [lock, setLock] = useState<{
+    kind: 'face' | 'touch' | 'passcode' | 'none'
+    saved: boolean
+  }>({ kind: 'none', saved: false })
+  // Результат кнопки «Проверить»: null — ещё не нажимали.
+  const [lockCheck, setLockCheck] = useState<boolean | null>(null)
 
-  // Уведомления уже разрешены — тихо обновляем адрес телефона на сервере.
+  /** Перечитать состояние быстрого входа: умеет ли телефон и есть ли ключ. */
+  const refreshLock = useCallback(async () => {
+    const [kind, saved] = await Promise.all([lockKind(), hasLockKey()])
+    setLock({ kind, saved })
+  }, [])
+
+  /** Включить быстрый вход: попросить у сайта ключ и спрятать его в телефон. */
+  const lockEnable = useCallback(async () => {
+    setLockCheck(null)
+    await rememberForFaceId()
+    await refreshLock()
+  }, [refreshLock])
+
+  /** Выключить: ключ с телефона стираем, из кабинета не выходим. */
+  const lockDisable = useCallback(async () => {
+    setLockCheck(null)
+    await forgetFaceId()
+    await refreshLock()
+  }, [refreshLock])
+
+  /**
+   * Проверка лицом прямо сейчас — чтобы не ждать, пока вход закончится.
+   * Ключ только достаём из телефона: в кабинет заново не входим, он уже открыт.
+   */
+  const lockTry = useCallback(async () => {
+    const reason = 'Проверка быстрого входа S Маркет'
+    setLockCheck(await loginWithFaceId(reason))
+  }, [])
+
+  // Уведомления. Если уже разрешены — тихо обновляем адрес телефона на сервере.
+  // Если ещё не спрашивали — спрашиваем сами, сразу после входа: искать кнопку
+  // покупатель не должен. iPhone показывает это окно один раз за установку,
+  // поэтому повторно мы не пристаём.
   useEffect(() => {
     if (!customer) return
     resumePush()
-    pushState().then(setPush)
+    let alive = true
+    pushState().then(async (state) => {
+      if (!alive) return
+      if (state !== 'ask') return setPush(state)
+      const ok = await enablePush()
+      if (alive) setPush(ok ? 'granted' : 'denied')
+    })
+    return () => {
+      alive = false
+    }
   }, [customer])
 
   // Вход закончился, но на телефоне остался ключ — предлагаем войти по лицу.
@@ -82,7 +130,7 @@ export function AccountView() {
   // на кассе она откроется и без интернета.
   useEffect(() => {
     if (!customer) return
-    rememberForFaceId()
+    rememberForFaceId().then(refreshLock)
     saveBonusCard({
       qrCode: customer.qrCode,
       name: customer.name,
@@ -91,7 +139,7 @@ export function AccountView() {
       tier: customer.tier,
       lang,
     })
-  }, [customer, lang])
+  }, [customer, lang, refreshLock])
 
   const leave = useCallback(async () => {
     await clearBonusCard()
@@ -181,7 +229,49 @@ export function AccountView() {
           <a href={CABINET_URL} className="btn btn--outline" target="_blank" rel="noopener noreferrer">{a.cabinetLink}</a>
           <button type="button" className="btn btn--ghost" onClick={leave}>{a.logout}</button>
         </div>
+        {push === 'denied' && <p className="account-push-off">{a.pushDenied}</p>}
       </section>
+
+      {nativeApp && (
+        <section className="account-lock">
+          <h2>{a.lockTitle}</h2>
+          {lock.kind === 'none' ? (
+            <p className="account-lock__note">{a.lockUnsupported}</p>
+          ) : (
+            <>
+              <p className="account-lock__state">
+                {lock.kind === 'touch' ? a.lockTouch : lock.kind === 'passcode' ? a.lockPasscode : a.lockFace}
+                {' · '}
+                <strong className={lock.saved ? 'is-on' : 'is-off'}>
+                  {lock.saved ? a.lockOn : a.lockOff}
+                </strong>
+              </p>
+              <p className="account-lock__note">{lock.saved ? a.lockText : a.lockTextOff}</p>
+              <div className="account-actions">
+                {lock.saved ? (
+                  <>
+                    <button type="button" className="btn btn--outline" onClick={lockTry}>
+                      {a.lockCheck}
+                    </button>
+                    <button type="button" className="btn btn--ghost" onClick={lockDisable}>
+                      {a.lockDisable}
+                    </button>
+                  </>
+                ) : (
+                  <button type="button" className="btn btn--primary" onClick={lockEnable}>
+                    {a.lockEnable}
+                  </button>
+                )}
+              </div>
+              {lockCheck !== null && (
+                <p className={lockCheck ? 'account-lock__ok' : 'field__error'} role="status">
+                  {lockCheck ? `✓ ${a.lockCheckOk}` : a.lockCheckFail}
+                </p>
+              )}
+            </>
+          )}
+        </section>
+      )}
 
       <section className="account-access">
         <h2>{a.orders}</h2>

@@ -1,4 +1,6 @@
 App/build
+# Сборка для настоящего iPhone (scripts/install-on-iphone.sh)
+App/build-device
 App/Pods
 App/output
 App/App/public

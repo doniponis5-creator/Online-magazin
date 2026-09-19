@@ -83,22 +83,39 @@
     <p class="ky">Интернетти текшериңиз да, кайра аракет кылыңыз.</p>
     <button type="button" id="retry">Повторить · Кайталоо</button>
     <button type="button" class="secondary" id="card" hidden>Бонусная карта · Бонус картасы</button>
+    <button type="button" class="secondary" id="catalog" hidden>Каталог · Каталог</button>
   </main>
 <script>
   document.getElementById('retry').addEventListener('click', function () {
     location.replace('https://smarket.kg');
   });
 
+  var plugins = (window.Capacitor && window.Capacitor.Plugins) || {};
+
   // Карта лежит в самом телефоне, поэтому открывается и сейчас, без связи.
   // Кнопку показываем только если карта уже сохранена.
   var card = document.getElementById('card');
-  var plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.BonusCard;
-  if (plugin) {
-    plugin.state().then(function (state) {
+  var cardPlugin = plugins.BonusCard;
+  if (cardPlugin) {
+    cardPlugin.state().then(function (state) {
       if (state && state.saved) card.hidden = false;
     }).catch(function () {});
     card.addEventListener('click', function () {
-      plugin.show().catch(function () {});
+      cardPlugin.show().catch(function () {});
+    });
+  }
+
+  // Каталог тоже сохранён в телефоне: названия, цены и наличие видно без связи.
+  // Заказать отсюда нельзя — об этом написано на самом экране каталога.
+  var catalog = document.getElementById('catalog');
+  var catalogPlugin = plugins.OfflineCatalog;
+  if (catalogPlugin) {
+    catalogPlugin.state().then(function (state) {
+      if (state && state.saved && state.count > 0) catalog.hidden = false;
+    }).catch(function () {});
+    catalog.addEventListener('click', function () {
+      var lang = (navigator.language || 'ru').slice(0, 2);
+      catalogPlugin.show({ lang: lang }).catch(function () {});
     });
   }
 </script>

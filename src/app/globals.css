@@ -73,6 +73,12 @@ html {
   -webkit-text-size-adjust: 100%;
   scroll-padding-top: calc(var(--header-h) + 16px);
   overflow-x: clip;
+  /* Двойное касание больше не приближает страницу: внутри приложения это
+     выглядит как поломка, а на сайте — как случайность. Раздвинуть двумя
+     пальцами по-прежнему можно: тем, кто плохо видит, это нужно.
+     Заодно исчезает задержка в треть секунды перед срабатыванием кнопок:
+     браузер больше не ждёт, не будет ли второго касания. */
+  touch-action: manipulation;
 }
 
 body {
@@ -156,7 +162,9 @@ textarea {
 
 main#content {
   min-height: 60vh;
-  padding-bottom: calc(var(--bottomnav-h) + 32px);
+  /* Панель внизу перекрывает страницу, поэтому оставляем место под неё:
+     её высота + полоска-«овал» iPhone + воздух. */
+  padding-bottom: calc(var(--bottomnav-h) + env(safe-area-inset-bottom, 0px) + 46px);
 }
 
 @media (min-width: 901px) {
@@ -277,6 +285,47 @@ main#content {
   -webkit-backdrop-filter: saturate(1.4) blur(14px);
   backdrop-filter: saturate(1.4) blur(14px);
   border-bottom: 1px solid var(--color-border);
+  /* Страница доходит до самого верха экрана, поэтому отступаем на высоту
+     полоски с часами: иначе логотип «Смарт Центр» уезжает под них. */
+  padding-top: env(safe-area-inset-top, 0px);
+  /* Листаем вниз — шапка уезжает, листаем обратно — возвращается.
+     Сдвигаем, а не прячем: место в потоке остаётся, витрина не дёргается. */
+  transition: transform 260ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: transform;
+}
+
+.header.is-hidden {
+  transform: translateY(-100%);
+}
+
+/* Кому движение мешает — тому его и не будет. */
+@media (prefers-reduced-motion: reduce) {
+  .header {
+    transition: none;
+  }
+}
+
+/* Полоса под часами, Wi-Fi и батареей на iPhone.
+   Внутри приложения страница доходит до самого верха экрана, и без этой
+   полосы сквозь часы видно товары. В браузере её высота — ноль, её нет. */
+.safe-top {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* Чуть выше самой полоски с часами: лишнее место уходит на растворение.
+     Множитель, а не «+12px», — чтобы в браузере высота осталась ровно нулём. */
+  height: calc(env(safe-area-inset-top, 0px) * 1.35);
+  z-index: 120;
+  pointer-events: none;
+  /* Не заслонка, а матовое стекло: текст, уезжающий под часы, размывается и
+     растворяется, а не обрезается по линейке. Маска гасит и фон, и размытие,
+     поэтому границы не видно. */
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.97), rgba(255, 255, 255, 0.9));
+  -webkit-backdrop-filter: saturate(1.4) blur(12px);
+  backdrop-filter: saturate(1.4) blur(12px);
+  -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
 }
 
 .header__inner {
@@ -477,7 +526,11 @@ main#content {
   -webkit-backdrop-filter: saturate(1.4) blur(14px);
   backdrop-filter: saturate(1.4) blur(14px);
   border-top: 1px solid var(--color-border);
-  padding-bottom: env(safe-area-inset-bottom, 0);
+  /* Снизу у iPhone своя полоска-«овал» для жеста «домой». Отступаем на её
+     высоту (env) и добавляем ещё немного воздуха, иначе подписи «Главная»,
+     «Каталог» упираются в этот овал и выглядят обрезанными. */
+  padding-top: 4px;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
 }
 
 .bottom-nav__item {
@@ -2276,7 +2329,7 @@ main#content {
   border-top: 1px solid var(--color-border);
   background: var(--color-surface);
   margin-top: 56px;
-  padding: 32px 0 calc(var(--bottomnav-h) + 24px);
+  padding: 32px 0 calc(var(--bottomnav-h) + env(safe-area-inset-bottom, 0px) + 38px);
 }
 
 @media (min-width: 768px) {
@@ -2315,6 +2368,40 @@ main#content {
   font-size: 13.5px;
   color: var(--color-muted);
   margin-top: 10px;
+}
+
+/* Телефоны магазина в подвале: крупнее заметки, по ним звонят с телефона. */
+.footer__phones {
+  margin-top: 10px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.footer__phone {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-ink);
+  letter-spacing: 0.2px;
+}
+
+.footer__phone:hover {
+  color: var(--color-primary);
+}
+
+/* Ссылки подвала стоят столбиком: их стало две. */
+.footer__links {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.footer__links .footer__sources-link {
+  margin-top: 0;
 }
 
 .footer__sources-link {
@@ -2737,4 +2824,50 @@ html.dialog-open {
     opacity: 0 !important;
     visibility: hidden !important;
   }
+}
+
+/* Политика конфиденциальности и другие правовые страницы: длинный текст,
+   читаемая ширина строки, никакой лишней графики. */
+.legal-page__updated {
+  margin-top: 10px;
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+.legal-page__text {
+  margin-top: 14px;
+  color: var(--color-ink-soft);
+  font-size: 15px;
+  line-height: 1.7;
+  max-width: 72ch;
+}
+
+.legal-page__block {
+  margin-top: 28px;
+}
+
+.legal-page__heading {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.legal-page__list {
+  margin-top: 12px;
+  padding-left: 20px;
+  max-width: 72ch;
+  color: var(--color-ink-soft);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.legal-page__list li + li {
+  margin-top: 8px;
+}
+
+.legal-page__note {
+  margin-top: 14px;
+  color: var(--color-muted);
+  font-size: 13px;
+  max-width: 72ch;
 }
