@@ -36,7 +36,11 @@ __pycache__/
 # папки агентов — у каждого свои, в общий репозиторий не идут
 .agent/
 .agents/
-.claude/
+# .claude/ — своя у каждого, КРОМЕ навыков: они общие для всех компьютеров
+.claude/*
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/caveman/
 .codex/
 .cursor/
 .gemini/

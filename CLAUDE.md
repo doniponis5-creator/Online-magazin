@@ -66,6 +66,8 @@
 - Коммитим по просьбе владельца. Не коммитим: `.env.local`,
   `smartcentr-site.tar.gz`, `review/_tmp-*`, папки агентов
   (`.agent/ .agents/ .claude/ .codex/ .cursor/ .gemini/ .zcode/`).
+  Одно исключение: `.claude/skills/caveman/` **коммитим** — этот навык
+  общий, его должны видеть и PC, и MacBook.
 
 ## Где что лежит
 
@@ -118,3 +120,5 @@ Rules:
    `cache/` — выполни `graphify update .` и закоммить результат. Файлы
    помечены в `.gitattributes` как несклеиваемые, git их не портит.
 3. `graph.html` в git нет намеренно. Нужна картинка — `graphify export html`.
+4. **На PC команда `graphify` не работает** — её нет в PATH. Там пиши
+   `python -m graphify ...`. На MacBook работает короткая форма.
