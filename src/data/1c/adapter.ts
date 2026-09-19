@@ -6,7 +6,7 @@
  * Цена 0 означает «цена по запросу»: товар виден, но в корзину не добавляется.
  */
 
-import type { ArtKind, Product } from '../products'
+import type { ArtKind, Product, SpecRow } from '../products'
 import { categoryForGroup, oneCCategories } from './categories'
 
 export type OneCItem = {
@@ -15,6 +15,8 @@ export type OneCItem = {
   name: string
   article?: string
   description?: string
+  /** характеристики, заданные в 1С: «Онлайн магазин» → карточка товара */
+  specs?: { label: string; value: string }[]
   group?: string
   parentGroup?: string
   brand?: string
@@ -94,13 +96,26 @@ export function productFromOneC(item: OneCItem): Product {
   const brand = BRAND_ALIASES[rawBrand.toUpperCase()] ?? rawBrand
   const price = Math.max(0, Math.round(item.price || 0))
   const oldPrice = item.oldPrice && item.oldPrice > price && price > 0 ? Math.round(item.oldPrice) : undefined
-  const specs = [
+  // Сначала то, что владелец вписал в 1С, потом служебные строки — бренд и коды
+  // покупателю менее интересны, чем объём, мощность или гарантия.
+  const fromOneC = (item.specs ?? [])
+    .filter((row) => row?.label?.trim() && row?.value?.trim())
+    .map((row) => ({
+      labelRu: row.label.trim(),
+      labelKy: row.label.trim(),
+      valueRu: row.value.trim(),
+      valueKy: row.value.trim(),
+    }))
+  // Служебные строки не дублируем: если владелец сам вписал «Бренд», второй раз не добавляем.
+  const taken = new Set(fromOneC.map((row) => row.labelRu.toLowerCase()))
+  const auto = [
     brand ? { labelRu: 'Бренд', labelKy: 'Бренд', valueRu: brand, valueKy: brand } : null,
     item.article && item.article !== name
       ? { labelRu: 'Артикул', labelKy: 'Артикул', valueRu: item.article, valueKy: item.article }
       : null,
     { labelRu: 'Код товара', labelKy: 'Товардын коду', valueRu: item.code, valueKy: item.code },
-  ].filter((s): s is NonNullable<typeof s> => Boolean(s))
+  ].filter((s): s is SpecRow => s !== null && !taken.has(s.labelRu.toLowerCase()))
+  const specs = [...fromOneC, ...auto]
 
   return {
     id: slugFromCode(item.code) || item.id,

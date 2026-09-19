@@ -8,14 +8,16 @@
 .login-card__channel { display: flex; align-items: flex-start; gap: 8px; }
 .login-card__channel svg { flex: 0 0 auto; margin-top: 2px; }
 .login-card__code { font-size: 26px; letter-spacing: 0.4em; text-align: center; font-variant-numeric: tabular-nums; }
-.login-card__welcome { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--color-lime-soft); font-weight: 650; }
+.login-card__welcome { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--color-lime-soft); font-weight: 650; display: flex; align-items: flex-start; gap: 10px; }
+.login-card__welcome-icon { flex: 0 0 auto; margin-top: 1px; }
 .login-card__links { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
 
 .link-btn { background: none; border: 0; padding: 6px 0; color: var(--color-ink-soft); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .link-btn:hover { color: var(--color-ink); }
 .link-btn:disabled { opacity: 0.5; cursor: default; }
 
-.account-welcome { margin-top: 20px; padding: 14px 16px; border-radius: 12px; background: var(--color-surface); font-weight: 700; color: var(--color-ink); }
+.account-welcome { margin-top: 20px; padding: 14px 16px; border-radius: 12px; background: var(--color-surface); font-weight: 700; color: var(--color-ink); display: flex; align-items: flex-start; gap: 10px; }
+.account-welcome__icon { flex: 0 0 auto; margin-top: 1px; }
 .account-welcome__note { font-size: 14px; margin-top: 8px; }
 .account-balance { display: grid; gap: 4px; margin: 20px 0 12px; }
 .account-balance__label { color: var(--color-ink-soft); font-weight: 600; }

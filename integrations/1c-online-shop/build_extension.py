@@ -210,7 +210,12 @@ def build_registers(out):
          ("ТоварДня", "Товар дня", t_bool()),
          ("Хит", "Хит", t_bool()),
          ("Новинка", "Новинка", t_bool()),
-         ("СтоимостьДоставки", "Стоимость доставки", t_num(15, 2))],
+         ("СтоимостьДоставки", "Стоимость доставки", t_num(15, 2)),
+         ("Описание", "Описание для сайта", t_str(0)),
+         # Характеристики — строки «Название=Значение», по одной на строку.
+         # Отдельный регистр с номером строки был бы правильнее по букве 1С,
+         # но для десятка строк это лишняя таблица и лишняя форма.
+         ("Характеристики", "Характеристики для сайта", t_str(0))],
         [("ДатаИзменения", "Дата изменения", t_date()),
          ("Пользователь", "Пользователь", t_str(100))],
     )
@@ -264,7 +269,7 @@ class Form:
 
     def input(self, name, path, readonly=False, title_location=None, width=None, height=None,
               stretch=None, choices=None, hint=None, events=None, table=False, title=None, negatives=False,
-              password=False):
+              password=False, multiline=False, list_choice=False):
         props = f"<DataPath>{path}</DataPath>"
         if title:
             props += f"<Title>{text(title)}</Title>"
@@ -282,8 +287,13 @@ class Form:
             props += f"<Height>{height}</Height>"
         if stretch is not None:
             props += f"<HorizontalStretch>{str(stretch).lower()}</HorizontalStretch>"
+        if multiline:
+            props += "<MultiLine>true</MultiLine>"
         if negatives:
             props += "<MarkNegatives>true</MarkNegatives>"
+        if list_choice and not choices:
+            # Список наполняется в модуле формы: группы номенклатуры заранее не известны.
+            props += "<ListChoiceMode>true</ListChoiceMode><ChoiceList/>"
         if choices:
             items = "".join(
                 '<xr:Item><xr:Presentation/><xr:CheckState>0</xr:CheckState><xr:Value xsi:type="FormChoiceListDesTimeValue">'
@@ -314,9 +324,12 @@ class Form:
                 "<PictureSize>Proportionally</PictureSize>"
                 f"{self._tail(name)}</PictureField>")
 
-    def html(self, name, path, width, height, events=None):
+    def html(self, name, path, width, height, events=None, v_stretch=None):
+        # v_stretch=False нужен, когда поле не должно растягиваться на всю форму:
+        # иначе 1С отдаёт ему всё свободное место и под содержимым остаётся пустота.
+        stretch = "" if v_stretch is None else f"<VerticalStretch>{str(v_stretch).lower()}</VerticalStretch>"
         return (f'<HTMLDocumentField name="{name}" id="{self.next_id()}"><DataPath>{path}</DataPath>'
-                f"<TitleLocation>None</TitleLocation><Width>{width}</Width><Height>{height}</Height>"
+                f"<TitleLocation>None</TitleLocation><Width>{width}</Width><Height>{height}</Height>{stretch}"
                 f"{self._tail(name)}{self._events(events)}</HTMLDocumentField>")
 
     def button(self, name, command, bar=False, default=False):
@@ -335,7 +348,7 @@ class Form:
                 f'<ExtendedTooltip name="{name}РасширеннаяПодсказка" id="{self.next_id()}"/>'
                 f"<ChildItems>{''.join(children)}</ChildItems></UsualGroup>")
 
-    def table(self, name, path, columns, bar_buttons=(), events=None, height=None, search=True):
+    def table(self, name, path, columns, bar_buttons=(), events=None, height=None, search=True, editable=False):
         def addition(tag, kind):
             element = f"{name}{kind}"
             return (f'<{tag} name="{element}" id="{self.next_id()}"><AdditionSource><Item>{name}</Item>'
@@ -349,8 +362,9 @@ class Form:
                f"<ChildItems>{''.join(bar_buttons)}</ChildItems></AutoCommandBar>")
         return (
             f'<Table name="{name}" id="{self.next_id()}"><Representation>List</Representation>'
-            "<ChangeRowSet>false</ChangeRowSet><ChangeRowOrder>false</ChangeRowOrder>"
-            f"{height_xml}<AutoInsertNewRow>false</AutoInsertNewRow><DataPath>{path}</DataPath>"
+            f"<ChangeRowSet>{str(editable).lower()}</ChangeRowSet>"
+            f"<ChangeRowOrder>{str(editable).lower()}</ChangeRowOrder>"
+            f"{height_xml}<AutoInsertNewRow>{str(editable).lower()}</AutoInsertNewRow><DataPath>{path}</DataPath>"
             f'{search_xml}<RowFilter xsi:nil="true"/>'
             f'<ContextMenu name="{name}КонтекстноеМеню" id="{self.next_id()}"/>{bar}'
             f'<ExtendedTooltip name="{name}РасширеннаяПодсказка" id="{self.next_id()}"/>'
@@ -404,6 +418,10 @@ class Form:
 
 PROCESSOR = "ИМ_ОнлайнМагазин"
 AVAILABILITY = ["По остатку", "В наличии", "Нет в наличии"]
+# «Показывать» отвечает на вопросы, которые владелец задаёт каждый день:
+# что ещё не готово к продаже и что уже висит на сайте.
+SHOW_MODES = ["Все", "На сайте", "Скрытые", "Без цены", "С ценой", "Без фото",
+              "Без описания", "Распродажа", "Товар дня", "Хит", "Новинка"]
 
 
 def list_form():
@@ -429,11 +447,14 @@ def list_form():
         ("Хит", "Хит", t_bool()),
         ("Новинка", "Новинка", t_bool()),
         ("СтоимостьДоставки", "Доставка, сом", t_num(15, 2)),
+        ("ЕстьОписание", "Описание", t_bool()),
         ("Изменено", "Изменено", t_bool()),
     ]
     f.attribute("Объект", f"<v8:Type>cfg:DataProcessorObject.{PROCESSOR}</v8:Type>", main=True)
     f.attribute("Товары", "<v8:Type>v8:ValueTable</v8:Type>", title="Товары", columns=columns)
     f.attribute("Поиск", t_str(100), title="Поиск")
+    f.attribute("ГруппаОтбора", t_str(150), title="Группа", save=True)
+    f.attribute("Показывать", t_str(24), title="Показывать", save=True)
     f.attribute("ТолькоВНаличии", t_bool(), title="Только в наличии", save=True)
     f.attribute("Итог", t_str(0), title="Итог")
     f.attribute("ЕстьСебестоимость", t_bool())
@@ -446,6 +467,7 @@ def list_form():
         ("ОткрытьНастройкиЗаказов", "Настройки заказов с сайта", "Организация, склад, касса O!Деньги для оплаченных заказов"),
         ("ОткрытьПанельСайта", "Панель сайта", "Сводка по сайту и настройки сайта: бонусы, заказ без входа"),
         ("ОтправитьКаталогНаСайт", "Отправить на сайт сейчас", "Не ждать 10 минут — отправить товары, цены и фото на сайт"),
+        ("СброситьОтбор", "Сбросить отбор", "Показать все товары: очистить поиск, группу и режим показа"),
     ]:
         f.command(name, title, tip)
 
@@ -461,6 +483,7 @@ def list_form():
         f.input("ТоварыМаржа", "Товары.Маржа", readonly=True, width=10, table=True, negatives=True),
         f.input("ТоварыМаржаПроцент", "Товары.МаржаПроцент", readonly=True, width=7, table=True, negatives=True),
         f.input("ТоварыФото", "Товары.Фото", readonly=True, width=5, table=True),
+        f.check("ТоварыЕстьОписание", "Товары.ЕстьОписание", readonly=True, table=True),
         f.check("ТоварыСкрыть", "Товары.Скрыть", table=True),
         f.input("ТоварыНаличие", "Товары.Наличие", width=12, choices=AVAILABILITY, table=True),
         f.check("ТоварыРаспродажа", "Товары.Распродажа", table=True),
@@ -470,9 +493,20 @@ def list_form():
         f.input("ТоварыСтоимостьДоставки", "Товары.СтоимостьДоставки", width=8, table=True),
     ]
     items = [
+        # Отбор отдельной строкой сверху: поиск, группа и «что показывать»
+        # владелец меняет каждый день, кнопки — реже.
         f.group("ГруппаОтбор", [
-            f.input("Поиск", "Поиск", hint="Название, артикул или код"),
-            f.check("ТолькоВНаличии", "ТолькоВНаличии", title_location="Right"),
+            f.input("Поиск", "Поиск", width=34, hint="Название, артикул или код",
+                    events={"OnChange": "ОтборПриИзменении"}),
+            f.input("ГруппаОтбора", "ГруппаОтбора", width=26, list_choice=True,
+                    hint="все группы", events={"OnChange": "ОтборПриИзменении"}),
+            f.input("Показывать", "Показывать", width=20, choices=SHOW_MODES,
+                    events={"OnChange": "ОтборПриИзменении"}),
+            f.check("ТолькоВНаличии", "ТолькоВНаличии", title_location="Right",
+                    events={"OnChange": "ОтборПриИзменении"}),
+            f.button("ФормаСбросОтбора", "СброситьОтбор"),
+        ], direction="AlwaysHorizontal"),
+        f.group("ГруппаКнопки", [
             f.button("ФормаОбновить", "Обновить"),
             f.button("ФормаСохранить", "Сохранить", default=True),
             f.button("ФормаОтправитьНаСайт", "ОтправитьКаталогНаСайт"),
@@ -511,6 +545,11 @@ def card_form():
         ("СтоимостьДоставки", "Доставка, сом", t_num(15, 2)),
     ]:
         f.attribute(name, type_xml, title=title, saved_data=True)
+    f.attribute("Описание", t_str(0), title="Описание для сайта", saved_data=True)
+    f.attribute("Характеристики", "<v8:Type>v8:ValueTable</v8:Type>", title="Характеристики", columns=[
+        ("Название", "Название", t_str(100)),
+        ("Значение", "Значение", t_str(200)),
+    ])
     f.attribute("Себестоимость", t_num(15, 2), title="Себестоимость")
     f.attribute("Маржа", t_num(15, 2, "Any"), title="Маржа, сом")
     f.attribute("МаржаПроцент", t_num(5, 1, "Any"), title="Маржа, %")
@@ -533,6 +572,8 @@ def card_form():
         ("ФотоВыше", "Выше", "Переместить фото выше"),
         ("ФотоНиже", "Ниже", "Переместить фото ниже"),
         ("УдалитьФото", "Удалить фото", "Удалить выбранное фото"),
+        ("ПодставитьХарактеристики", "Взять из 1С",
+         "Заполнить характеристики из свойств номенклатуры в 1С"),
     ]:
         f.command(name, title, tip)
 
@@ -568,10 +609,25 @@ def card_form():
         f.check("Хит", "Хит", title_location="Right", events=change),
         f.check("Новинка", "Новинка", title_location="Right", events=change),
     ], title="На сайте")
+    # Описание и характеристики читает покупатель на странице товара.
+    # Отдельным блоком под фото: это текст, ему нужна ширина, а не колонка.
+    texts = f.group("ГруппаТексты", [
+        f.input("Описание", "Описание", title_location="None", multiline=True,
+                height=4, stretch=True, events=change,
+                hint="Что это за товар и чем хорош. 2–4 предложения, для покупателя"),
+        f.table("Характеристики", "Характеристики", [
+            f.input("ХарактеристикиНазвание", "Характеристики.Название", width=26, table=True, events=change),
+            f.input("ХарактеристикиЗначение", "Характеристики.Значение", width=40, table=True, events=change),
+        ], bar_buttons=[
+            f.button("ХарактеристикиИз1С", "ПодставитьХарактеристики", bar=True),
+        ], height=6, search=False, editable=True,
+            events={"BeforeDeleteRow": "ХарактеристикиПередУдалением"}),
+    ], title="Описание и характеристики для сайта")
     items = [
         f.input("Номенклатура", "Номенклатура", readonly=True, stretch=True),
         f.input("Сводка", "Сводка", readonly=True, title_location="None", stretch=True),
         f.group("ГруппаОсновная", [photos, settings], direction="AlwaysHorizontal"),
+        texts,
     ]
     return f.render("Карточка товара", items,
                     {"OnCreateAtServer": "ПриСозданииНаСервере", "BeforeClose": "ПередЗакрытием"},
@@ -652,32 +708,15 @@ def settings_form():
 
 
 def panel_form():
-    """Панель сайта: сводка по магазину и настройки сайта, которые действуют сразу."""
+    """Панель сайта: сводка рисуется как HTML-дашборд, настройки — обычные поля 1С.
+
+    Двадцать полей ввода в столбик читались как свалка, поэтому сводка теперь
+    одно HTML-поле: плитки, графики за 14 дней и карточки разделов. Настройки
+    остались полями формы — их правят и сохраняют, а HTML для этого не годится.
+    """
     f = Form()
     f.attribute("Объект", f"<v8:Type>cfg:DataProcessorObject.{PROCESSOR}</v8:Type>", main=True)
-
-    counts = [
-        ("ЗаказыСегодня", "Заказов сегодня"), ("ЗаказыНеделя", "За 7 дней"), ("ЗаказыВсего", "Всего"),
-        ("ЖдутОплаты", "Ждут оплаты"), ("ОплаченыЖдут1С", "Оплачены, ждут 1С"),
-        ("Проведены1С", "Проведены в 1С"), ("Ошибки1С", "С ошибкой"), ("Отменены", "Отменены"),
-        ("ТоваровВКаталоге", "Товаров в каталоге"), ("ТоваровСЦеной", "Из них с ценой"),
-        ("ГотовыКПродаже", "Готовы к продаже (цена и остаток)"),
-        ("ПокупателейВсего", "Покупателей в SBonus"), ("ПришлиССайта", "Зарегистрировались на сайте"),
-        ("ПосетителейСегодня", "Людей на сайте сегодня"), ("ПосетителейНеделя", "За 7 дней"),
-        ("ПросмотровСегодня", "Открыто страниц сегодня"), ("ПросмотровНеделя", "За 7 дней"),
-        ("ВошлоСегодня", "Вошло в кабинет сегодня"), ("ВошлоНеделя", "За 7 дней"),
-        ("НовыхСегодня", "Новых покупателей сегодня"), ("НовыхНеделя", "За 7 дней"),
-        ("КодовTelegramСегодня", "Кодов в Telegram сегодня"), ("КодовTelegramНеделя", "За 7 дней"),
-        ("КодовWhatsAppСегодня", "Кодов в WhatsApp сегодня"), ("КодовWhatsAppНеделя", "За 7 дней"),
-    ]
-    for name, title in counts:
-        f.attribute(name, t_num(9, 0), title=title)
-    for name, title in [("ОплаченоСегодня", "Оплачено сегодня, сом"), ("ОплаченоНеделя", "За 7 дней, сом"),
-                        ("ОплаченоВсего", "Всего, сом"), ("БонусовСписано", "Бонусами оплачено, сом")]:
-        f.attribute(name, t_num(12, 2), title=title)
-    f.attribute("КаталогОбновлён", t_date(), title="Каталог обновлён")
-    f.attribute("КодЧерезTelegram", t_str(100), title="Telegram")
-    f.attribute("КодЧерезWhatsApp", t_str(100), title="WhatsApp (запасной)")
+    f.attribute("ТекстHTML", t_str(0), title="Сводка")
 
     f.attribute("ПриветственныйБонус", t_num(6, 0), title="Приветственный бонус новому покупателю, сом", saved_data=True)
     f.attribute("МаксимумБонусами", t_num(3, 0), title="Можно оплатить бонусами, % от заказа", saved_data=True)
@@ -691,53 +730,17 @@ def panel_form():
     ]:
         f.command(name, title, tip)
 
-    def ro(name, width=12):
-        return f.input(name, name, readonly=True, width=width)
-
     items = [
-        f.group("ГруппаЗаказы", [
-            f.group("ГруппаЗаказыСчёт", [ro("ЗаказыСегодня"), ro("ЗаказыНеделя"), ro("ЗаказыВсего")],
-                    direction="AlwaysHorizontal"),
-            f.group("ГруппаЗаказыДеньги", [ro("ОплаченоСегодня", 16), ro("ОплаченоНеделя", 16), ro("ОплаченоВсего", 16)],
-                    direction="AlwaysHorizontal"),
-        ], title="Заказы с сайта"),
-        f.group("ГруппаСтатусы", [
-            f.group("ГруппаСтатусыСтрока", [ro("ЖдутОплаты"), ro("ОплаченыЖдут1С"), ro("Проведены1С"),
-                                            ro("Ошибки1С"), ro("Отменены")], direction="AlwaysHorizontal"),
-            ro("БонусовСписано", 16),
-        ], title="Что с заказами сейчас"),
-        f.group("ГруппаКаталог", [
-            f.group("ГруппаКаталогСтрока", [ro("ТоваровВКаталоге"), ro("ТоваровСЦеной"), ro("ГотовыКПродаже")],
-                    direction="AlwaysHorizontal"),
-            ro("КаталогОбновлён", 20),
-        ], title="Каталог на сайте"),
-        f.group("ГруппаПосетители", [
-            f.group("ГруппаПосетителиСтрока", [ro("ПосетителейСегодня"), ro("ПосетителейНеделя")],
-                    direction="AlwaysHorizontal"),
-            f.group("ГруппаПросмотрыСтрока", [ro("ПросмотровСегодня"), ro("ПросмотровНеделя")],
-                    direction="AlwaysHorizontal"),
-        ], title="Люди на сайте (считаются и те, кто ничего не купил)"),
-        f.group("ГруппаЛюди", [
-            f.group("ГруппаЛюдиВсего", [ro("ПокупателейВсего"), ro("ПришлиССайта")], direction="AlwaysHorizontal"),
-            f.group("ГруппаЛюдиВход", [ro("ВошлоСегодня"), ro("ВошлоНеделя"),
-                                       ro("НовыхСегодня"), ro("НовыхНеделя")], direction="AlwaysHorizontal"),
-        ], title="Покупатели"),
-        f.group("ГруппаКаналы", [
-            ro("КодЧерезTelegram", 40),
-            f.group("ГруппаКодовTG", [ro("КодовTelegramСегодня"), ro("КодовTelegramНеделя")],
-                    direction="AlwaysHorizontal"),
-            ro("КодЧерезWhatsApp", 40),
-            f.group("ГруппаКодовWA", [ro("КодовWhatsAppСегодня"), ro("КодовWhatsAppНеделя")],
-                    direction="AlwaysHorizontal"),
-        ], title="Код для входа на сайт"),
+        f.html("Сводка", "ТекстHTML", width=150, height=28, v_stretch=False),
         f.group("ГруппаНастройки", [
-            f.input("ПриветственныйБонус", "ПриветственныйБонус", width=10),
-            f.input("МаксимумБонусами", "МаксимумБонусами", width=10),
-            f.check("ЗаказБезВхода", "ЗаказБезВхода", title_location="Right"),
-            f.group("ГруппаКнопкаСохранить", [f.button("КнопкаСохранить", "СохранитьНастройки")],
-                    direction="AlwaysHorizontal"),
+            f.group("ГруппаНастройкиПоля", [
+                f.input("ПриветственныйБонус", "ПриветственныйБонус", width=10),
+                f.input("МаксимумБонусами", "МаксимумБонусами", width=10),
+                f.check("ЗаказБезВхода", "ЗаказБезВхода", title_location="Right"),
+                f.button("КнопкаСохранить", "СохранитьНастройки"),
+            ], direction="AlwaysHorizontal"),
         ], title="Настройки сайта (действуют сразу)"),
-        f.input("Состояние", "Состояние", readonly=True, title_location="None", stretch=True, height=3),
+        f.input("Состояние", "Состояние", readonly=True, title_location="None", stretch=True, height=2),
     ]
     return f.render("Панель сайта", items, {"OnCreateAtServer": "ПриСозданииНаСервере"},
                     bar_buttons=[

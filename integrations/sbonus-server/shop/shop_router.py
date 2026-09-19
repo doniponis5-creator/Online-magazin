@@ -448,6 +448,10 @@ async def mark_done(order_id: str, request: Request, db: AsyncSession = Depends(
     payload = MarkDone.parse_raw(body)
     order = await _get_order(db, order_id)
     first_time = order.status != "in_1c"
+    # Товар приехал позже, и 1С дооформила отгрузку: заказ уже был «в 1С»,
+    # но теперь он собран. Покупателю это надо сказать — первый раз ему писали
+    # «заказ принят, товар везём», и с тех пор он ничего не слышал.
+    became_shipped = bool(payload.realized) and not bool(order.realized)
     order.status = "in_1c"
     order.order_number_1c = payload.order_number_1c[:32]
     order.pko_number_1c = payload.pko_number_1c[:32]
@@ -460,7 +464,7 @@ async def mark_done(order_id: str, request: Request, db: AsyncSession = Depends(
     await db.commit()
     await _log(db, order, "synced", payload.dict())
 
-    if first_time:
+    if first_time or became_shipped:
         earned = Decimal(str(order.bonus_earned or 0))
         await _push(db, order,
                     "Заказ готов" if payload.realized else "Заказ принят",

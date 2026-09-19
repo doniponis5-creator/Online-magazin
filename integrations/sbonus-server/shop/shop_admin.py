@@ -7,7 +7,7 @@
 Эндпоинты (под /api/v1):
   GET  /webhook/1c/shop/settings    ключ 1С          список настроек с текущими значениями
   POST /webhook/1c/shop/settings    подпись 1С       сохранить значения
-  GET  /webhook/1c/shop/dashboard   ключ 1С          сводка по заказам, каталогу, каналам
+  GET  /webhook/1c/shop/dashboard   ключ 1С          сводка, ряды по дням, последние заказы, каналы
   GET  /webhook/site/settings       подпись сайта    настройки, нужные самому сайту
   POST /webhook/site/visit          подпись сайта    отметка о посещении страницы
 
@@ -230,6 +230,10 @@ SELECT
   count(*) FILTER (WHERE status = 'awaiting_payment')                AS awaiting,
   count(*) FILTER (WHERE status = 'paid')                            AS paid_wait_1c,
   count(*) FILTER (WHERE status = 'in_1c')                           AS in_1c,
+  -- Оплачен, документы в 1С есть, но реализации нет: товара не было на складе.
+  -- Такой заказ надо привезти и отгрузить, иначе покупатель заберёт деньги обратно.
+  count(*) FILTER (WHERE status = 'in_1c' AND realized IS TRUE)      AS shipped,
+  count(*) FILTER (WHERE status = 'in_1c' AND realized IS NOT TRUE)  AS awaiting_shipment,
   count(*) FILTER (WHERE status = 'failed')                          AS failed,
   count(*) FILTER (WHERE status = 'cancelled')                       AS cancelled,
   coalesce(sum(bonus_spent), 0)                                      AS bonus_spent
@@ -276,6 +280,120 @@ SELECT
 """)
 
 
+DAILY_DAYS = 14
+
+# Ряды по дням для графиков в «Панели сайта». Пустые дни тоже нужны —
+# иначе график врёт: провал выглядит как отсутствие столбика, а не как ноль.
+DAILY_ORDERS_SQL = text("""
+SELECT to_char(created_at::date, 'YYYY-MM-DD')                       AS day,
+       count(*)                                                      AS orders,
+       coalesce(sum(pay_amount) FILTER (WHERE paid), 0)               AS paid
+FROM shop_orders
+WHERE created_at >= :from_day
+GROUP BY 1
+""")
+
+DAILY_VISITS_SQL = text("""
+SELECT to_char(created_at::date, 'YYYY-MM-DD')  AS day,
+       count(DISTINCT visitor)                  AS people,
+       count(*)                                 AS views
+FROM shop_visits
+WHERE created_at >= :from_day
+GROUP BY 1
+""")
+
+DAILY_EVENTS_SQL = text("""
+SELECT to_char(created_at::date, 'YYYY-MM-DD')             AS day,
+       count(*) FILTER (WHERE kind = 'register')           AS new_customers,
+       count(*) FILTER (WHERE kind = 'login')              AS logins
+FROM shop_events
+WHERE created_at >= :from_day
+GROUP BY 1
+""")
+
+
+async def _daily(db: AsyncSession, today: datetime) -> list[dict]:
+    """Последние DAILY_DAYS дней подряд, включая сегодня, без пропусков."""
+    first = today - timedelta(days=DAILY_DAYS - 1)
+    period = {"from_day": first.replace(tzinfo=None)}
+    rows: dict[str, dict] = {}
+    for sql in (DAILY_ORDERS_SQL, DAILY_VISITS_SQL, DAILY_EVENTS_SQL):
+        try:
+            for row in (await db.execute(sql, period)).mappings():
+                rows.setdefault(row["day"], {}).update(row)
+        except Exception as error:
+            logger.warning(f"ряд по дням не собран: {error}")
+
+    series = []
+    for shift in range(DAILY_DAYS):
+        day = (first + timedelta(days=shift)).date().isoformat()
+        got = rows.get(day, {})
+        series.append({
+            "day": day,
+            "orders": int(got.get("orders") or 0),
+            "paid": float(got.get("paid") or 0),
+            "people": int(got.get("people") or 0),
+            "views": int(got.get("views") or 0),
+            "newCustomers": int(got.get("new_customers") or 0),
+            "logins": int(got.get("logins") or 0),
+        })
+    return series
+
+
+RECENT_LIMIT = 10
+
+# Последние заказы для панели 1С: кто заказал, что и на сколько.
+# Имя и телефон нужны владельцу, чтобы позвонить по неотгруженному заказу,
+# не открывая каждый документ. Панель видят только сотрудники с доступом в 1С.
+RECENT_ITEMS = 3
+RECENT_SQL = text("""
+SELECT order_id, created_at, total, bonus_spent, status, paid, realized, order_number_1c,
+       customer_name, customer_phone, lines
+FROM shop_orders
+ORDER BY created_at DESC
+LIMIT :limit
+""")
+
+
+def _items(lines) -> list[dict]:
+    """Первые строки заказа: название и количество. Остальные считаются отдельно."""
+    out = []
+    for line in (lines or [])[:RECENT_ITEMS]:
+        if not isinstance(line, dict):
+            continue
+        name = str(line.get("name") or "").strip()
+        if not name:
+            continue
+        try:
+            qty = float(line.get("qty") or 0)
+        except (TypeError, ValueError):
+            qty = 0
+        out.append({"name": name[:120], "qty": qty})
+    return out
+
+
+async def _recent(db: AsyncSession) -> list[dict]:
+    try:
+        rows = (await db.execute(RECENT_SQL, {"limit": RECENT_LIMIT})).mappings().all()
+    except Exception as error:
+        logger.warning(f"последние заказы не собраны: {error}")
+        return []
+    return [{
+        "orderId": r["order_id"],
+        "createdAt": r["created_at"].isoformat() if r["created_at"] else None,
+        "total": float(r["total"] or 0),
+        "bonusSpent": float(r["bonus_spent"] or 0),
+        "status": r["status"] or "",
+        "paid": bool(r["paid"]),
+        "realized": bool(r["realized"]),
+        "customerName": r["customer_name"] or "",
+        "customerPhone": r["customer_phone"] or "",
+        "items": _items(r["lines"]),
+        "itemsTotal": len(r["lines"] or []),
+        "number1C": r["order_number_1c"] or "",
+    } for r in rows]
+
+
 async def _whatsapp_state() -> str:
     """Живой ответ Green API. Молчаливо сломанный WhatsApp — худшее, что может быть."""
     instance = _cfg("greenapi_instance_id")
@@ -308,10 +426,14 @@ async def dashboard(_=Depends(_verify_1c_key), db: AsyncSession = Depends(get_db
     u = (await db.execute(CUSTOMERS_SQL)).mappings().one_or_none()
     p = (await db.execute(PEOPLE_SQL, period)).mappings().one_or_none()
     v = (await db.execute(VISITS_SQL, period)).mappings().one_or_none()
+    daily = await _daily(db, today)
+    recent = await _recent(db)
 
     return {
         "ok": True,
         "checkedAt": now.isoformat(),
+        "daily": daily,
+        "recentOrders": recent,
         "orders": {
             "today": int(o["orders_today"]) if o else 0,
             "week": int(o["orders_week"]) if o else 0,
@@ -322,6 +444,8 @@ async def dashboard(_=Depends(_verify_1c_key), db: AsyncSession = Depends(get_db
             "awaitingPayment": int(o["awaiting"]) if o else 0,
             "paidWaiting1C": int(o["paid_wait_1c"]) if o else 0,
             "in1C": int(o["in_1c"]) if o else 0,
+            "shipped": int(o["shipped"]) if o else 0,
+            "awaitingShipment": int(o["awaiting_shipment"]) if o else 0,
             "failed": int(o["failed"]) if o else 0,
             "cancelled": int(o["cancelled"]) if o else 0,
             "bonusSpent": float(o["bonus_spent"]) if o else 0.0,

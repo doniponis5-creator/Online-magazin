@@ -183,7 +183,7 @@ export function ProductPurchase({
         <FavoriteButton productId={product.id} variant="floating" />
       </div>
 
-      <span className="demo-strip">{t.checkout.sbonusNote}</span>
+      <span className="bonus-hint">{t.checkout.sbonusNote}</span>
     </div>
   )
 }

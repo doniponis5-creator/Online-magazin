@@ -9,6 +9,7 @@ import '@/components/account.css'
 import { useCart } from '@/lib/cart/CartProvider'
 import { unitPrice } from '@/lib/cart/logic'
 import { getProduct, type Product } from '@/data/products'
+import { paymentMethods } from '@/data/payment-methods'
 import { variantLabel } from '@/lib/cart/sku'
 import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
@@ -50,10 +51,13 @@ export default function CheckoutPage() {
 
   // Вход нужен только для бонусов: телефон тогда берётся из входа, а не из формы.
   // Без входа заказ тоже оформляется — имя и телефон покупатель вводит сам.
-  const { customer, reload: reloadCustomer, logout } = useCustomer(total)
+  const { customer, guestCheckout, reload: reloadCustomer, logout } = useCustomer(total)
   const [useBonus, setUseBonus] = useState(false)
   const [bonusInput, setBonusInput] = useState('')
   const maxBonus = customer?.maxSpend ?? 0
+  // Заказ без входа разрешает владелец в 1С. Пока профиль грузится (undefined)
+  // кнопку не блокируем как «нужен вход» — иначе надпись мигает на каждой загрузке.
+  const needLogin = customer === null && !guestCheckout
   const bonus = useBonus ? Math.max(0, Math.min(maxBonus, Math.floor(Number(bonusInput) || 0))) : 0
   const payTotal = total - bonus
 
@@ -162,7 +166,7 @@ export default function CheckoutPage() {
       </div>
 
       {customer === null && (
-        <details className="form-card checkout-login">
+        <details className="form-card checkout-login" open={needLogin}>
           <summary className="form-section__title">{t.checkout.loginTitle}</summary>
           <p>{t.checkout.loginText}</p>
           <CustomerLogin onDone={() => reloadCustomer()} />
@@ -374,10 +378,36 @@ export default function CheckoutPage() {
             <span>{formatSom(payTotal)}</span>
           </div>
           {errors.form && <p role="alert" className="field__error">{errors.form}</p>}
-          <button type="submit" className="btn btn--primary btn--block checkout-pay" disabled={sending || !customer} aria-busy={sending}>
-            {sending ? t.checkout.paying : `${t.checkout.pay} ${formatSom(payTotal)} ${t.checkout.payVia}`}
+          <button
+            type="submit"
+            className="btn btn--primary btn--block checkout-pay"
+            disabled={sending || customer === undefined || needLogin}
+            aria-busy={sending}
+          >
+            {sending ? t.checkout.paying : `${t.checkout.pay} ${t.checkout.payVia}`}
           </button>
-          <p className="summary-card__note">{t.checkout.payNote}</p>
+          <p className="summary-card__note">{needLogin ? t.checkout.loginRequired : t.checkout.payNote}</p>
+          <section className="pay-methods">
+            <p className="pay-methods__text">{t.checkout.payMethodsText}</p>
+            <ul className="pay-methods__row">
+              {paymentMethods.map((method) => (
+                <li key={method.name}>
+                  {method.logo ? (
+                    <img
+                      src={method.logo}
+                      alt={method.name}
+                      title={method.name}
+                      width={64}
+                      height={64}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <span className="pay-methods__name">{method.name}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
         </aside>
       </form>
     </div>

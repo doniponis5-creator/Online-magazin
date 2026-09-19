@@ -59,12 +59,22 @@
 .sale-section .card__badges { display: none; }
 .social-account { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 .instagram-panel, .account-panel { padding: clamp(24px,3vw,40px); border-radius: 16px; }
-.instagram-panel { background: var(--color-primary-soft); }
+/* Текст слева, телефон справа: панель была наполовину пустой */
+.instagram-panel { background: var(--color-primary-soft); display: flex; flex-wrap: wrap; align-items: center; gap: 24px 28px; }
+.instagram-panel__text { flex: 1 1 200px; min-width: 0; }
+/* Внутри панели телефон меньше, чем на странице «О магазине»: иначе не влезает
+   рядом с текстом и сваливается под него, оставляя колонку пустой. */
+.instagram-panel .ig-phone { flex: none; margin-inline: auto; }
+.instagram-panel .ig-phone__frame { width: 210px; padding: 8px; border-radius: 30px; }
+.instagram-panel .ig-phone__shot { border-radius: 22px; }
+.instagram-panel .ig-phone__veil { border-radius: 30px; }
+.instagram-panel .ig-phone__veil img { width: 112px; height: 112px; margin-bottom: 10px; padding: 8px; }
+.instagram-panel .ig-phone__veil strong { font-size: 14px; }
 .account-panel { background: #f9fbdc; }
 .social-account h2 { font-size: clamp(25px,2.6vw,34px); letter-spacing: -.025em; line-height: 1.2; margin-top: 20px; }
 .social-account h2 span { display: block; }
 .social-account p { color: var(--color-ink-soft); font-size: 15px; line-height: 1.7; max-width: 40ch; margin: 18px 0 26px; }
-.instagram-panel__handle { display: flex; align-items: center; gap: 18px; width: fit-content; min-height: 44px; font-size: 22px; font-weight: 800; margin-bottom: 18px; }
+.instagram-panel__handle { display: flex; align-items: center; gap: 10px; width: fit-content; min-height: 44px; font-size: 22px; font-weight: 800; margin-bottom: 18px; }
 .account-panel .btn { margin-top: 10px; }
 .account-layout { display: grid; grid-template-columns: 1.05fr 1fr; gap: 32px; padding-top: 24px; }
 .account-loyalty { background: #f9fbdc; border-radius: 16px; padding: 36px; }

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import './home-story.css'
+import { IconArrowDown, IconArrowUpRight } from './Icons'
 
 /** Одна шкала прокрутки управляет приближением и смысловыми окнами. */
 export function HomeStory() {
@@ -64,8 +65,8 @@ export function HomeStory() {
       <div className="home-story__copy">
         <h1>{titles[phase]}</h1>
         <p>{notes[phase]}</p>
-        <Link className="btn btn--primary home-story__cta" href={`/${lang}/catalog?cat=home`}>{ky ? 'Техниканы тандоо' : 'Выбрать технику'} <span aria-hidden="true">↗</span></Link>
-        <span className="home-story__hint">{ky ? 'Үйүңүздү жаңыча көрүңүз' : 'Откройте дом по-новому'} <span aria-hidden="true">↓</span></span>
+        <Link className="btn btn--primary home-story__cta" href={`/${lang}/catalog?cat=home`}>{ky ? 'Техниканы тандоо' : 'Выбрать технику'}<IconArrowUpRight size={18} /></Link>
+        <span className="home-story__hint">{ky ? 'Үйүңүздү жаңыча көрүңүз' : 'Откройте дом по-новому'}<IconArrowDown size={16} /></span>
       </div>
       <div className="home-story__footer"><span>{ky ? 'Интерьердин концепциясы' : 'Концепция интерьера'}</span><span aria-hidden="true">0{phase + 1} / 03</span></div>
       <div className="home-story__progress" aria-hidden="true" />

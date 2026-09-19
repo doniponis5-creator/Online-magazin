@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from 'react'
 import { formatSom } from '@/lib/format'
-import { IconTelegram } from '@/components/Icons'
+import { IconGift, IconTelegram } from '@/components/Icons'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { normalizePhone } from '@/lib/orders/order'
 import type { CustomerProfile } from '@/lib/customer/gateway'
@@ -160,7 +160,7 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
           <h3 className="login-card__title">{a.nameTitle}</h3>
           <p className="login-card__hint">{a.nameText}</p>
           {welcome > 0 && (
-            <p className="login-card__welcome">🎁 {a.welcomePromo.replace('{amount}', formatSom(welcome))}</p>
+            <p className="login-card__welcome"><IconGift size={22} className="login-card__welcome-icon" />{a.welcomePromo.replace('{amount}', formatSom(welcome))}</p>
           )}
           <div className="field">
             <label className="field__label" htmlFor="login-name">{a.name}</label>

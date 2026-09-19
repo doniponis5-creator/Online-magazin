@@ -51,7 +51,8 @@ input, textarea { caret-color: var(--color-primary); }
 
 /* Фирменный знак и общая навигация. */
 .brand { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; }
-.brand__mark { object-fit: contain; flex: none; color: #deea00; width: 27px; height: 36px; }
+/* #fef102 — жёлтый из оригинального файла логотипа, не из палитры сайта */
+.brand__mark { flex: none; color: #fef102; width: 27px; height: 36px; }
 .brand__name { font-size: 23px; line-height: 1.2; font-weight: 800; letter-spacing: -.035em; color: var(--color-ink); }
 .logo { font-family: var(--font); letter-spacing: normal; flex-shrink: 0; }
 .header { background: #fff; box-shadow: none; border-bottom: 1px solid var(--color-border); }
@@ -136,6 +137,8 @@ input, textarea { caret-color: var(--color-primary); }
 .info-item__title { font-size: 13px; }
 .info-item__note { color: var(--color-muted); font-size: 12px; }
 .footer { margin-top: 48px; background: var(--color-surface); color: var(--color-ink); border-top: 1px solid var(--color-border); padding-block: 46px 24px; }
+/* Кнопка «Связаться» висит в правом нижнем углу и закрывала подпись в подвале. */
+@media (min-width: 901px) { .footer { padding-bottom: 92px; } }
 .footer__text, .footer__note { color: var(--color-ink-soft); font-size: 12px; line-height: 1.8; }
 .footer__title { color: var(--color-ink); }
 .footer__bottom { color: var(--color-muted); border-color: var(--color-border); font-size: 11px; }

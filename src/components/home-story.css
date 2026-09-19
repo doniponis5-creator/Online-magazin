@@ -8,7 +8,9 @@
 .home-story__copy { position: absolute; left: 5%; top: 16%; width: 40%; }
 .home-story__copy h1 { font-size: clamp(34px, 3.7vw, 58px); line-height: 1.08; letter-spacing: -.045em; font-weight: 800; color: var(--color-ink); max-width: 13ch; min-height: 3.3em; margin: 0; }
 .home-story__copy p { color: var(--color-story-copy); font-size: 16px; line-height: 1.6; max-width: 30ch; min-height: 3.2em; margin: 16px 0 24px; }
-.home-story__cta { min-height: 48px; font-size: 14px; }
+/* Значок вместо символа ↗: на телефоне символ рисовался цветным эмодзи. */
+.home-story__cta { min-height: 48px; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; }
+.home-story__cta svg, .home-story__hint svg { flex: none; }
 .home-story__hint { display: flex; gap: 18px; margin-top: 24px; font-size: 12px; color: var(--color-story-copy); }
 .home-story__footer { position: absolute; bottom: 20px; inset-inline: 5%; display: flex; justify-content: space-between; font-size: 10px; color: var(--color-ink); }
 .home-story__footer span { background: rgba(255,255,255,.9); padding: 5px 9px; border-radius: 6px; }

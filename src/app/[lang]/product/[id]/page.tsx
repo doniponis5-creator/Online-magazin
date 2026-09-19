@@ -7,6 +7,7 @@ import { ProductDetail } from '@/components/ProductDetail'
 import { ProductCard } from '@/components/ProductCard'
 import { Lang } from '@/lib/i18n/config'
 import { getDictionary } from '@/lib/i18n/dictionaries'
+import { SITE_NAME, SITE_URL, canonical } from '@/lib/seo'
 
 export function generateStaticParams() {
   return products.flatMap((p) => [
@@ -31,8 +32,35 @@ export default async function ProductPage({
     .filter((p) => p.categoryId === product.categoryId && p.id !== product.id)
     .slice(0, 4)
 
+  // Разметка товара: по ней Google рисует в выдаче цену, наличие и картинку.
+  // Без неё страница товара выглядит для поиска как обычный текст.
+  const inStock = product.variants.some((v) => v.stock > 0)
+  const productJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: lang === 'ky' ? product.nameKy : product.nameRu,
+    description: (lang === 'ky' ? product.descKy : product.descRu) || undefined,
+    sku: product.oneCCode || product.id,
+    brand: product.brand ? { '@type': 'Brand', name: product.brand } : undefined,
+    image: (product.images ?? []).map((src) => (src.startsWith('http') ? src : `${SITE_URL}${src}`)),
+    url: canonical(`/${lang}/product/${product.id}`),
+    // Цена 0 означает «по запросу» — такой товар в магазине есть, но оферты нет.
+    offers: product.price > 0 ? {
+      '@type': 'Offer',
+      price: product.price,
+      priceCurrency: 'KGS',
+      availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      url: canonical(`/${lang}/product/${product.id}`),
+      seller: { '@type': 'Store', name: SITE_NAME, '@id': `${SITE_URL}/#store` },
+    } : undefined,
+  }
+
   return (
     <div className="container">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
       <nav className="breadcrumbs" aria-label={dict.nav.home}>
         <Link href={`/${lang}`}>{dict.nav.home}</Link>
         {'/'}
@@ -115,8 +143,28 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   const { lang, id } = await params
   const product = getProduct(id)
   if (!product) notFound()
+  const name = lang === 'ky' ? product.nameKy : product.nameRu
+  const text = (lang === 'ky' ? product.descKy : product.descRu)
+    || (lang === 'ky'
+      ? `${name} — Smart Centr (S MARKET) дүкөнүндө. Кыргызстан боюнча жеткирүү.`
+      : `${name} — купить в Smart Centr (S MARKET). Доставка по всему Кыргызстану.`)
+  const path = `/${lang}/product/${product.id}`
   return {
-    title: `${lang === 'ky' ? product.nameKy : product.nameRu} — Smart Centr`,
-    description: lang === 'ky' ? product.descKy : product.descRu,
+    title: `${name} — Smart Centr (S MARKET)`,
+    description: text,
+    alternates: {
+      canonical: path,
+      languages: {
+        ru: `/ru/product/${product.id}`,
+        ky: `/ky/product/${product.id}`,
+      },
+    },
+    openGraph: {
+      type: 'website',
+      title: name,
+      description: text,
+      url: path,
+      images: product.image ? [{ url: product.image, alt: name }] : undefined,
+    },
   }
 }

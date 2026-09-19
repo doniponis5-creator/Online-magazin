@@ -5,6 +5,7 @@
   python manage.py copy          — свежая копия рабочей базы для проверки (около 6.6 ГБ)
   python manage.py install test  — собрать и загрузить расширение в КОПИЮ базы
   python manage.py open test     — открыть копию базы в 1С и проверить раздел «Онлайн магазин»
+  python manage.py try           — всё сразу: собрать, установить в копию и открыть её в 1С
   python manage.py install prod  — только после проверки: установить в РАБОЧУЮ базу
 
   В копии базы можно завести пользователя без пароля (например «Claude_Test», полные права)
@@ -116,11 +117,16 @@ def _detect(base):
     print("VARIANT=" + ("bas" if name.upper().startswith("BAS") else "ut"))
 
 
-def configure_extension(base, user, password):
+def configure_extension(base, user, password, base_key):
     """После загрузки: выключить безопасный режим (нужен доступ к серверу заказов по HTTPS)
-    и включить загрузку заказов каждые 5 минут. Отдельный процесс, как и определение конфигурации."""
+    и настроить обмен. Отдельный процесс, как и определение конфигурации.
+
+    В копии базы обмен ВЫКЛЮЧАЕТСЯ. Копия смотрит на тот же боевой сервер SBonus,
+    и включённый обмен уводил настоящие оплаченные заказы в копию: сервер помечал
+    их как «проведены в 1С», а в рабочей базе документов не появлялось.
+    """
     child = subprocess.run(
-        [sys.executable, str(Path(__file__)), "_configure", str(base)],
+        [sys.executable, str(Path(__file__)), "_configure", str(base), base_key],
         input=f"{user}\n{password}\n", capture_output=True, text=True, encoding="utf-8", check=False,
     )
     print(child.stdout.strip())
@@ -130,7 +136,7 @@ def configure_extension(base, user, password):
     return True
 
 
-def _configure(base):
+def _configure(base, base_key="test"):
     import win32com.client
 
     sys.stdin.reconfigure(encoding="utf-8")
@@ -139,6 +145,7 @@ def _configure(base):
     connector = win32com.client.Dispatch("V83.COMConnector")
     auth = f'Usr="{user}";' + (f'Pwd="{password}";' if password else "")
     session = connector.Connect(f'File="{base}";{auth}')
+    live = base_key == "prod"
 
     for extension in session.РасширенияКонфигурации.Получить():
         if str(extension.Имя) != EXTENSION:
@@ -151,27 +158,37 @@ def _configure(base):
         extension.Записать()
         print("Расширение: безопасный режим выключен (нужен для связи с сервером заказов)")
 
-    job = session.РегламентныеЗадания.НайтиПредопределенное(
-        session.Метаданные.РегламентныеЗадания.Найти("ИМ_ЗагрузкаЗаказовСайта"))
-    if job is not None:
+    for name, seconds, title in (
+        ("ИМ_ЗагрузкаЗаказовСайта", 300, "Загрузка заказов с сайта"),
+        ("ИМ_ОтправкаКаталогаНаСайт", 600, "Отправка каталога на сайт"),
+    ):
+        meta = session.Метаданные.РегламентныеЗадания.Найти(name)
+        if meta is None:
+            continue
+        job = session.РегламентныеЗадания.НайтиПредопределенное(meta)
+        if job is None:
+            continue
         schedule = session.NewObject("РасписаниеРегламентногоЗадания")
         schedule.ПериодПовтораДней = 1
-        schedule.ПериодПовтораВТечениеДня = 300
+        schedule.ПериодПовтораВТечениеДня = seconds
         job.Расписание = schedule
-        job.Использование = True
+        job.Использование = live
         job.Записать()
-        print("Регламентное задание «Загрузка заказов с сайта»: каждые 5 минут")
+        print(f"Регламентное задание «{title}»: "
+              + (f"каждые {seconds // 60} мин" if live else "ВЫКЛЮЧЕНО (копия базы)"))
 
-    job = session.РегламентныеЗадания.НайтиПредопределенное(
-        session.Метаданные.РегламентныеЗадания.Найти("ИМ_ОтправкаКаталогаНаСайт"))
-    if job is not None:
-        schedule = session.NewObject("РасписаниеРегламентногоЗадания")
-        schedule.ПериодПовтораДней = 1
-        schedule.ПериодПовтораВТечениеДня = 600
-        job.Расписание = schedule
-        job.Использование = True
-        job.Записать()
-        print("Регламентное задание «Отправка каталога на сайт»: каждые 10 минут")
+    # Копия не должна разговаривать с боевым сервером ни по расписанию, ни руками:
+    # иначе оплаченный заказ уходит в копию, а в рабочей базе его нет.
+    if not live:
+        record = session.РегистрыСведений.ИМ_НастройкиМагазина.СоздатьМенеджерЗаписи()
+        record.Ключ = "Основные"
+        record.Прочитать()
+        if record.Выбран() and record.Включено:
+            record.Включено = False
+            record.Записать()
+            print("Обмен с сайтом в копии базы ВЫКЛЮЧЕН: копия не заберёт настоящие заказы")
+        else:
+            print("Обмен с сайтом в копии базы выключен")
 
 
 def copy_base():
@@ -229,7 +246,7 @@ def install(base_key):
         if not designer(base, user, password, arguments, step):
             print(f"\nШаг «{step}» завершился с ошибкой. Скопируйте текст выше и отправьте его в чат.")
             sys.exit(1)
-    configure_extension(base, user, password)
+    configure_extension(base, user, password, base_key)
     print("\nГотово: расширение «Онлайн магазин» установлено.")
     print("Дальше в 1С: «Онлайн магазин» → «Настройки заказов с сайта» — заполнить организацию и склад.")
     if base_key == "test":
@@ -242,13 +259,28 @@ def open_base(base_key):
     print("1С запускается. Войдите как обычно и откройте раздел «Онлайн магазин».")
 
 
+def try_test():
+    """Одной командой: собрать, установить в копию базы и открыть её в 1С.
+
+    Обычный порядок проверки — install test, потом open test. Две команды подряд
+    владелец набирает каждый раз, поэтому здесь они склеены. Если установка
+    упадёт, install завершит процесс и 1С не откроется: смотреть нечего.
+    """
+    if not (TEST / "1Cv8.1CD").exists():
+        print(f"Копии базы нет: {TEST}")
+        print("Сначала сделайте копию (около 6.6 ГБ): python manage.py copy")
+        sys.exit(1)
+    install("test")
+    open_base("test")
+
+
 def main():
     sys.stdout.reconfigure(errors="replace")
     action = sys.argv[1] if len(sys.argv) > 1 else ""
     base_key = sys.argv[2] if len(sys.argv) > 2 else "test"
     if action == "_configure":
         sys.stdout.reconfigure(encoding="utf-8")
-        _configure(sys.argv[2])
+        _configure(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else "test")
     elif action == "_detect":
         sys.stdout.reconfigure(encoding="utf-8")
         _detect(sys.argv[2])
@@ -258,6 +290,8 @@ def main():
         install(base_key)
     elif action == "open" and base_key in BASES:
         open_base(base_key)
+    elif action == "try":
+        try_test()
     else:
         print(__doc__)
 

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useRef } from 'react'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { IconChevronRight } from './Icons'
+import { IconArrowDown } from './Icons'
 
 /**
  * Hero «LG F4X5ES5SB» — скролл-анимация из настоящих 3D-рендеров (TASK_05).
@@ -235,7 +236,7 @@ export function Hero3D() {
           <div className="hero3d__phases">
             <div className="hero3d__ph hero3d__ph--intro">
               <p className="hero3d__subtitle">{t.hero.subtitle}</p>
-              <p className="hero3d__hint">{t.hero.scrollHint} ↓</p>
+              <p className="hero3d__hint">{t.hero.scrollHint}<IconArrowDown size={16} /></p>
             </div>
 
             <div className="hero3d__ph hero3d__ph--front">

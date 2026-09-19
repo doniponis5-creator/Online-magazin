@@ -9,7 +9,7 @@ import { StorefrontHero } from '@/components/StorefrontHero'
 import { Brand } from '@/components/Brand'
 import { ProductArt } from '@/components/ProductArt'
 import { ProductCard } from '@/components/ProductCard'
-import { InstallmentDemo } from '@/components/InstallmentDemo'
+import { BonusPromo } from '@/components/BonusPromo'
 import {
   IconCard,
   IconChevronRight,
@@ -73,31 +73,6 @@ function ProductSection({
   )
 }
 
-function PromoSection() {
-  const { t } = useI18n()
-  return (
-    <section className="section" aria-label={t.home.sbonusTitle} data-reveal>
-      <div className="promo-grid">
-        <div className="promo promo--lime">
-          <h2 className="promo__title">
-            <Brand bonus />
-          </h2>
-          <h3 className="promo__subheading">
-            {t.home.sbonusTitle}
-          </h3>
-          <p className="promo__note">{t.home.sbonusNote}</p>
-          <span className="badge promo__tag">{t.common.demo} · SBonus</span>
-        </div>
-        <div className="promo promo--soft">
-          <h2 className="promo__title">{t.home.installmentTitle}</h2>
-          <p className="promo__note">{t.home.installmentNote}</p>
-          <InstallmentDemo />
-        </div>
-      </div>
-    </section>
-  )
-}
-
 function NightBanner() {
   const { t } = useI18n()
   return (
@@ -152,7 +127,7 @@ export default function HomePage() {
       <HitMosaic />
       <BrandStrip />
       <SaleSection />
-      <PromoSection />
+      <BonusPromo />
       <NightBanner />
       <ProductSection titleKey="newList" ctaKey="newCta" products={getNew()} />
       <SocialAndAccount />

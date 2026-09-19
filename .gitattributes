@@ -13,3 +13,8 @@ graphify-out/cache/**          -merge -diff
 # ВАЖНО: на втором компьютере тоже нужно один раз выполнить
 # `graphify hook install`, иначе git не знает этого объединителя.
 graphify-out/graph.json merge=graphify
+
+# Скрипты для сервера: только unix-переводы строк.
+# С windows-переводами bash на Linux падает на первой же строке
+# («$'': command not found»), а скрипт деплоя останавливается на полпути.
+*.sh text eol=lf

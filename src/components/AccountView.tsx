@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import { Brand } from '@/components/Brand'
 import { CustomerLogin } from '@/components/CustomerLogin'
-import { IconCart, IconHeart } from '@/components/Icons'
+import { IconCart, IconGift, IconHeart } from '@/components/Icons'
 import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { forgetFaceId, hasLockKey, lockKind, loginWithFaceId, rememberForFaceId } from '@/lib/native/appLock'
@@ -18,12 +18,16 @@ const CABINET_URL = 'https://cabinet.smartcentr.store'
 export function useCustomer(amount = 0, full = false) {
   const [customer, setCustomer] = useState<CustomerProfile | null | undefined>(undefined)
   const [failed, setFailed] = useState(false)
+  // Заказ без входа разрешает владелец в 1С. Пока ответа нет — считаем, что можно:
+  // иначе кнопка оплаты мигает запретом на каждой загрузке страницы.
+  const [guestCheckout, setGuestCheckout] = useState(true)
 
   const reload = useCallback(async () => {
     const response = await fetch(`/api/customer/me?amount=${Math.round(amount)}${full ? '&full=1' : ''}`, { cache: 'no-store' }).catch(() => null)
     if (!response) return setFailed(true)
-    if (response.status === 401) return setCustomer(null)
     const data = await response.json().catch(() => null)
+    if (data && 'guestCheckout' in data) setGuestCheckout(data.guestCheckout !== false)
+    if (response.status === 401) return setCustomer(null)
     if (data?.ok) {
       setFailed(false)
       setCustomer(data.customer)
@@ -39,7 +43,7 @@ export function useCustomer(amount = 0, full = false) {
     setCustomer(null)
   }, [])
 
-  return { customer, failed, reload, logout, setCustomer }
+  return { customer, failed, guestCheckout, reload, logout, setCustomer }
 }
 
 function formatDate(value: string | null, lang: string) {
@@ -173,7 +177,7 @@ export function AccountView() {
           <Brand bonus />
           <h2>{a.loyaltyTitle}</h2>
           <p>{a.loyaltyText}</p>
-          <p className="account-welcome">🎁 {a.welcomePromo.replace('{amount}', formatSom(1000))}</p>
+          <p className="account-welcome"><IconGift size={22} className="account-welcome__icon" />{a.welcomePromo.replace('{amount}', formatSom(1000))}</p>
           <p className="account-welcome__note">{a.welcomeNote}</p>
         </section>
         <section className="account-access">

@@ -9,11 +9,13 @@ import { CartProvider } from '@/lib/cart/CartProvider'
 import { FavoritesProvider } from '@/lib/favorites/FavoritesProvider'
 import { Header } from '@/components/Header'
 import { BottomNav } from '@/components/BottomNav'
+import { ContactButton } from '@/components/ContactButton'
 import { Footer } from '@/components/Footer'
 import { HtmlLang } from '@/components/HtmlLang'
 import { MotionProvider } from '@/components/MotionProvider'
 import { VisitCounter } from '@/components/VisitCounter'
 import { OfflineCatalogSync } from '@/components/OfflineCatalogSync'
+import { SITE_NAME, SITE_URL, storeJsonLd, websiteJsonLd } from '@/lib/seo'
 
 /**
  * viewportFit: 'cover' — страница занимает экран телефона целиком, вместе с
@@ -45,8 +47,17 @@ export default async function LangLayout({
   const lang = raw as Lang
   const dict = getDictionary(lang)
 
+  // Разметку отдаём в разметке страницы, а не скриптом: так её видит поисковик
+  // при первом же заходе, до выполнения какого-либо кода.
+  const jsonLd = [storeJsonLd(lang), websiteJsonLd(lang)]
+
   return (
-    <html lang={lang}><body><I18nProvider lang={lang} dict={dict}>
+    <html lang={lang}><body>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <I18nProvider lang={lang} dict={dict}>
       <CartProvider>
         <FavoritesProvider>
           <HtmlLang lang={lang} />
@@ -60,10 +71,12 @@ export default async function LangLayout({
             {children}
           </main>
           <Footer />
+          <ContactButton />
           <BottomNav />
         </FavoritesProvider>
       </CartProvider>
-    </I18nProvider></body></html>
+      </I18nProvider>
+    </body></html>
   )
 }
 
@@ -71,5 +84,28 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   const { lang: raw } = await params
   const lang: Lang = isLang(raw) ? raw : defaultLang
   const dict = getDictionary(lang)
-  return { title: dict.meta.title, description: dict.meta.description }
+  const path = `/${lang}`
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: dict.meta.title,
+    description: dict.meta.description,
+    applicationName: SITE_NAME,
+    // Каноническая ссылка и пара языков: без них поисковик считает русскую
+    // и кыргызскую версии разными сайтами и делит вес между ними.
+    alternates: {
+      canonical: path,
+      languages: { ru: '/ru', ky: '/ky', 'x-default': '/ru' },
+    },
+    openGraph: {
+      type: 'website',
+      siteName: SITE_NAME,
+      url: path,
+      title: dict.meta.title,
+      description: dict.meta.description,
+      locale: lang === 'ky' ? 'ky_KG' : 'ru_RU',
+      images: [{ url: '/brand/smart-centr-mark.jpg', width: 1000, height: 1794, alt: SITE_NAME }],
+    },
+    twitter: { card: 'summary_large_image', title: dict.meta.title, description: dict.meta.description },
+    robots: { index: true, follow: true },
+  }
 }

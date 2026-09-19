@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useEffect, useState, type FormEvent } from 'react'
+import { Suspense, useEffect, useState, type FormEvent, type MouseEvent } from 'react'
 import { categories } from '@/data/categories'
 import { useCart } from '@/lib/cart/CartProvider'
 import { useFavorites } from '@/lib/favorites/FavoritesProvider'
@@ -63,6 +63,17 @@ function HeaderInner() {
     router.push(buildCatalogHref(lang, { q: query }))
   }
 
+  /*
+   * Клик по логотипу перезагружает главную целиком, как кнопка «обновить»
+   * в браузере: владелец правит каталог в 1С и ждёт свежие данные сразу.
+   * Ctrl/Cmd/средняя кнопка отданы браузеру — открыть в новой вкладке.
+   */
+  const reloadHome = (e: MouseEvent<HTMLAnchorElement>) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+    e.preventDefault()
+    window.location.href = `/${lang}`
+  }
+
   const cartCount = mounted ? cart.itemsCount : 0
   const favCount = mounted ? fav.ids.length : 0
   const search = searchParams.toString() ? `?${searchParams.toString()}` : ''
@@ -78,7 +89,7 @@ function HeaderInner() {
           <span><IconMapPin size={14} />{lang === 'ky' ? 'Бүт Кыргызстан боюнча' : 'По всему Кыргызстану'}</span>
         </div>
         <div className="header__inner">
-          <Link href={`/${lang}`} className="logo" aria-label="Smart Centr">
+          <Link href={`/${lang}`} className="logo" aria-label="Smart Centr" onClick={reloadHome}>
             <Brand />
           </Link>
 

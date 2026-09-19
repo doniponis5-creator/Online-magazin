@@ -6,7 +6,12 @@
 # Пересобирается ТОЛЬКО api, как в deploy_balance_update.sh. Есть бэкап и откат.
 #
 # ПЕРЕД запуском (с Windows, из папки проекта сайта):
+#   ssh root@145.223.100.16 "rm -rf /tmp/sb_shop"
 #   scp -r integrations/sbonus-server/shop root@145.223.100.16:/tmp/sb_shop
+#
+# rm -rf обязателен: если /tmp/sb_shop уже есть, scp кладёт файлы ВНУТРЬ неё
+# (/tmp/sb_shop/shop), запускается старый скрипт и молча пересобирает сервер
+# прежним кодом — с виду «ГОТОВО», а изменений нет.
 #
 # Запуск на сервере:  bash /tmp/sb_shop/deploy_shop.sh
 # ════════════════════════════════════════════════════════════════════════════
@@ -24,6 +29,15 @@ FILES="__init__.py shop_models.py shop_router.py shop_catalog.py shop_telegram.p
 MIGRATIONS="001_shop_orders_migration.sql 002_shop_catalog_migration.sql 003_shop_bonus_migration.sql 004_shop_stats_migration.sql 005_shop_push_migration.sql"
 
 echo "=== Деплой: интернет-магазин (заказы + каталог + вход и бонусы) ==="
+
+# ── 0.0 Свежие файлы положили внутрь старой папки? ──────────────────────────
+if [ -d "$SRC/shop" ] && [ -f "$SRC/shop/shop_admin.py" ]; then
+    echo "❌ Похоже, scp положил свежие файлы в $SRC/shop, а запустился старый скрипт из $SRC."
+    echo "   На сервере:  rm -rf /tmp/sb_shop"
+    echo "   С Windows:   scp -r integrations/sbonus-server/shop root@145.223.100.16:/tmp/sb_shop"
+    echo "   Ничего не изменено."
+    exit 1
+fi
 
 # ── 0. Проверки ──────────────────────────────────────────────────────────────
 [ -d "$APP/payments" ] || { echo "❌ Нет $APP/payments — модуль O!Деньги не найден"; exit 1; }
