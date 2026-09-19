@@ -1,3 +1,5 @@
+import { address, instagram, phones } from './contacts'
+
 /**
  * Политика конфиденциальности — текст для сайта и для App Store.
  *
@@ -24,24 +26,21 @@ export const PRIVACY_UPDATED = '2026-09-19'
  * Для App Store Connect (раздел «App Review Information») почта всё равно
  * понадобится — там указывается почта владельца, не сайта.
  */
+// Один источник правды: телефоны, адрес и Instagram живут в data/contacts.ts.
+// Два списка номеров в проекте уже расходились — здесь только надстройка для
+// текста политики, где у каждого номера ещё написано, что на нём работает.
 export const SHOP_CONTACT: {
-  /** Телефоны магазина; messengers — что на них работает */
   phones: { number: string; messengers: string[] }[]
   email: string | null
   instagram: string
-  /** Адрес магазина на русском и на кыргызском */
   addressRu: string
   addressKy: string
 } = {
-  phones: [
-    { number: '+996 557 100 505', messengers: ['WhatsApp', 'Telegram'] },
-    { number: '+996 505 000 100', messengers: ['WhatsApp', 'Telegram'] },
-    { number: '+996 551 120 009', messengers: ['WhatsApp', 'Telegram'] },
-  ],
+  phones: phones.map((p) => ({ number: p.display, messengers: ['WhatsApp', 'Telegram'] })),
   email: null,
-  instagram: 'https://www.instagram.com/smartcentrr/',
-  addressRu: 'Ошская область, Араванский район, ул. Ош-3000, 86',
-  addressKy: 'Ош облусу, Араван району, Ош-3000 көчөсү, 86',
+  instagram: instagram.url,
+  addressRu: address.ru,
+  addressKy: address.ky,
 }
 
 
