@@ -57,7 +57,7 @@ export function ProductCard({ product }: { product: Product }) {
         <div className="card__prices">
           {product.price > 0 ? (
             <>
-              <span className="card__price">{formatSom(product.price)}</span>
+              <span className={`card__price${product.oldPrice ? ' card__price--sale' : ''}`}>{formatSom(product.price)}</span>
               {product.oldPrice && <span className="card__old-price">{formatSom(product.oldPrice)}</span>}
             </>
           ) : (

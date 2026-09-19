@@ -80,7 +80,7 @@ export function ProductPurchase({
         </div>
       ) : variant && price !== null ? (
         <div className="purchase__prices">
-          <span className="purchase__price">{formatSom(price)}</span>
+          <span className={`purchase__price${product.oldPrice ? ' purchase__price--sale' : ''}`}>{formatSom(price)}</span>
           {product.oldPrice && <span className="purchase__old">{formatSom(product.oldPrice)}</span>}
         </div>
       ) : null}
