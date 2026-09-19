@@ -125,6 +125,20 @@ async def _drop(db: AsyncSession, token: str) -> None:
     await db.commit()
 
 
+async def forget_phone(db: AsyncSession, phone: str) -> int:
+    """
+    Покупатель удалил учётную запись: больше не пишем ему на телефон.
+
+    Стираем все адреса этого номера. Возвращаем, сколько стёрли, — чтобы сайт
+    мог честно сказать человеку, что именно убрали.
+    """
+    result = await db.execute(
+        text("DELETE FROM shop_push_devices WHERE phone = :ph"), {"ph": phone}
+    )
+    await db.commit()
+    return int(result.rowcount or 0)
+
+
 async def _fail(db: AsyncSession, token: str) -> None:
     await db.execute(
         text("UPDATE shop_push_devices SET failed = failed + 1, updated_at = NOW() WHERE token = :t"),

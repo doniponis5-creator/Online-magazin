@@ -69,6 +69,8 @@ export function AccountView() {
   }>({ kind: 'none', saved: false })
   // Результат кнопки «Проверить»: null — ещё не нажимали.
   const [lockCheck, setLockCheck] = useState<boolean | null>(null)
+  // Удаление учётной записи: 'idle' → 'confirm' → 'busy' → 'failed'.
+  const [wipe, setWipe] = useState<'idle' | 'confirm' | 'busy' | 'failed'>('idle')
 
   /** Перечитать состояние быстрого входа: умеет ли телефон и есть ли ключ. */
   const refreshLock = useCallback(async () => {
@@ -146,6 +148,26 @@ export function AccountView() {
   }, [customer, lang, refreshLock])
 
   const leave = useCallback(async () => {
+    await clearBonusCard()
+    await forgetFaceId()
+    await logout()
+  }, [logout])
+
+  /**
+   * Удалить учётную запись. Apple требует, чтобы это делалось прямо здесь, а не
+   * звонком в магазин (правило 5.1.1).
+   *
+   * Порядок важен: сначала просим сервер убрать адрес телефона для уведомлений,
+   * и только потом стираем всё с самого телефона и закрываем вход. Иначе, если
+   * связь оборвётся, человек уже вышел, а уведомления продолжают приходить.
+   */
+  const removeAccount = useCallback(async () => {
+    setWipe('busy')
+    const response = await fetch('/api/customer/delete', { method: 'POST' }).catch(() => null)
+    if (!response?.ok) {
+      setWipe('failed')
+      return
+    }
     await clearBonusCard()
     await forgetFaceId()
     await logout()
@@ -324,6 +346,37 @@ export function AccountView() {
           <p>{a.historyEmpty}</p>
         )}
         {links}
+      </section>
+
+      <section className="account-wipe">
+        <h2>{a.deleteTitle}</h2>
+        <p className="account-wipe__text">{a.deleteText}</p>
+        <p className="account-wipe__kept">{a.deleteKept}</p>
+        {wipe === 'confirm' ? (
+          <>
+            <p className="account-wipe__ask" role="status">{a.deleteConfirm}</p>
+            <div className="account-actions">
+              <button type="button" className="btn btn--danger" onClick={removeAccount}>
+                {a.deleteYes}
+              </button>
+              <button type="button" className="btn btn--ghost" onClick={() => setWipe('idle')}>
+                {a.deleteNo}
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="account-actions">
+            <button
+              type="button"
+              className="btn btn--outline account-wipe__start"
+              onClick={() => setWipe('confirm')}
+              disabled={wipe === 'busy'}
+            >
+              {a.deleteAction}
+            </button>
+          </div>
+        )}
+        {wipe === 'failed' && <p className="field__error">{a.deleteFailed}</p>}
       </section>
     </div>
   )

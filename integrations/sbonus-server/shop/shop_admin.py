@@ -190,6 +190,43 @@ async def push_device(request: Request, db: AsyncSession = Depends(get_db)):
     return {"ok": True, "saved": True}
 
 
+class AccountDelete(BaseModel):
+    phone: str
+
+
+@router_site_admin.post("/account-delete")
+async def account_delete(request: Request, db: AsyncSession = Depends(get_db)):
+    """
+    Покупатель удалил учётную запись прямо в приложении.
+
+    Apple требует, чтобы это можно было сделать внутри приложения, а не
+    письмом в магазин (правило 5.1.1). Поэтому точка есть и работает сразу.
+
+    Что здесь стираем: адреса телефона для уведомлений. Больше сайту о человеке
+    хранить нечего — вход у нас без пароля, а телефон и имя живут в SBonus.
+
+    Чего НЕ трогаем: саму запись в SBonus. Это бонусный счёт магазина, он общий
+    с кассой: тот же человек ходит в магазин ногами, и стереть ему бонусы
+    молча — неправильно. Заказы тоже остаются: их обязан хранить бухгалтерский
+    учёт. Об этом приложение честно пишет человеку и даёт телефон магазина.
+
+    Запрос записываем в журнал: если человек попросит убрать и бонусный счёт,
+    владелец увидит, когда и от какого номера пришло.
+    """
+    payload = AccountDelete.parse_raw(await _verify_site_body(request))
+    phone = (payload.phone or "").strip()
+    if not phone:
+        return {"ok": False, "error": "phone обязателен"}
+    try:
+        from .shop_push import forget_phone
+        removed = await forget_phone(db, phone)
+    except Exception as error:
+        logger.error(f"account-delete: адреса телефона не стёрлись для {phone}: {error}")
+        return {"ok": False, "error": "не удалось"}
+    logger.info(f"account-delete: покупатель {phone} удалил учётную запись, адресов стёрто: {removed}")
+    return {"ok": True, "pushRemoved": removed}
+
+
 @router_site_admin.post("/visit")
 async def visit(request: Request, db: AsyncSession = Depends(get_db)):
     """

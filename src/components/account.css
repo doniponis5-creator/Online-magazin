@@ -109,3 +109,56 @@
   font-size: 13.5px;
   line-height: 1.6;
 }
+
+/* ── Удаление учётной записи ────────────────────────────────────────────
+   Apple требует, чтобы человек мог удалить запись там же, где её завёл.
+   Блок стоит в самом низу кабинета и спрашивает подтверждение: случайное
+   нажатие не должно стирать карту и вход. */
+.account-wipe {
+  background: var(--color-card, #fff);
+  border: 1px solid var(--color-border, #e3e8ee);
+  border-radius: 18px;
+  padding: 20px;
+  margin-top: 16px;
+}
+
+.account-wipe h2 {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  margin: 0;
+}
+
+.account-wipe__text {
+  margin-top: 10px;
+  color: var(--color-ink-soft, #5d6d7e);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.account-wipe__kept {
+  margin-top: 8px;
+  color: var(--color-muted, #a8b4c4);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.account-wipe__ask {
+  margin-top: 12px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.account-wipe__start {
+  color: #b3261e;
+  border-color: #e9c9c6;
+}
+
+.btn--danger {
+  background: #b3261e;
+  color: #fff;
+}
+
+.btn--danger:hover {
+  background: #9c211a;
+}

@@ -104,6 +104,66 @@ async function call<T>(path: string, init: { method: 'GET' | 'POST'; body?: unkn
   }
 }
 
+// ── Демонстрационный вход для проверяющего из Apple ───────────────────────────
+
+/**
+ * Apple проверяет приложение вручную, из другой страны. Наш вход — код в
+ * Telegram или WhatsApp на кыргызский номер: проверяющий такой код получить не
+ * может, а значит не увидит ни бонусную карту, ни Face ID, ни уведомления —
+ * и вернёт приложение обратно.
+ *
+ * Поэтому один-единственный номер входит по заранее известному коду. Он живёт
+ * только на сайте: в SBonus его нет, бонусы ему не начисляются, в 1С он не
+ * попадает. Номер и код задаются в настройках сервера
+ * (SITE_DEMO_PHONE, SITE_DEMO_CODE) — не заданы, и никакого демо-входа нет.
+ *
+ * После выхода приложения в App Store номер можно убрать: достаточно стереть
+ * две строки в настройках, пересобирать ничего не нужно.
+ */
+const DEMO_PHONE = (process.env.SITE_DEMO_PHONE ?? '').trim()
+const DEMO_CODE = (process.env.SITE_DEMO_CODE ?? '').trim()
+const DEMO_NAME = (process.env.SITE_DEMO_NAME ?? 'Apple Review').trim()
+const DEMO_QR = (process.env.SITE_DEMO_QR ?? 'SB-DEMO000001').trim()
+const DEMO_BALANCE = Number(process.env.SITE_DEMO_BALANCE ?? 1500)
+
+/** Демо-вход включён и это он. Оба значения обязательны: одного мало. */
+export function isDemoPhone(phone: string): boolean {
+  return Boolean(DEMO_PHONE && DEMO_CODE) && phone === DEMO_PHONE
+}
+
+/**
+ * Код у демо-номера короткий и постоянный, поэтому его можно подобрать
+ * перебором. Настоящий сервер от перебора защищён, а этот вход идёт мимо него —
+ * значит считаем промахи сами. Десять подряд — и час тишины.
+ *
+ * Счётчик живёт в памяти процесса: перезапуск сайта его обнуляет. Для номера,
+ * за которым нет ни денег, ни чужих данных, этого достаточно.
+ */
+const DEMO_MAX_MISSES = 10
+const DEMO_LOCK_MS = 60 * 60 * 1000
+const demoGuard = (globalThis as unknown as {
+  __scDemoGuard?: { misses: number; until: number }
+}).__scDemoGuard ??= { misses: 0, until: 0 }
+
+function demoProfile(_amount = 0): CustomerProfile {
+  const balance = Math.max(0, Math.round(DEMO_BALANCE))
+  return {
+    phone: DEMO_PHONE,
+    name: DEMO_NAME,
+    balance,
+    tier: 'Bronze',
+    tierPercent: 1,
+    maxSpendPct: 10,
+    // Списывать бонусы демо-номеру нельзя: заказ уходит на настоящий сервер, а
+    // там этого клиента нет — сервер пересчитает и откажет. Баланс показываем,
+    // тратить не даём: проверяющему нужна карта и QR, а не покупка бонусами.
+    maxSpend: 0,
+    qrCode: DEMO_QR,
+    history: [],
+    orders: [],
+  }
+}
+
 // ── API ───────────────────────────────────────────────────────────────────────
 
 /**
@@ -154,6 +214,8 @@ export async function recordVisit(visitor: string, path: string): Promise<void> 
 export type CodeChannel = 'telegram' | 'whatsapp'
 
 export async function sendCode(phone: string, ip: string): Promise<CodeChannel> {
+  // Демо-номеру отправлять нечего: код у проверяющего уже есть.
+  if (isDemoPhone(phone)) return 'telegram'
   if (paymentMode() === 'mock') {
     console.info(`[customer] тестовый код для ${phone}: ${MOCK_CODE}`)
     return 'whatsapp'
@@ -167,6 +229,19 @@ export async function sendCode(phone: string, ip: string): Promise<CodeChannel> 
 }
 
 export async function verifyCode(phone: string, code: string, ip: string): Promise<VerifyResult> {
+  if (isDemoPhone(phone)) {
+    if (Date.now() < demoGuard.until) throw new CustomerApiError(429, 'Слишком много попыток')
+    if (code !== DEMO_CODE) {
+      demoGuard.misses += 1
+      if (demoGuard.misses >= DEMO_MAX_MISSES) {
+        demoGuard.until = Date.now() + DEMO_LOCK_MS
+        demoGuard.misses = 0
+      }
+      throw new CustomerApiError(401, 'Неверный код')
+    }
+    demoGuard.misses = 0
+    return { ok: true, needName: false, customer: demoProfile() }
+  }
   if (paymentMode() === 'mock') {
     if (code !== MOCK_CODE) throw new CustomerApiError(401, 'Неверный код. Тестовый код: 1234')
     if (mockCustomers.has(phone)) return { ok: true, needName: false, customer: mockProfile(phone) }
@@ -193,6 +268,7 @@ export async function register(
 
 /** Профиль по телефону; null — клиента нет в SBonus. */
 export async function getProfile(phone: string, amount = 0, full = false): Promise<CustomerProfile | null> {
+  if (isDemoPhone(phone)) return demoProfile(amount)
   if (paymentMode() === 'mock') {
     return mockCustomers.has(phone) ? mockProfile(phone, amount) : null
   }
@@ -204,6 +280,28 @@ export async function getProfile(phone: string, amount = 0, full = false): Promi
     if (error instanceof CustomerApiError && error.status === 404) return null
     throw error
   }
+}
+
+/**
+ * Покупатель удалил учётную запись в приложении.
+ *
+ * Стираем то, что держит сайт: адреса телефона для уведомлений. Бонусный счёт
+ * в SBonus и заказы остаются — это общий счёт с кассой и записи бухгалтерии;
+ * приложение говорит об этом человеку прямо и даёт телефон магазина.
+ *
+ * Возвращает, сколько адресов убрали. Ошибка сервера не должна мешать выходу:
+ * решает вызывающая сторона.
+ */
+export async function deleteAccount(phone: string): Promise<{ pushRemoved: number }> {
+  if (isDemoPhone(phone) || paymentMode() === 'mock') {
+    console.info(`[customer] удаление учётной записи (без сервера): ${phone}`)
+    return { pushRemoved: 0 }
+  }
+  const result = await call<{ ok?: boolean; pushRemoved?: number }>(
+    '/api/v1/webhook/site/account-delete',
+    { method: 'POST', body: { phone } },
+  )
+  return { pushRemoved: Number(result.pushRemoved ?? 0) }
 }
 
 /** Тестовый режим: списать бонусы «после оплаты». */
