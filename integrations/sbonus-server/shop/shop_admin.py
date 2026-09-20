@@ -210,8 +210,9 @@ async def account_delete(request: Request, db: AsyncSession = Depends(get_db)):
     молча — неправильно. Заказы тоже остаются: их обязан хранить бухгалтерский
     учёт. Об этом приложение честно пишет человеку и даёт телефон магазина.
 
-    Запрос записываем в журнал: если человек попросит убрать и бонусный счёт,
-    владелец увидит, когда и от какого номера пришло.
+    Запрос записываем в журнал, но номер — только последними четырьмя цифрами,
+    как везде в этом проекте. Человек просит убрать свои данные; оставить его
+    телефон целиком в журнале именно в этот момент было бы издевательством.
     """
     payload = AccountDelete.parse_raw(await _verify_site_body(request))
     phone = (payload.phone or "").strip()
@@ -221,9 +222,9 @@ async def account_delete(request: Request, db: AsyncSession = Depends(get_db)):
         from .shop_push import forget_phone
         removed = await forget_phone(db, phone)
     except Exception as error:
-        logger.error(f"account-delete: адреса телефона не стёрлись для {phone}: {error}")
+        logger.error(f"account-delete: адреса телефона не стёрлись ...{phone[-4:]}: {error}")
         return {"ok": False, "error": "не удалось"}
-    logger.info(f"account-delete: покупатель {phone} удалил учётную запись, адресов стёрто: {removed}")
+    logger.info(f"account-delete: покупатель ...{phone[-4:]} удалил учётную запись, адресов стёрто: {removed}")
     return {"ok": True, "pushRemoved": removed}
 
 
