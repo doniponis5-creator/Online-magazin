@@ -4,6 +4,19 @@
   "graph": {},
   "nodes": [
     {
+      "id": "src_app_api_catalog_snapshot_route_snapshotitem",
+      "label": "SnapshotItem",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "products.ts",
+      "file_type": "code",
+      "norm_label": "snapshotitem",
+      "source_file": "src/app/api/catalog/snapshot/route.ts",
+      "source_location": "L20"
+    },
+    {
       "id": "src_data_categories_category",
       "label": "Category",
       "_callable": true,
@@ -28,19 +41,6 @@
       "norm_label": "categoryid",
       "source_file": "src/data/categories.ts",
       "source_location": "L5"
-    },
-    {
-      "id": "src_data_products_artkind",
-      "label": "ArtKind",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "products.ts",
-      "file_type": "code",
-      "norm_label": "artkind",
-      "source_file": "src/data/products.ts",
-      "source_location": "L18"
     },
     {
       "id": "src_data_products_coloroption",
@@ -160,39 +160,13 @@
       "source_location": "L179"
     },
     {
-      "id": "src_lib_assistant_talk_talklang",
-      "label": "TalkLang",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 100,
-      "community_name": "local.ts",
-      "file_type": "code",
-      "norm_label": "talklang",
-      "source_file": "src/lib/assistant/talk.ts",
-      "source_location": "L15"
-    },
-    {
-      "id": "src_app_api_catalog_snapshot_route_snapshotitem",
-      "label": "SnapshotItem",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 101,
-      "community_name": "sync-catalog.mjs",
-      "file_type": "code",
-      "norm_label": "snapshotitem",
-      "source_file": "src/app/api/catalog/snapshot/route.ts",
-      "source_location": "L20"
-    },
-    {
       "id": "src_lib_assistant_live_cache",
       "label": "Cache",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 102,
-      "community_name": "live.ts",
+      "community": 104,
+      "community_name": "telegram/order.ts",
       "file_type": "code",
       "norm_label": "cache",
       "source_file": "src/lib/assistant/live.ts",
@@ -433,97 +407,6 @@
       "source_location": "L18"
     },
     {
-      "id": "src_data_products_product",
-      "label": "Product",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 132,
-      "community_name": "checkout/page.tsx",
-      "file_type": "code",
-      "norm_label": "product",
-      "source_file": "src/data/products.ts",
-      "source_location": "L59"
-    },
-    {
-      "id": "src_lib_orders_gateway_publicorder",
-      "label": "PublicOrder",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 132,
-      "community_name": "checkout/page.tsx",
-      "file_type": "code",
-      "norm_label": "publicorder",
-      "source_file": "src/lib/orders/gateway.ts",
-      "source_location": "L21"
-    },
-    {
-      "id": "src_lib_orders_order_deliverymethod",
-      "label": "DeliveryMethod",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 132,
-      "community_name": "checkout/page.tsx",
-      "file_type": "code",
-      "norm_label": "deliverymethod",
-      "source_file": "src/lib/orders/order.ts",
-      "source_location": "L12"
-    },
-    {
-      "id": "src_lib_orders_order_ordererror",
-      "label": "OrderError",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 132,
-      "community_name": "checkout/page.tsx",
-      "file_type": "code",
-      "norm_label": "ordererror",
-      "source_file": "src/lib/orders/order.ts",
-      "source_location": "L47"
-    },
-    {
-      "id": "src_lib_orders_order_orderline",
-      "label": "OrderLine",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 132,
-      "community_name": "checkout/page.tsx",
-      "file_type": "code",
-      "norm_label": "orderline",
-      "source_file": "src/lib/orders/order.ts",
-      "source_location": "L24"
-    },
-    {
-      "id": "src_lib_orders_order_orderrequest",
-      "label": "OrderRequest",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 132,
-      "community_name": "checkout/page.tsx",
-      "file_type": "code",
-      "norm_label": "orderrequest",
-      "source_file": "src/lib/orders/order.ts",
-      "source_location": "L14"
-    },
-    {
-      "id": "ios_app_app_scenedelegate_scenedelegate",
-      "label": "SceneDelegate",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 134,
-      "community_name": "Capacitor",
-      "file_type": "code",
-      "norm_label": "scenedelegate",
-      "source_file": "ios/App/App/SceneDelegate.swift",
-      "source_location": "L4"
-    },
-    {
       "id": "src_lib_assistant_gemini_chatturn",
       "label": "ChatTurn",
       "_callable": true,
@@ -550,17 +433,17 @@
       "source_location": "L21"
     },
     {
-      "id": "src_lib_assistant_knowledge_customerbrief",
-      "label": "CustomerBrief",
+      "id": "src_lib_assistant_knowledge_producthit",
+      "label": "ProductHit",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
       "community": 135,
       "community_name": "reply.ts",
       "file_type": "code",
-      "norm_label": "customerbrief",
+      "norm_label": "producthit",
       "source_file": "src/lib/assistant/knowledge.ts",
-      "source_location": "L35"
+      "source_location": "L17"
     },
     {
       "id": "src_lib_assistant_reply_assistantreply",
@@ -634,7 +517,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 151,
-      "community_name": "vitest",
+      "community_name": "sources/page.tsx",
       "file_type": "code",
       "norm_label": "photosource",
       "source_file": "src/data/photo-sources.ts",
@@ -678,6 +561,19 @@
       "norm_label": "applockstore",
       "source_file": "ios/App/App/AppLock.swift",
       "source_location": "L18"
+    },
+    {
+      "id": "ios_app_app_bonuscard_mainviewcontroller",
+      "label": "MainViewController",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 16,
+      "community_name": "AppLockPlugin",
+      "file_type": "code",
+      "norm_label": "mainviewcontroller",
+      "source_file": "ios/App/App/BonusCard.swift",
+      "source_location": "L340"
     },
     {
       "id": "ios_app_app_bonuscard_bonuscarddata",
@@ -953,6 +849,19 @@
       "source_location": "L4"
     },
     {
+      "id": "ios_app_app_scenedelegate_scenedelegate",
+      "label": "SceneDelegate",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "AppDelegate",
+      "file_type": "code",
+      "norm_label": "scenedelegate",
+      "source_file": "ios/App/App/SceneDelegate.swift",
+      "source_location": "L4"
+    },
+    {
       "id": "src_components_brandlogo_logospec",
       "label": "LogoSpec",
       "_callable": true,
@@ -964,6 +873,19 @@
       "norm_label": "logospec",
       "source_file": "src/components/BrandLogo.tsx",
       "source_location": "L11"
+    },
+    {
+      "id": "src_lib_i18n_i18nprovider_i18nvalue",
+      "label": "I18nValue",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "useI18n",
+      "file_type": "code",
+      "norm_label": "i18nvalue",
+      "source_file": "src/lib/i18n/I18nProvider.tsx",
+      "source_location": "L7"
     },
     {
       "id": "src_lib_orders_gateway_createresult",
@@ -1005,13 +927,26 @@
       "source_location": "L19"
     },
     {
+      "id": "src_lib_orders_gateway_publicorder",
+      "label": "PublicOrder",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 26,
+      "community_name": "orders/gateway.ts",
+      "file_type": "code",
+      "norm_label": "publicorder",
+      "source_file": "src/lib/orders/gateway.ts",
+      "source_location": "L21"
+    },
+    {
       "id": "src_lib_customer_session_customersession",
       "label": "CustomerSession",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
       "community": 31,
-      "community_name": "route-helpers.ts",
+      "community_name": "session.ts",
       "file_type": "code",
       "norm_label": "customersession",
       "source_file": "src/lib/customer/session.ts",
@@ -1024,7 +959,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 31,
-      "community_name": "route-helpers.ts",
+      "community_name": "session.ts",
       "file_type": "code",
       "norm_label": "validatedorder",
       "source_file": "src/lib/orders/order.ts",
@@ -1200,19 +1135,6 @@
       "source_location": "L150"
     },
     {
-      "id": "ios_app_app_bonuscard_mainviewcontroller",
-      "label": "MainViewController",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 45,
-      "community_name": ".scene",
-      "file_type": "code",
-      "norm_label": "mainviewcontroller",
-      "source_file": "ios/App/App/BonusCard.swift",
-      "source_location": "L340"
-    },
-    {
       "id": "ios_app_app_offlinecatalog_offlinecatalogplugin",
       "label": "OfflineCatalogPlugin",
       "_callable": true,
@@ -1304,43 +1226,17 @@
       "source_location": "L140"
     },
     {
-      "id": "src_data_photos_productphoto",
-      "label": "ProductPhoto",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 57,
-      "community_name": "I18nProvider.tsx",
-      "file_type": "code",
-      "norm_label": "productphoto",
-      "source_file": "src/data/photos.ts",
-      "source_location": "L12"
-    },
-    {
       "id": "src_lib_favorites_favoritesprovider_favoritescontextvalue",
       "label": "FavoritesContextValue",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "file_type": "code",
       "norm_label": "favoritescontextvalue",
       "source_file": "src/lib/favorites/FavoritesProvider.tsx",
       "source_location": "L28"
-    },
-    {
-      "id": "src_lib_i18n_i18nprovider_i18nvalue",
-      "label": "I18nValue",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 57,
-      "community_name": "I18nProvider.tsx",
-      "file_type": "code",
-      "norm_label": "i18nvalue",
-      "source_file": "src/lib/i18n/I18nProvider.tsx",
-      "source_location": "L7"
     },
     {
       "id": "src_lib_native_applock_applockplugin",
@@ -1447,17 +1343,69 @@
       "source_location": "L55"
     },
     {
-      "id": "src_lib_assistant_knowledge_producthit",
-      "label": "ProductHit",
+      "id": "src_lib_assistant_knowledge_customerbrief",
+      "label": "CustomerBrief",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
       "community": 8,
       "community_name": "knowledge.ts",
       "file_type": "code",
-      "norm_label": "producthit",
+      "norm_label": "customerbrief",
       "source_file": "src/lib/assistant/knowledge.ts",
-      "source_location": "L17"
+      "source_location": "L35"
+    },
+    {
+      "id": "src_lib_assistant_talk_talklang",
+      "label": "TalkLang",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "knowledge.ts",
+      "file_type": "code",
+      "norm_label": "talklang",
+      "source_file": "src/lib/assistant/talk.ts",
+      "source_location": "L15"
+    },
+    {
+      "id": "src_data_photos_productphoto",
+      "label": "ProductPhoto",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "ProductArt.tsx",
+      "file_type": "code",
+      "norm_label": "productphoto",
+      "source_file": "src/data/photos.ts",
+      "source_location": "L12"
+    },
+    {
+      "id": "src_data_products_artkind",
+      "label": "ArtKind",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "ProductArt.tsx",
+      "file_type": "code",
+      "norm_label": "artkind",
+      "source_file": "src/data/products.ts",
+      "source_location": "L18"
+    },
+    {
+      "id": "src_data_products_product",
+      "label": "Product",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "ProductArt.tsx",
+      "file_type": "code",
+      "norm_label": "product",
+      "source_file": "src/data/products.ts",
+      "source_location": "L59"
     },
     {
       "id": "ios_app_app_offlinecatalog_catalogstore",
@@ -1471,6 +1419,58 @@
       "norm_label": "catalogstore",
       "source_file": "ios/App/App/OfflineCatalog.swift",
       "source_location": "L73"
+    },
+    {
+      "id": "src_lib_orders_order_deliverymethod",
+      "label": "DeliveryMethod",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 96,
+      "community_name": "orders/order.ts",
+      "file_type": "code",
+      "norm_label": "deliverymethod",
+      "source_file": "src/lib/orders/order.ts",
+      "source_location": "L12"
+    },
+    {
+      "id": "src_lib_orders_order_ordererror",
+      "label": "OrderError",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 96,
+      "community_name": "orders/order.ts",
+      "file_type": "code",
+      "norm_label": "ordererror",
+      "source_file": "src/lib/orders/order.ts",
+      "source_location": "L47"
+    },
+    {
+      "id": "src_lib_orders_order_orderline",
+      "label": "OrderLine",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 96,
+      "community_name": "orders/order.ts",
+      "file_type": "code",
+      "norm_label": "orderline",
+      "source_file": "src/lib/orders/order.ts",
+      "source_location": "L24"
+    },
+    {
+      "id": "src_lib_orders_order_orderrequest",
+      "label": "OrderRequest",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 96,
+      "community_name": "orders/order.ts",
+      "file_type": "code",
+      "norm_label": "orderrequest",
+      "source_file": "src/lib/orders/order.ts",
+      "source_location": "L14"
     },
     {
       "id": "src_lib_assistant_log_logrow",
@@ -1499,6 +1499,18 @@
       "source_location": "L99"
     },
     {
+      "id": "src_app_api_catalog_snapshot_route_get",
+      "label": "GET()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "products.ts",
+      "file_type": "code",
+      "norm_label": "get()",
+      "source_file": "src/app/api/catalog/snapshot/route.ts",
+      "source_location": "L41"
+    },
+    {
       "id": "src_app_lang_page_homepage",
       "label": "HomePage()",
       "_callable": true,
@@ -1509,6 +1521,18 @@
       "norm_label": "homepage()",
       "source_file": "src/app/[lang]/page.tsx",
       "source_location": "L120"
+    },
+    {
+      "id": "src_app_sitemap_sitemap",
+      "label": "sitemap()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "products.ts",
+      "file_type": "code",
+      "norm_label": "sitemap()",
+      "source_file": "src/app/sitemap.ts",
+      "source_location": "L12"
     },
     {
       "id": "src_components_homemerchandising_dailyselection",
@@ -2423,18 +2447,6 @@
       "source_location": "L102"
     },
     {
-      "id": "src_lib_assistant_knowledge_storefacts",
-      "label": "storeFacts()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 100,
-      "community_name": "local.ts",
-      "file_type": "code",
-      "norm_label": "storefacts()",
-      "source_file": "src/lib/assistant/knowledge.ts",
-      "source_location": "L195"
-    },
-    {
       "id": "src_lib_assistant_local_bonustext",
       "label": "bonusText()",
       "_callable": true,
@@ -2495,6 +2507,18 @@
       "source_location": "L121"
     },
     {
+      "id": "src_lib_assistant_local_parseanswer",
+      "label": "parseAnswer()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 100,
+      "community_name": "local.ts",
+      "file_type": "code",
+      "norm_label": "parseanswer()",
+      "source_file": "src/lib/assistant/local.ts",
+      "source_location": "L40"
+    },
+    {
       "id": "src_lib_assistant_local_pick",
       "label": "pick()",
       "_callable": true,
@@ -2519,40 +2543,28 @@
       "source_location": "L113"
     },
     {
-      "id": "src_lib_assistant_orders_orderstatusword",
-      "label": "orderStatusWord()",
+      "id": "src_lib_assistant_reply_talklang",
+      "label": "talkLang()",
       "_callable": true,
       "_origin": "ast",
       "community": 100,
       "community_name": "local.ts",
       "file_type": "code",
-      "norm_label": "orderstatusword()",
-      "source_file": "src/lib/assistant/orders.ts",
-      "source_location": "L39"
+      "norm_label": "talklang()",
+      "source_file": "src/lib/assistant/reply.ts",
+      "source_location": "L58"
     },
     {
-      "id": "src_lib_assistant_prompt_customerblock",
-      "label": "customerBlock()",
+      "id": "src_lib_assistant_talk_detectlang",
+      "label": "detectLang()",
       "_callable": true,
       "_origin": "ast",
       "community": 100,
       "community_name": "local.ts",
       "file_type": "code",
-      "norm_label": "customerblock()",
-      "source_file": "src/lib/assistant/prompt.ts",
-      "source_location": "L94"
-    },
-    {
-      "id": "src_lib_assistant_prompt_systeminstruction",
-      "label": "systemInstruction()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 100,
-      "community_name": "local.ts",
-      "file_type": "code",
-      "norm_label": "systeminstruction()",
-      "source_file": "src/lib/assistant/prompt.ts",
-      "source_location": "L19"
+      "norm_label": "detectlang()",
+      "source_file": "src/lib/assistant/talk.ts",
+      "source_location": "L30"
     },
     {
       "id": "scripts_sync_catalog_log",
@@ -2591,36 +2603,12 @@
       "source_location": "L23"
     },
     {
-      "id": "src_app_api_catalog_snapshot_route_get",
-      "label": "GET()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 101,
-      "community_name": "sync-catalog.mjs",
-      "file_type": "code",
-      "norm_label": "get()",
-      "source_file": "src/app/api/catalog/snapshot/route.ts",
-      "source_location": "L41"
-    },
-    {
-      "id": "src_data_1c_adapter_productsfromonec",
-      "label": "productsFromOneC()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 102,
-      "community_name": "live.ts",
-      "file_type": "code",
-      "norm_label": "productsfromonec()",
-      "source_file": "src/data/1c/adapter.ts",
-      "source_location": "L161"
-    },
-    {
       "id": "src_lib_assistant_limits_dailylimit",
       "label": "dailyLimit()",
       "_callable": true,
       "_origin": "ast",
       "community": 102,
-      "community_name": "live.ts",
+      "community_name": "ref_server_only",
       "file_type": "code",
       "norm_label": "dailylimit()",
       "source_file": "src/lib/assistant/limits.ts",
@@ -2632,35 +2620,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 102,
-      "community_name": "live.ts",
+      "community_name": "ref_server_only",
       "file_type": "code",
       "norm_label": "daybudgetleft()",
       "source_file": "src/lib/assistant/limits.ts",
       "source_location": "L37"
-    },
-    {
-      "id": "src_lib_assistant_live_catalognow",
-      "label": "catalogNow()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 102,
-      "community_name": "live.ts",
-      "file_type": "code",
-      "norm_label": "catalognow()",
-      "source_file": "src/lib/assistant/live.ts",
-      "source_location": "L35"
-    },
-    {
-      "id": "src_lib_assistant_live_livecatalogconfigured",
-      "label": "liveCatalogConfigured()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 102,
-      "community_name": "live.ts",
-      "file_type": "code",
-      "norm_label": "livecatalogconfigured()",
-      "source_file": "src/lib/assistant/live.ts",
-      "source_location": "L30"
     },
     {
       "id": "src_lib_store_store",
@@ -2668,7 +2632,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 102,
-      "community_name": "live.ts",
+      "community_name": "ref_server_only",
       "file_type": "code",
       "norm_label": "store()",
       "source_file": "src/lib/store.ts",
@@ -2680,7 +2644,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 103,
-      "community_name": "errorResponse",
+      "community_name": "route-helpers.ts",
       "file_type": "code",
       "norm_label": "post()",
       "source_file": "src/app/api/customer/register/route.ts",
@@ -2692,7 +2656,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 103,
-      "community_name": "errorResponse",
+      "community_name": "route-helpers.ts",
       "file_type": "code",
       "norm_label": "clientip()",
       "source_file": "src/app/api/customer/route-helpers.ts",
@@ -2704,11 +2668,23 @@
       "_callable": true,
       "_origin": "ast",
       "community": 103,
-      "community_name": "errorResponse",
+      "community_name": "route-helpers.ts",
       "file_type": "code",
       "norm_label": "errorresponse()",
       "source_file": "src/app/api/customer/route-helpers.ts",
       "source_location": "L27"
+    },
+    {
+      "id": "src_app_api_customer_route_helpers_startsession",
+      "label": "startSession()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 103,
+      "community_name": "route-helpers.ts",
+      "file_type": "code",
+      "norm_label": "startsession()",
+      "source_file": "src/app/api/customer/route-helpers.ts",
+      "source_location": "L17"
     },
     {
       "id": "src_app_api_customer_send_code_route_post",
@@ -2716,7 +2692,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 103,
-      "community_name": "errorResponse",
+      "community_name": "route-helpers.ts",
       "file_type": "code",
       "norm_label": "post()",
       "source_file": "src/app/api/customer/send-code/route.ts",
@@ -2728,7 +2704,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 103,
-      "community_name": "errorResponse",
+      "community_name": "route-helpers.ts",
       "file_type": "code",
       "norm_label": "post()",
       "source_file": "src/app/api/customer/verify/route.ts",
@@ -2740,7 +2716,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 103,
-      "community_name": "errorResponse",
+      "community_name": "route-helpers.ts",
       "file_type": "code",
       "norm_label": "demoprofile()",
       "source_file": "src/lib/customer/gateway.ts",
@@ -2752,7 +2728,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 103,
-      "community_name": "errorResponse",
+      "community_name": "route-helpers.ts",
       "file_type": "code",
       "norm_label": "sendcode()",
       "source_file": "src/lib/customer/gateway.ts",
@@ -2764,11 +2740,47 @@
       "_callable": true,
       "_origin": "ast",
       "community": 103,
-      "community_name": "errorResponse",
+      "community_name": "route-helpers.ts",
       "file_type": "code",
       "norm_label": "verifycode()",
       "source_file": "src/lib/customer/gateway.ts",
       "source_location": "L239"
+    },
+    {
+      "id": "src_data_1c_adapter_productsfromonec",
+      "label": "productsFromOneC()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 104,
+      "community_name": "telegram/order.ts",
+      "file_type": "code",
+      "norm_label": "productsfromonec()",
+      "source_file": "src/data/1c/adapter.ts",
+      "source_location": "L161"
+    },
+    {
+      "id": "src_lib_assistant_live_catalognow",
+      "label": "catalogNow()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 104,
+      "community_name": "telegram/order.ts",
+      "file_type": "code",
+      "norm_label": "catalognow()",
+      "source_file": "src/lib/assistant/live.ts",
+      "source_location": "L35"
+    },
+    {
+      "id": "src_lib_assistant_live_livecatalogconfigured",
+      "label": "liveCatalogConfigured()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 104,
+      "community_name": "telegram/order.ts",
+      "file_type": "code",
+      "norm_label": "livecatalogconfigured()",
+      "source_file": "src/lib/assistant/live.ts",
+      "source_location": "L30"
     },
     {
       "id": "src_lib_assistant_live_lookupin",
@@ -2987,28 +2999,28 @@
       "source_location": "L3"
     },
     {
-      "id": "src_components_hero3d_frameurl",
-      "label": "frameUrl()",
+      "id": "src_components_brand_brand",
+      "label": "Brand()",
       "_callable": true,
       "_origin": "ast",
       "community": 13,
       "community_name": "Icons.tsx",
       "file_type": "code",
-      "norm_label": "frameurl()",
-      "source_file": "src/components/Hero3D.tsx",
-      "source_location": "L38"
+      "norm_label": "brand()",
+      "source_file": "src/components/Brand.tsx",
+      "source_location": "L19"
     },
     {
-      "id": "src_components_hero3d_hero3d",
-      "label": "Hero3D()",
+      "id": "src_components_brand_brandmark",
+      "label": "BrandMark()",
       "_callable": true,
       "_origin": "ast",
       "community": 13,
       "community_name": "Icons.tsx",
       "file_type": "code",
-      "norm_label": "hero3d()",
-      "source_file": "src/components/Hero3D.tsx",
-      "source_location": "L41"
+      "norm_label": "brandmark()",
+      "source_file": "src/components/Brand.tsx",
+      "source_location": "L11"
     },
     {
       "id": "src_components_icons_base",
@@ -3263,6 +3275,18 @@
       "source_location": "L144"
     },
     {
+      "id": "src_components_icons_iconphone",
+      "label": "IconPhone()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "Icons.tsx",
+      "file_type": "code",
+      "norm_label": "iconphone()",
+      "source_file": "src/components/Icons.tsx",
+      "source_location": "L196"
+    },
+    {
       "id": "src_components_icons_iconplus",
       "label": "IconPlus()",
       "_callable": true,
@@ -3347,6 +3371,18 @@
       "source_location": "L204"
     },
     {
+      "id": "src_components_offlinecatalogsync_offlinecatalogsync",
+      "label": "OfflineCatalogSync()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 130,
+      "community_name": "catalog.ts",
+      "file_type": "code",
+      "norm_label": "offlinecatalogsync()",
+      "source_file": "src/components/OfflineCatalogSync.tsx",
+      "source_location": "L15"
+    },
+    {
       "id": "src_lib_native_catalog_marktried",
       "label": "markTried()",
       "_callable": true,
@@ -3419,24 +3455,12 @@
       "source_location": "L36"
     },
     {
-      "id": "e2e_checkout_spec_seedcart",
-      "label": "seedCart()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 131,
-      "community_name": "@playwright/test",
-      "file_type": "code",
-      "norm_label": "seedcart()",
-      "source_file": "e2e/checkout.spec.ts",
-      "source_location": "L12"
-    },
-    {
       "id": "scripts_telegram_bot_envvalue",
       "label": "envValue()",
       "_callable": true,
       "_origin": "ast",
       "community": 131,
-      "community_name": "@playwright/test",
+      "community_name": "ref_node_fs",
       "file_type": "code",
       "norm_label": "envvalue()",
       "source_file": "scripts/telegram-bot.mjs",
@@ -3448,23 +3472,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 131,
-      "community_name": "@playwright/test",
+      "community_name": "ref_node_fs",
       "file_type": "code",
       "norm_label": "tg()",
       "source_file": "scripts/telegram-bot.mjs",
       "source_location": "L47"
-    },
-    {
-      "id": "src_app_panel_questions_route_page",
-      "label": "page()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 131,
-      "community_name": "@playwright/test",
-      "file_type": "code",
-      "norm_label": "page()",
-      "source_file": "src/app/panel/questions/route.ts",
-      "source_location": "L58"
     },
     {
       "id": "src_app_lang_checkout_page_checkoutpage",
@@ -3527,6 +3539,18 @@
       "source_location": "L6"
     },
     {
+      "id": "src_lib_format_localized",
+      "label": "localized()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 132,
+      "community_name": "checkout/page.tsx",
+      "file_type": "code",
+      "norm_label": "localized()",
+      "source_file": "src/lib/format.ts",
+      "source_location": "L10"
+    },
+    {
       "id": "src_lib_orders_order_deliverypricefor",
       "label": "deliveryPriceFor()",
       "_callable": true,
@@ -3551,18 +3575,6 @@
       "source_location": "L69"
     },
     {
-      "id": "src_lib_orders_order_validateorder",
-      "label": "validateOrder()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 132,
-      "community_name": "checkout/page.tsx",
-      "file_type": "code",
-      "norm_label": "validateorder()",
-      "source_file": "src/lib/orders/order.ts",
-      "source_location": "L95"
-    },
-    {
       "id": "src_lib_orders_storage_readlastorder",
       "label": "readLastOrder()",
       "_callable": true,
@@ -3573,30 +3585,6 @@
       "norm_label": "readlastorder()",
       "source_file": "src/lib/orders/storage.ts",
       "source_location": "L4"
-    },
-    {
-      "id": "tests_orders_test_find",
-      "label": "find()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 132,
-      "community_name": "checkout/page.tsx",
-      "file_type": "code",
-      "norm_label": "find()",
-      "source_file": "__tests__/orders.test.ts",
-      "source_location": "L9"
-    },
-    {
-      "id": "tests_orders_test_withdelivery",
-      "label": "withDelivery()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 132,
-      "community_name": "checkout/page.tsx",
-      "file_type": "code",
-      "norm_label": "withdelivery()",
-      "source_file": "__tests__/orders.test.ts",
-      "source_location": "L5"
     },
     {
       "id": "src_app_api_assistant_route_customerbrief",
@@ -3707,16 +3695,28 @@
       "source_location": "L49"
     },
     {
-      "id": "src_lib_assistant_local_parseanswer",
-      "label": "parseAnswer()",
+      "id": "src_lib_assistant_knowledge_productname",
+      "label": "productName()",
       "_callable": true,
       "_origin": "ast",
       "community": 135,
       "community_name": "reply.ts",
       "file_type": "code",
-      "norm_label": "parseanswer()",
-      "source_file": "src/lib/assistant/local.ts",
-      "source_location": "L40"
+      "norm_label": "productname()",
+      "source_file": "src/lib/assistant/knowledge.ts",
+      "source_location": "L48"
+    },
+    {
+      "id": "src_lib_assistant_knowledge_tohit",
+      "label": "toHit()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 135,
+      "community_name": "reply.ts",
+      "file_type": "code",
+      "norm_label": "tohit()",
+      "source_file": "src/lib/assistant/knowledge.ts",
+      "source_location": "L52"
     },
     {
       "id": "src_lib_assistant_reply_answer",
@@ -3741,30 +3741,6 @@
       "norm_label": "hits()",
       "source_file": "src/lib/assistant/reply.ts",
       "source_location": "L71"
-    },
-    {
-      "id": "src_lib_assistant_reply_talklang",
-      "label": "talkLang()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 135,
-      "community_name": "reply.ts",
-      "file_type": "code",
-      "norm_label": "talklang()",
-      "source_file": "src/lib/assistant/reply.ts",
-      "source_location": "L58"
-    },
-    {
-      "id": "src_lib_assistant_talk_detectlang",
-      "label": "detectLang()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 135,
-      "community_name": "reply.ts",
-      "file_type": "code",
-      "norm_label": "detectlang()",
-      "source_file": "src/lib/assistant/talk.ts",
-      "source_location": "L30"
     },
     {
       "id": "src_app_lang_catalog_page_catalogpage",
@@ -3887,6 +3863,18 @@
       "source_location": "L27"
     },
     {
+      "id": "src_components_header_headerinner",
+      "label": "HeaderInner()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "CatalogView.tsx",
+      "file_type": "code",
+      "norm_label": "headerinner()",
+      "source_file": "src/components/Header.tsx",
+      "source_location": "L15"
+    },
+    {
       "id": "src_lib_links_buildcataloghref",
       "label": "buildCatalogHref()",
       "_callable": true,
@@ -3897,6 +3885,18 @@
       "norm_label": "buildcataloghref()",
       "source_file": "src/lib/links.ts",
       "source_location": "L16"
+    },
+    {
+      "id": "src_lib_links_buildlanghref",
+      "label": "buildLangHref()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "CatalogView.tsx",
+      "file_type": "code",
+      "norm_label": "buildlanghref()",
+      "source_file": "src/lib/links.ts",
+      "source_location": "L7"
     },
     {
       "id": "integrations_sbonus_server_shop_shop_push_b64",
@@ -4067,18 +4067,6 @@
       "source_location": "L251"
     },
     {
-      "id": "src_lib_links_buildlanghref",
-      "label": "buildLangHref()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 151,
-      "community_name": "vitest",
-      "file_type": "code",
-      "norm_label": "buildlanghref()",
-      "source_file": "src/lib/links.ts",
-      "source_location": "L7"
-    },
-    {
       "id": "src_components_filterselect_filterselect",
       "label": "FilterSelect()",
       "_callable": true,
@@ -4185,18 +4173,6 @@
       "norm_label": "removebackground()",
       "source_file": "scripts/brand-logos/process.cjs",
       "source_location": "L81"
-    },
-    {
-      "id": "src_lib_format_localized",
-      "label": "localized()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 156,
-      "community_name": "format.ts",
-      "file_type": "code",
-      "norm_label": "localized()",
-      "source_file": "src/lib/format.ts",
-      "source_location": "L10"
     },
     {
       "id": "ios_app_app_applock_applockplugin_available",
@@ -4379,6 +4355,18 @@
       "norm_label": ".unlock()",
       "source_file": "ios/App/App/AppLock.swift",
       "source_location": "L55"
+    },
+    {
+      "id": "ios_app_app_bonuscard_mainviewcontroller_capacitordidload",
+      "label": ".capacitorDidLoad()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 16,
+      "community_name": "AppLockPlugin",
+      "file_type": "code",
+      "norm_label": ".capacitordidload()",
+      "source_file": "ios/App/App/BonusCard.swift",
+      "source_location": "L341"
     },
     {
       "id": "ios_app_app_bonuscard_bonuscardstore_clear",
@@ -5381,18 +5369,6 @@
       "source_location": "L57"
     },
     {
-      "id": "src_lib_cart_logic_unitprice",
-      "label": "unitPrice()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 20,
-      "community_name": "CartProvider.tsx",
-      "file_type": "code",
-      "norm_label": "unitprice()",
-      "source_file": "src/lib/cart/logic.ts",
-      "source_location": "L22"
-    },
-    {
       "id": "src_lib_cart_logic_variantof",
       "label": "variantOf()",
       "_callable": true,
@@ -5403,6 +5379,18 @@
       "norm_label": "variantof()",
       "source_file": "src/lib/cart/logic.ts",
       "source_location": "L18"
+    },
+    {
+      "id": "src_app_lang_cart_page_cartpage",
+      "label": "CartPage()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 21,
+      "community_name": "ProductPurchase.tsx",
+      "file_type": "code",
+      "norm_label": "cartpage()",
+      "source_file": "src/app/[lang]/cart/page.tsx",
+      "source_location": "L14"
     },
     {
       "id": "src_components_productdetail_productdetail",
@@ -5441,40 +5429,16 @@
       "source_location": "L13"
     },
     {
-      "id": "src_components_promocountdown_msleft",
-      "label": "msLeft()",
+      "id": "src_components_quantitystepper_quantitystepper",
+      "label": "QuantityStepper()",
       "_callable": true,
       "_origin": "ast",
       "community": 21,
       "community_name": "ProductPurchase.tsx",
       "file_type": "code",
-      "norm_label": "msleft()",
-      "source_file": "src/components/PromoCountdown.tsx",
-      "source_location": "L19"
-    },
-    {
-      "id": "src_components_promocountdown_promocountdown",
-      "label": "PromoCountdown()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 21,
-      "community_name": "ProductPurchase.tsx",
-      "file_type": "code",
-      "norm_label": "promocountdown()",
-      "source_file": "src/components/PromoCountdown.tsx",
-      "source_location": "L27"
-    },
-    {
-      "id": "src_components_promocountdown_two",
-      "label": "two()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 21,
-      "community_name": "ProductPurchase.tsx",
-      "file_type": "code",
-      "norm_label": "two()",
-      "source_file": "src/components/PromoCountdown.tsx",
-      "source_location": "L25"
+      "norm_label": "quantitystepper()",
+      "source_file": "src/components/QuantityStepper.tsx",
+      "source_location": "L6"
     },
     {
       "id": "src_data_products_colorhexof",
@@ -5523,6 +5487,18 @@
       "norm_label": "defaultmemorykey()",
       "source_file": "src/data/products.ts",
       "source_location": "L666"
+    },
+    {
+      "id": "src_lib_cart_logic_unitprice",
+      "label": "unitPrice()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 21,
+      "community_name": "ProductPurchase.tsx",
+      "file_type": "code",
+      "norm_label": "unitprice()",
+      "source_file": "src/lib/cart/logic.ts",
+      "source_location": "L22"
     },
     {
       "id": "src_lib_cart_sku_colorexists",
@@ -5729,40 +5705,26 @@
       "source_location": "L32"
     },
     {
-      "id": "src_app_lang_product_id_page_generatemetadata",
-      "label": "generateMetadata()",
+      "id": "ios_app_app_scenedelegate_scenedelegate_scene",
+      "label": ".scene()",
       "_callable": true,
       "_origin": "ast",
-      "community": 24,
-      "community_name": "product/[id]/page.tsx",
+      "community": 23,
+      "community_name": "AppDelegate",
       "file_type": "code",
-      "norm_label": "generatemetadata()",
-      "source_file": "src/app/[lang]/product/[id]/page.tsx",
-      "source_location": "L142"
-    },
-    {
-      "id": "src_app_lang_product_id_page_generatestaticparams",
-      "label": "generateStaticParams()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 24,
-      "community_name": "product/[id]/page.tsx",
-      "file_type": "code",
-      "norm_label": "generatestaticparams()",
-      "source_file": "src/app/[lang]/product/[id]/page.tsx",
-      "source_location": "L12"
-    },
-    {
-      "id": "src_app_lang_product_id_page_productpage",
-      "label": "ProductPage()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 24,
-      "community_name": "product/[id]/page.tsx",
-      "file_type": "code",
-      "norm_label": "productpage()",
-      "source_file": "src/app/[lang]/product/[id]/page.tsx",
-      "source_location": "L19"
+      "metadata": {
+        "unresolved_calls": [
+          {
+            "callee": "makeKeyAndVisible",
+            "receiver_type": "UIWindow",
+            "lang": "swift",
+            "line": "L13"
+          }
+        ]
+      },
+      "norm_label": ".scene()",
+      "source_file": "ios/App/App/SceneDelegate.swift",
+      "source_location": "L7"
     },
     {
       "id": "src_app_robots_robots",
@@ -5770,23 +5732,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 24,
-      "community_name": "product/[id]/page.tsx",
+      "community_name": "seo.ts",
       "file_type": "code",
       "norm_label": "robots()",
       "source_file": "src/app/robots.ts",
       "source_location": "L75"
-    },
-    {
-      "id": "src_app_sitemap_sitemap",
-      "label": "sitemap()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 24,
-      "community_name": "product/[id]/page.tsx",
-      "file_type": "code",
-      "norm_label": "sitemap()",
-      "source_file": "src/app/sitemap.ts",
-      "source_location": "L12"
     },
     {
       "id": "src_lib_seo_addressline",
@@ -5794,23 +5744,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 24,
-      "community_name": "product/[id]/page.tsx",
+      "community_name": "seo.ts",
       "file_type": "code",
       "norm_label": "addressline()",
       "source_file": "src/lib/seo.ts",
       "source_location": "L94"
-    },
-    {
-      "id": "src_lib_seo_canonical",
-      "label": "canonical()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 24,
-      "community_name": "product/[id]/page.tsx",
-      "file_type": "code",
-      "norm_label": "canonical()",
-      "source_file": "src/lib/seo.ts",
-      "source_location": "L33"
     },
     {
       "id": "src_app_lang_page_categorytiles",
@@ -5883,6 +5821,30 @@
       "norm_label": "hasbrandimage()",
       "source_file": "src/components/BrandLogo.tsx",
       "source_location": "L172"
+    },
+    {
+      "id": "src_components_hero3d_frameurl",
+      "label": "frameUrl()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "useI18n",
+      "file_type": "code",
+      "norm_label": "frameurl()",
+      "source_file": "src/components/Hero3D.tsx",
+      "source_location": "L38"
+    },
+    {
+      "id": "src_components_hero3d_hero3d",
+      "label": "Hero3D()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "useI18n",
+      "file_type": "code",
+      "norm_label": "hero3d()",
+      "source_file": "src/components/Hero3D.tsx",
+      "source_location": "L41"
     },
     {
       "id": "src_components_homemerchandising_brandsforstrip",
@@ -6029,16 +5991,40 @@
       "source_location": "L56"
     },
     {
-      "id": "src_components_productcard_productcard",
-      "label": "ProductCard()",
+      "id": "src_components_promocountdown_msleft",
+      "label": "msLeft()",
       "_callable": true,
       "_origin": "ast",
       "community": 25,
       "community_name": "useI18n",
       "file_type": "code",
-      "norm_label": "productcard()",
-      "source_file": "src/components/ProductCard.tsx",
-      "source_location": "L16"
+      "norm_label": "msleft()",
+      "source_file": "src/components/PromoCountdown.tsx",
+      "source_location": "L19"
+    },
+    {
+      "id": "src_components_promocountdown_promocountdown",
+      "label": "PromoCountdown()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "useI18n",
+      "file_type": "code",
+      "norm_label": "promocountdown()",
+      "source_file": "src/components/PromoCountdown.tsx",
+      "source_location": "L27"
+    },
+    {
+      "id": "src_components_promocountdown_two",
+      "label": "two()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "useI18n",
+      "file_type": "code",
+      "norm_label": "two()",
+      "source_file": "src/components/PromoCountdown.tsx",
+      "source_location": "L25"
     },
     {
       "id": "src_components_storefronthero_storefronthero",
@@ -6430,7 +6416,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 31,
-      "community_name": "route-helpers.ts",
+      "community_name": "session.ts",
       "file_type": "code",
       "norm_label": "get()",
       "source_file": "src/app/api/customer/native-key/route.ts",
@@ -6442,23 +6428,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 31,
-      "community_name": "route-helpers.ts",
+      "community_name": "session.ts",
       "file_type": "code",
       "norm_label": "post()",
       "source_file": "src/app/api/customer/native-key/route.ts",
       "source_location": "L19"
-    },
-    {
-      "id": "src_app_api_customer_route_helpers_startsession",
-      "label": "startSession()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 31,
-      "community_name": "route-helpers.ts",
-      "file_type": "code",
-      "norm_label": "startsession()",
-      "source_file": "src/app/api/customer/route-helpers.ts",
-      "source_location": "L17"
     },
     {
       "id": "src_lib_customer_session_decodenativekey",
@@ -6466,7 +6440,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 31,
-      "community_name": "route-helpers.ts",
+      "community_name": "session.ts",
       "file_type": "code",
       "norm_label": "decodenativekey()",
       "source_file": "src/lib/customer/session.ts",
@@ -6478,7 +6452,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 31,
-      "community_name": "route-helpers.ts",
+      "community_name": "session.ts",
       "file_type": "code",
       "norm_label": "decodesession()",
       "source_file": "src/lib/customer/session.ts",
@@ -6490,7 +6464,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 31,
-      "community_name": "route-helpers.ts",
+      "community_name": "session.ts",
       "file_type": "code",
       "norm_label": "encodenativekey()",
       "source_file": "src/lib/customer/session.ts",
@@ -6502,7 +6476,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 31,
-      "community_name": "route-helpers.ts",
+      "community_name": "session.ts",
       "file_type": "code",
       "norm_label": "encodesession()",
       "source_file": "src/lib/customer/session.ts",
@@ -6514,7 +6488,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 31,
-      "community_name": "route-helpers.ts",
+      "community_name": "session.ts",
       "file_type": "code",
       "norm_label": "secret()",
       "source_file": "src/lib/customer/session.ts",
@@ -6526,7 +6500,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 31,
-      "community_name": "route-helpers.ts",
+      "community_name": "session.ts",
       "file_type": "code",
       "norm_label": "sign()",
       "source_file": "src/lib/customer/session.ts",
@@ -6538,7 +6512,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 31,
-      "community_name": "route-helpers.ts",
+      "community_name": "session.ts",
       "file_type": "code",
       "norm_label": "signnative()",
       "source_file": "src/lib/customer/session.ts",
@@ -6783,30 +6757,6 @@
       "source_location": "L23"
     },
     {
-      "id": "src_components_brand_brand",
-      "label": "Brand()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "AssistantChat.tsx",
-      "file_type": "code",
-      "norm_label": "brand()",
-      "source_file": "src/components/Brand.tsx",
-      "source_location": "L19"
-    },
-    {
-      "id": "src_components_brand_brandmark",
-      "label": "BrandMark()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "AssistantChat.tsx",
-      "file_type": "code",
-      "norm_label": "brandmark()",
-      "source_file": "src/components/Brand.tsx",
-      "source_location": "L11"
-    },
-    {
       "id": "src_components_footer_footer",
       "label": "Footer()",
       "_callable": true,
@@ -6817,18 +6767,6 @@
       "norm_label": "footer()",
       "source_file": "src/components/Footer.tsx",
       "source_location": "L10"
-    },
-    {
-      "id": "src_components_icons_iconphone",
-      "label": "IconPhone()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "AssistantChat.tsx",
-      "file_type": "code",
-      "norm_label": "iconphone()",
-      "source_file": "src/components/Icons.tsx",
-      "source_location": "L196"
     },
     {
       "id": "src_components_icons_icontelegram",
@@ -7287,38 +7225,28 @@
       "source_location": "L16"
     },
     {
-      "id": "ios_app_app_bonuscard_mainviewcontroller_capacitordidload",
-      "label": ".capacitorDidLoad()",
+      "id": "e2e_checkout_spec_seedcart",
+      "label": "seedCart()",
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": ".scene",
+      "community_name": "@playwright/test",
       "file_type": "code",
-      "norm_label": ".capacitordidload()",
-      "source_file": "ios/App/App/BonusCard.swift",
-      "source_location": "L341"
+      "norm_label": "seedcart()",
+      "source_file": "e2e/checkout.spec.ts",
+      "source_location": "L12"
     },
     {
-      "id": "ios_app_app_scenedelegate_scenedelegate_scene",
-      "label": ".scene()",
+      "id": "src_app_panel_questions_route_page",
+      "label": "page()",
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": ".scene",
+      "community_name": "@playwright/test",
       "file_type": "code",
-      "metadata": {
-        "unresolved_calls": [
-          {
-            "callee": "makeKeyAndVisible",
-            "receiver_type": "UIWindow",
-            "lang": "swift",
-            "line": "L13"
-          }
-        ]
-      },
-      "norm_label": ".scene()",
-      "source_file": "ios/App/App/SceneDelegate.swift",
-      "source_location": "L7"
+      "norm_label": "page()",
+      "source_file": "src/app/panel/questions/route.ts",
+      "source_location": "L58"
     },
     {
       "id": "ios_app_app_offlinecatalog_catalogstore_load",
@@ -7502,18 +7430,6 @@
       "file_type": "code",
       "norm_label": "motionprovider()",
       "source_file": "src/components/MotionProvider.tsx",
-      "source_location": "L15"
-    },
-    {
-      "id": "src_components_offlinecatalogsync_offlinecatalogsync",
-      "label": "OfflineCatalogSync()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 55,
-      "community_name": "[lang]/layout.tsx",
-      "file_type": "code",
-      "norm_label": "offlinecatalogsync()",
-      "source_file": "src/components/OfflineCatalogSync.tsx",
       "source_location": "L15"
     },
     {
@@ -7709,24 +7625,12 @@
       "source_location": "L30"
     },
     {
-      "id": "src_app_lang_cart_page_cartpage",
-      "label": "CartPage()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 57,
-      "community_name": "I18nProvider.tsx",
-      "file_type": "code",
-      "norm_label": "cartpage()",
-      "source_file": "src/app/[lang]/cart/page.tsx",
-      "source_location": "L14"
-    },
-    {
       "id": "src_app_lang_dev_gallery_page_devgalleryfixturepage",
       "label": "DevGalleryFixturePage()",
       "_callable": true,
       "_origin": "ast",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "file_type": "code",
       "norm_label": "devgalleryfixturepage()",
       "source_file": "src/app/[lang]/dev/gallery/page.tsx",
@@ -7738,11 +7642,47 @@
       "_callable": true,
       "_origin": "ast",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "file_type": "code",
       "norm_label": "favoritespage()",
       "source_file": "src/app/[lang]/favorites/page.tsx",
       "source_location": "L10"
+    },
+    {
+      "id": "src_app_lang_product_id_page_generatemetadata",
+      "label": "generateMetadata()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 57,
+      "community_name": "ProductCard.tsx",
+      "file_type": "code",
+      "norm_label": "generatemetadata()",
+      "source_file": "src/app/[lang]/product/[id]/page.tsx",
+      "source_location": "L142"
+    },
+    {
+      "id": "src_app_lang_product_id_page_generatestaticparams",
+      "label": "generateStaticParams()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 57,
+      "community_name": "ProductCard.tsx",
+      "file_type": "code",
+      "norm_label": "generatestaticparams()",
+      "source_file": "src/app/[lang]/product/[id]/page.tsx",
+      "source_location": "L12"
+    },
+    {
+      "id": "src_app_lang_product_id_page_productpage",
+      "label": "ProductPage()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 57,
+      "community_name": "ProductCard.tsx",
+      "file_type": "code",
+      "norm_label": "productpage()",
+      "source_file": "src/app/[lang]/product/[id]/page.tsx",
+      "source_location": "L19"
     },
     {
       "id": "src_components_addtocartbutton_addtocartbutton",
@@ -7750,7 +7690,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "file_type": "code",
       "norm_label": "addtocartbutton()",
       "source_file": "src/components/AddToCartButton.tsx",
@@ -7762,7 +7702,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "file_type": "code",
       "norm_label": "bottomnav()",
       "source_file": "src/components/BottomNav.tsx",
@@ -7774,7 +7714,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "file_type": "code",
       "norm_label": "cartreminder()",
       "source_file": "src/components/CartReminder.tsx",
@@ -7786,7 +7726,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "file_type": "code",
       "norm_label": "favoritebutton()",
       "source_file": "src/components/FavoriteButton.tsx",
@@ -7798,59 +7738,35 @@
       "_callable": true,
       "_origin": "ast",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "file_type": "code",
       "norm_label": "gallery()",
       "source_file": "src/components/Gallery.tsx",
       "source_location": "L23"
     },
     {
-      "id": "src_components_header_headerinner",
-      "label": "HeaderInner()",
+      "id": "src_components_productcard_productcard",
+      "label": "ProductCard()",
       "_callable": true,
       "_origin": "ast",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "file_type": "code",
-      "norm_label": "headerinner()",
-      "source_file": "src/components/Header.tsx",
-      "source_location": "L15"
+      "norm_label": "productcard()",
+      "source_file": "src/components/ProductCard.tsx",
+      "source_location": "L16"
     },
     {
-      "id": "src_components_productart_productart",
-      "label": "ProductArt()",
+      "id": "src_data_categories_categoryname",
+      "label": "categoryName()",
       "_callable": true,
       "_origin": "ast",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "file_type": "code",
-      "norm_label": "productart()",
-      "source_file": "src/components/ProductArt.tsx",
-      "source_location": "L8"
-    },
-    {
-      "id": "src_components_productimage_productimage",
-      "label": "ProductImage()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 57,
-      "community_name": "I18nProvider.tsx",
-      "file_type": "code",
-      "norm_label": "productimage()",
-      "source_file": "src/components/ProductImage.tsx",
-      "source_location": "L15"
-    },
-    {
-      "id": "src_components_quantitystepper_quantitystepper",
-      "label": "QuantityStepper()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 57,
-      "community_name": "I18nProvider.tsx",
-      "file_type": "code",
-      "norm_label": "quantitystepper()",
-      "source_file": "src/components/QuantityStepper.tsx",
-      "source_location": "L6"
+      "norm_label": "categoryname()",
+      "source_file": "src/data/categories.ts",
+      "source_location": "L27"
     },
     {
       "id": "src_data_products_getproduct",
@@ -7858,7 +7774,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "file_type": "code",
       "norm_label": "getproduct()",
       "source_file": "src/data/products.ts",
@@ -7870,7 +7786,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "file_type": "code",
       "norm_label": "usecart()",
       "source_file": "src/lib/cart/CartProvider.tsx",
@@ -7882,7 +7798,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "file_type": "code",
       "norm_label": "favoritesprovider()",
       "source_file": "src/lib/favorites/FavoritesProvider.tsx",
@@ -7894,7 +7810,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "file_type": "code",
       "norm_label": "onlyexisting()",
       "source_file": "src/lib/favorites/FavoritesProvider.tsx",
@@ -7906,7 +7822,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "file_type": "code",
       "norm_label": "readstorage()",
       "source_file": "src/lib/favorites/FavoritesProvider.tsx",
@@ -7918,11 +7834,23 @@
       "_callable": true,
       "_origin": "ast",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "file_type": "code",
       "norm_label": "usefavorites()",
       "source_file": "src/lib/favorites/FavoritesProvider.tsx",
       "source_location": "L111"
+    },
+    {
+      "id": "src_lib_seo_canonical",
+      "label": "canonical()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 57,
+      "community_name": "ProductCard.tsx",
+      "file_type": "code",
+      "norm_label": "canonical()",
+      "source_file": "src/lib/seo.ts",
+      "source_location": "L33"
     },
     {
       "id": "src_app_lang_account_page_accountpage",
@@ -8405,18 +8333,6 @@
       "source_location": "L41"
     },
     {
-      "id": "src_data_categories_categoryname",
-      "label": "categoryName()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 8,
-      "community_name": "knowledge.ts",
-      "file_type": "code",
-      "norm_label": "categoryname()",
-      "source_file": "src/data/categories.ts",
-      "source_location": "L27"
-    },
-    {
       "id": "src_lib_assistant_knowledge_catalogdigest",
       "label": "catalogDigest()",
       "_callable": true,
@@ -8465,18 +8381,6 @@
       "source_location": "L152"
     },
     {
-      "id": "src_lib_assistant_knowledge_productname",
-      "label": "productName()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 8,
-      "community_name": "knowledge.ts",
-      "file_type": "code",
-      "norm_label": "productname()",
-      "source_file": "src/lib/assistant/knowledge.ts",
-      "source_location": "L48"
-    },
-    {
       "id": "src_lib_assistant_knowledge_searchproducts",
       "label": "searchProducts()",
       "_callable": true,
@@ -8513,16 +8417,52 @@
       "source_location": "L148"
     },
     {
-      "id": "src_lib_assistant_knowledge_tohit",
-      "label": "toHit()",
+      "id": "src_lib_assistant_knowledge_storefacts",
+      "label": "storeFacts()",
       "_callable": true,
       "_origin": "ast",
       "community": 8,
       "community_name": "knowledge.ts",
       "file_type": "code",
-      "norm_label": "tohit()",
+      "norm_label": "storefacts()",
       "source_file": "src/lib/assistant/knowledge.ts",
-      "source_location": "L52"
+      "source_location": "L195"
+    },
+    {
+      "id": "src_lib_assistant_orders_orderstatusword",
+      "label": "orderStatusWord()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "knowledge.ts",
+      "file_type": "code",
+      "norm_label": "orderstatusword()",
+      "source_file": "src/lib/assistant/orders.ts",
+      "source_location": "L39"
+    },
+    {
+      "id": "src_lib_assistant_prompt_customerblock",
+      "label": "customerBlock()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "knowledge.ts",
+      "file_type": "code",
+      "norm_label": "customerblock()",
+      "source_file": "src/lib/assistant/prompt.ts",
+      "source_location": "L94"
+    },
+    {
+      "id": "src_lib_assistant_prompt_systeminstruction",
+      "label": "systemInstruction()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "knowledge.ts",
+      "file_type": "code",
+      "norm_label": "systeminstruction()",
+      "source_file": "src/lib/assistant/prompt.ts",
+      "source_location": "L19"
     },
     {
       "id": "scripts_make_ios_icon_glyph",
@@ -8669,6 +8609,18 @@
       "source_location": "L43"
     },
     {
+      "id": "src_components_productart_productart",
+      "label": "ProductArt()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "ProductArt.tsx",
+      "file_type": "code",
+      "norm_label": "productart()",
+      "source_file": "src/components/ProductArt.tsx",
+      "source_location": "L8"
+    },
+    {
       "id": "src_components_productart_robotart",
       "label": "RobotArt()",
       "_callable": true,
@@ -8753,6 +8705,18 @@
       "source_location": "L191"
     },
     {
+      "id": "src_components_productimage_productimage",
+      "label": "ProductImage()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "ProductArt.tsx",
+      "file_type": "code",
+      "norm_label": "productimage()",
+      "source_file": "src/components/ProductImage.tsx",
+      "source_location": "L15"
+    },
+    {
       "id": "ios_app_app_offlinecatalog_catalogstore_clear",
       "label": ".clear()",
       "_callable": true,
@@ -8818,23 +8782,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 96,
-      "community_name": "orders/route.ts",
+      "community_name": "orders/order.ts",
       "file_type": "code",
       "norm_label": "post()",
       "source_file": "src/app/api/orders/route.ts",
       "source_location": "L16"
-    },
-    {
-      "id": "src_app_api_site_settings_route_get",
-      "label": "GET()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 96,
-      "community_name": "orders/route.ts",
-      "file_type": "code",
-      "norm_label": "get()",
-      "source_file": "src/app/api/site-settings/route.ts",
-      "source_location": "L8"
     },
     {
       "id": "src_lib_customer_gateway_getprofile",
@@ -8842,23 +8794,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 96,
-      "community_name": "orders/route.ts",
+      "community_name": "orders/order.ts",
       "file_type": "code",
       "norm_label": "getprofile()",
       "source_file": "src/lib/customer/gateway.ts",
       "source_location": "L278"
-    },
-    {
-      "id": "src_lib_customer_gateway_getsitesettings",
-      "label": "getSiteSettings()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 96,
-      "community_name": "orders/route.ts",
-      "file_type": "code",
-      "norm_label": "getsitesettings()",
-      "source_file": "src/lib/customer/gateway.ts",
-      "source_location": "L185"
     },
     {
       "id": "src_lib_customer_gateway_isdemophone",
@@ -8866,7 +8806,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 96,
-      "community_name": "orders/route.ts",
+      "community_name": "orders/order.ts",
       "file_type": "code",
       "norm_label": "isdemophone()",
       "source_file": "src/lib/customer/gateway.ts",
@@ -8878,7 +8818,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 96,
-      "community_name": "orders/route.ts",
+      "community_name": "orders/order.ts",
       "file_type": "code",
       "norm_label": "createorder()",
       "source_file": "src/lib/orders/gateway.ts",
@@ -8890,11 +8830,47 @@
       "_callable": true,
       "_origin": "ast",
       "community": 96,
-      "community_name": "orders/route.ts",
+      "community_name": "orders/order.ts",
       "file_type": "code",
       "norm_label": "applybonus()",
       "source_file": "src/lib/orders/order.ts",
       "source_location": "L179"
+    },
+    {
+      "id": "src_lib_orders_order_validateorder",
+      "label": "validateOrder()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 96,
+      "community_name": "orders/order.ts",
+      "file_type": "code",
+      "norm_label": "validateorder()",
+      "source_file": "src/lib/orders/order.ts",
+      "source_location": "L95"
+    },
+    {
+      "id": "tests_orders_test_find",
+      "label": "find()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 96,
+      "community_name": "orders/order.ts",
+      "file_type": "code",
+      "norm_label": "find()",
+      "source_file": "__tests__/orders.test.ts",
+      "source_location": "L9"
+    },
+    {
+      "id": "tests_orders_test_withdelivery",
+      "label": "withDelivery()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 96,
+      "community_name": "orders/order.ts",
+      "file_type": "code",
+      "norm_label": "withdelivery()",
+      "source_file": "__tests__/orders.test.ts",
+      "source_location": "L5"
     },
     {
       "id": "src_app_api_customer_delete_route_post",
@@ -8969,6 +8945,18 @@
       "source_location": "L11"
     },
     {
+      "id": "src_app_api_site_settings_route_get",
+      "label": "GET()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "currentSession",
+      "file_type": "code",
+      "norm_label": "get()",
+      "source_file": "src/app/api/site-settings/route.ts",
+      "source_location": "L8"
+    },
+    {
       "id": "src_lib_customer_gateway_deleteaccount",
       "label": "deleteAccount()",
       "_callable": true,
@@ -8979,6 +8967,18 @@
       "norm_label": "deleteaccount()",
       "source_file": "src/lib/customer/gateway.ts",
       "source_location": "L303"
+    },
+    {
+      "id": "src_lib_customer_gateway_getsitesettings",
+      "label": "getSiteSettings()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "currentSession",
+      "file_type": "code",
+      "norm_label": "getsitesettings()",
+      "source_file": "src/lib/customer/gateway.ts",
+      "source_location": "L185"
     },
     {
       "id": "src_lib_customer_gateway_registerpushdevice",
@@ -9200,6 +9200,39 @@
       "source_url": null
     },
     {
+      "id": "src_app_api_catalog_snapshot_route",
+      "label": "snapshot/route.ts",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "products.ts",
+      "file_type": "code",
+      "norm_label": "snapshot/route.ts",
+      "source_file": "src/app/api/catalog/snapshot/route.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_app_api_catalog_snapshot_route_dynamic",
+      "label": "dynamic",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "products.ts",
+      "file_type": "code",
+      "norm_label": "dynamic",
+      "source_file": "src/app/api/catalog/snapshot/route.ts",
+      "source_location": "L18"
+    },
+    {
+      "id": "src_app_sitemap",
+      "label": "sitemap.ts",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "products.ts",
+      "file_type": "code",
+      "norm_label": "sitemap.ts",
+      "source_file": "src/app/sitemap.ts",
+      "source_location": "L1"
+    },
+    {
       "id": "src_data_categories",
       "label": "data/categories.ts",
       "_origin": "ast",
@@ -9277,6 +9310,17 @@
       "source_location": "L565"
     },
     {
+      "id": "src_data_products_products",
+      "label": "products",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "products.ts",
+      "file_type": "code",
+      "norm_label": "products",
+      "source_file": "src/data/products.ts",
+      "source_location": "L553"
+    },
+    {
       "id": "assets_src_lg_f4x5es5sb_build_model",
       "label": "build_model.py",
       "_origin": "ast",
@@ -9319,17 +9363,6 @@
       "norm_label": "manage.py",
       "source_file": "integrations/1c-online-shop/manage.py",
       "source_location": "L1"
-    },
-    {
-      "id": "package_scripts_test",
-      "label": "test",
-      "_origin": "ast",
-      "community": 1,
-      "community_name": "build_model.py",
-      "file_type": "code",
-      "norm_label": "test",
-      "source_file": "package.json",
-      "source_location": "L11"
     },
     {
       "id": "scripts_1c_export_export_catalog",
@@ -9684,39 +9717,6 @@
       "source_location": "L247"
     },
     {
-      "id": "src_lib_assistant_orders",
-      "label": "orders.ts",
-      "_origin": "ast",
-      "community": 100,
-      "community_name": "local.ts",
-      "file_type": "code",
-      "norm_label": "orders.ts",
-      "source_file": "src/lib/assistant/orders.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_lib_assistant_orders_words",
-      "label": "WORDS",
-      "_origin": "ast",
-      "community": 100,
-      "community_name": "local.ts",
-      "file_type": "code",
-      "norm_label": "words",
-      "source_file": "src/lib/assistant/orders.ts",
-      "source_location": "L11"
-    },
-    {
-      "id": "src_lib_assistant_prompt",
-      "label": "prompt.ts",
-      "_origin": "ast",
-      "community": 100,
-      "community_name": "local.ts",
-      "file_type": "code",
-      "norm_label": "prompt.ts",
-      "source_file": "src/lib/assistant/prompt.ts",
-      "source_location": "L1"
-    },
-    {
       "id": "src_lib_assistant_prompt_products_marker",
       "label": "PRODUCTS_MARKER",
       "_origin": "ast",
@@ -9728,26 +9728,37 @@
       "source_location": "L17"
     },
     {
-      "id": "src_lib_assistant_talk",
-      "label": "talk.ts",
+      "id": "tests_assistant_test",
+      "label": "assistant.test.ts",
       "_origin": "ast",
       "community": 100,
       "community_name": "local.ts",
       "file_type": "code",
-      "norm_label": "talk.ts",
-      "source_file": "src/lib/assistant/talk.ts",
+      "norm_label": "assistant.test.ts",
+      "source_file": "__tests__/assistant.test.ts",
       "source_location": "L1"
     },
     {
-      "id": "src_lib_assistant_talk_lang_name",
-      "label": "LANG_NAME",
+      "id": "tests_assistant_test_customer",
+      "label": "customer",
       "_origin": "ast",
       "community": 100,
       "community_name": "local.ts",
       "file_type": "code",
-      "norm_label": "lang_name",
-      "source_file": "src/lib/assistant/talk.ts",
-      "source_location": "L17"
+      "norm_label": "customer",
+      "source_file": "__tests__/assistant.test.ts",
+      "source_location": "L95"
+    },
+    {
+      "id": "ref_vitest",
+      "label": "vitest",
+      "_origin": "ast",
+      "community": 100,
+      "community_name": "local.ts",
+      "file_type": "concept",
+      "norm_label": "vitest",
+      "source_file": "package.json",
+      "source_location": "L30"
     },
     {
       "id": "scripts_sync_catalog",
@@ -9805,33 +9816,11 @@
       "source_location": "L19"
     },
     {
-      "id": "src_app_api_catalog_snapshot_route",
-      "label": "snapshot/route.ts",
-      "_origin": "ast",
-      "community": 101,
-      "community_name": "sync-catalog.mjs",
-      "file_type": "code",
-      "norm_label": "snapshot/route.ts",
-      "source_file": "src/app/api/catalog/snapshot/route.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_app_api_catalog_snapshot_route_dynamic",
-      "label": "dynamic",
-      "_origin": "ast",
-      "community": 101,
-      "community_name": "sync-catalog.mjs",
-      "file_type": "code",
-      "norm_label": "dynamic",
-      "source_file": "src/app/api/catalog/snapshot/route.ts",
-      "source_location": "L18"
-    },
-    {
       "id": "src_lib_assistant_limits",
       "label": "limits.ts",
       "_origin": "ast",
       "community": 102,
-      "community_name": "live.ts",
+      "community_name": "ref_server_only",
       "file_type": "code",
       "norm_label": "limits.ts",
       "source_file": "src/lib/assistant/limits.ts",
@@ -9842,7 +9831,7 @@
       "label": "day",
       "_origin": "ast",
       "community": 102,
-      "community_name": "live.ts",
+      "community_name": "ref_server_only",
       "file_type": "code",
       "norm_label": "day",
       "source_file": "src/lib/assistant/limits.ts",
@@ -9853,29 +9842,18 @@
       "label": "hits",
       "_origin": "ast",
       "community": 102,
-      "community_name": "live.ts",
+      "community_name": "ref_server_only",
       "file_type": "code",
       "norm_label": "hits",
       "source_file": "src/lib/assistant/limits.ts",
       "source_location": "L17"
     },
     {
-      "id": "src_lib_assistant_live",
-      "label": "live.ts",
-      "_origin": "ast",
-      "community": 102,
-      "community_name": "live.ts",
-      "file_type": "code",
-      "norm_label": "live.ts",
-      "source_file": "src/lib/assistant/live.ts",
-      "source_location": "L1"
-    },
-    {
       "id": "src_lib_store",
       "label": "store.ts",
       "_origin": "ast",
       "community": 102,
-      "community_name": "live.ts",
+      "community_name": "ref_server_only",
       "file_type": "code",
       "norm_label": "store.ts",
       "source_file": "src/lib/store.ts",
@@ -9886,7 +9864,7 @@
       "label": "box",
       "_origin": "ast",
       "community": 102,
-      "community_name": "live.ts",
+      "community_name": "ref_server_only",
       "file_type": "code",
       "norm_label": "box",
       "source_file": "src/lib/store.ts",
@@ -9897,10 +9875,21 @@
       "label": "register/route.ts",
       "_origin": "ast",
       "community": 103,
-      "community_name": "errorResponse",
+      "community_name": "route-helpers.ts",
       "file_type": "code",
       "norm_label": "register/route.ts",
       "source_file": "src/app/api/customer/register/route.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_app_api_customer_route_helpers",
+      "label": "route-helpers.ts",
+      "_origin": "ast",
+      "community": 103,
+      "community_name": "route-helpers.ts",
+      "file_type": "code",
+      "norm_label": "route-helpers.ts",
+      "source_file": "src/app/api/customer/route-helpers.ts",
       "source_location": "L1"
     },
     {
@@ -9908,7 +9897,7 @@
       "label": "send-code/route.ts",
       "_origin": "ast",
       "community": 103,
-      "community_name": "errorResponse",
+      "community_name": "route-helpers.ts",
       "file_type": "code",
       "norm_label": "send-code/route.ts",
       "source_file": "src/app/api/customer/send-code/route.ts",
@@ -9919,10 +9908,43 @@
       "label": "verify/route.ts",
       "_origin": "ast",
       "community": 103,
-      "community_name": "errorResponse",
+      "community_name": "route-helpers.ts",
       "file_type": "code",
       "norm_label": "verify/route.ts",
       "source_file": "src/app/api/customer/verify/route.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_lib_customer_session_session_cookie",
+      "label": "SESSION_COOKIE",
+      "_origin": "ast",
+      "community": 103,
+      "community_name": "route-helpers.ts",
+      "file_type": "code",
+      "norm_label": "session_cookie",
+      "source_file": "src/lib/customer/session.ts",
+      "source_location": "L11"
+    },
+    {
+      "id": "src_lib_customer_session_sessioncookieoptions",
+      "label": "sessionCookieOptions",
+      "_origin": "ast",
+      "community": 103,
+      "community_name": "route-helpers.ts",
+      "file_type": "code",
+      "norm_label": "sessioncookieoptions",
+      "source_file": "src/lib/customer/session.ts",
+      "source_location": "L98"
+    },
+    {
+      "id": "src_lib_assistant_live",
+      "label": "live.ts",
+      "_origin": "ast",
+      "community": 104,
+      "community_name": "telegram/order.ts",
+      "file_type": "code",
+      "norm_label": "live.ts",
+      "source_file": "src/lib/assistant/live.ts",
       "source_location": "L1"
     },
     {
@@ -10460,6 +10482,17 @@
       "source_location": "L1"
     },
     {
+      "id": "src_components_bonuspromo",
+      "label": "BonusPromo.tsx",
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "Icons.tsx",
+      "file_type": "code",
+      "norm_label": "bonuspromo.tsx",
+      "source_file": "src/components/BonusPromo.tsx",
+      "source_location": "L1"
+    },
+    {
       "id": "src_components_bottomnav",
       "label": "BottomNav.tsx",
       "_origin": "ast",
@@ -10468,6 +10501,17 @@
       "file_type": "code",
       "norm_label": "bottomnav.tsx",
       "source_file": "src/components/BottomNav.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_components_brand",
+      "label": "Brand.tsx",
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "Icons.tsx",
+      "file_type": "code",
+      "norm_label": "brand.tsx",
+      "source_file": "src/components/Brand.tsx",
       "source_location": "L1"
     },
     {
@@ -10482,14 +10526,14 @@
       "source_location": "L1"
     },
     {
-      "id": "src_components_hero3d",
-      "label": "Hero3D.tsx",
+      "id": "src_components_homestory",
+      "label": "HomeStory.tsx",
       "_origin": "ast",
       "community": 13,
       "community_name": "Icons.tsx",
       "file_type": "code",
-      "norm_label": "hero3d.tsx",
-      "source_file": "src/components/Hero3D.tsx",
+      "norm_label": "homestory.tsx",
+      "source_file": "src/components/HomeStory.tsx",
       "source_location": "L1"
     },
     {
@@ -10504,6 +10548,17 @@
       "source_location": "L1"
     },
     {
+      "id": "src_components_offlinecatalogsync",
+      "label": "OfflineCatalogSync.tsx",
+      "_origin": "ast",
+      "community": 130,
+      "community_name": "catalog.ts",
+      "file_type": "code",
+      "norm_label": "offlinecatalogsync.tsx",
+      "source_file": "src/components/OfflineCatalogSync.tsx",
+      "source_location": "L1"
+    },
+    {
       "id": "src_lib_native_catalog",
       "label": "catalog.ts",
       "_origin": "ast",
@@ -10515,88 +10570,11 @@
       "source_location": "L1"
     },
     {
-      "id": "test",
-      "label": "@playwright/test",
-      "_origin": "ast",
-      "community": 131,
-      "community_name": "@playwright/test",
-      "confidence": "EXTRACTED",
-      "file_type": "code",
-      "norm_label": "@playwright/test",
-      "source_file": "@playwright/test"
-    },
-    {
-      "id": "e2e_cart_spec",
-      "label": "cart.spec.ts",
-      "_origin": "ast",
-      "community": 131,
-      "community_name": "@playwright/test",
-      "file_type": "code",
-      "norm_label": "cart.spec.ts",
-      "source_file": "e2e/cart.spec.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "e2e_catalog_spec",
-      "label": "catalog.spec.ts",
-      "_origin": "ast",
-      "community": 131,
-      "community_name": "@playwright/test",
-      "file_type": "code",
-      "norm_label": "catalog.spec.ts",
-      "source_file": "e2e/catalog.spec.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "e2e_checkout_spec",
-      "label": "checkout.spec.ts",
-      "_origin": "ast",
-      "community": 131,
-      "community_name": "@playwright/test",
-      "file_type": "code",
-      "norm_label": "checkout.spec.ts",
-      "source_file": "e2e/checkout.spec.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "e2e_product_zoom_spec",
-      "label": "product-zoom.spec.ts",
-      "_origin": "ast",
-      "community": 131,
-      "community_name": "@playwright/test",
-      "file_type": "code",
-      "norm_label": "product-zoom.spec.ts",
-      "source_file": "e2e/product-zoom.spec.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "e2e_task03_spec",
-      "label": "task03.spec.ts",
-      "_origin": "ast",
-      "community": 131,
-      "community_name": "@playwright/test",
-      "file_type": "code",
-      "norm_label": "task03.spec.ts",
-      "source_file": "e2e/task03.spec.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "e2e_task03a_spec",
-      "label": "task03a.spec.ts",
-      "_origin": "ast",
-      "community": 131,
-      "community_name": "@playwright/test",
-      "file_type": "code",
-      "norm_label": "task03a.spec.ts",
-      "source_file": "e2e/task03a.spec.ts",
-      "source_location": "L1"
-    },
-    {
       "id": "e2e_task05_spec",
       "label": "task05.spec.ts",
       "_origin": "ast",
       "community": 131,
-      "community_name": "@playwright/test",
+      "community_name": "ref_node_fs",
       "file_type": "code",
       "norm_label": "task05.spec.ts",
       "source_file": "e2e/task05.spec.ts",
@@ -10607,7 +10585,7 @@
       "label": "visual.spec.ts",
       "_origin": "ast",
       "community": 131,
-      "community_name": "@playwright/test",
+      "community_name": "ref_node_fs",
       "file_type": "code",
       "norm_label": "visual.spec.ts",
       "source_file": "e2e/visual.spec.ts",
@@ -10618,29 +10596,18 @@
       "label": "widths",
       "_origin": "ast",
       "community": 131,
-      "community_name": "@playwright/test",
+      "community_name": "ref_node_fs",
       "file_type": "code",
       "norm_label": "widths",
       "source_file": "e2e/visual.spec.ts",
       "source_location": "L60"
     },
     {
-      "id": "playwright_config",
-      "label": "playwright.config.ts",
-      "_origin": "ast",
-      "community": 131,
-      "community_name": "@playwright/test",
-      "file_type": "code",
-      "norm_label": "playwright.config.ts",
-      "source_file": "playwright.config.ts",
-      "source_location": "L1"
-    },
-    {
       "id": "scripts_review_home_story",
       "label": "review-home-story.cjs",
       "_origin": "ast",
       "community": 131,
-      "community_name": "@playwright/test",
+      "community_name": "ref_node_fs",
       "file_type": "code",
       "norm_label": "review-home-story.cjs",
       "source_file": "scripts/review-home-story.cjs",
@@ -10651,7 +10618,7 @@
       "label": "assert",
       "_origin": "ast",
       "community": 131,
-      "community_name": "@playwright/test",
+      "community_name": "ref_node_fs",
       "file_type": "code",
       "norm_label": "assert",
       "source_file": "scripts/review-home-story.cjs",
@@ -10662,7 +10629,7 @@
       "label": "{ chromium }",
       "_origin": "ast",
       "community": 131,
-      "community_name": "@playwright/test",
+      "community_name": "ref_node_fs",
       "file_type": "code",
       "norm_label": "{ chromium }",
       "source_file": "scripts/review-home-story.cjs",
@@ -10673,7 +10640,7 @@
       "label": "fs",
       "_origin": "ast",
       "community": 131,
-      "community_name": "@playwright/test",
+      "community_name": "ref_node_fs",
       "file_type": "code",
       "norm_label": "fs",
       "source_file": "scripts/review-home-story.cjs",
@@ -10684,7 +10651,7 @@
       "label": "telegram-bot.mjs",
       "_origin": "ast",
       "community": 131,
-      "community_name": "@playwright/test",
+      "community_name": "ref_node_fs",
       "file_type": "code",
       "norm_label": "telegram-bot.mjs",
       "source_file": "scripts/telegram-bot.mjs",
@@ -10695,7 +10662,7 @@
       "label": "SECRET",
       "_origin": "ast",
       "community": 131,
-      "community_name": "@playwright/test",
+      "community_name": "ref_node_fs",
       "file_type": "code",
       "norm_label": "secret",
       "source_file": "scripts/telegram-bot.mjs",
@@ -10706,22 +10673,11 @@
       "label": "TOKEN",
       "_origin": "ast",
       "community": 131,
-      "community_name": "@playwright/test",
+      "community_name": "ref_node_fs",
       "file_type": "code",
       "norm_label": "token",
       "source_file": "scripts/telegram-bot.mjs",
       "source_location": "L32"
-    },
-    {
-      "id": "ref_playwright_test",
-      "label": "@playwright/test",
-      "_origin": "ast",
-      "community": 131,
-      "community_name": "@playwright/test",
-      "file_type": "concept",
-      "norm_label": "@playwright/test",
-      "source_file": "package.json",
-      "source_location": "L24"
     },
     {
       "id": "src_app_lang_checkout_page",
@@ -10779,26 +10735,26 @@
       "source_location": "L26"
     },
     {
-      "id": "src_data_products_demoproducts",
-      "label": "demoProducts",
+      "id": "src_lib_format",
+      "label": "format.ts",
       "_origin": "ast",
       "community": 132,
       "community_name": "checkout/page.tsx",
       "file_type": "code",
-      "norm_label": "demoproducts",
-      "source_file": "src/data/products.ts",
-      "source_location": "L129"
+      "norm_label": "format.ts",
+      "source_file": "src/lib/format.ts",
+      "source_location": "L1"
     },
     {
-      "id": "src_lib_orders_order",
-      "label": "orders/order.ts",
+      "id": "src_lib_format_numberformat",
+      "label": "numberFormat",
       "_origin": "ast",
       "community": 132,
       "community_name": "checkout/page.tsx",
       "file_type": "code",
-      "norm_label": "orders/order.ts",
-      "source_file": "src/lib/orders/order.ts",
-      "source_location": "L1"
+      "norm_label": "numberformat",
+      "source_file": "src/lib/format.ts",
+      "source_location": "L3"
     },
     {
       "id": "src_lib_orders_storage",
@@ -10823,127 +10779,6 @@
       "source_location": "L2"
     },
     {
-      "id": "tests_orders_test",
-      "label": "orders.test.ts",
-      "_origin": "ast",
-      "community": 132,
-      "community_name": "checkout/page.tsx",
-      "file_type": "code",
-      "norm_label": "orders.test.ts",
-      "source_file": "__tests__/orders.test.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "tests_orders_test_base",
-      "label": "base",
-      "_origin": "ast",
-      "community": 132,
-      "community_name": "checkout/page.tsx",
-      "file_type": "code",
-      "norm_label": "base",
-      "source_file": "__tests__/orders.test.ts",
-      "source_location": "L11"
-    },
-    {
-      "id": "tests_orders_test_catalog",
-      "label": "catalog",
-      "_origin": "ast",
-      "community": 132,
-      "community_name": "checkout/page.tsx",
-      "file_type": "code",
-      "norm_label": "catalog",
-      "source_file": "__tests__/orders.test.ts",
-      "source_location": "L6"
-    },
-    {
-      "id": "package_devdependencies",
-      "label": "devDependencies",
-      "_origin": "ast",
-      "community": 133,
-      "community_name": "devDependencies",
-      "file_type": "code",
-      "norm_label": "devdependencies",
-      "source_file": "package.json",
-      "source_location": "L23"
-    },
-    {
-      "id": "package_devdependencies_playwright_test",
-      "label": "@playwright/test",
-      "_origin": "ast",
-      "community": 133,
-      "community_name": "devDependencies",
-      "file_type": "code",
-      "norm_label": "@playwright/test",
-      "source_file": "package.json",
-      "source_location": "L24"
-    },
-    {
-      "id": "package_devdependencies_sharp",
-      "label": "sharp",
-      "_origin": "ast",
-      "community": 133,
-      "community_name": "devDependencies",
-      "file_type": "code",
-      "norm_label": "sharp",
-      "source_file": "package.json",
-      "source_location": "L28"
-    },
-    {
-      "id": "package_devdependencies_types_node",
-      "label": "@types/node",
-      "_origin": "ast",
-      "community": 133,
-      "community_name": "devDependencies",
-      "file_type": "code",
-      "norm_label": "@types/node",
-      "source_file": "package.json",
-      "source_location": "L25"
-    },
-    {
-      "id": "package_devdependencies_types_react",
-      "label": "@types/react",
-      "_origin": "ast",
-      "community": 133,
-      "community_name": "devDependencies",
-      "file_type": "code",
-      "norm_label": "@types/react",
-      "source_file": "package.json",
-      "source_location": "L26"
-    },
-    {
-      "id": "package_devdependencies_types_react_dom",
-      "label": "@types/react-dom",
-      "_origin": "ast",
-      "community": 133,
-      "community_name": "devDependencies",
-      "file_type": "code",
-      "norm_label": "@types/react-dom",
-      "source_file": "package.json",
-      "source_location": "L27"
-    },
-    {
-      "id": "package_devdependencies_typescript",
-      "label": "typescript",
-      "_origin": "ast",
-      "community": 133,
-      "community_name": "devDependencies",
-      "file_type": "code",
-      "norm_label": "typescript",
-      "source_file": "package.json",
-      "source_location": "L29"
-    },
-    {
-      "id": "package_devdependencies_vitest",
-      "label": "vitest",
-      "_origin": "ast",
-      "community": 133,
-      "community_name": "devDependencies",
-      "file_type": "code",
-      "norm_label": "vitest",
-      "source_file": "package.json",
-      "source_location": "L30"
-    },
-    {
       "id": "capacitor",
       "label": "Capacitor",
       "_origin": "ast",
@@ -10953,6 +10788,18 @@
       "norm_label": "capacitor",
       "source_file": "ios/App/App/SceneDelegate.swift",
       "source_location": "L2",
+      "type": "module"
+    },
+    {
+      "id": "foundation",
+      "label": "Foundation",
+      "_origin": "ast",
+      "community": 134,
+      "community_name": "Capacitor",
+      "file_type": "code",
+      "norm_label": "foundation",
+      "source_file": "ios/App/App/AppLock.swift",
+      "source_location": "L13",
       "type": "module"
     },
     {
@@ -10967,6 +10814,17 @@
       "source_location": "L1"
     },
     {
+      "id": "ios_app_app_applock",
+      "label": "AppLock.swift",
+      "_origin": "ast",
+      "community": 134,
+      "community_name": "Capacitor",
+      "file_type": "code",
+      "norm_label": "applock.swift",
+      "source_file": "ios/App/App/AppLock.swift",
+      "source_location": "L1"
+    },
+    {
       "id": "ios_app_app_scenedelegate",
       "label": "SceneDelegate.swift",
       "_origin": "ast",
@@ -10978,15 +10836,16 @@
       "source_location": "L1"
     },
     {
-      "id": "ios_app_app_scenedelegate_swift_uiwindow",
-      "label": "UIWindow",
+      "id": "localauthentication",
+      "label": "LocalAuthentication",
       "_origin": "ast",
       "community": 134,
       "community_name": "Capacitor",
       "file_type": "code",
-      "norm_label": "uiwindow",
-      "source_file": "",
-      "source_location": ""
+      "norm_label": "localauthentication",
+      "source_file": "ios/App/App/AppLock.swift",
+      "source_location": "L14",
+      "type": "module"
     },
     {
       "id": "uikit",
@@ -10999,28 +10858,6 @@
       "source_file": "ios/App/App/SceneDelegate.swift",
       "source_location": "L1",
       "type": "module"
-    },
-    {
-      "id": "uiresponder",
-      "label": "UIResponder",
-      "_origin": "ast",
-      "community": 134,
-      "community_name": "Capacitor",
-      "file_type": "code",
-      "norm_label": "uiresponder",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "uiwindowscenedelegate",
-      "label": "UIWindowSceneDelegate",
-      "_origin": "ast",
-      "community": 134,
-      "community_name": "Capacitor",
-      "file_type": "code",
-      "norm_label": "uiwindowscenedelegate",
-      "source_file": "",
-      "source_location": ""
     },
     {
       "id": "src_app_api_assistant_route",
@@ -11076,72 +10913,6 @@
       "norm_label": "reply.ts",
       "source_file": "src/lib/assistant/reply.ts",
       "source_location": "L1"
-    },
-    {
-      "id": "package_scripts",
-      "label": "scripts",
-      "_origin": "ast",
-      "community": 136,
-      "community_name": "scripts",
-      "file_type": "code",
-      "norm_label": "scripts",
-      "source_file": "package.json",
-      "source_location": "L6"
-    },
-    {
-      "id": "package_scripts_build",
-      "label": "build",
-      "_origin": "ast",
-      "community": 136,
-      "community_name": "scripts",
-      "file_type": "code",
-      "norm_label": "build",
-      "source_file": "package.json",
-      "source_location": "L8"
-    },
-    {
-      "id": "package_scripts_dev",
-      "label": "dev",
-      "_origin": "ast",
-      "community": 136,
-      "community_name": "scripts",
-      "file_type": "code",
-      "norm_label": "dev",
-      "source_file": "package.json",
-      "source_location": "L7"
-    },
-    {
-      "id": "package_scripts_start",
-      "label": "start",
-      "_origin": "ast",
-      "community": 136,
-      "community_name": "scripts",
-      "file_type": "code",
-      "norm_label": "start",
-      "source_file": "package.json",
-      "source_location": "L9"
-    },
-    {
-      "id": "package_scripts_test_e2e",
-      "label": "test:e2e",
-      "_origin": "ast",
-      "community": 136,
-      "community_name": "scripts",
-      "file_type": "code",
-      "norm_label": "test:e2e",
-      "source_file": "package.json",
-      "source_location": "L12"
-    },
-    {
-      "id": "package_scripts_typecheck",
-      "label": "typecheck",
-      "_origin": "ast",
-      "community": 136,
-      "community_name": "scripts",
-      "file_type": "code",
-      "norm_label": "typecheck",
-      "source_file": "package.json",
-      "source_location": "L10"
     },
     {
       "id": "scripts_update_all",
@@ -11300,6 +11071,28 @@
       "source_location": "L561"
     },
     {
+      "id": "src_lib_links",
+      "label": "links.ts",
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "CatalogView.tsx",
+      "file_type": "code",
+      "norm_label": "links.ts",
+      "source_file": "src/lib/links.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "tests_links_test",
+      "label": "links.test.ts",
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "CatalogView.tsx",
+      "file_type": "code",
+      "norm_label": "links.test.ts",
+      "source_file": "__tests__/links.test.ts",
+      "source_location": "L1"
+    },
+    {
       "id": "integrations_sbonus_server_shop_shop_push",
       "label": "shop_push.py",
       "_origin": "ast",
@@ -11454,11 +11247,33 @@
       "source_location": "L32"
     },
     {
+      "id": "src_app_lang_sources_page",
+      "label": "sources/page.tsx",
+      "_origin": "ast",
+      "community": 151,
+      "community_name": "sources/page.tsx",
+      "file_type": "code",
+      "norm_label": "sources/page.tsx",
+      "source_file": "src/app/[lang]/sources/page.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_app_lang_sources_page_metadata",
+      "label": "metadata",
+      "_origin": "ast",
+      "community": 151,
+      "community_name": "sources/page.tsx",
+      "file_type": "code",
+      "norm_label": "metadata",
+      "source_file": "src/app/[lang]/sources/page.tsx",
+      "source_location": "L7"
+    },
+    {
       "id": "src_data_photo_sources",
       "label": "photo-sources.ts",
       "_origin": "ast",
       "community": 151,
-      "community_name": "vitest",
+      "community_name": "sources/page.tsx",
       "file_type": "code",
       "norm_label": "photo-sources.ts",
       "source_file": "src/data/photo-sources.ts",
@@ -11469,7 +11284,7 @@
       "label": "PEXELS_LICENSE",
       "_origin": "ast",
       "community": 151,
-      "community_name": "vitest",
+      "community_name": "sources/page.tsx",
       "file_type": "code",
       "norm_label": "pexels_license",
       "source_file": "src/data/photo-sources.ts",
@@ -11480,55 +11295,22 @@
       "label": "photoSources",
       "_origin": "ast",
       "community": 151,
-      "community_name": "vitest",
+      "community_name": "sources/page.tsx",
       "file_type": "code",
       "norm_label": "photosources",
       "source_file": "src/data/photo-sources.ts",
       "source_location": "L36"
     },
     {
-      "id": "src_lib_links",
-      "label": "links.ts",
-      "_origin": "ast",
-      "community": 151,
-      "community_name": "vitest",
-      "file_type": "code",
-      "norm_label": "links.ts",
-      "source_file": "src/lib/links.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "tests_links_test",
-      "label": "links.test.ts",
-      "_origin": "ast",
-      "community": 151,
-      "community_name": "vitest",
-      "file_type": "code",
-      "norm_label": "links.test.ts",
-      "source_file": "__tests__/links.test.ts",
-      "source_location": "L1"
-    },
-    {
       "id": "tests_photo_sources_test",
       "label": "photo-sources.test.ts",
       "_origin": "ast",
       "community": 151,
-      "community_name": "vitest",
+      "community_name": "sources/page.tsx",
       "file_type": "code",
       "norm_label": "photo-sources.test.ts",
       "source_file": "__tests__/photo-sources.test.ts",
       "source_location": "L1"
-    },
-    {
-      "id": "ref_vitest",
-      "label": "vitest",
-      "_origin": "ast",
-      "community": 151,
-      "community_name": "vitest",
-      "file_type": "concept",
-      "norm_label": "vitest",
-      "source_file": "package.json",
-      "source_location": "L30"
     },
     {
       "id": "src_components_filterselect",
@@ -11797,49 +11579,26 @@
       "source_location": "L1"
     },
     {
-      "id": "src_lib_format",
-      "label": "format.ts",
-      "_origin": "ast",
-      "community": 156,
-      "community_name": "format.ts",
-      "file_type": "code",
-      "norm_label": "format.ts",
-      "source_file": "src/lib/format.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_lib_format_numberformat",
-      "label": "numberFormat",
-      "_origin": "ast",
-      "community": 156,
-      "community_name": "format.ts",
-      "file_type": "code",
-      "norm_label": "numberformat",
-      "source_file": "src/lib/format.ts",
-      "source_location": "L3"
-    },
-    {
-      "id": "foundation",
-      "label": "Foundation",
+      "id": "capbridgeviewcontroller",
+      "label": "CAPBridgeViewController",
       "_origin": "ast",
       "community": 16,
       "community_name": "AppLockPlugin",
       "file_type": "code",
-      "norm_label": "foundation",
-      "source_file": "ios/App/App/AppLock.swift",
-      "source_location": "L13",
-      "type": "module"
+      "norm_label": "capbridgeviewcontroller",
+      "source_file": "",
+      "source_location": ""
     },
     {
-      "id": "ios_app_app_applock",
-      "label": "AppLock.swift",
+      "id": "capplugin",
+      "label": "CAPPlugin",
       "_origin": "ast",
       "community": 16,
       "community_name": "AppLockPlugin",
       "file_type": "code",
-      "norm_label": "applock.swift",
-      "source_file": "ios/App/App/AppLock.swift",
-      "source_location": "L1"
+      "norm_label": "capplugin",
+      "source_file": "",
+      "source_location": ""
     },
     {
       "id": "ios_app_app_applock_applockstore_base",
@@ -11917,18 +11676,6 @@
       "norm_label": "void",
       "source_file": "",
       "source_location": ""
-    },
-    {
-      "id": "localauthentication",
-      "label": "LocalAuthentication",
-      "_origin": "ast",
-      "community": 16,
-      "community_name": "AppLockPlugin",
-      "file_type": "code",
-      "norm_label": "localauthentication",
-      "source_file": "ios/App/App/AppLock.swift",
-      "source_location": "L14",
-      "type": "module"
     },
     {
       "id": "coreimage_cifilterbuiltins",
@@ -12582,6 +12329,17 @@
       "source_location": "L14"
     },
     {
+      "id": "src_app_lang_cart_page",
+      "label": "cart/page.tsx",
+      "_origin": "ast",
+      "community": 21,
+      "community_name": "ProductPurchase.tsx",
+      "file_type": "code",
+      "norm_label": "cart/page.tsx",
+      "source_file": "src/app/[lang]/cart/page.tsx",
+      "source_location": "L1"
+    },
+    {
       "id": "src_components_productdetail",
       "label": "ProductDetail.tsx",
       "_origin": "ast",
@@ -12604,14 +12362,14 @@
       "source_location": "L1"
     },
     {
-      "id": "src_components_promocountdown",
-      "label": "PromoCountdown.tsx",
+      "id": "src_components_quantitystepper",
+      "label": "QuantityStepper.tsx",
       "_origin": "ast",
       "community": 21,
       "community_name": "ProductPurchase.tsx",
       "file_type": "code",
-      "norm_label": "promocountdown.tsx",
-      "source_file": "src/components/PromoCountdown.tsx",
+      "norm_label": "quantitystepper.tsx",
+      "source_file": "src/components/QuantityStepper.tsx",
       "source_location": "L1"
     },
     {
@@ -12923,6 +12681,61 @@
       "source_location": ""
     },
     {
+      "id": "ios_app_app_scenedelegate_swift_uiscene",
+      "label": "UIScene",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "AppDelegate",
+      "file_type": "code",
+      "norm_label": "uiscene",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "ios_app_app_scenedelegate_swift_uiscenesession",
+      "label": "UISceneSession",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "AppDelegate",
+      "file_type": "code",
+      "norm_label": "uiscenesession",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "ios_app_app_scenedelegate_swift_uiwindow",
+      "label": "UIWindow",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "AppDelegate",
+      "file_type": "code",
+      "norm_label": "uiwindow",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "nsuseractivity",
+      "label": "NSUserActivity",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "AppDelegate",
+      "file_type": "code",
+      "norm_label": "nsuseractivity",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "set",
+      "label": "Set",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "AppDelegate",
+      "file_type": "code",
+      "norm_label": "set",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
       "id": "uiapplication",
       "label": "UIApplication",
       "_origin": "ast",
@@ -12945,6 +12758,28 @@
       "source_location": ""
     },
     {
+      "id": "uiopenurlcontext",
+      "label": "UIOpenURLContext",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "AppDelegate",
+      "file_type": "code",
+      "norm_label": "uiopenurlcontext",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "uiresponder",
+      "label": "UIResponder",
+      "_origin": "ast",
+      "community": 23,
+      "community_name": "AppDelegate",
+      "file_type": "code",
+      "norm_label": "uiresponder",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
       "id": "uisceneconfiguration",
       "label": "UISceneConfiguration",
       "_origin": "ast",
@@ -12956,22 +12791,22 @@
       "source_location": ""
     },
     {
-      "id": "src_app_lang_product_id_page",
-      "label": "product/[id]/page.tsx",
+      "id": "uiwindowscenedelegate",
+      "label": "UIWindowSceneDelegate",
       "_origin": "ast",
-      "community": 24,
-      "community_name": "product/[id]/page.tsx",
+      "community": 23,
+      "community_name": "AppDelegate",
       "file_type": "code",
-      "norm_label": "product/[id]/page.tsx",
-      "source_file": "src/app/[lang]/product/[id]/page.tsx",
-      "source_location": "L1"
+      "norm_label": "uiwindowscenedelegate",
+      "source_file": "",
+      "source_location": ""
     },
     {
       "id": "src_app_robots",
       "label": "robots.ts",
       "_origin": "ast",
       "community": 24,
-      "community_name": "product/[id]/page.tsx",
+      "community_name": "seo.ts",
       "file_type": "code",
       "norm_label": "robots.ts",
       "source_file": "src/app/robots.ts",
@@ -12982,7 +12817,7 @@
       "label": "ALLOW",
       "_origin": "ast",
       "community": 24,
-      "community_name": "product/[id]/page.tsx",
+      "community_name": "seo.ts",
       "file_type": "code",
       "norm_label": "allow",
       "source_file": "src/app/robots.ts",
@@ -12993,7 +12828,7 @@
       "label": "ASSISTANTS",
       "_origin": "ast",
       "community": 24,
-      "community_name": "product/[id]/page.tsx",
+      "community_name": "seo.ts",
       "file_type": "code",
       "norm_label": "assistants",
       "source_file": "src/app/robots.ts",
@@ -13004,7 +12839,7 @@
       "label": "PRIVATE",
       "_origin": "ast",
       "community": 24,
-      "community_name": "product/[id]/page.tsx",
+      "community_name": "seo.ts",
       "file_type": "code",
       "norm_label": "private",
       "source_file": "src/app/robots.ts",
@@ -13015,29 +12850,18 @@
       "label": "TRAINERS",
       "_origin": "ast",
       "community": 24,
-      "community_name": "product/[id]/page.tsx",
+      "community_name": "seo.ts",
       "file_type": "code",
       "norm_label": "trainers",
       "source_file": "src/app/robots.ts",
       "source_location": "L39"
     },
     {
-      "id": "src_app_sitemap",
-      "label": "sitemap.ts",
-      "_origin": "ast",
-      "community": 24,
-      "community_name": "product/[id]/page.tsx",
-      "file_type": "code",
-      "norm_label": "sitemap.ts",
-      "source_file": "src/app/sitemap.ts",
-      "source_location": "L1"
-    },
-    {
       "id": "src_lib_seo",
       "label": "seo.ts",
       "_origin": "ast",
       "community": 24,
-      "community_name": "product/[id]/page.tsx",
+      "community_name": "seo.ts",
       "file_type": "code",
       "norm_label": "seo.ts",
       "source_file": "src/lib/seo.ts",
@@ -13048,7 +12872,7 @@
       "label": "SITE_ALT_NAMES",
       "_origin": "ast",
       "community": 24,
-      "community_name": "product/[id]/page.tsx",
+      "community_name": "seo.ts",
       "file_type": "code",
       "norm_label": "site_alt_names",
       "source_file": "src/lib/seo.ts",
@@ -13059,7 +12883,7 @@
       "label": "SITE_NAME",
       "_origin": "ast",
       "community": 24,
-      "community_name": "product/[id]/page.tsx",
+      "community_name": "seo.ts",
       "file_type": "code",
       "norm_label": "site_name",
       "source_file": "src/lib/seo.ts",
@@ -13070,7 +12894,7 @@
       "label": "SITE_URL",
       "_origin": "ast",
       "community": 24,
-      "community_name": "product/[id]/page.tsx",
+      "community_name": "seo.ts",
       "file_type": "code",
       "norm_label": "site_url",
       "source_file": "src/lib/seo.ts",
@@ -13081,7 +12905,7 @@
       "label": "siteAuthor",
       "_origin": "ast",
       "community": 24,
-      "community_name": "product/[id]/page.tsx",
+      "community_name": "seo.ts",
       "file_type": "code",
       "norm_label": "siteauthor",
       "source_file": "src/lib/seo.ts",
@@ -13121,6 +12945,17 @@
       "source_location": "L23"
     },
     {
+      "id": "src_components_hero3d",
+      "label": "Hero3D.tsx",
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "useI18n",
+      "file_type": "code",
+      "norm_label": "hero3d.tsx",
+      "source_file": "src/components/Hero3D.tsx",
+      "source_location": "L1"
+    },
+    {
       "id": "src_components_homemerchandising",
       "label": "HomeMerchandising.tsx",
       "_origin": "ast",
@@ -13132,17 +12967,6 @@
       "source_location": "L1"
     },
     {
-      "id": "src_components_homestory",
-      "label": "HomeStory.tsx",
-      "_origin": "ast",
-      "community": 25,
-      "community_name": "useI18n",
-      "file_type": "code",
-      "norm_label": "homestory.tsx",
-      "source_file": "src/components/HomeStory.tsx",
-      "source_location": "L1"
-    },
-    {
       "id": "src_components_instagramlink",
       "label": "InstagramLink.tsx",
       "_origin": "ast",
@@ -13151,6 +12975,17 @@
       "file_type": "code",
       "norm_label": "instagramlink.tsx",
       "source_file": "src/components/InstagramLink.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_components_promocountdown",
+      "label": "PromoCountdown.tsx",
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "useI18n",
+      "file_type": "code",
+      "norm_label": "promocountdown.tsx",
+      "source_file": "src/components/PromoCountdown.tsx",
       "source_location": "L1"
     },
     {
@@ -13185,6 +13020,28 @@
       "norm_label": "storefront",
       "source_file": "src/data/storefront.ts",
       "source_location": "L2"
+    },
+    {
+      "id": "src_lib_i18n_i18nprovider",
+      "label": "I18nProvider.tsx",
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "useI18n",
+      "file_type": "code",
+      "norm_label": "i18nprovider.tsx",
+      "source_file": "src/lib/i18n/I18nProvider.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_lib_i18n_i18nprovider_i18ncontext",
+      "label": "I18nContext",
+      "_origin": "ast",
+      "community": 25,
+      "community_name": "useI18n",
+      "file_type": "code",
+      "norm_label": "i18ncontext",
+      "source_file": "src/lib/i18n/I18nProvider.tsx",
+      "source_location": "L9"
     },
     {
       "id": "ref_react",
@@ -13464,28 +13321,6 @@
       "source_location": "L1"
     },
     {
-      "id": "src_app_lang_sources_page",
-      "label": "sources/page.tsx",
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "config.ts",
-      "file_type": "code",
-      "norm_label": "sources/page.tsx",
-      "source_file": "src/app/[lang]/sources/page.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_app_lang_sources_page_metadata",
-      "label": "metadata",
-      "_origin": "ast",
-      "community": 3,
-      "community_name": "config.ts",
-      "file_type": "code",
-      "norm_label": "metadata",
-      "source_file": "src/app/[lang]/sources/page.tsx",
-      "source_location": "L7"
-    },
-    {
       "id": "src_lib_i18n_config",
       "label": "config.ts",
       "_origin": "ast",
@@ -13545,21 +13380,10 @@
       "label": "native-key/route.ts",
       "_origin": "ast",
       "community": 31,
-      "community_name": "route-helpers.ts",
+      "community_name": "session.ts",
       "file_type": "code",
       "norm_label": "native-key/route.ts",
       "source_file": "src/app/api/customer/native-key/route.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_app_api_customer_route_helpers",
-      "label": "route-helpers.ts",
-      "_origin": "ast",
-      "community": 31,
-      "community_name": "route-helpers.ts",
-      "file_type": "code",
-      "norm_label": "route-helpers.ts",
-      "source_file": "src/app/api/customer/route-helpers.ts",
       "source_location": "L1"
     },
     {
@@ -13567,7 +13391,7 @@
       "label": "session.ts",
       "_origin": "ast",
       "community": 31,
-      "community_name": "route-helpers.ts",
+      "community_name": "session.ts",
       "file_type": "code",
       "norm_label": "session.ts",
       "source_file": "src/lib/customer/session.ts",
@@ -13578,51 +13402,29 @@
       "label": "NATIVE_KEY_DAYS",
       "_origin": "ast",
       "community": 31,
-      "community_name": "route-helpers.ts",
+      "community_name": "session.ts",
       "file_type": "code",
       "norm_label": "native_key_days",
       "source_file": "src/lib/customer/session.ts",
       "source_location": "L68"
     },
     {
-      "id": "src_lib_customer_session_session_cookie",
-      "label": "SESSION_COOKIE",
-      "_origin": "ast",
-      "community": 31,
-      "community_name": "route-helpers.ts",
-      "file_type": "code",
-      "norm_label": "session_cookie",
-      "source_file": "src/lib/customer/session.ts",
-      "source_location": "L11"
-    },
-    {
       "id": "src_lib_customer_session_session_days",
       "label": "SESSION_DAYS",
       "_origin": "ast",
       "community": 31,
-      "community_name": "route-helpers.ts",
+      "community_name": "session.ts",
       "file_type": "code",
       "norm_label": "session_days",
       "source_file": "src/lib/customer/session.ts",
       "source_location": "L18"
     },
     {
-      "id": "src_lib_customer_session_sessioncookieoptions",
-      "label": "sessionCookieOptions",
-      "_origin": "ast",
-      "community": 31,
-      "community_name": "route-helpers.ts",
-      "file_type": "code",
-      "norm_label": "sessioncookieoptions",
-      "source_file": "src/lib/customer/session.ts",
-      "source_location": "L98"
-    },
-    {
       "id": "tests_customer_test",
       "label": "customer.test.ts",
       "_origin": "ast",
       "community": 31,
-      "community_name": "route-helpers.ts",
+      "community_name": "session.ts",
       "file_type": "code",
       "norm_label": "customer.test.ts",
       "source_file": "__tests__/customer.test.ts",
@@ -13633,7 +13435,7 @@
       "label": "order",
       "_origin": "ast",
       "community": 31,
-      "community_name": "route-helpers.ts",
+      "community_name": "session.ts",
       "file_type": "code",
       "norm_label": "order",
       "source_file": "__tests__/customer.test.ts",
@@ -13714,28 +13516,6 @@
       "file_type": "code",
       "norm_label": "assistantchat.tsx",
       "source_file": "src/components/AssistantChat.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_components_bonuspromo",
-      "label": "BonusPromo.tsx",
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "AssistantChat.tsx",
-      "file_type": "code",
-      "norm_label": "bonuspromo.tsx",
-      "source_file": "src/components/BonusPromo.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_components_brand",
-      "label": "Brand.tsx",
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "AssistantChat.tsx",
-      "file_type": "code",
-      "norm_label": "brand.tsx",
-      "source_file": "src/components/Brand.tsx",
       "source_location": "L1"
     },
     {
@@ -14256,70 +14036,92 @@
       "source_location": "L18"
     },
     {
-      "id": "capbridgeviewcontroller",
-      "label": "CAPBridgeViewController",
+      "id": "e2e_cart_spec",
+      "label": "cart.spec.ts",
       "_origin": "ast",
       "community": 45,
-      "community_name": ".scene",
+      "community_name": "@playwright/test",
       "file_type": "code",
-      "norm_label": "capbridgeviewcontroller",
-      "source_file": "",
-      "source_location": ""
+      "norm_label": "cart.spec.ts",
+      "source_file": "e2e/cart.spec.ts",
+      "source_location": "L1"
     },
     {
-      "id": "ios_app_app_scenedelegate_swift_uiscene",
-      "label": "UIScene",
+      "id": "e2e_catalog_spec",
+      "label": "catalog.spec.ts",
       "_origin": "ast",
       "community": 45,
-      "community_name": ".scene",
+      "community_name": "@playwright/test",
       "file_type": "code",
-      "norm_label": "uiscene",
-      "source_file": "",
-      "source_location": ""
+      "norm_label": "catalog.spec.ts",
+      "source_file": "e2e/catalog.spec.ts",
+      "source_location": "L1"
     },
     {
-      "id": "ios_app_app_scenedelegate_swift_uiscenesession",
-      "label": "UISceneSession",
+      "id": "e2e_checkout_spec",
+      "label": "checkout.spec.ts",
       "_origin": "ast",
       "community": 45,
-      "community_name": ".scene",
+      "community_name": "@playwright/test",
       "file_type": "code",
-      "norm_label": "uiscenesession",
-      "source_file": "",
-      "source_location": ""
+      "norm_label": "checkout.spec.ts",
+      "source_file": "e2e/checkout.spec.ts",
+      "source_location": "L1"
     },
     {
-      "id": "nsuseractivity",
-      "label": "NSUserActivity",
+      "id": "e2e_product_zoom_spec",
+      "label": "product-zoom.spec.ts",
       "_origin": "ast",
       "community": 45,
-      "community_name": ".scene",
+      "community_name": "@playwright/test",
       "file_type": "code",
-      "norm_label": "nsuseractivity",
-      "source_file": "",
-      "source_location": ""
+      "norm_label": "product-zoom.spec.ts",
+      "source_file": "e2e/product-zoom.spec.ts",
+      "source_location": "L1"
     },
     {
-      "id": "set",
-      "label": "Set",
+      "id": "e2e_task03_spec",
+      "label": "task03.spec.ts",
       "_origin": "ast",
       "community": 45,
-      "community_name": ".scene",
+      "community_name": "@playwright/test",
       "file_type": "code",
-      "norm_label": "set",
-      "source_file": "",
-      "source_location": ""
+      "norm_label": "task03.spec.ts",
+      "source_file": "e2e/task03.spec.ts",
+      "source_location": "L1"
     },
     {
-      "id": "uiopenurlcontext",
-      "label": "UIOpenURLContext",
+      "id": "e2e_task03a_spec",
+      "label": "task03a.spec.ts",
       "_origin": "ast",
       "community": 45,
-      "community_name": ".scene",
+      "community_name": "@playwright/test",
       "file_type": "code",
-      "norm_label": "uiopenurlcontext",
-      "source_file": "",
-      "source_location": ""
+      "norm_label": "task03a.spec.ts",
+      "source_file": "e2e/task03a.spec.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "playwright_config",
+      "label": "playwright.config.ts",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "@playwright/test",
+      "file_type": "code",
+      "norm_label": "playwright.config.ts",
+      "source_file": "playwright.config.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "ref_playwright_test",
+      "label": "@playwright/test",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "@playwright/test",
+      "file_type": "concept",
+      "norm_label": "@playwright/test",
+      "source_file": "package.json",
+      "source_location": "L24"
     },
     {
       "id": "review_audit_20260915_audit_uz",
@@ -14526,18 +14328,6 @@
       "source_location": "L150"
     },
     {
-      "id": "review_audit_20260915_audit_uz_a11_p2_\u049b\u0438\u0440\u0493\u0438\u0437\u0447\u0430_html_\u0434\u0430\u0441\u0442\u043b\u0430\u0431_\u0440\u0443\u0441_\u0442\u0438\u043b\u0438_\u0434\u0435\u0431_\u0431\u0435\u043b\u0433\u0438\u043b\u0430\u043d\u0433\u0430\u043d",
-      "label": "A11 \u00b7 P2 \u2014 \u049a\u0438\u0440\u0493\u0438\u0437\u0447\u0430 HTML \u0434\u0430\u0441\u0442\u043b\u0430\u0431 \u0440\u0443\u0441 \u0442\u0438\u043b\u0438 \u0434\u0435\u0431 \u0431\u0435\u043b\u0433\u0438\u043b\u0430\u043d\u0433\u0430\u043d",
-      "_origin": "ast",
-      "community": 47,
-      "community_name": "3. \u0423\u0441\u0442\u0443\u0432\u043e\u0440 \u0442\u043e\u043f\u0438\u043b\u043c\u0430\u043b\u0430\u0440",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "a11 \u00b7 p2 \u2014 \u049b\u0438\u0440\u0493\u0438\u0437\u0447\u0430 html \u0434\u0430\u0441\u0442\u043b\u0430\u0431 \u0440\u0443\u0441 \u0442\u0438\u043b\u0438 \u0434\u0435\u0431 \u0431\u0435\u043b\u0433\u0438\u043b\u0430\u043d\u0433\u0430\u043d",
-      "source_file": "review/audit-20260915/AUDIT_UZ.md",
-      "source_location": "L162"
-    },
-    {
       "id": "review_audit_20260915_audit_uz_\u0441\u043c\u0430\u0440\u0442_\u0446\u0435\u043d\u0442\u0440_impeccable_\u0442\u0435\u0445\u043d\u0438\u043a_\u0430\u0443\u0434\u0438\u0442",
       "label": "\u0421\u043c\u0430\u0440\u0442 \u0426\u0435\u043d\u0442\u0440 \u2014 Impeccable \u0442\u0435\u0445\u043d\u0438\u043a \u0430\u0443\u0434\u0438\u0442",
       "_origin": "ast",
@@ -14694,94 +14484,6 @@
       "source_location": "L7"
     },
     {
-      "id": "package_dependencies",
-      "label": "dependencies",
-      "_origin": "ast",
-      "community": 50,
-      "community_name": "dependencies",
-      "file_type": "code",
-      "norm_label": "dependencies",
-      "source_file": "package.json",
-      "source_location": "L14"
-    },
-    {
-      "id": "package_dependencies_capacitor_cli",
-      "label": "@capacitor/cli",
-      "_origin": "ast",
-      "community": 50,
-      "community_name": "dependencies",
-      "file_type": "code",
-      "norm_label": "@capacitor/cli",
-      "source_file": "package.json",
-      "source_location": "L15"
-    },
-    {
-      "id": "package_dependencies_capacitor_core",
-      "label": "@capacitor/core",
-      "_origin": "ast",
-      "community": 50,
-      "community_name": "dependencies",
-      "file_type": "code",
-      "norm_label": "@capacitor/core",
-      "source_file": "package.json",
-      "source_location": "L16"
-    },
-    {
-      "id": "package_dependencies_capacitor_ios",
-      "label": "@capacitor/ios",
-      "_origin": "ast",
-      "community": 50,
-      "community_name": "dependencies",
-      "file_type": "code",
-      "norm_label": "@capacitor/ios",
-      "source_file": "package.json",
-      "source_location": "L17"
-    },
-    {
-      "id": "package_dependencies_capacitor_push_notifications",
-      "label": "@capacitor/push-notifications",
-      "_origin": "ast",
-      "community": 50,
-      "community_name": "dependencies",
-      "file_type": "code",
-      "norm_label": "@capacitor/push-notifications",
-      "source_file": "package.json",
-      "source_location": "L18"
-    },
-    {
-      "id": "package_dependencies_next",
-      "label": "next",
-      "_origin": "ast",
-      "community": 50,
-      "community_name": "dependencies",
-      "file_type": "code",
-      "norm_label": "next",
-      "source_file": "package.json",
-      "source_location": "L19"
-    },
-    {
-      "id": "package_dependencies_react",
-      "label": "react",
-      "_origin": "ast",
-      "community": 50,
-      "community_name": "dependencies",
-      "file_type": "code",
-      "norm_label": "react",
-      "source_file": "package.json",
-      "source_location": "L20"
-    },
-    {
-      "id": "package_dependencies_react_dom",
-      "label": "react-dom",
-      "_origin": "ast",
-      "community": 50,
-      "community_name": "dependencies",
-      "file_type": "code",
-      "norm_label": "react-dom",
-      "source_file": "package.json",
-      "source_location": "L21"
-    },
-    {
       "id": "capbridgedplugin",
       "label": "CAPBridgedPlugin",
       "_origin": "ast",
@@ -14789,17 +14491,6 @@
       "community_name": "OfflineCatalogPlugin",
       "file_type": "code",
       "norm_label": "capbridgedplugin",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "capplugin",
-      "label": "CAPPlugin",
-      "_origin": "ast",
-      "community": 51,
-      "community_name": "OfflineCatalogPlugin",
-      "file_type": "code",
-      "norm_label": "capplugin",
       "source_file": "",
       "source_location": ""
     },
@@ -15125,17 +14816,6 @@
       "source_location": "L1"
     },
     {
-      "id": "src_components_offlinecatalogsync",
-      "label": "OfflineCatalogSync.tsx",
-      "_origin": "ast",
-      "community": 55,
-      "community_name": "[lang]/layout.tsx",
-      "file_type": "code",
-      "norm_label": "offlinecatalogsync.tsx",
-      "source_file": "src/components/OfflineCatalogSync.tsx",
-      "source_location": "L1"
-    },
-    {
       "id": "src_components_visitcounter",
       "label": "VisitCounter.tsx",
       "_origin": "ast",
@@ -15145,6 +14825,18 @@
       "norm_label": "visitcounter.tsx",
       "source_file": "src/components/VisitCounter.tsx",
       "source_location": "L1"
+    },
+    {
+      "id": "review_audit_20260915_audit_uz_a11_p2_\u049b\u0438\u0440\u0493\u0438\u0437\u0447\u0430_html_\u0434\u0430\u0441\u0442\u043b\u0430\u0431_\u0440\u0443\u0441_\u0442\u0438\u043b\u0438_\u0434\u0435\u0431_\u0431\u0435\u043b\u0433\u0438\u043b\u0430\u043d\u0433\u0430\u043d",
+      "label": "A11 \u00b7 P2 \u2014 \u049a\u0438\u0440\u0493\u0438\u0437\u0447\u0430 HTML \u0434\u0430\u0441\u0442\u043b\u0430\u0431 \u0440\u0443\u0441 \u0442\u0438\u043b\u0438 \u0434\u0435\u0431 \u0431\u0435\u043b\u0433\u0438\u043b\u0430\u043d\u0433\u0430\u043d",
+      "_origin": "ast",
+      "community": 55,
+      "community_name": "[lang]/layout.tsx",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "a11 \u00b7 p2 \u2014 \u049b\u0438\u0440\u0493\u0438\u0437\u0447\u0430 html \u0434\u0430\u0441\u0442\u043b\u0430\u0431 \u0440\u0443\u0441 \u0442\u0438\u043b\u0438 \u0434\u0435\u0431 \u0431\u0435\u043b\u0433\u0438\u043b\u0430\u043d\u0433\u0430\u043d",
+      "source_file": "review/audit-20260915/AUDIT_UZ.md",
+      "source_location": "L162"
     },
     {
       "id": "integrations_sbonus_server_shop_shop_catalog",
@@ -15235,22 +14927,11 @@
       "source_location": "L1"
     },
     {
-      "id": "src_app_lang_cart_page",
-      "label": "cart/page.tsx",
-      "_origin": "ast",
-      "community": 57,
-      "community_name": "I18nProvider.tsx",
-      "file_type": "code",
-      "norm_label": "cart/page.tsx",
-      "source_file": "src/app/[lang]/cart/page.tsx",
-      "source_location": "L1"
-    },
-    {
       "id": "src_app_lang_dev_gallery_page",
       "label": "gallery/page.tsx",
       "_origin": "ast",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "file_type": "code",
       "norm_label": "gallery/page.tsx",
       "source_file": "src/app/[lang]/dev/gallery/page.tsx",
@@ -15261,10 +14942,21 @@
       "label": "favorites/page.tsx",
       "_origin": "ast",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "file_type": "code",
       "norm_label": "favorites/page.tsx",
       "source_file": "src/app/[lang]/favorites/page.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_app_lang_product_id_page",
+      "label": "product/[id]/page.tsx",
+      "_origin": "ast",
+      "community": 57,
+      "community_name": "ProductCard.tsx",
+      "file_type": "code",
+      "norm_label": "product/[id]/page.tsx",
+      "source_file": "src/app/[lang]/product/[id]/page.tsx",
       "source_location": "L1"
     },
     {
@@ -15272,7 +14964,7 @@
       "label": "AddToCartButton.tsx",
       "_origin": "ast",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "file_type": "code",
       "norm_label": "addtocartbutton.tsx",
       "source_file": "src/components/AddToCartButton.tsx",
@@ -15283,7 +14975,7 @@
       "label": "CartReminder.tsx",
       "_origin": "ast",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "file_type": "code",
       "norm_label": "cartreminder.tsx",
       "source_file": "src/components/CartReminder.tsx",
@@ -15294,21 +14986,10 @@
       "label": "FavoriteButton.tsx",
       "_origin": "ast",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "file_type": "code",
       "norm_label": "favoritebutton.tsx",
       "source_file": "src/components/FavoriteButton.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_components_gallery",
-      "label": "Gallery.tsx",
-      "_origin": "ast",
-      "community": 57,
-      "community_name": "I18nProvider.tsx",
-      "file_type": "code",
-      "norm_label": "gallery.tsx",
-      "source_file": "src/components/Gallery.tsx",
       "source_location": "L1"
     },
     {
@@ -15316,43 +14997,10 @@
       "label": "ProductCard.tsx",
       "_origin": "ast",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "file_type": "code",
       "norm_label": "productcard.tsx",
       "source_file": "src/components/ProductCard.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_components_productimage",
-      "label": "ProductImage.tsx",
-      "_origin": "ast",
-      "community": 57,
-      "community_name": "I18nProvider.tsx",
-      "file_type": "code",
-      "norm_label": "productimage.tsx",
-      "source_file": "src/components/ProductImage.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_components_quantitystepper",
-      "label": "QuantityStepper.tsx",
-      "_origin": "ast",
-      "community": 57,
-      "community_name": "I18nProvider.tsx",
-      "file_type": "code",
-      "norm_label": "quantitystepper.tsx",
-      "source_file": "src/components/QuantityStepper.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_data_photos",
-      "label": "photos.ts",
-      "_origin": "ast",
-      "community": 57,
-      "community_name": "I18nProvider.tsx",
-      "file_type": "code",
-      "norm_label": "photos.ts",
-      "source_file": "src/data/photos.ts",
       "source_location": "L1"
     },
     {
@@ -15360,7 +15008,7 @@
       "label": "FavoritesProvider.tsx",
       "_origin": "ast",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "file_type": "code",
       "norm_label": "favoritesprovider.tsx",
       "source_file": "src/lib/favorites/FavoritesProvider.tsx",
@@ -15371,40 +15019,18 @@
       "label": "FavoritesContext",
       "_origin": "ast",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "file_type": "code",
       "norm_label": "favoritescontext",
       "source_file": "src/lib/favorites/FavoritesProvider.tsx",
       "source_location": "L36"
     },
     {
-      "id": "src_lib_i18n_i18nprovider",
-      "label": "I18nProvider.tsx",
-      "_origin": "ast",
-      "community": 57,
-      "community_name": "I18nProvider.tsx",
-      "file_type": "code",
-      "norm_label": "i18nprovider.tsx",
-      "source_file": "src/lib/i18n/I18nProvider.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_lib_i18n_i18nprovider_i18ncontext",
-      "label": "I18nContext",
-      "_origin": "ast",
-      "community": 57,
-      "community_name": "I18nProvider.tsx",
-      "file_type": "code",
-      "norm_label": "i18ncontext",
-      "source_file": "src/lib/i18n/I18nProvider.tsx",
-      "source_location": "L9"
-    },
-    {
       "id": "tests_favorites_test",
       "label": "favorites.test.ts",
       "_origin": "ast",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "file_type": "code",
       "norm_label": "favorites.test.ts",
       "source_file": "__tests__/favorites.test.ts",
@@ -15504,6 +15130,94 @@
       "source_location": "L1"
     },
     {
+      "id": "package_dependencies",
+      "label": "dependencies",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "package.json",
+      "file_type": "code",
+      "norm_label": "dependencies",
+      "source_file": "package.json",
+      "source_location": "L14"
+    },
+    {
+      "id": "package_dependencies_capacitor_cli",
+      "label": "@capacitor/cli",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "package.json",
+      "file_type": "code",
+      "norm_label": "@capacitor/cli",
+      "source_file": "package.json",
+      "source_location": "L15"
+    },
+    {
+      "id": "package_dependencies_capacitor_core",
+      "label": "@capacitor/core",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "package.json",
+      "file_type": "code",
+      "norm_label": "@capacitor/core",
+      "source_file": "package.json",
+      "source_location": "L16"
+    },
+    {
+      "id": "package_dependencies_capacitor_ios",
+      "label": "@capacitor/ios",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "package.json",
+      "file_type": "code",
+      "norm_label": "@capacitor/ios",
+      "source_file": "package.json",
+      "source_location": "L17"
+    },
+    {
+      "id": "package_dependencies_capacitor_push_notifications",
+      "label": "@capacitor/push-notifications",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "package.json",
+      "file_type": "code",
+      "norm_label": "@capacitor/push-notifications",
+      "source_file": "package.json",
+      "source_location": "L18"
+    },
+    {
+      "id": "package_dependencies_next",
+      "label": "next",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "package.json",
+      "file_type": "code",
+      "norm_label": "next",
+      "source_file": "package.json",
+      "source_location": "L19"
+    },
+    {
+      "id": "package_dependencies_react",
+      "label": "react",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "package.json",
+      "file_type": "code",
+      "norm_label": "react",
+      "source_file": "package.json",
+      "source_location": "L20"
+    },
+    {
+      "id": "package_dependencies_react_dom",
+      "label": "react-dom",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "package.json",
+      "file_type": "code",
+      "norm_label": "react-dom",
+      "source_file": "package.json",
+      "source_location": "L21"
+    },
+    {
       "id": "package_description",
       "label": "description",
       "_origin": "ast",
@@ -15513,6 +15227,94 @@
       "norm_label": "description",
       "source_file": "package.json",
       "source_location": "L5"
+    },
+    {
+      "id": "package_devdependencies",
+      "label": "devDependencies",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "package.json",
+      "file_type": "code",
+      "norm_label": "devdependencies",
+      "source_file": "package.json",
+      "source_location": "L23"
+    },
+    {
+      "id": "package_devdependencies_playwright_test",
+      "label": "@playwright/test",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "package.json",
+      "file_type": "code",
+      "norm_label": "@playwright/test",
+      "source_file": "package.json",
+      "source_location": "L24"
+    },
+    {
+      "id": "package_devdependencies_sharp",
+      "label": "sharp",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "package.json",
+      "file_type": "code",
+      "norm_label": "sharp",
+      "source_file": "package.json",
+      "source_location": "L28"
+    },
+    {
+      "id": "package_devdependencies_types_node",
+      "label": "@types/node",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "package.json",
+      "file_type": "code",
+      "norm_label": "@types/node",
+      "source_file": "package.json",
+      "source_location": "L25"
+    },
+    {
+      "id": "package_devdependencies_types_react",
+      "label": "@types/react",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "package.json",
+      "file_type": "code",
+      "norm_label": "@types/react",
+      "source_file": "package.json",
+      "source_location": "L26"
+    },
+    {
+      "id": "package_devdependencies_types_react_dom",
+      "label": "@types/react-dom",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "package.json",
+      "file_type": "code",
+      "norm_label": "@types/react-dom",
+      "source_file": "package.json",
+      "source_location": "L27"
+    },
+    {
+      "id": "package_devdependencies_typescript",
+      "label": "typescript",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "package.json",
+      "file_type": "code",
+      "norm_label": "typescript",
+      "source_file": "package.json",
+      "source_location": "L29"
+    },
+    {
+      "id": "package_devdependencies_vitest",
+      "label": "vitest",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "package.json",
+      "file_type": "code",
+      "norm_label": "vitest",
+      "source_file": "package.json",
+      "source_location": "L30"
     },
     {
       "id": "package_name",
@@ -15535,6 +15337,83 @@
       "norm_label": "private",
       "source_file": "package.json",
       "source_location": "L4"
+    },
+    {
+      "id": "package_scripts",
+      "label": "scripts",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "package.json",
+      "file_type": "code",
+      "norm_label": "scripts",
+      "source_file": "package.json",
+      "source_location": "L6"
+    },
+    {
+      "id": "package_scripts_build",
+      "label": "build",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "package.json",
+      "file_type": "code",
+      "norm_label": "build",
+      "source_file": "package.json",
+      "source_location": "L8"
+    },
+    {
+      "id": "package_scripts_dev",
+      "label": "dev",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "package.json",
+      "file_type": "code",
+      "norm_label": "dev",
+      "source_file": "package.json",
+      "source_location": "L7"
+    },
+    {
+      "id": "package_scripts_start",
+      "label": "start",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "package.json",
+      "file_type": "code",
+      "norm_label": "start",
+      "source_file": "package.json",
+      "source_location": "L9"
+    },
+    {
+      "id": "package_scripts_test",
+      "label": "test",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "package.json",
+      "file_type": "code",
+      "norm_label": "test",
+      "source_file": "package.json",
+      "source_location": "L11"
+    },
+    {
+      "id": "package_scripts_test_e2e",
+      "label": "test:e2e",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "package.json",
+      "file_type": "code",
+      "norm_label": "test:e2e",
+      "source_file": "package.json",
+      "source_location": "L12"
+    },
+    {
+      "id": "package_scripts_typecheck",
+      "label": "typecheck",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "package.json",
+      "file_type": "code",
+      "norm_label": "typecheck",
+      "source_file": "package.json",
+      "source_location": "L10"
     },
     {
       "id": "package_version",
@@ -16462,17 +16341,6 @@
       "source_location": "L1"
     },
     {
-      "id": "src_data_products_products",
-      "label": "products",
-      "_origin": "ast",
-      "community": 8,
-      "community_name": "knowledge.ts",
-      "file_type": "code",
-      "norm_label": "products",
-      "source_file": "src/data/products.ts",
-      "source_location": "L553"
-    },
-    {
       "id": "src_lib_assistant_knowledge",
       "label": "knowledge.ts",
       "_origin": "ast",
@@ -16495,26 +16363,59 @@
       "source_location": "L72"
     },
     {
-      "id": "tests_assistant_test",
-      "label": "assistant.test.ts",
+      "id": "src_lib_assistant_orders",
+      "label": "orders.ts",
       "_origin": "ast",
       "community": 8,
       "community_name": "knowledge.ts",
       "file_type": "code",
-      "norm_label": "assistant.test.ts",
-      "source_file": "__tests__/assistant.test.ts",
+      "norm_label": "orders.ts",
+      "source_file": "src/lib/assistant/orders.ts",
       "source_location": "L1"
     },
     {
-      "id": "tests_assistant_test_customer",
-      "label": "customer",
+      "id": "src_lib_assistant_orders_words",
+      "label": "WORDS",
       "_origin": "ast",
       "community": 8,
       "community_name": "knowledge.ts",
       "file_type": "code",
-      "norm_label": "customer",
-      "source_file": "__tests__/assistant.test.ts",
-      "source_location": "L95"
+      "norm_label": "words",
+      "source_file": "src/lib/assistant/orders.ts",
+      "source_location": "L11"
+    },
+    {
+      "id": "src_lib_assistant_prompt",
+      "label": "prompt.ts",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "knowledge.ts",
+      "file_type": "code",
+      "norm_label": "prompt.ts",
+      "source_file": "src/lib/assistant/prompt.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_lib_assistant_talk",
+      "label": "talk.ts",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "knowledge.ts",
+      "file_type": "code",
+      "norm_label": "talk.ts",
+      "source_file": "src/lib/assistant/talk.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_lib_assistant_talk_lang_name",
+      "label": "LANG_NAME",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "knowledge.ts",
+      "file_type": "code",
+      "norm_label": "lang_name",
+      "source_file": "src/lib/assistant/talk.ts",
+      "source_location": "L17"
     },
     {
       "id": "review_home_story_brief",
@@ -16807,6 +16708,17 @@
       "source_location": "L1"
     },
     {
+      "id": "src_components_gallery",
+      "label": "Gallery.tsx",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "ProductArt.tsx",
+      "file_type": "code",
+      "norm_label": "gallery.tsx",
+      "source_file": "src/components/Gallery.tsx",
+      "source_location": "L1"
+    },
+    {
       "id": "src_components_productart",
       "label": "ProductArt.tsx",
       "_origin": "ast",
@@ -16815,6 +16727,28 @@
       "file_type": "code",
       "norm_label": "productart.tsx",
       "source_file": "src/components/ProductArt.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_components_productimage",
+      "label": "ProductImage.tsx",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "ProductArt.tsx",
+      "file_type": "code",
+      "norm_label": "productimage.tsx",
+      "source_file": "src/components/ProductImage.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_data_photos",
+      "label": "photos.ts",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "ProductArt.tsx",
+      "file_type": "code",
+      "norm_label": "photos.ts",
+      "source_file": "src/data/photos.ts",
       "source_location": "L1"
     },
     {
@@ -17009,32 +16943,65 @@
       "label": "orders/route.ts",
       "_origin": "ast",
       "community": 96,
-      "community_name": "orders/route.ts",
+      "community_name": "orders/order.ts",
       "file_type": "code",
       "norm_label": "orders/route.ts",
       "source_file": "src/app/api/orders/route.ts",
       "source_location": "L1"
     },
     {
-      "id": "src_app_api_site_settings_route",
-      "label": "site-settings/route.ts",
+      "id": "src_data_products_demoproducts",
+      "label": "demoProducts",
       "_origin": "ast",
       "community": 96,
-      "community_name": "orders/route.ts",
+      "community_name": "orders/order.ts",
       "file_type": "code",
-      "norm_label": "site-settings/route.ts",
-      "source_file": "src/app/api/site-settings/route.ts",
+      "norm_label": "demoproducts",
+      "source_file": "src/data/products.ts",
+      "source_location": "L129"
+    },
+    {
+      "id": "src_lib_orders_order",
+      "label": "orders/order.ts",
+      "_origin": "ast",
+      "community": 96,
+      "community_name": "orders/order.ts",
+      "file_type": "code",
+      "norm_label": "orders/order.ts",
+      "source_file": "src/lib/orders/order.ts",
       "source_location": "L1"
     },
     {
-      "id": "src_app_api_site_settings_route_dynamic",
-      "label": "dynamic",
+      "id": "tests_orders_test",
+      "label": "orders.test.ts",
       "_origin": "ast",
       "community": 96,
-      "community_name": "orders/route.ts",
+      "community_name": "orders/order.ts",
       "file_type": "code",
-      "norm_label": "dynamic",
-      "source_file": "src/app/api/site-settings/route.ts",
+      "norm_label": "orders.test.ts",
+      "source_file": "__tests__/orders.test.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "tests_orders_test_base",
+      "label": "base",
+      "_origin": "ast",
+      "community": 96,
+      "community_name": "orders/order.ts",
+      "file_type": "code",
+      "norm_label": "base",
+      "source_file": "__tests__/orders.test.ts",
+      "source_location": "L11"
+    },
+    {
+      "id": "tests_orders_test_catalog",
+      "label": "catalog",
+      "_origin": "ast",
+      "community": 96,
+      "community_name": "orders/order.ts",
+      "file_type": "code",
+      "norm_label": "catalog",
+      "source_file": "__tests__/orders.test.ts",
       "source_location": "L6"
     },
     {
@@ -17069,6 +17036,28 @@
       "norm_label": "device/route.ts",
       "source_file": "src/app/api/push/device/route.ts",
       "source_location": "L1"
+    },
+    {
+      "id": "src_app_api_site_settings_route",
+      "label": "site-settings/route.ts",
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "currentSession",
+      "file_type": "code",
+      "norm_label": "site-settings/route.ts",
+      "source_file": "src/app/api/site-settings/route.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_app_api_site_settings_route_dynamic",
+      "label": "dynamic",
+      "_origin": "ast",
+      "community": 97,
+      "community_name": "currentSession",
+      "file_type": "code",
+      "norm_label": "dynamic",
+      "source_file": "src/app/api/site-settings/route.ts",
+      "source_location": "L6"
     },
     {
       "id": "src_app_panel_questions_route",
@@ -19245,6 +19234,18 @@
       "source_url": null
     },
     {
+      "id": "ref_node_crypto",
+      "label": "ref_node_crypto",
+      "_origin": "semantic",
+      "community": 0,
+      "community_name": "products.ts",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "ref_node_crypto",
+      "source_file": "",
+      "type": "external"
+    },
+    {
       "id": "src_data_1c_catalog",
       "label": "src_data_1c_catalog",
       "_origin": "semantic",
@@ -19341,6 +19342,18 @@
       "type": "external"
     },
     {
+      "id": "re",
+      "label": "re",
+      "_origin": "semantic",
+      "community": 1,
+      "community_name": "build_model.py",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "re",
+      "source_file": "",
+      "type": "external"
+    },
+    {
       "id": "shutil",
       "label": "shutil",
       "_origin": "semantic",
@@ -19401,14 +19414,14 @@
       "type": "external"
     },
     {
-      "id": "ref_node_crypto",
-      "label": "ref_node_crypto",
+      "id": "src_lib_assistant_local_detectlang",
+      "label": "src_lib_assistant_local_detectlang",
       "_origin": "semantic",
-      "community": 101,
-      "community_name": "sync-catalog.mjs",
+      "community": 100,
+      "community_name": "local.ts",
       "external": true,
       "file_type": "concept",
-      "norm_label": "ref_node_crypto",
+      "norm_label": "src_lib_assistant_local_detectlang",
       "source_file": "",
       "type": "external"
     },
@@ -19429,10 +19442,22 @@
       "label": "ref_server_only",
       "_origin": "semantic",
       "community": 102,
-      "community_name": "live.ts",
+      "community_name": "ref_server_only",
       "external": true,
       "file_type": "concept",
       "norm_label": "ref_server_only",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "ref_next_headers",
+      "label": "ref_next_headers",
+      "_origin": "semantic",
+      "community": 103,
+      "community_name": "route-helpers.ts",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "ref_next_headers",
       "source_file": "",
       "type": "external"
     },
@@ -19737,11 +19762,23 @@
       "type": "external"
     },
     {
+      "id": "src_components_home_story",
+      "label": "src_components_home_story",
+      "_origin": "semantic",
+      "community": 13,
+      "community_name": "Icons.tsx",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "src_components_home_story",
+      "source_file": "",
+      "type": "external"
+    },
+    {
       "id": "ref_node_assert_strict",
       "label": "ref_node_assert_strict",
       "_origin": "semantic",
       "community": 131,
-      "community_name": "@playwright/test",
+      "community_name": "ref_node_fs",
       "external": true,
       "file_type": "concept",
       "norm_label": "ref_node_assert_strict",
@@ -19753,10 +19790,22 @@
       "label": "ref_node_fs",
       "_origin": "semantic",
       "community": 131,
-      "community_name": "@playwright/test",
+      "community_name": "ref_node_fs",
       "external": true,
       "file_type": "concept",
       "norm_label": "ref_node_fs",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "src_components_account",
+      "label": "src_components_account",
+      "_origin": "semantic",
+      "community": 132,
+      "community_name": "checkout/page.tsx",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "src_components_account",
       "source_file": "",
       "type": "external"
     },
@@ -20061,18 +20110,6 @@
       "type": "external"
     },
     {
-      "id": "src_components_home_story",
-      "label": "src_components_home_story",
-      "_origin": "semantic",
-      "community": 25,
-      "community_name": "useI18n",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "src_components_home_story",
-      "source_file": "",
-      "type": "external"
-    },
-    {
       "id": "src_data_brand_logos",
       "label": "src_data_brand_logos",
       "_origin": "semantic",
@@ -20133,18 +20170,6 @@
       "type": "external"
     },
     {
-      "id": "ref_next_headers",
-      "label": "ref_next_headers",
-      "_origin": "semantic",
-      "community": 31,
-      "community_name": "route-helpers.ts",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "ref_next_headers",
-      "source_file": "",
-      "type": "external"
-    },
-    {
       "id": "src_components_assistant_chat",
       "label": "src_components_assistant_chat",
       "_origin": "semantic",
@@ -20189,18 +20214,6 @@
       "external": true,
       "file_type": "concept",
       "norm_label": "ref_vitest_config",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "ref_next_navigation",
-      "label": "ref_next_navigation",
-      "_origin": "semantic",
-      "community": 55,
-      "community_name": "[lang]/layout.tsx",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "ref_next_navigation",
       "source_file": "",
       "type": "external"
     },
@@ -20289,18 +20302,6 @@
       "type": "external"
     },
     {
-      "id": "re",
-      "label": "re",
-      "_origin": "semantic",
-      "community": 56,
-      "community_name": "shop_router.py",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "re",
-      "source_file": "",
-      "type": "external"
-    },
-    {
       "id": "secrets",
       "label": "secrets",
       "_origin": "semantic",
@@ -20361,23 +20362,11 @@
       "type": "external"
     },
     {
-      "id": "ref_next_image",
-      "label": "ref_next_image",
-      "_origin": "semantic",
-      "community": 57,
-      "community_name": "I18nProvider.tsx",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "ref_next_image",
-      "source_file": "",
-      "type": "external"
-    },
-    {
       "id": "ref_next_link",
       "label": "ref_next_link",
       "_origin": "semantic",
       "community": 57,
-      "community_name": "I18nProvider.tsx",
+      "community_name": "ProductCard.tsx",
       "external": true,
       "file_type": "concept",
       "norm_label": "ref_next_link",
@@ -20385,14 +20374,14 @@
       "type": "external"
     },
     {
-      "id": "src_components_account",
-      "label": "src_components_account",
+      "id": "ref_next_navigation",
+      "label": "ref_next_navigation",
       "_origin": "semantic",
-      "community": 7,
-      "community_name": "AccountView.tsx",
+      "community": 57,
+      "community_name": "ProductCard.tsx",
       "external": true,
       "file_type": "concept",
-      "norm_label": "src_components_account",
+      "norm_label": "ref_next_navigation",
       "source_file": "",
       "type": "external"
     },
@@ -20405,18 +20394,6 @@
       "external": true,
       "file_type": "concept",
       "norm_label": "src_components_home_merchandising",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "src_lib_assistant_local_detectlang",
-      "label": "src_lib_assistant_local_detectlang",
-      "_origin": "semantic",
-      "community": 8,
-      "community_name": "knowledge.ts",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "src_lib_assistant_local_detectlang",
       "source_file": "",
       "type": "external"
     },
@@ -20465,6 +20442,18 @@
       "external": true,
       "file_type": "concept",
       "norm_label": "io",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "ref_next_image",
+      "label": "ref_next_image",
+      "_origin": "semantic",
+      "community": 9,
+      "community_name": "ProductArt.tsx",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "ref_next_image",
       "source_file": "",
       "type": "external"
     },
@@ -58254,15 +58243,6 @@
       "weight": 1.0
     },
     {
-      "source": "e2e_checkout_spec",
-      "target": "test",
-      "relation": "dynamic_import",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "e2e/checkout.spec.ts"
-    },
-    {
       "source": "ios_app_app_appdelegate_appdelegate",
       "target": "uiapplicationdelegate",
       "relation": "implements",
@@ -63278,5 +63258,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "8115195f482d258a6a2f4fa71659847f4a44f65c"
+  "built_at_commit": "0e79b181d9c6d68075cc33f99bc16674bae7d4ba"
 }
