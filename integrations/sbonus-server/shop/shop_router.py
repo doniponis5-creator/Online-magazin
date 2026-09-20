@@ -356,14 +356,22 @@ def _notify_paid(order: ShopOrder) -> None:
     bonus_warn = (f"\n⚠ Бонусов списано {_money(spent)} вместо {_money(planned)} — проверьте скидку" if spent < planned else "")
     how = (f"🚚 Доставка: {delivery.get('city', '')}, {delivery.get('address', '')}"
            if delivery.get("method") == "delivery" else "🏬 Самовывоз из магазина")
+    # Ссылку на заказ показываем кнопкой: длинный адрес с токеном читать
+    # неудобно. Кнопка не прошла — уйдёт обычным текстом, как раньше.
+    order_url = f"{_site_base_url()}/{order.lang}/order/{order.order_id}?token={order.token}"
     try:
-        wa.send_text(order.customer_phone, (
-            f"Здравствуйте, {order.customer_name.split()[0]}!\n"
-            f"Оплата заказа {order.order_id} получена ✅\n💵 {money}\n\n"
-            f"{lines}\n{how}\n\n"
-            f"Сотрудник Smart Centr свяжется с вами. Статус заказа:\n"
-            f"{_site_base_url()}/{order.lang}/order/{order.order_id}?token={order.token}"
-        ))
+        from .shop_whatsapp import send_with_button
+        send_with_button(
+            order.customer_phone,
+            (
+                f"Здравствуйте, {order.customer_name.split()[0]}!\n"
+                f"Оплата заказа {order.order_id} получена ✅\n💵 {money}\n\n"
+                f"{lines}\n{how}\n\n"
+                f"Сотрудник Smart Centr свяжется с вами."
+            ),
+            "Статус заказа",
+            order_url,
+        )
     except Exception as error:
         logger.error(f"shop client notify failed {order.order_id}: {error}")
     try:
