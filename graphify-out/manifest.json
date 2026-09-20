@@ -168,33 +168,33 @@
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/001_shop_orders_migration.sql": {
-    "mtime": 1789746574.7940266,
-    "seen": 1789909057.025109,
-    "ast_hash": "",
+    "mtime": 1789643427.3177383,
+    "seen": 1789910546.9380808,
+    "ast_hash": "60be7d56cd2d952129a61d54d95ccbad",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/002_shop_catalog_migration.sql": {
-    "mtime": 1789746574.7941577,
-    "seen": 1789909057.02511,
-    "ast_hash": "",
+    "mtime": 1789647531.5057318,
+    "seen": 1789910546.9380817,
+    "ast_hash": "323907e0405b2bceb84a441153a980bb",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/003_shop_bonus_migration.sql": {
-    "mtime": 1789746574.7942019,
-    "seen": 1789909057.025111,
-    "ast_hash": "",
+    "mtime": 1789651724.3017156,
+    "seen": 1789910546.9380825,
+    "ast_hash": "dbc01a01d56350ab572dec625b30a088",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/004_shop_stats_migration.sql": {
-    "mtime": 1789746574.7942476,
-    "seen": 1789909057.0251122,
-    "ast_hash": "",
+    "mtime": 1789734501.4004698,
+    "seen": 1789910546.9380834,
+    "ast_hash": "73f2ccafbc5d694f742539899e5a6c61",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/005_shop_push_migration.sql": {
-    "mtime": 1789751144.4544964,
-    "seen": 1789909057.0251122,
-    "ast_hash": "",
+    "mtime": 1789792750.2917469,
+    "seen": 1789910546.9380841,
+    "ast_hash": "21cfa1d3a03bec41c0123ad74dd060df",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/__init__.py": {
@@ -216,9 +216,9 @@
     "semantic_hash": "de546f09e6a5fe14fc84b6f27abd37b5"
   },
   "integrations/sbonus-server/shop/shop_admin.py": {
-    "mtime": 1789897131.9264543,
-    "seen": 1789909330.7034752,
-    "ast_hash": "da04e4566dc42f9d0e56c331e60e6f37",
+    "mtime": 1789910533.7646976,
+    "seen": 1789910546.9380872,
+    "ast_hash": "f09fc585592ed9e594f5c60055833991",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/shop_catalog.py": {
@@ -3984,9 +3984,9 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/content.json": {
-    "mtime": 1789895669.5677044,
-    "seen": 1789909330.7035074,
-    "ast_hash": "22f59aadb9dc228bccc3ba67fcfe573f",
+    "mtime": 1789910377.5129027,
+    "seen": 1789910390.7570362,
+    "ast_hash": "cd40fdb9888e946565aa4bf5780d282f",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/current-1c.json": {
@@ -3996,15 +3996,15 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/downloaded-photos.json": {
-    "mtime": 1789895679.729561,
-    "seen": 1789909330.7035093,
-    "ast_hash": "14987df26f881acf5fb1a40b4de5117f",
+    "mtime": 1789910333.4154544,
+    "seen": 1789910341.3532379,
+    "ast_hash": "0ce5b201cd79593814f77a72c0430a9a",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos.json": {
-    "mtime": 1789895680.129889,
-    "seen": 1789909330.7035103,
-    "ast_hash": "813cbc4ebd6d8ce944aed4d67157a540",
+    "mtime": 1789910334.0196269,
+    "seen": 1789910341.3532405,
+    "ast_hash": "16651bca42f31350d182b0529c36a934",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/queue.json": {
@@ -4458,9 +4458,9 @@
     "semantic_hash": ""
   },
   "scripts/1c-export/download_builtin_photos.py": {
-    "mtime": 1789895669.5667043,
-    "seen": 1789909330.70361,
-    "ast_hash": "3b57d922766ae195b3527a3a2781d236",
+    "mtime": 1789910377.511899,
+    "seen": 1789910390.7750368,
+    "ast_hash": "f6479d287d91331fee3dcd10dd518797",
     "semantic_hash": ""
   },
   "scripts/1c-export/download_vacuum_photos.py": {
@@ -4488,9 +4488,9 @@
     "semantic_hash": ""
   },
   "scripts/1c-export/import_washer_enrichment.py": {
-    "mtime": 1789893324.4531932,
-    "seen": 1789909330.7036154,
-    "ast_hash": "ff5a0197fc160cba76b8199fe5922517",
+    "mtime": 1789910090.3820255,
+    "seen": 1789910100.2054377,
+    "ast_hash": "ecbdfaa3e070900db41cd722a4a39b96",
     "semantic_hash": ""
   },
   "scripts/1c-export/inspect_builtins.py": {
@@ -4548,9 +4548,9 @@
     "semantic_hash": ""
   },
   "scripts/1c-export/prepare_open_dishwasher_photos.cjs": {
-    "mtime": 1789909254.9779937,
-    "seen": 1789909330.7036238,
-    "ast_hash": "2998f7a6a16fb51000c2af5305a02492",
+    "mtime": 1789909983.5723062,
+    "seen": 1789910001.893333,
+    "ast_hash": "bb12d5f8ea36272764a9c8f5e64c3b51",
     "semantic_hash": ""
   },
   "scripts/1c-export/prepare_vacuum_package.py": {
@@ -4608,9 +4608,9 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/STATUS.md": {
-    "mtime": 1789909254.9779937,
-    "seen": 1789909330.7038007,
-    "ast_hash": "a43471574150fb87ef01a9ae96121c0d",
+    "mtime": 1789910377.5129027,
+    "seen": 1789910390.8166525,
+    "ast_hash": "cf8783ff5884261711056b018c135a2a",
     "semantic_hash": ""
   },
   "review/vacuum-enrichment/STATUS.md": {
@@ -4800,56 +4800,56 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos/midea-mh60c785x.jpg": {
-    "mtime": 1789895679.906,
-    "seen": 1789909330.7042093,
+    "mtime": 1789910333.598,
+    "seen": 1789910341.5036466,
     "ast_hash": "1d4ff9104effd0e66a92f04fce6e7469",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos/midea-mh60i370b.jpg": {
-    "mtime": 1789895679.933,
-    "seen": 1789909330.7042103,
+    "mtime": 1789910333.63,
+    "seen": 1789910341.503649,
     "ast_hash": "2a0292e9526bdf6aab8ccd6c4c1b9df2",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos/midea-mo69103gb.jpg": {
-    "mtime": 1789895679.96,
-    "seen": 1789909330.704211,
+    "mtime": 1789910333.721,
+    "seen": 1789910341.5036545,
     "ast_hash": "48bf42f7ada30e7ba419d407ac15ef21",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos/midea-mo72105gb.jpg": {
-    "mtime": 1789895680.008,
-    "seen": 1789909330.704212,
+    "mtime": 1789910333.769,
+    "seen": 1789910341.5036561,
     "ast_hash": "d0f8c2dcc678b487a74482f5f61c825c",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos/midea-mo72130gb.jpg": {
-    "mtime": 1789895680.048,
-    "seen": 1789909330.704213,
+    "mtime": 1789910333.811,
+    "seen": 1789910341.503658,
     "ast_hash": "84af30498c69ba32734be2bbb5eb094b",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos/velberg-vlb4512z.jpg": {
-    "mtime": 1789909266.212,
-    "seen": 1789909330.704214,
-    "ast_hash": "ba73e7a05fcbaf3a334e40861c711b98",
+    "mtime": 1789910334.129,
+    "seen": 1789910341.5036595,
+    "ast_hash": "febd240b7e94219e9f12e685056dbd2c",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos/velberg-vlb6003g.jpg": {
-    "mtime": 1789909266.247,
-    "seen": 1789909330.7042148,
+    "mtime": 1789910334.158,
+    "seen": 1789910341.5036612,
     "ast_hash": "543239fc9fdadcb0dcf1459ba0296b82",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos/velberg-vlb6012z.jpg": {
-    "mtime": 1789909266.282,
-    "seen": 1789909330.7042158,
+    "mtime": 1789910334.186,
+    "seen": 1789910341.5036626,
     "ast_hash": "0048c8b12b0a3027a5aa4c22690eb318",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos/velberg-vlb6088r.jpg": {
-    "mtime": 1789909266.316,
-    "seen": 1789909330.7042165,
+    "mtime": 1789910334.22,
+    "seen": 1789910341.503665,
     "ast_hash": "ae136b7fb96488346370839fc2ac4a45",
     "semantic_hash": ""
   },
@@ -4860,44 +4860,44 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/originals/midea-mh60c785x.webp": {
-    "mtime": 1789895675.1817484,
-    "seen": 1789909330.7042181,
+    "mtime": 1789910326.7843747,
+    "seen": 1789910341.5039227,
     "ast_hash": "63023c0fd079bbdc1591bcefd640ce59",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/originals/midea-mh60i370b.webp": {
-    "mtime": 1789895675.809098,
-    "seen": 1789909330.704219,
+    "mtime": 1789910327.2298234,
+    "seen": 1789910341.5039253,
     "ast_hash": "6bb4cf6e4fc8a149ef5e5fe0cd33ac99",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/originals/midea-mo69103gb.webp": {
-    "mtime": 1789895676.3109028,
-    "seen": 1789909330.7042198,
+    "mtime": 1789910328.519729,
+    "seen": 1789910341.5039313,
     "ast_hash": "4d157ca8bee853f0f73291d1e0598cc3",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/originals/midea-mo72105gb.webp": {
-    "mtime": 1789895677.256674,
-    "seen": 1789909330.7042208,
+    "mtime": 1789910329.4294152,
+    "seen": 1789910341.5039327,
     "ast_hash": "3133f23d12634251325105be099804fc",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/originals/midea-mo72130gb.webp": {
-    "mtime": 1789895678.2737477,
-    "seen": 1789909330.7042217,
+    "mtime": 1789910330.3669083,
+    "seen": 1789910341.503934,
     "ast_hash": "d614f16b6844618f02efdd5ea5ff0b71",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/originals/velberg-vlb4512z-open.png": {
-    "mtime": 1789909101.1456616,
-    "seen": 1789909330.7042224,
-    "ast_hash": "79745194b6f97e8cea85720383b54b2e",
+    "mtime": 1789909401.5267777,
+    "seen": 1789909419.4319212,
+    "ast_hash": "28cd0c3bd4ca58d69420c275f4163dc5",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/originals/velberg-vlb4512z.jpg": {
-    "mtime": 1789895678.6288106,
-    "seen": 1789909330.7042232,
+    "mtime": 1789910331.6319015,
+    "seen": 1789910341.5041506,
     "ast_hash": "ba7d7006b163450526e19a4b5f244ade",
     "semantic_hash": ""
   },
@@ -4908,8 +4908,8 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/originals/velberg-vlb6003g.jpg": {
-    "mtime": 1789895679.0158553,
-    "seen": 1789909330.704225,
+    "mtime": 1789910332.0057485,
+    "seen": 1789910341.5043807,
     "ast_hash": "85c9dba85c1023950813768804b05168",
     "semantic_hash": ""
   },
@@ -4920,8 +4920,8 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/originals/velberg-vlb6012z.jpg": {
-    "mtime": 1789895679.3752892,
-    "seen": 1789909330.7042267,
+    "mtime": 1789910332.3460255,
+    "seen": 1789910341.504591,
     "ast_hash": "c17b46af07e5ec5fba629d17e3caf947",
     "semantic_hash": ""
   },
@@ -4932,8 +4932,8 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/originals/velberg-vlb6088r.jpg": {
-    "mtime": 1789895679.729561,
-    "seen": 1789909330.7042284,
+    "mtime": 1789910332.6934867,
+    "seen": 1789910341.5048018,
     "ast_hash": "653f743c8e59052dc153585d47a841ba",
     "semantic_hash": ""
   },
@@ -6339,6 +6339,138 @@
     "mtime": 1789815590.1582112,
     "seen": 1789909330.704555,
     "ast_hash": "48d5c7da7dbfccf6455c5e34b5b7c2a1",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/final-photos/velberg-vlb6609w.jpg": {
+    "mtime": 1789910334.248,
+    "seen": 1789910341.503667,
+    "ast_hash": "7c25a0c9f21646112624eb87bf8c0afa",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/final-photos/velberg-vlb6617s.jpg": {
+    "mtime": 1789910334.276,
+    "seen": 1789910341.5036693,
+    "ast_hash": "480dc75dbd861cde5c3bad150bf9d568",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/velberg-vlb6609w-open.png": {
+    "mtime": 1789909879.1001363,
+    "seen": 1789910002.0119305,
+    "ast_hash": "01c225711e7f3fcd9365e1a916976a6b",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/velberg-vlb6609w.jpg": {
+    "mtime": 1789910333.0473752,
+    "seen": 1789910341.5050125,
+    "ast_hash": "119a7e302950a8c841322c6befa0a4ae",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/velberg-vlb6617s-open.png": {
+    "mtime": 1789909908.8709807,
+    "seen": 1789910002.0119343,
+    "ast_hash": "136caf97fb3200822cc73e91402449e8",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/velberg-vlb6617s.jpg": {
+    "mtime": 1789910333.4154544,
+    "seen": 1789910341.5052226,
+    "ast_hash": "405d01667547c1a389bf6971a7df9846",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/backups/prod-20260920-191545/backup.json": {
+    "mtime": 1789910146.0209763,
+    "seen": 1789910341.352993,
+    "ast_hash": "a4a14ae8e8c43480c33d074fe48cda82",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/backups/prod-20260920-191545/\u0426\u0411-00001547-1.jpg": {
+    "mtime": 1789910145.92823,
+    "seen": 1789910341.5034113,
+    "ast_hash": "1d4ff9104effd0e66a92f04fce6e7469",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/backups/prod-20260920-191545/\u0426\u0411-00002138-1.jpg": {
+    "mtime": 1789910145.9372084,
+    "seen": 1789910341.503414,
+    "ast_hash": "2a0292e9526bdf6aab8ccd6c4c1b9df2",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/backups/prod-20260920-191545/\u0426\u0411-00002142-1.jpg": {
+    "mtime": 1789910145.9709778,
+    "seen": 1789910341.503416,
+    "ast_hash": "84af30498c69ba32734be2bbb5eb094b",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/backups/prod-20260920-191545/\u0426\u0411-00002147-1.jpg": {
+    "mtime": 1789910145.945017,
+    "seen": 1789910341.5034182,
+    "ast_hash": "48bf42f7ada30e7ba419d407ac15ef21",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/backups/prod-20260920-191545/\u0426\u0411-00002241-1.jpg": {
+    "mtime": 1789910145.9619777,
+    "seen": 1789910341.5034199,
+    "ast_hash": "d0f8c2dcc678b487a74482f5f61c825c",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/backups/prod-20260920-191545/\u0426\u0411-00002332-1.jpg": {
+    "mtime": 1789910145.9539776,
+    "seen": 1789910341.5034218,
+    "ast_hash": "5440f9a24350a890ae02625eaf9a72c0",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/backups/prod-20260920-191545/\u0426\u0411-00002489-1.jpg": {
+    "mtime": 1789910145.978978,
+    "seen": 1789910341.5034235,
+    "ast_hash": "ef8a590f7433f7866a24b421bd4e6ad8",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/backups/prod-20260920-191545/\u0426\u0411-00002490-1.jpg": {
+    "mtime": 1789910145.9879766,
+    "seen": 1789910341.5034251,
+    "ast_hash": "cb69d0d0b38679cf62a451a914908182",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/backups/prod-20260920-191545/\u0426\u0411-00002491-1.jpg": {
+    "mtime": 1789910145.9959779,
+    "seen": 1789910341.5034268,
+    "ast_hash": "1e7a103d2bd84e8a4a4deff7d5b1a8e6",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/backups/prod-20260920-191545/\u0426\u0411-00002492-1.jpg": {
+    "mtime": 1789910146.005976,
+    "seen": 1789910341.5034287,
+    "ast_hash": "9dbfdd8203b861907a8c60b8715e59bc",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/final-photos/midea-mh60i770gb.jpg": {
+    "mtime": 1789910333.693,
+    "seen": 1789910341.5036507,
+    "ast_hash": "de2592e33d7ce1cd8ef3a3df1bff21d5",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/final-photos/midea-mo17000gb.jpg": {
+    "mtime": 1789910333.897,
+    "seen": 1789910341.5036526,
+    "ast_hash": "43a9d6638b91bc5f8874f0e87d754451",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/midea-mh60i770gb.png": {
+    "mtime": 1789910328.1410463,
+    "seen": 1789910341.5039272,
+    "ast_hash": "bc2cc33e9c3e46ed36d15a68aa1481dc",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/midea-mo17000gb.png": {
+    "mtime": 1789910331.284735,
+    "seen": 1789910341.5039291,
+    "ast_hash": "1c039a35763b3a7dedfafe1c8787780c",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/midea-mh60i770gb-alt.png": {
+    "mtime": 1789910356.748201,
+    "seen": 1789910390.8797252,
+    "ast_hash": "463fec1f0fd793871166ed3d89e00083",
     "semantic_hash": ""
   }
 }
