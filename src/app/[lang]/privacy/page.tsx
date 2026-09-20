@@ -4,7 +4,7 @@ import { isLang, type Lang } from '@/lib/i18n/config'
 import { getPrivacy, PRIVACY_UPDATED, SHOP_CONTACT } from '@/data/privacy'
 
 export const metadata: Metadata = {
-  title: 'Политика конфиденциальности — Smart Centr',
+  title: 'Политика конфиденциальности — Смарт Центр',
   description:
     'Какие данные собирают сайт smarket.kg и приложение «S Маркет», зачем они нужны и кому передаются.',
 }

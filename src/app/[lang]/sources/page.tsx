@@ -5,7 +5,7 @@ import { getDictionary } from '@/lib/i18n/dictionaries'
 import { PEXELS_LICENSE, photoSources } from '@/data/photo-sources'
 
 export const metadata: Metadata = {
-  title: 'Источники изображений — Smart Centr (демо)',
+  title: 'Источники изображений — Смарт Центр (демо)',
 }
 
 // Статическая страница: активные баннерные фото + честный архив прежних.

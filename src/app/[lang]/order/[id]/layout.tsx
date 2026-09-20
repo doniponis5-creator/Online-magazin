@@ -6,7 +6,7 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   const { lang } = await params
   const t = getDictionary(isLang(lang) ? lang : defaultLang)
   // страница заказа личная — не индексируем
-  return { title: `${t.order.title} — Smart Centr`, robots: { index: false, follow: false } }
+  return { title: `${t.order.title} — Смарт Центр`, robots: { index: false, follow: false } }
 }
 
 export default function Layout({ children }: { children: React.ReactNode }) {

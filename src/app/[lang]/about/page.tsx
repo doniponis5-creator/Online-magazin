@@ -15,7 +15,7 @@ import {
 } from '@/data/contacts'
 
 export const metadata: Metadata = {
-  title: 'О магазине — Smart Centr',
+  title: 'О магазине — Смарт Центр',
   description:
     'Smart Centr — магазин электроники и бытовой техники в Араванском районе Ошской области. Работаем с 2011 года. Официальная гарантия, доставка по Кыргызстану.',
 }

@@ -1,7 +1,7 @@
 import { CatalogView } from '@/components/CatalogView'
 
 export const metadata = {
-  title: 'Каталог — Smart Centr',
+  title: 'Каталог — Смарт Центр',
 }
 
 // Состояние каталога живёт в URL и читается клиентом; страница статична.

@@ -12,9 +12,23 @@ import { address, developer, instagram, phones, since } from '@/data/contacts'
 /** Боевой адрес. Меняется только вместе с доменом. */
 export const SITE_URL = 'https://smarket.kg'
 
-/** Как магазин называют люди. Оба имени должны находиться поиском. */
-export const SITE_NAME = 'Smart Centr'
-export const SITE_ALT_NAMES = ['S MARKET', 'Смарт Центр', 'smarket', 'smartcentr', 'СМАРТ ЦЕНТР']
+/**
+ * Как магазин называют люди. На вывеске — «Смарт Центр» кириллицей, и именно
+ * так его набирают в поиске соседи. Латинское «Smart Centr» и «S MARKET» —
+ * те же мы, поэтому они идут вторыми именами: поиск связывает все написания
+ * с одним магазином и не делит вес между ними.
+ */
+export const SITE_NAME = 'Смарт Центр'
+export const SITE_ALT_NAMES = [
+  'Smart Centr',
+  'SmartCentr',
+  'smartcentr',
+  'S MARKET',
+  'SMARKET',
+  'smarket',
+  'СМАРТ ЦЕНТР',
+  'Смарт Центр Ош',
+]
 
 export const canonical = (path: string) => `${SITE_URL}${path}`
 

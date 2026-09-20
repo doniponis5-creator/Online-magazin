@@ -6,7 +6,7 @@ import '@/components/account.css'
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params
   return {
-    title: `${lang === 'ky' ? 'Жеке кабинет' : 'Личный кабинет'} SBonus — Smart Centr`,
+    title: `${lang === 'ky' ? 'Жеке кабинет' : 'Личный кабинет'} SBonus — Смарт Центр`,
     robots: { index: false },
   }
 }

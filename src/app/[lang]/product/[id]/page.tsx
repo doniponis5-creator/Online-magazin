@@ -146,11 +146,11 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
   const name = lang === 'ky' ? product.nameKy : product.nameRu
   const text = (lang === 'ky' ? product.descKy : product.descRu)
     || (lang === 'ky'
-      ? `${name} — Smart Centr (S MARKET) дүкөнүндө. Кыргызстан боюнча жеткирүү.`
+      ? `${name} — Смарт Центр (S MARKET) дүкөнүндө. Кыргызстан боюнча жеткирүү.`
       : `${name} — купить в Smart Centr (S MARKET). Доставка по всему Кыргызстану.`)
   const path = `/${lang}/product/${product.id}`
   return {
-    title: `${name} — Smart Centr (S MARKET)`,
+    title: `${name} — Смарт Центр (S MARKET)`,
     description: text,
     alternates: {
       canonical: path,
