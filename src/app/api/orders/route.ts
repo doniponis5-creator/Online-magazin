@@ -1,5 +1,5 @@
 import { getProduct } from '@/data/products'
-import { getProfile, getSiteSettings } from '@/lib/customer/gateway'
+import { getProfile, getSiteSettings, isDemoPhone } from '@/lib/customer/gateway'
 import { createOrder } from '@/lib/orders/gateway'
 import { applyBonus, validateOrder, type OrderRequest } from '@/lib/orders/order'
 import { currentSession, errorResponse } from '../customer/route-helpers'
@@ -36,6 +36,12 @@ export async function POST(request: Request) {
   }
 
   let order = result.order
+  // Заказ с демо-номера Apple: номер выдуманный, позвонить по нему некому.
+  // Не блокируем — проверяющий должен пройти путь до конца, — но помечаем,
+  // чтобы в 1С такой заказ нельзя было спутать с настоящим и отгрузить.
+  if (session && isDemoPhone(session.phone)) {
+    order = { ...order, comment: `ПРОВЕРКА APPLE — не отгружать. ${order.comment}`.trim() }
+  }
   if (Number(body.bonus) > 0) {
     if (!session) return Response.json({ ok: false, errors: ['login'] }, { status: 401 })
     try {
