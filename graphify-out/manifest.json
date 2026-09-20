@@ -169,32 +169,32 @@
   },
   "integrations/sbonus-server/shop/001_shop_orders_migration.sql": {
     "mtime": 1789643427.3177383,
-    "seen": 1789910546.9380808,
-    "ast_hash": "60be7d56cd2d952129a61d54d95ccbad",
+    "seen": 1789911678.3107264,
+    "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/002_shop_catalog_migration.sql": {
     "mtime": 1789647531.5057318,
-    "seen": 1789910546.9380817,
-    "ast_hash": "323907e0405b2bceb84a441153a980bb",
+    "seen": 1789911678.3107274,
+    "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/003_shop_bonus_migration.sql": {
     "mtime": 1789651724.3017156,
-    "seen": 1789910546.9380825,
-    "ast_hash": "dbc01a01d56350ab572dec625b30a088",
+    "seen": 1789911678.3107285,
+    "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/004_shop_stats_migration.sql": {
     "mtime": 1789734501.4004698,
-    "seen": 1789910546.9380834,
-    "ast_hash": "73f2ccafbc5d694f742539899e5a6c61",
+    "seen": 1789911678.3107293,
+    "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/005_shop_push_migration.sql": {
     "mtime": 1789792750.2917469,
-    "seen": 1789910546.9380841,
-    "ast_hash": "21cfa1d3a03bec41c0123ad74dd060df",
+    "seen": 1789911678.31073,
+    "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/__init__.py": {
@@ -444,10 +444,10 @@
     "semantic_hash": "ff785eb40f9020d7105ecab3944e1bb2"
   },
   "src/app/(entry)/layout.tsx": {
-    "mtime": 1789636212.7381322,
-    "seen": 1789909330.7036555,
-    "ast_hash": "8ddcf0aee8ea49e137e1cf345fa7fbb3",
-    "semantic_hash": "8ddcf0aee8ea49e137e1cf345fa7fbb3"
+    "mtime": 1789911632.5952015,
+    "seen": 1789911678.3108554,
+    "ast_hash": "c1edd4c84e3b24057f03cb96d1ff301b",
+    "semantic_hash": ""
   },
   "src/app/(entry)/page.tsx": {
     "mtime": 1789465627.0056534,
@@ -456,15 +456,15 @@
     "semantic_hash": ""
   },
   "src/app/[lang]/account/page.tsx": {
-    "mtime": 1789652057.749524,
-    "seen": 1789909330.703659,
-    "ast_hash": "fecb447ac127b42e99393c892b5966b1",
-    "semantic_hash": "fecb447ac127b42e99393c892b5966b1"
+    "mtime": 1789911619.736327,
+    "seen": 1789911678.3108578,
+    "ast_hash": "5462a49646234e3ce797dd31c5900940",
+    "semantic_hash": ""
   },
   "src/app/[lang]/cart/layout.tsx": {
-    "mtime": 1789465627.0056534,
-    "seen": 1789909330.7036598,
-    "ast_hash": "bb2662d6f729af7640bf720694efca1b",
+    "mtime": 1789911619.8652349,
+    "seen": 1789911678.310858,
+    "ast_hash": "5b3f31dcdf6b3ed0ce848646dff27a91",
     "semantic_hash": ""
   },
   "src/app/[lang]/cart/page.tsx": {
@@ -474,15 +474,15 @@
     "semantic_hash": "aa93e43d09ac1b51ec6236e3bb339c86"
   },
   "src/app/[lang]/catalog/page.tsx": {
-    "mtime": 1789636212.7028747,
-    "seen": 1789909330.7036622,
-    "ast_hash": "78faa8b2f680f1ae33ba02cdbd77a646",
-    "semantic_hash": "78faa8b2f680f1ae33ba02cdbd77a646"
+    "mtime": 1789911619.9764426,
+    "seen": 1789911678.3108594,
+    "ast_hash": "33ef01fc8921ca2c0ad7afe1176808b6",
+    "semantic_hash": ""
   },
   "src/app/[lang]/checkout/layout.tsx": {
-    "mtime": 1789465627.0056534,
-    "seen": 1789909330.703663,
-    "ast_hash": "877b51b0f7d56551b79866bcdd2b52e9",
+    "mtime": 1789911620.0881658,
+    "seen": 1789911678.3108604,
+    "ast_hash": "366e35cc8b327237a6066467d786d8f0",
     "semantic_hash": ""
   },
   "src/app/[lang]/checkout/page.tsx": {
@@ -498,9 +498,9 @@
     "semantic_hash": "a0df14366190272a09fc47f85857d58a"
   },
   "src/app/[lang]/favorites/layout.tsx": {
-    "mtime": 1789465627.0056534,
-    "seen": 1789909330.7036667,
-    "ast_hash": "51ad34dde9778f93885e861bb620940a",
+    "mtime": 1789911620.2032428,
+    "seen": 1789911678.3108623,
+    "ast_hash": "892db6d2b845ac4b501c912801ee8d5f",
     "semantic_hash": ""
   },
   "src/app/[lang]/favorites/page.tsx": {
@@ -522,10 +522,10 @@
     "semantic_hash": ""
   },
   "src/app/[lang]/order/[id]/layout.tsx": {
-    "mtime": 1789643270.1473043,
-    "seen": 1789909330.7036707,
-    "ast_hash": "920c12de3791103e7fcbf365cb24ed13",
-    "semantic_hash": "920c12de3791103e7fcbf365cb24ed13"
+    "mtime": 1789911620.3216295,
+    "seen": 1789911678.3108652,
+    "ast_hash": "38e3b64e9aae888e3bc3f39ab7469b32",
+    "semantic_hash": ""
   },
   "src/app/[lang]/order/[id]/page.tsx": {
     "mtime": 1789652119.871775,
@@ -540,16 +540,16 @@
     "semantic_hash": ""
   },
   "src/app/[lang]/product/[id]/page.tsx": {
-    "mtime": 1789821116.309651,
-    "seen": 1789909330.7036746,
-    "ast_hash": "ab9b6d53d63ae0277e9cfb37fabc0947",
+    "mtime": 1789911620.5410311,
+    "seen": 1789911678.310868,
+    "ast_hash": "30bbc13e4ed5ad0fee76ea7c9ce49b77",
     "semantic_hash": ""
   },
   "src/app/[lang]/sources/page.tsx": {
-    "mtime": 1789193434.0644586,
-    "seen": 1789909330.7036757,
-    "ast_hash": "41398e68050e3b31dfbc0ccd9bae5c44",
-    "semantic_hash": "41398e68050e3b31dfbc0ccd9bae5c44"
+    "mtime": 1789911620.6505287,
+    "seen": 1789911678.3108685,
+    "ast_hash": "196defbbfc48efdb702f017a13ec3462",
+    "semantic_hash": ""
   },
   "src/app/api/customer/me/route.ts": {
     "mtime": 1789821116.309651,
@@ -894,9 +894,9 @@
     "semantic_hash": "ab578875f27d0e418c615aed2d950578"
   },
   "src/lib/i18n/dictionaries.ts": {
-    "mtime": 1789897132.8781307,
-    "seen": 1789909330.7037468,
-    "ast_hash": "40ffeb1b62df333fb1eaa6b4b7ba40ca",
+    "mtime": 1789911612.2127087,
+    "seen": 1789911678.3109202,
+    "ast_hash": "1158d87cc4dc2d42a21ccfa549b61280",
     "semantic_hash": ""
   },
   "src/lib/links.ts": {
@@ -3684,9 +3684,9 @@
     "semantic_hash": ""
   },
   "src/app/[lang]/privacy/page.tsx": {
-    "mtime": 1789821115.4906228,
-    "seen": 1789909330.7036738,
-    "ast_hash": "26b51df23750b3034b16cbdb2e7e5338",
+    "mtime": 1789911620.4315732,
+    "seen": 1789911678.3108673,
+    "ast_hash": "dedb13b58a130ec1be69dc06f1144da3",
     "semantic_hash": ""
   },
   "src/data/privacy.ts": {
@@ -3738,9 +3738,9 @@
     "semantic_hash": ""
   },
   "src/app/[lang]/about/page.tsx": {
-    "mtime": 1789821116.3076468,
-    "seen": 1789909330.7036574,
-    "ast_hash": "314b5b0646f2b497416add3c040e5f0a",
+    "mtime": 1789911619.6300907,
+    "seen": 1789911678.310857,
+    "ast_hash": "0527aa66d4f9d25fd68077f3a961d60d",
     "semantic_hash": ""
   },
   "src/app/api/site-settings/route.ts": {
@@ -3792,9 +3792,9 @@
     "semantic_hash": ""
   },
   "src/lib/seo.ts": {
-    "mtime": 1789821116.3198805,
-    "seen": 1789909330.7037554,
-    "ast_hash": "ebba179c16223d9167880dcfeeaf7824",
+    "mtime": 1789911612.2127087,
+    "seen": 1789911678.3109267,
+    "ast_hash": "b32e310d4850a18ace101f3f8f353ed9",
     "semantic_hash": ""
   },
   "public/instagram/profile.webp": {
@@ -3984,9 +3984,9 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/content.json": {
-    "mtime": 1789910377.5129027,
-    "seen": 1789910390.7570362,
-    "ast_hash": "cd40fdb9888e946565aa4bf5780d282f",
+    "mtime": 1789911692.8479471,
+    "seen": 1789911708.062901,
+    "ast_hash": "1c795621723b241086236ccef196c59e",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/current-1c.json": {
@@ -3996,15 +3996,15 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/downloaded-photos.json": {
-    "mtime": 1789910333.4154544,
-    "seen": 1789910341.3532379,
-    "ast_hash": "0ce5b201cd79593814f77a72c0430a9a",
+    "mtime": 1789911276.647562,
+    "seen": 1789911364.109239,
+    "ast_hash": "a22bdb4151073f5388d3b6d5b5e56c31",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos.json": {
-    "mtime": 1789910334.0196269,
-    "seen": 1789910341.3532405,
-    "ast_hash": "16651bca42f31350d182b0529c36a934",
+    "mtime": 1789911700.6281044,
+    "seen": 1789911708.0633655,
+    "ast_hash": "05db9cc6ab2a15e3e564cd1d8a97314d",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/queue.json": {
@@ -4458,9 +4458,9 @@
     "semantic_hash": ""
   },
   "scripts/1c-export/download_builtin_photos.py": {
-    "mtime": 1789910377.511899,
-    "seen": 1789910390.7750368,
-    "ast_hash": "f6479d287d91331fee3dcd10dd518797",
+    "mtime": 1789911263.9015377,
+    "seen": 1789911364.118946,
+    "ast_hash": "6b1a2ddc8093de74d13a5c71c288b25c",
     "semantic_hash": ""
   },
   "scripts/1c-export/download_vacuum_photos.py": {
@@ -4608,9 +4608,9 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/STATUS.md": {
-    "mtime": 1789910377.5129027,
-    "seen": 1789910390.8166525,
-    "ast_hash": "cf8783ff5884261711056b018c135a2a",
+    "mtime": 1789911692.8479471,
+    "seen": 1789911708.12653,
+    "ast_hash": "ac82481ec6b9b1af10a9ede93d88b78b",
     "semantic_hash": ""
   },
   "review/vacuum-enrichment/STATUS.md": {
@@ -4800,56 +4800,56 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos/midea-mh60c785x.jpg": {
-    "mtime": 1789910333.598,
-    "seen": 1789910341.5036466,
+    "mtime": 1789911276.811,
+    "seen": 1789911364.2451391,
     "ast_hash": "1d4ff9104effd0e66a92f04fce6e7469",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos/midea-mh60i370b.jpg": {
-    "mtime": 1789910333.63,
-    "seen": 1789910341.503649,
+    "mtime": 1789911276.829,
+    "seen": 1789911364.2451408,
     "ast_hash": "2a0292e9526bdf6aab8ccd6c4c1b9df2",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos/midea-mo69103gb.jpg": {
-    "mtime": 1789910333.721,
-    "seen": 1789910341.5036545,
+    "mtime": 1789911276.868,
+    "seen": 1789911364.245783,
     "ast_hash": "48bf42f7ada30e7ba419d407ac15ef21",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos/midea-mo72105gb.jpg": {
-    "mtime": 1789910333.769,
-    "seen": 1789910341.5036561,
+    "mtime": 1789911276.915,
+    "seen": 1789911364.245785,
     "ast_hash": "d0f8c2dcc678b487a74482f5f61c825c",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos/midea-mo72130gb.jpg": {
-    "mtime": 1789910333.811,
-    "seen": 1789910341.503658,
+    "mtime": 1789911276.955,
+    "seen": 1789911364.245787,
     "ast_hash": "84af30498c69ba32734be2bbb5eb094b",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos/velberg-vlb4512z.jpg": {
-    "mtime": 1789910334.129,
-    "seen": 1789910341.5036595,
+    "mtime": 1789911277.354,
+    "seen": 1789911364.2457905,
     "ast_hash": "febd240b7e94219e9f12e685056dbd2c",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos/velberg-vlb6003g.jpg": {
-    "mtime": 1789910334.158,
-    "seen": 1789910341.5036612,
+    "mtime": 1789911277.386,
+    "seen": 1789911364.2457926,
     "ast_hash": "543239fc9fdadcb0dcf1459ba0296b82",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos/velberg-vlb6012z.jpg": {
-    "mtime": 1789910334.186,
-    "seen": 1789910341.5036626,
+    "mtime": 1789911277.417,
+    "seen": 1789911364.245794,
     "ast_hash": "0048c8b12b0a3027a5aa4c22690eb318",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos/velberg-vlb6088r.jpg": {
-    "mtime": 1789910334.22,
-    "seen": 1789910341.503665,
+    "mtime": 1789911277.448,
+    "seen": 1789911364.2457952,
     "ast_hash": "ae136b7fb96488346370839fc2ac4a45",
     "semantic_hash": ""
   },
@@ -4860,32 +4860,32 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/originals/midea-mh60c785x.webp": {
-    "mtime": 1789910326.7843747,
-    "seen": 1789910341.5039227,
+    "mtime": 1789911269.6907268,
+    "seen": 1789911364.2462292,
     "ast_hash": "63023c0fd079bbdc1591bcefd640ce59",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/originals/midea-mh60i370b.webp": {
-    "mtime": 1789910327.2298234,
-    "seen": 1789910341.5039253,
+    "mtime": 1789911270.197319,
+    "seen": 1789911364.2462313,
     "ast_hash": "6bb4cf6e4fc8a149ef5e5fe0cd33ac99",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/originals/midea-mo69103gb.webp": {
-    "mtime": 1789910328.519729,
-    "seen": 1789910341.5039313,
+    "mtime": 1789911270.5875494,
+    "seen": 1789911364.2477179,
     "ast_hash": "4d157ca8bee853f0f73291d1e0598cc3",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/originals/midea-mo72105gb.webp": {
-    "mtime": 1789910329.4294152,
-    "seen": 1789910341.5039327,
+    "mtime": 1789911271.5696874,
+    "seen": 1789911364.2477198,
     "ast_hash": "3133f23d12634251325105be099804fc",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/originals/midea-mo72130gb.webp": {
-    "mtime": 1789910330.3669083,
-    "seen": 1789910341.503934,
+    "mtime": 1789911272.4063146,
+    "seen": 1789911364.2477217,
     "ast_hash": "d614f16b6844618f02efdd5ea5ff0b71",
     "semantic_hash": ""
   },
@@ -4896,8 +4896,8 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/originals/velberg-vlb4512z.jpg": {
-    "mtime": 1789910331.6319015,
-    "seen": 1789910341.5041506,
+    "mtime": 1789911275.2332854,
+    "seen": 1789911364.2479365,
     "ast_hash": "ba7d7006b163450526e19a4b5f244ade",
     "semantic_hash": ""
   },
@@ -4908,8 +4908,8 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/originals/velberg-vlb6003g.jpg": {
-    "mtime": 1789910332.0057485,
-    "seen": 1789910341.5043807,
+    "mtime": 1789911275.628604,
+    "seen": 1789911364.2481453,
     "ast_hash": "85c9dba85c1023950813768804b05168",
     "semantic_hash": ""
   },
@@ -4920,8 +4920,8 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/originals/velberg-vlb6012z.jpg": {
-    "mtime": 1789910332.3460255,
-    "seen": 1789910341.504591,
+    "mtime": 1789911275.9550092,
+    "seen": 1789911364.2483742,
     "ast_hash": "c17b46af07e5ec5fba629d17e3caf947",
     "semantic_hash": ""
   },
@@ -4932,8 +4932,8 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/originals/velberg-vlb6088r.jpg": {
-    "mtime": 1789910332.6934867,
-    "seen": 1789910341.5048018,
+    "mtime": 1789911276.1861875,
+    "seen": 1789911364.2485857,
     "ast_hash": "653f743c8e59052dc153585d47a841ba",
     "semantic_hash": ""
   },
@@ -6342,14 +6342,14 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos/velberg-vlb6609w.jpg": {
-    "mtime": 1789910334.248,
-    "seen": 1789910341.503667,
+    "mtime": 1789911277.48,
+    "seen": 1789911364.2457972,
     "ast_hash": "7c25a0c9f21646112624eb87bf8c0afa",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos/velberg-vlb6617s.jpg": {
-    "mtime": 1789910334.276,
-    "seen": 1789910341.5036693,
+    "mtime": 1789911277.51,
+    "seen": 1789911364.2457986,
     "ast_hash": "480dc75dbd861cde5c3bad150bf9d568",
     "semantic_hash": ""
   },
@@ -6360,8 +6360,8 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/originals/velberg-vlb6609w.jpg": {
-    "mtime": 1789910333.0473752,
-    "seen": 1789910341.5050125,
+    "mtime": 1789911276.4200757,
+    "seen": 1789911364.2487934,
     "ast_hash": "119a7e302950a8c841322c6befa0a4ae",
     "semantic_hash": ""
   },
@@ -6372,8 +6372,8 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/originals/velberg-vlb6617s.jpg": {
-    "mtime": 1789910333.4154544,
-    "seen": 1789910341.5052226,
+    "mtime": 1789911276.647562,
+    "seen": 1789911364.2490022,
     "ast_hash": "405d01667547c1a389bf6971a7df9846",
     "semantic_hash": ""
   },
@@ -6450,8 +6450,8 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos/midea-mo17000gb.jpg": {
-    "mtime": 1789910333.897,
-    "seen": 1789910341.5036526,
+    "mtime": 1789911277.044,
+    "seen": 1789911364.2453594,
     "ast_hash": "43a9d6638b91bc5f8874f0e87d754451",
     "semantic_hash": ""
   },
@@ -6462,8 +6462,8 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/originals/midea-mo17000gb.png": {
-    "mtime": 1789910331.284735,
-    "seen": 1789910341.5039291,
+    "mtime": 1789911273.3870554,
+    "seen": 1789911364.2466645,
     "ast_hash": "1c039a35763b3a7dedfafe1c8787780c",
     "semantic_hash": ""
   },
@@ -6471,6 +6471,180 @@
     "mtime": 1789910356.748201,
     "seen": 1789910390.8797252,
     "ast_hash": "463fec1f0fd793871166ed3d89e00083",
+    "semantic_hash": ""
+  },
+  "scripts/1c-export/prepare_midea_mo18000_photos.cjs": {
+    "mtime": 1789910845.828137,
+    "seen": 1789910861.1220596,
+    "ast_hash": "8f78bae4cc747cf9c5ab753fa801e39f",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/final-photos/midea-mo18000gb.jpg": {
+    "mtime": 1789910853.965,
+    "seen": 1789910861.2398627,
+    "ast_hash": "303e3643ff7b7528f6c59ac46c4249ce",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/final-photos/midea-mo18000gw.jpg": {
+    "mtime": 1789910853.993,
+    "seen": 1789910861.2398648,
+    "ast_hash": "ccfa0ec03ab4b84d7fe641c59d1f8179",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/midea-mo18000gb-alt.png": {
+    "mtime": 1789910657.747781,
+    "seen": 1789910861.2430875,
+    "ast_hash": "1b282a98336533cfe6eaf1394784f1e1",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/midea-mo18000gb-clean.png": {
+    "mtime": 1789910745.0250657,
+    "seen": 1789910861.2430897,
+    "ast_hash": "b9fb295ebb65fc812300f9d6d1f50ec4",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/midea-mo18000gb-review.jpg": {
+    "mtime": 1789910646.543842,
+    "seen": 1789910861.2430909,
+    "ast_hash": "5b1956b41c86e1922cab8f063eca413e",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/midea-mo18000gw-clean.png": {
+    "mtime": 1789910813.463118,
+    "seen": 1789910861.2430923,
+    "ast_hash": "756d25d49efa6e306703e2c090cc1f70",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/midea-mo18000gw-review.png": {
+    "mtime": 1789910646.9008234,
+    "seen": 1789910861.2430933,
+    "ast_hash": "788da2625ec8d2d5e343132fdb3884c7",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/final-photos/midea-mc3d3001r212s.jpg": {
+    "mtime": 1789911277.071,
+    "seen": 1789911364.2451353,
+    "ast_hash": "1f3b1341c553bc075cd3536de0697007",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/final-photos/midea-mc6t3401r216.jpg": {
+    "mtime": 1789911277.087,
+    "seen": 1789911364.2451375,
+    "ast_hash": "6eaa4b4ef8a61151f4a9ef3d8b27fddb",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/midea-mc3d3001r212s.webp": {
+    "mtime": 1789911273.930816,
+    "seen": 1789911364.2460148,
+    "ast_hash": "7d3b1285aa8336e6de2526b5f57cf35f",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/midea-mc6t3401r216.webp": {
+    "mtime": 1789911057.7601821,
+    "seen": 1789911067.697638,
+    "ast_hash": "63ff452cb28b57a46f104bd4b017b628",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/final-photos/uakeen-uk60th5954.jpg": {
+    "mtime": 1789911700.563,
+    "seen": 1789911708.2280104,
+    "ast_hash": "2c65024e2068ff579a28bddb0111fd6f",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/midea-mc6t3401r216.jpg": {
+    "mtime": 1789911274.490312,
+    "seen": 1789911364.2460165,
+    "ast_hash": "3c10349d4558d0e8be348428daf740ad",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/uakeen-uk60th5954-clean.png": {
+    "mtime": 1789911335.5099914,
+    "seen": 1789911364.2477236,
+    "ast_hash": "96613ec42a6b099fd38d8d1f73fbb313",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/uakeen-uk60th5954.jpg": {
+    "mtime": 1789911274.865655,
+    "seen": 1789911364.247725,
+    "ast_hash": "a0c3d11914643240f4a606622e37839a",
+    "semantic_hash": ""
+  },
+  "scripts/1c-export/prepare_custom_builtin_photos.cjs": {
+    "mtime": 1789911692.8479471,
+    "seen": 1789911708.086368,
+    "ast_hash": "b4cf891ac8de1d4e6176954de139c7e8",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/final-photos/asco-shak6013gray.jpg": {
+    "mtime": 1789911700.593,
+    "seen": 1789911708.2248454,
+    "ast_hash": "c54ccab33b62899789c6a16affc68d45",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/asco-shak6013gray-clean.png": {
+    "mtime": 1789911531.4584832,
+    "seen": 1789911582.7552586,
+    "ast_hash": "621abaa5a3190e2651e598cf700d48a9",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/asco6013-1.webp": {
+    "mtime": 1789911473.7351606,
+    "seen": 1789911582.7552605,
+    "ast_hash": "d8744db9ea70ef270ec94c0d499a7a40",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/asco6013-2.webp": {
+    "mtime": 1789911474.1668136,
+    "seen": 1789911582.7552624,
+    "ast_hash": "6c6f31ffb76790d3c1c4097a2964b2af",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/asco6013-3.webp": {
+    "mtime": 1789911474.5840392,
+    "seen": 1789911582.7552652,
+    "ast_hash": "e554723c84a1cbb38b0324c01cfa6218",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/asco6013-4.webp": {
+    "mtime": 1789911475.0082264,
+    "seen": 1789911582.7552671,
+    "ast_hash": "94e775ece04050f31be17c6f6c0c56af",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/asco6013-5.webp": {
+    "mtime": 1789911475.4313602,
+    "seen": 1789911582.755269,
+    "ast_hash": "2e67e6bbb20335a2d5befe67f2c52778",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/asco-bg-main.webp": {
+    "mtime": 1789911602.5270092,
+    "seen": 1789911678.311241,
+    "ast_hash": "ba163a38fa59ef213d27de0a269cf66b",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/asco-gbx-main.webp": {
+    "mtime": 1789911603.4201894,
+    "seen": 1789911678.3112416,
+    "ast_hash": "5191cdedae2614762a5759bde077b942",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/asco-mgray-main.webp": {
+    "mtime": 1789911604.3221624,
+    "seen": 1789911678.3112433,
+    "ast_hash": "9e380ca1288809b0123a459e28700e12",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/final-photos/asco-shak6222bg.jpg": {
+    "mtime": 1789911700.626,
+    "seen": 1789911708.224848,
+    "ast_hash": "ebc93cf5ef93f9d50a7ba4b896a98921",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/asco-shak6222bg-clean.png": {
+    "mtime": 1789911671.6664233,
+    "seen": 1789911708.2313628,
+    "ast_hash": "a7c600badc51af2635a00cbc5919f03e",
     "semantic_hash": ""
   }
 }
