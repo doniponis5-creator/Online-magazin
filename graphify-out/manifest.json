@@ -168,33 +168,33 @@
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/001_shop_orders_migration.sql": {
-    "mtime": 1789643427.3177383,
-    "seen": 1789897246.553524,
-    "ast_hash": "",
+    "mtime": 1789746574.7940266,
+    "seen": 1789909057.025109,
+    "ast_hash": "60be7d56cd2d952129a61d54d95ccbad",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/002_shop_catalog_migration.sql": {
-    "mtime": 1789647531.5057318,
-    "seen": 1789897246.553525,
-    "ast_hash": "",
+    "mtime": 1789746574.7941577,
+    "seen": 1789909057.02511,
+    "ast_hash": "323907e0405b2bceb84a441153a980bb",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/003_shop_bonus_migration.sql": {
-    "mtime": 1789651724.3017156,
-    "seen": 1789897246.5535257,
-    "ast_hash": "",
+    "mtime": 1789746574.7942019,
+    "seen": 1789909057.025111,
+    "ast_hash": "dbc01a01d56350ab572dec625b30a088",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/004_shop_stats_migration.sql": {
-    "mtime": 1789734501.4004698,
-    "seen": 1789897246.5535266,
-    "ast_hash": "",
+    "mtime": 1789746574.7942476,
+    "seen": 1789909057.0251122,
+    "ast_hash": "73f2ccafbc5d694f742539899e5a6c61",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/005_shop_push_migration.sql": {
-    "mtime": 1789792750.2917469,
-    "seen": 1789897246.5535274,
-    "ast_hash": "",
+    "mtime": 1789751144.4544964,
+    "seen": 1789909057.0251122,
+    "ast_hash": "f9038580e7253c0cfd9fdcb52d3e5d8a",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/__init__.py": {
@@ -1092,9 +1092,9 @@
     "semantic_hash": ""
   },
   "docs/TODO_NEXT.md": {
-    "mtime": 1789816550.976808,
-    "seen": 1789897610.221139,
-    "ast_hash": "896682dd40885995c0f5d3685d09bac4",
+    "mtime": 1789909037.3416471,
+    "seen": 1789909055.786335,
+    "ast_hash": "fa42fc766d244c2eff8e87200d5b488a",
     "semantic_hash": ""
   },
   "infra/SMARKET_KG_UZ.md": {
@@ -3939,6 +3939,18 @@
     "mtime": 1789897361.0776842,
     "seen": 1789897610.221298,
     "ast_hash": "62794921fd815956ecb449c9962f9773",
+    "semantic_hash": ""
+  },
+  "scripts/build-appstore.sh": {
+    "mtime": 1789909037.3175786,
+    "seen": 1789909055.7845702,
+    "ast_hash": "ecbf049dc0f70fd740c6e8e80ebdf901",
+    "semantic_hash": ""
+  },
+  "docs/APP_STORE_UZ.md": {
+    "mtime": 1789909002.4744134,
+    "seen": 1789909055.786303,
+    "ast_hash": "0f53ed9d42e67153a4e751043fe6d812",
     "semantic_hash": ""
   }
 }
