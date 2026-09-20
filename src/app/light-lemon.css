@@ -211,7 +211,7 @@ input, textarea { caret-color: var(--color-primary); }
   .header__actions { gap: 6px; }
   .header__actions > .icon-btn { display: none; }
   .header__search { display: block; order: 3; flex: 0 0 100%; width: 100%; }
-  .search__input { height: 43px; font-size: 13px; }
+  .search__input { height: 43px; }
   .header__subnav { display: none; }
   .hero3d { --scene-h: 596px; --scroll-range: 400px; margin-top: 12px; }
   .hero3d__sticky { border-radius: 14px; }
@@ -291,7 +291,21 @@ input, textarea { caret-color: var(--color-primary); }
 .install-demo__choice:has(:checked) { border-color: var(--color-primary); background: var(--color-primary-soft); }
 .install-demo__choice:has(:focus-visible) { outline: 2px solid var(--color-primary); outline-offset: 3px; }
 @media (max-width: 900px) {
-  .field input, .field textarea, .field select { font-size: 16px; min-height: 44px; }
+  .field input, .field textarea, .field select { min-height: 44px; }
+  /* iPhone увеличивает всю страницу, как только трогаешь поле, где текст мельче
+     16 пикселей, — и покупатель вместо поиска получает съехавший экран.
+     Поэтому 16 здесь не про красоту, а про то, чтобы экран не прыгал.
+     Классы перечислены поимённо: у них выше вес, иначе своё правило останется. */
+  input,
+  textarea,
+  select,
+  .search__input,
+  .field input,
+  .field textarea,
+  .field select,
+  .price-range__field input {
+    font-size: 16px;
+  }
 }
 .card__price--request, .purchase__price--request { color: var(--color-ink-soft); font-size: 15px; font-weight: 700; letter-spacing: 0; }
 .gallery__thumb--photo { padding: 4px; background: #fff; overflow: hidden; }

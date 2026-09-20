@@ -64,3 +64,11 @@
   .filter-panel__title { margin-right: auto; }
   .filter-panel.is-open .filter-panel__apply { display: flex; position: fixed; left: 16px; right: 16px; bottom: 16px; width: auto; }
 }
+
+/* На телефоне поле цены тоже не мельче 16 пикселей: иначе iPhone при касании
+   увеличивает всю страницу, и человек вместо ввода цены поправляет экран.
+   Правило живёт здесь, а не в общей теме: этот файл грузится позже и перебил
+   бы её. */
+@media (max-width: 900px) {
+  .price-range__field input { font-size: 16px; }
+}
