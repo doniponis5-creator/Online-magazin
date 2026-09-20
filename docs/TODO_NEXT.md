@@ -3,6 +3,46 @@
 > Сначала прочитайте [HANDOFF.md](HANDOFF.md) — там правила работы и что уже готово.
 > Дата: 2026-09-17. Порядок задач = порядок выполнения.
 
+## ⚠ Прочти это первым, PC (написано 2026-09-21 с MacBook)
+
+**1. Сайт уже выкачен, на нём новое.** На `smarket.kg` работает онлайн-консультант
+(чат в углу) и телеграм-бот @ssmartket_bot. Что это и где лежит — `HANDOFF.md`
+§2.1, задача 5 ниже. Сервер обновлялся `deploy/site/update_site.sh`, образ
+пересобран, журнал чата хранится в томе докера `smartcentr-site_site-data`.
+
+**2. Твоя задача после одобрения Apple: переключить push в боевой режим.**
+Сервер SBonus до сих пор в песочнице (`api.sandbox.push.apple.com`). Сборка,
+ушедшая в App Store, ждёт боевой режим: пока `apns_production = 1` не выставлен,
+покупателям не придут уведомления о заказах. Трогать **до** одобрения нельзя —
+отладочные сборки на телефоне владельца живут в песочнице.
+
+**3. Приложение на проверке у Apple (отправлено 2026-09-21).** Пока не пришёл
+вердикт (1–3 дня), ничего, что меняет **вход, «Кабинет» или оформление заказа**,
+на сервер не выкатывать. Проверяющий открывает живой `smarket.kg`: сломается
+вход — приложение вернут по правилу 4.2, это неделя. Нужно что-то выкатить —
+сначала напиши сессии, которая ведёт App Store.
+
+**4. Кто что ведёт, чтобы не столкнуться в git.**
+
+| Чьё | Файлы |
+|---|---|
+| MacBook, приложение | `ios/`, `assets-src/`, `review/`, `scripts/make-ios-icon.mjs`, `scripts/install-on-iphone.sh`, `scripts/update-all.sh`, `scripts/build-appstore.sh`, `scripts/setup-demo-login.sh`, `docs/IOS_APP_UZ.md`, `docs/APP_STORE_UZ.md`, `docs/IPHONE_TEST_UZ.md` |
+| MacBook, консультант | `src/lib/assistant/`, `src/lib/telegram/`, `src/app/api/assistant/`, `src/app/api/telegram/`, `src/app/panel/`, `src/components/AssistantChat.tsx` + `assistant-chat.css`, `src/lib/store.ts`, `scripts/telegram-*`, `deploy/site/docker-compose.yml`, `Dockerfile` |
+| PC | `src/` (остальное), `public/`, `integrations/`, `deploy/` (кроме compose) |
+| Общее — предупреждай | `src/lib/i18n/dictionaries.ts`, `src/app/[lang]/layout.tsx`, `src/app/robots.ts`, `CLAUDE.md`, `docs/HANDOFF.md`, `docs/TODO_NEXT.md`, `graphify-out/` |
+
+**5. Git между машинами — без изменений, но напомню.** Сначала `git status` и
+`git log --oneline -10`, потом коммит **только своих** файлов, потом
+`git pull --rebase origin <ветка>`, потом `git push` **без** `--force`.
+Конфликт в `graphify-out/` руками не правится: возьми любую сторону,
+`git add`, `git rebase --continue`, в конце `graphify update .` и отдельный коммит.
+
+**6. Что от тебя нужно для следующего шага.** Чат не умеет отвечать на «сколько
+месяцев осталось по моей рассрочке» — этих данных нет нигде, кроме 1С. Нужна
+выгрузка остатка по рассрочке на телефон покупателя: сумма долга, сколько
+месяцев осталось, дата ближайшего платежа. Откуда именно брать в 1С — у
+владельца рассрочка ведётся по-своему, спроси его. Подробности — задача 5.2.
+
 ## Что сделали 2026-09-18 на MacBook (ветка `feature/ios-app`)
 
 Целый вечер занимались приложением для iPhone. Подробности — в
