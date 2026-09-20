@@ -2,8 +2,18 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Push-уведомления. development — для проверки, Apple сам меняет на production при выпуске. -->
+	<!-- Push-уведомления.
+
+	     Значение подставляет Xcode из настройки APS_ENVIRONMENT:
+	       отладочная сборка (Debug)  → development — сервер шлёт в sandbox Apple;
+	       сборка для TestFlight и App Store (Release) → production.
+
+	     Так сделано потому, что у Apple это два разных мира: адрес телефона,
+	     выданный в одном, в другом не работает. Одно значение на обе сборки
+	     означало бы, что уведомления не приходят либо при проверке, либо после
+	     выпуска. Сервер переключается в боевой режим в тот же момент, когда
+	     собирается первая сборка для TestFlight. -->
 	<key>aps-environment</key>
-	<string>development</string>
+	<string>$(APS_ENVIRONMENT)</string>
 </dict>
 </plist>

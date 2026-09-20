@@ -4,17 +4,12 @@
 <dict>
   <key>CAPACITOR_DEBUG</key>
 	<string>$(CAPACITOR_DEBUG)</string>
+	<!-- Магазин говорит по-русски и по-кыргызски; en тут был от шаблона. -->
 	<key>CFBundleDevelopmentRegion</key>
-	<string>en</string>
-	<!-- Разрешает http только к своей же машине: нужно, чтобы проверять приложение
-	     на локальном сайте (npm run dev). Для интернета остаётся обязательный https. -->
+	<string>ru</string>
+	<!-- Зачем телефон спрашивает лицо: текст видит покупатель в окне Face ID. -->
 	<key>NSFaceIDUsageDescription</key>
 	<string>Чтобы входить в личный кабинет и открывать бонусную карту без кода.</string>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsLocalNetworking</key>
-		<true/>
-	</dict>
 	<key>CFBundleDisplayName</key>
         <string>S Маркет</string>
 	<key>CFBundleExecutable</key>
@@ -33,6 +28,11 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- Приложение не везёт с собой своего шифрования: только обычный HTTPS и
+	     Keychain телефона. Ответ «нет» освобождает от экспортных деклараций и
+	     убирает вопрос, который App Store Connect задаёт при каждой загрузке. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -60,18 +60,12 @@
 	<array>
 		<string>armv7</string>
 	</array>
+	<!-- Только вертикально. Витрина сделана под телефон в руке: положенный
+	     набок экран выглядел бы сломанным, а проверяющий Apple телефон
+	     поворачивает. Раздел для iPad убран — приложение только для iPhone. -->
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
