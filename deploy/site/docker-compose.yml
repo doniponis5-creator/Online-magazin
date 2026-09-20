@@ -14,4 +14,9 @@ services:
       - ../../.env.production
     ports:
       - "127.0.0.1:18820:3000"
+    volumes:
+      # Журнал вопросов из чата. Папка лежит ВНЕ /opt/smartcentr-site нарочно:
+      # обновление сайта стирает эту папку целиком, и журнал пропадал бы при
+      # каждой выкатке. ASSISTANT_LOG_DIR=/app/data в .env.production.
+      - /opt/smartcentr-site-data:/app/data
     mem_limit: 768m
