@@ -25,6 +25,22 @@ export type ProductHit = {
   image?: string
 }
 
+/**
+ * Что консультант знает о вошедшем покупателе.
+ *
+ * Своё маленькое описание, а не тип из SBonus: в чат попадает только то, что
+ * человеку и так показано в личном кабинете. Ни QR-кода, ни истории бонусов,
+ * ни чужих телефонов здесь нет.
+ */
+export type CustomerBrief = {
+  name: string
+  /** бонусов на счету, сом */
+  balance: number
+  /** какую часть заказа можно закрыть бонусами, % */
+  maxSpendPct: number
+  orders: { id: string; status: string; total: number; createdAt: string | null }[]
+}
+
 export function isInStock(product: Product): boolean {
   return product.variants.some((v) => v.stock > 0)
 }
@@ -47,25 +63,56 @@ export function toHit(product: Product, lang: Lang): ProductHit {
 }
 
 /**
+ * Синонимы: как покупатель называет товар и как он назван в 1С.
+ *
+ * В каталоге написано «Смартфон», а спрашивают «телефон»; написано
+ * «Холодильник», а пишут «muzlatgich». Без этой таблицы поиск отвечал бы
+ * «ничего не нашёл» на самые частые вопросы.
+ */
+const SYNONYMS: Record<string, string[]> = {
+  телефон: ['смартфон'],
+  телефондор: ['смартфон'],
+  phone: ['смартфон'],
+  telefon: ['смартфон'],
+  ноут: ['ноутбук'],
+  kompyuter: ['ноутбук'],
+  компьютер: ['ноутбук'],
+  televizor: ['телевизор'],
+  телевизорлор: ['телевизор'],
+  muzlatgich: ['холодильник'],
+  муздаткыч: ['холодильник'],
+  stiralka: ['стиральная'],
+  стиралка: ['стиральная'],
+  мошина: ['стиральная'],
+  pylesos: ['пылесос'],
+  changyutgich: ['пылесос'],
+  наушник: ['наушники'],
+  quloqchin: ['наушники'],
+  soat: ['часы'],
+  саат: ['часы'],
+}
+
+/**
  * Поиск по каталогу обычными словами.
  *
- * Без «умных» библиотек: слово запроса ищется в названии, бренде и разделе.
- * Совпадение в названии весит больше, чем в разделе, — иначе на запрос
- * «телефон» первыми выпадали бы чехлы из раздела «Аксессуары».
+ * Без «умных» библиотек: слово запроса сравнивается с началом слов в названии,
+ * бренде и разделе. Именно с началом, а не «где-то внутри»: иначе вопрос
+ * «Вы чините велосипеды?» находил «Вытяжку» — потому что «вы» есть внутри
+ * слова «вытяжка». Слова короче трёх букв не ищутся вовсе.
  */
-export function searchProducts(query: string, lang: Lang, limit = 6): Product[] {
-  const words = normalize(query).split(' ').filter((w) => w.length >= 2)
+export function searchProducts(query: string, lang: Lang, limit = 6, list: Product[] = products): Product[] {
+  const words = expand(splitWords(query).filter((w) => w.length >= 3))
   if (words.length === 0) return []
 
-  const scored = products.map((product) => {
-    const name = normalize(`${product.nameRu} ${product.nameKy} ${product.brand}`)
-    const section = normalize(`${categoryName(product.categoryId, 'ru')} ${categoryName(product.categoryId, 'ky')}`)
-    const specs = normalize(product.specs.map((s) => `${s.valueRu} ${s.valueKy}`).join(' '))
+  const scored = list.map((product) => {
+    const name = splitWords(`${product.nameRu} ${product.nameKy} ${product.brand}`)
+    const section = splitWords(`${categoryName(product.categoryId, 'ru')} ${categoryName(product.categoryId, 'ky')}`)
+    const specs = splitWords(product.specs.map((s) => `${s.valueRu} ${s.valueKy}`).join(' '))
     let score = 0
     for (const word of words) {
-      if (name.includes(word)) score += 5
-      else if (section.includes(word)) score += 2
-      else if (specs.includes(word)) score += 1
+      if (startsAny(name, word)) score += 5
+      else if (startsAny(section, word)) score += 2
+      else if (startsAny(specs, word)) score += 1
     }
     // Товар, которого нет на складе, показываем, но ниже: он всё же ответ на вопрос.
     if (score > 0 && isInStock(product)) score += 1
@@ -77,6 +124,29 @@ export function searchProducts(query: string, lang: Lang, limit = 6): Product[] 
     .sort((a, b) => b.score - a.score || a.product.price - b.product.price)
     .slice(0, limit)
     .map((row) => row.product)
+}
+
+/** Слово покупателя + его синонимы из таблицы выше. */
+function expand(words: string[]): string[] {
+  const out = new Set<string>()
+  for (const word of words) {
+    out.add(word)
+    for (const alias of SYNONYMS[word] ?? []) out.add(alias)
+  }
+  return [...out]
+}
+
+function splitWords(value: string): string[] {
+  return normalize(value).split(' ').filter(Boolean)
+}
+
+/**
+ * Слово запроса совпало, если с него начинается слово товара (или наоборот:
+ * «холодильники» и «холодильник» — одно и то же). Слова короче трёх букв в
+ * расчёт не берутся.
+ */
+function startsAny(haystack: string[], word: string): boolean {
+  return haystack.some((w) => w.length >= 3 && (w.startsWith(word) || word.startsWith(w)))
 }
 
 function normalize(value: string): string {
@@ -95,8 +165,8 @@ function normalize(value: string): string {
  * если 1С однажды выгрузит тысячи позиций, — тогда простыня станет слишком
  * дорогой, и понадобится поиск по запросу.
  */
-export function catalogDigest(lang: Lang, limit = 400): string {
-  const lines = products.slice(0, limit).map((product) => {
+export function catalogDigest(limit = 400, list: Product[] = products): string {
+  const lines = list.slice(0, limit).map((product) => {
     const price = product.price > 0 ? `${product.price} сом` : 'цена по запросу'
     const old = product.oldPrice ? `, было ${product.oldPrice} сом` : ''
     const stock = isInStock(product) ? 'есть' : 'нет в наличии'
@@ -108,13 +178,16 @@ export function catalogDigest(lang: Lang, limit = 400): string {
       `раздел: ${section}`,
       `цена: ${price}${old}`,
       `наличие: ${stock}`,
-      `гарантия: ${product.warrantyMonths} мес.`,
+      `доставка: ${product.deliveryPrice ? `${product.deliveryPrice} сом` : 'бесплатно'}`,
+      // Ноль в выгрузке значит «срок не заполнили», а не «гарантии нет».
+      // Строку с нулём не пишем вовсе, иначе чат отвечает «гарантия 0 месяцев».
+      product.warrantyMonths > 0 ? `гарантия: ${product.warrantyMonths} мес.` : '',
       specs ? `характеристики: ${specs}` : '',
     ]
       .filter(Boolean)
       .join(' | ')
   })
-  const cut = products.length > limit ? `\n(показаны первые ${limit} из ${products.length})` : ''
+  const cut = list.length > limit ? `\n(показаны первые ${limit} из ${list.length})` : ''
   return lines.join('\n') + cut
 }
 
@@ -126,9 +199,39 @@ export function storeFacts(lang: Lang): string {
     'Магазин: Smart Centr, он же S MARKET. Электроника и бытовая техника.',
     `Адрес: ${address.ru}. Работает с ${since} года (${yearsOnMarket()} лет).`,
     `Телефоны (они же WhatsApp и Telegram): ${numbers}.`,
-    'Доставка по всему Кыргызстану. Оплата онлайн через O!Деньги или при получении.',
-    'Есть бонусы SBonus: часть заказа можно закрыть бонусами после входа по номеру телефона.',
+    '',
+    'ДОСТАВКА',
+    'Возим по всему Кыргызстану — в любой город и любое село, куда скажет покупатель.',
+    'До центра района или области доставка бесплатная. Назвал свой город (Манас, Талас, Каракол, Нарын, Баткен, Джалал-Абад, Бишкек, Ош) — отвечай прямо: «привезём, доставка бесплатная».',
+    'Если у товара в каталоге ниже указана цена доставки — назови её, она за этот товар.',
+    'В село или отдалённое место довозим тоже.',
+    'КОГДА ПРИВЕЗЁМ: точный день и час не называй никогда. Отвечай так: «оплатите заказ — и наш сотрудник свяжется с вами и договорится, когда привезти». Это и есть ответ на «за сколько дней», «когда будет», «во сколько».',
+    '',
+    'КАК ЗАКАЗАТЬ И КАК ЗАПЛАТИТЬ',
+    'Спросили «как купить», «куда перевести деньги», «куда скинуть» — объясни по шагам:',
+    '1) открыть страницу товара на сайте и нажать «В корзину»;',
+    '2) оформить заказ — имя, телефон, куда везти;',
+    '3) сайт сам откроет страницу оплаты, там QR и список банков.',
+    'Платят из приложения своего банка (MBANK, O!Bank, Bakai, Optima, KICB, MegaPay и другие) — деньги идут в кассу магазина через O!Деньги.',
+    'Можно приехать и купить в самом магазине — самовывоз.',
+    'ВАЖНО: никакого номера карты и никакого личного счёта ты не даёшь и не обещаешь. Денег «на карту сотруднику» магазин не принимает.',
+    'Оплаты при получении на сайте нет — не обещай её.',
+    'Есть бонусы SBonus: часть заказа закрывается бонусами после входа по номеру телефона.',
     'Заказать можно и без входа; вход нужен только для оплаты бонусами.',
+    '',
+    'ЕСЛИ ПОКУПАТЕЛЬ БОИТСЯ ЗАКАЗЫВАТЬ',
+    'Не уговаривай и не дави. Просто скажи правду, из-за которой бояться нечего:',
+    `магазин настоящий и работает с ${since} года (${yearsOnMarket()} лет), у него есть адрес и три телефона;`,
+    'можно приехать и забрать самому; можно сначала позвонить и поговорить с живым сотрудником;',
+    'заказ и его состояние видны в личном кабинете на сайте.',
+    'Никогда не проси прислать деньги на чей-то личный счёт или карту — оплата только через сайт или в магазине.',
+    '',
+    'ЧЕГО ТЫ НЕ ЗНАЕШЬ — И НЕ ВЫДУМЫВАЙ',
+    'Часы работы магазина. Не пиши «работаем ежедневно» или «с 9 до 18» — скажи, что время работы уточнят по телефону.',
+    'Срок гарантии, если он не указан у товара в каталоге ниже. Не говори «0 месяцев» и не называй своё число — скажи, что срок подтвердит сотрудник.',
+    'Возврат, обмен и брак: решение принимает сотрудник магазина. Посочувствуй и позови к телефону, но сам ничего не обещай.',
+    'Свойства товара, которых нет в его характеристиках. Не дописывай «инверторный мотор», «класс А+++», «есть пар» — этого может не быть.',
+    '',
     `Разделы каталога: ${sections}.`,
     `Язык покупателя сейчас: ${lang === 'ky' ? 'кыргызский' : 'русский'}.`,
   ].join('\n')

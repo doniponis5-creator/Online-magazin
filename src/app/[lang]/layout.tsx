@@ -10,7 +10,7 @@ import { FavoritesProvider } from '@/lib/favorites/FavoritesProvider'
 import { Header } from '@/components/Header'
 import { BottomNav } from '@/components/BottomNav'
 import { CartReminder } from '@/components/CartReminder'
-import { ContactButton } from '@/components/ContactButton'
+import { AssistantChat } from '@/components/AssistantChat'
 import { Footer } from '@/components/Footer'
 import { HtmlLang } from '@/components/HtmlLang'
 import { MotionProvider } from '@/components/MotionProvider'
@@ -73,7 +73,7 @@ export default async function LangLayout({
           </main>
           <Footer />
           <CartReminder />
-          <ContactButton />
+          <AssistantChat />
           <BottomNav />
         </FavoritesProvider>
       </CartProvider>

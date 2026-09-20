@@ -54,6 +54,7 @@ const TRAINERS = [
 /** Личные страницы: у каждого покупателя свои, поиску там делать нечего. */
 const PRIVATE = [
   '/api/',
+  '/panel/',
   '/ru/checkout',
   '/ky/checkout',
   '/ru/cart',
