@@ -61,6 +61,52 @@ Next.js 16 (App Router), React 19, TypeScript. Тесты: `npm test` (vitest, 5
 | Настройки | `.env.local` (заполнен владельцем, не в git), `.env.example` |
 | Режим оплаты | `paymentMode()`: `live`, если заданы `SHOP_API_URL` и `SHOP_API_SECRET`; иначе тестовый mock |
 
+### 2.1 Онлайн-консультант и телеграм-бот (20.09.2026)
+
+Чат отвечает покупателям по каталогу на **русском, кыргызском и узбекском**
+(узбекский — и латиницей, и кириллицей). Один «мозг» на два канала: сайт и
+Telegram. Языковая модель — Google Gemini; ключа нет или Google не ответил —
+работает запасной режим: поиск по каталогу и телефон магазина. Чат никогда не
+остаётся без ответа.
+
+| Что | Файлы |
+|---|---|
+| «Мозг»: знания о магазине, каталог для модели, поиск по словам | `src/lib/assistant/knowledge.ts` |
+| Правила разговора (первое правило — **ничего не выдумывать**) | `src/lib/assistant/prompt.ts` |
+| Обращение к Gemini (повтор при 429/503, предел 12 с) | `src/lib/assistant/gemini.ts` |
+| Запасной режим без модели, три языка | `src/lib/assistant/local.ts` |
+| Определение языка покупателя (не поручено модели) | `src/lib/assistant/talk.ts` |
+| Каталог прямо из 1С, обновление раз в 10 мин | `src/lib/assistant/live.ts` |
+| Пределы: 20 сообщений/10 мин на человека, `ASSISTANT_DAILY_LIMIT` в сутки | `src/lib/assistant/limits.ts` |
+| Журнал вопросов (файл, телефоны скрыты) | `src/lib/assistant/log.ts` |
+| Страница для владельца «О чём спрашивают» | `/panel/questions?key=…` → `src/app/panel/questions/route.ts` |
+| API чата на сайте | `src/app/api/assistant/route.ts` |
+| Кнопка-виджет: чат + телефоны в одной кнопке | `src/components/AssistantChat.tsx`, `assistant-chat.css` |
+| Телеграм-бот: ответы, фото товаров, память разговора | `src/lib/telegram/bot.ts` |
+| Заказ в Telegram без модели: имя → телефон → адрес → ссылка O!Деньги | `src/lib/telegram/order.ts` |
+| Webhook для Telegram | `src/app/api/telegram/webhook/route.ts` |
+| Память, переживающая перезагрузку кода | `src/lib/store.ts` |
+| Проверка на ноутбуке без публичного адреса | `node scripts/telegram-bot.mjs` |
+| Включить бота на сервере | `bash scripts/telegram-webhook.sh` (выключить — `off`) |
+| Тесты | `__tests__/assistant.test.ts`, `assistant-log.test.ts`, `telegram-order.test.ts` |
+
+**Настройки** (`.env.local`, на сервере `.env.production`; образец — `.env.example`):
+`GEMINI_API_KEY`, `GEMINI_MODEL` (пусто — `gemini-3.5-flash-lite`),
+`TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `ASSISTANT_LOG_KEY`,
+`ASSISTANT_LOG_DIR`, `ASSISTANT_DAILY_LIMIT`. Каталог из 1С включается сам,
+как только заданы `SHOP_API_URL` и `SHOP_API_SECRET`.
+
+**Чего чат не знает и не выдумывает:** часы работы, остаток по рассрочке,
+срок гарантии (в 1С он не заполнен), условия возврата, свойства товара сверх
+характеристик из 1С. На такие вопросы он даёт телефон магазина. Это проверено
+35 живыми вопросами — подробности и список найденных ошибок в
+`docs/TODO_NEXT.md`, задача 5.
+
+**Кнопка на сайте одна.** Бывшая «Связаться» (`ContactButton.tsx`) удалена
+вместе со своим CSS; её телефоны, мессенджеры и Instagram переехали внутрь
+панели чата, в сворачиваемую строку «Не помог? Связаться с магазином».
+Внешний вид, лимонный цвет и анимации (кольцо, покачивание значка) сохранены.
+
 Сборка для сервера: `next.config.ts` (`output: 'standalone'`), `Dockerfile`, `.dockerignore`.
 
 ## 3. Расширение 1С «Онлайн магазин» (`integrations/1c-online-shop/`)

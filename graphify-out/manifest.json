@@ -60,8 +60,8 @@
     "semantic_hash": "3b18dc4ec58359fce25bc104258f856d"
   },
   "capacitor.config.ts": {
-    "mtime": 1789897573.6224642,
-    "seen": 1789897610.221028,
+    "mtime": 1789922802.0387983,
+    "seen": 1789923809.844747,
     "ast_hash": "2eb1828b05f9ad48e700689c8124d4da",
     "semantic_hash": ""
   },
@@ -169,32 +169,32 @@
   },
   "integrations/sbonus-server/shop/001_shop_orders_migration.sql": {
     "mtime": 1789746574.7940266,
-    "seen": 1789920602.195062,
-    "ast_hash": "60be7d56cd2d952129a61d54d95ccbad",
+    "seen": 1789926287.234006,
+    "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/002_shop_catalog_migration.sql": {
     "mtime": 1789746574.7941577,
-    "seen": 1789920602.195063,
-    "ast_hash": "323907e0405b2bceb84a441153a980bb",
+    "seen": 1789926287.2340071,
+    "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/003_shop_bonus_migration.sql": {
     "mtime": 1789746574.7942019,
-    "seen": 1789920602.195063,
-    "ast_hash": "dbc01a01d56350ab572dec625b30a088",
+    "seen": 1789926287.234008,
+    "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/004_shop_stats_migration.sql": {
     "mtime": 1789746574.7942476,
-    "seen": 1789920602.195064,
-    "ast_hash": "73f2ccafbc5d694f742539899e5a6c61",
+    "seen": 1789926287.234008,
+    "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/005_shop_push_migration.sql": {
     "mtime": 1789751144.4544964,
-    "seen": 1789920602.195064,
-    "ast_hash": "f9038580e7253c0cfd9fdcb52d3e5d8a",
+    "seen": 1789926287.234009,
+    "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/__init__.py": {
@@ -270,8 +270,8 @@
     "semantic_hash": ""
   },
   "ios/App/App/Assets.xcassets/AppIcon.appiconset/Contents.json": {
-    "mtime": 1789747246.1875505,
-    "seen": 1789897610.221045,
+    "mtime": 1789925878.4561882,
+    "seen": 1789926060.831208,
     "ast_hash": "f825b7ac8ba6965347c3dc205c3892ce",
     "semantic_hash": ""
   },
@@ -282,8 +282,8 @@
     "semantic_hash": ""
   },
   "ios/App/App/Assets.xcassets/Splash.imageset/Contents.json": {
-    "mtime": 1789747252.9763298,
-    "seen": 1789897610.221046,
+    "mtime": 1789925878.5963666,
+    "seen": 1789926060.831229,
     "ast_hash": "cbb5a996a8b637d5c76b192dcff31950",
     "semantic_hash": ""
   },
@@ -300,8 +300,8 @@
     "semantic_hash": ""
   },
   "ios/App/CapApp-SPM/Package.swift": {
-    "mtime": 1789897577.423541,
-    "seen": 1789897610.221049,
+    "mtime": 1789926086.0156476,
+    "seen": 1789926237.909347,
     "ast_hash": "6afff4174aae0cb67b1c393c63006f66",
     "semantic_hash": ""
   },
@@ -378,9 +378,9 @@
     "semantic_hash": "1c788157c479605f4722219af77b68f9"
   },
   "scripts/make-ios-icon.mjs": {
-    "mtime": 1789747242.2399192,
-    "seen": 1789897610.22106,
-    "ast_hash": "81787278dff299991e90864225112ff4",
+    "mtime": 1789925878.354137,
+    "seen": 1789926060.831965,
+    "ast_hash": "84b506f3a9ff9efbde545d7cb96f6fe1",
     "semantic_hash": ""
   },
   "scripts/photo-metadata.json": {
@@ -510,9 +510,9 @@
     "semantic_hash": "040a0ddf1ee44603e16683ea81258c6b"
   },
   "src/app/[lang]/layout.tsx": {
-    "mtime": 1789897361.0783098,
-    "seen": 1789897610.221075,
-    "ast_hash": "61b92a15fae678194ce7bda368373b07",
+    "mtime": 1789925859.8902152,
+    "seen": 1789926060.832339,
+    "ast_hash": "62a489e381753f02109d8f8f5bb3fb5b",
     "semantic_hash": ""
   },
   "src/app/[lang]/not-found.tsx": {
@@ -894,9 +894,9 @@
     "semantic_hash": "ab578875f27d0e418c615aed2d950578"
   },
   "src/lib/i18n/dictionaries.ts": {
-    "mtime": 1789897361.0827134,
-    "seen": 1789897610.221119,
-    "ast_hash": "c8d29a5630893c9fc11846a3333cbee1",
+    "mtime": 1789922520.3647435,
+    "seen": 1789923809.846864,
+    "ast_hash": "30a90b6c324ced2a0344f9af8c7eda24",
     "semantic_hash": ""
   },
   "src/lib/links.ts": {
@@ -972,9 +972,9 @@
     "semantic_hash": "70485c37d27b112c2f676f5014b96340"
   },
   "CLAUDE.md": {
-    "mtime": 1789821567.1457584,
-    "seen": 1789897610.221129,
-    "ast_hash": "ab11d8d934def052dab5942a9681b8f0",
+    "mtime": 1789926235.650457,
+    "seen": 1789926237.911319,
+    "ast_hash": "08a9fe9004c8c167272420acd5e7e36e",
     "semantic_hash": ""
   },
   "DESIGN.md": {
@@ -1080,9 +1080,9 @@
     "semantic_hash": "f3c1e18fe048e43d35198c768bc44d79"
   },
   "docs/HANDOFF.md": {
-    "mtime": 1789897361.0692003,
-    "seen": 1789897610.221138,
-    "ast_hash": "c923b741c1d2b8723bce15a503f50aa1",
+    "mtime": 1789926235.6205084,
+    "seen": 1789926237.9114938,
+    "ast_hash": "863a59b224c35d017e35baf048e340c2",
     "semantic_hash": ""
   },
   "docs/IOS_APP_UZ.md": {
@@ -1092,9 +1092,9 @@
     "semantic_hash": ""
   },
   "docs/TODO_NEXT.md": {
-    "mtime": 1789920552.386408,
-    "seen": 1789920554.532744,
-    "ast_hash": "6dc277b8da3c1763c2c33717a7b305c1",
+    "mtime": 1789925520.3723805,
+    "seen": 1789925522.977986,
+    "ast_hash": "a513cfed168c1904c1dfc34878b0f6be",
     "semantic_hash": ""
   },
   "infra/SMARKET_KG_UZ.md": {
@@ -1740,27 +1740,27 @@
     "semantic_hash": ""
   },
   "ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png": {
-    "mtime": 1789747246.1827836,
-    "seen": 1789897610.221189,
-    "ast_hash": "1359cdea9b82c360a149b13c36543aff",
+    "mtime": 1789925878.4558892,
+    "seen": 1789926060.83534,
+    "ast_hash": "528762cf3bda40ee23d33e7ffbe20cd4",
     "semantic_hash": ""
   },
   "ios/App/App/Assets.xcassets/Splash.imageset/splash.png": {
-    "mtime": 1789747246.245993,
-    "seen": 1789897610.22119,
-    "ast_hash": "275792d801f4dac047426464b8ce2362",
+    "mtime": 1789925878.4954796,
+    "seen": 1789926060.835341,
+    "ast_hash": "8c80cb6d67aeb508685182652ecaad75",
     "semantic_hash": ""
   },
   "ios/App/App/Assets.xcassets/Splash.imageset/splash@2x.png": {
-    "mtime": 1789747252.4275453,
-    "seen": 1789897610.221191,
-    "ast_hash": "def411d98052e508c5368ef9575aa638",
+    "mtime": 1789925878.547229,
+    "seen": 1789926060.8353422,
+    "ast_hash": "5e873931662f645916fb7aafe75d0b0e",
     "semantic_hash": ""
   },
   "ios/App/App/Assets.xcassets/Splash.imageset/splash@3x.png": {
-    "mtime": 1789747252.9534414,
-    "seen": 1789897610.221191,
-    "ast_hash": "5e5a47ddef13958d34cf30ef97bd9dc0",
+    "mtime": 1789925878.5959675,
+    "seen": 1789926060.8353422,
+    "ast_hash": "741b83494a004f23a943949dfdda505b",
     "semantic_hash": ""
   },
   "public/brand/smart-centr-mark.jpg": {
@@ -3750,9 +3750,9 @@
     "semantic_hash": ""
   },
   "src/app/robots.ts": {
-    "mtime": 1789821567.1717682,
-    "seen": 1789897610.2210891,
-    "ast_hash": "375fe3f212c10cd12b4dc9053766f4dd",
+    "mtime": 1789922506.9710808,
+    "seen": 1789923809.84616,
+    "ast_hash": "19fd1488ecd87d49acd9812654b2314b",
     "semantic_hash": ""
   },
   "src/app/sitemap.ts": {
@@ -3765,12 +3765,6 @@
     "mtime": 1789897361.0793004,
     "seen": 1789897610.221091,
     "ast_hash": "da7ece78b88973fbfe751c745fd64573",
-    "semantic_hash": ""
-  },
-  "src/components/ContactButton.tsx": {
-    "mtime": 1789897361.0797832,
-    "seen": 1789897610.221094,
-    "ast_hash": "e63b5c48c8ae4cd31de0a12aa394423b",
     "semantic_hash": ""
   },
   "src/components/InstagramLink.tsx": {
@@ -3957,6 +3951,222 @@
     "mtime": 1789920459.4107451,
     "seen": 1789920554.530526,
     "ast_hash": "e407801589ae8a45a7e13461db036a56",
+    "semantic_hash": ""
+  },
+  "src/lib/assistant/knowledge.ts": {
+    "mtime": 1789925339.1667647,
+    "seen": 1789925522.977414,
+    "ast_hash": "c6de1daafb2251aae54b5585123d4aa4",
+    "semantic_hash": ""
+  },
+  "__tests__/assistant.test.ts": {
+    "mtime": 1789923787.650986,
+    "seen": 1789923809.844615,
+    "ast_hash": "8f8486ca9f0fe27444680b6c29e9e00c",
+    "semantic_hash": ""
+  },
+  "src/app/api/assistant/route.ts": {
+    "mtime": 1789922499.044583,
+    "seen": 1789923809.8459232,
+    "ast_hash": "293cb9f6614e270b1aa99afbf653e777",
+    "semantic_hash": ""
+  },
+  "src/components/AssistantChat.tsx": {
+    "mtime": 1789925935.1616344,
+    "seen": 1789926060.832824,
+    "ast_hash": "9da0b634c10e170298a82623d719a32e",
+    "semantic_hash": ""
+  },
+  "src/lib/assistant/gemini.ts": {
+    "mtime": 1789921975.4757016,
+    "seen": 1789922091.484163,
+    "ast_hash": "00d09f188003328df3c1b9b09568e24e",
+    "semantic_hash": ""
+  },
+  "src/lib/assistant/local.ts": {
+    "mtime": 1789925494.0814657,
+    "seen": 1789925522.977417,
+    "ast_hash": "48c83c7a9971dd2ac16617253817e4a9",
+    "semantic_hash": ""
+  },
+  "src/lib/assistant/orders.ts": {
+    "mtime": 1789921953.5328624,
+    "seen": 1789922091.4841769,
+    "ast_hash": "a43de7138eb805a7483c1261a0e71125",
+    "semantic_hash": ""
+  },
+  "src/lib/assistant/prompt.ts": {
+    "mtime": 1789925422.9346974,
+    "seen": 1789925522.9774451,
+    "ast_hash": "8541e3f4a4403649b2862c54e0f9f7f8",
+    "semantic_hash": ""
+  },
+  "src/lib/assistant/reply.ts": {
+    "mtime": 1789925407.2569156,
+    "seen": 1789925522.9774458,
+    "ast_hash": "995ce623a71dc3c83ce04be87228bb04",
+    "semantic_hash": ""
+  },
+  "src/lib/assistant/talk.ts": {
+    "mtime": 1789924781.8168514,
+    "seen": 1789925522.9774468,
+    "ast_hash": "f3a39415ec9a842ca4c35c2c53f1102a",
+    "semantic_hash": ""
+  },
+  "review/appstore-screenshots/01-home.png": {
+    "mtime": 1789922454.0939634,
+    "seen": 1789923809.8515468,
+    "ast_hash": "7d2344c606334e4180112c1e2e34cf58",
+    "semantic_hash": ""
+  },
+  "__tests__/assistant-log.test.ts": {
+    "mtime": 1789922568.3396683,
+    "seen": 1789923809.844613,
+    "ast_hash": "e199a9ad47f6db394b6c575244019777",
+    "semantic_hash": ""
+  },
+  "__tests__/telegram-order.test.ts": {
+    "mtime": 1789925377.9852798,
+    "seen": 1789925522.975253,
+    "ast_hash": "f6668540850a00f1612b11c85236fb41",
+    "semantic_hash": ""
+  },
+  "scripts/telegram-bot.mjs": {
+    "mtime": 1789923304.9686193,
+    "seen": 1789923809.845591,
+    "ast_hash": "81ea75b9988b0b9f11088b926cdb80bf",
+    "semantic_hash": ""
+  },
+  "scripts/telegram-webhook.sh": {
+    "mtime": 1789922750.9489853,
+    "seen": 1789923809.845603,
+    "ast_hash": "2340364216ea57ee7f9c675658a63b31",
+    "semantic_hash": ""
+  },
+  "src/app/api/telegram/webhook/route.ts": {
+    "mtime": 1789922733.7224753,
+    "seen": 1789923809.846133,
+    "ast_hash": "e9a0cd10223c2213796fc7f5030e0b49",
+    "semantic_hash": ""
+  },
+  "src/app/panel/questions/route.ts": {
+    "mtime": 1789922486.2384694,
+    "seen": 1789923809.84616,
+    "ast_hash": "ed28a6a4f4a37e20a0e59072a111e4f0",
+    "semantic_hash": ""
+  },
+  "src/lib/assistant/log.ts": {
+    "mtime": 1789922689.5403926,
+    "seen": 1789923809.8467221,
+    "ast_hash": "12b90fd5036f8cf5886535ffdd60d723",
+    "semantic_hash": ""
+  },
+  "src/lib/telegram/bot.ts": {
+    "mtime": 1789925407.2570639,
+    "seen": 1789925522.977694,
+    "ast_hash": "2e5771285a99dc8034674eab2e15cd87",
+    "semantic_hash": ""
+  },
+  "src/lib/telegram/order.ts": {
+    "mtime": 1789925368.288738,
+    "seen": 1789925522.977696,
+    "ast_hash": "f9d519de478456132eca948460d5bcc0",
+    "semantic_hash": ""
+  },
+  "review/appstore-screenshots/02-catalog.png": {
+    "mtime": 1789922575.7026527,
+    "seen": 1789923809.851548,
+    "ast_hash": "695e459be2191d8af578156aee98948b",
+    "semantic_hash": ""
+  },
+  "review/appstore-screenshots/03-product.png": {
+    "mtime": 1789922609.4262826,
+    "seen": 1789923809.851548,
+    "ast_hash": "fc8d81d318b52b6b03bc40f8b1395df3",
+    "semantic_hash": ""
+  },
+  "review/appstore-screenshots/04-account.png": {
+    "mtime": 1789923100.0731237,
+    "seen": 1789923809.851549,
+    "ast_hash": "42cf647cf2ce971d4ade4a6037e83b6e",
+    "semantic_hash": ""
+  },
+  "review/appstore-screenshots/04-bonus-promo.png": {
+    "mtime": 1789922699.709524,
+    "seen": 1789923809.8515542,
+    "ast_hash": "62a5e2f371957a124d44c199850f13ed",
+    "semantic_hash": ""
+  },
+  "review/appstore-screenshots/05-offline-catalog.png": {
+    "mtime": 1789922801.9838364,
+    "seen": 1789923809.8515542,
+    "ast_hash": "d3bf703f670d7cbfd2f40b51c943ea2b",
+    "semantic_hash": ""
+  },
+  "review/appstore-screenshots/06-bonus-card.png": {
+    "mtime": 1789923133.6560667,
+    "seen": 1789923809.851555,
+    "ast_hash": "05db05f2652154fe1e7b9541fddb5e56",
+    "semantic_hash": ""
+  },
+  "src/lib/assistant/limits.ts": {
+    "mtime": 1789925407.240997,
+    "seen": 1789925522.977416,
+    "ast_hash": "71543101c1834d06ee6cb3bfd8aa592e",
+    "semantic_hash": ""
+  },
+  "src/lib/assistant/live.ts": {
+    "mtime": 1789925306.9468596,
+    "seen": 1789925522.977416,
+    "ast_hash": "435bcdf2bc37ddf28ef186966684809e",
+    "semantic_hash": ""
+  },
+  "src/lib/store.ts": {
+    "mtime": 1789925320.5726252,
+    "seen": 1789925522.9776928,
+    "ast_hash": "fad836d4bb973ecd790ef03bccf2045d",
+    "semantic_hash": ""
+  },
+  "review/appstore-screenshots/6.5/01-home.png": {
+    "mtime": 1789924233.501023,
+    "seen": 1789925522.982542,
+    "ast_hash": "8a6274ef360db4b8e442dff2622eca46",
+    "semantic_hash": ""
+  },
+  "review/appstore-screenshots/6.5/02-catalog.png": {
+    "mtime": 1789924233.6438134,
+    "seen": 1789925522.982543,
+    "ast_hash": "b24c3b170f1e6b657e49cdbc48f77b42",
+    "semantic_hash": ""
+  },
+  "review/appstore-screenshots/6.5/03-product.png": {
+    "mtime": 1789924233.803563,
+    "seen": 1789925522.982544,
+    "ast_hash": "c38d07639ece95c1224cfd14e4ab45b5",
+    "semantic_hash": ""
+  },
+  "review/appstore-screenshots/6.5/04-account.png": {
+    "mtime": 1789924233.9327261,
+    "seen": 1789925522.982545,
+    "ast_hash": "9771a27e22bd0442cba06c973d673b22",
+    "semantic_hash": ""
+  },
+  "review/appstore-screenshots/6.5/05-offline-catalog.png": {
+    "mtime": 1789924234.0684686,
+    "seen": 1789925522.9825459,
+    "ast_hash": "936715bd4ba9cd640a4ece56d37277d5",
+    "semantic_hash": ""
+  },
+  "review/appstore-screenshots/6.5/06-bonus-card.png": {
+    "mtime": 1789924234.180332,
+    "seen": 1789925522.982547,
+    "ast_hash": "d7f1d7a92dbbfc9c762f916808a4bb4a",
+    "semantic_hash": ""
+  },
+  "assets-src/icon/app-icon-source.jpg": {
+    "mtime": 1789925577.048472,
+    "seen": 1789926060.834453,
+    "ast_hash": "de69301253a358345ed30fd9bacdfd25",
     "semantic_hash": ""
   }
 }
