@@ -24,6 +24,9 @@ RUN addgroup -S site && adduser -S site -G site
 COPY --from=build --chown=site:site /app/.next/standalone ./
 COPY --from=build --chown=site:site /app/.next/static ./.next/static
 COPY --from=build --chown=site:site /app/public ./public
+# Папка журнала должна существовать в образе и принадлежать site: иначе докер
+# создаст хранилище от root, и сайт не сможет в него писать.
+RUN mkdir -p /app/data && chown site:site /app/data
 USER site
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
