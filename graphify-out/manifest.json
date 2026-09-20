@@ -169,32 +169,32 @@
   },
   "integrations/sbonus-server/shop/001_shop_orders_migration.sql": {
     "mtime": 1789643427.3177383,
-    "seen": 1789911678.3107264,
-    "ast_hash": "",
+    "seen": 1789912561.2386453,
+    "ast_hash": "60be7d56cd2d952129a61d54d95ccbad",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/002_shop_catalog_migration.sql": {
     "mtime": 1789647531.5057318,
-    "seen": 1789911678.3107274,
-    "ast_hash": "",
+    "seen": 1789912561.2386465,
+    "ast_hash": "323907e0405b2bceb84a441153a980bb",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/003_shop_bonus_migration.sql": {
     "mtime": 1789651724.3017156,
-    "seen": 1789911678.3107285,
-    "ast_hash": "",
+    "seen": 1789912561.2386472,
+    "ast_hash": "dbc01a01d56350ab572dec625b30a088",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/004_shop_stats_migration.sql": {
     "mtime": 1789734501.4004698,
-    "seen": 1789911678.3107293,
-    "ast_hash": "",
+    "seen": 1789912561.2386477,
+    "ast_hash": "73f2ccafbc5d694f742539899e5a6c61",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/005_shop_push_migration.sql": {
     "mtime": 1789792750.2917469,
-    "seen": 1789911678.31073,
-    "ast_hash": "",
+    "seen": 1789912561.2386487,
+    "ast_hash": "21cfa1d3a03bec41c0123ad74dd060df",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/__init__.py": {
@@ -3750,9 +3750,9 @@
     "semantic_hash": ""
   },
   "src/app/robots.ts": {
-    "mtime": 1789821116.3116508,
-    "seen": 1789909330.7036917,
-    "ast_hash": "5efbc5ea65c71b8f46b9a8d43dc2a086",
+    "mtime": 1789912328.1038296,
+    "seen": 1789912347.2857492,
+    "ast_hash": "f68a6edcb0c64bea1f8183b3c04416dd",
     "semantic_hash": ""
   },
   "src/app/sitemap.ts": {
@@ -3984,9 +3984,9 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/content.json": {
-    "mtime": 1789911692.8479471,
-    "seen": 1789911708.062901,
-    "ast_hash": "1c795621723b241086236ccef196c59e",
+    "mtime": 1789912328.1690834,
+    "seen": 1789912347.246965,
+    "ast_hash": "46da213690ba70d91440bec6f72a8a32",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/current-1c.json": {
@@ -4002,9 +4002,9 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos.json": {
-    "mtime": 1789911700.6281044,
-    "seen": 1789911708.0633655,
-    "ast_hash": "05db9cc6ab2a15e3e564cd1d8a97314d",
+    "mtime": 1789912340.5375478,
+    "seen": 1789912347.2474072,
+    "ast_hash": "6de0a40e4e61030b6ed7f745ac59a3d3",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/queue.json": {
@@ -4608,9 +4608,9 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/STATUS.md": {
-    "mtime": 1789911692.8479471,
-    "seen": 1789911708.12653,
-    "ast_hash": "ac82481ec6b9b1af10a9ede93d88b78b",
+    "mtime": 1789912328.1690834,
+    "seen": 1789912347.3118782,
+    "ast_hash": "143d27352ed4fe756b42ba9d53932261",
     "semantic_hash": ""
   },
   "review/vacuum-enrichment/STATUS.md": {
@@ -6546,8 +6546,8 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos/uakeen-uk60th5954.jpg": {
-    "mtime": 1789911700.563,
-    "seen": 1789911708.2280104,
+    "mtime": 1789912340.418,
+    "seen": 1789912347.3999727,
     "ast_hash": "2c65024e2068ff579a28bddb0111fd6f",
     "semantic_hash": ""
   },
@@ -6570,14 +6570,14 @@
     "semantic_hash": ""
   },
   "scripts/1c-export/prepare_custom_builtin_photos.cjs": {
-    "mtime": 1789911692.8479471,
-    "seen": 1789911708.086368,
-    "ast_hash": "b4cf891ac8de1d4e6176954de139c7e8",
+    "mtime": 1789912328.16808,
+    "seen": 1789912347.2706578,
+    "ast_hash": "18ec48dab91eb07f365bf7d4927e237b",
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos/asco-shak6013gray.jpg": {
-    "mtime": 1789911700.593,
-    "seen": 1789911708.2248454,
+    "mtime": 1789912340.447,
+    "seen": 1789912347.397323,
     "ast_hash": "c54ccab33b62899789c6a16affc68d45",
     "semantic_hash": ""
   },
@@ -6636,8 +6636,8 @@
     "semantic_hash": ""
   },
   "review/builtins-enrichment/final-photos/asco-shak6222bg.jpg": {
-    "mtime": 1789911700.626,
-    "seen": 1789911708.224848,
+    "mtime": 1789912340.477,
+    "seen": 1789912347.397326,
     "ast_hash": "ebc93cf5ef93f9d50a7ba4b896a98921",
     "semantic_hash": ""
   },
@@ -6645,6 +6645,108 @@
     "mtime": 1789911671.6664233,
     "seen": 1789911708.2313628,
     "ast_hash": "a7c600badc51af2635a00cbc5919f03e",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/backups/prod-20260920-194326/backup.json": {
+    "mtime": 1789911806.2585819,
+    "seen": 1789912347.2469616,
+    "ast_hash": "bee721aa3bb1874736f68c11b60ae57b",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/backups/prod-20260920-194326/\u0426\u0411-00001547-1.jpg": {
+    "mtime": 1789911806.104359,
+    "seen": 1789912347.3970718,
+    "ast_hash": "1d4ff9104effd0e66a92f04fce6e7469",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/backups/prod-20260920-194326/\u0426\u0411-00002138-1.jpg": {
+    "mtime": 1789911806.113359,
+    "seen": 1789912347.397075,
+    "ast_hash": "2a0292e9526bdf6aab8ccd6c4c1b9df2",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/backups/prod-20260920-194326/\u0426\u0411-00002142-1.jpg": {
+    "mtime": 1789911806.1341672,
+    "seen": 1789912347.3970768,
+    "ast_hash": "84af30498c69ba32734be2bbb5eb094b",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/backups/prod-20260920-194326/\u0426\u0411-00002147-1.jpg": {
+    "mtime": 1789911806.1183603,
+    "seen": 1789912347.3970785,
+    "ast_hash": "48bf42f7ada30e7ba419d407ac15ef21",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/backups/prod-20260920-194326/\u0426\u0411-00002241-1.jpg": {
+    "mtime": 1789911806.1341672,
+    "seen": 1789912347.3970807,
+    "ast_hash": "d0f8c2dcc678b487a74482f5f61c825c",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/backups/prod-20260920-194326/\u0426\u0411-00002332-1.jpg": {
+    "mtime": 1789911806.1183603,
+    "seen": 1789912347.3970823,
+    "ast_hash": "5440f9a24350a890ae02625eaf9a72c0",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/backups/prod-20260920-194326/\u0426\u0411-00002489-1.jpg": {
+    "mtime": 1789911806.152148,
+    "seen": 1789912347.3970847,
+    "ast_hash": "febd240b7e94219e9f12e685056dbd2c",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/backups/prod-20260920-194326/\u0426\u0411-00002490-1.jpg": {
+    "mtime": 1789911806.1659348,
+    "seen": 1789912347.3970869,
+    "ast_hash": "543239fc9fdadcb0dcf1459ba0296b82",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/backups/prod-20260920-194326/\u0426\u0411-00002491-1.jpg": {
+    "mtime": 1789911806.1739526,
+    "seen": 1789912347.3970888,
+    "ast_hash": "0048c8b12b0a3027a5aa4c22690eb318",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/backups/prod-20260920-194326/\u0426\u0411-00002492-1.jpg": {
+    "mtime": 1789911806.1815946,
+    "seen": 1789912347.3970907,
+    "ast_hash": "ae136b7fb96488346370839fc2ac4a45",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/backups/prod-20260920-194326/\u0426\u0411-00002493-1.jpg": {
+    "mtime": 1789911806.1815946,
+    "seen": 1789912347.3970923,
+    "ast_hash": "7c25a0c9f21646112624eb87bf8c0afa",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/backups/prod-20260920-194326/\u0426\u0411-00002494-1.jpg": {
+    "mtime": 1789911806.2015903,
+    "seen": 1789912347.3970942,
+    "ast_hash": "480dc75dbd861cde5c3bad150bf9d568",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/final-photos/asco-shak6222gbx.jpg": {
+    "mtime": 1789912340.499,
+    "seen": 1789912347.397328,
+    "ast_hash": "cb8753a8279d4691ce1320cd477da06a",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/final-photos/asco-shak6222mgray.jpg": {
+    "mtime": 1789912340.535,
+    "seen": 1789912347.3973296,
+    "ast_hash": "9c57ee8bfea7f6967132a8dd6388de63",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/asco-shak6222gbx-clean.png": {
+    "mtime": 1789912257.3755994,
+    "seen": 1789912347.402831,
+    "ast_hash": "4eb511b23e91ade5d386be9f7fee98f2",
+    "semantic_hash": ""
+  },
+  "review/builtins-enrichment/originals/asco-shak6222mgray-clean.png": {
+    "mtime": 1789912298.4985373,
+    "seen": 1789912347.4028337,
+    "ast_hash": "7e1a1e84319a1c3902c00f0f3b8e835a",
     "semantic_hash": ""
   }
 }
