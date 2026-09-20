@@ -14,11 +14,17 @@ ENV_FILE="${ENV_FILE:-.env.production}"
 SITE_URL="${SITE_URL:-https://smarket.kg}"
 
 [ -f "$ENV_FILE" ] || { echo "Нет файла $ENV_FILE"; exit 1; }
-# shellcheck disable=SC1090
-set -a; . "$ENV_FILE"; set +a
 
-[ -n "${TELEGRAM_BOT_TOKEN:-}" ] || { echo "В $ENV_FILE нет TELEGRAM_BOT_TOKEN"; exit 1; }
-[ -n "${TELEGRAM_WEBHOOK_SECRET:-}" ] || { echo "В $ENV_FILE нет TELEGRAM_WEBHOOK_SECRET"; exit 1; }
+# Файл не исполняем через «. файл» нарочно: в нём есть значения с пробелами
+# (SITE_DEMO_NAME=Apple Review), и оболочка пыталась запустить «Review».
+# Берём ровно две нужные строки.
+value_of() { sed -n "s/^$1=//p" "$ENV_FILE" | tail -n 1 | tr -d '\r'; }
+
+TELEGRAM_BOT_TOKEN=$(value_of TELEGRAM_BOT_TOKEN)
+TELEGRAM_WEBHOOK_SECRET=$(value_of TELEGRAM_WEBHOOK_SECRET)
+
+[ -n "$TELEGRAM_BOT_TOKEN" ] || { echo "В $ENV_FILE нет TELEGRAM_BOT_TOKEN"; exit 1; }
+[ -n "$TELEGRAM_WEBHOOK_SECRET" ] || { echo "В $ENV_FILE нет TELEGRAM_WEBHOOK_SECRET"; exit 1; }
 
 API="https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}"
 
