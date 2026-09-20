@@ -295,6 +295,17 @@ export function IconInstagram({ size = 20, ...props }: IconProps) {
   )
 }
 
+/** Витрина магазина — метка «только в магазине» у рассрочки. */
+export function IconStore(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M4 9.5V20h16V9.5" />
+      <path d="M3 9.5 4.8 4.5h14.4L21 9.5a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0Z" />
+      <path d="M9.8 20v-5.2h4.4V20" />
+    </svg>
+  )
+}
+
 /** Стрелка «уходим на другой сайт» — как в кнопке «Выбрать технику». */
 export function IconArrowUpRight(props: IconProps) {
   return (
@@ -321,6 +332,21 @@ export function IconClock(props: IconProps) {
     <svg {...base(props)}>
       <circle cx="12" cy="12" r="8.5" />
       <path d="M12 7.5V12l3 1.8" />
+    </svg>
+  )
+}
+
+/**
+ * Круглосуточно: циферблат, разомкнутый сверху, и стрелка, которая идёт по
+ * кругу дальше. Для блока «Заказ 24/7» — луна там говорила про ночь, а заказ
+ * принимается в любое время суток.
+ */
+export function IconClock24(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M19.1 7.9A8.2 8.2 0 1 1 12 3.8" />
+      <path d="M10.7 2.5 12 3.8l-1.3 1.3" />
+      <path d="M12 7.8V12l2.9 1.7" />
     </svg>
   )
 }

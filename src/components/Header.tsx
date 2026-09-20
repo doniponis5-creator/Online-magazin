@@ -56,6 +56,7 @@ function HeaderInner() {
   }, [])
 
   const activeQuery = searchParams.get('q') ?? ''
+  const hideSearch = pathname.startsWith(`/${lang}/checkout`)
   useEffect(() => setQuery(activeQuery), [activeQuery])
 
   const onSearch = (e: FormEvent) => {
@@ -98,7 +99,16 @@ function HeaderInner() {
             {t.nav.openCatalog}
           </Link>
 
-          <form className="header__search" role="search" onSubmit={onSearch}>
+          {/* На оформлении заказа поиска нет: там человек заканчивает покупку,
+              и любая ссылка «в сторону» — это брошенная корзина. На остальных
+              страницах поиск остаётся: в магазине это главный способ найти
+              товар, и убирать его из кабинета или корзины нельзя. */}
+          <form
+            className={`header__search${hideSearch ? ' is-hidden' : ''}`}
+            role="search"
+            onSubmit={onSearch}
+            hidden={hideSearch}
+          >
             <div className="search">
               <span className="search__icon">
                 <IconSearch size={19} />

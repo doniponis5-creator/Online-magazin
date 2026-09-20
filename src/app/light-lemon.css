@@ -119,19 +119,40 @@ input, textarea { caret-color: var(--color-primary); }
 .badge { border-radius: 6px; font-weight: 700; }
 .badge--hit { color: #344000; background: #eff5b2; }
 .badge--new { color: #24508c; background: #eaf3ff; }
+/* Две фирменные витрины: лимонная — программа SBonus+, синяя — рассрочка.
+   Мягкий переход цвета и тонкая рамка вместо плоской заливки: блок выглядит
+   как витрина магазина, а не как цветной прямоугольник. */
 .promo-grid { gap: 24px; }
-.promo { padding: 36px; border-radius: 16px; box-shadow: none; border: 0; }
-.promo--lime { background: #f7fad7; color: var(--color-ink); }
-.promo--soft { background: #f4f7fb; }
+.promo { padding: 36px; border-radius: 20px; box-shadow: none; border: 1px solid transparent; }
+.promo--lime {
+  background: radial-gradient(120% 130% at 0% 0%, #fdffe4 0%, #f4f9c8 46%, #eaf3a8 100%);
+  border-color: #e4eda9;
+  color: var(--color-ink);
+}
+.promo--soft {
+  background: radial-gradient(120% 130% at 100% 0%, #ffffff 0%, #f3f7fc 45%, #e7eefa 100%);
+  border-color: #dde5f2;
+  color: var(--color-ink);
+}
+.promo__watermark { color: #c9d84a; }
+.promo--soft .promo__watermark { color: #7d9bd0; }
 .promo .brand__mark { height: 44px; width: 32px; }
 .promo .brand__name { font-size: 32px; }
-.promo__subheading { font-size: 21px; line-height: 1.4; margin-top: 20px; font-weight: 750; }
-.promo__title { font-size: 24px; letter-spacing: -.025em; }
-.promo__note { color: #435235; font-size: 14px; line-height: 1.7; max-width: 54ch; }
+.brand__plus { margin-left: 2px; color: var(--color-primary); font-weight: 800; }
+.promo__subheading { font-size: 21px; line-height: 1.4; margin-top: 18px; font-weight: 750; }
+.promo__title { font-size: 24px; letter-spacing: -.025em; margin-top: 14px; }
+.promo__note { color: #4b5b3a; font-size: 14px; line-height: 1.7; max-width: 54ch; }
 .promo--soft .promo__note { color: var(--color-ink-soft); }
-.promo__tag { background: #eaf0b6; color: #344000; }
+.promo__tag { background: rgba(255, 255, 255, .82); color: #5c6b12; box-shadow: 0 1px 4px rgba(38, 50, 68, .07); }
+.promo__tag--soft { color: #2b5391; }
+.promo-facts li { background: rgba(255, 255, 255, .8); box-shadow: 0 2px 10px rgba(38, 50, 68, .05); }
+.promo-facts strong { color: var(--color-ink); }
+.promo-facts span { color: #55663f; }
+.promo-steps__num { background: #fff; color: var(--color-primary); box-shadow: 0 2px 8px rgba(40, 84, 147, .12); }
+.promo--soft .btn--outline { background: #fff; border-color: #d3dceb; }
 .night-banner { background: #eaf3ff; color: var(--color-ink); border: 0; border-radius: 14px; padding: 28px 32px; }
-.night-banner__icon { background: transparent; color: #285493; }
+/* Белый кружок под значком: на светло-голубом блоке он иначе теряется. */
+.night-banner__icon { background: #fff; border-radius: 50%; color: #285493; box-shadow: 0 2px 8px rgba(40, 84, 147, 0.14); }
 .night-banner__title { color: var(--color-ink); font-size: 19px; }
 .night-banner__text { color: #405878; font-size: 14px; max-width: 85ch; }
 .info-strip { border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); border-radius: 0; background: white; padding-block: 28px; box-shadow: none; }
@@ -146,7 +167,22 @@ input, textarea { caret-color: var(--color-primary); }
 .footer__title { color: var(--color-ink); }
 .footer__bottom { color: var(--color-muted); border-color: var(--color-border); font-size: 11px; }
 .bottom-nav { border-top: 1px solid var(--color-border); box-shadow: none; background: #fff; }
-.bottom-nav__item.is-active { color: var(--color-ink); background: #fafce3; }
+/* Активный раздел: чистый лимонный штрих сверху и заливка чуть насыщеннее.
+   Штрих отвечает за «я здесь», заливка — только фон. Заливать всю плитку
+   ярким лимоном нельзя: этим цветом на сайте помечены кнопки действия
+   («В корзину», «Оформить»), и одинаковый цвет у кнопки и у фона сбивает. */
+.bottom-nav__item.is-active { color: var(--color-ink); background: #f7fac9; font-weight: 750; }
+.bottom-nav__item.is-active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 30px;
+  height: 3px;
+  transform: translateX(-50%);
+  border-radius: 0 0 3px 3px;
+  background: var(--color-lemon);
+}
 .bottom-nav__item.is-active svg { fill: #eaf500; stroke: #263244; }
 .bottom-nav__item { font-size: 10px; gap: 5px; }
 .purchase { box-shadow: none; border: 0; }

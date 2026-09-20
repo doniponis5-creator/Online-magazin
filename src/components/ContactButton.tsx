@@ -1,7 +1,10 @@
 'use client'
 
+import { usePathname } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { instagram, phones, telHref, telegramHref, whatsappHref } from '@/data/contacts'
+import { getProduct } from '@/data/products'
+import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { IconClose, IconInstagram, IconPhone, IconTelegram, IconWhatsApp } from './Icons'
 
@@ -16,10 +19,27 @@ import { IconClose, IconInstagram, IconPhone, IconTelegram, IconWhatsApp } from 
  * переписка удобнее — видно, о каком товаре речь.
  */
 export function ContactButton() {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const c = t.contactWidget
+  const pathname = usePathname() || ''
   const [open, setOpen] = useState(false)
   const box = useRef<HTMLDivElement>(null)
+
+  /**
+   * На странице товара сообщение в WhatsApp уже набрано: название, цена и
+   * ссылка. Это и есть наш «онлайн-чат» — покупатель пишет туда, где сидит
+   * сам, а продавец сразу видит, о каком товаре речь.
+   */
+  const productAsk = (() => {
+    const match = pathname.match(new RegExp(`^/${lang}/product/([^/]+)`))
+    const product = match ? getProduct(decodeURIComponent(match[1])) : undefined
+    if (!product) return null
+    const name = lang === 'ky' ? product.nameKy : product.nameRu
+    const price = product.price > 0 ? ` — ${formatSom(product.price)}` : ''
+    const link = typeof window === 'undefined' ? '' : `
+${window.location.href}`
+    return `${c.askAbout} ${name}${price}${link}`
+  })()
 
   const close = useCallback(() => setOpen(false), [])
 
@@ -29,20 +49,24 @@ export function ContactButton() {
       if (e.key === 'Escape') close()
     }
     // Клик мимо панели закрывает её: так ведут себя все всплывающие окна,
-    // и человек не ищет крестик.
-    const onDown = (e: MouseEvent) => {
+    // и человек не ищет крестик. Слушаем pointerdown, а не mousedown: на
+    // телефоне часть касаний до mousedown не доходит, и панель не закрывалась.
+    const onDown = (e: Event) => {
       if (box.current && !box.current.contains(e.target as Node)) close()
     }
     document.addEventListener('keydown', onKey)
-    document.addEventListener('mousedown', onDown)
+    document.addEventListener('pointerdown', onDown)
     return () => {
       document.removeEventListener('keydown', onKey)
-      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('pointerdown', onDown)
     }
   }, [open, close])
 
   return (
-    <div className="contact-fab" ref={box}>
+    <div className={`contact-fab${open ? ' is-open' : ''}`} ref={box}>
+      {/* Подложка на весь экран: нажатие в любом пустом месте закрывает панель.
+          Один слушатель события мог промахнуться мимо касания, эта — нет. */}
+      {open && <div className="contact-fab__backdrop" onClick={close} aria-hidden="true" />}
       {open && (
         <div className="contact-fab__panel" role="dialog" aria-label={c.title}>
           <div className="contact-fab__head">
@@ -51,14 +75,14 @@ export function ContactButton() {
               <IconClose size={18} />
             </button>
           </div>
-          <p className="contact-fab__hint">{c.hint}</p>
+          <p className="contact-fab__hint">{productAsk ? c.hintProduct : c.hint}</p>
           <ul className="contact-fab__list">
             {phones.map((phone) => (
               <li key={phone.raw}>
                 <span className="contact-fab__number">{phone.display}</span>
                 <span className="contact-fab__actions">
                   <a
-                    href={whatsappHref(phone)}
+                    href={whatsappHref(phone, productAsk ?? undefined)}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={`WhatsApp ${phone.display}`}
@@ -105,7 +129,9 @@ export function ContactButton() {
         aria-expanded={open}
         aria-label={c.title}
       >
-        {open ? <IconClose size={22} /> : <IconPhone size={22} />}
+        <span className="contact-fab__icon">
+          {open ? <IconClose size={22} /> : <IconPhone size={22} />}
+        </span>
         <span className="contact-fab__label">{c.short}</span>
       </button>
     </div>

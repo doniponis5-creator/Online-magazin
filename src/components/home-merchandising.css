@@ -26,7 +26,11 @@
 .hit-mosaic__item--4 { grid-column: 2 / 4; grid-row: 2; }
 .hit-mosaic__item--5 { grid-column: 4; grid-row: 2; }
 .hit-mosaic__item--6 { grid-column: 5; grid-row: 2; }
-.hit-mosaic__item--0 .card__media { flex: 1; min-height: 330px; }
+/* Лишнюю высоту забирает картинка, а не текст. Иначе в высокой плитке между
+   описанием и ценой зияла пустая полоса в пол-карточки. */
+.hit-mosaic__item .card__media { flex: 1 1 auto; }
+.hit-mosaic__item .card__body { flex: 0 0 auto; }
+.hit-mosaic__item--0 .card__media { min-height: 330px; }
 .hit-mosaic__item .card__body { padding: 14px; }
 .hit-mosaic__item .card__name { font-size: 13px; min-height: 40px; }
 .hit-mosaic__item .card__price { font-size: clamp(17px,1.65vw,23px); }
@@ -36,26 +40,52 @@
 .hit-mosaic__item .card__actions .btn { padding-inline: 8px; font-size: 12px; }
 .hit-mosaic__item--3 .card, .hit-mosaic__item--4 .card { display: grid; grid-template-columns: 44% 56%; }
 .hit-mosaic__item--3 .card__media, .hit-mosaic__item--4 .card__media { height: 100%; aspect-ratio: auto; }
+/* Широкие плитки: текст стоит рядом с картинкой во всю высоту. Прижимать цену
+   к низу тут нечем — между описанием и ценой оставалась дыра. Поэтому текст
+   выравниваем по центру колонки и даём описанию больше строк: места хватает. */
+.hit-mosaic__item--3 .card__body, .hit-mosaic__item--4 .card__body { justify-content: center; }
+.hit-mosaic__item--3 .card__prices, .hit-mosaic__item--4 .card__prices { margin-top: 10px; }
+.hit-mosaic__item--3 .card__desc, .hit-mosaic__item--4 .card__desc { -webkit-line-clamp: 4; line-clamp: 4; }
 .hit-mosaic__rail { grid-column: 6; grid-row: 1 / 3; display: grid; grid-template-rows: repeat(4,1fr); gap: 14px; }
 .hit-mosaic__rail a { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 14px 8px; gap: 10px; border: 1px solid var(--color-border); border-radius: 14px; text-align: center; font-size: 12px; font-weight: 650; background: #fff; }
 .hit-mosaic__rail a:hover { background: var(--color-primary-soft); }
 .hit-mosaic__rail svg { width: 68px; height: 68px; }
-.brand-strip__grid { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); border-top: 1px solid var(--color-border); border-left: 1px solid var(--color-border); }
-.brand-strip__grid a { min-width: 0; min-height: 88px; padding: 12px; display: flex; align-items: center; justify-content: center; font-size: clamp(14px,1.5vw,21px); border-right: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
-.brand-strip__grid a { color: #5d6d7e; transition: background-color 160ms ease-out, color 160ms ease-out; }
-.brand-strip__grid a:hover { background: var(--color-surface); }
-.brand-strip__grid a:hover .brand-logo { color: var(--brand-color); }
-.brand-strip__grid a:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+/* Лента брендов. Стоит на месте, пока логотипы помещаются; не помещаются —
+   едет по кругу. По краям лёгкое затухание, чтобы логотипы не обрезались
+   ножом, а уходили за край. */
+.brand-rail { overflow: hidden; border-top: 1px solid var(--color-border); border-left: 1px solid var(--color-border); }
+.brand-rail.is-running { -webkit-mask-image: linear-gradient(90deg, transparent, #000 48px, #000 calc(100% - 48px), transparent); mask-image: linear-gradient(90deg, transparent, #000 48px, #000 calc(100% - 48px), transparent); }
+.brand-rail__track { display: flex; }
+.brand-rail__set { display: flex; flex: 1 0 auto; }
+.brand-rail.is-running .brand-rail__set { flex: none; }
+.brand-rail.is-running .brand-rail__track { width: max-content; animation-name: brand-rail; animation-timing-function: linear; animation-iteration-count: infinite; }
+/* Палец или мышь на ленте — остановились, иначе по логотипу не попасть */
+.brand-rail:hover .brand-rail__track, .brand-rail:active .brand-rail__track, .brand-rail:focus-within .brand-rail__track { animation-play-state: paused; }
+@keyframes brand-rail { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .brand-rail.is-running .brand-rail__track { animation: none; } }
+
+.brand-rail__set > a, .brand-rail__set > span { min-width: 0; min-height: 88px; padding: 12px; display: flex; align-items: center; justify-content: center; font-size: clamp(14px,1.5vw,21px); border-right: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
+/* Ширина плитки одна и та же в обоих режимах. Если бы в покое она была
+   другой, включение бега меняло бы ширину ленты, измерение давало бы обратный
+   ответ — и лента переключалась бы между режимами без остановки. */
+.brand-rail:not(.is-running) .brand-rail__set > a { flex: 1 1 clamp(150px, 17vw, 215px); }
+.brand-rail.is-running .brand-rail__set > a, .brand-rail.is-running .brand-rail__set > span { width: clamp(150px, 17vw, 215px); flex: none; }
+.brand-rail__set > a { color: #5d6d7e; transition: background-color 160ms ease-out, color 160ms ease-out; }
+.brand-rail__set > a:hover { background: var(--color-surface); }
+.brand-rail__set > a:hover .brand-logo { color: var(--brand-color); }
+.brand-rail__set > a:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
 .brand-logo { display: inline-flex; align-items: center; gap: .4em; max-width: 100%; color: inherit; font-size: inherit; line-height: 1; white-space: nowrap; transition: color 160ms ease-out; }
 .brand-logo__mark { width: 1.25em; height: 1.25em; flex: none; }
 .brand-logo__word { overflow: hidden; text-overflow: ellipsis; letter-spacing: -.02em; }
 .brand-logo__word-light { font-weight: 450; }
 .brand-logo--image img { display: block; max-width: 100%; height: auto; transition: transform 160ms ease-out; }
-.brand-strip__grid a:hover .brand-logo--image img { transform: scale(1.04); }
+.brand-rail__set > a:hover .brand-logo--image img { transform: scale(1.04); }
 .sale-section__grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 20px; }
 .sale-section__item { position: relative; }
 .sale-section__item .card { height: 100%; }
-.sale-section__discount { position: absolute; top: 16px; left: 14px; z-index: 2; background: var(--color-lemon); color: var(--color-ink); border-radius: 6px; padding: 5px 9px; font-weight: 800; font-size: 13px; }
+/* Процент скидки красный, а не лимонный: на распродаже он главное число
+   на карточке, а лимонный сливался с кнопкой «В корзину». */
+.sale-section__discount { position: absolute; top: 16px; left: 14px; z-index: 3; background: var(--color-danger); color: #fff; border-radius: 6px; padding: 5px 9px; font-weight: 800; font-size: 13px; letter-spacing: .01em; box-shadow: 0 2px 8px rgba(214, 64, 45, .28); }
 .sale-section .card__badges { display: none; }
 .social-account { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 .instagram-panel, .account-panel { padding: clamp(24px,3vw,40px); border-radius: 16px; }
@@ -114,10 +144,9 @@
  .hit-mosaic__rail { grid-column: 1 / -1; grid-row: auto; grid-template-columns: repeat(4,minmax(0,1fr)); grid-template-rows: auto; gap: 8px; }
  .hit-mosaic__rail a { font-size: 10px; padding: 12px 4px; }
  .hit-mosaic__rail svg { width: 44px; height: 44px; }
- .brand-strip__grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
- .brand-strip__grid a { min-height: 76px; font-size: 13px; padding: 8px; }
- .brand-strip__grid .brand-logo { flex-direction: column; gap: 7px; }
- .brand-strip__grid .brand-logo__mark { width: 20px; height: 20px; }
+ .brand-rail__set > a, .brand-rail__set > span { min-height: 76px; font-size: 13px; padding: 8px; }
+ .brand-rail .brand-logo { flex-direction: column; gap: 7px; }
+ .brand-rail .brand-logo__mark { width: 20px; height: 20px; }
  .sale-section__grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
  .social-account, .account-layout { grid-template-columns: 1fr; }
  .account-loyalty { padding: 26px; }

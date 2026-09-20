@@ -35,6 +35,7 @@ const BRANDS = {
   TOEAR: { slug: 'toear' },
   UAKEEN: { slug: 'uakeen' },
   VELBERG: { slug: 'velberg' },
+  AVANGARD: { slug: 'avangard' },
   'AVEST-LOGO-USER': { slug: 'avest' },
   ТЕХНОМИР: { slug: 'tehnomir' },
   // wikimedia/ — логотипы с Wikimedia Commons (см. public/Бренд лого/wikimedia/SOURCES.md)
@@ -51,6 +52,9 @@ const BRANDS = {
   ARISTON: { slug: 'ariston' },
   GORENJE: { slug: 'gorenje' },
   SHIVAKI: { slug: 'shivaki' },
+  ARTEL: { slug: 'artel', mode: 'light' },
+  // HANTAJI намеренно нет: исходник — фотография вывески, после обрезки
+  // остаётся мутный серый прямоугольник. Текстовое начертание выглядит лучше.
 }
 
 function median(values) {
@@ -92,7 +96,14 @@ async function removeBackground(input, brand) {
   for (let p = 0; p < width * height; p++) {
     const i = p * channels
     let [r, g, b, a] = [data[i], data[i + 1], data[i + 2], data[i + 3]]
-    if (brand.mode === 'chroma') {
+    if (brand.mode === 'light') {
+      // светлый рисунок на цветной подложке с переливом (зелёная шильда Artel):
+      // ищем не фон, а сам логотип — оставляем только светлые пиксели.
+      const lum = 0.299 * r + 0.587 * g + 0.114 * b
+      const t = Math.min(1, Math.max(0, (lum - 140) / 80))
+      a = Math.round(a * t)
+      ;[r, g, b] = INK
+    } else if (brand.mode === 'chroma') {
       // фон — серый металл с переливом: оставляем только цветные пиксели логотипа
       const chroma = Math.max(r, g, b) - Math.min(r, g, b)
       const t = Math.min(1, Math.max(0, (chroma - 12) / 18))

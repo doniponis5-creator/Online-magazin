@@ -80,6 +80,8 @@ export type Product = {
   /** отметки из 1С: «Распродажа» и «Товар дня» */
   sale?: boolean
   dealOfDay?: boolean
+  /** отметка «Специально для вас» из 1С */
+  forYou?: boolean
   /** стоимость доставки товара, сом (0 или нет — бесплатно) */
   deliveryPrice?: number
   /** до какого момента идёт акция; бишкекское время, без него отсчёта нет */
@@ -606,9 +608,16 @@ export function getHits(demoIds: string[]): Product[] {
   return catalogSource === '1c' ? pick(products.filter((p) => p.badge === 'hit'), 7) : byIds(demoIds)
 }
 
+/**
+ * «Специально для вас»: сначала товары с отметкой из 1С, дальше добираем
+ * остальными. Раньше блок набирался сам, и владелец не мог положить в него
+ * нужный товар — единственная витрина сайта без ручки в 1С.
+ */
 export function getRecommended(demoIds: string[], exclude: Product[] = []): Product[] {
   if (catalogSource === 'demo') return byIds(demoIds)
-  return pick(products.filter((p) => p.image && purchasable(p)), 3, exclude)
+  const chosen = products.filter((p) => p.forYou && purchasable(p))
+  const rest = products.filter((p) => !p.forYou && p.image && purchasable(p))
+  return pick([...chosen, ...rest], 3, exclude)
 }
 
 /** Распродажа: отметка «Распродажа» или старая цена выше текущей. */

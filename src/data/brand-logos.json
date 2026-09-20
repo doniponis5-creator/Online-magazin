@@ -19,10 +19,20 @@
     "w": 420,
     "h": 67
   },
+  "ARTEL": {
+    "src": "/brands/artel.webp",
+    "w": 309,
+    "h": 120
+  },
   "ASKO": {
     "src": "/brands/asko.webp",
     "w": 420,
     "h": 88
+  },
+  "AVANGARD": {
+    "src": "/brands/avangard.webp",
+    "w": 420,
+    "h": 52
   },
   "AVEST-LOGO-USER": {
     "src": "/brands/avest.webp",

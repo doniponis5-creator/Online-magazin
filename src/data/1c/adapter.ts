@@ -27,6 +27,8 @@ export type OneCItem = {
   oldPrice?: number
   sale?: boolean
   dealOfDay?: boolean
+  /** отметка «Специально для вас» из 1С */
+  forYou?: boolean
   hit?: boolean
   isNew?: boolean
   photos?: string[]
@@ -61,10 +63,19 @@ function cleanName(name: string): string {
   return name.replace(/\s+/g, ' ').trim()
 }
 
+/**
+ * «В наличии» владелец ставит, когда товар продаётся всегда: остаток в базе
+ * может быть нулевым, товар привозят под заказ. Поэтому здесь остаток не
+ * ограничивает корзину — иначе при остатке 1 покупатель не мог положить две
+ * штуки, и кнопка «В корзину» гасла со словом «Максимум». 99 — предел, который
+ * и так проверяет сервер заказов (MAX_QTY).
+ */
+const ALWAYS_IN_STOCK = 99
+
 function stockFor(item: OneCItem): number {
   const stock = Math.max(0, Math.floor(item.stock || 0))
   if (item.availability === 'Нет в наличии') return 0
-  if (item.availability === 'В наличии') return Math.max(stock, 1)
+  if (item.availability === 'В наличии') return Math.max(stock, ALWAYS_IN_STOCK)
   return stock
 }
 
@@ -139,6 +150,7 @@ export function productFromOneC(item: OneCItem): Product {
     badge: item.hit ? 'hit' : item.isNew ? 'new' : undefined,
     sale: Boolean(item.sale),
     dealOfDay: Boolean(item.dealOfDay),
+    forYou: Boolean(item.forYou),
     deliveryPrice: Math.max(0, Math.round(item.deliveryPrice || 0)),
     promoUntil: item.promoUntil,
     oneCId: item.id,

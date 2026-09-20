@@ -10,7 +10,20 @@ import {
   type ReactNode,
 } from 'react'
 
+import { getProduct } from '@/data/products'
+
 const STORAGE_KEY = 'sc-favorites-v1'
+
+/**
+ * Оставляем только те товары, которые есть в каталоге сейчас.
+ *
+ * Иначе бывает так: покупатель сохранил товар, владелец скрыл его в 1С — и на
+ * значке висит «1», а страница «Избранное» пустая. Счётчик обязан показывать
+ * ровно то, что человек увидит, открыв страницу.
+ */
+export function onlyExisting(ids: string[]): string[] {
+  return ids.filter((id) => Boolean(getProduct(id)))
+}
 
 type FavoritesContextValue = {
   ids: string[]
@@ -28,7 +41,7 @@ function readStorage(): string[] {
     if (!raw) return []
     const parsed: unknown = JSON.parse(raw)
     if (!Array.isArray(parsed)) return []
-    return parsed.filter((v): v is string => typeof v === 'string')
+    return onlyExisting(parsed.filter((v): v is string => typeof v === 'string'))
   } catch {
     return []
   }
@@ -64,7 +77,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
         parsed = null
       }
       if (Array.isArray(parsed)) {
-        setIds(parsed.filter((v): v is string => typeof v === 'string'))
+        setIds(onlyExisting(parsed.filter((v): v is string => typeof v === 'string')))
       } else {
         setIds([])
       }

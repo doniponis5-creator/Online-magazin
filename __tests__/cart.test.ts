@@ -9,6 +9,7 @@ import {
   unitPrice,
   type ProductRef,
 } from '@/lib/cart/logic'
+import { productFromOneC } from '@/data/1c/adapter'
 
 const phone: ProductRef = {
   id: 'phone',
@@ -210,5 +211,25 @@ describe('normalizeLines — восстановление корзины из lo
     expect(Number.isFinite(subtotal)).toBe(true)
     expect(subtotal).toBeGreaterThanOrEqual(0)
     expect(itemsCount).toBeGreaterThanOrEqual(0)
+  })
+})
+
+/**
+ * Остаток из 1С: «В наличии» — товар продаётся всегда, даже когда в базе ноль.
+ * Раньше такой товар получал остаток 1, и вторую штуку положить было нельзя.
+ */
+describe('остаток из 1С', () => {
+  const item = (availability: string, stock: number) =>
+    productFromOneC({ id: 'g1', code: 'C1', name: 'Тест', stock, availability, price: 100 })
+      .variants[0].stock
+
+  it('«В наличии» не ограничивает корзину остатком базы', () => {
+    expect(item('В наличии', 0)).toBeGreaterThanOrEqual(99)
+    expect(item('В наличии', 1)).toBeGreaterThanOrEqual(99)
+  })
+
+  it('«Нет в наличии» — ноль, «По остатку» — остаток базы', () => {
+    expect(item('Нет в наличии', 7)).toBe(0)
+    expect(item('По остатку', 3)).toBe(3)
   })
 })

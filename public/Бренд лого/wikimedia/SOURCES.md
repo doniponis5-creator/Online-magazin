@@ -1,4 +1,4 @@
-# Логотипы с Wikimedia Commons (скачаны 17.09.2026)
+# Логотипы с Wikimedia Commons (скачаны 17.09.2026, ARTEL — 20.09.2026)
 
 | Бренд | Файл на Commons | Лицензия |
 |---|---|---|
@@ -15,5 +15,6 @@
 | ARISTON | File:Ariston logo.svg | Public domain |
 | GORENJE | File:Gorenje logo 2024.svg | Public domain |
 | SHIVAKI | File:Logo SHIVAKI.png | Public domain |
+| ARTEL | File:Shilda Artel.svg (официальный логотип 2023, artelgroup.org; автор «Амаль») | CC BY-SA 4.0 |
 
 Логотипы — товарные знаки их владельцев; используются для обозначения брендов товаров в магазине.

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useRef, useState } from 'react'
 import { brands, products, getDailyProduct, getHits, getRecommended, getSale } from '@/data/products'
 import { categories } from '@/data/categories'
 import { storefront } from '@/data/storefront'
@@ -79,11 +80,65 @@ function brandsForStrip(): string[] {
     .slice(0, 12)
 }
 
+/**
+ * Бренды бегущей строкой — но только если они не помещаются на экран.
+ *
+ * Логотипы, которые ездят без нужды, читаются как реклама, и по ним трудно
+ * попасть пальцем. Поэтому измеряем: влезли — стоят ровным рядом, не влезли —
+ * едут медленно справа налево и возвращаются по кругу. Палец или мышь на
+ * строке — движение останавливается, чтобы можно было нажать.
+ */
 export function BrandStrip() {
   const { lang } = useI18n()
+  const list = brandsForStrip()
+  const wrap = useRef<HTMLDivElement>(null)
+  const row = useRef<HTMLDivElement>(null)
+  const [seconds, setSeconds] = useState(0)
+
+  useEffect(() => {
+    const box = wrap.current
+    const set = row.current
+    if (!box || !set) return
+    const measure = () => {
+      const width = set.scrollWidth
+      // 60 пикселей в секунду — примерно шаг спокойного чтения
+      setSeconds(width > box.clientWidth ? Math.max(18, Math.round(width / 60)) : 0)
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(box)
+    observer.observe(set)
+    return () => observer.disconnect()
+  }, [list.length])
+
+  const running = seconds > 0
+  const logos = (
+    <div className="brand-rail__set" ref={row}>
+      {list.map((brand) => (
+        <Link key={brand} href={`/${lang}/catalog?brand=${encodeURIComponent(brand)}`}>
+          <BrandLogo brand={brand} />
+        </Link>
+      ))}
+    </div>
+  )
+
   return <section className="section brand-strip" aria-labelledby="brands-title">
     <Heading id="brands-title" title={lang === 'ky' ? 'Бренддер' : 'Бренды'} />
-    <div className="brand-strip__grid">{brandsForStrip().map(brand => <Link key={brand} href={`/${lang}/catalog?brand=${encodeURIComponent(brand)}`}><BrandLogo brand={brand} /></Link>)}</div>
+    <div className={`brand-rail${running ? ' is-running' : ''}`} ref={wrap}>
+      <div className="brand-rail__track" style={running ? { animationDuration: `${seconds}s` } : undefined}>
+        {logos}
+        {/* Вторая копия — чтобы строка шла по кругу без пустого места */}
+        {running && (
+          <div className="brand-rail__set" aria-hidden="true">
+            {list.map((brand) => (
+              <span key={brand}>
+                <BrandLogo brand={brand} />
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   </section>
 }
 

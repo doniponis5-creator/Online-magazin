@@ -14,7 +14,7 @@ import {
   IconCard,
   IconChevronRight,
   IconHeadset,
-  IconMoon,
+  IconClock24,
   IconShield,
   IconTruck,
 } from '@/components/Icons'
@@ -79,7 +79,7 @@ function NightBanner() {
     <section className="section" aria-labelledby="night-title" data-reveal>
       <div className="night-banner">
         <span className="night-banner__icon">
-          <IconMoon size={26} />
+          <IconClock24 size={28} />
         </span>
         <div>
           <h2 className="night-banner__title" id="night-title">

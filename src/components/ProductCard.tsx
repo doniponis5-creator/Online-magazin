@@ -17,6 +17,7 @@ export function ProductCard({ product }: { product: Product }) {
   const { t, lang } = useI18n()
   const cart = useCart()
   const name = lang === 'ky' ? product.nameKy : product.nameRu
+  const desc = (lang === 'ky' ? product.descKy : product.descRu)?.trim()
   const variant = product.variants[0]
   const inStock = variant.stock > 0
   const href = `/${lang}/product/${product.id}`
@@ -57,6 +58,10 @@ export function ProductCard({ product }: { product: Product }) {
         <Link href={href} className="card__name">
           {name}
         </Link>
+        {/* Две строки описания — только на компьютере. Там карточки тянутся до
+            высоты самой высокой в ряду, и под названием оставалась пустота.
+            На телефоне места нет, и описание там только мешало бы. */}
+        {desc && <p className="card__desc">{desc}</p>}
         <div className="card__prices">
           {product.price > 0 ? (
             <>

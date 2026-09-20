@@ -37,7 +37,13 @@ export function yearsOnMarket(now = new Date()): number {
 }
 
 export const telHref = (p: Phone) => `tel:+${p.raw}`
-export const whatsappHref = (p: Phone) => `https://wa.me/${p.raw}`
+/**
+ * Ссылка в WhatsApp. С текстом — сообщение уже набрано за покупателя: он
+ * нажал «Связаться» на странице товара, и продавец сразу видит, о чём речь,
+ * а не спрашивает «какой именно?».
+ */
+export const whatsappHref = (p: Phone, text?: string) =>
+  text ? `https://wa.me/${p.raw}?text=${encodeURIComponent(text)}` : `https://wa.me/${p.raw}`
 export const telegramHref = (p: Phone) => `https://t.me/+${p.raw}`
 
 /**
