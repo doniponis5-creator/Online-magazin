@@ -738,7 +738,8 @@ def panel_form():
     f.attribute("ПриветственныйБонус", t_num(6, 0), title="Приветственный бонус новому покупателю, сом", saved_data=True)
     f.attribute("МаксимумБонусами", t_num(3, 0), title="Можно оплатить бонусами, % от заказа", saved_data=True)
     f.attribute("ЗаказБезВхода", t_bool(), title="Разрешить заказ без входа", saved_data=True)
-    f.attribute("НаценкаДляЧата", t_num(3, 0), title="Наценка на товары не с сайта (продаёт чат), %", saved_data=True)
+    f.attribute("НаценкаКрупная", t_num(3, 0), title="Наценка для чата: крупная техника, %", saved_data=True)
+    f.attribute("НаценкаМелкая", t_num(3, 0), title="мелкая техника, %", saved_data=True)
     f.attribute("ЗнанияДляЧата", t_str(0), title="Знания для чата", saved_data=True)
     f.attribute("ЗнанияЗагружены", t_bool())
     f.attribute("Состояние", t_str(0), title="Состояние")
@@ -762,7 +763,8 @@ def panel_form():
             ], direction="AlwaysHorizontal"),
             f.group("ГруппаНастройкиЧат", [
                 # Себестоимость + этот % — цена в чате для товаров со склада, которых нет на сайте. 0 — не продавать.
-                f.input("НаценкаДляЧата", "НаценкаДляЧата", width=6, hint="0 — выкл."),
+                f.input("НаценкаКрупная", "НаценкаКрупная", width=6, hint="0 — выкл."),
+                f.input("НаценкаМелкая", "НаценкаМелкая", width=6, hint="0 — выкл."),
                 f.button("КнопкаСохранить", "СохранитьНастройки"),
             ], direction="AlwaysHorizontal"),
         ], title="Настройки сайта (действуют сразу)"),
