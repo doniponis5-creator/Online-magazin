@@ -1,7 +1,7 @@
 # Graph Report - Online-magazin  (2026-09-21)
 
 ## Corpus Check
-- 405 files · ~10,347,616 words
+- 405 files · ~10,347,621 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 39 file(s) not represented in the graph (top: .css 9, .bsl 7, (none) 6)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `5a50b386`
+- Built from commit: `0f5460e2`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -140,12 +140,12 @@
 - webkit
 - next
 - catalog.ts
-- telegram-bot.mjs
+- assistant/route.ts
 - I18nProvider.tsx
 - normalize_washer_photos.cjs
 - privacy.ts
 - reply.ts
-- assistant/route.ts
+- Gallery.tsx
 - update-all.sh
 - install-on-iphone.sh
 - cappluginmethod
@@ -169,10 +169,10 @@
 - render-svg.cjs
 - shop_models.py
 - .money_amount
-- Gallery.tsx
+- Header.tsx
 - prepare_midea_mo18000_photos.cjs
 - Подготовка карточек стиральных машин для 1С
-- Header.tsx
+- prepare_flagman_av80.cjs
 - install-global.ps1
 - Блендеры, мясорубки, чопперы и швейные машины
 - Пылесосы — статус подготовки
@@ -187,7 +187,7 @@
 - ref_vitest_config
 - HomeStory.tsx
 - review-home-story.cjs
-- prepare_flagman_av80.cjs
+- telegram-bot.mjs
 - washer_contact_sheet.cjs
 
 ## God Nodes (most connected - your core abstractions)
@@ -571,6 +571,10 @@ Nodes (6): nextConfig, next, metadata, src_app_globals, src_app_light_lemon, Not
 Cohesion: 0.31
 Nodes (9): OfflineCatalogSync(), CapacitorGlobal, CatalogPlugin, markTried(), offlineCatalogState(), plugin(), showOfflineCatalog(), syncOfflineCatalog() (+1 more)
 
+### Community 131 - "assistant/route.ts"
+Cohesion: 0.36
+Nodes (8): customerBrief(), dynamic, ipOf(), POST(), readTurns(), seen, tooOften(), getInstallment()
+
 ### Community 132 - "I18nProvider.tsx"
 Cohesion: 0.17
 Nodes (18): react, FavoritesPage(), AddToCartButton(), BottomNav(), FavoriteButton(), ProductCard(), StockLine(), WarrantyBadge() (+10 more)
@@ -587,9 +591,9 @@ Nodes (9): metadata, PrivacyPage(), getPrivacy(), PRIVACY_UPDATED, PrivacyConten
 Cohesion: 0.23
 Nodes (13): askGemini(), ChatTurn, geminiConfigured(), GeminiError, once(), ProductHit, parseAnswer(), ownerNotes() (+5 more)
 
-### Community 136 - "assistant/route.ts"
-Cohesion: 0.36
-Nodes (8): customerBrief(), dynamic, ipOf(), POST(), readTurns(), seen, tooOften(), getInstallment()
+### Community 136 - "Gallery.tsx"
+Cohesion: 0.33
+Nodes (5): DevGalleryFixturePage(), Gallery(), ProductArt(), ProductImage(), ProductPhoto
 
 ### Community 137 - "update-all.sh"
 Cohesion: 0.83
@@ -631,9 +635,9 @@ Nodes (5): Интернет-магазин Smart Centr — заказы с са�
 Cohesion: 0.33
 Nodes (3): Сколько клиент платит деньгами (для старых заказов без бонусов — total)., Для страницы заказа на сайте: без телефона и адреса., Для 1С: всё, что нужно для Заказа клиента, ПКО и Реализации.
 
-### Community 160 - "Gallery.tsx"
-Cohesion: 0.33
-Nodes (5): DevGalleryFixturePage(), Gallery(), ProductArt(), ProductImage(), ProductPhoto
+### Community 160 - "Header.tsx"
+Cohesion: 0.62
+Nodes (4): HeaderInner(), Lang, buildCatalogHref(), buildLangHref()
 
 ### Community 161 - "prepare_midea_mo18000_photos.cjs"
 Cohesion: 0.33
@@ -643,9 +647,9 @@ Nodes (5): fs, keys, path, root, sharp
 Cohesion: 0.40
 Nodes (4): Загружено в 1С — 24 товара, Загрузка, Не загружаются без точного подтверждения — 4 товара, Подготовка карточек стиральных машин для 1С
 
-### Community 163 - "Header.tsx"
-Cohesion: 0.62
-Nodes (4): HeaderInner(), Lang, buildCatalogHref(), buildLangHref()
+### Community 163 - "prepare_flagman_av80.cjs"
+Cohesion: 0.40
+Nodes (4): jobs, path, root, sharp
 
 ### Community 179 - "HomeStory.tsx"
 Cohesion: 0.47
@@ -654,10 +658,6 @@ Nodes (4): A09 · P2 — Дизайн ҳужжати ва токенлар ам�
 ### Community 180 - "review-home-story.cjs"
 Cohesion: 0.40
 Nodes (4): ref_node_assert, assert, { chromium }, fs
-
-### Community 181 - "prepare_flagman_av80.cjs"
-Cohesion: 0.40
-Nodes (4): jobs, path, root, sharp
 
 ### Community 182 - "washer_contact_sheet.cjs"
 Cohesion: 0.40
@@ -672,9 +672,9 @@ Nodes (4): fs, path, root, sharp
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `test` connect `package.json` to `manage.py`?**
-  _High betweenness centrality (0.218) - this node is a cross-community bridge._
+  _High betweenness centrality (0.216) - this node is a cross-community bridge._
 - **Why does `copy_base()` connect `manage.py` to `build_extension.py`, `package.json`?**
-  _High betweenness centrality (0.218) - this node is a cross-community bridge._
+  _High betweenness centrality (0.216) - this node is a cross-community bridge._
 - **What connects `customer`, `phone`, `laptop` to the rest of the system?**
   _393 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `products.ts` be split into smaller, more focused modules?**

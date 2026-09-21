@@ -169,31 +169,31 @@
   },
   "integrations/sbonus-server/shop/001_shop_orders_migration.sql": {
     "mtime": 1789643427.3177383,
-    "seen": 1789966167.1922483,
+    "seen": 1789968251.0229514,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/002_shop_catalog_migration.sql": {
     "mtime": 1789647531.5057318,
-    "seen": 1789966167.192252,
+    "seen": 1789968251.0229528,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/003_shop_bonus_migration.sql": {
     "mtime": 1789651724.3017156,
-    "seen": 1789966167.1922543,
+    "seen": 1789968251.0229535,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/004_shop_stats_migration.sql": {
     "mtime": 1789734501.4004698,
-    "seen": 1789966167.192256,
+    "seen": 1789968251.0229542,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/005_shop_push_migration.sql": {
     "mtime": 1789792750.2917469,
-    "seen": 1789966167.1922584,
+    "seen": 1789968251.022955,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -894,9 +894,9 @@
     "semantic_hash": "ab578875f27d0e418c615aed2d950578"
   },
   "src/lib/i18n/dictionaries.ts": {
-    "mtime": 1789968103.5332303,
-    "seen": 1789968246.7318168,
-    "ast_hash": "7c059d1b239ec136cdbfaa98df1d2041",
+    "mtime": 1789968271.1118057,
+    "seen": 1789968334.0007448,
+    "ast_hash": "ec080c43b629d7fa5b89b78be5767128",
     "semantic_hash": ""
   },
   "src/lib/links.ts": {
@@ -8725,7 +8725,7 @@
   },
   "integrations/sbonus-server/shop/006_shop_installments_migration.sql": {
     "mtime": 1789964335.2680974,
-    "seen": 1789966167.1922605,
+    "seen": 1789968251.0229564,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -8919,6 +8919,12 @@
     "mtime": 1789966251.525843,
     "seen": 1789968246.7927353,
     "ast_hash": "b265db581ecb7c54afd2e1d6903dca93",
+    "semantic_hash": ""
+  },
+  "integrations/sbonus-server/shop/007_shop_notes_migration.sql": {
+    "mtime": 1789965631.4248226,
+    "seen": 1789968251.0229578,
+    "ast_hash": "",
     "semantic_hash": ""
   }
 }
