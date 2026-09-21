@@ -36,6 +36,41 @@ function StockLine({ stock }: { stock: number }) {
   )
 }
 
+/** 12 → «1 год», 24 → «2 года», 18 → «18 мес.»: целые годы читаются легче месяцев. */
+export function warrantyText(
+  months: number,
+  words: { warrantyMonths: string; warrantyYear1: string; warrantyYear2: string; warrantyYear5: string },
+): string {
+  if (months % 12 !== 0) return `${months} ${words.warrantyMonths}`
+  const years = months / 12
+  const tail = years % 10
+  const teen = years % 100 >= 11 && years % 100 <= 14
+  const word = teen || tail === 0 || tail >= 5 ? words.warrantyYear5 : tail === 1 ? words.warrantyYear1 : words.warrantyYear2
+  return `${years} ${word}`
+}
+
+/** Гарантия из карточки товара в 1С. Не указана (0) — плашки нет: пустое обещание хуже никакого. */
+function WarrantyBadge({ months }: { months: number }) {
+  const { t } = useI18n()
+  if (months <= 0) return null
+  return (
+    <div className="warranty-badge">
+      <span className="warranty-badge__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z" />
+          <path d="M8.5 12l2.5 2.5 4.5-5" />
+        </svg>
+      </span>
+      <span className="warranty-badge__text">
+        <strong>
+          {t.product.warranty} {warrantyText(months, t.product)}
+        </strong>
+        <span>{t.product.warrantyNote}</span>
+      </span>
+    </div>
+  )
+}
+
 export function ProductPurchase({
   product,
   variant,
@@ -92,6 +127,7 @@ export function ProductPurchase({
         <div>
           <StockLine stock={variant.stock} />
           <p className="stock-note">{t.product.stockNote}</p>
+          <WarrantyBadge months={product.warrantyMonths} />
         </div>
       ) : (
         <div className="combo-missing" role="status">

@@ -199,10 +199,7 @@ export function catalogForQuestion(list: Product[], question: string, lang: Lang
     const desc = product.descRu.replace(/\s+/g, ' ').trim()
     return [
       productLine(product),
-      product.warrantyMonths > 0 ? `гарантия: ${product.warrantyMonths} мес.` : '',
       `доставка: ${product.deliveryPrice ? `${product.deliveryPrice} сом` : 'бесплатно'}`,
-      product.sale ? 'распродажа' : '',
-      product.dealOfDay ? 'товар дня' : '',
       specs ? `характеристики: ${specs}` : '',
       desc ? `описание: ${desc.slice(0, DESC_CHARS)}${desc.length > DESC_CHARS ? '…' : ''}` : '',
     ]
@@ -226,7 +223,32 @@ function productLine(product: Product): string {
   const price = product.price > 0 ? `${product.price} сом` : 'цена по запросу'
   const old = product.oldPrice ? `, было ${product.oldPrice} сом` : ''
   const stock = isInStock(product) ? 'есть' : 'нет в наличии'
-  return `id=${product.id} | ${product.brand} ${product.nameRu} | ${categoryName(product.categoryId, 'ru')} | ${price}${old} | ${stock}`
+  return [
+    `id=${product.id}`,
+    `${product.brand} ${product.nameRu}`,
+    categoryName(product.categoryId, 'ru'),
+    `${price}${old}`,
+    stock,
+    // Гарантию и акцию пишем и в короткой строке: про них спрашивают чаще всего.
+    product.warrantyMonths > 0 ? `гарантия ${product.warrantyMonths} мес.` : '',
+    ...promoMarks(product),
+  ]
+    .filter(Boolean)
+    .join(' | ')
+}
+
+/**
+ * Отметки акции из карточки товара в 1С. Истёкшую акцию не показываем:
+ * отметку в 1С могли забыть снять, а обещать прошедшую скидку нельзя.
+ */
+function promoMarks(product: Product, now = Date.now()): string[] {
+  const until = product.promoUntil ? Date.parse(product.promoUntil + '+06:00') : NaN
+  if (Number.isFinite(until) && until < now) return []
+  const marks: string[] = []
+  if (product.sale) marks.push('распродажа')
+  if (product.dealOfDay) marks.push('товар дня')
+  if (Number.isFinite(until)) marks.push(`акция до ${product.promoUntil!.slice(0, 10)} ${product.promoUntil!.slice(11, 16)}`)
+  return marks
 }
 
 /** Всё, что консультант должен знать о самом магазине. */
@@ -264,10 +286,10 @@ export function storeFacts(lang: Lang): string {
     'заказ и его состояние видны в личном кабинете на сайте.',
     'Никогда не проси прислать деньги на чей-то личный счёт или карту — оплата только через сайт или в магазине.',
     '',
-    'ЧЕГО ТЫ НЕ ЗНАЕШЬ — И НЕ ВЫДУМЫВАЙ',
-    'Часы работы магазина. Не пиши «работаем ежедневно» или «с 9 до 18» — скажи, что время работы уточнят по телефону.',
+    'ЧЕГО ТЫ НЕ ЗНАЕШЬ — И НЕ ВЫДУМЫВАЙ (если этого нет в «ЗНАНИЯ ОТ ВЛАДЕЛЬЦА»; там написано — отвечай по написанному)',
+    'Часы работы магазина. Не пиши «работаем ежедневно» или «с 9 до 18» от себя — скажи, что время работы уточнят по телефону.',
     'Срок гарантии, если он не указан у товара в каталоге ниже. Не говори «0 месяцев» и не называй своё число — скажи, что срок подтвердит сотрудник.',
-    'Возврат, обмен и брак: решение принимает сотрудник магазина. Посочувствуй и позови к телефону, но сам ничего не обещай.',
+    'Возврат, обмен и брак: решение принимает сотрудник магазина. Посочувствуй и позови к телефону, но сам ничего не обещай сверх написанного владельцем.',
     'Свойства товара, которых нет в его характеристиках. Не дописывай «инверторный мотор», «класс А+++», «есть пар» — этого может не быть.',
     '',
     `Разделы каталога: ${sections}.`,

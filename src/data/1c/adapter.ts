@@ -36,6 +36,8 @@ export type OneCItem = {
   deliveryPrice?: number
   /** срок акции из 1С: «2026-09-25T18:00:00», бишкекское время */
   promoUntil?: string
+  /** гарантия из карточки товара в 1С, месяцев; 0 — не указана */
+  warrantyMonths?: number
 }
 
 export type OneCCatalog = { exportedAt?: string | null; items: OneCItem[] }
@@ -145,7 +147,7 @@ export function productFromOneC(item: OneCItem): Product {
     descRu: item.description ?? '',
     descKy: item.description ?? '',
     specs,
-    warrantyMonths: 0,
+    warrantyMonths: Math.max(0, Math.round(Number(item.warrantyMonths) || 0)),
     variants: [{ id: 'std', stock: stockFor(item) }],
     badge: item.hit ? 'hit' : item.isNew ? 'new' : undefined,
     sale: Boolean(item.sale),
