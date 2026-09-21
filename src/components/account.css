@@ -1,13 +1,25 @@
 /* Вход по коду WhatsApp, кабинет покупателя и бонусы в оформлении заказа */
 
 .login-card { display: grid; gap: 14px; max-width: 420px; }
-.login-card form { display: grid; gap: 14px; }
+.login-card form, .login-card__wa-step { display: grid; gap: 14px; }
 .login-card__title { font-size: 20px; margin: 0; }
 .login-card__hint { margin: 0; color: var(--color-ink-soft); line-height: 1.6; }
 /* Значок Telegram или WhatsApp рядом с подсказкой: видно, где искать код */
 .login-card__channel { display: flex; align-items: flex-start; gap: 8px; }
 .login-card__channel svg { flex: 0 0 auto; margin-top: 2px; }
 .login-card__code { font-size: 26px; letter-spacing: 0.4em; text-align: center; font-variant-numeric: tabular-nums; }
+/* Вход через WhatsApp: зелёная кнопка — главный путь, код в Telegram — запасной */
+.login-card__wa { background: #25d366; color: #fff; gap: 10px; }
+.login-card__wa:hover:not(:disabled) { background: #1fb85a; }
+.login-card__wa svg { background: #fff; border-radius: 50%; padding: 2px; box-sizing: content-box; }
+.login-card__other { justify-self: center; font-size: 14px; }
+.login-card__or { display: flex; align-items: center; gap: 12px; color: var(--color-muted); font-size: 13px; }
+.login-card__or::before, .login-card__or::after { content: ''; flex: 1; height: 1px; background: var(--color-border); }
+.login-card__wait { display: flex; align-items: center; gap: 10px; color: var(--color-ink-soft); }
+.login-card__spinner { width: 18px; height: 18px; border: 2px solid var(--color-border-strong); border-top-color: #25d366; border-radius: 50%; animation: login-spin 0.9s linear infinite; flex: 0 0 auto; }
+@keyframes login-spin { to { transform: rotate(360deg); } }
+.login-card__manual { margin: 0; font-size: 13px; color: var(--color-muted); line-height: 1.5; }
+.login-card__manual code { display: inline-block; margin-top: 4px; padding: 6px 10px; border-radius: 10px; background: var(--color-surface); color: var(--color-ink); font-size: 15px; font-weight: 650; letter-spacing: 0.04em; }
 .login-card__welcome { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--color-lime-soft); font-weight: 650; display: flex; align-items: flex-start; gap: 10px; }
 .login-card__welcome-icon { flex: 0 0 auto; margin-top: 1px; }
 .login-card__links { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
@@ -16,6 +28,14 @@
 .link-btn:hover { color: var(--color-ink); }
 .link-btn:disabled { opacity: 0.5; cursor: default; }
 
+/* Карточка после регистрации: сколько начислили, на что тратить, куда идти */
+.account-hello { margin-top: 20px; padding: 18px; border-radius: 16px; background: #fff; border: 1px solid var(--color-border); display: flex; gap: 14px; align-items: flex-start; box-shadow: 0 8px 24px rgba(38, 50, 68, 0.08); }
+.account-hello__icon { flex: 0 0 auto; width: 46px; height: 46px; border-radius: 14px; background: var(--color-lime); color: var(--color-ink); display: inline-flex; align-items: center; justify-content: center; }
+.account-hello__body { display: grid; gap: 8px; min-width: 0; }
+.account-hello__title { font-size: 20px; line-height: 1.2; color: var(--color-ink); }
+.account-hello__text { margin: 0; font-size: 14px; line-height: 1.55; color: var(--color-ink-soft) !important; }
+.account-hello__cta { justify-self: start; margin-top: 4px; gap: 8px; }
+@media (max-width: 640px) { .account-hello { padding: 16px; } .account-hello__cta { justify-self: stretch; } }
 .account-welcome { margin-top: 20px; padding: 14px 16px; border-radius: 12px; background: var(--color-surface); font-weight: 700; color: var(--color-ink); display: flex; align-items: flex-start; gap: 10px; }
 .account-welcome__icon { flex: 0 0 auto; margin-top: 1px; }
 .account-welcome__note { font-size: 14px; margin-top: 8px; }

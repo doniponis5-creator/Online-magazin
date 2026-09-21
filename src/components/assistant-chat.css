@@ -357,6 +357,37 @@
   align-items: flex-end;
 }
 
+.assistant__attach {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  background: #fff;
+  color: var(--color-ink-muted, #666);
+  cursor: pointer;
+}
+
+.assistant__attach:hover:not(:disabled) {
+  color: var(--color-ink);
+}
+
+.assistant__attach:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.assistant__img {
+  display: block;
+  max-width: 220px;
+  max-height: 220px;
+  border-radius: 10px;
+  margin-bottom: 4px;
+}
+
 .assistant__form textarea {
   flex: 1;
   min-height: 42px;

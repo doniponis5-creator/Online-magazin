@@ -1,22 +1,27 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { formatSom } from '@/lib/format'
-import { IconGift, IconTelegram } from '@/components/Icons'
+import { IconGift, IconTelegram, IconWhatsApp } from '@/components/Icons'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { normalizePhone } from '@/lib/orders/order'
 import type { CustomerProfile } from '@/lib/customer/gateway'
 
-type Step = 'phone' | 'code' | 'name'
+type Step = 'phone' | 'code' | 'name' | 'wa'
 
 /**
- * Вход без пароля: телефон → код → (новый номер) имя.
+ * Вход без пароля.
  *
- * Основной канал — Telegram, и на экранах показан только его знак.
- * WhatsApp остаётся запасным: если Telegram на номере нет, код уходит туда,
- * и тогда экран так и пишет — без значка, но прямым текстом, чтобы человек
- * не искал код не в том приложении.
+ * Главный путь — WhatsApp «наоборот»: сайт открывает wa.me с готовым
+ * сообщением «Код входа: 482913», покупатель отправляет его магазину, сайт
+ * ждёт и входит сам. Магазин ничего не шлёт — Green API нечего блокировать,
+ * а номер подтверждён самим WhatsApp.
+ *
+ * Запасной путь — код: телефон → код в Telegram (если Telegram нет — в
+ * WhatsApp) → (новый номер) имя.
  */
+const WA_POLL_MS = 3000
+const WA_WAIT_MS = 5 * 60_000
 export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, welcomeBonus: number) => void }) {
   const { t } = useI18n()
   const a = t.account
@@ -30,6 +35,10 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [channel, setChannel] = useState<'telegram' | 'whatsapp'>('telegram')
+  const [wa, setWa] = useState<{ code: string; waPhone: string; startedAt: number } | null>(null)
+  // Код в Telegram — запасной путь: форма свёрнута, пока не попросят.
+  const [showCode, setShowCode] = useState(false)
+  const waTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const post = async (url: string, body: unknown) => {
     const response = await fetch(url, {
@@ -43,6 +52,62 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
 
   const serverError = (status: number, data: { error?: string } | null) =>
     status >= 400 && status < 500 && data?.error && data.error.length > 8 ? data.error : a.errorServer
+
+  const waStart = async () => {
+    setBusy(true)
+    setError('')
+    const { status, data } = await post('/api/customer/wa-login/start', {})
+    setBusy(false)
+    if (!data?.ok) return setError(serverError(status, data))
+    setWa({ code: data.code, waPhone: data.waPhone, startedAt: Date.now() })
+    setStep('wa')
+  }
+
+  const waStop = () => {
+    if (waTimer.current) clearTimeout(waTimer.current)
+    waTimer.current = null
+  }
+
+  // Пока открыт экран WhatsApp — спрашиваем сервер, пришло ли сообщение.
+  useEffect(() => {
+    if (step !== 'wa' || !wa) return
+    let stopped = false
+    const tick = async () => {
+      if (stopped) return
+      if (Date.now() - wa.startedAt > WA_WAIT_MS) {
+        setError(a.waExpired)
+        setStep('phone')
+        return
+      }
+      const { status, data } = await post('/api/customer/wa-login/check', { code: wa.code })
+      if (stopped) return
+      if (data?.ok && !data.pending) {
+        if (data.needName) {
+          setTicket(data.ticket)
+          setWelcome(data.welcomeBonus ?? 0)
+          setStep('name')
+        } else {
+          onDone(data.customer, 0)
+        }
+        return
+      }
+      if (!data?.ok && status !== 0 && status !== 502) {
+        setError(status === 410 ? a.waExpired : serverError(status, data))
+        setStep('phone')
+        return
+      }
+      waTimer.current = setTimeout(tick, WA_POLL_MS)
+    }
+    waTimer.current = setTimeout(tick, WA_POLL_MS)
+    return () => {
+      stopped = true
+      waStop()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, wa])
+
+  const waMessage = wa ? a.waMessage.replace('{code}', wa.code) : ''
+  const waHref = wa ? `https://wa.me/${wa.waPhone}?text=${encodeURIComponent(waMessage)}` : '#'
 
   const requestCode = async (e?: FormEvent) => {
     e?.preventDefault()
@@ -94,6 +159,18 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
     <div className="login-card">
       {step === 'phone' && (
         <form onSubmit={requestCode} noValidate>
+          <button type="button" className="btn btn--block login-card__wa" onClick={() => void waStart()} disabled={busy} aria-busy={busy}>
+            <IconWhatsApp size={22} />
+            {a.waLogin}
+          </button>
+          <p className="login-card__hint">{a.waHint}</p>
+          {!showCode && (
+            <button type="button" className="link-btn login-card__other" onClick={() => setShowCode(true)}>
+              {a.waOther}
+            </button>
+          )}
+          {showCode && <p className="login-card__or">{a.waOther}</p>}
+          {showCode && (
           <div className="field">
             <label className="field__label" htmlFor="login-phone">{a.phone}</label>
             <input
@@ -111,10 +188,38 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
               <span>{a.phoneHint}</span>
             </p>
           </div>
+          )}
+          {showCode && (
           <button type="submit" className="btn btn--primary btn--block" disabled={busy} aria-busy={busy}>
             {busy ? a.sending : a.sendCode}
           </button>
+          )}
         </form>
+      )}
+
+      {step === 'wa' && wa && (
+        <div className="login-card__wa-step">
+          <h3 className="login-card__title">{a.waTitle}</h3>
+          <p className="login-card__hint">{a.waText}</p>
+          <a className="btn btn--block login-card__wa" href={waHref} target="_blank" rel="noopener">
+            <IconWhatsApp size={22} />
+            {a.waOpen}
+          </a>
+          <p className="login-card__wait" aria-live="polite">
+            <span className="login-card__spinner" aria-hidden="true" />
+            <span>{a.waWaiting}</span>
+          </p>
+          <p className="login-card__manual">
+            {a.waManual} +{wa.waPhone}
+            <br />
+            <code>{waMessage}</code>
+          </p>
+          <div className="login-card__links">
+            <button type="button" className="link-btn" onClick={() => { waStop(); setWa(null); setStep('phone'); setError('') }}>
+              {a.waBack}
+            </button>
+          </div>
+        </div>
       )}
 
       {step === 'code' && (

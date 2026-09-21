@@ -60,3 +60,15 @@ describe('сессия покупателя', () => {
     expect(decodeSession(undefined)).toBeNull()
   })
 })
+
+describe('вход через WhatsApp «наоборот» (тестовый режим)', () => {
+  it('код 6 цифр, номер магазина, потом «ждём» и вход', async () => {
+    const { waLoginStart, waLoginCheck } = await import('@/lib/customer/gateway')
+    const start = await waLoginStart('127.0.0.1')
+    expect(start.code).toMatch(/^\d{6}$/)
+    expect(start.waPhone).toBe('996557100505')
+    const first = await waLoginCheck(start.code)
+    expect(first).toEqual({ pending: true })
+    await expect(waLoginCheck('000000')).rejects.toThrow(/Время вышло/)
+  })
+})

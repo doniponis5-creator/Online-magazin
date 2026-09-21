@@ -1,6 +1,9 @@
 'use client'
 
 import { useI18n } from '@/lib/i18n/I18nProvider'
+import { phones, whatsappHref } from '@/data/contacts'
+import { SITE_URL } from '@/lib/seo'
+import { IconWhatsApp } from './Icons'
 import type { Product, ProductVariant } from '@/data/products'
 import { unitPrice } from '@/lib/cart/logic'
 import { formatSom } from '@/lib/format'
@@ -232,6 +235,22 @@ export function ProductPurchase({
       </div>
 
       <span className="bonus-hint">{t.checkout.sbonusNote}</span>
+
+      {/* Одно нажатие — и в WhatsApp уже написано, о каком товаре речь:
+          покупателю не надо объяснять, сотруднику не надо переспрашивать. */}
+      <a
+        className="btn purchase__ask"
+        href={whatsappHref(phones[0], askText(t.contactWidget.askAbout, name, price, `${SITE_URL}/${lang}/product/${product.id}`))}
+        target="_blank"
+        rel="noopener"
+      >
+        <IconWhatsApp size={22} />
+        {t.product.askWhatsApp}
+      </a>
     </div>
   )
+}
+
+function askText(intro: string, name: string, price: number | null, url: string): string {
+  return `${intro} ${name}${price ? ` — ${formatSom(price)}` : ''}\n${url}`
 }

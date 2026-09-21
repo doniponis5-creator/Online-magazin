@@ -72,7 +72,9 @@ export const AFFIRM =
   /^(ha|xa|давай|да|ооба|оба|макул|maqul|mayli|yes|ok|окей|хорошо|bo.?ladi|bop)(?![\p{L}])/iu
 
 /** Признак того, что бот предложил оформить заказ. */
-export const OFFER = /(оформ|заказ|buyurtma|zakaz|rasmiylashtir|заказать)/i
+// Кыргызские «буйрутма» и «тариздейли» — обязательно: без них «ооба» на
+// «буйрутманы тариздейлиби?» уходило модели, и она заново спрашивала имя.
+export const OFFER = /(оформ|заказ|buyurtma|zakaz|rasmiylashtir|заказать|буйрутма|таризд|тариз)/i
 
 const ASK_NAME: Say = {
   ru: 'Хорошо, оформим. Как вас зовут?',
@@ -178,22 +180,42 @@ function nextQuestion(draft: Draft, lang: TalkLang): string {
   return pick(ASK_WHERE, lang)
 }
 
+/**
+ * Похоже на вопрос, а не на ответ шага: знак вопроса или длинная фраза.
+ * Кыргызы и узбеки в мессенджере часто пишут вопрос без «?»
+ * («акчасын толойбузбу»), поэтому длинная фраза тоже считается вопросом.
+ */
+export function looksLikeQuestion(text: string): boolean {
+  return text.includes('?') || text.trim().split(/\s+/).length > 5
+}
+
 export async function step(chatId: ChatKey, text: string, lang: TalkLang, siteLang: Lang): Promise<string | null> {
   const draft = drafts.get(chatId)
   if (!draft) return null
 
   const value = text.trim()
 
+  // Вопрос посреди шагов («можно оплатить при получении?») — не ответ на шаг.
+  // Отдаём его консультанту, а не переспрашиваем по кругу: покупатель, которому
+  // трижды ответили «напишите номер», решил, что с ним говорит мошенник.
+  if (draft.step !== 'address' && looksLikeQuestion(value)) return null
+
   if (draft.step === 'pick') {
     const index = Number.parseInt(value, 10) - 1
-    const id = draft.options[index]
-    if (!id) return pick(ASK_PICK, lang)
+    const id = /^\d{1,2}\b/.test(value) ? draft.options[index] : undefined
+    if (!id) {
+      // Написал не номер — значит, выбирать пока не готов. Выходим из заказа.
+      drafts.delete(chatId)
+      return null
+    }
     draft.productId = id
     return nextQuestion(draft, lang)
   }
 
   if (draft.step === 'name') {
     if (value.length < 2) return pick(ASK_NAME, lang)
+    // Имя — одно-два слова. Длинная фраза — это вопрос или просьба.
+    if (value.split(/\s+/).length > 3) return null
     draft.name = value.slice(0, 60)
     return nextQuestion(draft, lang)
   }

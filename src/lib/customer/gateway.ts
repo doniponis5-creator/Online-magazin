@@ -65,6 +65,7 @@ type MockCustomer = { name: string; balance: number }
 const store = globalThis as unknown as {
   __scMockCustomers?: Map<string, MockCustomer>
   __scMockTickets?: Map<string, string>
+  __scMockWaLogins?: Map<string, number>
 }
 const mockCustomers = (store.__scMockCustomers ??= new Map())
 const mockTickets = (store.__scMockTickets ??= new Map())
@@ -220,6 +221,38 @@ export async function recordVisit(visitor: string, path: string): Promise<void> 
 
 /** Куда ушёл код: сервер сначала пробует Telegram, потом WhatsApp. */
 export type CodeChannel = 'telegram' | 'whatsapp'
+
+/** Вход через WhatsApp «наоборот»: покупатель сам шлёт код магазину. */
+export type WaLoginStart = { code: string; waPhone: string; ttl: number }
+export type WaLoginCheck = { pending: true } | VerifyResult
+
+const MOCK_WA_PHONE = '996557100505'
+const mockWaLogins = (store.__scMockWaLogins ??= new Map<string, number>())
+
+export async function waLoginStart(ip: string): Promise<WaLoginStart> {
+  if (paymentMode() === 'mock') {
+    const code = String(Math.floor(100000 + Math.random() * 900000))
+    mockWaLogins.set(code, Date.now())
+    console.info(`[customer] тестовый вход через WhatsApp: код ${code} «придёт» через 8 секунд`)
+    return { code, waPhone: MOCK_WA_PHONE, ttl: 300 }
+  }
+  return call<WaLoginStart>('/api/v1/webhook/site/customer/wa-login/start', { method: 'POST', body: { ip } })
+}
+
+export async function waLoginCheck(code: string): Promise<WaLoginCheck> {
+  if (paymentMode() === 'mock') {
+    const started = mockWaLogins.get(code)
+    if (!started) throw new CustomerApiError(410, 'Время вышло. Начните заново.')
+    if (Date.now() - started < 8000) return { pending: true }
+    mockWaLogins.delete(code)
+    const phone = '+996555000777'
+    if (mockCustomers.has(phone)) return { ok: true, needName: false, customer: mockProfile(phone) }
+    const ticket = `mock-${Date.now()}`
+    mockTickets.set(ticket, phone)
+    return { ok: true, needName: true, ticket, welcomeBonus: MOCK_WELCOME }
+  }
+  return call<WaLoginCheck>('/api/v1/webhook/site/customer/wa-login/check', { method: 'POST', body: { code } })
+}
 
 export async function sendCode(phone: string, ip: string): Promise<CodeChannel> {
   // Демо-номеру отправлять нечего: код у проверяющего уже есть.

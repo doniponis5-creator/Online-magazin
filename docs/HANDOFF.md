@@ -91,13 +91,36 @@ Telegram. Языковая модель — Google Gemini; ключа нет и�
 | Тесты | `__tests__/assistant.test.ts`, `assistant-log.test.ts`, `telegram-order.test.ts` |
 
 **Настройки** (`.env.local`, на сервере `.env.production`; образец — `.env.example`):
-`GEMINI_API_KEY`, `GEMINI_MODEL` (пусто — `gemini-3.5-flash-lite`),
+`GEMINI_API_KEY`, `GEMINI_MODEL` (пусто — `gemini-3.8-flash`; голос и фото читает та же модель),
 `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `ASSISTANT_LOG_KEY`,
 `ASSISTANT_LOG_DIR`, `ASSISTANT_DAILY_LIMIT`. Каталог из 1С включается сам,
 как только заданы `SHOP_API_URL` и `SHOP_API_SECRET`.
 
-**Чего чат не знает и не выдумывает:** часы работы, остаток по рассрочке,
-срок гарантии (в 1С он не заполнен), условия возврата, свойства товара сверх
+**Правила магазина** (часы, доставка, оплата, возврат, рассрочка MBANK, скидки
+до 5 %) вшиты в `src/lib/assistant/policy.ts` — со слов владельца 21.09.2026.
+«Знания для чата» из 1С их дополняют и побеждают при противоречии.
+**Имтихон:** `npm run exam` — вопросы из `scripts/exam/questions.txt`, ответы
+настоящей модели на экран; без `SHOP_API_URL` в `.env.local` каталог вшитый.
+**WhatsApp: голос и фото** — сервер шлёт ссылку Green API на
+`/api/channel/media`, сайт расшифровывает («[Голосовое] …», «[Фото] …»).
+**Вход через WhatsApp «наоборот»** (`CustomerLogin.tsx`, `/api/customer/wa-login/*`,
+сервер `shop_customers.py wa-login/start|check`): покупатель сам шлёт магазину
+«Код входа: 482913» через wa.me; сервер читает журнал Green API (не чаще раза в
+3 с) и подтверждает номер отправителя. Магазин ничего не отправляет — Green API
+нечего блокировать. Код в Telegram остался запасным путём; welcome-сообщение
+новому клиенту по-прежнему уходит в WhatsApp. Продавец-робот такие сообщения
+пропускает (`WA_LOGIN_RE`). Кабинет SBonus (`cabinet.smartcentr.store`) входит
+так же: патчи и деплой — `integrations/sbonus-server/cabinet/`.
+**Сайт: фото** — кнопка-камера в чате (`AssistantChat.tsx shrink`), фото
+ужимается в браузере до 1024 px и уходит в `/api/assistant` полем `image`.
+**Утренняя сводка** — `digest.ts` + `/api/assistant/digest`; сервер
+(`shop_wa_bot.run_digest`, cron раз в час, шлёт в 9:00 по Бишкеку) отправляет
+владельцу в WhatsApp: где бот сдался, чего не нашёл, что спрашивали чаще.
+**«Ещё актуально?»** — `followup.ts` + `/api/channel/followup`; сервер
+(`_nudge_silent`) напоминает через 2 часа молчания после показа товара, в
+рабочее время, раз в 3 дня на чат, если заказа нет и сотрудник не вмешивался.
+
+**Чего чат не знает и не выдумывает:** остаток по рассрочке, свойства товара сверх
 характеристик из 1С. На такие вопросы он даёт телефон магазина. Это проверено
 35 живыми вопросами — подробности и список найденных ошибок в
 `docs/TODO_NEXT.md`, задача 5.

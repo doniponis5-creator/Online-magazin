@@ -31,10 +31,13 @@ export async function answer(
   turns: ChatTurn[],
   lang: Lang,
   customer: CustomerBrief | null = null,
+  /** id товара, страница которого сейчас открыта у покупателя */
+  page?: string,
 ): Promise<AssistantReply> {
   const lastQuestion = [...turns].reverse().find((t) => t.role === 'user')?.text ?? ''
   // Каталог берём сегодняшний: из 1С, если сервер настроен, иначе вшитый.
   const [list, notes] = await Promise.all([salesCatalogNow(), ownerNotes()])
+  const viewing = page ? (lookupIn(list)(page) ?? null) : null
   // Товары ищем по трём последним вопросам: «а какой из них тише?» без
   // прошлого вопроса про стиральные машины ничего не найдёт.
   const recent = turns
@@ -47,7 +50,7 @@ export async function answer(
     try {
       const lastAnswer = [...turns].reverse().find((t) => t.role === 'assistant')?.text ?? ''
       const ceiling = cheaperThan(lastQuestion, lastAnswer)
-      const raw = await askGemini(systemInstruction(lang, customer, talkLang(turns, lang), list, recent, notes, ceiling), turns)
+      const raw = await askGemini(systemInstruction(lang, customer, talkLang(turns, lang), list, recent, notes, ceiling, viewing), turns)
       const parsed = parseAnswer(raw)
       return { text: parsed.text, products: hits(parsed.productIds, lang, list), source: 'gemini' }
     } catch (error) {
@@ -70,9 +73,19 @@ export function talkLang(turns: ChatTurn[], lang: Lang) {
   const said = turns
     .filter((t) => t.role === 'user')
     .slice(-2)
-    .map((t) => t.text)
+    .map((t) => ownWords(t.text))
     .join(' ')
   return detectLang(said, lang)
+}
+
+/**
+ * Слова самого покупателя. Описание фото пишет модель по-русски — по нему
+ * язык не определить; считаются только подпись под фото и голосовое.
+ */
+function ownWords(text: string): string {
+  if (!text.startsWith('[Фото]')) return text.replace(/^\[Голосовое\]\s*/, '')
+  const caption = text.split('Подпись покупателя:')[1]
+  return caption?.trim() ?? ''
 }
 
 /**

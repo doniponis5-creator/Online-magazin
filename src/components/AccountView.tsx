@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import { Brand } from '@/components/Brand'
 import { CustomerLogin } from '@/components/CustomerLogin'
-import { IconCart, IconGift, IconHeart } from '@/components/Icons'
+import { IconArrowUpRight, IconCart, IconGift, IconHeart } from '@/components/Icons'
 import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { forgetFaceId, hasLockKey, lockKind, loginWithFaceId, rememberForFaceId } from '@/lib/native/appLock'
@@ -215,6 +215,12 @@ export function AccountView() {
           <p>{a.loginText}</p>
           <CustomerLogin
             onDone={(_, bonus) => {
+              // Баланс изменился — полоска «у вас есть бонусы» пусть спросит заново.
+              try {
+                window.sessionStorage.removeItem('sc-bonus-cache')
+              } catch {
+                // приватный режим
+              }
               setWelcome(bonus)
               reload()
             }}
@@ -230,7 +236,19 @@ export function AccountView() {
       <section className="account-loyalty">
         <Brand bonus />
         <h2>{customer.name}</h2>
-        {welcome > 0 && <p className="account-welcome" role="status">🎉 {a.welcomeDone.replace('{amount}', formatSom(welcome))}</p>}
+        {welcome > 0 && (
+          <div className="account-hello" role="status">
+            <span className="account-hello__icon" aria-hidden="true"><IconGift size={26} /></span>
+            <div className="account-hello__body">
+              <strong className="account-hello__title">{a.helloTitle.replace('{amount}', formatSom(welcome))}</strong>
+              <p className="account-hello__text">{a.helloText.replace('{pct}', String(customer.maxSpendPct))}</p>
+              <Link href={`/${lang}/catalog`} className="btn btn--lime account-hello__cta">
+                {a.helloCta}
+                <IconArrowUpRight size={18} />
+              </Link>
+            </div>
+          </div>
+        )}
         <div className="account-balance">
           <span className="account-balance__label">{a.balance}</span>
           <strong className="account-balance__value">{formatSom(customer.balance)}</strong>

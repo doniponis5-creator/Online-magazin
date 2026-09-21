@@ -223,3 +223,18 @@ describe('товар только для чата', () => {
     expect(toHit(item, 'ru').href).toBe('')
   })
 })
+
+describe('правила магазина в голове консультанта', () => {
+  it('часы, доставка, оплата, рассрочка и скидки — прямо в подсказке', () => {
+    const text = systemInstruction('ru', null, 'ru', products)
+    expect(text).toContain('ПРАВИЛА МАГАЗИНА')
+    expect(text).toMatch(/с 9:00 до 18:00/)
+    expect(text).toContain('Кызыл-Кия')
+    expect(text).toMatch(/Оплаты при получении нет/)
+    expect(text).toContain('Адал рассрочка')
+    expect(text).toMatch(/самое большее 5%/)
+    expect(text).toContain('[Голосовое]')
+    // Старые запреты «не знаешь часы работы» ушли — иначе они спорят с правилами.
+    expect(text).not.toMatch(/Часы работы магазина\. Не пиши/)
+  })
+})

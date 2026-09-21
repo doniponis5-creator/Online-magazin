@@ -2,6 +2,7 @@ import { isLang, defaultLang, type Lang } from '@/lib/i18n/config'
 import { customerBrief, readTurns, respond } from '@/lib/assistant/respond'
 import { currentSession } from '@/app/api/customer/route-helpers'
 import { logQuestion } from '@/lib/assistant/log'
+import { geminiConfigured, readMedia } from '@/lib/assistant/gemini'
 
 /**
  * Чат с консультантом.
@@ -47,11 +48,27 @@ export async function POST(request: Request) {
     return Response.json({ ok: false, error: 'bad-json' }, { status: 400 })
   }
 
-  const raw = body as { lang?: unknown; messages?: unknown; sid?: unknown; buy?: unknown; shown?: unknown }
+  const raw = body as { lang?: unknown; messages?: unknown; sid?: unknown; buy?: unknown; shown?: unknown; image?: unknown; page?: unknown }
   const lang: Lang = typeof raw.lang === 'string' && isLang(raw.lang) ? raw.lang : defaultLang
   const turns = readTurns(raw.messages)
   if (turns.length === 0) {
     return Response.json({ ok: false, error: 'empty' }, { status: 400 })
+  }
+
+  // Фото товара: модель описывает, что на нём, и описание становится последней
+  // репликой покупателя — «[Фото] …», как и в WhatsApp. Подпись сохраняем.
+  let heard = ''
+  const image = readImage(raw.image)
+  if (image && geminiConfigured()) {
+    try {
+      const seen = await readMedia('image', image.mime, image.data)
+      if (seen) {
+        heard = `[Фото] ${seen}` + (image.caption ? `\nПодпись покупателя: ${image.caption}` : '')
+        turns[turns.length - 1].text = heard
+      }
+    } catch (error) {
+      console.error('[assistant] фото:', error instanceof Error ? error.message : error)
+    }
   }
 
   // Покупатель — только из входного cookie: номер, присланный браузером или
@@ -75,6 +92,7 @@ export async function POST(request: Request) {
     customer,
     sid ? raw.buy : undefined,
     sid ? raw.shown : undefined,
+    typeof raw.page === 'string' && /^[a-z0-9-]{1,80}$/i.test(raw.page) ? raw.page : undefined,
   )
 
   // Записываем вопрос в журнал владельца. Ждать запись не нужно — ответ уходит
@@ -87,5 +105,18 @@ export async function POST(request: Request) {
     source: reply.source,
   })
 
-  return Response.json({ ok: true, text: reply.text, products: reply.products, source: reply.source })
+  return Response.json({ ok: true, text: reply.text, products: reply.products, source: reply.source, heard: heard || undefined })
+}
+
+/** Фото из браузера: JPEG/PNG/WebP в base64, не больше 2 МБ. */
+const IMAGE_MAX = 2 * 1024 * 1024
+
+function readImage(value: unknown): { mime: string; data: string; caption: string } | null {
+  if (!value || typeof value !== 'object') return null
+  const { mime, data, caption: rawCaption } = value as { mime?: unknown; data?: unknown; caption?: unknown }
+  const caption = typeof rawCaption === 'string' ? rawCaption.trim().slice(0, 300) : ''
+  if (typeof mime !== 'string' || !/^image\/(jpeg|png|webp)$/.test(mime)) return null
+  if (typeof data !== 'string' || data.length === 0 || data.length > IMAGE_MAX * 1.4) return null
+  if (!/^[A-Za-z0-9+/=]+$/.test(data)) return null
+  return { mime, data, caption }
 }

@@ -16,7 +16,8 @@ import { fromJson } from './answer-json'
 const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models'
 
 /** Модель по умолчанию. Меняется через GEMINI_MODEL, пересборка не нужна. */
-const DEFAULT_MODEL = 'gemini-3.5-flash-lite'
+// 3.8 Flash: заметно умнее «lite» и дешевле 3.5 Flash; понимает голос и фото.
+const DEFAULT_MODEL = 'gemini-3.8-flash'
 
 export type ChatTurn = { role: 'user' | 'assistant'; text: string }
 
@@ -107,4 +108,53 @@ async function once(key: string, system: string, turns: ChatTurn[]): Promise<str
       .join('') ?? ''
   if (!text.trim()) throw new GeminiError(`empty-answer:${data.candidates?.[0]?.finishReason ?? '?'}`, 502)
   return fromJson(text.trim())
+}
+
+/** Что прислал покупатель вместо текста. */
+export type MediaKind = 'audio' | 'image'
+
+const MEDIA_TASK: Record<MediaKind, string> = {
+  audio: `Это голосовое сообщение покупателя магазина электроники в Кыргызстане.
+Расшифруй его дословно, на том языке, на котором говорят: русский, кыргызский или узбекский.
+Узбекский пиши латиницей, кыргызский и русский — кириллицей. Числа — цифрами.
+Верни только текст сообщения, без пояснений, без кавычек. Не разобрал ни слова — верни пустую строку.`,
+  image: `Это фото или скриншот, который прислал покупатель магазина электроники.
+Опиши коротко по-русски, что на нём: вид товара (холодильник, телевизор…), марка и модель, если видны,
+любой видимый текст — название, цена, надписи. Скриншот переписки или сайта — перескажи, что там написано.
+Только описание, одним-двумя предложениями. Без советов и без вопросов.`,
+}
+
+/**
+ * Голосовое → текст, фото → описание. Дальше это обычная реплика покупателя,
+ * и отвечает на неё тот же продавец, что и на текст.
+ */
+export async function readMedia(kind: MediaKind, mime: string, base64: string): Promise<string> {
+  const key = process.env.GEMINI_API_KEY
+  if (!key) throw new GeminiError('no-key', 500)
+  const model = process.env.GEMINI_MODEL || DEFAULT_MODEL
+
+  const response = await fetch(`${ENDPOINT}/${encodeURIComponent(model)}:generateContent`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
+    // Минута голосового расшифровывается дольше, чем пишется текстовый ответ.
+    signal: AbortSignal.timeout(25_000),
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [{ inlineData: { mimeType: mime, data: base64 } }, { text: MEDIA_TASK[kind] }] }],
+      generationConfig: { temperature: 0.1, maxOutputTokens: 1200, thinkingConfig: { thinkingLevel: 'low' } },
+    }),
+  })
+  if (!response.ok) {
+    const body = await response.text().catch(() => '')
+    throw new GeminiError(body.slice(0, 300) || `http-${response.status}`, response.status)
+  }
+  const data = (await response.json()) as {
+    candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[]
+  }
+  return (
+    data.candidates?.[0]?.content?.parts
+      ?.filter((p) => !p.thought)
+      .map((p) => p.text ?? '')
+      .join('')
+      .trim() ?? ''
+  )
 }

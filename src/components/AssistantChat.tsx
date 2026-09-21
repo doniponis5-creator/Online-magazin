@@ -7,7 +7,7 @@ import { instagram, phones, telHref, telegramHref, whatsappHref } from '@/data/c
 import { getProduct } from '@/data/products'
 import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
-import { IconClose, IconInstagram, IconPhone, IconTelegram, IconWhatsApp } from './Icons'
+import { IconCamera, IconClose, IconInstagram, IconPhone, IconTelegram, IconWhatsApp } from './Icons'
 
 /**
  * Одна кнопка помощи в углу экрана: сначала чат, под ним — живые люди.
@@ -33,9 +33,17 @@ type Hit = {
 
 type Msg = {
   role: 'user' | 'assistant'
+  /** для фото — описание, которое составил сервер; покупателю его не показываем */
   text: string
   products?: Hit[]
+  /** фото покупателя (уменьшенное), чтобы показать его в ленте */
+  image?: string
+  /** подпись покупателя к фото */
+  caption?: string
 }
+
+/** Фото, которое уходит на сервер. */
+type Picture = { mime: string; data: string; preview: string }
 
 export function AssistantChat() {
   const { t, lang } = useI18n()
@@ -51,6 +59,7 @@ export function AssistantChat() {
   const feed = useRef<HTMLDivElement>(null)
   const people = useRef<HTMLDivElement>(null)
   const field = useRef<HTMLTextAreaElement>(null)
+  const fileInput = useRef<HTMLInputElement>(null)
   const box = useRef<HTMLDivElement>(null)
   // Ключ вкладки для оформления заказа по шагам. Живёт, пока открыта вкладка,
   // никуда не сохраняется — как и сам разговор.
@@ -130,9 +139,9 @@ export function AssistantChat() {
    * Отправить вопрос. buy — «Заказать» у карточки: оформление начинается
    * сразу с этим товаром, без вопроса «какой именно?».
    */
-  async function send(say?: string, buy?: string) {
+  async function send(say?: string, buy?: string, picture?: Picture) {
     const question = (say ?? input).trim()
-    if (!question || busy) return
+    if ((!question && !picture) || busy) return
 
     if (!sid.current) {
       sid.current =
@@ -142,8 +151,13 @@ export function AssistantChat() {
     }
     // Товары последнего ответа: на «беру» оформляем именно их.
     const shown = [...messages].reverse().find((m) => m.role === 'assistant' && m.products?.length)?.products ?? []
+    // Открыта страница товара — консультант отвечает про него, даже если его не назвали.
+    const page = pathname.match(new RegExp(`^/${lang}/product/([^/]+)`))?.[1]
 
-    const history = [...messages, { role: 'user' as const, text: question }]
+    const mine: Msg = picture
+      ? { role: 'user', text: question || a.photo, image: picture.preview, caption: question }
+      : { role: 'user', text: question }
+    const history = [...messages, mine]
     setMessages(history)
     if (say === undefined) setInput('')
     setBusy(true)
@@ -155,18 +169,46 @@ export function AssistantChat() {
         body: JSON.stringify({
           lang,
           sid: sid.current,
+          page: page ? decodeURIComponent(page) : undefined,
           buy,
           shown: shown.map((p) => p.id),
           messages: history.map((m) => ({ role: m.role, text: m.text })),
+          image: picture ? { mime: picture.mime, data: picture.data, caption: question } : undefined,
         }),
       })
       const data = await response.json()
       if (!response.ok || !data.ok) throw new Error(data?.error ?? 'failed')
-      setMessages((prev) => [...prev, { role: 'assistant', text: data.text, products: data.products ?? [] }])
+      setMessages((prev) => {
+        // Что сервер разглядел на фото, кладём в текст: следующие вопросы («а дешевле?»)
+        // уходят с этим описанием, и консультант помнит, о каком товаре речь.
+        const seen = typeof data.heard === 'string' && picture ? data.heard : ''
+        const withHeard = seen ? prev.map((m) => (m === mine ? { ...m, text: seen } : m)) : prev
+        return [...withHeard, { role: 'assistant', text: data.text, products: data.products ?? [] }]
+      })
     } catch {
       setMessages((prev) => [...prev, { role: 'assistant', text: a.error }])
     } finally {
       setBusy(false)
+    }
+  }
+
+  /**
+   * Фото товара: уменьшаем в браузере до 1024 px и отправляем как JPEG.
+   * Снимок с телефона — 3–5 МБ, а модели хватает и 100 КБ.
+   */
+  async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file || busy) return
+    if (!file.type.startsWith('image/') || file.size > 15 * 1024 * 1024) {
+      setMessages((prev) => [...prev, { role: 'assistant', text: a.photoTooBig }])
+      return
+    }
+    try {
+      const picture = await shrink(file)
+      await send(input, undefined, picture)
+    } catch {
+      setMessages((prev) => [...prev, { role: 'assistant', text: a.photoTooBig }])
     }
   }
 
@@ -218,7 +260,16 @@ export function AssistantChat() {
           <div className="assistant__feed" ref={feed}>
             {messages.map((msg, i) => (
               <div key={i} className={`assistant__msg assistant__msg--${msg.role}`}>
-                <div className="assistant__bubble">{withLinks(msg.text, a.payLink)}</div>
+                <div className="assistant__bubble">
+                  {msg.image ? (
+                    <>
+                      <img className="assistant__img" src={msg.image} alt={a.photo} />
+                      {msg.caption ? <div>{msg.caption}</div> : null}
+                    </>
+                  ) : (
+                    withLinks(msg.text, a.payLink)
+                  )}
+                </div>
                 {msg.products && msg.products.length > 0 && (
                   <ul className="assistant__hits">
                     {msg.products.map((hit) => (
@@ -262,6 +313,23 @@ export function AssistantChat() {
           </div>
 
           <div className="assistant__form">
+            <input
+              ref={fileInput}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => void onPickFile(e)}
+            />
+            <button
+              type="button"
+              className="assistant__attach"
+              onClick={() => fileInput.current?.click()}
+              disabled={busy}
+              aria-label={a.attach}
+              title={a.attach}
+            >
+              <IconCamera size={20} />
+            </button>
             <textarea
               ref={field}
               rows={1}
@@ -367,6 +435,30 @@ export function AssistantChat() {
  * сотруднику важно, что спросил человек, а не что ответила программа.
  */
 /** Палец вместо мыши — значит, клавиатура экранная. */
+/** Уменьшить фото до 1024 px по длинной стороне и отдать как JPEG (base64). */
+async function shrink(file: File): Promise<Picture> {
+  const url = URL.createObjectURL(file)
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image()
+      el.onload = () => resolve(el)
+      el.onerror = () => reject(new Error('bad-image'))
+      el.src = url
+    })
+    const scale = Math.min(1, 1024 / Math.max(img.width, img.height))
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.max(1, Math.round(img.width * scale))
+    canvas.height = Math.max(1, Math.round(img.height * scale))
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('no-canvas')
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+    const preview = canvas.toDataURL('image/jpeg', 0.8)
+    return { mime: 'image/jpeg', data: preview.slice(preview.indexOf(',') + 1), preview }
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
+
 function isTouch(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
 }

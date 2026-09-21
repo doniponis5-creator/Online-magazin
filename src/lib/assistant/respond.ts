@@ -11,7 +11,7 @@ import 'server-only'
 
 import type { Lang } from '@/lib/i18n/config'
 import { answer, talkLang } from './reply'
-import { AFFIRM, BUY_INTENT, OFFER, cancel, hasDraft, start, step } from '@/lib/telegram/order'
+import { AFFIRM, BUY_INTENT, OFFER, cancel, hasDraft, looksLikeQuestion, start, step } from '@/lib/telegram/order'
 import { CALL_INTENT, cancelLead, hasLead, leadContext, leadStep, startLead } from './leads'
 import { lookupIn, salesCatalogNow } from './live'
 import type { ChatTurn } from './gemini'
@@ -43,10 +43,12 @@ export async function respond(
   customer: CustomerBrief | null,
   buy?: unknown,
   shown?: unknown,
+  /** id товара, страница которого открыта у покупателя (чат на сайте) */
+  page?: string,
 ): Promise<Reply> {
-  const flow = await salesFlow(channel, turns, lang, customer, buy, shown)
+  const flow = await salesFlow(channel, turns, lang, customer, buy, shown, page)
   if (flow) return flow
-  return await answer(turns, lang, customer)
+  return await answer(turns, lang, customer, page)
 }
 
 /**
@@ -61,12 +63,13 @@ async function salesFlow(
   customer: CustomerBrief | null,
   buy: unknown,
   shownRaw: unknown,
+  page?: string,
 ): Promise<Reply | null> {
   const { key, known, orderSource } = channel
   const text = turns[turns.length - 1]?.text ?? ''
   const talk = talkLang(turns, lang)
   const only = (reply: string, handoff = false): Reply => ({ text: reply, products: [], source: 'flow', handoff })
-  const who = { name: known.name ?? customer?.name, phone: known.phone }
+  const who = { name: known.name ?? customer?.name ?? nameFromTurns(turns), phone: known.phone }
 
   // Передумал посреди шагов — выходим, не доспрашивая.
   if (/^(отмена|стоп|bekor|токтот|жок|cancel|не надо)$/i.test(text.trim()) && (hasDraft(key) || hasLead(key))) {
@@ -83,8 +86,10 @@ async function salesFlow(
   const ongoing = await step(key, text, talk, lang)
   if (ongoing) return only(ongoing)
 
-  const shown = Array.isArray(shownRaw) ? shownRaw.filter((x): x is string => typeof x === 'string').slice(0, 3) : []
   const find = lookupIn(await salesCatalogNow())
+  let shown = Array.isArray(shownRaw) ? shownRaw.filter((x): x is string => typeof x === 'string').slice(0, 3) : []
+  // Консультант ещё ничего не показывал, но открыта страница товара — «беру» про него.
+  if (shown.length === 0 && page && find(page)) shown = [page]
   const shownNames = shown.map((id) => find(id)?.nameRu).filter((x): x is string => Boolean(x))
 
   if (typeof buy === 'string' && find(buy)) {
@@ -102,10 +107,42 @@ async function salesFlow(
 
   // «беру», «куда платить» — или «да» сразу после того, как консультант предложил оформить.
   const lastAnswer = [...turns].reverse().find((t) => t.role === 'assistant')?.text ?? ''
-  if (shown.length > 0 && (BUY_INTENT.test(text) || (AFFIRM.test(text) && OFFER.test(lastAnswer)))) {
+  // Длинная фраза со словом «заказ» — обычно вопрос («если закажем, оплатить
+  // при получении можно?»). На него отвечает консультант, а не анкета заказа.
+  const wantsToBuy = BUY_INTENT.test(text) && !looksLikeQuestion(text.replace(/\?/g, ''))
+  if (shown.length > 0 && (wantsToBuy || (AFFIRM.test(text) && OFFER.test(lastAnswer)))) {
     return only(await start(key, shown, talk, orderSource, who))
   }
   return null
+}
+
+/** Бот спросил имя. */
+const ASKED_NAME = /(как (вас|к вам) (зовут|обращаться)|атыңыз ким|атыныз ким|кантип кайрыл|ismingiz|isminggiz|исмингиз)/i
+/** «Меня зовут Азамат», «менин атым Азамат», «mening ismim Aziz». */
+const SAID_NAME = /(?:меня зовут|зовут меня|менин атым|атым|mening ismim|ismim|исмим)\s+([\p{L}'-]{2,30})/iu
+
+/**
+ * Имя покупателя из разговора: он назвал его сам или ответил на вопрос бота.
+ * Иначе анкета заказа спросит имя второй раз — и человек решит, что его не слушают.
+ */
+export function nameFromTurns(turns: ChatTurn[]): string | undefined {
+  for (let i = turns.length - 1; i >= 0; i -= 1) {
+    const turn = turns[i]
+    if (turn.role !== 'user') continue
+    const said = turn.text.match(SAID_NAME)
+    if (said) return capital(said[1])
+    const before = turns[i - 1]
+    if (before?.role === 'assistant' && ASKED_NAME.test(before.text)) {
+      // Короткий ответ без цифр — имя. «Азамат», «Айка.», «Нурлан, нас четверо» — первое слово.
+      const word = turn.text.trim().split(/[\s,.!]+/)[0] ?? ''
+      if (/^[\p{L}'-]{2,30}$/u.test(word) && !/^(да|нет|ha|yo'q|ооба|жок)$/i.test(word)) return capital(word)
+    }
+  }
+  return undefined
+}
+
+function capital(word: string): string {
+  return word.charAt(0).toUpperCase() + word.slice(1)
 }
 
 /**

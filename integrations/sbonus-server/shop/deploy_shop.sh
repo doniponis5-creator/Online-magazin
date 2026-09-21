@@ -65,7 +65,7 @@ import app.shop_precheck.shop_whatsapp as wa_btn
 import app.shop_precheck.shop_installments as inst
 import app.shop_precheck.shop_stock as stock
 import app.shop_precheck.shop_wa_bot as wabot
-assert callable(wabot.poll_once)
+assert callable(wabot.poll_once) and callable(wabot.send_digest)
 assert stock.shortages([{'oneCId': 'a', 'qty': 1, 'name': 'A'}], [{'id': 'a', 'stock': 1, 'availability': 'По остатку'}], {'a': 1}) == ['A']
 assert inst.parse_phones('0558311031/0558882507') == ['+996558311031', '+996558882507']
 assert len(ad.SETTINGS) >= 3
@@ -336,6 +336,13 @@ cat > /etc/cron.d/sbonus-wa-bot <<'CRONEOF'
 CRONEOF
 chmod 644 /etc/cron.d/sbonus-wa-bot
 echo "✓ cron: WhatsApp-продавец раз в минуту (/etc/cron.d/sbonus-wa-bot, журнал /var/log/sbonus-wa-bot.log)"
+# Утренняя сводка владельцу. Cron дёргает каждый час, а «9 утра по Бишкеку»
+# проверяет сам скрипт — часовой пояс сервера тогда не важен.
+cat > /etc/cron.d/sbonus-wa-digest <<'CRONEOF'
+5 * * * * root docker exec sbonus_api python3 -c "from app.shop.shop_wa_bot import run_digest; run_digest()" >> /var/log/sbonus-wa-bot.log 2>&1
+CRONEOF
+chmod 644 /etc/cron.d/sbonus-wa-digest
+echo "✓ cron: утренняя сводка консультанта владельцу в 9:05 (/etc/cron.d/sbonus-wa-digest)"
 
 # ── 8. Проверка ──────────────────────────────────────────────────────────────
 echo "=== ПРОВЕРКА ==="

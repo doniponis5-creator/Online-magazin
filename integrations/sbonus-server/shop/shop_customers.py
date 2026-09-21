@@ -7,7 +7,14 @@
 Новый номер → сайт спрашивает имя → клиент создаётся в SBonus + приветственный бонус сайта
 (только тем, кого ещё не было в SBonus; один раз на телефон — уникальный receipt_number).
 
+Вход через WhatsApp «наоборот»: код шлёт не магазин покупателю, а покупатель
+магазину (wa.me с готовым текстом «Код входа: 482913»). Магазин ничего не
+отправляет — значит, Green API нечего блокировать за рассылку; номер подтверждён
+самим WhatsApp (он в отправителе). Сайт спрашивает «пришло?» раз в несколько секунд.
+
 Эндпоинты (все под /api/v1, подпись HMAC сайта — секрет SHOP_SITE_SECRET):
+  POST /webhook/site/customer/wa-login/start {ip}              код и номер магазина для wa.me
+  POST /webhook/site/customer/wa-login/check {code}            pending | профиль | needName+ticket
   POST /webhook/site/customer/send-code   {phone, ip}          отправить код → channel
   POST /webhook/site/customer/verify      {phone, code, ip}    проверить код → профиль или needName+ticket
   POST /webhook/site/customer/register    {ticket, name}       создать клиента + приветственный бонус
@@ -47,6 +54,10 @@ logger = logging.getLogger("sbonus.shop.customer")
 router_site_customer = APIRouter(prefix="/webhook/site/customer", tags=["Сайт: покупатель и бонусы"])
 
 CODE_TTL = 300          # код действует 5 минут
+WA_LOGIN_TTL = 300      # столько ждём сообщение покупателя
+WA_SCAN_EVERY = 3       # журнал Green API читаем не чаще раза в столько секунд
+# Текст, который сайт подставляет в wa.me. Русский, кыргызский и узбекский варианты.
+WA_LOGIN_RE = re.compile(r"(?:код входа|кирүү коду|kirish kodi)\D{0,40}(\d{6})", re.I)
 TICKET_TTL = 900        # 15 минут, чтобы ввести имя
 MAX_ATTEMPTS = 5
 DEFAULT_WELCOME = Decimal("1000")
@@ -187,6 +198,14 @@ async def profile(db: AsyncSession, customer: Customer, amount: Decimal = Decima
 
 # ── Модели запросов ─────────────────────────────────────────────────────────
 
+class WaLoginStart(BaseModel):
+    ip: str = ""
+
+
+class WaLoginCheck(BaseModel):
+    code: str
+
+
 class SendCode(BaseModel):
     phone: str
     ip: str = ""
@@ -237,6 +256,107 @@ async def send_code(request: Request, db: AsyncSession = Depends(get_db)):
     return {"ok": True, "channel": "whatsapp"}
 
 
+async def _logged_in(db: AsyncSession, phone: str) -> dict:
+    """Номер подтверждён (кодом или сообщением из WhatsApp): вход или анкета имени."""
+    customer = await _customer(db, phone)
+    if customer:
+        if not customer.is_active:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "Номер заблокирован. Обратитесь в магазин.")
+        await _track(db, "login", phone)
+        return {"ok": True, "needName": False, "customer": await profile(db, customer)}
+    ticket = secrets.token_urlsafe(24)
+    await redis_client.setex(f"shop_reg:{ticket}", TICKET_TTL, phone)
+    return {"ok": True, "needName": True, "ticket": ticket, "welcomeBonus": float(await welcome_amount(db))}
+
+
+# ── Вход через WhatsApp «наоборот» ───────────────────────────────────────────
+
+async def _own_wa_number() -> str:
+    """Номер WhatsApp магазина (цифры) — из Green API, чтобы не держать его в двух местах."""
+    cached = await redis_client.get("shop_wa_own")
+    if isinstance(cached, bytes):
+        cached = cached.decode()
+    if cached:
+        return cached
+    import httpx
+    from .shop_whatsapp import _url
+    host, instance, token = _url()
+    async with httpx.AsyncClient(timeout=15) as client:
+        data = (await client.get(f"{host}/waInstance{instance}/getSettings/{token}")).json()
+    digits = re.sub(r"\D", "", str(data.get("wid") or "").split("@")[0])
+    if not digits:
+        raise wa.GreenAPIError("Green API не отдал номер магазина")
+    await redis_client.setex("shop_wa_own", 3600, digits)
+    return digits
+
+
+async def _scan_wa_logins() -> None:
+    """
+    Прочитать свежие входящие WhatsApp и отметить коды входа, которые прислали
+    покупатели. Не чаще раза в WA_SCAN_EVERY секунд: сайт спрашивает часто,
+    Green API дёргать каждый раз незачем.
+    """
+    if not await redis_client.set("shop_walogin_scan", "1", ex=WA_SCAN_EVERY, nx=True):
+        return
+    from .shop_wa_bot import _journal, _journal_text
+    try:
+        messages = await _journal("lastIncomingMessages", minutes=6)
+    except Exception as error:
+        logger.warning(f"wa-login journal: {error}")
+        return
+    for message in messages:
+        chat = str(message.get("chatId") or "")
+        if not chat.endswith("@c.us"):
+            continue
+        found = WA_LOGIN_RE.search(_journal_text(message))
+        if not found:
+            continue
+        code = found.group(1)
+        if not await redis_client.get(f"shop_walogin:{code}"):
+            continue
+        phone = "+" + chat.removesuffix("@c.us")
+        if not PHONE_RE.fullmatch(phone):
+            continue
+        await redis_client.setex(f"shop_walogin_done:{code}", WA_LOGIN_TTL, phone)
+
+
+@router_site_customer.post("/wa-login/start")
+async def wa_login_start(request: Request):
+    payload = WaLoginStart.parse_raw(await _verify_site_body(request))
+    ip = (payload.ip or "")[:45]
+    if ip and not await check_rate_limit(f"shop_walogin_ip:{ip}", max_attempts=20, window_seconds=3600):
+        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, "Слишком много запросов. Попробуйте позже.")
+    try:
+        own = await _own_wa_number()
+    except Exception as error:
+        logger.error(f"wa-login start: {error}")
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, "WhatsApp магазина сейчас недоступен. Войдите по коду.")
+    code = f"{secrets.randbelow(900000) + 100000}"
+    await redis_client.setex(f"shop_walogin:{code}", WA_LOGIN_TTL, ip or "-")
+    return {"ok": True, "code": code, "waPhone": own, "ttl": WA_LOGIN_TTL}
+
+
+@router_site_customer.post("/wa-login/check")
+async def wa_login_check(request: Request, db: AsyncSession = Depends(get_db)):
+    payload = WaLoginCheck.parse_raw(await _verify_site_body(request))
+    code = (payload.code or "").strip()
+    if not re.fullmatch(r"\d{6}", code):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Код — 6 цифр")
+    if not await redis_client.get(f"shop_walogin:{code}"):
+        raise HTTPException(status.HTTP_410_GONE, "Время вышло. Начните заново.")
+    phone = await redis_client.get(f"shop_walogin_done:{code}")
+    if not phone:
+        await _scan_wa_logins()
+        phone = await redis_client.get(f"shop_walogin_done:{code}")
+    if isinstance(phone, bytes):
+        phone = phone.decode()
+    if not phone:
+        return {"ok": True, "pending": True}
+    await redis_client.delete(f"shop_walogin:{code}", f"shop_walogin_done:{code}")
+    await _track(db, "code_sent", phone, "whatsapp-in")
+    return await _logged_in(db, phone)
+
+
 @router_site_customer.post("/verify")
 async def verify_code(request: Request, db: AsyncSession = Depends(get_db)):
     payload = VerifyCode.parse_raw(await _verify_site_body(request))
@@ -263,17 +383,7 @@ async def verify_code(request: Request, db: AsyncSession = Depends(get_db)):
 
     await redis_client.delete(f"shop_otp:{phone}")
     await redis_client.delete(attempts_key)
-
-    customer = await _customer(db, phone)
-    if customer:
-        if not customer.is_active:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, "Номер заблокирован. Обратитесь в магазин.")
-        await _track(db, "login", phone)
-        return {"ok": True, "needName": False, "customer": await profile(db, customer)}
-
-    ticket = secrets.token_urlsafe(24)
-    await redis_client.setex(f"shop_reg:{ticket}", TICKET_TTL, phone)
-    return {"ok": True, "needName": True, "ticket": ticket, "welcomeBonus": float(await welcome_amount(db))}
+    return await _logged_in(db, phone)
 
 
 @router_site_customer.post("/register")

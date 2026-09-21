@@ -10,6 +10,7 @@ import { FavoritesProvider } from '@/lib/favorites/FavoritesProvider'
 import { Header } from '@/components/Header'
 import { BottomNav } from '@/components/BottomNav'
 import { CartReminder } from '@/components/CartReminder'
+import { BonusReminder } from '@/components/BonusReminder'
 import { AssistantChat } from '@/components/AssistantChat'
 import { Footer } from '@/components/Footer'
 import { HtmlLang } from '@/components/HtmlLang'
@@ -68,7 +69,9 @@ export default async function LangLayout({
           <a href="#content" className="skip-link">
             {dict.nav.skipToContent}
           </a>
-          <Header />          <main id="content" tabIndex={-1}>
+          <Header />
+          <BonusReminder />
+          <main id="content" tabIndex={-1}>
             {children}
           </main>
           <Footer />
