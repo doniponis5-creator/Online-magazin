@@ -6,12 +6,12 @@
 - Unclassified: 55 file(s) not represented in the graph (top: .xml 13, (none) 8, .css 8)
 
 ## Summary
-- 2142 nodes · 4867 edges · 185 communities (110 shown, 75 thin omitted)
+- 2141 nodes · 4867 edges · 184 communities (110 shown, 74 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 107 edges (avg confidence: 0.86)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `b19c931e`
+- Built from commit: `24f66ccd`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -191,13 +191,13 @@
 ## God Nodes (most connected - your core abstractions)
 1. `useI18n()` - 70 edges
 2. `formatSom()` - 38 edges
-3. `react` - 32 edges
-4. `handleUpdate()` - 32 edges
+3. `handleUpdate()` - 32 edges
+4. `react` - 32 edges
 5. `text()` - 31 edges
 6. `base()` - 30 edges
 7. `OfflineCatalogActivity` - 24 edges
-8. `_post()` - 24 edges
-9. `getProduct()` - 24 edges
+8. `getProduct()` - 24 edges
+9. `_post()` - 24 edges
 10. `Lang` - 23 edges
 
 ## Surprising Connections (you probably didn't know these)
@@ -207,15 +207,15 @@
   ARCHITECTURE_UZ.md → TASK_02_REPORT.md
 - `Smart Centr Project Working Rules` --semantically_similar_to--> `Owner's Work Standard (verify visually, no self-scoring)`  [INFERRED] [semantically similar]
   CLAUDE.md → TASK_03A_REVIEW_FIXES.md
-- `Для PC: кабинет SBonus тоже шлёт код через Green API` --references--> `_own_wa_number()`  [INFERRED]
-  docs/MAC_2026-09-21.md → integrations/sbonus-server/shop/shop_customers.py
-- `Для PC: кабинет SBonus тоже шлёт код через Green API` --references--> `_scan_wa_logins()`  [INFERRED]
-  docs/MAC_2026-09-21.md → integrations/sbonus-server/shop/shop_customers.py
+- `Консультант` --references--> `_nudge_silent()`  [INFERRED]
+  docs/MAC_2026-09-21.md → integrations/sbonus-server/shop/shop_wa_bot.py
+- `Консультант` --references--> `_read_media()`  [INFERRED]
+  docs/MAC_2026-09-21.md → integrations/sbonus-server/shop/shop_wa_bot.py
 
 ## Import Cycles
 - None detected.
 
-## Communities (185 total, 75 thin omitted)
+## Communities (184 total, 74 thin omitted)
 
 ### Community 1 - "build_model.py"
 Cohesion: 0.12
@@ -658,22 +658,22 @@ Cohesion: 0.33
 Nodes (4): ALLOW, ASSISTANTS, PRIVATE, TRAINERS
 
 ## Knowledge Gaps
-- **368 isolated node(s):** `customer`, `phone`, `laptop`, `catalog`, `order` (+363 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 739 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **75 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **368 isolated node(s):** `Вход через WhatsApp «наоборот» (главное за вечер)`, `Для PC (1С): 1 000 сом — тратить целиком`, `Бонус виден покупателю`, `Проверить после выкатки (PC)`, `Answer` (+363 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 738 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **74 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `scripts` connect `scripts` to `package.json`?**
-  _High betweenness centrality (0.274) - this node is a cross-community bridge._
+  _High betweenness centrality (0.270) - this node is a cross-community bridge._
 - **Why does `test` connect `scripts` to `manage.py`?**
-  _High betweenness centrality (0.272) - this node is a cross-community bridge._
+  _High betweenness centrality (0.268) - this node is a cross-community bridge._
 - **Why does `copy_base()` connect `manage.py` to `build_extension.py`, `scripts`?**
-  _High betweenness centrality (0.272) - this node is a cross-community bridge._
+  _High betweenness centrality (0.268) - this node is a cross-community bridge._
 - **Are the 17 inferred relationships involving `text()` (e.g. with `_notes()` and `save_notes()`) actually correct?**
   _`text()` has 17 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `customer`, `phone`, `laptop` to the rest of the system?**
+- **What connects `Вход через WhatsApp «наоборот» (главное за вечер)`, `Для PC (1С): 1 000 сом — тратить целиком`, `Бонус виден покупателю` to the rest of the system?**
   _368 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `ProductArt.tsx` be split into smaller, more focused modules?**
   _Cohesion score 0.11764705882352941 - nodes in this community are weakly interconnected._
