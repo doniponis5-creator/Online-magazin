@@ -169,31 +169,31 @@
   },
   "integrations/sbonus-server/shop/001_shop_orders_migration.sql": {
     "mtime": 1789643427.3177383,
-    "seen": 1789988267.0517645,
+    "seen": 1789989692.7530215,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/002_shop_catalog_migration.sql": {
     "mtime": 1789647531.5057318,
-    "seen": 1789988267.0517654,
+    "seen": 1789989692.7530227,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/003_shop_bonus_migration.sql": {
     "mtime": 1789651724.3017156,
-    "seen": 1789988267.0517662,
+    "seen": 1789989692.7530243,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/004_shop_stats_migration.sql": {
     "mtime": 1789734501.4004698,
-    "seen": 1789988267.051767,
+    "seen": 1789989692.7530255,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/005_shop_push_migration.sql": {
     "mtime": 1789792750.2917469,
-    "seen": 1789988267.0517678,
+    "seen": 1789989692.7530267,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -894,9 +894,9 @@
     "semantic_hash": "ab578875f27d0e418c615aed2d950578"
   },
   "src/lib/i18n/dictionaries.ts": {
-    "mtime": 1789987428.1338854,
-    "seen": 1789987610.961004,
-    "ast_hash": "44e23a4d8c7d30447cbff91d18de3824",
+    "mtime": 1789989382.6170077,
+    "seen": 1789989692.753498,
+    "ast_hash": "ee842d25b7d7ca7ed591c61ed590f5f0",
     "semantic_hash": ""
   },
   "src/lib/links.ts": {
@@ -3954,9 +3954,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/knowledge.ts": {
-    "mtime": 1789987403.00715,
-    "seen": 1789987610.9573271,
-    "ast_hash": "839e6c101a30dbb7484863446270894b",
+    "mtime": 1789989417.3166988,
+    "seen": 1789989692.7534735,
+    "ast_hash": "991ca02f6547296ed2ec67ca3ce6f97d",
     "semantic_hash": ""
   },
   "__tests__/assistant.test.ts": {
@@ -3984,9 +3984,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/local.ts": {
-    "mtime": 1789964486.9919522,
-    "seen": 1789964793.2721083,
-    "ast_hash": "5b1c594eb1dba47c3a758c0c62e717ea",
+    "mtime": 1789989382.6170077,
+    "seen": 1789989692.7534783,
+    "ast_hash": "bbbfae25cc58bf3a74865d7bf1dec431",
     "semantic_hash": ""
   },
   "src/lib/assistant/orders.ts": {
@@ -3996,15 +3996,15 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/prompt.ts": {
-    "mtime": 1789986356.4904535,
-    "seen": 1789986547.1680808,
-    "ast_hash": "618cee8f9193cba5d5a55d427d63735f",
+    "mtime": 1789989608.6767635,
+    "seen": 1789989692.7534833,
+    "ast_hash": "9a52c84cf431c677a87d293d72ec4282",
     "semantic_hash": ""
   },
   "src/lib/assistant/reply.ts": {
-    "mtime": 1789987403.0051486,
-    "seen": 1789987610.9589038,
-    "ast_hash": "b7b8baf9aa95c5d6761070bdea5e5e5f",
+    "mtime": 1789989417.3206277,
+    "seen": 1789989692.7534842,
+    "ast_hash": "8d913c9a03cecb750ca728ff4d1b29e0",
     "semantic_hash": ""
   },
   "src/lib/assistant/talk.ts": {
@@ -4062,9 +4062,9 @@
     "semantic_hash": ""
   },
   "src/lib/telegram/bot.ts": {
-    "mtime": 1789987428.1338854,
-    "seen": 1789987610.9634569,
-    "ast_hash": "534f81fdce1340f27077021129cd9fe4",
+    "mtime": 1789989382.6170077,
+    "seen": 1789989692.7535114,
+    "ast_hash": "fac0ab3ab2d4ca750a5ac9706a03d6b8",
     "semantic_hash": ""
   },
   "src/lib/telegram/order.ts": {
@@ -4398,27 +4398,27 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/content.json": {
-    "mtime": 1789988931.1935973,
-    "seen": 1789989002.5549166,
-    "ast_hash": "79e5c318ea9fb24631dd4aad804b91ba",
+    "mtime": 1789989362.5197997,
+    "seen": 1789989692.7531743,
+    "ast_hash": "fbe8d3018bddc278892f673d1f7f1794",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/current-1c.json": {
-    "mtime": 1789988979.3055296,
-    "seen": 1789989002.554918,
-    "ast_hash": "1e2534387ac2c94395fb6270a568040e",
+    "mtime": 1789989415.4904418,
+    "seen": 1789989692.753176,
+    "ast_hash": "67a7eefbed9b9e94439444099a756dd3",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/downloaded-photos.json": {
-    "mtime": 1789988949.7128768,
-    "seen": 1789989002.5549195,
-    "ast_hash": "5d9f5c6c99f322f57be55d7524dc910c",
+    "mtime": 1789989378.492355,
+    "seen": 1789989692.7531776,
+    "ast_hash": "5940e034f117edd01e6f48460506ffb5",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos.json": {
-    "mtime": 1789988951.223611,
-    "seen": 1789989002.5549207,
-    "ast_hash": "b7619ffc42ca8db16ba4fcd1fc09ecf2",
+    "mtime": 1789989380.0746326,
+    "seen": 1789989692.753179,
+    "ast_hash": "4373e24967e968c343161bbf709fd1ae",
     "semantic_hash": ""
   },
   "review/vacuum-enrichment/backups/prod-20260920-140957/backup.json": {
@@ -4914,9 +4914,9 @@
     "semantic_hash": ""
   },
   "scripts/1c-export/import_small_appliance_enrichment.py": {
-    "mtime": 1789988931.1935973,
-    "seen": 1789989002.5550334,
-    "ast_hash": "da65e03561e29e15c237c897190ad3c5",
+    "mtime": 1789989362.5197997,
+    "seen": 1789989692.7532978,
+    "ast_hash": "a56b1768f5b90b7c6b17f6339fad0b79",
     "semantic_hash": ""
   },
   "scripts/1c-export/import_vacuum_enrichment.py": {
@@ -5076,9 +5076,9 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/STATUS.md": {
-    "mtime": 1789988995.0086374,
-    "seen": 1789989002.5553098,
-    "ast_hash": "85a6646d1fe0f78c8f3da78c60015dc7",
+    "mtime": 1789989425.3837435,
+    "seen": 1789989692.7535708,
+    "ast_hash": "dea1bd8ce897df2dada756f323361bab",
     "semantic_hash": ""
   },
   "review/vacuum-enrichment/STATUS.md": {
@@ -6738,74 +6738,74 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/baoyu-gt-282.jpg": {
-    "mtime": 1789988950.351,
-    "seen": 1789989002.5563128,
+    "mtime": 1789989379.144,
+    "seen": 1789989692.7545764,
     "ast_hash": "acdc1c3ff2a144a9ef9db952bf00a6b3",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/bruce-q5.jpg": {
-    "mtime": 1789988950.422,
-    "seen": 1789989002.5563145,
+    "mtime": 1789989379.22,
+    "seen": 1789989692.7545779,
     "ast_hash": "098ffaf26fbe36343ed7bd9b3f8b2479",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/midea-mj-bl6013w4.jpg": {
-    "mtime": 1789988950.009,
-    "seen": 1789989002.5563166,
+    "mtime": 1789989378.783,
+    "seen": 1789989692.75458,
     "ast_hash": "8ab59142f10b3f79ee278bd6f242cf80",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/midea-mj-bl7001aw.jpg": {
-    "mtime": 1789988950.045,
-    "seen": 1789989002.5563178,
+    "mtime": 1789989378.81,
+    "seen": 1789989692.754581,
     "ast_hash": "2e42708abce5ef153682b790ed1d0904",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-mg-300g.jpg": {
-    "mtime": 1789988950.476,
-    "seen": 1789989002.5563252,
+    "mtime": 1789989379.277,
+    "seen": 1789989692.754591,
     "ast_hash": "a271cba7416fe86775bc4a101a068d3e",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-6035.jpg": {
-    "mtime": 1789988950.093,
-    "seen": 1789989002.5563338,
+    "mtime": 1789989378.861,
+    "seen": 1789989692.7545986,
     "ast_hash": "2fbedff1e01cae3489f45a1fdadea19c",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-6038.jpg": {
-    "mtime": 1789988950.14,
-    "seen": 1789989002.5563362,
+    "mtime": 1789989378.922,
+    "seen": 1789989692.7546008,
     "ast_hash": "8b27f995714d0d35e5bfa8ddd4c88d5b",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-7913.jpg": {
-    "mtime": 1789988950.19,
-    "seen": 1789989002.5563374,
+    "mtime": 1789989378.97,
+    "seen": 1789989692.754602,
     "ast_hash": "018827418e52942daa6902005c2e765c",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-7915.jpg": {
-    "mtime": 1789988950.251,
-    "seen": 1789989002.5563385,
+    "mtime": 1789989379.024,
+    "seen": 1789989692.754603,
     "ast_hash": "89026c0a10f02d02c51f6a2bd624fe45",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-7999.jpg": {
-    "mtime": 1789988950.309,
-    "seen": 1789989002.5563405,
+    "mtime": 1789989379.103,
+    "seen": 1789989692.7546048,
     "ast_hash": "7ad5b5b0d889c5800f00ea814dfc5e4c",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/baoyu-gt-282.jpg": {
-    "mtime": 1789988942.9476807,
-    "seen": 1789989002.556344,
+    "mtime": 1789989372.3178377,
+    "seen": 1789989692.754608,
     "ast_hash": "d28e43b9383ef2adbe7df50d7b975e9c",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/bruce-q5.jpg": {
-    "mtime": 1789988945.0520532,
-    "seen": 1789989002.5563474,
+    "mtime": 1789989374.453153,
+    "seen": 1789989692.7546115,
     "ast_hash": "e84534a46674996500094c9eb897972e",
     "semantic_hash": ""
   },
@@ -6816,50 +6816,50 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/midea-mj-bl6013w4.png": {
-    "mtime": 1789988938.4094937,
-    "seen": 1789989002.5563612,
+    "mtime": 1789989369.4567678,
+    "seen": 1789989692.7546246,
     "ast_hash": "5cfb7ea197c05757009b748572c4129c",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/midea-mj-bl7001aw.jpg": {
-    "mtime": 1789988939.5632393,
-    "seen": 1789989002.5563622,
+    "mtime": 1789989370.4233422,
+    "seen": 1789989692.7546253,
     "ast_hash": "34a2335bca97e97b87cc50476b032f38",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-mg-300g.jpg": {
-    "mtime": 1789988945.0839314,
-    "seen": 1789989002.5563748,
+    "mtime": 1789989374.4853497,
+    "seen": 1789989692.754649,
     "ast_hash": "c46e40303814e1cd991d7d481106cda7",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-6035.jpg": {
-    "mtime": 1789988939.5782688,
-    "seen": 1789989002.5564265,
+    "mtime": 1789989370.4367316,
+    "seen": 1789989692.7546747,
     "ast_hash": "883581fd2d1ef3cbe76fbae6caea5f11",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-6038.jpg": {
-    "mtime": 1789988939.5952685,
-    "seen": 1789989002.556437,
+    "mtime": 1789989370.4503493,
+    "seen": 1789989692.7546852,
     "ast_hash": "f527c2ac7c925a59201628e8f8e0a00b",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-7913.jpg": {
-    "mtime": 1789988942.192426,
-    "seen": 1789989002.5564382,
+    "mtime": 1789989371.5476644,
+    "seen": 1789989692.754686,
     "ast_hash": "f3b999862cd47f6ddde67a727b1f2ee6",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-7915.jpg": {
-    "mtime": 1789988942.2279274,
-    "seen": 1789989002.5564413,
+    "mtime": 1789989371.5786252,
+    "seen": 1789989692.7546885,
     "ast_hash": "becbfe948b2de020ec9f22f26b47a045",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-7999.jpg": {
-    "mtime": 1789988942.262643,
-    "seen": 1789989002.5564516,
+    "mtime": 1789989371.6116283,
+    "seen": 1789989692.754698,
     "ast_hash": "f4c96c848d810344f8a15905d300897e",
     "semantic_hash": ""
   },
@@ -8610,62 +8610,62 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/raf-r-3400.jpg": {
-    "mtime": 1789988950.603,
-    "seen": 1789989002.55632,
+    "mtime": 1789989379.423,
+    "seen": 1789989692.7545834,
     "ast_hash": "24018df4a3368a8fda055f0a17356bfa",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-mg-180a.jpg": {
-    "mtime": 1789988950.51,
-    "seen": 1789989002.5563223,
+    "mtime": 1789989379.311,
+    "seen": 1789989692.7545884,
     "ast_hash": "9b29a898a7054047acd18008111de816",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-mg-190g.jpg": {
-    "mtime": 1789988950.669,
-    "seen": 1789989002.5563238,
+    "mtime": 1789989379.478,
+    "seen": 1789989692.7545898,
     "ast_hash": "b6de6741431eb623474b4adef35e378e",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-218.jpg": {
-    "mtime": 1789988950.728,
-    "seen": 1789989002.5563283,
+    "mtime": 1789989379.546,
+    "seen": 1789989692.7545934,
     "ast_hash": "9859e7218cc7fc6f85cb47c2874c59f3",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-222.jpg": {
-    "mtime": 1789988950.782,
-    "seen": 1789989002.5563293,
+    "mtime": 1789989379.588,
+    "seen": 1789989692.7545943,
     "ast_hash": "b481e2f76b8a5bc6adf0f605ad79d9d0",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-227.jpg": {
-    "mtime": 1789988950.709,
-    "seen": 1789989002.5563304,
+    "mtime": 1789989379.513,
+    "seen": 1789989692.7545955,
     "ast_hash": "0e11c9f9167b771cf2320be945668b00",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-wmg-1800.jpg": {
-    "mtime": 1789988950.556,
-    "seen": 1789989002.5563416,
+    "mtime": 1789989379.367,
+    "seen": 1789989692.754606,
     "ast_hash": "f9101087980af4494989df2193a2d739",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/raf-r-3400.jpg": {
-    "mtime": 1789988946.6211233,
-    "seen": 1789989002.5563648,
+    "mtime": 1789989375.9165246,
+    "seen": 1789989692.7546282,
     "ast_hash": "60b43a34014ff9b1864e62b3b81fcba2",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-mg-180a.jpg": {
-    "mtime": 1789988945.7668686,
-    "seen": 1789989002.55637,
+    "mtime": 1789989375.1536536,
+    "seen": 1789989692.7546437,
     "ast_hash": "69c6df4b038404020a020e41b4fe1aec",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-mg-190g.jpg": {
-    "mtime": 1789988946.6601365,
-    "seen": 1789989002.5563724,
+    "mtime": 1789989375.9516528,
+    "seen": 1789989692.7546463,
     "ast_hash": "f831bd0cd5b47791058a4ef6b9b027b6",
     "semantic_hash": ""
   },
@@ -8676,26 +8676,26 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-218.jpg": {
-    "mtime": 1789988947.723964,
-    "seen": 1789989002.5563848,
+    "mtime": 1789989376.7838693,
+    "seen": 1789989692.7546594,
     "ast_hash": "d2172e68d8d4db623bc75705c0420083",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-222.jpg": {
-    "mtime": 1789988948.5014977,
-    "seen": 1789989002.556386,
+    "mtime": 1789989377.3478284,
+    "seen": 1789989692.7546606,
     "ast_hash": "4c62cfb6650f64a4de5ceafd6ffdf2fc",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-227.jpg": {
-    "mtime": 1789988947.348922,
-    "seen": 1789989002.5563874,
+    "mtime": 1789989376.4158256,
+    "seen": 1789989692.7546616,
     "ast_hash": "c9c5a7afc269897aed4f6d516e3d0248",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-wmg-1800.jpg": {
-    "mtime": 1789988946.1752148,
-    "seen": 1789989002.5564532,
+    "mtime": 1789989375.5458238,
+    "seen": 1789989692.7547016,
     "ast_hash": "a6474ae7127a2d3b80235288bffa351f",
     "semantic_hash": ""
   },
@@ -8725,7 +8725,7 @@
   },
   "integrations/sbonus-server/shop/006_shop_installments_migration.sql": {
     "mtime": 1789964335.2680974,
-    "seen": 1789988267.051769,
+    "seen": 1789989692.7530286,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -8772,26 +8772,26 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/bruce-x5-overlock.jpg": {
-    "mtime": 1789988950.837,
-    "seen": 1789989002.5563157,
+    "mtime": 1789989379.637,
+    "seen": 1789989692.7545788,
     "ast_hash": "521bdcc81a198959610c5009a78a4461",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/raf-r-2841.jpg": {
-    "mtime": 1789988950.879,
-    "seen": 1789989002.556319,
+    "mtime": 1789989379.673,
+    "seen": 1789989692.754582,
     "ast_hash": "5772fa8f0b8ebc1e268200e335e9b5be",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-6016.jpg": {
-    "mtime": 1789988950.93,
-    "seen": 1789989002.5563326,
+    "mtime": 1789989379.72,
+    "seen": 1789989692.7545977,
     "ast_hash": "5f55b1a57a0b57e9c3e7c4abebbb762e",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-7998.jpg": {
-    "mtime": 1789988950.984,
-    "seen": 1789989002.5563397,
+    "mtime": 1789989379.771,
+    "seen": 1789989692.754604,
     "ast_hash": "80245f4c90ed1fa816da6f51ed7a9235",
     "semantic_hash": ""
   },
@@ -8808,14 +8808,14 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/bruce-x5-overlock.jpg": {
-    "mtime": 1789988948.5385065,
-    "seen": 1789989002.5563512,
+    "mtime": 1789989377.3871727,
+    "seen": 1789989692.754615,
     "ast_hash": "c1857cf13d97902896b0acbcf48a62a7",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/raf-r-2841.jpg": {
-    "mtime": 1789988948.5475068,
-    "seen": 1789989002.5563636,
+    "mtime": 1789989377.39412,
+    "seen": 1789989692.7546268,
     "ast_hash": "57392cc61eb5287a6d8c0695a70e5841",
     "semantic_hash": ""
   },
@@ -8838,8 +8838,8 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-6016.jpg": {
-    "mtime": 1789988948.5785127,
-    "seen": 1789989002.5564222,
+    "mtime": 1789989377.4296203,
+    "seen": 1789989692.7546716,
     "ast_hash": "e026acca2876757427a031614b1f5354",
     "semantic_hash": ""
   },
@@ -8862,8 +8862,8 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-7998.jpg": {
-    "mtime": 1789988948.6090195,
-    "seen": 1789989002.556445,
+    "mtime": 1789989377.4575336,
+    "seen": 1789989692.754692,
     "ast_hash": "c5522bf379eab725460616730a0de0e9",
     "semantic_hash": ""
   },
@@ -8923,7 +8923,7 @@
   },
   "integrations/sbonus-server/shop/007_shop_notes_migration.sql": {
     "mtime": 1789965631.4248226,
-    "seen": 1789988267.0517707,
+    "seen": 1789989692.753031,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -9582,21 +9582,21 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/sem-sk-234.jpg": {
-    "mtime": 1789988951.061,
-    "seen": 1789989002.5563214,
+    "mtime": 1789989379.845,
+    "seen": 1789989692.7545846,
     "ast_hash": "201ecd5831b54e24e14f5798c86435d5",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/texnomir-th-213.jpg": {
-    "mtime": 1789988951.028,
-    "seen": 1789989002.5563428,
+    "mtime": 1789989379.81,
+    "seen": 1789989692.7546072,
     "ast_hash": "23e66cea8ccbf557b4b8e8e8f4de6945",
     "semantic_hash": ""
   },
   "__tests__/budget.test.ts": {
-    "mtime": 1789986311.456733,
-    "seen": 1789986547.1677983,
-    "ast_hash": "94cb26f7db2ac11c356086e5eed834ba",
+    "mtime": 1789989403.0395942,
+    "seen": 1789989692.752971,
+    "ast_hash": "f95d99df2b09a77193ef7b388d65266b",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/backups/prod-20260921-161059/backup.json": {
@@ -9624,9 +9624,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/budget.ts": {
-    "mtime": 1789986320.5141013,
-    "seen": 1789986547.1680737,
-    "ast_hash": "08b4367a6cc24dfab88a44d74ad3dd84",
+    "mtime": 1789989403.0257332,
+    "seen": 1789989692.7534707,
+    "ast_hash": "a9bc1dde2633598523f540226da8a702",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/bruce-q5-official-1.jpg": {
@@ -9678,8 +9678,8 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/sem-sk-234.jpg": {
-    "mtime": 1789988949.6174836,
-    "seen": 1789989002.5563684,
+    "mtime": 1789989378.3628078,
+    "seen": 1789989692.7546315,
     "ast_hash": "5be53afd14026926ae13bcd9808377e8",
     "semantic_hash": ""
   },
@@ -9726,8 +9726,8 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/texnomir-th-213.jpg": {
-    "mtime": 1789988949.2303264,
-    "seen": 1789989002.5564542,
+    "mtime": 1789989377.9850163,
+    "seen": 1789989692.7547028,
     "ast_hash": "044f905292a0f97776ef51b9f06e36d7",
     "semantic_hash": ""
   },
@@ -9738,8 +9738,8 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-331.jpg": {
-    "mtime": 1789988951.112,
-    "seen": 1789989002.5563316,
+    "mtime": 1789989379.894,
+    "seen": 1789989692.7545967,
     "ast_hash": "38bf8625295c14686f31528a6a349b0b",
     "semantic_hash": ""
   },
@@ -9774,14 +9774,14 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-331.jpg": {
-    "mtime": 1789988949.6479924,
-    "seen": 1789989002.5564115,
+    "mtime": 1789989378.381218,
+    "seen": 1789989692.754669,
     "ast_hash": "52121700b0f61c8d2142e258cc355cc2",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/008_shop_chat_extra_migration.sql": {
     "mtime": 1789987286.5630145,
-    "seen": 1789988267.0517716,
+    "seen": 1789989692.7530322,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -9798,14 +9798,14 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-211.jpg": {
-    "mtime": 1789988951.161,
-    "seen": 1789989002.5563264,
+    "mtime": 1789989379.935,
+    "seen": 1789989692.754592,
     "ast_hash": "7d56a5292252907a0ec803a8c00b2bd1",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-6037.jpg": {
-    "mtime": 1789988951.216,
-    "seen": 1789989002.5563345,
+    "mtime": 1789989379.977,
+    "seen": 1789989692.7545996,
     "ast_hash": "173255268bf84de7fc7f0a15cb177ab5",
     "semantic_hash": ""
   },
@@ -9852,8 +9852,8 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-211.jpg": {
-    "mtime": 1789988949.6779916,
-    "seen": 1789989002.5563831,
+    "mtime": 1789989378.4218726,
+    "seen": 1789989692.7546582,
     "ast_hash": "e8507610a5f34452c738f12491f30fd8",
     "semantic_hash": ""
   },
@@ -9882,9 +9882,99 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-6037.jpg": {
-    "mtime": 1789988949.711877,
-    "seen": 1789989002.556433,
+    "mtime": 1789989378.4503186,
+    "seen": 1789989692.754681,
     "ast_hash": "d48a4d710d78be8c3c7c76200fe9c3d1",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/backups/prod-20260921-171323/backup.json": {
+    "mtime": 1789989203.7281044,
+    "seen": 1789989692.7531624,
+    "ast_hash": "161e571b65a8056e9701565f67214909",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/backups/prod-20260921-171642/backup.json": {
+    "mtime": 1789989402.4920292,
+    "seen": 1789989692.7531652,
+    "ast_hash": "0199051d2d78522d377c0deebe9ac3dc",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/final-photos/technomir-fc-980.jpg": {
+    "mtime": 1789989380.026,
+    "seen": 1789989692.7545862,
+    "ast_hash": "632ac2a2302f9b76a1a7c8b697ed40a0",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/final-photos/technomir-fc-982.jpg": {
+    "mtime": 1789989380.067,
+    "seen": 1789989692.7545872,
+    "ast_hash": "19b3732491549d447729b815e65713e4",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/originals/technomir-fc-980-clean.png": {
+    "mtime": 1789989142.7986531,
+    "seen": 1789989692.7546325,
+    "ast_hash": "ef0a07bb743bfdd7f3bd33de175c6116",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/originals/technomir-fc-980-facebook.jpg": {
+    "mtime": 1789989078.9496717,
+    "seen": 1789989692.7546337,
+    "ast_hash": "da34b82e72a02bdea0ce2c5b9e2c1cd5",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/originals/technomir-fc-980-google-1.jpg": {
+    "mtime": 1789989093.4668746,
+    "seen": 1789989692.7546349,
+    "ast_hash": "75dfd7d3ba8652b00274927373aa24f9",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/originals/technomir-fc-980-google-2.jpg": {
+    "mtime": 1789989093.8401003,
+    "seen": 1789989692.7546358,
+    "ast_hash": "1127726f59d740f1473ef502dfe5dca2",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/originals/technomir-fc-980-google-3.jpg": {
+    "mtime": 1789989094.2452116,
+    "seen": 1789989692.7546368,
+    "ast_hash": "c4e12514bf7492fc0f5d1b595a882ee7",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/originals/technomir-fc-980-google-4.jpg": {
+    "mtime": 1789989094.6910527,
+    "seen": 1789989692.7546377,
+    "ast_hash": "b19307b6e223785df2dddfb694033b9b",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/originals/technomir-fc-980.jpg": {
+    "mtime": 1789989378.4780662,
+    "seen": 1789989692.754639,
+    "ast_hash": "67f67d7a5d3d7dba289168d64ba105dc",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/originals/technomir-fc-982-google.jpg": {
+    "mtime": 1789989302.0497718,
+    "seen": 1789989692.7546399,
+    "ast_hash": "10d3db30c102e0a59f27eb8455a598f1",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/originals/technomir-fc-982-simsim-api.jpg": {
+    "mtime": 1789989340.3880174,
+    "seen": 1789989692.7546408,
+    "ast_hash": "8a7d5cc7e24e219ed3db04889cd35856",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/originals/technomir-fc-982-simsim.jpg": {
+    "mtime": 1789989276.118736,
+    "seen": 1789989692.7546418,
+    "ast_hash": "026150329e3277fc028e5e284b8b952b",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/originals/technomir-fc-982.jpg": {
+    "mtime": 1789989378.492355,
+    "seen": 1789989692.7546427,
+    "ast_hash": "eeaf9c746bb334f5b7dba6c8503673c0",
     "semantic_hash": ""
   }
 }
