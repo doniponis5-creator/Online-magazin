@@ -29,10 +29,12 @@ const WORDS: Record<string, Record<TalkLang, string>> = {
     ky: 'жокко чыгарылды',
     uz: 'bekor qilingan',
   },
+  // failed — это и «счёт не создан», и «оплачен, но 1С не приняла». Во втором
+  // случае деньги у магазина, и «оплата не прошла» напугало бы человека зря.
   failed: {
-    ru: 'оплата не прошла',
-    ky: 'төлөм өтпөй калды',
-    uz: "to'lov o'tmadi",
+    ru: 'оформляется — сотрудник свяжется',
+    ky: 'иштетилүүдө — кызматкер байланышат',
+    uz: "rasmiylashtirilmoqda — xodim bog'lanadi",
   },
 }
 

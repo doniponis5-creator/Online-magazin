@@ -488,6 +488,53 @@ async def _recent(db: AsyncSession) -> list[dict]:
     } for r in rows]
 
 
+# Оплаченные заказы, по которым владелец должен что-то сделать. Покупатель про
+# нехватку товара не знает (ему пишут «принят магазином»), поэтому знать должен
+# владелец: привезти товар, вернуть деньги или предложить другой.
+ATTENTION_SQL = text("""
+SELECT order_id, paid_at, total, status, realized, order_number_1c, note,
+       customer_name, customer_phone, lines
+FROM shop_orders
+WHERE paid IS TRUE AND (
+      (status = 'in_1c' AND realized IS NOT TRUE)
+   OR status = 'failed'
+   OR (status = 'paid' AND paid_at < :stale)
+)
+ORDER BY paid_at ASC
+LIMIT 50
+""")
+
+
+async def _attention(db: AsyncSession, now: datetime) -> list[dict]:
+    try:
+        stale = (now - timedelta(minutes=30)).replace(tzinfo=None)
+        rows = (await db.execute(ATTENTION_SQL, {"stale": stale})).mappings().all()
+    except Exception as error:
+        logger.warning(f"заказы для внимания не собраны: {error}")
+        return []
+    out = []
+    for r in rows:
+        if r["status"] == "failed":
+            kind = "failed"          # оплачен, 1С не смогла создать документы
+        elif r["status"] == "paid":
+            kind = "waiting_1c"      # оплачен, 1С его не забирает (компьютер выключен?)
+        else:
+            kind = "no_stock"        # в 1С, но товара на складе не было
+        out.append({
+            "orderId": r["order_id"],
+            "kind": kind,
+            "paidAt": r["paid_at"].isoformat() if r["paid_at"] else None,
+            "total": float(r["total"] or 0),
+            "customerName": r["customer_name"] or "",
+            "customerPhone": r["customer_phone"] or "",
+            "items": _items(r["lines"]),
+            "itemsTotal": len(r["lines"] or []),
+            "number1C": r["order_number_1c"] or "",
+            "note": (r["note"] or "")[:300],
+        })
+    return out
+
+
 async def _whatsapp_state() -> str:
     """Живой ответ Green API. Молчаливо сломанный WhatsApp — худшее, что может быть."""
     instance = _cfg("greenapi_instance_id")
@@ -522,12 +569,14 @@ async def dashboard(_=Depends(_verify_1c_key), db: AsyncSession = Depends(get_db
     v = (await db.execute(VISITS_SQL, period)).mappings().one_or_none()
     daily = await _daily(db, today)
     recent = await _recent(db)
+    attention = await _attention(db, now)
 
     return {
         "ok": True,
         "checkedAt": now.isoformat(),
         "daily": daily,
         "recentOrders": recent,
+        "attention": attention,
         "orders": {
             "today": int(o["orders_today"]) if o else 0,
             "week": int(o["orders_week"]) if o else 0,

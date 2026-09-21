@@ -511,7 +511,9 @@ async def mark_done(order_id: str, request: Request, db: AsyncSession = Depends(
                     "Заказ готов" if payload.realized else "Заказ принят",
                     (f"Заказ {order.order_id} собран, ждём вас в магазине."
                      if payload.realized else
-                     f"Заказ {order.order_id} принят, товар везём на склад.")
+                     # Покупателю — без «товара нет»: владелец привезёт или
+                     # свяжется сам (см. «Оплачено — нужно действие» в Панели сайта).
+                     f"Заказ {order.order_id} принят. Сотрудник свяжется с вами.")
                     + (f" Начислено бонусов: {earned:.0f}" if earned > 0 else ""))
         try:
             state = ("✅ Реализация проведена — товар списан со склада"
