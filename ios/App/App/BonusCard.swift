@@ -342,5 +342,10 @@ class MainViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(BonusCardPlugin())
         bridge?.registerPluginInstance(AppLockPlugin())
         bridge?.registerPluginInstance(OfflineCatalogPlugin())
+        // Смахивание от левого края — назад, как в Safari и во всех приложениях
+        // iPhone. Жест системный: плавный, идёт за пальцем и работает на частоте
+        // экрана (120 Гц на ProMotion, 60 — на остальных). На первой странице
+        // возвращаться некуда — жест просто ничего не делает.
+        webView?.allowsBackForwardNavigationGestures = true
     }
 }
