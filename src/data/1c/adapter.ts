@@ -154,6 +154,7 @@ export function productFromOneC(item: OneCItem): Product {
     dealOfDay: Boolean(item.dealOfDay),
     forYou: Boolean(item.forYou),
     deliveryPrice: Math.max(0, Math.round(item.deliveryPrice || 0)),
+    stockHidden: item.availability === 'В наличии',
     promoUntil: item.promoUntil,
     oneCId: item.id,
     oneCCode: item.code,

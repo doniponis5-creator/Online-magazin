@@ -10,13 +10,22 @@ import { AddToCartButton } from './AddToCartButton'
 import { FavoriteButton } from './FavoriteButton'
 import { PromoCountdown } from './PromoCountdown'
 
-function StockLine({ stock }: { stock: number }) {
+function StockLine({ stock, hidden }: { stock: number; hidden?: boolean }) {
   const { t } = useI18n()
   if (stock <= 0) {
     return (
       <span className="stock-line">
         <span className="stock-dot stock-dot--out" />
         {t.catalog.outOfStock}
+      </span>
+    )
+  }
+  // «В наличии» из 1С без остатка: число выдуманное, его не пишем.
+  if (hidden) {
+    return (
+      <span className="stock-line">
+        <span className="stock-dot" />
+        {t.product.inStock}
       </span>
     )
   }
@@ -125,7 +134,7 @@ export function ProductPurchase({
 
       {variant ? (
         <div>
-          <StockLine stock={variant.stock} />
+          <StockLine stock={variant.stock} hidden={product.stockHidden} />
           <p className="stock-note">{t.product.stockNote}</p>
           <WarrantyBadge months={product.warrantyMonths} />
         </div>
