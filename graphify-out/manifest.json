@@ -156,9 +156,9 @@
     "semantic_hash": "1bd378da175d43d07cd8fe82e2aa41cc"
   },
   "integrations/1c-online-shop/build_extension.py": {
-    "mtime": 1789988901.4073067,
-    "seen": 1789989002.5547848,
-    "ast_hash": "008ff4b8826c27137cc3bb9357ff7d5c",
+    "mtime": 1789993278.217188,
+    "seen": 1789994321.9885223,
+    "ast_hash": "4cc886d00e81c727bbb4385e93f9e2c8",
     "semantic_hash": ""
   },
   "integrations/1c-online-shop/manage.py": {
@@ -169,31 +169,31 @@
   },
   "integrations/sbonus-server/shop/001_shop_orders_migration.sql": {
     "mtime": 1789643427.3177383,
-    "seen": 1789991967.505899,
+    "seen": 1789994321.988526,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/002_shop_catalog_migration.sql": {
     "mtime": 1789647531.5057318,
-    "seen": 1789991967.5059004,
+    "seen": 1789994321.9885273,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/003_shop_bonus_migration.sql": {
     "mtime": 1789651724.3017156,
-    "seen": 1789991967.5059013,
+    "seen": 1789994321.9885285,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/004_shop_stats_migration.sql": {
     "mtime": 1789734501.4004698,
-    "seen": 1789991967.505902,
+    "seen": 1789994321.98853,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/005_shop_push_migration.sql": {
     "mtime": 1789792750.2917469,
-    "seen": 1789991967.5059028,
+    "seen": 1789994321.988531,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -204,9 +204,9 @@
     "semantic_hash": "aefada3d3561b0ee7f025971b437c15a"
   },
   "integrations/sbonus-server/shop/deploy_shop.sh": {
-    "mtime": 1789987317.9607627,
-    "seen": 1789987610.90616,
-    "ast_hash": "985e45ad6c9747ae7cd91e8331fefc6f",
+    "mtime": 1789994000.7491274,
+    "seen": 1789994321.98854,
+    "ast_hash": "c27dc490974e312af1b257f363d2e5cf",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/inspect_server.sh": {
@@ -216,9 +216,9 @@
     "semantic_hash": "de546f09e6a5fe14fc84b6f27abd37b5"
   },
   "integrations/sbonus-server/shop/shop_admin.py": {
-    "mtime": 1789988901.4073067,
-    "seen": 1789989002.5548062,
-    "ast_hash": "87767bdf604ac5c16a85f73d1c450a12",
+    "mtime": 1789993278.217188,
+    "seen": 1789994321.988543,
+    "ast_hash": "20d7ae58ad1a5cbfa526821103fa18db",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/shop_catalog.py": {
@@ -3966,9 +3966,9 @@
     "semantic_hash": ""
   },
   "src/app/api/assistant/route.ts": {
-    "mtime": 1789987403.0061498,
-    "seen": 1789987610.9430318,
-    "ast_hash": "8860e9e47cb32fc672072e33c5691f53",
+    "mtime": 1789993132.8119366,
+    "seen": 1789994321.9888535,
+    "ast_hash": "245105442a2a01a314486dfeec3e0281",
     "semantic_hash": ""
   },
   "src/components/AssistantChat.tsx": {
@@ -3984,9 +3984,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/local.ts": {
-    "mtime": 1789989382.6170077,
-    "seen": 1789989692.7534783,
-    "ast_hash": "bbbfae25cc58bf3a74865d7bf1dec431",
+    "mtime": 1789993446.7994275,
+    "seen": 1789994321.988942,
+    "ast_hash": "7bdb9886f260b7386174884235caa770",
     "semantic_hash": ""
   },
   "src/lib/assistant/orders.ts": {
@@ -3996,9 +3996,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/prompt.ts": {
-    "mtime": 1789989608.6767635,
-    "seen": 1789989692.7534833,
-    "ast_hash": "9a52c84cf431c677a87d293d72ec4282",
+    "mtime": 1789993278.217188,
+    "seen": 1789994321.9889462,
+    "ast_hash": "52df7c72f374050ae1eb300deaf32065",
     "semantic_hash": ""
   },
   "src/lib/assistant/reply.ts": {
@@ -4056,9 +4056,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/log.ts": {
-    "mtime": 1789962850.5732741,
-    "seen": 1789964793.2721095,
-    "ast_hash": "90da03210784be21ccf02ac418fe12d8",
+    "mtime": 1789993164.680613,
+    "seen": 1789994321.9889426,
+    "ast_hash": "c47f5869196bcbcc338fb401437cddd6",
     "semantic_hash": ""
   },
   "src/lib/telegram/bot.ts": {
@@ -8725,7 +8725,7 @@
   },
   "integrations/sbonus-server/shop/006_shop_installments_migration.sql": {
     "mtime": 1789964335.2680974,
-    "seen": 1789991967.5059044,
+    "seen": 1789994321.9885333,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -8923,7 +8923,7 @@
   },
   "integrations/sbonus-server/shop/007_shop_notes_migration.sql": {
     "mtime": 1789965631.4248226,
-    "seen": 1789991967.5059059,
+    "seen": 1789994321.988535,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -9450,9 +9450,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/leads.ts": {
-    "mtime": 1789982562.1680377,
-    "seen": 1789983110.9193437,
-    "ast_hash": "6191f224bde5027bf7f63e9d9ec9e8e7",
+    "mtime": 1789993175.5188553,
+    "seen": 1789994321.9889376,
+    "ast_hash": "553609dbdabe40597771b437831fd7cc",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/_final-batch-sheet.jpg": {
@@ -9781,7 +9781,7 @@
   },
   "integrations/sbonus-server/shop/008_shop_chat_extra_migration.sql": {
     "mtime": 1789987286.5630145,
-    "seen": 1789991967.505907,
+    "seen": 1789994321.9885368,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -9975,6 +9975,24 @@
     "mtime": 1789989378.492355,
     "seen": 1789989692.7546427,
     "ast_hash": "eeaf9c746bb334f5b7dba6c8503673c0",
+    "semantic_hash": ""
+  },
+  "integrations/sbonus-server/shop/shop_wa_bot.py": {
+    "mtime": 1789994129.7636049,
+    "seen": 1789994321.9885573,
+    "ast_hash": "b0257b9acbe75171b05a53eab36277ac",
+    "semantic_hash": ""
+  },
+  "src/app/api/channel/whatsapp/route.ts": {
+    "mtime": 1789993446.7994275,
+    "seen": 1789994321.9888558,
+    "ast_hash": "ca96df72575ae4105dfe345e56ed044d",
+    "semantic_hash": ""
+  },
+  "src/lib/assistant/respond.ts": {
+    "mtime": 1789993175.5396652,
+    "seen": 1789994321.9889486,
+    "ast_hash": "ac48ecac1ab938c3da52ffbdcfea8686",
     "semantic_hash": ""
   }
 }
