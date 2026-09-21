@@ -107,8 +107,8 @@
 .instagram-panel__handle { display: flex; align-items: center; gap: 10px; width: fit-content; min-height: 44px; font-size: 22px; font-weight: 800; margin-bottom: 18px; }
 .account-panel .btn { margin-top: 10px; }
 .account-layout { display: grid; grid-template-columns: 1.05fr 1fr; gap: 32px; padding-top: 24px; }
-.account-loyalty { background: #f9fbdc; border-radius: 16px; padding: 36px; }
-.account-loyalty h2 { font-size: 30px; margin: 24px 0 16px; }
+.account-loyalty { background: #f9fbdc; border-radius: 16px; padding: 32px; }
+.account-loyalty h2 { font-size: 30px; margin: 24px 0 12px; }
 .account-loyalty p, .account-access p { color: var(--color-ink-soft); line-height: 1.7; }
 .account-access { padding: 24px 0; }
 .account-access h2 { font-size: 24px; margin-bottom: 18px; }
@@ -149,7 +149,7 @@
  .brand-rail .brand-logo__mark { width: 20px; height: 20px; }
  .sale-section__grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
  .social-account, .account-layout { grid-template-columns: 1fr; }
- .account-loyalty { padding: 26px; }
+ .account-loyalty { padding: 24px; }
  .social-account p { font-size: 14px; }
 }
 

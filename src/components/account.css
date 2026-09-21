@@ -28,14 +28,27 @@
 .link-btn:hover { color: var(--color-ink); }
 .link-btn:disabled { opacity: 0.5; cursor: default; }
 
-/* Карточка после регистрации: сколько начислили, на что тратить, куда идти */
-.account-hello { margin-top: 20px; padding: 18px; border-radius: 16px; background: #fff; border: 1px solid var(--color-border); display: flex; gap: 14px; align-items: flex-start; box-shadow: 0 8px 24px rgba(38, 50, 68, 0.08); }
-.account-hello__icon { flex: 0 0 auto; width: 46px; height: 46px; border-radius: 14px; background: var(--color-lime); color: var(--color-ink); display: inline-flex; align-items: center; justify-content: center; }
-.account-hello__body { display: grid; gap: 8px; min-width: 0; }
-.account-hello__title { font-size: 20px; line-height: 1.2; color: var(--color-ink); }
-.account-hello__text { margin: 0; font-size: 14px; line-height: 1.55; color: var(--color-ink-soft) !important; }
-.account-hello__cta { justify-self: start; margin-top: 4px; gap: 8px; }
-@media (max-width: 640px) { .account-hello { padding: 16px; } .account-hello__cta { justify-self: stretch; } }
+/* Карточка после регистрации — единственный авторский момент кабинета:
+   поднимается, значок «выстреливает» искрами, сумма набегает от нуля. */
+.hello { margin-top: 24px; padding: 24px; border-radius: 16px; background: #fff; border: 1px solid var(--color-border); box-shadow: 0 12px 28px -12px rgba(38, 50, 68, 0.18); display: grid; gap: 8px; animation: hello-in 520ms cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+.hello__badge { position: relative; width: 56px; height: 56px; border-radius: 16px; background: var(--color-lime); color: var(--color-ink); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 8px; animation: hello-pop 640ms cubic-bezier(0.34, 1.56, 0.64, 1) 120ms both; }
+.hello__sparks { position: absolute; inset: 0; pointer-events: none; }
+.hello__spark { position: absolute; left: 50%; top: 50%; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; opacity: 0; transform: rotate(var(--a)) translateY(0); animation: hello-spark 900ms cubic-bezier(0.2, 0.8, 0.3, 1) calc(240ms + var(--i) * 18ms) both; }
+.hello__spark--0 { background: var(--color-lime); }
+.hello__spark--1 { background: var(--color-primary); width: 5px; height: 5px; }
+.hello__spark--2 { background: #9cc4ff; border-radius: 2px; }
+.account-loyalty .hello__title, .hello__title { margin: 0; font-size: 15px; font-weight: 700; line-height: 1.4; color: var(--color-ink-soft); letter-spacing: 0; }
+.hello__amount { margin: 0; display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 10px; }
+.hello__sum { font-size: clamp(34px, 5vw, 44px); font-weight: 800; line-height: 1.05; letter-spacing: -0.03em; color: var(--color-ink); font-variant-numeric: tabular-nums; }
+.hello__yours { font-size: 18px; font-weight: 700; color: var(--color-ink); }
+.hello__text { margin: 4px 0 0; font-size: 15px; line-height: 1.55; color: var(--color-ink-soft) !important; max-width: 46ch; }
+.hello__cta { margin-top: 12px; gap: 8px; }
+@keyframes hello-in { from { opacity: 0; transform: translateY(14px) scale(0.985); } to { opacity: 1; transform: none; } }
+@keyframes hello-pop { from { transform: scale(0.6); } to { transform: scale(1); } }
+@keyframes hello-spark { 0% { opacity: 0; transform: rotate(var(--a)) translateY(0) scale(0.6); } 18% { opacity: 1; } 100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(-1 * var(--d))) scale(1); } }
+@media (max-width: 640px) { .hello { padding: 20px; } }
+@media (prefers-reduced-motion: reduce) { .hello, .hello__badge, .hello__spark { animation: none; } .hello__spark { display: none; } }
+
 .account-welcome { margin-top: 20px; padding: 14px 16px; border-radius: 12px; background: var(--color-surface); font-weight: 700; color: var(--color-ink); display: flex; align-items: flex-start; gap: 10px; }
 .account-welcome__icon { flex: 0 0 auto; margin-top: 1px; }
 .account-welcome__note { font-size: 14px; margin-top: 8px; }

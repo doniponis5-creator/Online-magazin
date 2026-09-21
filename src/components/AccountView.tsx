@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import { Brand } from '@/components/Brand'
 import { CustomerLogin } from '@/components/CustomerLogin'
-import { IconArrowUpRight, IconCart, IconGift, IconHeart } from '@/components/Icons'
+import { IconCart, IconGift, IconHeart } from '@/components/Icons'
+import { WelcomeCard } from '@/components/WelcomeCard'
 import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { forgetFaceId, hasLockKey, lockKind, loginWithFaceId, rememberForFaceId } from '@/lib/native/appLock'
@@ -236,19 +237,7 @@ export function AccountView() {
       <section className="account-loyalty">
         <Brand bonus />
         <h2>{customer.name}</h2>
-        {welcome > 0 && (
-          <div className="account-hello" role="status">
-            <span className="account-hello__icon" aria-hidden="true"><IconGift size={26} /></span>
-            <div className="account-hello__body">
-              <strong className="account-hello__title">{a.helloTitle.replace('{amount}', formatSom(welcome))}</strong>
-              <p className="account-hello__text">{a.helloText.replace('{pct}', String(customer.maxSpendPct))}</p>
-              <Link href={`/${lang}/catalog`} className="btn btn--lime account-hello__cta">
-                {a.helloCta}
-                <IconArrowUpRight size={18} />
-              </Link>
-            </div>
-          </div>
-        )}
+        {welcome > 0 && <WelcomeCard amount={welcome} pct={customer.maxSpendPct} />}
         <div className="account-balance">
           <span className="account-balance__label">{a.balance}</span>
           <strong className="account-balance__value">{formatSom(customer.balance)}</strong>
