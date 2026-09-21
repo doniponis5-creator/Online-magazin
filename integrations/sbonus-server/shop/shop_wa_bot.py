@@ -183,13 +183,17 @@ async def poll_once() -> dict:
         if not chat.endswith("@c.us") or chat == own:
             continue
         text = _journal_text(message).strip()
-        if not text or not await _first_time(str(message.get("idMessage"))):
+        # Голосовое робот не слушает — попросит написать текстом (тоже через ожидание сотрудника).
+        voice = message.get("typeMessage") in VOICE_TYPES
+        if (not text and not voice) or not await _first_time(str(message.get("idMessage"))):
             continue
         digits = chat.removesuffix("@c.us")
-        await _remember(digits, "user", text)
+        if text:
+            await _remember(digits, "user", text)
         await redis_client.hset("wa:pending", digits, json.dumps({
             "ts": int(message.get("timestamp") or time.time()),
             "name": str(message.get("senderName") or "")[:60],
+            "voice": bool(voice and not text),
         }, ensure_ascii=False))
 
     # Кто ждёт дольше, чем договорились, и кому не ответил человек — отвечаем.
@@ -210,9 +214,32 @@ async def poll_once() -> dict:
         if now - float(pending.get("ts") or now) < wait:
             continue
         await redis_client.hdel("wa:pending", digits)
-        if await _answer(digits, str(pending.get("name") or "")):
+        if pending.get("voice"):
+            if await _ask_for_text(digits):
+                answered += 1
+        elif await _answer(digits, str(pending.get("name") or "")):
             answered += 1
     return {"enabled": True, "answered": answered}
+
+
+VOICE_TYPES = ("audioMessage", "voiceMessage", "pttMessage")
+
+# Только по-русски — так решил владелец.
+ASK_FOR_TEXT = "Извините, голосовые сообщения я не слушаю — напишите, пожалуйста, текстом 🙏"
+
+
+async def _ask_for_text(digits: str) -> bool:
+    """Ответ на голосовое. Не чаще раза в полчаса: пять голосовых — одна просьба."""
+    if not await redis_client.set(f"wa:askedtext:{digits}", "1", ex=30 * 60, nx=True):
+        return False
+    try:
+        await _send_text(digits, ASK_FOR_TEXT)
+        await _remember(digits, "assistant", ASK_FOR_TEXT)
+        await redis_client.set(f"wa:botactive:{digits}", "1", ex=30 * 60)
+        return True
+    except Exception as error:
+        logger.error(f"wa bot voice {digits[-4:]}: {error}")
+        return False
 
 
 async def _answer(digits: str, name: str) -> bool:
