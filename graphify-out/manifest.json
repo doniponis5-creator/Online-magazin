@@ -169,31 +169,31 @@
   },
   "integrations/sbonus-server/shop/001_shop_orders_migration.sql": {
     "mtime": 1789643427.3177383,
-    "seen": 1789994321.988526,
+    "seen": 1789994846.7755704,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/002_shop_catalog_migration.sql": {
     "mtime": 1789647531.5057318,
-    "seen": 1789994321.9885273,
+    "seen": 1789994846.7755723,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/003_shop_bonus_migration.sql": {
     "mtime": 1789651724.3017156,
-    "seen": 1789994321.9885285,
+    "seen": 1789994846.7755737,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/004_shop_stats_migration.sql": {
     "mtime": 1789734501.4004698,
-    "seen": 1789994321.98853,
+    "seen": 1789994846.775575,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/005_shop_push_migration.sql": {
     "mtime": 1789792750.2917469,
-    "seen": 1789994321.988531,
+    "seen": 1789994846.7755766,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -8725,7 +8725,7 @@
   },
   "integrations/sbonus-server/shop/006_shop_installments_migration.sql": {
     "mtime": 1789964335.2680974,
-    "seen": 1789994321.9885333,
+    "seen": 1789994846.7755787,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -8923,7 +8923,7 @@
   },
   "integrations/sbonus-server/shop/007_shop_notes_migration.sql": {
     "mtime": 1789965631.4248226,
-    "seen": 1789994321.988535,
+    "seen": 1789994846.7755811,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -9781,7 +9781,7 @@
   },
   "integrations/sbonus-server/shop/008_shop_chat_extra_migration.sql": {
     "mtime": 1789987286.5630145,
-    "seen": 1789994321.9885368,
+    "seen": 1789994846.775583,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -9978,9 +9978,9 @@
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/shop_wa_bot.py": {
-    "mtime": 1789994129.7636049,
-    "seen": 1789994321.9885573,
-    "ast_hash": "b0257b9acbe75171b05a53eab36277ac",
+    "mtime": 1789994784.0720015,
+    "seen": 1789994846.7756026,
+    "ast_hash": "a5722030dc27267c208d73d5116bce10",
     "semantic_hash": ""
   },
   "src/app/api/channel/whatsapp/route.ts": {
