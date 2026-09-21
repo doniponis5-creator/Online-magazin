@@ -25,7 +25,7 @@ SRC="$(cd "$(dirname "$0")" && pwd)"
 API=sbonus_api
 DB=sbonus_db
 TS=$(date +%Y%m%d_%H%M%S)
-FILES="__init__.py shop_models.py shop_router.py shop_catalog.py shop_telegram.py shop_customers.py shop_admin.py shop_push.py shop_whatsapp.py shop_installments_calc.py shop_installments.py"
+FILES="__init__.py shop_models.py shop_router.py shop_catalog.py shop_telegram.py shop_customers.py shop_admin.py shop_push.py shop_whatsapp.py shop_installments_calc.py shop_installments.py shop_stock.py"
 MIGRATIONS="001_shop_orders_migration.sql 002_shop_catalog_migration.sql 003_shop_bonus_migration.sql 004_shop_stats_migration.sql 005_shop_push_migration.sql 006_shop_installments_migration.sql 007_shop_notes_migration.sql"
 
 echo "=== Деплой: интернет-магазин (заказы + каталог + вход и бонусы) ==="
@@ -63,6 +63,8 @@ import app.shop_precheck.shop_customers as cu
 import app.shop_precheck.shop_admin as ad
 import app.shop_precheck.shop_whatsapp as wa_btn
 import app.shop_precheck.shop_installments as inst
+import app.shop_precheck.shop_stock as stock
+assert stock.shortages([{'oneCId': 'a', 'qty': 1, 'name': 'A'}], [{'id': 'a', 'stock': 1, 'availability': 'По остатку'}], {'a': 1}) == ['A']
 assert inst.parse_phones('0558311031/0558882507') == ['+996558311031', '+996558882507']
 assert len(ad.SETTINGS) >= 3
 from app.models import Branch, BonusAccount, Customer, Setting, Tier, Transaction, TransactionType

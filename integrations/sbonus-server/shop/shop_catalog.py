@@ -128,10 +128,22 @@ async def site_catalog(request: Request, db: AsyncSession = Depends(get_db)):
     data, digest, updated_at = row
     if isinstance(data, str):
         data = json.loads(data)
+    items = data.get("items", [])
+
+    # Остаток на сайте — за вычетом занятого заказами, о которых 1С ещё не знает
+    # (shop_stock.py): оплатили последнюю штуку — у следующего её уже нет.
+    from .shop_router import taken_now
+    from .shop_stock import free_stock
+    free = free_stock(items, await taken_now(db))
+    if free:
+        items = [{**item, "stock": free[str(item.get("id"))]} if str(item.get("id")) in free else item for item in items]
+        # Сайт пересобирается, когда меняется hash, — пусть он меняется и от брони.
+        mark = json.dumps(sorted(free.items()), ensure_ascii=False)
+        digest = hashlib.sha256(f"{digest}|{mark}".encode("utf-8")).hexdigest()
     return {
         "hash": digest,
         "exportedAt": updated_at.isoformat() if isinstance(updated_at, datetime) else None,
-        "items": data.get("items", []),
+        "items": items,
     }
 
 

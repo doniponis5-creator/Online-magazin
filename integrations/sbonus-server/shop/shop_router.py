@@ -33,7 +33,7 @@ from typing import List, Literal, Optional
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from sqlalchemy import and_, select
+from sqlalchemy import and_, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -199,6 +199,32 @@ class MarkFailed(BaseModel):
 
 # ── Сайт ─────────────────────────────────────────────────────────────────────
 
+async def taken_now(db: AsyncSession) -> dict[str, int]:
+    """Сколько штук каждого товара уже занято заказами, о которых 1С ещё не знает (shop_stock.py)."""
+    from .shop_stock import HOLD_UNPAID, SYNC_GRACE, reserved_by
+    now = datetime.utcnow()
+    res = await db.execute(
+        select(ShopOrder.lines).where(or_(
+            and_(ShopOrder.paid == True, ShopOrder.status.in_(("paid", "failed"))),  # noqa: E712
+            and_(ShopOrder.paid == True, ShopOrder.status == "in_1c", ShopOrder.synced_at > now - SYNC_GRACE),  # noqa: E712
+            and_(ShopOrder.paid == False, ShopOrder.status == "awaiting_payment",  # noqa: E712
+                 ShopOrder.created_at > now - HOLD_UNPAID),
+        ))
+    )
+    return reserved_by([{"lines": lines} for (lines,) in res.all()])
+
+
+async def catalog_items(db: AsyncSession) -> list[dict]:
+    row = (await db.execute(text("SELECT data FROM shop_catalog WHERE id = 1"))).first()
+    if not row:
+        return []
+    data = row[0]
+    if isinstance(data, str):
+        import json
+        data = json.loads(data)
+    return list((data or {}).get("items") or [])
+
+
 def _new_order_id() -> str:
     alphabet = string.ascii_uppercase + string.digits
     return f"SC-{datetime.utcnow():%y%m%d}-" + "".join(secrets.choice(alphabet) for _ in range(5))
@@ -212,6 +238,13 @@ async def site_create_order(request: Request, db: AsyncSession = Depends(get_db)
         _check_site_order(payload)
     except Exception as error:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"заказ не прошёл проверку: {error}")
+
+    # Последнюю штуку не продаём второй раз: остаток 1С минус то, что уже занято
+    # оплаченными и ждущими оплаты заказами, о которых 1С ещё не знает.
+    from .shop_stock import shortages
+    short = shortages([l.dict() for l in payload.lines], await catalog_items(db), await taken_now(db))
+    if short:
+        raise HTTPException(status.HTTP_409_CONFLICT, {"code": "out-of-stock", "items": short})
 
     bonus = Decimal(payload.bonus)
     if bonus > 0:

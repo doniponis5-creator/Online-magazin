@@ -60,6 +60,11 @@ export async function POST(request: Request) {
     const created = await createOrder(order)
     return Response.json({ ok: true, ...created, total: order.total, payAmount: order.total - order.bonus })
   } catch (error) {
+    // Сервер отказал: последнюю штуку уже купили (оплачено, но 1С ещё не
+    // пересчитала остаток). Покупателю — «нет в наличии», а не «сервер недоступен».
+    if (/ответил 409:[\s\S]*out-of-stock/.test(String((error as Error)?.message))) {
+      return Response.json({ ok: false, errors: ['out-of-stock'] }, { status: 409 })
+    }
     console.error('[orders] не удалось создать заказ:', error)
     return Response.json({ ok: false, errors: ['server-unavailable'] }, { status: 502 })
   }
