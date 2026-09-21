@@ -11,6 +11,8 @@ import 'server-only'
  * и чат отвечает запасным режимом (reply.ts).
  */
 
+import { fromJson } from './answer-json'
+
 const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models'
 
 /** Модель по умолчанию. Меняется через GEMINI_MODEL, пересборка не нужна. */
@@ -72,6 +74,19 @@ async function once(key: string, system: string, turns: ChatTurn[]): Promise<str
         // обрывался на полуслове или не приходил вовсе.
         maxOutputTokens: 2400,
         thinkingConfig: { thinkingLevel: 'low' },
+        // Ответ строго в двух полях. Без этого модель изредка писала покупателю
+        // свои размышления: «Покупатель прислал нечитаемые символы… Отвечу
+        // вежливо…» — и уже потом сам ответ. В поле reply попадает только то,
+        // что читает покупатель.
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: 'OBJECT',
+          properties: {
+            reply: { type: 'STRING', description: 'Готовый ответ покупателю, слово в слово' },
+            productIds: { type: 'ARRAY', items: { type: 'STRING' }, description: 'id названных товаров, не больше трёх' },
+          },
+          required: ['reply'],
+        },
       },
     }),
   })
@@ -82,9 +97,14 @@ async function once(key: string, system: string, turns: ChatTurn[]): Promise<str
   }
 
   const data = (await response.json()) as {
-    candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[]
+    candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] }; finishReason?: string }[]
   }
-  const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ?? ''
+  // Части с thought — размышления модели; покупателю их не отдаём никогда.
+  const text =
+    data.candidates?.[0]?.content?.parts
+      ?.filter((p) => !p.thought)
+      .map((p) => p.text ?? '')
+      .join('') ?? ''
   if (!text.trim()) throw new GeminiError(`empty-answer:${data.candidates?.[0]?.finishReason ?? '?'}`, 502)
-  return text.trim()
+  return fromJson(text.trim())
 }

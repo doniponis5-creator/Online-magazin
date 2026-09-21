@@ -187,3 +187,18 @@ describe('рассрочка', () => {
     expect(text).not.toMatch(/сом/)
   })
 })
+
+describe('ответ модели в JSON', () => {
+  it('reply и productIds превращаются в текст со строкой TOVAR', async () => {
+    const { fromJson } = await import('@/lib/assistant/answer-json')
+    const { parseAnswer } = await import('@/lib/assistant/local')
+    const parsed = parseAnswer(fromJson('{"reply":"Есть LG за 37 400 сом.","productIds":["a","b","c","d"]}'))
+    expect(parsed.text).toBe('Есть LG за 37 400 сом.')
+    expect(parsed.productIds).toEqual(['a', 'b', 'c'])
+  })
+
+  it('не JSON — отдаётся как есть', async () => {
+    const { fromJson } = await import('@/lib/assistant/answer-json')
+    expect(fromJson('Просто текст')).toBe('Просто текст')
+  })
+})
