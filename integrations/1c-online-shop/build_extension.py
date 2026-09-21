@@ -733,6 +733,8 @@ def panel_form():
     f.attribute("ПриветственныйБонус", t_num(6, 0), title="Приветственный бонус новому покупателю, сом", saved_data=True)
     f.attribute("МаксимумБонусами", t_num(3, 0), title="Можно оплатить бонусами, % от заказа", saved_data=True)
     f.attribute("ЗаказБезВхода", t_bool(), title="Разрешить заказ без входа", saved_data=True)
+    f.attribute("ЗнанияДляЧата", t_str(0), title="Знания для чата", saved_data=True)
+    f.attribute("ЗнанияЗагружены", t_bool())
     f.attribute("Состояние", t_str(0), title="Состояние")
 
     for name, title, tip in [
@@ -752,6 +754,12 @@ def panel_form():
                 f.button("КнопкаСохранить", "СохранитьНастройки"),
             ], direction="AlwaysHorizontal"),
         ], title="Настройки сайта (действуют сразу)"),
+        f.group("ГруппаЗнания", [
+            f.input("ЗнанияДляЧата", "ЗнанияДляЧата", title_location="None", multiline=True, stretch=True, height=8,
+                    hint="Обычными словами, по строке на тему. Например: «Часы работы: каждый день "
+                         "с 9:00 до 20:00». «Гарантия на холодильники — 1 год». «Возврат — в течение 14 дней, "
+                         "если товар не был в работе». «Акция до 30 сентября: стиральные машины с доставкой бесплатно»."),
+        ], title="Знания для чата: что чат должен знать о магазине (сохраняется кнопкой «Сохранить настройки»)"),
         f.input("Состояние", "Состояние", readonly=True, title_location="None", stretch=True, height=2),
     ]
     return f.render("Панель сайта", items, {"OnCreateAtServer": "ПриСозданииНаСервере"},

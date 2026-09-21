@@ -173,38 +173,60 @@ function normalize(value: string): string {
     .trim()
 }
 
+/** Сколько товаров по вопросу модель видит целиком, со всеми характеристиками. */
+const FOCUS_LIMIT = 25
+/** Сколько товаров влезает в короткий список всего каталога. */
+const BRIEF_LIMIT = 1500
+const DESC_CHARS = 400
+
 /**
- * Весь каталог одной простынёй для языковой модели.
+ * Каталог для модели в два слоя.
  *
- * Товаров сейчас несколько десятков, поэтому список отдаётся целиком: модель
- * видит настоящие цены и наличие и не придумывает их. Предел стоит на случай,
- * если 1С однажды выгрузит тысячи позиций, — тогда простыня станет слишком
- * дорогой, и понадобится поиск по запросу.
+ * Раньше модель видела первые 400 товаров и у каждого 4 характеристики: товар
+ * из конца каталога для неё не существовал, а сравнить две стиральные машины
+ * было не по чему. Теперь:
+ *   1) ПО ВОПРОСУ — до 25 товаров, найденных по последним репликам покупателя,
+ *      со всеми характеристиками и описанием: из них она сравнивает и советует;
+ *   2) ВЕСЬ КАТАЛОГ — каждый товар одной короткой строкой: цена и наличие.
+ *      Этого хватает, чтобы ответить «а есть ли у вас…» про что угодно.
  */
-export function catalogDigest(limit = 400, list: Product[] = products): string {
-  const lines = list.slice(0, limit).map((product) => {
-    const price = product.price > 0 ? `${product.price} сом` : 'цена по запросу'
-    const old = product.oldPrice ? `, было ${product.oldPrice} сом` : ''
-    const stock = isInStock(product) ? 'есть' : 'нет в наличии'
-    const section = categoryName(product.categoryId, 'ru')
-    const specs = product.specs.slice(0, 4).map((s) => `${s.labelRu}: ${s.valueRu}`).join('; ')
+export function catalogForQuestion(list: Product[], question: string, lang: Lang): string {
+  const focus = searchProducts(question, lang, FOCUS_LIMIT, list)
+  const focusIds = new Set(focus.map((p) => p.id))
+
+  const detailed = focus.map((product) => {
+    const specs = product.specs.map((s) => `${s.labelRu}: ${s.valueRu}`).join('; ')
+    const desc = product.descRu.replace(/\s+/g, ' ').trim()
     return [
-      `id=${product.id}`,
-      `${product.brand} ${product.nameRu}`,
-      `раздел: ${section}`,
-      `цена: ${price}${old}`,
-      `наличие: ${stock}`,
-      `доставка: ${product.deliveryPrice ? `${product.deliveryPrice} сом` : 'бесплатно'}`,
-      // Ноль в выгрузке значит «срок не заполнили», а не «гарантии нет».
-      // Строку с нулём не пишем вовсе, иначе чат отвечает «гарантия 0 месяцев».
+      productLine(product),
       product.warrantyMonths > 0 ? `гарантия: ${product.warrantyMonths} мес.` : '',
+      `доставка: ${product.deliveryPrice ? `${product.deliveryPrice} сом` : 'бесплатно'}`,
+      product.sale ? 'распродажа' : '',
+      product.dealOfDay ? 'товар дня' : '',
       specs ? `характеристики: ${specs}` : '',
+      desc ? `описание: ${desc.slice(0, DESC_CHARS)}${desc.length > DESC_CHARS ? '…' : ''}` : '',
     ]
       .filter(Boolean)
       .join(' | ')
   })
-  const cut = list.length > limit ? `\n(показаны первые ${limit} из ${list.length})` : ''
-  return lines.join('\n') + cut
+
+  const rest = list.filter((p) => !focusIds.has(p.id))
+  const brief = rest.slice(0, BRIEF_LIMIT).map(productLine)
+  const cut = rest.length > BRIEF_LIMIT ? `\n(показаны ${BRIEF_LIMIT} из ${rest.length})` : ''
+
+  return [
+    detailed.length > 0
+      ? `ПО ВОПРОСУ ПОКУПАТЕЛЯ — подробно, отсюда сравнивай и советуй:\n${detailed.join('\n')}`
+      : 'ПО ВОПРОСУ ПОКУПАТЕЛЯ: по словам вопроса ничего не нашлось — ищи в общем списке ниже.',
+    `ВЕСЬ КАТАЛОГ — коротко (характеристики у этих товаров есть, но здесь не показаны; спросят — скажи, что уточнишь, и дай телефон):\n${brief.join('\n')}${cut}`,
+  ].join('\n\n')
+}
+
+function productLine(product: Product): string {
+  const price = product.price > 0 ? `${product.price} сом` : 'цена по запросу'
+  const old = product.oldPrice ? `, было ${product.oldPrice} сом` : ''
+  const stock = isInStock(product) ? 'есть' : 'нет в наличии'
+  return `id=${product.id} | ${product.brand} ${product.nameRu} | ${categoryName(product.categoryId, 'ru')} | ${price}${old} | ${stock}`
 }
 
 /** Всё, что консультант должен знать о самом магазине. */

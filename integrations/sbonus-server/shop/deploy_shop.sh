@@ -26,7 +26,7 @@ API=sbonus_api
 DB=sbonus_db
 TS=$(date +%Y%m%d_%H%M%S)
 FILES="__init__.py shop_models.py shop_router.py shop_catalog.py shop_telegram.py shop_customers.py shop_admin.py shop_push.py shop_whatsapp.py shop_installments_calc.py shop_installments.py"
-MIGRATIONS="001_shop_orders_migration.sql 002_shop_catalog_migration.sql 003_shop_bonus_migration.sql 004_shop_stats_migration.sql 005_shop_push_migration.sql 006_shop_installments_migration.sql"
+MIGRATIONS="001_shop_orders_migration.sql 002_shop_catalog_migration.sql 003_shop_bonus_migration.sql 004_shop_stats_migration.sql 005_shop_push_migration.sql 006_shop_installments_migration.sql 007_shop_notes_migration.sql"
 
 echo "=== Деплой: интернет-магазин (заказы + каталог + вход и бонусы) ==="
 
@@ -244,7 +244,13 @@ docker exec "$DB" psql -U sbonus -d sbonus_db -v ON_ERROR_STOP=1 -f /tmp/005_sho
     && echo "✓ Таблица shop_push_devices (уведомления в приложении)" \
     || { echo "❌ Миграция уведомлений не прошла — стоп (код не пересобран)"; exit 1; }
 docker cp "$SRC/006_shop_installments_migration.sql" "$DB:/tmp/006_shop_installments_migration.sql"
-docker exec "$DB" psql -U sbonus -d sbonus_db -v ON_ERROR_STOP=1 -f /tmp/006_shop_installments_migration.sql     && echo "✓ Таблица shop_installments (остаток по рассрочке для чата)"     || { echo "❌ Миграция рассрочки не прошла — стоп (код не пересобран)"; exit 1; }
+docker exec "$DB" psql -U sbonus -d sbonus_db -v ON_ERROR_STOP=1 -f /tmp/006_shop_installments_migration.sql \
+    && echo "✓ Таблица shop_installments (остаток по рассрочке для чата)" \
+    || { echo "❌ Миграция рассрочки не прошла — стоп (код не пересобран)"; exit 1; }
+docker cp "$SRC/007_shop_notes_migration.sql" "$DB:/tmp/007_shop_notes_migration.sql"
+docker exec "$DB" psql -U sbonus -d sbonus_db -v ON_ERROR_STOP=1 -f /tmp/007_shop_notes_migration.sql \
+    && echo "✓ Таблица shop_assistant_notes (знания для чата из 1С)" \
+    || { echo "❌ Миграция знаний для чата не прошла — стоп (код не пересобран)"; exit 1; }
 
 # ── 6. Секрет сайта в .env (создаётся один раз) ──────────────────────────────
 if grep -q '^SHOP_SITE_SECRET=' "$ENV_FILE" 2>/dev/null; then
@@ -306,10 +312,10 @@ curl -s -o /dev/null -w "  HTTP %{http_code}\n" https://api.smartcentr.store/api
 echo "--- вход покупателя без подписи (ожидается 401) ---"
 curl -s -o /dev/null -w "  HTTP %{http_code}\n" -X POST https://api.smartcentr.store/api/v1/webhook/site/customer/send-code
 echo "--- рассрочка для чата: 1С и сайт без подписи (ожидается 401 и 401) ---"
-curl -s -o /dev/null -w "  HTTP %{http_code}
-" -X POST https://api.smartcentr.store/api/v1/webhook/1c/shop/installments
-curl -s -o /dev/null -w "  HTTP %{http_code}
-" https://api.smartcentr.store/api/v1/webhook/site/customer/996555000000/installment
+curl -s -o /dev/null -w "  HTTP %{http_code}\n" -X POST https://api.smartcentr.store/api/v1/webhook/1c/shop/installments
+curl -s -o /dev/null -w "  HTTP %{http_code}\n" https://api.smartcentr.store/api/v1/webhook/site/customer/996555000000/installment
+echo "--- знания для чата без подписи (ожидается 401) ---"
+curl -s -o /dev/null -w "  HTTP %{http_code}\n" https://api.smartcentr.store/api/v1/webhook/site/notes
 echo "--- ошибки запуска ---"
 docker logs "$API" --since 30s 2>&1 | grep -i -E "error|traceback" | tail -10 || echo "  (ошибок нет)"
 

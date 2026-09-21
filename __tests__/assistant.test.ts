@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { detectLang, localAnswer, parseAnswer } from '@/lib/assistant/local'
-import { catalogDigest, searchProducts } from '@/lib/assistant/knowledge'
+import { catalogForQuestion, searchProducts } from '@/lib/assistant/knowledge'
+import { systemInstruction } from '@/lib/assistant/prompt'
 import { products } from '@/data/products'
 
 describe('parseAnswer', () => {
@@ -82,13 +83,34 @@ describe('searchProducts', () => {
   })
 })
 
-describe('catalogDigest', () => {
-  it('в списке столько же строк, сколько товаров', () => {
-    expect(catalogDigest().split('\n')).toHaveLength(products.length)
+describe('catalogForQuestion', () => {
+  const idsIn = (text: string) => [...text.matchAll(/id=([^ |]+)/g)].map((m) => m[1])
+
+  it('каждый товар каталога ровно один раз', () => {
+    const ids = idsIn(catalogForQuestion(products, 'холодильник', 'ru'))
+    expect(ids.sort()).toEqual(products.map((p) => p.id).sort())
   })
 
-  it('не содержит себестоимости и служебных полей', () => {
-    expect(catalogDigest()).not.toMatch(/oneCId|GUID/)
+  it('товары по вопросу — со всеми характеристиками', () => {
+    const withSpecs = products.find((p) => p.specs.length > 4)!
+    const text = catalogForQuestion(products, withSpecs.nameRu, 'ru')
+    const focus = text.split('ВЕСЬ КАТАЛОГ')[0]
+    for (const spec of withSpecs.specs) expect(focus).toContain(spec.valueRu)
+  })
+
+  it('не содержит служебных полей 1С', () => {
+    expect(catalogForQuestion(products, 'телефон', 'ru')).not.toMatch(/oneCId|GUID/)
+  })
+})
+
+describe('знания от владельца', () => {
+  it('текст владельца попадает в подсказку модели', () => {
+    const text = systemInstruction('ru', null, 'ru', products, '', 'Часы работы: с 9:00 до 20:00 без выходных.')
+    expect(text).toContain('с 9:00 до 20:00')
+  })
+
+  it('без текста модель знает, что часов работы не знает', () => {
+    expect(systemInstruction('ru', null, 'ru', products)).toMatch(/Пока пусто/)
   })
 })
 

@@ -9,6 +9,7 @@ import 'server-only'
  */
 
 import { catalogNow, lookupIn } from './live'
+import { ownerNotes } from './notes'
 import type { Product } from '@/data/products'
 import type { Lang } from '@/lib/i18n/config'
 import { askGemini, geminiConfigured, type ChatTurn } from './gemini'
@@ -32,11 +33,18 @@ export async function answer(
 ): Promise<AssistantReply> {
   const lastQuestion = [...turns].reverse().find((t) => t.role === 'user')?.text ?? ''
   // Каталог берём сегодняшний: из 1С, если сервер настроен, иначе вшитый.
-  const list = await catalogNow()
+  const [list, notes] = await Promise.all([catalogNow(), ownerNotes()])
+  // Товары ищем по трём последним вопросам: «а какой из них тише?» без
+  // прошлого вопроса про стиральные машины ничего не найдёт.
+  const recent = turns
+    .filter((t) => t.role === 'user')
+    .slice(-3)
+    .map((t) => t.text)
+    .join(' ')
 
   if (geminiConfigured() && dayBudgetLeft()) {
     try {
-      const raw = await askGemini(systemInstruction(lang, customer, talkLang(turns, lang), list), turns)
+      const raw = await askGemini(systemInstruction(lang, customer, talkLang(turns, lang), list, recent, notes), turns)
       const parsed = parseAnswer(raw)
       return { text: parsed.text, products: hits(parsed.productIds, lang, list), source: 'gemini' }
     } catch (error) {

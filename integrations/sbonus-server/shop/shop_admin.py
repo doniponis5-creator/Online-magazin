@@ -9,6 +9,9 @@
   POST /webhook/1c/shop/settings    подпись 1С       сохранить значения
   GET  /webhook/1c/shop/dashboard   ключ 1С          сводка, ряды по дням, последние заказы, каналы
   GET  /webhook/site/settings       подпись сайта    настройки, нужные самому сайту
+  GET  /webhook/1c/shop/notes       ключ 1С          «Знания для чата» — текст владельца
+  POST /webhook/1c/shop/notes       подпись 1С       сохранить этот текст
+  GET  /webhook/site/notes          подпись сайта    тот же текст для чата на сайте
   POST /webhook/site/visit          подпись сайта    отметка о посещении страницы
 
 Настройки лежат в таблице settings SBonus и действуют сразу, без перезапуска.
@@ -153,6 +156,59 @@ async def site_settings(request: Request, db: AsyncSession = Depends(get_db)):
         "bonusMaxPct": int(current["SITE_BONUS_MAX_PCT"]),
         "welcomeBonus": int(current["SITE_WELCOME_BONUS_AMOUNT"]),
     }
+
+
+# ── Знания для чата ──────────────────────────────────────────────────────────
+# Владелец пишет в 1С обычными словами то, чего нет в каталоге: часы работы,
+# гарантия, возврат, акции. Чат отвечает по этому тексту и ничего сверх него
+# не придумывает. Отдельная таблица, а не settings: текст длинный.
+
+MAX_NOTES = 8000
+
+
+class SaveNotes(BaseModel):
+    text: str = ""
+
+
+async def _notes(db: AsyncSession) -> dict:
+    row = (await db.execute(text("SELECT text, updated_at FROM shop_assistant_notes WHERE id = 1"))).first()
+    if not row:
+        return {"text": "", "updatedAt": None}
+    return {"text": row[0] or "", "updatedAt": row[1].isoformat() if isinstance(row[1], datetime) else None}
+
+
+@router_1c_admin.get("/notes")
+async def read_notes(_=Depends(_verify_1c_key), db: AsyncSession = Depends(get_db)):
+    return {"ok": True, **await _notes(db)}
+
+
+@router_1c_admin.post("/notes")
+async def save_notes(request: Request, db: AsyncSession = Depends(get_db)):
+    payload = SaveNotes.parse_raw(await _verify_1c_body(request))
+    # Переводы строк 1С (CR LF) приводим к одному LF; прочие управляющие символы выкидываем.
+    value = payload.text.replace("\r\n", "\n").replace("\r", "\n")
+    value = "".join(ch for ch in value if ch in "\n\t" or ord(ch) >= 32).strip()
+    if len(value) > MAX_NOTES:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            f"Текст для чата длиннее {MAX_NOTES} знаков ({len(value)}). Сократите его.",
+        )
+    await db.execute(
+        text(
+            "INSERT INTO shop_assistant_notes (id, text, updated_at) VALUES (1, :t, NOW()) "
+            "ON CONFLICT (id) DO UPDATE SET text = :t, updated_at = NOW()"
+        ),
+        {"t": value},
+    )
+    await db.commit()
+    logger.info(f"assistant notes saved: {len(value)} chars")
+    return {"ok": True, **await _notes(db)}
+
+
+@router_site_admin.get("/notes")
+async def site_notes(request: Request, db: AsyncSession = Depends(get_db)):
+    _verify_site_path(request)
+    return {"ok": True, **await _notes(db)}
 
 
 # ── Посещения сайта ──────────────────────────────────────────────────────────
