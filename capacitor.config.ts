@@ -29,6 +29,26 @@ const config: CapacitorConfig = {
     // Это и так по умолчанию, пишем явно, чтобы случайно не включилось.
     zoomEnabled: false,
   },
+  android: {
+    // Подложка под страницей — белая, как на iPhone.
+    backgroundColor: '#ffffff',
+    zoomEnabled: false,
+    // Push на Android пока выключен: ему нужен свой проект Firebase у Google
+    // и отправка через FCM на сервере SBonus. Без Firebase плагин роняет
+    // приложение при подписке, поэтому на Android его просто не подключаем —
+    // сайт тогда видит «уведомлений нет» и кнопку не показывает.
+    includePlugins: [],
+  },
+  plugins: {
+    // Android 15+ растягивает приложение под часы и под полоску жестов.
+    // Сайт уже умеет отводить место сам (viewport-fit=cover и env(...) в CSS),
+    // поэтому говорим это сразу — чтобы страница не прыгала при запуске.
+    // LIGHT — тёмные значки часов и батареи на белом фоне сайта.
+    SystemBars: {
+      initialViewportFitValueHint: 'cover',
+      style: 'LIGHT',
+    },
+  },
 }
 
 export default config

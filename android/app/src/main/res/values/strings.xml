@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">S Маркет</string>
+    <string name="title_activity_main">S Маркет</string>
+    <string name="package_name">kg.smarket.app</string>
+    <string name="custom_url_scheme">kg.smarket.app</string>
+</resources>

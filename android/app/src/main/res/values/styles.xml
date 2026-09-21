@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="colorPrimary">@color/brand_ink</item>
+        <item name="colorPrimaryDark">@color/brand_ink</item>
+        <item name="colorAccent">@color/brand_lemon</item>
+    </style>
+
+    <!-- Основной экран: сайт на весь экран, без полосы заголовка. -->
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowBackground">@color/white</item>
+        <item name="android:statusBarColor">@color/white</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">@color/white</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+
+    <!-- Экран запуска: жёлтый фон и буква S, как на iPhone. -->
+    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_yellow</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_logo</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
+    </style>
+
+    <!-- Бонусная карта и каталог без интернета — свои экраны приложения. -->
+    <style name="AppTheme.Card" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@color/brand_ink</item>
+        <item name="android:statusBarColor">@color/brand_ink</item>
+        <item name="android:navigationBarColor">@color/brand_ink</item>
+    </style>
+
+    <style name="AppTheme.Catalog" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowBackground">@color/white</item>
+        <item name="android:statusBarColor">@color/white</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">@color/white</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>
