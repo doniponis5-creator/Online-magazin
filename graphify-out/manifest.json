@@ -169,31 +169,31 @@
   },
   "integrations/sbonus-server/shop/001_shop_orders_migration.sql": {
     "mtime": 1789643427.3177383,
-    "seen": 1789968251.0229514,
+    "seen": 1789969290.9544663,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/002_shop_catalog_migration.sql": {
     "mtime": 1789647531.5057318,
-    "seen": 1789968251.0229528,
+    "seen": 1789969290.9544687,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/003_shop_bonus_migration.sql": {
     "mtime": 1789651724.3017156,
-    "seen": 1789968251.0229535,
+    "seen": 1789969290.95447,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/004_shop_stats_migration.sql": {
     "mtime": 1789734501.4004698,
-    "seen": 1789968251.0229542,
+    "seen": 1789969290.954471,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/005_shop_push_migration.sql": {
     "mtime": 1789792750.2917469,
-    "seen": 1789968251.022955,
+    "seen": 1789969290.9544725,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -3972,9 +3972,9 @@
     "semantic_hash": ""
   },
   "src/components/AssistantChat.tsx": {
-    "mtime": 1789962850.5732741,
-    "seen": 1789964793.2720609,
-    "ast_hash": "7886d542743ddf878d9cca3727a8de3a",
+    "mtime": 1789969136.2497282,
+    "seen": 1789969290.9547768,
+    "ast_hash": "1bef0a6f07160b9d2aaa351bd1e36d73",
     "semantic_hash": ""
   },
   "src/lib/assistant/gemini.ts": {
@@ -8725,7 +8725,7 @@
   },
   "integrations/sbonus-server/shop/006_shop_installments_migration.sql": {
     "mtime": 1789964335.2680974,
-    "seen": 1789968251.0229564,
+    "seen": 1789969290.9544744,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -8923,7 +8923,7 @@
   },
   "integrations/sbonus-server/shop/007_shop_notes_migration.sql": {
     "mtime": 1789965631.4248226,
-    "seen": 1789968251.0229578,
+    "seen": 1789969290.9544768,
     "ast_hash": "",
     "semantic_hash": ""
   }
