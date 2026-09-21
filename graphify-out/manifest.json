@@ -169,31 +169,31 @@
   },
   "integrations/sbonus-server/shop/001_shop_orders_migration.sql": {
     "mtime": 1789643427.3177383,
-    "seen": 1789979049.8652456,
+    "seen": 1789980025.5631545,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/002_shop_catalog_migration.sql": {
     "mtime": 1789647531.5057318,
-    "seen": 1789979049.8652475,
+    "seen": 1789980025.5631557,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/003_shop_bonus_migration.sql": {
     "mtime": 1789651724.3017156,
-    "seen": 1789979049.8652487,
+    "seen": 1789980025.5631564,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/004_shop_stats_migration.sql": {
     "mtime": 1789734501.4004698,
-    "seen": 1789979049.8652499,
+    "seen": 1789980025.5631576,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/005_shop_push_migration.sql": {
     "mtime": 1789792750.2917469,
-    "seen": 1789979049.865251,
+    "seen": 1789980025.5631585,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -246,9 +246,9 @@
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/shop_router.py": {
-    "mtime": 1789978908.54128,
-    "seen": 1789979049.8652692,
-    "ast_hash": "e173b9396ebd993a21a852cd76b75412",
+    "mtime": 1789980202.2773786,
+    "seen": 1789980344.677626,
+    "ast_hash": "0be0d600ed333b6116cded49d824ae90",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/shop_telegram.py": {
@@ -8725,7 +8725,7 @@
   },
   "integrations/sbonus-server/shop/006_shop_installments_migration.sql": {
     "mtime": 1789964335.2680974,
-    "seen": 1789979049.8652532,
+    "seen": 1789980025.5631595,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -8923,7 +8923,7 @@
   },
   "integrations/sbonus-server/shop/007_shop_notes_migration.sql": {
     "mtime": 1789965631.4248226,
-    "seen": 1789979049.865255,
+    "seen": 1789980025.5631607,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -8973,6 +8973,426 @@
     "mtime": 1789978363.3287542,
     "seen": 1789978455.110935,
     "ast_hash": "31a1f1df076a205e783bfd8a6b019bf5",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2.json": {
+    "mtime": 1789979673.9426026,
+    "seen": 1789980025.563216,
+    "ast_hash": "0d47ea9582e3a2742f49a0b611d16f5d",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates3.json": {
+    "mtime": 1789979750.8373635,
+    "seen": 1789980025.5632167,
+    "ast_hash": "c040522a337d7a5afe2967847cb8bf4e",
+    "semantic_hash": ""
+  },
+  "scripts/1c-export/check_catalog_gaps.py": {
+    "mtime": 1789980021.4931657,
+    "seen": 1789980025.5632782,
+    "ast_hash": "c0e04024da88f9092d0e76572b093b07",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/_batch2-sheet-1.jpg": {
+    "mtime": 1789979674.2414987,
+    "seen": 1789980025.5639226,
+    "ast_hash": "fb762de0934e826a595f79b5a697e902",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/_batch2-sheet-2.jpg": {
+    "mtime": 1789979674.5333338,
+    "seen": 1789980025.5639236,
+    "ast_hash": "d45f9d6a724c2c5a59c32907c3f2499e",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/_batch2-sheet-3.jpg": {
+    "mtime": 1789979674.7418854,
+    "seen": 1789980025.5639246,
+    "ast_hash": "8b1aa744bb2dfda4ca89c44105454899",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/_batch3-sheet-1.jpg": {
+    "mtime": 1789979750.8609514,
+    "seen": 1789980025.5639255,
+    "ast_hash": "fa33d4ada85eecf577ff6c0224224b75",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/_batch3-sheet-2.jpg": {
+    "mtime": 1789979750.865951,
+    "seen": 1789980025.563926,
+    "ast_hash": "e3091c751c0f1b1760929b3fc49246e3",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/_batch3-sheet-3.jpg": {
+    "mtime": 1789979750.8689497,
+    "seen": 1789980025.5639265,
+    "ast_hash": "5a6491c154ca334ffad041c58f011a53",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000011/1.jpg": {
+    "mtime": 1789979511.5019338,
+    "seen": 1789980025.5639408,
+    "ast_hash": "a9a9cd3c5dbdc08351cfcdb8076c5e9f",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000021/1.jpg": {
+    "mtime": 1789979517.9322927,
+    "seen": 1789980025.5639417,
+    "ast_hash": "39ff7520abacbba4712ea7cd11142720",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000021/2.jpg": {
+    "mtime": 1789979519.001733,
+    "seen": 1789980025.5639422,
+    "ast_hash": "622b36999338dc80d0728f84be3239c1",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000021/3.jpg": {
+    "mtime": 1789979521.591865,
+    "seen": 1789980025.563943,
+    "ast_hash": "c8bf849e91e133a265d5f18195f2f58d",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000021/4.jpg": {
+    "mtime": 1789979525.4877295,
+    "seen": 1789980025.5639434,
+    "ast_hash": "89a0ee85ecccc9291bc3eee17f9e00ea",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000021/5.jpg": {
+    "mtime": 1789979527.6877515,
+    "seen": 1789980025.5639439,
+    "ast_hash": "595a54511a4b55c516655b7a7ea18eb8",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000021/6.jpg": {
+    "mtime": 1789979528.7330446,
+    "seen": 1789980025.5639443,
+    "ast_hash": "3c799a2184c23ec362de934c5df9c61f",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000025/1.jpg": {
+    "mtime": 1789979531.455627,
+    "seen": 1789980025.563945,
+    "ast_hash": "fc0f8a2a88c858080b965bf8d67ac6e0",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000025/2.jpg": {
+    "mtime": 1789979534.5777779,
+    "seen": 1789980025.5639455,
+    "ast_hash": "a8d6d46643402acf92479120b6d5b452",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000025/3.jpg": {
+    "mtime": 1789979535.4725053,
+    "seen": 1789980025.563946,
+    "ast_hash": "129e1f7440479815ecd51efd625f6958",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000025/4.jpg": {
+    "mtime": 1789979536.2720492,
+    "seen": 1789980025.5639465,
+    "ast_hash": "f5d6a056c1cdfd89fd4951a467aec2f3",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000025/5.jpg": {
+    "mtime": 1789979537.1585424,
+    "seen": 1789980025.5639474,
+    "ast_hash": "b0e4c3b63feeca20bbb59829e3823f32",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000025/6.jpg": {
+    "mtime": 1789979538.1036973,
+    "seen": 1789980025.563948,
+    "ast_hash": "12578cb8bd9560757f63cb06b4b320cc",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000029/1.jpg": {
+    "mtime": 1789979543.6112213,
+    "seen": 1789980025.5639486,
+    "ast_hash": "321571eccd2c306681f7c0270a35f833",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000029/2.jpg": {
+    "mtime": 1789979545.8833559,
+    "seen": 1789980025.5639493,
+    "ast_hash": "8cb42413c623a7b675a9cbcbb967655b",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000029/3.jpg": {
+    "mtime": 1789979546.2285242,
+    "seen": 1789980025.5639498,
+    "ast_hash": "459769c5de2d7539b0d5ecb60f36a842",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000029/4.jpg": {
+    "mtime": 1789979548.2628639,
+    "seen": 1789980025.5639503,
+    "ast_hash": "407ff1bfa721941638a7314ecc4626f2",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000029/5.jpg": {
+    "mtime": 1789979549.0471115,
+    "seen": 1789980025.563951,
+    "ast_hash": "9594dabef6cb696966c3e1526bf31cec",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000029/6.jpg": {
+    "mtime": 1789979550.7939572,
+    "seen": 1789980025.5639517,
+    "ast_hash": "4243d75aa914144aa17af67e2db3de32",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000030/1.jpg": {
+    "mtime": 1789979553.1024554,
+    "seen": 1789980025.5639522,
+    "ast_hash": "1d5086627ae5a85aca38db5c1afd8e5f",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000030/2.jpg": {
+    "mtime": 1789979555.5250278,
+    "seen": 1789980025.563953,
+    "ast_hash": "2b6710c517506e783559eb313c345ae9",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000033/1.jpg": {
+    "mtime": 1789979573.5216613,
+    "seen": 1789980025.5639534,
+    "ast_hash": "018c118323f6018f12c30a34f7803650",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000033/2.jpg": {
+    "mtime": 1789979577.092227,
+    "seen": 1789980025.5639539,
+    "ast_hash": "f353f178b0cecdad20930fccf153edb1",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000719/1.jpg": {
+    "mtime": 1789979504.0141673,
+    "seen": 1789980025.5639544,
+    "ast_hash": "0e32a1cfe613c72fc28e38b6d3471ea1",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000719/2.jpg": {
+    "mtime": 1789979506.7001796,
+    "seen": 1789980025.5639548,
+    "ast_hash": "2c7b20844defafd868db93f985549134",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000770/1.jpg": {
+    "mtime": 1789979592.541316,
+    "seen": 1789980025.5639558,
+    "ast_hash": "3cf9e11abe2f21455ceb5dd13a814f80",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000770/2.jpg": {
+    "mtime": 1789979615.10018,
+    "seen": 1789980025.5639563,
+    "ast_hash": "b237256f0fffdf8abcbada667d465751",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000770/3.jpg": {
+    "mtime": 1789979615.8274398,
+    "seen": 1789980025.5639567,
+    "ast_hash": "a57b31742ec976d96c75975adc913936",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000770/4.jpg": {
+    "mtime": 1789979617.3653467,
+    "seen": 1789980025.5639575,
+    "ast_hash": "df3c18c17d1e0c72d6c476d7e9f49db1",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000770/5.jpg": {
+    "mtime": 1789979618.7953825,
+    "seen": 1789980025.563958,
+    "ast_hash": "f9d013a100812676e3301f872acfb686",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000770/6.jpg": {
+    "mtime": 1789979620.6314304,
+    "seen": 1789980025.563959,
+    "ast_hash": "701b7d6556e163f262f6f5e3120f2bb5",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000848/1.jpg": {
+    "mtime": 1789979670.6311095,
+    "seen": 1789980025.5639594,
+    "ast_hash": "fc9e6b1ea8172296fc3e9ac58ba70cb1",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000848/2.jpg": {
+    "mtime": 1789979673.7391064,
+    "seen": 1789980025.5639598,
+    "ast_hash": "271e9486a13c47fb6430f033223171a3",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000870/1.jpg": {
+    "mtime": 1789979634.2886097,
+    "seen": 1789980025.5639603,
+    "ast_hash": "daf8dfdd63296177c6c2e4383e3ee376",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000870/2.jpg": {
+    "mtime": 1789979634.9304366,
+    "seen": 1789980025.563961,
+    "ast_hash": "f4bc0f77ba7b2241f33f28088c3a2e5b",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000870/3.jpg": {
+    "mtime": 1789979636.3065646,
+    "seen": 1789980025.5639615,
+    "ast_hash": "d49cc58d36029b9ba288afa8c575308a",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000870/4.jpg": {
+    "mtime": 1789979637.0937624,
+    "seen": 1789980025.5639622,
+    "ast_hash": "c2d70c39dc4292fdbb3367b2e9ea3520",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000870/5.jpg": {
+    "mtime": 1789979638.2909195,
+    "seen": 1789980025.5639627,
+    "ast_hash": "03bf364324729fee78c7cd1c83489c30",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000870/6.jpg": {
+    "mtime": 1789979639.4715154,
+    "seen": 1789980025.5639632,
+    "ast_hash": "817dcdb5d885cc3d7e6e5186001c29a5",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000960/1.jpg": {
+    "mtime": 1789979623.868704,
+    "seen": 1789980025.5639637,
+    "ast_hash": "82ff9bb25d023a5ca1c513ef7a725be7",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000960/2.jpg": {
+    "mtime": 1789979624.513688,
+    "seen": 1789980025.5639644,
+    "ast_hash": "6b9045aa8e31b1ff19ed0a7fd4620ffb",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000960/3.jpg": {
+    "mtime": 1789979625.5638213,
+    "seen": 1789980025.5639648,
+    "ast_hash": "6afe0e4dd3f91c13047b067e5586d923",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000960/4.jpg": {
+    "mtime": 1789979626.624236,
+    "seen": 1789980025.5639656,
+    "ast_hash": "2fb5d9d3359b5cd4dd748ebdc5902535",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000960/5.jpg": {
+    "mtime": 1789979627.7842112,
+    "seen": 1789980025.5639665,
+    "ast_hash": "fd81110ed52497a5ac5322bb8b24e3fe",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000960/6.jpg": {
+    "mtime": 1789979630.4160423,
+    "seen": 1789980025.5639672,
+    "ast_hash": "a47f348a4c4e1a81596c90ac26b6b83c",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00000988/1.jpg": {
+    "mtime": 1789979667.7201903,
+    "seen": 1789980025.563968,
+    "ast_hash": "61c5084d08de05f6fc555dca4afcb3e2",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00001503/1.jpg": {
+    "mtime": 1789979580.2848153,
+    "seen": 1789980025.5639684,
+    "ast_hash": "a43248d4f4b15e37761e9a0f5988bc53",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00001503/2.jpg": {
+    "mtime": 1789979583.4318767,
+    "seen": 1789980025.5639691,
+    "ast_hash": "4c5dcc4022c3195b7a97d6664e9c8856",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00001946/1.jpg": {
+    "mtime": 1789979662.7210865,
+    "seen": 1789980025.5639696,
+    "ast_hash": "4cfaa336182d7967ab9fed74febf3850",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00002282/1.jpg": {
+    "mtime": 1789979558.9776597,
+    "seen": 1789980025.5639703,
+    "ast_hash": "5722324c746a5b18d9b749d3bcda9047",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00002282/2.jpg": {
+    "mtime": 1789979560.6617744,
+    "seen": 1789980025.5639708,
+    "ast_hash": "4cf78c881035b7f04232cf74636b3188",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00002282/3.jpg": {
+    "mtime": 1789979561.716047,
+    "seen": 1789980025.5639713,
+    "ast_hash": "733484ec88f0e5fa3c9a52c4fe01e410",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00002282/4.jpg": {
+    "mtime": 1789979563.0708916,
+    "seen": 1789980025.563972,
+    "ast_hash": "87620aacffb8cd735c9381f1f46f6210",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00002282/5.jpg": {
+    "mtime": 1789979564.4795098,
+    "seen": 1789980025.5639727,
+    "ast_hash": "7805f4958630bbb51f0676ce687ef57a",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00002282/6.jpg": {
+    "mtime": 1789979565.245727,
+    "seen": 1789980025.5639732,
+    "ast_hash": "00662d42147ffe13437fe73486ac443c",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00002339/1.jpg": {
+    "mtime": 1789979647.2769547,
+    "seen": 1789980025.563974,
+    "ast_hash": "de5c85a376ba42342e600d61fadfa126",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00002339/2.jpg": {
+    "mtime": 1789979649.9638748,
+    "seen": 1789980025.5639744,
+    "ast_hash": "e42efa7a25528fa721fd60afef4329fd",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00002339/3.jpg": {
+    "mtime": 1789979652.3378837,
+    "seen": 1789980025.5639749,
+    "ast_hash": "19a51b3247a372650cc910c80297cb9a",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00002339/4.jpg": {
+    "mtime": 1789979653.7229428,
+    "seen": 1789980025.5639756,
+    "ast_hash": "134f058471a40ee7a2efaa9277474811",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00002339/5.jpg": {
+    "mtime": 1789979655.8386028,
+    "seen": 1789980025.5639763,
+    "ast_hash": "21947b0a4cad63c15f60354e5979a765",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/candidates2/cb-00002339/6.jpg": {
+    "mtime": 1789979657.1541266,
+    "seen": 1789980025.563977,
+    "ast_hash": "e5641e6710bb5e30a8fbc081956e1bee",
     "semantic_hash": ""
   }
 }
