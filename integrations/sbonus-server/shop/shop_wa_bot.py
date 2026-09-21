@@ -31,6 +31,7 @@ import hashlib
 import hmac
 import json
 import logging
+import re
 import time
 from datetime import datetime, timedelta, timezone
 
@@ -110,6 +111,35 @@ def _journal_text(message: dict) -> str:
     return ""
 
 
+AUTO_REPLY_RE = re.compile(
+    r"(не на связи|в рабочее время|благодарим за (ваше )?(сообщение|обращение)|спасибо за (ваше )?(сообщение|обращение)"
+    r"|обращение принято|скоро ответим|we are (currently )?away|thanks for (contacting|your message)"
+    r"|иш убагында|ish vaqtida|javob beramiz|жооп беребиз)",
+    re.I,
+)
+
+
+async def _auto_reply(digits: str, text: str) -> bool:
+    """
+    Автоответ или приветствие WhatsApp Business, а не живой сотрудник.
+
+    Узнаём двумя способами: по типичным словам и по повтору — один и тот же
+    текст «с телефона» ушёл в два разных чата, значит, это шаблон.
+    """
+    text = text.strip()
+    if not text:
+        return False
+    if AUTO_REPLY_RE.search(text):
+        return True
+    # Короткое «Да», «Спасибо», «Есть» сотрудник пишет многим — это живой ответ.
+    if len(text) < 40:
+        return False
+    key ="wa:outtext:" + hashlib.sha1(text.encode("utf-8")).hexdigest()
+    await redis_client.sadd(key, digits)
+    await redis_client.expire(key, 7 * 24 * 3600)
+    return await redis_client.scard(key) >= 2
+
+
 async def _first_time(message_id: str) -> bool:
     """Каждое сообщение журнала обрабатываем один раз."""
     return bool(await redis_client.set(f"wa:seen:{message_id}", "1", ex=2 * 24 * 3600, nx=True))
@@ -136,6 +166,10 @@ async def poll_once() -> dict:
         if not await _first_time(str(message.get("idMessage"))):
             continue
         digits = chat.removesuffix("@c.us")
+        # Автоответ WhatsApp Business («Сейчас мы не на связи…») уходит «с телефона»,
+        # но это не человек. Без этой проверки он глушил робота в каждом чате.
+        if await _auto_reply(digits, _journal_text(message)):
+            continue
         await redis_client.set(f"wa:human:{digits}", "1", ex=HUMAN_QUIET)
         await redis_client.hdel("wa:pending", digits)
         text = _journal_text(message).strip()
