@@ -310,6 +310,69 @@
   background: #fff;
 }
 
+/* ---------- Телефон: чат во весь экран ----------
+   Окошко 360 px в углу на телефоне превращалось в полоску между шапкой и
+   клавиатурой. Здесь чат занимает ровно видимую часть экрана: --vv-h и
+   --vv-top ставит AssistantChat.tsx по visualViewport, поэтому строка ввода
+   всегда стоит прямо над клавиатурой. */
+@media (max-width: 560px) {
+  .assistant.is-open .assistant__panel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: var(--vv-top, 0px);
+    width: 100%;
+    height: var(--vv-h, 100dvh);
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    animation: assistant-sheet 220ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  }
+
+  .assistant.is-open .assistant__head {
+    padding-top: calc(12px + env(safe-area-inset-top, 0px));
+  }
+
+  .assistant.is-open .assistant__head button {
+    padding: 8px;
+    background: var(--color-surface);
+    border-radius: 50%;
+  }
+
+  /* Закрывает крестик в шапке, круглая кнопка поверх переписки только мешает */
+  .assistant.is-open .assistant__button,
+  .assistant.is-open .assistant__backdrop {
+    display: none;
+  }
+
+  .assistant.is-open .assistant__form {
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    background: #fff;
+  }
+
+  /* 16px и больше: иначе iPhone сам увеличивает страницу при нажатии на поле */
+  .assistant__form textarea {
+    font-size: 16px;
+  }
+
+  .assistant__people-body {
+    max-height: 28vh;
+  }
+}
+
+@keyframes assistant-sheet {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Страница под открытым чатом не прокручивается */
+html.assistant-lock,
+html.assistant-lock body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 .assistant__form textarea:focus {
   outline: none;
   border-color: var(--color-ink);

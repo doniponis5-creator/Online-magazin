@@ -60,8 +60,38 @@ export function AssistantChat() {
     if (open && messages.length === 0) {
       setMessages([{ role: 'assistant', text: a.hello }])
     }
-    if (open) field.current?.focus()
+    // На телефоне поле не фокусируем: клавиатура выскакивала сразу и закрывала
+    // половину чата, человек не успевал прочитать приветствие. Нажмёт на поле —
+    // тогда и клавиатура.
+    if (open && !isTouch()) field.current?.focus()
   }, [open, messages.length, a.hello])
+
+  // Телефон: чат во весь экран, ровно в видимую часть — над клавиатурой.
+  // iPhone не уменьшает окно, когда выезжает клавиатура, а просто наезжает
+  // ею на страницу; размер видимой части знает только visualViewport.
+  // Страницу под чатом не прокручиваем, иначе она уезжает вместе с пальцем.
+  useEffect(() => {
+    if (!open || !isPhone()) return
+    const root = document.documentElement
+    const node = box.current
+    const vv = window.visualViewport
+    const fit = () => {
+      if (!node) return
+      node.style.setProperty('--vv-h', `${vv ? vv.height : window.innerHeight}px`)
+      node.style.setProperty('--vv-top', `${vv ? vv.offsetTop : 0}px`)
+      const list = feed.current
+      if (list) list.scrollTop = list.scrollHeight
+    }
+    fit()
+    root.classList.add('assistant-lock')
+    vv?.addEventListener('resize', fit)
+    vv?.addEventListener('scroll', fit)
+    return () => {
+      root.classList.remove('assistant-lock')
+      vv?.removeEventListener('resize', fit)
+      vv?.removeEventListener('scroll', fit)
+    }
+  }, [open])
 
   useEffect(() => {
     if (!open) return
@@ -296,6 +326,16 @@ export function AssistantChat() {
  * хватает, чтобы продолжить разговор с середины. Ответы робота не шлём —
  * сотруднику важно, что спросил человек, а не что ответила программа.
  */
+/** Палец вместо мыши — значит, клавиатура экранная. */
+function isTouch(): boolean {
+  return typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
+}
+
+/** Та же граница, что в assistant-chat.css: уже — чат во весь экран. */
+function isPhone(): boolean {
+  return typeof window !== 'undefined' && window.matchMedia('(max-width: 560px)').matches
+}
+
 function handoffText(messages: Msg[], intro: string, productsLead: string): string | undefined {
   const asked = messages
     .filter((m) => m.role === 'user')
