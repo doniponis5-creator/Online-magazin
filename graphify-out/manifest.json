@@ -170,31 +170,31 @@
   "integrations/sbonus-server/shop/001_shop_orders_migration.sql": {
     "mtime": 1789643427.3177383,
     "seen": 1789969427.2892876,
-    "ast_hash": "60be7d56cd2d952129a61d54d95ccbad",
+    "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/002_shop_catalog_migration.sql": {
     "mtime": 1789647531.5057318,
     "seen": 1789969427.289289,
-    "ast_hash": "323907e0405b2bceb84a441153a980bb",
+    "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/003_shop_bonus_migration.sql": {
     "mtime": 1789651724.3017156,
     "seen": 1789969427.2892897,
-    "ast_hash": "dbc01a01d56350ab572dec625b30a088",
+    "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/004_shop_stats_migration.sql": {
     "mtime": 1789734501.4004698,
     "seen": 1789969427.2892904,
-    "ast_hash": "73f2ccafbc5d694f742539899e5a6c61",
+    "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/005_shop_push_migration.sql": {
     "mtime": 1789792750.2917469,
     "seen": 1789969427.2892914,
-    "ast_hash": "21cfa1d3a03bec41c0123ad74dd060df",
+    "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/__init__.py": {
@@ -288,9 +288,9 @@
     "semantic_hash": ""
   },
   "ios/App/App/BonusCard.swift": {
-    "mtime": 1789821115.4856153,
-    "seen": 1789964793.271851,
-    "ast_hash": "380b61861c6de28ef98f62ad9c378cb5",
+    "mtime": 1789969704.0679739,
+    "seen": 1789969721.1937256,
+    "ast_hash": "7d9bfbf41b7b14eaa30c6af59b7926d8",
     "semantic_hash": ""
   },
   "ios/App/App/SceneDelegate.swift": {
@@ -1092,9 +1092,9 @@
     "semantic_hash": ""
   },
   "docs/TODO_NEXT.md": {
-    "mtime": 1789965888.5008836,
-    "seen": 1789966160.9263594,
-    "ast_hash": "ecf2e122c6b134322f8f3ea910673783",
+    "mtime": 1789969711.3666635,
+    "seen": 1789969721.1940248,
+    "ast_hash": "4c669f78b73c430eef1b98381461fe00",
     "semantic_hash": ""
   },
   "infra/SMARKET_KG_UZ.md": {
@@ -8726,7 +8726,7 @@
   "integrations/sbonus-server/shop/006_shop_installments_migration.sql": {
     "mtime": 1789964335.2680974,
     "seen": 1789969427.2892926,
-    "ast_hash": "f24e719c22fcfec5106738efc270ee5d",
+    "ast_hash": "",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/backups/prod-20260921-105401/backup.json": {
@@ -8924,13 +8924,19 @@
   "integrations/sbonus-server/shop/007_shop_notes_migration.sql": {
     "mtime": 1789965631.4248226,
     "seen": 1789969427.289294,
-    "ast_hash": "f5e4a392389d0c4c7e69be5b316d7c92",
+    "ast_hash": "",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-6038-exact.jpg": {
     "mtime": 1789969419.8197877,
     "seen": 1789969427.290108,
     "ast_hash": "c3f040daa2596a643d1eddbd58558b00",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/originals/technomir-th-6035-alt.webp": {
+    "mtime": 1789969460.600327,
+    "seen": 1789969721.1946151,
+    "ast_hash": "d7db5697a8294f3ffe9298d839d8d451",
     "semantic_hash": ""
   }
 }
