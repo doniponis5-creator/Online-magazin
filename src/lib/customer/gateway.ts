@@ -290,6 +290,73 @@ export async function getProfile(phone: string, amount = 0, full = false): Promi
   }
 }
 
+export type InstallmentPurchase = {
+  doc: string
+  date: string | null
+  total: number
+  left: number
+  overdue: number
+  nextDate: string | null
+  nextAmount: number
+  monthsLeft: number
+}
+
+export type Installment = {
+  /** остаток долга по всем покупкам, сом */
+  debt: number
+  /** из него уже просрочено, сом */
+  overdue: number
+  nextDate: string | null
+  nextAmount: number
+  monthsLeft: number
+  purchases: InstallmentPurchase[]
+  /** когда 1С присылала цифры в последний раз */
+  asOf: string | null
+}
+
+/**
+ * Остаток по рассрочке. Цифры считает 1С и раз в 10 минут присылает на сервер.
+ *
+ * Звать ТОЛЬКО с телефоном из входного cookie: сервер отдаёт долг любого
+ * номера, который ему назовут, и защищает его одна эта граница.
+ * debt = 0 — долга нет. null — неизвестно: 1С ещё не присылала цифры.
+ */
+const STALE_MS = 3 * 24 * 60 * 60 * 1000
+
+export async function getInstallment(phone: string): Promise<Installment | null> {
+  if (isDemoPhone(phone) || paymentMode() === 'mock') return null
+  const digits = phone.replace(/^\+/, '')
+  try {
+    const data = await call<Partial<Installment> & { has?: boolean; shared?: boolean }>(
+      `/api/v1/webhook/site/customer/${digits}/installment`,
+      { method: 'GET' },
+    )
+    // Снимка из 1С ещё не было — не знаем. Снимок есть, а номера в нём нет — долга нет.
+    if (!data.asOf) return null
+    // Компьютер с 1С выключен третий день — цифры устарели: оплаты не учтены,
+    // просрочка посчитана на старый день. Лучше честное «не знаю».
+    if (Date.now() - Date.parse(data.asOf.slice(0, 19) + 'Z') > STALE_MS) return null
+    // Номер записан в 1С у разных людей — чей долг, не знаем. Не «долга нет», а «позвоните».
+    if (data.shared) return null
+    if (!data.has) {
+      return { debt: 0, overdue: 0, nextDate: null, nextAmount: 0, monthsLeft: 0, purchases: [], asOf: data.asOf }
+    }
+    return {
+      debt: Number(data.debt),
+      overdue: Number(data.overdue ?? 0),
+      nextDate: data.nextDate ?? null,
+      nextAmount: Number(data.nextAmount ?? 0),
+      monthsLeft: Number(data.monthsLeft ?? 0),
+      purchases: Array.isArray(data.purchases) ? data.purchases : [],
+      asOf: data.asOf ?? null,
+    }
+  } catch (error) {
+    // Старый сервер без этого пути отвечает 404 — просто «цифр нет».
+    if (error instanceof CustomerApiError && error.status === 404) return null
+    throw error
+  }
+}
+
 /**
  * Покупатель удалил учётную запись в приложении.
  *

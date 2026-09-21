@@ -39,6 +39,22 @@ export type CustomerBrief = {
   /** какую часть заказа можно закрыть бонусами, % */
   maxSpendPct: number
   orders: { id: string; status: string; total: number; createdAt: string | null }[]
+  /**
+   * Его рассрочка — цифры из 1С. null: долга нет или 1С их не прислала.
+   * Попадает сюда только по телефону из входного cookie, поэтому это всегда
+   * его собственный долг.
+   */
+  installment?: InstallmentBrief | null
+}
+
+export type InstallmentBrief = {
+  debt: number
+  overdue: number
+  nextDate: string | null
+  nextAmount: number
+  monthsLeft: number
+  /** на какой день цифры, «2026-09-21» */
+  asOf: string | null
 }
 
 export function isInStock(product: Product): boolean {

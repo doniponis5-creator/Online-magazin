@@ -2,7 +2,7 @@ import { isLang, defaultLang, type Lang } from '@/lib/i18n/config'
 import { answer } from '@/lib/assistant/reply'
 import type { ChatTurn } from '@/lib/assistant/gemini'
 import type { CustomerBrief } from '@/lib/assistant/knowledge'
-import { getProfile } from '@/lib/customer/gateway'
+import { getInstallment, getProfile } from '@/lib/customer/gateway'
 import { currentSession } from '@/app/api/customer/route-helpers'
 import { logQuestion } from '@/lib/assistant/log'
 
@@ -87,9 +87,24 @@ async function customerBrief(): Promise<CustomerBrief | null> {
   const session = await currentSession()
   if (!session) return null
   try {
-    const profile = await getProfile(session.phone, 0, true)
+    const [profile, installment] = await Promise.all([
+      getProfile(session.phone, 0, true),
+      // Рассрочка — отдельный запрос: сервер без неё не должен ломать чат.
+      getInstallment(session.phone).catch((error) => {
+        console.error('[assistant] рассрочка:', error instanceof Error ? error.message : error)
+        return null
+      }),
+    ])
     if (!profile) return null
     return {
+      installment: installment && {
+        debt: installment.debt,
+        overdue: installment.overdue,
+        nextDate: installment.nextDate,
+        nextAmount: installment.nextAmount,
+        monthsLeft: installment.monthsLeft,
+        asOf: installment.asOf ? installment.asOf.slice(0, 10) : null,
+      },
       name: profile.name,
       balance: profile.balance,
       maxSpendPct: profile.maxSpendPct,

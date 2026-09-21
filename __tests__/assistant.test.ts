@@ -127,11 +127,41 @@ describe('вошедший покупатель', () => {
 })
 
 describe('рассрочка', () => {
-  it('не называет число месяцев ни на одном языке', () => {
+  it('без цифр из магазина не называет число месяцев ни на одном языке', () => {
     for (const q of ['Сколько месяцев осталось по рассрочке?', 'Nasiyam necha oy qoldi?', 'Бөлүп төлөө канча ай калды?']) {
       const { text } = localAnswer(q, 'ru', customer)
       expect(text).toMatch(/\+996/)
       expect(text).not.toMatch(/\b\d{1,2}\s*(мес|ай|oy)\b/)
     }
+  })
+
+  it('вошедшему называет его остаток, ближайший платёж и просрочку', () => {
+    const withDebt = {
+      ...customer,
+      installment: { debt: 16000, overdue: 6000, nextDate: '2026-10-01', nextAmount: 2000, monthsLeft: 5, asOf: '2026-09-21' },
+    }
+    const ru = localAnswer('Сколько я должен по рассрочке?', 'ru', withDebt).text
+    expect(ru).toMatch(/16\s?000/)
+    expect(ru).toMatch(/просрочено/)
+    expect(ru).toMatch(/1 октября/)
+    expect(ru).toMatch(/Осталось платежей: 5/)
+    const uz = localAnswer("Nasiyam qancha qoldi?", 'ru', withDebt).text
+    expect(uz).toMatch(/1-oktabr/)
+  })
+
+  it('долга нет — так и говорит, без выдуманных цифр', () => {
+    const noDebt = {
+      ...customer,
+      installment: { debt: 0, overdue: 0, nextDate: null, nextAmount: 0, monthsLeft: 0, asOf: '2026-09-21' },
+    }
+    const { text } = localAnswer('Сколько осталось по рассрочке?', 'ru', noDebt)
+    expect(text).toMatch(/нет/)
+    expect(text).not.toMatch(/\d+\s?сом/)
+  })
+
+  it('не вошёл — просит войти, а не называет цифры', () => {
+    const { text } = localAnswer('Сколько я должен по рассрочке? мой номер 0555123456', 'ru', null)
+    expect(text).toMatch(/Кабинет/)
+    expect(text).not.toMatch(/сом/)
   })
 })

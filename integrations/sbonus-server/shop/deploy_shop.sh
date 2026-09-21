@@ -25,8 +25,8 @@ SRC="$(cd "$(dirname "$0")" && pwd)"
 API=sbonus_api
 DB=sbonus_db
 TS=$(date +%Y%m%d_%H%M%S)
-FILES="__init__.py shop_models.py shop_router.py shop_catalog.py shop_telegram.py shop_customers.py shop_admin.py shop_push.py"
-MIGRATIONS="001_shop_orders_migration.sql 002_shop_catalog_migration.sql 003_shop_bonus_migration.sql 004_shop_stats_migration.sql 005_shop_push_migration.sql"
+FILES="__init__.py shop_models.py shop_router.py shop_catalog.py shop_telegram.py shop_customers.py shop_admin.py shop_push.py shop_whatsapp.py shop_installments_calc.py shop_installments.py"
+MIGRATIONS="001_shop_orders_migration.sql 002_shop_catalog_migration.sql 003_shop_bonus_migration.sql 004_shop_stats_migration.sql 005_shop_push_migration.sql 006_shop_installments_migration.sql"
 
 echo "=== Деплой: интернет-магазин (заказы + каталог + вход и бонусы) ==="
 
@@ -61,13 +61,17 @@ import app.shop_precheck.shop_router as r
 import app.shop_precheck.shop_catalog as c
 import app.shop_precheck.shop_customers as cu
 import app.shop_precheck.shop_admin as ad
+import app.shop_precheck.shop_whatsapp as wa_btn
+import app.shop_precheck.shop_installments as inst
+assert inst.parse_phones('0558311031/0558882507') == ['+996558311031', '+996558882507']
 assert len(ad.SETTINGS) >= 3
 from app.models import Branch, BonusAccount, Customer, Setting, Tier, Transaction, TransactionType
 from app.core.redis import check_rate_limit, redis_client
 assert cu.max_spend(__import__('decimal').Decimal('5000'), __import__('decimal').Decimal('20000'), __import__('decimal').Decimal('10')) == 2000
 paths = [x.path for x in r.router_site.routes + r.router_obank_shop.routes + r.router_1c_shop.routes
          + c.router_1c_catalog.routes + c.router_site_catalog.routes + c.router_public_photos.routes
-         + cu.router_site_customer.routes + ad.router_1c_admin.routes + ad.router_site_admin.routes]
+         + cu.router_site_customer.routes + ad.router_1c_admin.routes + ad.router_site_admin.routes
+         + inst.router_1c_installments.routes + inst.router_site_installments.routes]
 print('OK: модуль импортируется, маршрутов:', len(paths))
 "
 PRECHECK=$?
@@ -188,6 +192,29 @@ print("✓ main.py: панель сайта (настройки и сводка)
 PYEOF2
 [ $? -eq 0 ] || { cp "$APP/main.py.bak_$TS" "$APP/main.py"; echo "↩️ main.py восстановлен"; exit 1; }
 
+python3 - "$APP/main.py" <<'PYEOF3'
+import sys
+p = sys.argv[1]
+s = open(p, encoding="utf-8").read()
+if "app.shop.shop_installments" in s:
+    print("• main.py уже подключает рассрочку для сайта — пропуск")
+    raise SystemExit(0)
+anchor = 'app.include_router(router_site_admin, prefix="/api/v1")'
+idx = s.find(anchor)
+if idx < 0:
+    raise SystemExit("❌ В main.py нет панели сайта — не к чему подключить рассрочку")
+end = s.find(chr(10), idx)
+end = len(s) if end < 0 else end
+block = """
+from app.shop.shop_installments import router_1c_installments, router_site_installments
+app.include_router(router_1c_installments, prefix="/api/v1")    # /api/v1/webhook/1c/shop/installments
+app.include_router(router_site_installments, prefix="/api/v1")  # /api/v1/webhook/site/customer/{phone}/installment"""
+s = s[:end] + block + s[end:]
+open(p, "w", encoding="utf-8").write(s)
+print("✓ main.py: рассрочка для чата сайта подключена")
+PYEOF3
+[ $? -eq 0 ] || { cp "$APP/main.py.bak_$TS" "$APP/main.py"; echo "↩️ main.py восстановлен"; exit 1; }
+
 # ── 4. Синтаксис ─────────────────────────────────────────────────────────────
 for f in $FILES; do
     python3 -c "import ast; ast.parse(open('$DST/$f', encoding='utf-8').read())" \
@@ -216,6 +243,8 @@ docker cp "$SRC/005_shop_push_migration.sql" "$DB:/tmp/005_shop_push_migration.s
 docker exec "$DB" psql -U sbonus -d sbonus_db -v ON_ERROR_STOP=1 -f /tmp/005_shop_push_migration.sql \
     && echo "✓ Таблица shop_push_devices (уведомления в приложении)" \
     || { echo "❌ Миграция уведомлений не прошла — стоп (код не пересобран)"; exit 1; }
+docker cp "$SRC/006_shop_installments_migration.sql" "$DB:/tmp/006_shop_installments_migration.sql"
+docker exec "$DB" psql -U sbonus -d sbonus_db -v ON_ERROR_STOP=1 -f /tmp/006_shop_installments_migration.sql     && echo "✓ Таблица shop_installments (остаток по рассрочке для чата)"     || { echo "❌ Миграция рассрочки не прошла — стоп (код не пересобран)"; exit 1; }
 
 # ── 6. Секрет сайта в .env (создаётся один раз) ──────────────────────────────
 if grep -q '^SHOP_SITE_SECRET=' "$ENV_FILE" 2>/dev/null; then
@@ -276,6 +305,11 @@ echo "--- каталог сайта без подписи (ожидается 40
 curl -s -o /dev/null -w "  HTTP %{http_code}\n" https://api.smartcentr.store/api/v1/webhook/site/catalog
 echo "--- вход покупателя без подписи (ожидается 401) ---"
 curl -s -o /dev/null -w "  HTTP %{http_code}\n" -X POST https://api.smartcentr.store/api/v1/webhook/site/customer/send-code
+echo "--- рассрочка для чата: 1С и сайт без подписи (ожидается 401 и 401) ---"
+curl -s -o /dev/null -w "  HTTP %{http_code}
+" -X POST https://api.smartcentr.store/api/v1/webhook/1c/shop/installments
+curl -s -o /dev/null -w "  HTTP %{http_code}
+" https://api.smartcentr.store/api/v1/webhook/site/customer/996555000000/installment
 echo "--- ошибки запуска ---"
 docker logs "$API" --since 30s 2>&1 | grep -i -E "error|traceback" | tail -10 || echo "  (ошибок нет)"
 

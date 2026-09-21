@@ -29,7 +29,7 @@ export type Answer = { text: string; productIds: string[] }
 
 type Say = { ru: string; ky: string; uz: string }
 
-const pick = (say: Say, lang: TalkLang) => say[lang]
+const pick = <T,>(say: Record<TalkLang, T>, lang: TalkLang): T => say[lang]
 
 /**
  * Ответ модели → текст + список товаров.
@@ -98,6 +98,60 @@ function helloText(lang: TalkLang, customer: CustomerBrief | null): string {
  * нельзя ни в коем случае: человек поверит и придёт с ней в магазин.
  */
 function installmentText(lang: TalkLang, customer: CustomerBrief | null): string {
+  if (!customer) {
+    return pick(
+      {
+        ru: `Чтобы узнать остаток по рассрочке, войдите по своему номеру — кнопка «Кабинет» вверху. После входа я отвечу здесь же. Или позвоните: ${phoneList}.`,
+        ky: `Бөлүп төлөөнүн калдыгын билүү үчүн өз номериңиз менен кириңиз — жогорудагы «Кабинет» баскычы. Киргенден кийин ушул жерде жооп берем. Же чалыңыз: ${phoneList}.`,
+        uz: `Bo'lib to'lash qoldig'ini bilish uchun o'z raqamingiz bilan kiring — yuqoridagi «Кабинет» tugmasi. Kirgandan keyin shu yerda javob beraman. Yoki qo'ng'iroq qiling: ${phoneList}.`,
+      },
+      lang,
+    )
+  }
+  const i = customer.installment
+  if (i && i.debt <= 0) {
+    return withName(
+      pick(
+        {
+          ru: `по данным магазина долга по рассрочке у вас нет. Если оформляли на другой номер — позвоните: ${phoneList}.`,
+          ky: `дүкөндүн маалыматы боюнча бөлүп төлөө боюнча карызыңыз жок. Башка номерге алган болсоңуз — чалыңыз: ${phoneList}.`,
+          uz: `do'kon ma'lumotiga ko'ra bo'lib to'lash bo'yicha qarzingiz yo'q. Boshqa raqamga rasmiylashtirgan bo'lsangiz — qo'ng'iroq qiling: ${phoneList}.`,
+        },
+        lang,
+      ),
+      customer,
+    )
+  }
+  if (i) {
+    const next = i.nextDate ? `${formatSom(i.nextAmount)} — ${dayText(i.nextDate, lang)}` : ''
+    const lines = pick(
+      {
+        ru: [
+          `по рассрочке осталось ${formatSom(i.debt)}.`,
+          i.overdue > 0 ? `Из них ${formatSom(i.overdue)} уже просрочено — постарайтесь оплатить поскорее.` : '',
+          next ? `Ближайший платёж: ${next}.` : '',
+          i.monthsLeft > 0 ? `Осталось платежей: ${i.monthsLeft}.` : '',
+          i.asOf ? `Данные магазина на ${dayText(i.asOf, lang)}; сегодняшняя оплата может быть ещё не учтена.` : '',
+        ],
+        ky: [
+          `бөлүп төлөө боюнча ${formatSom(i.debt)} калды.`,
+          i.overdue > 0 ? `Анын ${formatSom(i.overdue)} мөөнөтү өтүп кеткен — тезирээк төлөп коюңуз.` : '',
+          next ? `Жакынкы төлөм: ${next}.` : '',
+          i.monthsLeft > 0 ? `Калган төлөмдөр: ${i.monthsLeft}.` : '',
+          i.asOf ? `Дүкөндүн маалыматы ${dayText(i.asOf, lang)} боюнча; бүгүнкү төлөм азырынча эсепке кирбей калышы мүмкүн.` : '',
+        ],
+        uz: [
+          `bo'lib to'lash bo'yicha ${formatSom(i.debt)} qoldi.`,
+          i.overdue > 0 ? `Shundan ${formatSom(i.overdue)} muddati o'tgan — tezroq to'lab qo'ying.` : '',
+          next ? `Keyingi to'lov: ${next}.` : '',
+          i.monthsLeft > 0 ? `Qolgan to'lovlar: ${i.monthsLeft}.` : '',
+          i.asOf ? `Do'kon ma'lumoti ${dayText(i.asOf, lang)} holatiga; bugungi to'lov hali hisobga kirmagan bo'lishi mumkin.` : '',
+        ],
+      },
+      lang,
+    )
+    return withName(lines.filter(Boolean).join(' '), customer)
+  }
   const body = pick(
     {
       ru: `по рассрочке я цифру не назову — остаток и месяцы считает программа магазина, в чат они пока не приходят. Позвоните, и вам скажут точно: ${phoneList}.`,
@@ -107,6 +161,19 @@ function installmentText(lang: TalkLang, customer: CustomerBrief | null): string
     lang,
   )
   return withName(body, customer)
+}
+
+const MONTHS: Record<TalkLang, string[]> = {
+  ru: ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'],
+  ky: ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'],
+  uz: ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr'],
+}
+
+/** «2026-09-21» → «21 сентября» / «21-sentabr». */
+export function dayText(iso: string, lang: TalkLang): string {
+  const [, m, d] = iso.slice(0, 10).split('-').map(Number)
+  if (!m || !d || m > 12) return iso.slice(0, 10)
+  return lang === 'ru' ? `${d} ${MONTHS.ru[m - 1]}` : `${d}-${MONTHS[lang][m - 1]}`
 }
 
 /** «Азамат, по рассрочке…» — а без имени фраза начинается с заглавной буквы. */
