@@ -35,3 +35,19 @@ export function budgetFrom(text: string): number | null {
   }
   return null
 }
+
+/** «Дорого», «подешевле», «qimmat», «кымбат» — просит вариант дешевле. */
+const TOO_EXPENSIVE = /(дорог|дешевле|подешевле|бюджетнее|qimmat|arzonro|arzonrog|кымбат|арзаныраак|арзаныр|қиммат|арзонроқ)/i
+
+/**
+ * Потолок цены после «дорого»: дешевле самого дешёвого, что консультант
+ * только что назвал. Без этого слабая модель на «дорого» предлагала машину
+ * на сто сом ДОРОЖЕ прежней.
+ */
+export function cheaperThan(question: string, lastAnswer: string): number | null {
+  if (!TOO_EXPENSIVE.test(question)) return null
+  const prices = [...lastAnswer.matchAll(/(\d{1,3}(?:[\s ]\d{3})+|\d{4,})\s*(?:сом|som|so.?m)/gi)]
+    .map((m) => Number(m[1].replace(/[\s ]/g, '')))
+    .filter((n) => n >= 1000)
+  return prices.length > 0 ? Math.min(...prices) - 1 : null
+}

@@ -192,13 +192,14 @@ const DESC_CHARS = 400
  *   2) ВЕСЬ КАТАЛОГ — каждый товар одной короткой строкой: цена и наличие.
  *      Этого хватает, чтобы ответить «а есть ли у вас…» про что угодно.
  */
-export function catalogForQuestion(list: Product[], question: string, lang: Lang): string {
+export function catalogForQuestion(list: Product[], question: string, lang: Lang, ceiling: number | null = null): string {
   const found = searchProducts(question, lang, FOCUS_LIMIT, list)
 
   // Бюджет назван — дороже не показываем вовсе: слабая модель иначе первой
   // предлагала то, что не по карману. Ничего не влезло — показываем три
   // самых дешёвых из найденного, и модель честно говорит про разницу.
-  const budget = budgetFrom(question)
+  // ceiling — «дорого» после предложения: дешевле того, что уже назвали.
+  const budget = ceiling ?? budgetFrom(question)
   const fits = (p: Product) => p.price > 0 && (budget === null || p.price <= budget)
   let focus = found.filter(fits)
   let budgetNote = budget ? `Покупатель назвал бюджет: до ${budget} сом. Ниже — только то, что в него укладывается.\n` : ''

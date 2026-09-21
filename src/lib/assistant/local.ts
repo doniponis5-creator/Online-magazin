@@ -72,8 +72,8 @@ function helloText(lang: TalkLang, customer: CustomerBrief | null): string {
   if (name) {
     return pick(
       {
-        ru: `Здравствуйте, ${name}! Рады вас видеть. Чем помочь?`,
-        ky: `Саламатсызбы, ${name}! Сизди көргөнүбүзгө кубанычтабыз. Кандай жардам керек?`,
+        ru: `Ассаламу алейкум, ${name}! Рады вас видеть. Чем помочь?`,
+        ky: `Ассаламу алейкум, ${name}! Сизди көргөнүбүзгө кубанычтабыз. Кандай жардам керек?`,
         uz: `Assalomu alaykum, ${name}! Sizni ko'rganimizdan xursandmiz. Qanday yordam kerak?`,
       },
       lang,
@@ -81,8 +81,8 @@ function helloText(lang: TalkLang, customer: CustomerBrief | null): string {
   }
   return pick(
     {
-      ru: 'Здравствуйте! Какая техника нужна? Напишите — найду по каталогу.',
-      ky: 'Саламатсызбы! Кандай техника издеп жатасыз? Жазыңыз — каталогдон табып берем.',
+      ru: 'Ассаламу алейкум! Какая техника нужна? Напишите — найду по каталогу.',
+      ky: 'Ассаламу алейкум! Кандай техника издеп жатасыз? Жазыңыз — каталогдон табып берем.',
       uz: "Assalomu alaykum! Qanday texnika kerak? Yozing — katalogdan topib beraman.",
     },
     lang,

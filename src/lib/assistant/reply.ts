@@ -10,6 +10,7 @@ import 'server-only'
 
 import { lookupIn, salesCatalogNow } from './live'
 import { ownerNotes } from './notes'
+import { cheaperThan } from './budget'
 import type { Product } from '@/data/products'
 import type { Lang } from '@/lib/i18n/config'
 import { askGemini, geminiConfigured, type ChatTurn } from './gemini'
@@ -44,7 +45,9 @@ export async function answer(
 
   if (geminiConfigured() && dayBudgetLeft()) {
     try {
-      const raw = await askGemini(systemInstruction(lang, customer, talkLang(turns, lang), list, recent, notes), turns)
+      const lastAnswer = [...turns].reverse().find((t) => t.role === 'assistant')?.text ?? ''
+      const ceiling = cheaperThan(lastQuestion, lastAnswer)
+      const raw = await askGemini(systemInstruction(lang, customer, talkLang(turns, lang), list, recent, notes, ceiling), turns)
       const parsed = parseAnswer(raw)
       return { text: parsed.text, products: hits(parsed.productIds, lang, list), source: 'gemini' }
     } catch (error) {
