@@ -1,7 +1,7 @@
 # Graph Report - Online-magazin  (2026-09-21)
 
 ## Corpus Check
-- 432 files · ~11,507,764 words
+- 432 files · ~11,507,773 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 39 file(s) not represented in the graph (top: .css 9, .bsl 7, (none) 6)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a92fbcda`
+- Built from commit: `79c45e2b`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -25,7 +25,7 @@
 - package.json
 - AccountView.tsx
 - next
-- product/[id]/page.tsx
+- FavoritesProvider.tsx
 - shop_customers.py
 - customer/gateway.ts
 - Текшириладиган рўйхат
@@ -61,7 +61,7 @@
 - IOS_APP_UZ.md — App Store Guide
 - TASK 03 Report — Storefront Photos and Motion
 - fetch-photos.mjs
-- FavoritesProvider.tsx
+- product/[id]/page.tsx
 - Smart Centr Project Working Rules
 - 3. Устувор топилмалар
 - Hero3D Pure-CSS LG Scroll Scene
@@ -108,7 +108,7 @@
 - capacitor_swift
 - AssistantChat.tsx
 - log.ts
-- catalog.ts
+- (entry)/layout.tsx
 - local.ts
 - adapter.ts
 - _post
@@ -138,7 +138,7 @@
 - uchar
 - usernotifications
 - webkit
-- (entry)/layout.tsx
+- catalog.ts
 - orders/route.ts
 - prepare_builtins_queue.py
 - [lang]/layout.tsx
@@ -252,9 +252,9 @@ Nodes (28): AccountView(), formatDate(), useCustomer(), src_components_home_merc
 Cohesion: 0.16
 Nodes (17): nextConfig, next, DevGalleryFixturePage(), FavoritesPage(), AddToCartButton(), BottomNav(), CartReminder(), FavoriteButton() (+9 more)
 
-### Community 9 - "product/[id]/page.tsx"
-Cohesion: 0.14
-Nodes (11): generateMetadata(), ProductPage(), ALLOW, ASSISTANTS, PRIVATE, TRAINERS, canonical(), SITE_ALT_NAMES (+3 more)
+### Community 9 - "FavoritesProvider.tsx"
+Cohesion: 0.48
+Nodes (5): FavoritesContext, FavoritesContextValue, FavoritesProvider(), onlyExisting(), readStorage()
 
 ### Community 10 - "shop_customers.py"
 Cohesion: 0.12
@@ -396,9 +396,9 @@ Nodes (8): Manrope SIL Open Font License 1.1, TASK 03 Report — Storefront Phot
 Cohesion: 0.36
 Nodes (8): BAD_WORDS, FORCE, GOOD_WORDS, main(), score(), searchTopic(), sleep(), TOPICS
 
-### Community 45 - "FavoritesProvider.tsx"
-Cohesion: 0.48
-Nodes (5): FavoritesContext, FavoritesContextValue, FavoritesProvider(), onlyExisting(), readStorage()
+### Community 45 - "product/[id]/page.tsx"
+Cohesion: 0.14
+Nodes (11): generateMetadata(), ProductPage(), ALLOW, ASSISTANTS, PRIVATE, TRAINERS, canonical(), SITE_ALT_NAMES (+3 more)
 
 ### Community 46 - "Smart Centr Project Working Rules"
 Cohesion: 0.25
@@ -528,9 +528,9 @@ Nodes (10): src_components_assistant_chat, AssistantChat(), onKeyDown(), send(),
 Cohesion: 0.21
 Nodes (12): dynamic, esc(), GET(), rowsTable(), when(), fileFor(), hideDigits(), logQuestion() (+4 more)
 
-### Community 99 - "catalog.ts"
-Cohesion: 0.31
-Nodes (9): OfflineCatalogSync(), CapacitorGlobal, CatalogPlugin, markTried(), offlineCatalogState(), plugin(), showOfflineCatalog(), syncOfflineCatalog() (+1 more)
+### Community 99 - "(entry)/layout.tsx"
+Cohesion: 0.24
+Nodes (4): metadata, src_app_globals, src_app_light_lemon, NotFoundMessage()
 
 ### Community 100 - "local.ts"
 Cohesion: 0.10
@@ -560,9 +560,9 @@ Nodes (10): cards, fs, main(), meta, output, path, review, root (+2 more)
 Cohesion: 0.13
 Nodes (20): argparse, getpass, main(), Проверка остатков по рассрочке перед выкатом — ничего не меняет и никуда не…, som(), main(), apply_one(), connect() (+12 more)
 
-### Community 129 - "(entry)/layout.tsx"
-Cohesion: 0.24
-Nodes (4): metadata, src_app_globals, src_app_light_lemon, NotFoundMessage()
+### Community 129 - "catalog.ts"
+Cohesion: 0.31
+Nodes (9): OfflineCatalogSync(), CapacitorGlobal, CatalogPlugin, markTried(), offlineCatalogState(), plugin(), showOfflineCatalog(), syncOfflineCatalog() (+1 more)
 
 ### Community 130 - "orders/route.ts"
 Cohesion: 0.36

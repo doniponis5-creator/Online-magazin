@@ -485,6 +485,32 @@
       "source_location": "L40"
     },
     {
+      "id": "src_lib_native_catalog_capacitorglobal",
+      "label": "CapacitorGlobal",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 129,
+      "community_name": "catalog.ts",
+      "file_type": "code",
+      "norm_label": "capacitorglobal",
+      "source_file": "src/lib/native/catalog.ts",
+      "source_location": "L20"
+    },
+    {
+      "id": "src_lib_native_catalog_catalogplugin",
+      "label": "CatalogPlugin",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 129,
+      "community_name": "catalog.ts",
+      "file_type": "code",
+      "norm_label": "catalogplugin",
+      "source_file": "src/lib/native/catalog.ts",
+      "source_location": "L14"
+    },
+    {
       "id": "src_components_icons_iconprops",
       "label": "IconProps",
       "_callable": true,
@@ -1187,19 +1213,6 @@
       "source_location": "L150"
     },
     {
-      "id": "src_lib_favorites_favoritesprovider_favoritescontextvalue",
-      "label": "FavoritesContextValue",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 45,
-      "community_name": "FavoritesProvider.tsx",
-      "file_type": "code",
-      "norm_label": "favoritescontextvalue",
-      "source_file": "src/lib/favorites/FavoritesProvider.tsx",
-      "source_location": "L28"
-    },
-    {
       "id": "ios_app_app_offlinecatalog_offlinecatalogplugin",
       "label": "OfflineCatalogPlugin",
       "_callable": true,
@@ -1421,6 +1434,19 @@
       "source_location": "L35"
     },
     {
+      "id": "src_lib_favorites_favoritesprovider_favoritescontextvalue",
+      "label": "FavoritesContextValue",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "FavoritesProvider.tsx",
+      "file_type": "code",
+      "norm_label": "favoritescontextvalue",
+      "source_file": "src/lib/favorites/FavoritesProvider.tsx",
+      "source_location": "L28"
+    },
+    {
       "id": "src_lib_orders_gateway_createresult",
       "label": "CreateResult",
       "_callable": true,
@@ -1627,32 +1653,6 @@
       "norm_label": "summary",
       "source_file": "src/lib/assistant/log.ts",
       "source_location": "L99"
-    },
-    {
-      "id": "src_lib_native_catalog_capacitorglobal",
-      "label": "CapacitorGlobal",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 99,
-      "community_name": "catalog.ts",
-      "file_type": "code",
-      "norm_label": "capacitorglobal",
-      "source_file": "src/lib/native/catalog.ts",
-      "source_location": "L20"
-    },
-    {
-      "id": "src_lib_native_catalog_catalogplugin",
-      "label": "CatalogPlugin",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 99,
-      "community_name": "catalog.ts",
-      "file_type": "code",
-      "norm_label": "catalogplugin",
-      "source_file": "src/lib/native/catalog.ts",
-      "source_location": "L14"
     },
     {
       "id": "src_app_lang_cart_page_cartpage",
@@ -3143,52 +3143,88 @@
       "source_location": "L239"
     },
     {
-      "id": "src_app_entry_layout_rootlayout",
-      "label": "RootLayout()",
+      "id": "src_components_offlinecatalogsync_offlinecatalogsync",
+      "label": "OfflineCatalogSync()",
       "_callable": true,
       "_origin": "ast",
       "community": 129,
-      "community_name": "(entry)/layout.tsx",
+      "community_name": "catalog.ts",
       "file_type": "code",
-      "norm_label": "rootlayout()",
-      "source_file": "src/app/(entry)/layout.tsx",
-      "source_location": "L12"
+      "norm_label": "offlinecatalogsync()",
+      "source_file": "src/components/OfflineCatalogSync.tsx",
+      "source_location": "L15"
     },
     {
-      "id": "src_app_global_not_found_globalnotfound",
-      "label": "GlobalNotFound()",
+      "id": "src_lib_native_catalog_marktried",
+      "label": "markTried()",
       "_callable": true,
       "_origin": "ast",
       "community": 129,
-      "community_name": "(entry)/layout.tsx",
+      "community_name": "catalog.ts",
       "file_type": "code",
-      "norm_label": "globalnotfound()",
-      "source_file": "src/app/global-not-found.tsx",
-      "source_location": "L5"
+      "norm_label": "marktried()",
+      "source_file": "src/lib/native/catalog.ts",
+      "source_location": "L45"
     },
     {
-      "id": "src_app_lang_not_found_notfound",
-      "label": "NotFound()",
+      "id": "src_lib_native_catalog_offlinecatalogstate",
+      "label": "offlineCatalogState()",
       "_callable": true,
       "_origin": "ast",
       "community": 129,
-      "community_name": "(entry)/layout.tsx",
+      "community_name": "catalog.ts",
       "file_type": "code",
-      "norm_label": "notfound()",
-      "source_file": "src/app/[lang]/not-found.tsx",
-      "source_location": "L3"
+      "norm_label": "offlinecatalogstate()",
+      "source_file": "src/lib/native/catalog.ts",
+      "source_location": "L88"
     },
     {
-      "id": "src_components_notfoundmessage_notfoundmessage",
-      "label": "NotFoundMessage()",
+      "id": "src_lib_native_catalog_plugin",
+      "label": "plugin()",
       "_callable": true,
       "_origin": "ast",
       "community": 129,
-      "community_name": "(entry)/layout.tsx",
+      "community_name": "catalog.ts",
       "file_type": "code",
-      "norm_label": "notfoundmessage()",
-      "source_file": "src/components/NotFoundMessage.tsx",
-      "source_location": "L3"
+      "norm_label": "plugin()",
+      "source_file": "src/lib/native/catalog.ts",
+      "source_location": "L25"
+    },
+    {
+      "id": "src_lib_native_catalog_showofflinecatalog",
+      "label": "showOfflineCatalog()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 129,
+      "community_name": "catalog.ts",
+      "file_type": "code",
+      "norm_label": "showofflinecatalog()",
+      "source_file": "src/lib/native/catalog.ts",
+      "source_location": "L99"
+    },
+    {
+      "id": "src_lib_native_catalog_syncofflinecatalog",
+      "label": "syncOfflineCatalog()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 129,
+      "community_name": "catalog.ts",
+      "file_type": "code",
+      "norm_label": "syncofflinecatalog()",
+      "source_file": "src/lib/native/catalog.ts",
+      "source_location": "L59"
+    },
+    {
+      "id": "src_lib_native_catalog_triedrecently",
+      "label": "triedRecently()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 129,
+      "community_name": "catalog.ts",
+      "file_type": "code",
+      "norm_label": "triedrecently()",
+      "source_file": "src/lib/native/catalog.ts",
+      "source_location": "L36"
     },
     {
       "id": "src_components_hero3d_frameurl",
@@ -6720,7 +6756,7 @@
       "file_type": "code",
       "norm_label": "getdictionary()",
       "source_file": "src/lib/i18n/dictionaries.ts",
-      "source_location": "L955"
+      "source_location": "L956"
     },
     {
       "id": "src_app_api_customer_delete_route_post",
@@ -7765,40 +7801,88 @@
       "source_location": "L16"
     },
     {
-      "id": "src_lib_favorites_favoritesprovider_favoritesprovider",
-      "label": "FavoritesProvider()",
+      "id": "src_app_lang_product_id_page_generatemetadata",
+      "label": "generateMetadata()",
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "FavoritesProvider.tsx",
+      "community_name": "product/[id]/page.tsx",
       "file_type": "code",
-      "norm_label": "favoritesprovider()",
-      "source_file": "src/lib/favorites/FavoritesProvider.tsx",
-      "source_location": "L50"
+      "norm_label": "generatemetadata()",
+      "source_file": "src/app/[lang]/product/[id]/page.tsx",
+      "source_location": "L142"
     },
     {
-      "id": "src_lib_favorites_favoritesprovider_onlyexisting",
-      "label": "onlyExisting()",
+      "id": "src_app_lang_product_id_page_generatestaticparams",
+      "label": "generateStaticParams()",
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "FavoritesProvider.tsx",
+      "community_name": "product/[id]/page.tsx",
       "file_type": "code",
-      "norm_label": "onlyexisting()",
-      "source_file": "src/lib/favorites/FavoritesProvider.tsx",
-      "source_location": "L24"
+      "norm_label": "generatestaticparams()",
+      "source_file": "src/app/[lang]/product/[id]/page.tsx",
+      "source_location": "L12"
     },
     {
-      "id": "src_lib_favorites_favoritesprovider_readstorage",
-      "label": "readStorage()",
+      "id": "src_app_lang_product_id_page_productpage",
+      "label": "ProductPage()",
       "_callable": true,
       "_origin": "ast",
       "community": 45,
-      "community_name": "FavoritesProvider.tsx",
+      "community_name": "product/[id]/page.tsx",
       "file_type": "code",
-      "norm_label": "readstorage()",
-      "source_file": "src/lib/favorites/FavoritesProvider.tsx",
-      "source_location": "L38"
+      "norm_label": "productpage()",
+      "source_file": "src/app/[lang]/product/[id]/page.tsx",
+      "source_location": "L19"
+    },
+    {
+      "id": "src_app_robots_robots",
+      "label": "robots()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "product/[id]/page.tsx",
+      "file_type": "code",
+      "norm_label": "robots()",
+      "source_file": "src/app/robots.ts",
+      "source_location": "L75"
+    },
+    {
+      "id": "src_app_sitemap_sitemap",
+      "label": "sitemap()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "product/[id]/page.tsx",
+      "file_type": "code",
+      "norm_label": "sitemap()",
+      "source_file": "src/app/sitemap.ts",
+      "source_location": "L12"
+    },
+    {
+      "id": "src_lib_seo_addressline",
+      "label": "addressLine()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "product/[id]/page.tsx",
+      "file_type": "code",
+      "norm_label": "addressline()",
+      "source_file": "src/lib/seo.ts",
+      "source_location": "L94"
+    },
+    {
+      "id": "src_lib_seo_canonical",
+      "label": "canonical()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "product/[id]/page.tsx",
+      "file_type": "code",
+      "norm_label": "canonical()",
+      "source_file": "src/lib/seo.ts",
+      "source_location": "L33"
     },
     {
       "id": "src_components_htmllang_htmllang",
@@ -9293,88 +9377,40 @@
       "source_location": "L5"
     },
     {
-      "id": "src_app_lang_product_id_page_generatemetadata",
-      "label": "generateMetadata()",
+      "id": "src_lib_favorites_favoritesprovider_favoritesprovider",
+      "label": "FavoritesProvider()",
       "_callable": true,
       "_origin": "ast",
       "community": 9,
-      "community_name": "product/[id]/page.tsx",
+      "community_name": "FavoritesProvider.tsx",
       "file_type": "code",
-      "norm_label": "generatemetadata()",
-      "source_file": "src/app/[lang]/product/[id]/page.tsx",
-      "source_location": "L142"
+      "norm_label": "favoritesprovider()",
+      "source_file": "src/lib/favorites/FavoritesProvider.tsx",
+      "source_location": "L50"
     },
     {
-      "id": "src_app_lang_product_id_page_generatestaticparams",
-      "label": "generateStaticParams()",
+      "id": "src_lib_favorites_favoritesprovider_onlyexisting",
+      "label": "onlyExisting()",
       "_callable": true,
       "_origin": "ast",
       "community": 9,
-      "community_name": "product/[id]/page.tsx",
+      "community_name": "FavoritesProvider.tsx",
       "file_type": "code",
-      "norm_label": "generatestaticparams()",
-      "source_file": "src/app/[lang]/product/[id]/page.tsx",
-      "source_location": "L12"
+      "norm_label": "onlyexisting()",
+      "source_file": "src/lib/favorites/FavoritesProvider.tsx",
+      "source_location": "L24"
     },
     {
-      "id": "src_app_lang_product_id_page_productpage",
-      "label": "ProductPage()",
+      "id": "src_lib_favorites_favoritesprovider_readstorage",
+      "label": "readStorage()",
       "_callable": true,
       "_origin": "ast",
       "community": 9,
-      "community_name": "product/[id]/page.tsx",
+      "community_name": "FavoritesProvider.tsx",
       "file_type": "code",
-      "norm_label": "productpage()",
-      "source_file": "src/app/[lang]/product/[id]/page.tsx",
-      "source_location": "L19"
-    },
-    {
-      "id": "src_app_robots_robots",
-      "label": "robots()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 9,
-      "community_name": "product/[id]/page.tsx",
-      "file_type": "code",
-      "norm_label": "robots()",
-      "source_file": "src/app/robots.ts",
-      "source_location": "L75"
-    },
-    {
-      "id": "src_app_sitemap_sitemap",
-      "label": "sitemap()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 9,
-      "community_name": "product/[id]/page.tsx",
-      "file_type": "code",
-      "norm_label": "sitemap()",
-      "source_file": "src/app/sitemap.ts",
-      "source_location": "L12"
-    },
-    {
-      "id": "src_lib_seo_addressline",
-      "label": "addressLine()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 9,
-      "community_name": "product/[id]/page.tsx",
-      "file_type": "code",
-      "norm_label": "addressline()",
-      "source_file": "src/lib/seo.ts",
-      "source_location": "L94"
-    },
-    {
-      "id": "src_lib_seo_canonical",
-      "label": "canonical()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 9,
-      "community_name": "product/[id]/page.tsx",
-      "file_type": "code",
-      "norm_label": "canonical()",
-      "source_file": "src/lib/seo.ts",
-      "source_location": "L33"
+      "norm_label": "readstorage()",
+      "source_file": "src/lib/favorites/FavoritesProvider.tsx",
+      "source_location": "L38"
     },
     {
       "id": "src_app_api_orders_id_mock_pay_route_post",
@@ -10349,88 +10385,52 @@
       "source_location": "L21"
     },
     {
-      "id": "src_components_offlinecatalogsync_offlinecatalogsync",
-      "label": "OfflineCatalogSync()",
+      "id": "src_app_entry_layout_rootlayout",
+      "label": "RootLayout()",
       "_callable": true,
       "_origin": "ast",
       "community": 99,
-      "community_name": "catalog.ts",
+      "community_name": "(entry)/layout.tsx",
       "file_type": "code",
-      "norm_label": "offlinecatalogsync()",
-      "source_file": "src/components/OfflineCatalogSync.tsx",
-      "source_location": "L15"
+      "norm_label": "rootlayout()",
+      "source_file": "src/app/(entry)/layout.tsx",
+      "source_location": "L12"
     },
     {
-      "id": "src_lib_native_catalog_marktried",
-      "label": "markTried()",
+      "id": "src_app_global_not_found_globalnotfound",
+      "label": "GlobalNotFound()",
       "_callable": true,
       "_origin": "ast",
       "community": 99,
-      "community_name": "catalog.ts",
+      "community_name": "(entry)/layout.tsx",
       "file_type": "code",
-      "norm_label": "marktried()",
-      "source_file": "src/lib/native/catalog.ts",
-      "source_location": "L45"
+      "norm_label": "globalnotfound()",
+      "source_file": "src/app/global-not-found.tsx",
+      "source_location": "L5"
     },
     {
-      "id": "src_lib_native_catalog_offlinecatalogstate",
-      "label": "offlineCatalogState()",
+      "id": "src_app_lang_not_found_notfound",
+      "label": "NotFound()",
       "_callable": true,
       "_origin": "ast",
       "community": 99,
-      "community_name": "catalog.ts",
+      "community_name": "(entry)/layout.tsx",
       "file_type": "code",
-      "norm_label": "offlinecatalogstate()",
-      "source_file": "src/lib/native/catalog.ts",
-      "source_location": "L88"
+      "norm_label": "notfound()",
+      "source_file": "src/app/[lang]/not-found.tsx",
+      "source_location": "L3"
     },
     {
-      "id": "src_lib_native_catalog_plugin",
-      "label": "plugin()",
+      "id": "src_components_notfoundmessage_notfoundmessage",
+      "label": "NotFoundMessage()",
       "_callable": true,
       "_origin": "ast",
       "community": 99,
-      "community_name": "catalog.ts",
+      "community_name": "(entry)/layout.tsx",
       "file_type": "code",
-      "norm_label": "plugin()",
-      "source_file": "src/lib/native/catalog.ts",
-      "source_location": "L25"
-    },
-    {
-      "id": "src_lib_native_catalog_showofflinecatalog",
-      "label": "showOfflineCatalog()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 99,
-      "community_name": "catalog.ts",
-      "file_type": "code",
-      "norm_label": "showofflinecatalog()",
-      "source_file": "src/lib/native/catalog.ts",
-      "source_location": "L99"
-    },
-    {
-      "id": "src_lib_native_catalog_syncofflinecatalog",
-      "label": "syncOfflineCatalog()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 99,
-      "community_name": "catalog.ts",
-      "file_type": "code",
-      "norm_label": "syncofflinecatalog()",
-      "source_file": "src/lib/native/catalog.ts",
-      "source_location": "L59"
-    },
-    {
-      "id": "src_lib_native_catalog_triedrecently",
-      "label": "triedRecently()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 99,
-      "community_name": "catalog.ts",
-      "file_type": "code",
-      "norm_label": "triedrecently()",
-      "source_file": "src/lib/native/catalog.ts",
-      "source_location": "L36"
+      "norm_label": "notfoundmessage()",
+      "source_file": "src/components/NotFoundMessage.tsx",
+      "source_location": "L3"
     },
     {
       "id": "deploy_site_docker_compose_isolation",
@@ -11977,58 +11977,25 @@
       "source_location": "L1"
     },
     {
-      "id": "src_app_entry_layout",
-      "label": "(entry)/layout.tsx",
+      "id": "src_components_offlinecatalogsync",
+      "label": "OfflineCatalogSync.tsx",
       "_origin": "ast",
       "community": 129,
-      "community_name": "(entry)/layout.tsx",
+      "community_name": "catalog.ts",
       "file_type": "code",
-      "norm_label": "(entry)/layout.tsx",
-      "source_file": "src/app/(entry)/layout.tsx",
+      "norm_label": "offlinecatalogsync.tsx",
+      "source_file": "src/components/OfflineCatalogSync.tsx",
       "source_location": "L1"
     },
     {
-      "id": "src_app_entry_layout_metadata",
-      "label": "metadata",
+      "id": "src_lib_native_catalog",
+      "label": "catalog.ts",
       "_origin": "ast",
       "community": 129,
-      "community_name": "(entry)/layout.tsx",
+      "community_name": "catalog.ts",
       "file_type": "code",
-      "norm_label": "metadata",
-      "source_file": "src/app/(entry)/layout.tsx",
-      "source_location": "L5"
-    },
-    {
-      "id": "src_app_global_not_found",
-      "label": "global-not-found.tsx",
-      "_origin": "ast",
-      "community": 129,
-      "community_name": "(entry)/layout.tsx",
-      "file_type": "code",
-      "norm_label": "global-not-found.tsx",
-      "source_file": "src/app/global-not-found.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_app_lang_not_found",
-      "label": "not-found.tsx",
-      "_origin": "ast",
-      "community": 129,
-      "community_name": "(entry)/layout.tsx",
-      "file_type": "code",
-      "norm_label": "not-found.tsx",
-      "source_file": "src/app/[lang]/not-found.tsx",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_components_notfoundmessage",
-      "label": "NotFoundMessage.tsx",
-      "_origin": "ast",
-      "community": 129,
-      "community_name": "(entry)/layout.tsx",
-      "file_type": "code",
-      "norm_label": "notfoundmessage.tsx",
-      "source_file": "src/components/NotFoundMessage.tsx",
+      "norm_label": "catalog.ts",
+      "source_file": "src/lib/native/catalog.ts",
       "source_location": "L1"
     },
     {
@@ -16723,37 +16690,136 @@
       "source_location": "L18"
     },
     {
-      "id": "src_lib_favorites_favoritesprovider",
-      "label": "FavoritesProvider.tsx",
+      "id": "src_app_lang_product_id_page",
+      "label": "product/[id]/page.tsx",
       "_origin": "ast",
       "community": 45,
-      "community_name": "FavoritesProvider.tsx",
+      "community_name": "product/[id]/page.tsx",
       "file_type": "code",
-      "norm_label": "favoritesprovider.tsx",
-      "source_file": "src/lib/favorites/FavoritesProvider.tsx",
+      "norm_label": "product/[id]/page.tsx",
+      "source_file": "src/app/[lang]/product/[id]/page.tsx",
       "source_location": "L1"
     },
     {
-      "id": "src_lib_favorites_favoritesprovider_favoritescontext",
-      "label": "FavoritesContext",
+      "id": "src_app_robots",
+      "label": "robots.ts",
       "_origin": "ast",
       "community": 45,
-      "community_name": "FavoritesProvider.tsx",
+      "community_name": "product/[id]/page.tsx",
       "file_type": "code",
-      "norm_label": "favoritescontext",
-      "source_file": "src/lib/favorites/FavoritesProvider.tsx",
-      "source_location": "L36"
+      "norm_label": "robots.ts",
+      "source_file": "src/app/robots.ts",
+      "source_location": "L1"
     },
     {
-      "id": "tests_favorites_test",
-      "label": "favorites.test.ts",
+      "id": "src_app_robots_allow",
+      "label": "ALLOW",
       "_origin": "ast",
       "community": 45,
-      "community_name": "FavoritesProvider.tsx",
+      "community_name": "product/[id]/page.tsx",
       "file_type": "code",
-      "norm_label": "favorites.test.ts",
-      "source_file": "__tests__/favorites.test.ts",
+      "norm_label": "allow",
+      "source_file": "src/app/robots.ts",
+      "source_location": "L73"
+    },
+    {
+      "id": "src_app_robots_assistants",
+      "label": "ASSISTANTS",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "product/[id]/page.tsx",
+      "file_type": "code",
+      "norm_label": "assistants",
+      "source_file": "src/app/robots.ts",
+      "source_location": "L25"
+    },
+    {
+      "id": "src_app_robots_private",
+      "label": "PRIVATE",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "product/[id]/page.tsx",
+      "file_type": "code",
+      "norm_label": "private",
+      "source_file": "src/app/robots.ts",
+      "source_location": "L55"
+    },
+    {
+      "id": "src_app_robots_trainers",
+      "label": "TRAINERS",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "product/[id]/page.tsx",
+      "file_type": "code",
+      "norm_label": "trainers",
+      "source_file": "src/app/robots.ts",
+      "source_location": "L39"
+    },
+    {
+      "id": "src_app_sitemap",
+      "label": "sitemap.ts",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "product/[id]/page.tsx",
+      "file_type": "code",
+      "norm_label": "sitemap.ts",
+      "source_file": "src/app/sitemap.ts",
       "source_location": "L1"
+    },
+    {
+      "id": "src_lib_seo",
+      "label": "seo.ts",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "product/[id]/page.tsx",
+      "file_type": "code",
+      "norm_label": "seo.ts",
+      "source_file": "src/lib/seo.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_lib_seo_site_alt_names",
+      "label": "SITE_ALT_NAMES",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "product/[id]/page.tsx",
+      "file_type": "code",
+      "norm_label": "site_alt_names",
+      "source_file": "src/lib/seo.ts",
+      "source_location": "L22"
+    },
+    {
+      "id": "src_lib_seo_site_name",
+      "label": "SITE_NAME",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "product/[id]/page.tsx",
+      "file_type": "code",
+      "norm_label": "site_name",
+      "source_file": "src/lib/seo.ts",
+      "source_location": "L21"
+    },
+    {
+      "id": "src_lib_seo_site_url",
+      "label": "SITE_URL",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "product/[id]/page.tsx",
+      "file_type": "code",
+      "norm_label": "site_url",
+      "source_file": "src/lib/seo.ts",
+      "source_location": "L13"
+    },
+    {
+      "id": "src_lib_seo_siteauthor",
+      "label": "siteAuthor",
+      "_origin": "ast",
+      "community": 45,
+      "community_name": "product/[id]/page.tsx",
+      "file_type": "code",
+      "norm_label": "siteauthor",
+      "source_file": "src/lib/seo.ts",
+      "source_location": "L96"
     },
     {
       "id": "review_audit_20260915_audit_uz",
@@ -18689,7 +18755,7 @@
       "file_type": "code",
       "norm_label": "dictionaries",
       "source_file": "src/lib/i18n/dictionaries.ts",
-      "source_location": "L953"
+      "source_location": "L954"
     },
     {
       "id": "src_lib_i18n_dictionaries_ky",
@@ -18700,7 +18766,7 @@
       "file_type": "code",
       "norm_label": "ky",
       "source_file": "src/lib/i18n/dictionaries.ts",
-      "source_location": "L481"
+      "source_location": "L482"
     },
     {
       "id": "src_lib_i18n_dictionaries_ru",
@@ -19868,136 +19934,37 @@
       "source_location": "L30"
     },
     {
-      "id": "src_app_lang_product_id_page",
-      "label": "product/[id]/page.tsx",
+      "id": "src_lib_favorites_favoritesprovider",
+      "label": "FavoritesProvider.tsx",
       "_origin": "ast",
       "community": 9,
-      "community_name": "product/[id]/page.tsx",
+      "community_name": "FavoritesProvider.tsx",
       "file_type": "code",
-      "norm_label": "product/[id]/page.tsx",
-      "source_file": "src/app/[lang]/product/[id]/page.tsx",
+      "norm_label": "favoritesprovider.tsx",
+      "source_file": "src/lib/favorites/FavoritesProvider.tsx",
       "source_location": "L1"
     },
     {
-      "id": "src_app_robots",
-      "label": "robots.ts",
+      "id": "src_lib_favorites_favoritesprovider_favoritescontext",
+      "label": "FavoritesContext",
       "_origin": "ast",
       "community": 9,
-      "community_name": "product/[id]/page.tsx",
+      "community_name": "FavoritesProvider.tsx",
       "file_type": "code",
-      "norm_label": "robots.ts",
-      "source_file": "src/app/robots.ts",
+      "norm_label": "favoritescontext",
+      "source_file": "src/lib/favorites/FavoritesProvider.tsx",
+      "source_location": "L36"
+    },
+    {
+      "id": "tests_favorites_test",
+      "label": "favorites.test.ts",
+      "_origin": "ast",
+      "community": 9,
+      "community_name": "FavoritesProvider.tsx",
+      "file_type": "code",
+      "norm_label": "favorites.test.ts",
+      "source_file": "__tests__/favorites.test.ts",
       "source_location": "L1"
-    },
-    {
-      "id": "src_app_robots_allow",
-      "label": "ALLOW",
-      "_origin": "ast",
-      "community": 9,
-      "community_name": "product/[id]/page.tsx",
-      "file_type": "code",
-      "norm_label": "allow",
-      "source_file": "src/app/robots.ts",
-      "source_location": "L73"
-    },
-    {
-      "id": "src_app_robots_assistants",
-      "label": "ASSISTANTS",
-      "_origin": "ast",
-      "community": 9,
-      "community_name": "product/[id]/page.tsx",
-      "file_type": "code",
-      "norm_label": "assistants",
-      "source_file": "src/app/robots.ts",
-      "source_location": "L25"
-    },
-    {
-      "id": "src_app_robots_private",
-      "label": "PRIVATE",
-      "_origin": "ast",
-      "community": 9,
-      "community_name": "product/[id]/page.tsx",
-      "file_type": "code",
-      "norm_label": "private",
-      "source_file": "src/app/robots.ts",
-      "source_location": "L55"
-    },
-    {
-      "id": "src_app_robots_trainers",
-      "label": "TRAINERS",
-      "_origin": "ast",
-      "community": 9,
-      "community_name": "product/[id]/page.tsx",
-      "file_type": "code",
-      "norm_label": "trainers",
-      "source_file": "src/app/robots.ts",
-      "source_location": "L39"
-    },
-    {
-      "id": "src_app_sitemap",
-      "label": "sitemap.ts",
-      "_origin": "ast",
-      "community": 9,
-      "community_name": "product/[id]/page.tsx",
-      "file_type": "code",
-      "norm_label": "sitemap.ts",
-      "source_file": "src/app/sitemap.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_lib_seo",
-      "label": "seo.ts",
-      "_origin": "ast",
-      "community": 9,
-      "community_name": "product/[id]/page.tsx",
-      "file_type": "code",
-      "norm_label": "seo.ts",
-      "source_file": "src/lib/seo.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_lib_seo_site_alt_names",
-      "label": "SITE_ALT_NAMES",
-      "_origin": "ast",
-      "community": 9,
-      "community_name": "product/[id]/page.tsx",
-      "file_type": "code",
-      "norm_label": "site_alt_names",
-      "source_file": "src/lib/seo.ts",
-      "source_location": "L22"
-    },
-    {
-      "id": "src_lib_seo_site_name",
-      "label": "SITE_NAME",
-      "_origin": "ast",
-      "community": 9,
-      "community_name": "product/[id]/page.tsx",
-      "file_type": "code",
-      "norm_label": "site_name",
-      "source_file": "src/lib/seo.ts",
-      "source_location": "L21"
-    },
-    {
-      "id": "src_lib_seo_site_url",
-      "label": "SITE_URL",
-      "_origin": "ast",
-      "community": 9,
-      "community_name": "product/[id]/page.tsx",
-      "file_type": "code",
-      "norm_label": "site_url",
-      "source_file": "src/lib/seo.ts",
-      "source_location": "L13"
-    },
-    {
-      "id": "src_lib_seo_siteauthor",
-      "label": "siteAuthor",
-      "_origin": "ast",
-      "community": 9,
-      "community_name": "product/[id]/page.tsx",
-      "file_type": "code",
-      "norm_label": "siteauthor",
-      "source_file": "src/lib/seo.ts",
-      "source_location": "L96"
     },
     {
       "id": "src_app_api_orders_id_mock_pay_route",
@@ -20374,25 +20341,58 @@
       "source_location": "L1"
     },
     {
-      "id": "src_components_offlinecatalogsync",
-      "label": "OfflineCatalogSync.tsx",
+      "id": "src_app_entry_layout",
+      "label": "(entry)/layout.tsx",
       "_origin": "ast",
       "community": 99,
-      "community_name": "catalog.ts",
+      "community_name": "(entry)/layout.tsx",
       "file_type": "code",
-      "norm_label": "offlinecatalogsync.tsx",
-      "source_file": "src/components/OfflineCatalogSync.tsx",
+      "norm_label": "(entry)/layout.tsx",
+      "source_file": "src/app/(entry)/layout.tsx",
       "source_location": "L1"
     },
     {
-      "id": "src_lib_native_catalog",
-      "label": "catalog.ts",
+      "id": "src_app_entry_layout_metadata",
+      "label": "metadata",
       "_origin": "ast",
       "community": 99,
-      "community_name": "catalog.ts",
+      "community_name": "(entry)/layout.tsx",
       "file_type": "code",
-      "norm_label": "catalog.ts",
-      "source_file": "src/lib/native/catalog.ts",
+      "norm_label": "metadata",
+      "source_file": "src/app/(entry)/layout.tsx",
+      "source_location": "L5"
+    },
+    {
+      "id": "src_app_global_not_found",
+      "label": "global-not-found.tsx",
+      "_origin": "ast",
+      "community": 99,
+      "community_name": "(entry)/layout.tsx",
+      "file_type": "code",
+      "norm_label": "global-not-found.tsx",
+      "source_file": "src/app/global-not-found.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_app_lang_not_found",
+      "label": "not-found.tsx",
+      "_origin": "ast",
+      "community": 99,
+      "community_name": "(entry)/layout.tsx",
+      "file_type": "code",
+      "norm_label": "not-found.tsx",
+      "source_file": "src/app/[lang]/not-found.tsx",
+      "source_location": "L1"
+    },
+    {
+      "id": "src_components_notfoundmessage",
+      "label": "NotFoundMessage.tsx",
+      "_origin": "ast",
+      "community": 99,
+      "community_name": "(entry)/layout.tsx",
+      "file_type": "code",
+      "norm_label": "notfoundmessage.tsx",
+      "source_file": "src/components/NotFoundMessage.tsx",
       "source_location": "L1"
     },
     {
@@ -22994,30 +22994,6 @@
       "type": "external"
     },
     {
-      "id": "src_app_globals",
-      "label": "src_app_globals",
-      "_origin": "semantic",
-      "community": 129,
-      "community_name": "(entry)/layout.tsx",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "src_app_globals",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "src_app_light_lemon",
-      "label": "src_app_light_lemon",
-      "_origin": "semantic",
-      "community": 129,
-      "community_name": "(entry)/layout.tsx",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "src_app_light_lemon",
-      "source_file": "",
-      "type": "external"
-    },
-    {
       "id": "collections",
       "label": "collections",
       "_origin": "semantic",
@@ -23830,6 +23806,30 @@
       "external": true,
       "file_type": "concept",
       "norm_label": "src_components_assistant_chat",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "src_app_globals",
+      "label": "src_app_globals",
+      "_origin": "semantic",
+      "community": 99,
+      "community_name": "(entry)/layout.tsx",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "src_app_globals",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "src_app_light_lemon",
+      "label": "src_app_light_lemon",
+      "_origin": "semantic",
+      "community": 99,
+      "community_name": "(entry)/layout.tsx",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "src_app_light_lemon",
       "source_file": "",
       "type": "external"
     }
@@ -67220,7 +67220,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/i18n/dictionaries.ts",
-      "source_location": "L481",
+      "source_location": "L482",
       "weight": 1.0
     },
     {
@@ -67253,7 +67253,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/i18n/dictionaries.ts",
-      "source_location": "L953",
+      "source_location": "L954",
       "weight": 1.0
     },
     {
@@ -67264,7 +67264,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/i18n/dictionaries.ts",
-      "source_location": "L955",
+      "source_location": "L956",
       "weight": 1.0
     },
     {
@@ -74682,5 +74682,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "a92fbcdab3fa8614ff1ab3b819b917f9c51627b8"
+  "built_at_commit": "79c45e2b4ee188f5eaabfc0ec6e42896949af1b0"
 }
