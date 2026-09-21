@@ -12,6 +12,7 @@
   GET  /webhook/1c/shop/notes       ключ 1С          «Знания для чата» — текст владельца
   POST /webhook/1c/shop/notes       подпись 1С       сохранить этот текст
   GET  /webhook/site/notes          подпись сайта    тот же текст для чата на сайте
+  POST /webhook/site/lead           подпись сайта    «перезвоните мне» из чата → WhatsApp владельцу
   POST /webhook/site/visit          подпись сайта    отметка о посещении страницы
 
 Настройки лежат в таблице settings SBonus и действуют сразу, без перезапуска.
@@ -209,6 +210,46 @@ async def save_notes(request: Request, db: AsyncSession = Depends(get_db)):
 async def site_notes(request: Request, db: AsyncSession = Depends(get_db)):
     _verify_site_path(request)
     return {"ok": True, **await _notes(db)}
+
+
+# ── «Перезвоните мне» из чата ────────────────────────────────────────────────
+# Покупатель не купил, но оставил номер, или попросил живого человека. Такой
+# человек почти готов купить — терять его нельзя. Номер и пересказ разговора
+# уходят владельцу в WhatsApp, туда же, куда приходят оплаченные заказы.
+
+class SiteLead(BaseModel):
+    name: str = ""
+    phone: str
+    text: str = ""
+    channel: str = "site"
+
+
+@router_site_admin.post("/lead")
+async def site_lead(request: Request):
+    import re
+    from app.payments import payments_greenapi as wa  # type: ignore
+    from .shop_router import _admin_phone
+
+    payload = SiteLead.parse_raw(await _verify_site_body(request))
+    digits = re.sub(r"\D", "", payload.phone)
+    if not 9 <= len(digits) <= 12:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "телефон")
+    # Один номер — одна заявка в 10 минут: «перезвоните» два раза подряд не
+    # должно звонить владельцу два раза.
+    if not await redis_client.set(f"shop_lead:{digits}", "1", ex=600, nx=True):
+        return {"ok": True, "duplicate": True}
+    where = "Telegram-бот" if payload.channel == "telegram" else "чат на сайте"
+    try:
+        wa.send_text(_admin_phone(), (
+            f"📞 ПЕРЕЗВОНИТЬ — {where}\n━━━━━━━━━━━━━━━━━━━\n"
+            f"👤 {payload.name.strip()[:80] or 'имя не сказал'}\n📱 {payload.phone.strip()[:30]}\n\n"
+            f"{payload.text.strip()[:1200]}"
+        ))
+    except Exception as error:
+        logger.error(f"lead notify failed: {error}")
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, "WhatsApp недоступен")
+    logger.info(f"lead from {where}")
+    return {"ok": True}
 
 
 # ── Посещения сайта ──────────────────────────────────────────────────────────

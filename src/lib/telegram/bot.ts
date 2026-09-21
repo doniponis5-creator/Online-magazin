@@ -19,7 +19,8 @@ import { SITE_URL } from '@/lib/seo'
 import { defaultLang, isLang, type Lang } from '@/lib/i18n/config'
 import { detectLang, type TalkLang } from '@/lib/assistant/talk'
 import { searchProducts } from '@/lib/assistant/knowledge'
-import { catalogNow } from '@/lib/assistant/live'
+import { catalogNow, lookupIn } from '@/lib/assistant/live'
+import { CALL_INTENT, cancelLead, leadContext, leadStep, startLead } from '@/lib/assistant/leads'
 import { tooOften } from '@/lib/assistant/limits'
 import { AFFIRM, BUY_INTENT, OFFER, cancel, hasDraft, start, step } from './order'
 import { store } from '@/lib/store'
@@ -95,7 +96,16 @@ export async function handleUpdate(update: TelegramUpdate): Promise<void> {
   // Передумал посреди оформления — выходим из него, не доспрашивая.
   if (/^(отмена|стоп|bekor|токтот|жок|cancel)$/i.test(text)) {
     cancel(chatId)
+    cancelLead(chatId)
     await send(chatId, backToChat(talk))
+    return
+  }
+
+  // Ждём номер для «перезвоните».
+  const lead = await leadStep(chatId, text, talk)
+  if (lead) {
+    remember(chatId, text, lead)
+    await send(chatId, lead)
     return
   }
 
@@ -107,6 +117,17 @@ export async function handleUpdate(update: TelegramUpdate): Promise<void> {
     // объяснять, как класть товар в корзину.
     remember(chatId, text, ongoing)
     await send(chatId, ongoing)
+    return
+  }
+
+  // «Перезвоните», «дайте менеджера» — номер и пересказ разговора сотруднику.
+  if (!hasDraft(chatId) && CALL_INTENT.test(text)) {
+    const questions = [...(talks.get(chatId) ?? []).filter((t) => t.role === 'user').map((t) => t.text), text]
+    const find = lookupIn(await catalogNow())
+    const seen = (shown.get(chatId) ?? []).map((id) => find(id)?.nameRu).filter((x): x is string => Boolean(x))
+    const reply = await startLead(chatId, talk, leadContext(questions, seen), {}, 'telegram')
+    remember(chatId, text, reply)
+    await send(chatId, reply)
     return
   }
 

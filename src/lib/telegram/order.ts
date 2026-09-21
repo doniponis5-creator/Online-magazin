@@ -1,7 +1,8 @@
 import 'server-only'
 
 /**
- * Заказ прямо в Telegram — чтобы покупателю не приходилось никуда уходить.
+ * Заказ прямо в разговоре — в Telegram и в чате на сайте, чтобы покупателю не
+ * приходилось никуда уходить.
  *
  * Здесь нет языковой модели, и это главное. Когда речь идёт о деньгах, шаги
  * должны быть одни и те же каждый раз: имя → телефон → куда везти → ссылка на
@@ -23,8 +24,16 @@ import { store } from '@/lib/store'
 
 type Step = 'pick' | 'name' | 'phone' | 'where' | 'address'
 
+/** Чей разговор: номер чата Telegram или «web:<id вкладки>» для сайта. */
+export type ChatKey = number | string
+
+/** Что уже известно о покупателе: вошёл на сайт — имя и телефон не спрашиваем. */
+export type Prefill = { name?: string; phone?: string }
+
 type Draft = {
   step: Step
+  /** откуда заказ — пишется в комментарий, чтобы сотрудник знал */
+  source: string
   /** товары, из которых покупатель выбирает, когда их несколько */
   options: string[]
   productId?: string
@@ -33,16 +42,16 @@ type Draft = {
   city?: string
 }
 
-const drafts = store('drafts', () => new Map<number, Draft>())
+const drafts = store('drafts', () => new Map<ChatKey, Draft>())
 
 type Say = { ru: string; ky: string; uz: string }
 const pick = (say: Say, lang: TalkLang) => say[lang]
 
-export function hasDraft(chatId: number): boolean {
+export function hasDraft(chatId: ChatKey): boolean {
   return drafts.has(chatId)
 }
 
-export function cancel(chatId: number): void {
+export function cancel(chatId: ChatKey): void {
   drafts.delete(chatId)
 }
 
@@ -116,7 +125,13 @@ const FAILED: Say = {
 /**
  * Начать заказ. products — то, что бот показал в прошлом ответе.
  */
-export async function start(chatId: number, productIds: string[], lang: TalkLang): Promise<string> {
+export async function start(
+  chatId: ChatKey,
+  productIds: string[],
+  lang: TalkLang,
+  source = 'Заказ из Telegram-бота',
+  prefill: Prefill = {},
+): Promise<string> {
   const find = lookupIn(await catalogNow())
   const found = productIds.map(find).filter((p): p is Product => Boolean(p))
 
@@ -125,12 +140,18 @@ export async function start(chatId: number, productIds: string[], lang: TalkLang
     return pick(NO_PRODUCT, lang)
   }
 
-  if (found.length === 1) {
-    drafts.set(chatId, { step: 'name', options: [], productId: found[0].id })
-    return `${found[0].nameRu} — ${formatSom(found[0].price)}\n\n${pick(ASK_NAME, lang)}`
+  const known = {
+    name: prefill.name?.trim() || undefined,
+    phone: prefill.phone?.replace(/\D/g, '') || undefined,
   }
 
-  drafts.set(chatId, { step: 'pick', options: found.map((p) => p.id) })
+  if (found.length === 1) {
+    const draft: Draft = { step: 'name', source, options: [], productId: found[0].id, ...known }
+    drafts.set(chatId, draft)
+    return `${found[0].nameRu} — ${formatSom(found[0].price)}\n\n${nextQuestion(draft, lang)}`
+  }
+
+  drafts.set(chatId, { step: 'pick', source, options: found.map((p) => p.id), ...known })
   const list = found.map((p, i) => `${i + 1}. ${p.nameRu} — ${formatSom(p.price)}`).join('\n')
   return `${list}\n\n${pick(ASK_PICK, lang)}`
 }
@@ -139,7 +160,25 @@ export async function start(chatId: number, productIds: string[], lang: TalkLang
  * Продолжить начатый заказ. Возвращает, что ответить покупателю,
  * или null — значит, заказа в работе нет и отвечает обычный консультант.
  */
-export async function step(chatId: number, text: string, lang: TalkLang, siteLang: Lang): Promise<string | null> {
+/**
+ * Следующий вопрос. Что уже известно (вошёл на сайт — имя и телефон есть),
+ * не спрашиваем: переспрашивать вошедшего покупателя его же номер — первое,
+ * от чего люди бросают заказ.
+ */
+function nextQuestion(draft: Draft, lang: TalkLang): string {
+  if (!draft.name) {
+    draft.step = 'name'
+    return pick(ASK_NAME, lang)
+  }
+  if (!draft.phone) {
+    draft.step = 'phone'
+    return pick(ASK_PHONE, lang)
+  }
+  draft.step = 'where'
+  return pick(ASK_WHERE, lang)
+}
+
+export async function step(chatId: ChatKey, text: string, lang: TalkLang, siteLang: Lang): Promise<string | null> {
   const draft = drafts.get(chatId)
   if (!draft) return null
 
@@ -150,23 +189,20 @@ export async function step(chatId: number, text: string, lang: TalkLang, siteLan
     const id = draft.options[index]
     if (!id) return pick(ASK_PICK, lang)
     draft.productId = id
-    draft.step = 'name'
-    return pick(ASK_NAME, lang)
+    return nextQuestion(draft, lang)
   }
 
   if (draft.step === 'name') {
     if (value.length < 2) return pick(ASK_NAME, lang)
     draft.name = value.slice(0, 60)
-    draft.step = 'phone'
-    return pick(ASK_PHONE, lang)
+    return nextQuestion(draft, lang)
   }
 
   if (draft.step === 'phone') {
     const digits = value.replace(/\D/g, '')
     if (digits.length < 9 || digits.length > 12) return pick(BAD_PHONE, lang)
     draft.phone = digits
-    draft.step = 'where'
-    return pick(ASK_WHERE, lang)
+    return nextQuestion(draft, lang)
   }
 
   if (draft.step === 'where') {
@@ -185,7 +221,7 @@ export async function step(chatId: number, text: string, lang: TalkLang, siteLan
 }
 
 async function finish(
-  chatId: number,
+  chatId: ChatKey,
   draft: Draft,
   method: 'pickup' | 'delivery',
   lang: TalkLang,
@@ -207,7 +243,7 @@ async function finish(
     {
       customer: { name: draft.name ?? '', phone: draft.phone ?? '' },
       delivery: { method, city: draft.city ?? '', address },
-      comment: 'Заказ из Telegram-бота',
+      comment: draft.source,
       lines: [{ productId: product.id, variantId: variant?.id ?? '', qty: 1 }],
       lang: siteLang,
     },

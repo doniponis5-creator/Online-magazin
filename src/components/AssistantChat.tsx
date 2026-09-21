@@ -25,6 +25,7 @@ import { IconClose, IconInstagram, IconPhone, IconTelegram, IconWhatsApp } from 
 type Hit = {
   id: string
   name: string
+  price: number
   priceLabel: string
   inStock: boolean
   href: string
@@ -51,6 +52,9 @@ export function AssistantChat() {
   const people = useRef<HTMLDivElement>(null)
   const field = useRef<HTMLTextAreaElement>(null)
   const box = useRef<HTMLDivElement>(null)
+  // Ключ вкладки для оформления заказа по шагам. Живёт, пока открыта вкладка,
+  // никуда не сохраняется — как и сам разговор.
+  const sid = useRef('')
 
   const close = useCallback(() => setOpen(false), [])
 
@@ -122,13 +126,26 @@ export function AssistantChat() {
     return () => cancelAnimationFrame(id)
   }, [contactsOpen])
 
-  async function send() {
-    const question = input.trim()
+  /**
+   * Отправить вопрос. buy — «Заказать» у карточки: оформление начинается
+   * сразу с этим товаром, без вопроса «какой именно?».
+   */
+  async function send(say?: string, buy?: string) {
+    const question = (say ?? input).trim()
     if (!question || busy) return
+
+    if (!sid.current) {
+      sid.current =
+        typeof crypto !== 'undefined' && 'randomUUID' in crypto
+          ? crypto.randomUUID()
+          : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`
+    }
+    // Товары последнего ответа: на «беру» оформляем именно их.
+    const shown = [...messages].reverse().find((m) => m.role === 'assistant' && m.products?.length)?.products ?? []
 
     const history = [...messages, { role: 'user' as const, text: question }]
     setMessages(history)
-    setInput('')
+    if (say === undefined) setInput('')
     setBusy(true)
 
     try {
@@ -137,6 +154,9 @@ export function AssistantChat() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           lang,
+          sid: sid.current,
+          buy,
+          shown: shown.map((p) => p.id),
           messages: history.map((m) => ({ role: m.role, text: m.text })),
         }),
       })
@@ -198,16 +218,27 @@ export function AssistantChat() {
           <div className="assistant__feed" ref={feed}>
             {messages.map((msg, i) => (
               <div key={i} className={`assistant__msg assistant__msg--${msg.role}`}>
-                <div className="assistant__bubble">{msg.text}</div>
+                <div className="assistant__bubble">{withLinks(msg.text, a.payLink)}</div>
                 {msg.products && msg.products.length > 0 && (
                   <ul className="assistant__hits">
                     {msg.products.map((hit) => (
-                      <li key={hit.id}>
+                      <li key={hit.id} className="assistant__hit">
                         <a href={hit.href}>
                           <span className="assistant__hit-name">{hit.name}</span>
                           <span className="assistant__hit-price">{hit.priceLabel}</span>
                           {!hit.inStock && <span className="assistant__hit-out">{a.outOfStock}</span>}
                         </a>
+                        {/* Без цены заказать нельзя — сначала сотрудник назовёт цену */}
+                        {hit.inStock && hit.price > 0 && (
+                          <button
+                            type="button"
+                            className="assistant__buy"
+                            disabled={busy}
+                            onClick={() => void send(`${a.order}: ${hit.name}`, hit.id)}
+                          >
+                            {a.order}
+                          </button>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -334,6 +365,30 @@ function isTouch(): boolean {
 /** Та же граница, что в assistant-chat.css: уже — чат во весь экран. */
 function isPhone(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(max-width: 560px)').matches
+}
+
+/**
+ * Ссылка на оплату приходит текстом — делаем из неё кнопку. Другие адреса —
+ * обычными ссылками. Разметку из текста не берём: только адреса https.
+ */
+function withLinks(text: string, payLabel: string): React.ReactNode {
+  const parts = text.split(/(https:\/\/[^\s]+)/g)
+  if (parts.length === 1) return text
+  return parts.map((part, i) => {
+    if (!/^https:\/\//.test(part)) return part
+    const pay = /\/order\/|obank|pay|dengi/i.test(part)
+    return (
+      <a
+        key={i}
+        href={part}
+        className={pay ? 'assistant__paylink' : undefined}
+        target={pay ? undefined : '_blank'}
+        rel={pay ? undefined : 'noopener noreferrer'}
+      >
+        {pay ? payLabel : part}
+      </a>
+    )
+  })
 }
 
 function handoffText(messages: Msg[], intro: string, productsLead: string): string | undefined {

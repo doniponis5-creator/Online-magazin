@@ -63,7 +63,7 @@ export async function answer(
  * Короткое «qachan keladi?» по одному сообщению узнать трудно, а вместе с
  * прошлым вопросом — уже легко. Человек не меняет язык посреди разговора.
  */
-function talkLang(turns: ChatTurn[], lang: Lang) {
+export function talkLang(turns: ChatTurn[], lang: Lang) {
   const said = turns
     .filter((t) => t.role === 'user')
     .slice(-2)
