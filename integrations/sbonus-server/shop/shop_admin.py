@@ -89,6 +89,22 @@ SETTINGS: list[dict] = [
         "default": "20",
     },
     {
+        "key": "SITE_WA_BOT",
+        "title": "WhatsApp-консультант (робот отвечает, если сотрудник молчит)",
+        "hint": "Включено — на WhatsApp магазина отвечает робот, когда никто не ответил за указанное время.",
+        "type": "bool",
+        "default": "1",
+    },
+    {
+        "key": "SITE_WA_DELAY_MIN",
+        "title": "WhatsApp: сколько минут ждать сотрудника",
+        "hint": "Сотрудник не ответил за это время — отвечает робот. 0 — сразу.",
+        "type": "number",
+        "min": 0,
+        "max": 120,
+        "default": "5",
+    },
+    {
         "key": "SITE_GUEST_CHECKOUT",
         "title": "Разрешить заказ без входа",
         "hint": "Включено — покупатель заказывает, указав имя и телефон, и не ждёт код. "
@@ -259,7 +275,7 @@ async def site_lead(request: Request):
     # должно звонить владельцу два раза.
     if not await redis_client.set(f"shop_lead:{digits}", "1", ex=600, nx=True):
         return {"ok": True, "duplicate": True}
-    where = "Telegram-бот" if payload.channel == "telegram" else "чат на сайте"
+    where = {"telegram": "Telegram-бот", "whatsapp": "WhatsApp (ответил робот)"}.get(payload.channel, "чат на сайте")
     try:
         wa.send_text(_admin_phone(), (
             f"📞 ПЕРЕЗВОНИТЬ — {where}\n━━━━━━━━━━━━━━━━━━━\n"

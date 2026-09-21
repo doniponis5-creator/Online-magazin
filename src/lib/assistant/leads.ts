@@ -25,7 +25,7 @@ const pick = (say: Say, lang: TalkLang) => say[lang]
 export const CALL_INTENT =
   /(перезвон|позвоните мне|позвонить мне|свяжитесь со мной|свяжитесь|менеджер|оператор|живой человек|живым человеком|с человеком|консультант.{0,10}человек|чалып кой|мага чал|чалыңыз мага|менеджер менен|qo.?ng.?iroq qiling menga|menga qo.?ng.?iroq|menga tel|qo.?ng.?iroq qilib|odam bilan|operator|menejer|телефон қилинг|менга қўнғироқ)/i
 
-type Draft = { context: string; name?: string; channel: 'site' | 'telegram' }
+type Draft = { context: string; name?: string; channel: 'site' | 'telegram' | 'whatsapp' }
 const drafts = store('lead-drafts', () => new Map<ChatKey, Draft>())
 
 const ASK_PHONE: Say = {
@@ -69,7 +69,7 @@ export async function startLead(
   lang: TalkLang,
   context: string,
   known: { name?: string; phone?: string } = {},
-  channel: 'site' | 'telegram' = 'site',
+  channel: 'site' | 'telegram' | 'whatsapp' = 'site',
 ): Promise<string> {
   if (known.phone) {
     return (await sendLead({ name: known.name, phone: known.phone, context, channel })) ? pick(SENT, lang) : pick(FAILED, lang)

@@ -1,12 +1,5 @@
 import { isLang, defaultLang, type Lang } from '@/lib/i18n/config'
-import { answer, talkLang } from '@/lib/assistant/reply'
-import { AFFIRM, BUY_INTENT, OFFER, cancel, hasDraft, start, step } from '@/lib/telegram/order'
-import { CALL_INTENT, cancelLead, hasLead, leadContext, leadStep, startLead } from '@/lib/assistant/leads'
-import { lookupIn, salesCatalogNow } from '@/lib/assistant/live'
-import { toHit } from '@/lib/assistant/knowledge'
-import type { ChatTurn } from '@/lib/assistant/gemini'
-import type { CustomerBrief } from '@/lib/assistant/knowledge'
-import { getInstallment, getProfile } from '@/lib/customer/gateway'
+import { customerBrief, readTurns, respond } from '@/lib/assistant/respond'
 import { currentSession } from '@/app/api/customer/route-helpers'
 import { logQuestion } from '@/lib/assistant/log'
 
@@ -18,10 +11,6 @@ import { logQuestion } from '@/lib/assistant/log'
  * свой разговор.
  */
 export const dynamic = 'force-dynamic'
-
-/** Сколько сообщений разговора отдаём модели. Дальше платим за чужую историю. */
-const MAX_TURNS = 12
-const MAX_CHARS = 800
 
 /** Ограничение частоты: столько вопросов с одного адреса за окно. */
 const LIMIT = 20
@@ -65,20 +54,28 @@ export async function POST(request: Request) {
     return Response.json({ ok: false, error: 'empty' }, { status: 400 })
   }
 
-  const customer = await customerBrief()
+  // Покупатель — только из входного cookie: номер, присланный браузером или
+  // написанный в чате, ничего не открывает.
+  const session = await currentSession()
+  const customer = await customerBrief(session?.phone)
 
   // Оформление заказа и «перезвоните мне» идут по шагам, без модели: там
-  // деньги и телефон. Нужен ключ вкладки — его присылает браузер.
+  // деньги и телефон. Нужен ключ вкладки — его присылает браузер; без него —
+  // только консультант.
   const sid = typeof raw.sid === 'string' && /^[a-z0-9-]{8,40}$/i.test(raw.sid) ? raw.sid : ''
-  if (sid) {
-    const flow = await salesFlow(`web:${sid}`, turns, lang, customer, raw.buy, raw.shown)
-    if (flow) {
-      void logQuestion({ lang, q: turns[turns.length - 1]?.text ?? '', a: flow.text, found: flow.products.length > 0, source: 'flow' })
-      return Response.json({ ok: true, ...flow, source: 'flow' })
-    }
-  }
-
-  const reply = await answer(turns, lang, customer)
+  const reply = await respond(
+    {
+      key: sid ? `web:${sid}` : `web:none-${Date.now()}`,
+      orderSource: 'Заказ из чата на сайте',
+      leadChannel: 'site',
+      known: { name: customer?.name, phone: session?.phone },
+    },
+    turns,
+    lang,
+    customer,
+    sid ? raw.buy : undefined,
+    sid ? raw.shown : undefined,
+  )
 
   // Записываем вопрос в журнал владельца. Ждать запись не нужно — ответ уходит
   // покупателю сразу, а журнал дописывается следом.
@@ -90,125 +87,5 @@ export async function POST(request: Request) {
     source: reply.source,
   })
 
-  return Response.json({ ok: true, ...reply })
-}
-
-type FlowReply = { text: string; products: ReturnType<typeof toHit>[] }
-
-/**
- * Продавец доводит до покупки: «Заказать» у карточки, «беру», «да» на
- * «оформим?» — и заказ оформляется прямо в чате; «перезвоните» — номер
- * уходит сотруднику. null — это обычный вопрос, отвечает консультант.
- */
-async function salesFlow(
-  key: string,
-  turns: ChatTurn[],
-  lang: Lang,
-  customer: CustomerBrief | null,
-  buy: unknown,
-  shownRaw: unknown,
-): Promise<FlowReply | null> {
-  const text = turns[turns.length - 1]?.text ?? ''
-  const talk = talkLang(turns, lang)
-  const session = await currentSession()
-  const known = { name: customer?.name, phone: session?.phone }
-  const only = (reply: string): FlowReply => ({ text: reply, products: [] })
-
-  // Передумал посреди шагов — выходим, не доспрашивая.
-  if (/^(отмена|стоп|bekor|токтот|жок|cancel|не надо)$/i.test(text.trim()) && (hasDraft(key) || hasLead(key))) {
-    cancel(key)
-    cancelLead(key)
-    return only(
-      talk === 'ky' ? 'Макул, токтоттук. Дагы эмне керек?' : talk === 'uz' ? "Mayli, to'xtatdik. Yana nima kerak?" : 'Хорошо, отменил. Чем ещё помочь?',
-    )
-  }
-
-  const lead = await leadStep(key, text, talk)
-  if (lead) return only(lead)
-
-  const ongoing = await step(key, text, talk, lang)
-  if (ongoing) return only(ongoing)
-
-  const shown = Array.isArray(shownRaw) ? shownRaw.filter((x): x is string => typeof x === 'string').slice(0, 3) : []
-  const products = await salesCatalogNow()
-  const find = lookupIn(products)
-  const shownNames = shown.map((id) => find(id)?.nameRu).filter((x): x is string => Boolean(x))
-
-  if (typeof buy === 'string' && find(buy)) {
-    cancelLead(key)
-    return only(await start(key, [buy], talk, 'Заказ из чата на сайте', known))
-  }
-
-  if (CALL_INTENT.test(text)) {
-    cancel(key)
-    const questions = turns.filter((t) => t.role === 'user').map((t) => t.text)
-    return only(await startLead(key, talk, leadContext(questions, shownNames), known, 'site'))
-  }
-
-  // «беру», «куда платить» — или «да» сразу после того, как консультант предложил оформить.
-  const lastAnswer = [...turns].reverse().find((t) => t.role === 'assistant')?.text ?? ''
-  if (shown.length > 0 && (BUY_INTENT.test(text) || (AFFIRM.test(text) && OFFER.test(lastAnswer)))) {
-    return only(await start(key, shown, talk, 'Заказ из чата на сайте', known))
-  }
-  return null
-}
-
-/**
- * Данные вошедшего покупателя — имя, бонусы, его заказы.
- *
- * Берём их по телефону из входного печенья (cookie), а не из того, что
- * прислал браузер: иначе любой мог бы спросить чужие заказы, подставив чужой
- * номер. Не вошёл или сервер SBonus молчит — консультант работает без них.
- */
-async function customerBrief(): Promise<CustomerBrief | null> {
-  const session = await currentSession()
-  if (!session) return null
-  try {
-    const [profile, installment] = await Promise.all([
-      getProfile(session.phone, 0, true),
-      // Рассрочка — отдельный запрос: сервер без неё не должен ломать чат.
-      getInstallment(session.phone).catch((error) => {
-        console.error('[assistant] рассрочка:', error instanceof Error ? error.message : error)
-        return null
-      }),
-    ])
-    if (!profile) return null
-    return {
-      installment: installment && {
-        debt: installment.debt,
-        overdue: installment.overdue,
-        nextDate: installment.nextDate,
-        nextAmount: installment.nextAmount,
-        monthsLeft: installment.monthsLeft,
-        asOf: installment.asOf ? installment.asOf.slice(0, 10) : null,
-      },
-      name: profile.name,
-      balance: profile.balance,
-      maxSpendPct: profile.maxSpendPct,
-      orders: (profile.orders ?? []).map((o) => ({
-        id: o.orderId,
-        status: o.status,
-        total: o.total,
-        createdAt: o.createdAt,
-      })),
-    }
-  } catch (error) {
-    console.error('[assistant] профиль покупателя:', error instanceof Error ? error.message : error)
-    return null
-  }
-}
-
-function readTurns(value: unknown): ChatTurn[] {
-  if (!Array.isArray(value)) return []
-  const turns: ChatTurn[] = []
-  for (const item of value.slice(-MAX_TURNS)) {
-    if (!item || typeof item !== 'object') continue
-    const row = item as { role?: unknown; text?: unknown }
-    const text = typeof row.text === 'string' ? row.text.trim().slice(0, MAX_CHARS) : ''
-    if (!text) continue
-    turns.push({ role: row.role === 'assistant' ? 'assistant' : 'user', text })
-  }
-  // Модель ждёт разговор, который начинается с вопроса покупателя.
-  while (turns.length > 0 && turns[0].role !== 'user') turns.shift()
-  return turns
+  return Response.json({ ok: true, text: reply.text, products: reply.products, source: reply.source })
 }

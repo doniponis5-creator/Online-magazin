@@ -330,7 +330,9 @@ export function localAnswer(
   const text = question.trim()
   const talk = detectLang(text, siteLang)
 
-  if (greeting.test(text)) return { text: helloText(talk, customer), productIds: [] }
+  // Только приветствие — здороваемся. «Салам, пылесос есть?» — это уже вопрос,
+  // отвечаем на него, а не одним «Ассаламу алейкум».
+  if (greeting.test(text) && text.split(/\s+/).length <= 3) return { text: helloText(talk, customer), productIds: [] }
   if (installment.test(text)) return { text: installmentText(talk, customer), productIds: [] }
   if (orderAsk.test(text)) return { text: ordersText(talk, customer), productIds: [] }
   if (bonusAsk.test(text)) return { text: bonusText(talk, customer), productIds: [] }

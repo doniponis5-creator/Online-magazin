@@ -25,7 +25,7 @@ SRC="$(cd "$(dirname "$0")" && pwd)"
 API=sbonus_api
 DB=sbonus_db
 TS=$(date +%Y%m%d_%H%M%S)
-FILES="__init__.py shop_models.py shop_router.py shop_catalog.py shop_telegram.py shop_customers.py shop_admin.py shop_push.py shop_whatsapp.py shop_installments_calc.py shop_installments.py shop_stock.py"
+FILES="__init__.py shop_models.py shop_router.py shop_catalog.py shop_telegram.py shop_customers.py shop_admin.py shop_push.py shop_whatsapp.py shop_installments_calc.py shop_installments.py shop_stock.py shop_wa_bot.py"
 MIGRATIONS="001_shop_orders_migration.sql 002_shop_catalog_migration.sql 003_shop_bonus_migration.sql 004_shop_stats_migration.sql 005_shop_push_migration.sql 006_shop_installments_migration.sql 007_shop_notes_migration.sql 008_shop_chat_extra_migration.sql"
 
 echo "=== Деплой: интернет-магазин (заказы + каталог + вход и бонусы) ==="
@@ -64,6 +64,8 @@ import app.shop_precheck.shop_admin as ad
 import app.shop_precheck.shop_whatsapp as wa_btn
 import app.shop_precheck.shop_installments as inst
 import app.shop_precheck.shop_stock as stock
+import app.shop_precheck.shop_wa_bot as wabot
+assert callable(wabot.poll_once)
 assert stock.shortages([{'oneCId': 'a', 'qty': 1, 'name': 'A'}], [{'id': 'a', 'stock': 1, 'availability': 'По остатку'}], {'a': 1}) == ['A']
 assert inst.parse_phones('0558311031/0558882507') == ['+996558311031', '+996558882507']
 assert len(ad.SETTINGS) >= 3
@@ -217,6 +219,28 @@ print("✓ main.py: рассрочка для чата сайта подключ
 PYEOF3
 [ $? -eq 0 ] || { cp "$APP/main.py.bak_$TS" "$APP/main.py"; echo "↩️ main.py восстановлен"; exit 1; }
 
+python3 - "$APP/main.py" <<'PYEOF4'
+import sys
+p = sys.argv[1]
+s = open(p, encoding="utf-8").read()
+if "app.shop.shop_wa_bot" in s:
+    print("• main.py уже подключает WhatsApp-продавца — пропуск")
+    raise SystemExit(0)
+anchor = 'app.include_router(router_site_installments, prefix="/api/v1")'
+idx = s.find(anchor)
+if idx < 0:
+    raise SystemExit("❌ В main.py нет рассрочки — не к чему подключить WhatsApp-продавца")
+end = s.find(chr(10), idx)
+end = len(s) if end < 0 else end
+block = """
+from app.shop.shop_wa_bot import router_wa_bot
+app.include_router(router_wa_bot, prefix="/api/v1")  # /api/v1/webhook/greenapi/incoming"""
+s = s[:end] + block + s[end:]
+open(p, "w", encoding="utf-8").write(s)
+print("✓ main.py: WhatsApp-продавец подключён")
+PYEOF4
+[ $? -eq 0 ] || { cp "$APP/main.py.bak_$TS" "$APP/main.py"; echo "↩️ main.py восстановлен"; exit 1; }
+
 # ── 4. Синтаксис ─────────────────────────────────────────────────────────────
 for f in $FILES; do
     python3 -c "import ast; ast.parse(open('$DST/$f', encoding='utf-8').read())" \
@@ -303,6 +327,15 @@ if ! echo "$HEALTH" | grep -q '"healthy"'; then
     exit 1
 fi
 echo "✓ api healthy"
+
+# ── 7.2 WhatsApp-продавец: опрос журнала Green API раз в минуту ─────────────
+# Не webhook: очередь уведомлений Green API читает WhatsApp-чат в 1С, его не трогаем.
+# flock — чтобы долгий ответ не наложился на следующий запуск.
+cat > /etc/cron.d/sbonus-wa-bot <<'CRONEOF'
+* * * * * root flock -n /var/lock/sbonus-wa-bot.lock docker exec sbonus_api python3 -c "from app.shop.shop_wa_bot import run_cron; run_cron()" >> /var/log/sbonus-wa-bot.log 2>&1
+CRONEOF
+chmod 644 /etc/cron.d/sbonus-wa-bot
+echo "✓ cron: WhatsApp-продавец раз в минуту (/etc/cron.d/sbonus-wa-bot, журнал /var/log/sbonus-wa-bot.log)"
 
 # ── 8. Проверка ──────────────────────────────────────────────────────────────
 echo "=== ПРОВЕРКА ==="

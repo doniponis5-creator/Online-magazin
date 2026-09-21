@@ -740,6 +740,8 @@ def panel_form():
     f.attribute("ЗаказБезВхода", t_bool(), title="Разрешить заказ без входа", saved_data=True)
     f.attribute("НаценкаКрупная", t_num(3, 0), title="Наценка для чата: крупная техника, %", saved_data=True)
     f.attribute("НаценкаМелкая", t_num(3, 0), title="мелкая техника, %", saved_data=True)
+    f.attribute("РоботВотсАп", t_bool(), title="WhatsApp-консультант", saved_data=True)
+    f.attribute("РоботЖдатьМинут", t_num(3, 0), title="ждать сотрудника, мин", saved_data=True)
     f.attribute("ЗнанияДляЧата", t_str(0), title="Знания для чата", saved_data=True)
     f.attribute("ЗнанияЗагружены", t_bool())
     f.attribute("Состояние", t_str(0), title="Состояние")
@@ -765,6 +767,9 @@ def panel_form():
                 # Себестоимость + этот % — цена в чате для товаров со склада, которых нет на сайте. 0 — не продавать.
                 f.input("НаценкаКрупная", "НаценкаКрупная", width=6, hint="0 — выкл."),
                 f.input("НаценкаМелкая", "НаценкаМелкая", width=6, hint="0 — выкл."),
+                # Робот на WhatsApp магазина: отвечает, если сотрудник молчит столько минут.
+                f.check("РоботВотсАп", "РоботВотсАп", title_location="Right"),
+                f.input("РоботЖдатьМинут", "РоботЖдатьМинут", width=4),
                 f.button("КнопкаСохранить", "СохранитьНастройки"),
             ], direction="AlwaysHorizontal"),
         ], title="Настройки сайта (действуют сразу)"),
