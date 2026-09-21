@@ -169,31 +169,31 @@
   },
   "integrations/sbonus-server/shop/001_shop_orders_migration.sql": {
     "mtime": 1789643427.3177383,
-    "seen": 1789980025.5631545,
+    "seen": 1789983110.9191093,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/002_shop_catalog_migration.sql": {
     "mtime": 1789647531.5057318,
-    "seen": 1789980025.5631557,
+    "seen": 1789983110.9191098,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/003_shop_bonus_migration.sql": {
     "mtime": 1789651724.3017156,
-    "seen": 1789980025.5631564,
+    "seen": 1789983110.9191113,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/004_shop_stats_migration.sql": {
     "mtime": 1789734501.4004698,
-    "seen": 1789980025.5631576,
+    "seen": 1789983110.919112,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/005_shop_push_migration.sql": {
     "mtime": 1789792750.2917469,
-    "seen": 1789980025.5631585,
+    "seen": 1789983110.9191127,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -216,9 +216,9 @@
     "semantic_hash": "de546f09e6a5fe14fc84b6f27abd37b5"
   },
   "integrations/sbonus-server/shop/shop_admin.py": {
-    "mtime": 1789978908.5402806,
-    "seen": 1789979049.8652606,
-    "ast_hash": "086ab19f68b1c4d0b0f48cb73d93bd3f",
+    "mtime": 1789982539.5563624,
+    "seen": 1789983110.919119,
+    "ast_hash": "11fb1d7c607cc85b911cb7307e2c9b9d",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/shop_catalog.py": {
@@ -894,9 +894,9 @@
     "semantic_hash": "ab578875f27d0e418c615aed2d950578"
   },
   "src/lib/i18n/dictionaries.ts": {
-    "mtime": 1789978143.744804,
-    "seen": 1789978455.1100874,
-    "ast_hash": "d0a8062788c7487833acc7b5aac2c789",
+    "mtime": 1789982678.3110945,
+    "seen": 1789983110.9193575,
+    "ast_hash": "f25fa26ebbce50577c2aa68a949cb172",
     "semantic_hash": ""
   },
   "src/lib/links.ts": {
@@ -3966,15 +3966,15 @@
     "semantic_hash": ""
   },
   "src/app/api/assistant/route.ts": {
-    "mtime": 1789964426.7733004,
-    "seen": 1789964793.2720373,
-    "ast_hash": "e7a8a487a9c2a16830aba084fad6bf82",
+    "mtime": 1789982595.0827932,
+    "seen": 1789983110.919295,
+    "ast_hash": "f87db4f7315c2432f8bf4da0e75476e2",
     "semantic_hash": ""
   },
   "src/components/AssistantChat.tsx": {
-    "mtime": 1789969136.2497282,
-    "seen": 1789969290.9547768,
-    "ast_hash": "1bef0a6f07160b9d2aaa351bd1e36d73",
+    "mtime": 1789982787.2127802,
+    "seen": 1789983110.9193106,
+    "ast_hash": "3f272cafafda167c59297fdaa181c40c",
     "semantic_hash": ""
   },
   "src/lib/assistant/gemini.ts": {
@@ -3996,15 +3996,15 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/prompt.ts": {
-    "mtime": 1789969964.3957279,
-    "seen": 1789970092.3186095,
-    "ast_hash": "96b62ce102e91d04ec40852d10832d28",
+    "mtime": 1789983003.760602,
+    "seen": 1789983110.9193487,
+    "ast_hash": "08dd3b1228fac4cfce4197af5eb4061a",
     "semantic_hash": ""
   },
   "src/lib/assistant/reply.ts": {
-    "mtime": 1789965800.2104795,
-    "seen": 1789966160.9130654,
-    "ast_hash": "618d13072ca972be66559a4dc4a7f7ec",
+    "mtime": 1789982595.0827932,
+    "seen": 1789983110.9193492,
+    "ast_hash": "61f104e6ad82d8c8455e697fac42394d",
     "semantic_hash": ""
   },
   "src/lib/assistant/talk.ts": {
@@ -4062,15 +4062,15 @@
     "semantic_hash": ""
   },
   "src/lib/telegram/bot.ts": {
-    "mtime": 1789962850.5732741,
-    "seen": 1789964793.2721343,
-    "ast_hash": "0f68cee975204c6bac7a49985ba77361",
+    "mtime": 1789982619.5599988,
+    "seen": 1789983110.9193652,
+    "ast_hash": "d1edc8a47034ff879323fdeb892c0e88",
     "semantic_hash": ""
   },
   "src/lib/telegram/order.ts": {
-    "mtime": 1789962850.5732741,
-    "seen": 1789964793.2721355,
-    "ast_hash": "c2f1a970ac08a3c78834e5ce02d348a4",
+    "mtime": 1789982516.250637,
+    "seen": 1789983110.919366,
+    "ast_hash": "3abf114cc29d4a548ef2657314481448",
     "semantic_hash": ""
   },
   "review/appstore-screenshots/02-catalog.png": {
@@ -4398,9 +4398,9 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/content.json": {
-    "mtime": 1789967010.424673,
-    "seen": 1789968246.7122428,
-    "ast_hash": "dbf374e087d8dfaa0f3bee128170baf7",
+    "mtime": 1789981384.2031353,
+    "seen": 1789983110.9191756,
+    "ast_hash": "adbf63064bf5052a0635cd33110697a0",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/current-1c.json": {
@@ -4416,9 +4416,9 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos.json": {
-    "mtime": 1789967037.962129,
-    "seen": 1789968246.7122462,
-    "ast_hash": "b899e90089be953f16a508a7623a42bc",
+    "mtime": 1789981384.2031353,
+    "seen": 1789983110.9191782,
+    "ast_hash": "780eb0db8ee9b293acd8b1391413c928",
     "semantic_hash": ""
   },
   "review/vacuum-enrichment/backups/prod-20260920-140957/backup.json": {
@@ -5076,9 +5076,9 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/STATUS.md": {
-    "mtime": 1789967071.5781567,
-    "seen": 1789968246.7367868,
-    "ast_hash": "6383721e2e033aa2f25f5450bb154aa7",
+    "mtime": 1789981472.5065286,
+    "seen": 1789983110.9194112,
+    "ast_hash": "d743fa9c0c79029f1514316b7b1179ff",
     "semantic_hash": ""
   },
   "review/vacuum-enrichment/STATUS.md": {
@@ -8725,7 +8725,7 @@
   },
   "integrations/sbonus-server/shop/006_shop_installments_migration.sql": {
     "mtime": 1789964335.2680974,
-    "seen": 1789980025.5631595,
+    "seen": 1789983110.9191139,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -8923,7 +8923,7 @@
   },
   "integrations/sbonus-server/shop/007_shop_notes_migration.sql": {
     "mtime": 1789965631.4248226,
-    "seen": 1789980025.5631607,
+    "seen": 1789983110.9191155,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -9393,6 +9393,204 @@
     "mtime": 1789979657.1541266,
     "seen": 1789980025.563977,
     "ast_hash": "e5641e6710bb5e30a8fbc081956e1bee",
+    "semantic_hash": ""
+  },
+  "__tests__/sales-flow.test.ts": {
+    "mtime": 1789982706.4392827,
+    "seen": 1789983110.9190867,
+    "ast_hash": "2f3906624b8cf8b9ffd8668ee4b27d48",
+    "semantic_hash": ""
+  },
+  "q.json": {
+    "mtime": 1789983088.3883293,
+    "seen": 1789983110.9191387,
+    "ast_hash": "5e41f734a020ff8115baff25a60214c6",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/_final_sheet.py": {
+    "mtime": 1789981217.028882,
+    "seen": 1789983110.9191573,
+    "ast_hash": "acfa2f7d49ac3e6aa4abeb6ef577bd4c",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/_make_cards.py": {
+    "mtime": 1789981379.510002,
+    "seen": 1789983110.9191582,
+    "ast_hash": "d4603ba2659000c32915c89b3e2cd479",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/_om.py": {
+    "mtime": 1789981174.2552466,
+    "seen": 1789983110.9191594,
+    "ast_hash": "eb16c95d5209b55519fc3e7453b6ac6e",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/backups/prod-20260921-150349/backup.json": {
+    "mtime": 1789981429.4025216,
+    "seen": 1789983110.9191718,
+    "ast_hash": "f89b0dc157bc7f3a5d3adeb35ca9e48d",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/found-pages.json": {
+    "mtime": 1789980991.6012523,
+    "seen": 1789983110.9191792,
+    "ast_hash": "84a93676dfeb9639cea7a352c8d132fc",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/systema-sweep.json": {
+    "mtime": 1789980944.1829257,
+    "seen": 1789983110.91918,
+    "ast_hash": "c22a63ffe74736237f085bb037809e25",
+    "semantic_hash": ""
+  },
+  "scripts/1c-export/import_small_appliance_batch2.py": {
+    "mtime": 1789981397.0768428,
+    "seen": 1789983110.919244,
+    "ast_hash": "0df97ee9c55b03359f97a541fbc30697",
+    "semantic_hash": ""
+  },
+  "src/lib/assistant/leads.ts": {
+    "mtime": 1789982562.1680377,
+    "seen": 1789983110.9193437,
+    "ast_hash": "6191f224bde5027bf7f63e9d9ec9e8e7",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/_final-batch-sheet.jpg": {
+    "mtime": 1789981223.888338,
+    "seen": 1789983110.9198508,
+    "ast_hash": "aecbbd87f6c57c8c4dac479e7ab46718",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/_found-sheet.jpg": {
+    "mtime": 1789981010.200016,
+    "seen": 1789983110.9198515,
+    "ast_hash": "3d992cf42d36896b60024faf989f9fff",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/_loaded-2.jpg": {
+    "mtime": 1789981445.399526,
+    "seen": 1789983110.919852,
+    "ast_hash": "51283ec67ccaacf3a8ce0d8a70e6f10c",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/final-cand/sk-234-1.jpg": {
+    "mtime": 1789981004.919695,
+    "seen": 1789983110.9199617,
+    "ast_hash": "bc99228e6fa55271c50bfd24934c5802",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/final-cand/th-211-1.jpg": {
+    "mtime": 1789981004.854159,
+    "seen": 1789983110.9199626,
+    "ast_hash": "f4a498690acfe5ea79463049a6e4c185",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/final-cand/th-213-1.jpg": {
+    "mtime": 1789981005.5569205,
+    "seen": 1789983110.9199631,
+    "ast_hash": "ef09b5c3150d386002deb406be5c2a76",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/final-cand/th-213-6.jpg": {
+    "mtime": 1789981007.8101008,
+    "seen": 1789983110.9199638,
+    "ast_hash": "45a845a8d4f7a4da939af75d2ab1774e",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/final-cand/th-213-7.jpg": {
+    "mtime": 1789981008.3850422,
+    "seen": 1789983110.9199643,
+    "ast_hash": "6d85bad1e6dca8ec56c765e84a33a273",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/final-cand/th-217-1.jpg": {
+    "mtime": 1789981008.810783,
+    "seen": 1789983110.919965,
+    "ast_hash": "7e67554b0e15ddd5cb948728f2c9377c",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/final-cand/th-217-2.jpg": {
+    "mtime": 1789981009.306916,
+    "seen": 1789983110.9199657,
+    "ast_hash": "9f941917831e6b6fd30d44029b744ca2",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/final-cand/th-217-3.jpg": {
+    "mtime": 1789981009.6665652,
+    "seen": 1789983110.9199665,
+    "ast_hash": "a554c64d76673dd56ae9da1aa07ac3f5",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/final-cand/th-217-4.jpg": {
+    "mtime": 1789981010.1229281,
+    "seen": 1789983110.919967,
+    "ast_hash": "4fb9a50bbcd616ec55abebce20631a6f",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/final-cand/th-217-full-180314.jpg": {
+    "mtime": 1789981223.3927195,
+    "seen": 1789983110.9199674,
+    "ast_hash": "a554c64d76673dd56ae9da1aa07ac3f5",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/final-cand/th-217-full-180333.jpg": {
+    "mtime": 1789981222.6191673,
+    "seen": 1789983110.919968,
+    "ast_hash": "43457cead1cddf1380381aff4a08a4a0",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/final-cand/th-217-full-180352.jpg": {
+    "mtime": 1789981223.8070922,
+    "seen": 1789983110.9199686,
+    "ast_hash": "4fb9a50bbcd616ec55abebce20631a6f",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/final-cand/th-217-full-180408.jpg": {
+    "mtime": 1789981223.0441737,
+    "seen": 1789983110.9199693,
+    "ast_hash": "d4427359a574f43f6575a5b162ff04ee",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/final-cand/th-6019-1.jpg": {
+    "mtime": 1789981004.7440386,
+    "seen": 1789983110.9199698,
+    "ast_hash": "f4a498690acfe5ea79463049a6e4c185",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/final-cand/th-7920-1.jpg": {
+    "mtime": 1789981005.0023394,
+    "seen": 1789983110.9199703,
+    "ast_hash": "f4a498690acfe5ea79463049a6e4c185",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/final-cand/th-7920-om1-1.jpg": {
+    "mtime": 1789981185.8079114,
+    "seen": 1789983110.9199708,
+    "ast_hash": "d2e0ebc84861bf4658b87eaed53bb7cb",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/final-cand/th-7920-om1-2.jpg": {
+    "mtime": 1789981188.563926,
+    "seen": 1789983110.9199712,
+    "ast_hash": "fc9125804596614b6cb2352b2988ff36",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/final-cand/th-7920-om2-1.jpg": {
+    "mtime": 1789981189.3682907,
+    "seen": 1789983110.919972,
+    "ast_hash": "a9daef70d044189cc6f709cca4ce7f17",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/final-photos/sem-sk-234.jpg": {
+    "mtime": 1789981384.1954763,
+    "seen": 1789983110.9199774,
+    "ast_hash": "ca33972d5547e54f890799675b614ee7",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/final-photos/texnomir-th-213.jpg": {
+    "mtime": 1789981384.1742017,
+    "seen": 1789983110.9199882,
+    "ast_hash": "a019f88e17b4c4a733951e06a9fa49d9",
     "semantic_hash": ""
   }
 }
