@@ -202,3 +202,13 @@ describe('ответ модели в JSON', () => {
     expect(fromJson('Просто текст')).toBe('Просто текст')
   })
 })
+
+describe('служебные id в ответе', () => {
+  it('вырезаются из текста покупателю', async () => {
+    const { withoutIds } = await import('@/lib/assistant/answer-json')
+    expect(withoutIds('Salom! 7 kishilik oilaga [cb-00001494] LG 9 kg tavsiya qilaman')).toBe('Salom! 7 kishilik oilaga LG 9 kg tavsiya qilaman')
+    expect(withoutIds('Есть id=cb-00002255 LG за 37 400 сом')).toBe('Есть LG за 37 400 сом')
+    expect(withoutIds('Модель [00-00000006] за 7 700 сом')).toBe('Модель за 7 700 сом')
+    expect(withoutIds('Загрузка 8 кг [точно]')).toBe('Загрузка 8 кг [точно]')
+  })
+})

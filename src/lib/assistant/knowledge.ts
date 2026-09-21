@@ -11,6 +11,7 @@ import { address, phones, since, yearsOnMarket } from '@/data/contacts'
 import { categories, categoryName } from '@/data/categories'
 import { products, type Product } from '@/data/products'
 import { formatSom } from '@/lib/format'
+import { budgetFrom } from './budget'
 import type { Lang } from '@/lib/i18n/config'
 
 /** Товар в ответе консультанта: только то, что нужно показать карточкой. */
@@ -191,7 +192,20 @@ const DESC_CHARS = 400
  *      Этого хватает, чтобы ответить «а есть ли у вас…» про что угодно.
  */
 export function catalogForQuestion(list: Product[], question: string, lang: Lang): string {
-  const focus = searchProducts(question, lang, FOCUS_LIMIT, list)
+  const found = searchProducts(question, lang, FOCUS_LIMIT, list)
+
+  // Бюджет назван — дороже не показываем вовсе: слабая модель иначе первой
+  // предлагала то, что не по карману. Ничего не влезло — показываем три
+  // самых дешёвых из найденного, и модель честно говорит про разницу.
+  const budget = budgetFrom(question)
+  const fits = (p: Product) => p.price > 0 && (budget === null || p.price <= budget)
+  let focus = found.filter(fits)
+  let budgetNote = budget ? `Покупатель назвал бюджет: до ${budget} сом. Ниже — только то, что в него укладывается.\n` : ''
+  if (budget && focus.length === 0 && found.length > 0) {
+    focus = [...found].filter((p) => p.price > 0).sort((a, b) => a.price - b.price).slice(0, 3)
+    budgetNote = `Покупатель назвал бюджет: до ${budget} сом. В него ничего не укладывается — ниже самые дешёвые варианты; честно скажи, на сколько они дороже.\n`
+  }
+  if (!budget) focus = found
   const focusIds = new Set(focus.map((p) => p.id))
 
   const detailed = focus.map((product) => {
@@ -208,12 +222,14 @@ export function catalogForQuestion(list: Product[], question: string, lang: Lang
   })
 
   const rest = list.filter((p) => !focusIds.has(p.id))
-  const brief = rest.slice(0, BRIEF_LIMIT).map(productLine)
+  const brief = rest
+    .slice(0, BRIEF_LIMIT)
+    .map((p) => productLine(p) + (budget && p.price > budget ? ' | дороже бюджета — не предлагай' : ''))
   const cut = rest.length > BRIEF_LIMIT ? `\n(показаны ${BRIEF_LIMIT} из ${rest.length})` : ''
 
   return [
     detailed.length > 0
-      ? `ПО ВОПРОСУ ПОКУПАТЕЛЯ — подробно, отсюда сравнивай и советуй:\n${detailed.join('\n')}`
+      ? `ПО ВОПРОСУ ПОКУПАТЕЛЯ — подробно, отсюда сравнивай и советуй:\n${budgetNote}${detailed.join('\n')}`
       : 'ПО ВОПРОСУ ПОКУПАТЕЛЯ: по словам вопроса ничего не нашлось — ищи в общем списке ниже.',
     `ВЕСЬ КАТАЛОГ — коротко (характеристики у этих товаров есть, но здесь не показаны; спросят — скажи, что уточнишь, и дай телефон):\n${brief.join('\n')}${cut}`,
   ].join('\n\n')
@@ -225,7 +241,9 @@ function productLine(product: Product): string {
   const stock = isInStock(product) ? 'есть' : 'нет в наличии'
   return [
     `id=${product.id}`,
-    `${product.brand} ${product.nameRu}`,
+    // Бренд уже в названии из 1С — не дублируем: «FLAGMAN Стиральная машина FLAGMAN» модель
+    // так и повторяла покупателю.
+    product.nameRu.toLowerCase().includes(product.brand.toLowerCase()) ? product.nameRu : `${product.brand} ${product.nameRu}`,
     categoryName(product.categoryId, 'ru'),
     `${price}${old}`,
     stock,
