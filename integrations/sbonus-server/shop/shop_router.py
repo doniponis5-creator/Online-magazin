@@ -528,6 +528,45 @@ async def mark_done(order_id: str, request: Request, db: AsyncSession = Depends(
     return {"ok": True}
 
 
+@router_1c_shop.get("/awaiting-shipment")
+async def awaiting_shipment(_=Depends(_verify_1c_key), db: AsyncSession = Depends(get_db)):
+    """
+    Оплаченные заказы, которые уже в 1С, но ещё не отгружены (товара не было).
+
+    1С проверяет каждый: товар пришёл — делает реализацию; реализацию сделали
+    руками — сообщает об этом; заказ закрыли (вернули деньги) — отменяет.
+    Список берётся отсюда, а не из комментариев в 1С: иначе старые заказы
+    заслоняли новые, и новые не отгружались никогда.
+    """
+    res = await db.execute(
+        select(ShopOrder)
+        .where(and_(ShopOrder.paid == True, ShopOrder.status == "in_1c", ShopOrder.realized != True))  # noqa: E712
+        .order_by(ShopOrder.paid_at.asc())
+        .limit(100)
+    )
+    orders = res.scalars().all()
+    return {"ok": True, "count": len(orders), "orders": [
+        {"order_id": o.order_id, "customer_phone": o.customer_phone} for o in orders
+    ]}
+
+
+@router_1c_shop.post("/{order_id}/mark-cancelled")
+async def mark_cancelled(order_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    """Заказ закрыли в 1С без отгрузки — деньги вернули или заказ отменили."""
+    body = await _verify_1c_body(request)
+    payload = MarkFailed.parse_raw(body)
+    order = await _get_order(db, order_id)
+    if order.status == "cancelled":
+        return {"ok": True, "already": True}
+    if order.realized:
+        raise HTTPException(status.HTTP_409_CONFLICT, "заказ уже отгружен — отменять нечего")
+    order.status = "cancelled"
+    order.note = (payload.note or "Закрыт в 1С без отгрузки")[:1000]
+    await db.commit()
+    await _log(db, order, "cancelled_in_1c", {"note": order.note})
+    return {"ok": True}
+
+
 @router_1c_shop.post("/{order_id}/mark-failed")
 async def mark_failed(order_id: str, request: Request, db: AsyncSession = Depends(get_db)):
     body = await _verify_1c_body(request)
