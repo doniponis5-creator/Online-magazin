@@ -8,7 +8,7 @@ import 'server-only'
  * получит поиск по каталогу и телефон магазина.
  */
 
-import { catalogNow, lookupIn } from './live'
+import { lookupIn, salesCatalogNow } from './live'
 import { ownerNotes } from './notes'
 import type { Product } from '@/data/products'
 import type { Lang } from '@/lib/i18n/config'
@@ -33,7 +33,7 @@ export async function answer(
 ): Promise<AssistantReply> {
   const lastQuestion = [...turns].reverse().find((t) => t.role === 'user')?.text ?? ''
   // Каталог берём сегодняшний: из 1С, если сервер настроен, иначе вшитый.
-  const [list, notes] = await Promise.all([catalogNow(), ownerNotes()])
+  const [list, notes] = await Promise.all([salesCatalogNow(), ownerNotes()])
   // Товары ищем по трём последним вопросам: «а какой из них тише?» без
   // прошлого вопроса про стиральные машины ничего не найдёт.
   const recent = turns

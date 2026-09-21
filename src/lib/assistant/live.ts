@@ -71,6 +71,52 @@ export async function catalogNow(): Promise<Product[]> {
   return cache.list
 }
 
+// ── Товары только для чата ────────────────────────────────────────────────────
+// На складе есть, на сайте нет. Сайт их не показывает; чат видит и может
+// продать — см. shop_catalog.py (chat-extra) и 1С ОтправитьТоварыДляЧата.
+
+const EXTRA_PATH = '/api/v1/webhook/site/chat-extra'
+type ExtraCache = { at: number; list: Product[] }
+const extraCache = store<ExtraCache>('chat-extra', () => ({ at: 0, list: [] }))
+
+async function chatExtraNow(): Promise<Product[]> {
+  if (!liveCatalogConfigured()) return []
+  if (Date.now() - extraCache.at < EVERY_MS) return extraCache.list
+  extraCache.at = Date.now()
+  const url = (process.env.SHOP_API_URL ?? '').replace(/\/+$/, '')
+  const secret = process.env.SHOP_API_SECRET ?? ''
+  try {
+    const signature = createHmac('sha256', secret).update(EXTRA_PATH, 'utf8').digest('hex')
+    const response = await fetch(`${url}${EXTRA_PATH}`, {
+      headers: { 'X-Signature': signature },
+      signal: AbortSignal.timeout(20_000),
+    })
+    // 404 — сервер ещё без этой части: просто нет таких товаров.
+    if (!response.ok) return extraCache.list
+    const data = (await response.json()) as OneCCatalog
+    extraCache.list = productsFromOneC({ items: Array.isArray(data.items) ? data.items : [] }).map((p) => ({
+      ...p,
+      chatOnly: true,
+    }))
+  } catch (error) {
+    console.error('[assistant] товары для чата:', error instanceof Error ? error.message : error)
+  }
+  return extraCache.list
+}
+
+/**
+ * Каталог для продажи в чате: сайт + товары только для чата.
+ * Товар сайта без цены заменяется своей версией «для чата» — с ценой из 1С.
+ */
+export async function salesCatalogNow(): Promise<Product[]> {
+  const [site, extra] = await Promise.all([catalogNow(), chatExtraNow()])
+  if (extra.length === 0) return site
+  const extraById = new Map(extra.map((p) => [p.id, p]))
+  const merged = site.map((p) => (p.price <= 0 && extraById.has(p.id) ? extraById.get(p.id)! : p))
+  const onSite = new Set(site.map((p) => p.id))
+  return [...merged, ...extra.filter((p) => !onSite.has(p.id))]
+}
+
 /** Поиск товара по адресу страницы — в том каталоге, который сейчас в работе. */
 export function lookupIn(list: Product[]): (id: string) => Product | undefined {
   const byId = new Map(list.map((p) => [p.id, p]))

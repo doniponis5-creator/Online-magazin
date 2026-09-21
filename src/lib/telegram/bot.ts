@@ -19,7 +19,7 @@ import { SITE_URL } from '@/lib/seo'
 import { defaultLang, isLang, type Lang } from '@/lib/i18n/config'
 import { detectLang, type TalkLang } from '@/lib/assistant/talk'
 import { searchProducts } from '@/lib/assistant/knowledge'
-import { catalogNow, lookupIn } from '@/lib/assistant/live'
+import { lookupIn, salesCatalogNow as catalogNow } from '@/lib/assistant/live'
 import { CALL_INTENT, cancelLead, leadContext, leadStep, startLead } from '@/lib/assistant/leads'
 import { tooOften } from '@/lib/assistant/limits'
 import { AFFIRM, BUY_INTENT, OFFER, cancel, hasDraft, start, step } from './order'
@@ -184,7 +184,8 @@ export async function handleUpdate(update: TelegramUpdate): Promise<void> {
  */
 function withProducts(text: string, products: { name: string; priceLabel: string; href: string }[]): string {
   if (products.length === 0) return text
-  const lines = products.map((p) => `• ${p.name} — ${p.priceLabel}\n${SITE_URL}${p.href}`)
+  // Товар «только для чата» страницы не имеет — без ссылки, «беру» оформит его здесь.
+  const lines = products.map((p) => `• ${p.name} — ${p.priceLabel}${p.href ? `\n${SITE_URL}${p.href}` : ''}`)
   return [text, '', ...lines].join('\n')
 }
 
@@ -194,7 +195,7 @@ function isPhoto(url: string | undefined): url is string {
 }
 
 function photoCaption(p: { name: string; priceLabel: string; href: string }): string {
-  return `${p.name} — ${p.priceLabel}\n${SITE_URL}${p.href}`.slice(0, 1000)
+  return `${p.name} — ${p.priceLabel}${p.href ? `\n${SITE_URL}${p.href}` : ''}`.slice(0, 1000)
 }
 
 /**

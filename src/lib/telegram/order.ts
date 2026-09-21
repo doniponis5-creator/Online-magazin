@@ -13,7 +13,7 @@ import 'server-only'
  */
 
 import type { Product } from '@/data/products'
-import { catalogNow, lookupIn } from '@/lib/assistant/live'
+import { lookupIn, salesCatalogNow as catalogNow } from '@/lib/assistant/live'
 import { createOrder } from '@/lib/orders/gateway'
 import { validateOrder } from '@/lib/orders/order'
 import { SITE_URL } from '@/lib/seo'

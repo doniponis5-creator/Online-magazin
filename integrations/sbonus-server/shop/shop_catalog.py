@@ -9,6 +9,9 @@
   GET  /api/v1/webhook/site/catalog                (HMAC пути)  каталог + hash (сайт обновляется при смене hash)
 Публично:
   GET  /api/v1/shop/photos/{key}.jpg               фото товара (кэш на год: ключ меняется вместе с фото)
+Только для чата (на сайте не показываются):
+  POST /api/v1/webhook/1c/shop/chat-extra          (HMAC тела)  товары со склада, которых нет на сайте, с ценой из 1С
+  GET  /api/v1/webhook/site/chat-extra             (HMAC пути)  те же товары для чата
 
 Себестоимость сюда не передаётся — 1С отправляет только то, что можно показать покупателям.
 """
@@ -145,6 +148,58 @@ async def site_catalog(request: Request, db: AsyncSession = Depends(get_db)):
         "exportedAt": updated_at.isoformat() if isinstance(updated_at, datetime) else None,
         "items": items,
     }
+
+
+# ── Товары только для чата ───────────────────────────────────────────────────
+# Лежат на складе, но на сайте их нет: нет фото, описания или цены сайта. Чат
+# может их предложить и продать. Цену считает 1С (цена сайта или себестоимость
+# + наценка владельца) — себестоимость сюда не приходит.
+
+async def chat_extra_items(db: AsyncSession) -> list[dict]:
+    row = (await db.execute(text("SELECT data FROM shop_chat_extra WHERE id = 1"))).first()
+    if not row:
+        return []
+    data = row[0]
+    if isinstance(data, str):
+        data = json.loads(data)
+    return list((data or {}).get("items") or [])
+
+
+@router_1c_catalog.post("/chat-extra")
+async def upload_chat_extra(request: Request, db: AsyncSession = Depends(get_db)):
+    body = await _verify_1c_body(request)
+    try:
+        data = json.loads(body.decode("utf-8"))
+        items = data["items"]
+        assert isinstance(items, list) and len(items) <= MAX_ITEMS
+    except Exception:
+        raise HTTPException(422, "ожидается {\"items\": [...]}")
+    # На всякий случай: себестоимость и всё похожее сервер не хранит, даже если пришло.
+    clean = [{k: v for k, v in item.items() if "cost" not in k.lower() and "себест" not in k.lower()}
+             for item in items if isinstance(item, dict)]
+    payload = json.dumps({"items": clean}, ensure_ascii=False)
+    await db.execute(
+        text(
+            "INSERT INTO shop_chat_extra (id, data, items_count, updated_at) VALUES (1, CAST(:d AS JSONB), :n, NOW()) "
+            "ON CONFLICT (id) DO UPDATE SET data = CAST(:d AS JSONB), items_count = :n, updated_at = NOW()"
+        ),
+        {"d": payload, "n": len(clean)},
+    )
+    await db.commit()
+    return {"ok": True, "items": len(clean)}
+
+
+@router_site_catalog.get("/chat-extra")
+async def site_chat_extra(request: Request, db: AsyncSession = Depends(get_db)):
+    _verify_site_path(request)
+    items = await chat_extra_items(db)
+    # Бронь та же, что у каталога: оплаченную последнюю штуку второй раз не продаём.
+    from .shop_router import taken_now
+    from .shop_stock import free_stock
+    free = free_stock(items, await taken_now(db))
+    if free:
+        items = [{**i, "stock": free[str(i.get("id"))]} if str(i.get("id")) in free else i for i in items]
+    return {"items": items}
 
 
 @router_public_photos.get("/{key}.jpg")

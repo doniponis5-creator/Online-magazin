@@ -2,7 +2,7 @@ import { isLang, defaultLang, type Lang } from '@/lib/i18n/config'
 import { answer, talkLang } from '@/lib/assistant/reply'
 import { AFFIRM, BUY_INTENT, OFFER, cancel, hasDraft, start, step } from '@/lib/telegram/order'
 import { CALL_INTENT, cancelLead, hasLead, leadContext, leadStep, startLead } from '@/lib/assistant/leads'
-import { catalogNow, lookupIn } from '@/lib/assistant/live'
+import { lookupIn, salesCatalogNow } from '@/lib/assistant/live'
 import { toHit } from '@/lib/assistant/knowledge'
 import type { ChatTurn } from '@/lib/assistant/gemini'
 import type { CustomerBrief } from '@/lib/assistant/knowledge'
@@ -130,7 +130,7 @@ async function salesFlow(
   if (ongoing) return only(ongoing)
 
   const shown = Array.isArray(shownRaw) ? shownRaw.filter((x): x is string => typeof x === 'string').slice(0, 3) : []
-  const products = await catalogNow()
+  const products = await salesCatalogNow()
   const find = lookupIn(products)
   const shownNames = shown.map((id) => find(id)?.nameRu).filter((x): x is string => Boolean(x))
 

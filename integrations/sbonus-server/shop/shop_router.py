@@ -242,7 +242,10 @@ async def site_create_order(request: Request, db: AsyncSession = Depends(get_db)
     # Последнюю штуку не продаём второй раз: остаток 1С минус то, что уже занято
     # оплаченными и ждущими оплаты заказами, о которых 1С ещё не знает.
     from .shop_stock import shortages
-    short = shortages([l.dict() for l in payload.lines], await catalog_items(db), await taken_now(db))
+    from .shop_catalog import chat_extra_items
+    # Товары «только для чата» — первыми: у одинакового id каталог сайта перекроет их.
+    stock_items = await chat_extra_items(db) + await catalog_items(db)
+    short = shortages([l.dict() for l in payload.lines], stock_items, await taken_now(db))
     if short:
         raise HTTPException(status.HTTP_409_CONFLICT, {"code": "out-of-stock", "items": short})
 

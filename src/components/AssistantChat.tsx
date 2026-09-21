@@ -223,11 +223,20 @@ export function AssistantChat() {
                   <ul className="assistant__hits">
                     {msg.products.map((hit) => (
                       <li key={hit.id} className="assistant__hit">
-                        <a href={hit.href}>
-                          <span className="assistant__hit-name">{hit.name}</span>
-                          <span className="assistant__hit-price">{hit.priceLabel}</span>
-                          {!hit.inStock && <span className="assistant__hit-out">{a.outOfStock}</span>}
-                        </a>
+                        {hit.href ? (
+                          <a href={hit.href}>
+                            <span className="assistant__hit-name">{hit.name}</span>
+                            <span className="assistant__hit-price">{hit.priceLabel}</span>
+                            {!hit.inStock && <span className="assistant__hit-out">{a.outOfStock}</span>}
+                          </a>
+                        ) : (
+                          // Товар есть в магазине, но страницы на сайте у него нет — только в чате.
+                          <div className="assistant__hit-card">
+                            <span className="assistant__hit-name">{hit.name}</span>
+                            <span className="assistant__hit-price">{hit.priceLabel}</span>
+                            <span className="assistant__hit-note">{a.inStoreOnly}</span>
+                          </div>
+                        )}
                         {/* Без цены заказать нельзя — сначала сотрудник назовёт цену */}
                         {hit.inStock && hit.price > 0 && (
                           <button

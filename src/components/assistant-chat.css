@@ -265,6 +265,24 @@
   transition: border-color 140ms ease-out, background-color 140ms ease-out;
 }
 
+.assistant__hit-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  color: var(--color-ink);
+  font-size: 13px;
+}
+
+.assistant__hit-note {
+  flex-basis: 100%;
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
 .assistant__hits a:hover {
   border-color: var(--color-border-strong);
   background: var(--color-surface);

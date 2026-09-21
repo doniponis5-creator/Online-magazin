@@ -212,3 +212,14 @@ describe('служебные id в ответе', () => {
     expect(withoutIds('Загрузка 8 кг [точно]')).toBe('Загрузка 8 кг [точно]')
   })
 })
+
+describe('товар только для чата', () => {
+  it('модель знает, что он есть в магазине, но не на сайте; у карточки нет ссылки', async () => {
+    const { toHit } = await import('@/lib/assistant/knowledge')
+    const item = { ...products[0], id: 'chat-only-1', chatOnly: true, price: 27600 }
+    const text = catalogForQuestion([item], item.nameRu, 'ru')
+    expect(text).toMatch(/на сайте ещё не выложен/)
+    expect(text).toContain('27600 сом')
+    expect(toHit(item, 'ru').href).toBe('')
+  })
+})

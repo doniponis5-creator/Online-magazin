@@ -74,7 +74,8 @@ export function toHit(product: Product, lang: Lang): ProductHit {
     price: product.price,
     priceLabel: product.price > 0 ? formatSom(product.price) : lang === 'ky' ? 'Баасы суроо боюнча' : 'Цена по запросу',
     inStock: isInStock(product),
-    href: `/${lang}/product/${product.id}`,
+    // У товара «только для чата» страницы нет — карточка без ссылки.
+    href: product.chatOnly ? '' : `/${lang}/product/${product.id}`,
     image: product.image,
   }
 }
@@ -250,6 +251,7 @@ function productLine(product: Product): string {
     // Гарантию и акцию пишем и в короткой строке: про них спрашивают чаще всего.
     product.warrantyMonths > 0 ? `гарантия ${product.warrantyMonths} мес.` : '',
     ...promoMarks(product),
+    product.chatOnly ? 'есть в магазине, на сайте ещё не выложен (нет фото) — продаёшь здесь, в чате' : '',
   ]
     .filter(Boolean)
     .join(' | ')
