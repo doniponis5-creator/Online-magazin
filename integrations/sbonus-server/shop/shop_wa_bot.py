@@ -171,6 +171,7 @@ async def poll_once() -> dict:
         if await _auto_reply(digits, _journal_text(message)):
             continue
         await redis_client.set(f"wa:human:{digits}", "1", ex=HUMAN_QUIET)
+        await redis_client.delete(f"wa:botactive:{digits}")
         await redis_client.hdel("wa:pending", digits)
         text = _journal_text(message).strip()
         if text:
@@ -203,7 +204,10 @@ async def poll_once() -> dict:
         if await redis_client.get(f"wa:human:{digits}"):
             await redis_client.hdel("wa:pending", digits)
             continue
-        if now - float(pending.get("ts") or now) < delay * 60:
+        # Робот уже ведёт этот разговор (сотрудник не вмешался) — следующий ответ
+        # сразу, на ближайшем запуске: ждать 5 минут на каждое «а доставка есть?» — долго.
+        wait = 0 if await redis_client.get(f"wa:botactive:{digits}") else delay * 60
+        if now - float(pending.get("ts") or now) < wait:
             continue
         await redis_client.hdel("wa:pending", digits)
         if await _answer(digits, str(pending.get("name") or "")):
@@ -233,6 +237,7 @@ async def _answer(digits: str, name: str) -> bool:
         await _send_photos(digits, reply.get("products") or [])
         await _remember(digits, "assistant", text)
         await redis_client.set(count_key, str(count + 1), ex=2 * 24 * 3600)
+        await redis_client.set(f"wa:botactive:{digits}", "1", ex=30 * 60)
         ids = [p.get("id") for p in reply.get("products") or [] if p.get("id")]
         if ids:
             await redis_client.set(f"wa:shown:{digits}", json.dumps(ids), ex=TURNS_TTL)
