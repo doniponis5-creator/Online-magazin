@@ -1092,9 +1092,9 @@
     "semantic_hash": ""
   },
   "docs/TODO_NEXT.md": {
-    "mtime": 1789970086.8395016,
-    "seen": 1789970092.3186743,
-    "ast_hash": "534ca1336921ea3e257b69bb934f5d24",
+    "mtime": 1789996141.5297244,
+    "seen": 1789996146.1719272,
+    "ast_hash": "59fad2efa589aa0316385c457a3b1558",
     "semantic_hash": ""
   },
   "infra/SMARKET_KG_UZ.md": {
@@ -9993,6 +9993,12 @@
     "mtime": 1789993175.5396652,
     "seen": 1789994321.9889486,
     "ast_hash": "ac48ecac1ab938c3da52ffbdcfea8686",
+    "semantic_hash": ""
+  },
+  "docs/PC_2026-09-21.md": {
+    "mtime": 1789996136.121198,
+    "seen": 1789996146.1719246,
+    "ast_hash": "4dae7dad8070dcabf32106b39c474f6d",
     "semantic_hash": ""
   }
 }
