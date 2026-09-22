@@ -10,7 +10,7 @@
 | CHANGHONG | File:Changhong.svg | Public domain |
 | ASKO | File:ASKO logo.png | Public domain |
 | BOSCH | File:Bosch-logo.svg | Public domain |
-| BEKO | File:Beko Germany Logo 2023.svg | Public domain |
+| BEKO | BEKO.render.png — прислал владелец 22.09.2026 (голубой, с полосой); BEKO.svg — старый, File:Beko Germany Logo 2023.svg | Public domain |
 | HITACHI | File:Hitachi logo LIGHT HIRES.svg | Public domain |
 | ARISTON | File:Ariston logo.svg | Public domain |
 | GORENJE | File:Gorenje logo 2024.svg | Public domain |

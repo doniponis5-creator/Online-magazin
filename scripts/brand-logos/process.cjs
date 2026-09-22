@@ -21,6 +21,8 @@ const manifest = {}
 const HEIGHT = 120 // высота холста; сам логотип вписывается с полями
 const MAX_WIDTH = 420
 const INK = [38, 50, 68] // --color-ink
+// node process.cjs ARTEL HITACHI — переделать только эти; остальные остаются в списке как были
+const ONLY = process.argv.slice(2).map((a) => a.toUpperCase())
 
 // Имя файла (без расширения, в верхнем регистре) → бренд и настройки
 const BRANDS = {
@@ -48,11 +50,13 @@ const BRANDS = {
   ASKO: { slug: 'asko' },
   BOSCH: { slug: 'bosch' },
   BEKO: { slug: 'beko' },
-  HITACHI: { slug: 'hitachi' },
+  // Фирменный красный, только надпись: слоган «Inspire the Next» и полосу под ним отрезаем.
+  HITACHI: { slug: 'hitachi', ink: [222, 0, 49], topBand: true },
   ARISTON: { slug: 'ariston' },
   GORENJE: { slug: 'gorenje' },
   SHIVAKI: { slug: 'shivaki' },
-  ARTEL: { slug: 'artel', mode: 'light' },
+  // Белая надпись с зелёной шильды, перекрашенная в фирменный зелёный Artel.
+  ARTEL: { slug: 'artel', mode: 'light', ink: [106, 180, 58] },
   // HANTAJI намеренно нет: исходник — фотография вывески, после обрезки
   // остаётся мутный серый прямоугольник. Текстовое начертание выглядит лучше.
 }
@@ -102,7 +106,7 @@ async function removeBackground(input, brand) {
       const lum = 0.299 * r + 0.587 * g + 0.114 * b
       const t = Math.min(1, Math.max(0, (lum - 140) / 80))
       a = Math.round(a * t)
-      ;[r, g, b] = INK
+      ;[r, g, b] = brand.ink ?? INK
     } else if (brand.mode === 'chroma') {
       // фон — серый металл с переливом: оставляем только цветные пиксели логотипа
       const chroma = Math.max(r, g, b) - Math.min(r, g, b)
@@ -115,10 +119,30 @@ async function removeBackground(input, brand) {
       a = Math.round(a * t)
     }
     if (darkBackground) [r, g, b] = INK
+    if (brand.ink) [r, g, b] = brand.ink
     out[p * 4] = r; out[p * 4 + 1] = g; out[p * 4 + 2] = b; out[p * 4 + 3] = a
   }
 
   return sharp(out, { raw: { width, height, channels: 4 } }).trim({ threshold: 10 }).png().toBuffer()
+}
+
+/**
+ * Оставить только верхнюю полосу рисунка — до первого пустого промежутка.
+ * Нужна логотипам со слоганом под надписью (Hitachi «Inspire the Next»).
+ */
+async function firstBand(png) {
+  const { data, info } = await sharp(png).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+  const { width, height, channels } = info
+  const filled = (y) => {
+    let n = 0
+    for (let x = 0; x < width; x++) if (data[(y * width + x) * channels + 3] > 40) n++
+    return n > width * 0.004
+  }
+  let top = 0
+  while (top < height && !filled(top)) top++
+  let bottom = top
+  while (bottom < height && filled(bottom)) bottom++
+  return sharp(png).extract({ left: 0, top, width, height: bottom - top }).trim({ threshold: 10 }).png().toBuffer()
 }
 
 async function processFile(file) {
@@ -127,11 +151,13 @@ async function processFile(file) {
   if (!/\.(png|jpe?g|webp|svg)$/i.test(file)) return
   if (/\.svg$/i.test(file) && fs.existsSync(file.replace(/\.svg$/i, '.render.png'))) return
   const brand = BRANDS[key]
+  if (ONLY.length && !ONLY.includes(key)) return
   if (!brand) {
     console.log(`  пропущен (нет в списке брендов): ${file}`)
     return
   }
   let trimmed = await removeBackground(file, brand)
+  if (brand.topBand) trimmed = await firstBand(trimmed)
   // Фото логотипа на подложке (белая рамка, внутри серый металл): второй проход по новому краю.
   for (let pass = 0; pass < (brand.passes ?? 1) - 1; pass++) {
     trimmed = await removeBackground(trimmed, brand)
@@ -157,6 +183,7 @@ async function main() {
       }
     }
   }
+  if (ONLY.length) Object.assign(manifest, JSON.parse(fs.readFileSync(MANIFEST, 'utf8')))
   for (const file of files) await processFile(file)
   const sorted = Object.fromEntries(Object.entries(manifest).sort(([a], [b]) => a.localeCompare(b)))
   fs.writeFileSync(MANIFEST, JSON.stringify(sorted, null, 2) + '\n')

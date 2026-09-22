@@ -46,7 +46,7 @@
   },
   "BEKO": {
     "src": "/brands/beko.webp",
-    "w": 343,
+    "w": 210,
     "h": 120
   },
   "BOSCH": {
@@ -86,8 +86,8 @@
   },
   "HITACHI": {
     "src": "/brands/hitachi.webp",
-    "w": 295,
-    "h": 120
+    "w": 420,
+    "h": 46
   },
   "ITIMAT": {
     "src": "/brands/itimat.webp",

@@ -178,7 +178,7 @@ export function BrandLogo({ brand, className }: { brand: string; className?: str
   if (image) {
     const aspect = image.w / image.h
     const height = Math.round(Math.min(52, Math.max(22, Math.sqrt(2600 / aspect))))
-    const width = Math.round(Math.min(150, height * aspect))
+    const width = Math.round(Math.min(170, height * aspect))
     return (
       <span className={`brand-logo brand-logo--image${className ? ` ${className}` : ''}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
