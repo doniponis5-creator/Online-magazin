@@ -186,8 +186,16 @@ function nextQuestion(draft: Draft, lang: TalkLang): string {
  * («акчасын толойбузбу»), поэтому длинная фраза тоже считается вопросом.
  */
 export function looksLikeQuestion(text: string): boolean {
-  return text.includes('?') || text.trim().split(/\s+/).length > 5
+  return text.includes('?') || text.trim().split(/\s+/).length > 5 || NOT_AN_ANSWER.test(text)
 }
+
+/**
+ * Слова, которых не бывает в имени, номере или адресе: «есть скидка»,
+ * «канча турат», «нарх» — это вопрос консультанту, а не ответ на шаг.
+ * Без этого «Есть скидка» становилось именем покупателя.
+ */
+const NOT_AN_ANSWER =
+  /(?<![\p{L}])(скидк|цена|цены|стоит|сколько|есть|можно|доставк|гаранти|рассрочк|бонус|дорого|дешевле|нужен|нужна|нужно|бар|барбы|борми|бор|канча|нарх|нархи|чегирма|арзан|арзон|кымбат|керек|керак|баасы|жеткир|етказ|акция|подумаю|ойлоноюн|уйлаб)(?![\p{L}])/iu
 
 export async function step(chatId: ChatKey, text: string, lang: TalkLang, siteLang: Lang): Promise<string | null> {
   const draft = drafts.get(chatId)
@@ -222,6 +230,8 @@ export async function step(chatId: ChatKey, text: string, lang: TalkLang, siteLa
 
   if (draft.step === 'phone') {
     const digits = value.replace(/\D/g, '')
+    // Буквы и почти без цифр — это не попытка написать номер, а вопрос. Пусть ответит консультант.
+    if (digits.length < 6 && /[\p{L}]{3,}/u.test(value)) return null
     if (digits.length < 9 || digits.length > 12) return pick(BAD_PHONE, lang)
     draft.phone = digits
     return nextQuestion(draft, lang)

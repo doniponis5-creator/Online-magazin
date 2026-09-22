@@ -22,7 +22,9 @@ describe('заказ в Telegram', () => {
     const product = products.find((p) => p.price > 0 && p.variants.some((v) => v.stock > 0))!
     await start(43, [product.id], 'ru')
     await step(43, 'Азамат', 'ru', 'ru')
-    expect(await step(43, 'не скажу', 'ru', 'ru')).toContain('не похож')
+    // Слова вместо номера — это разговор, отвечает консультант; цифры не те — переспрашиваем.
+    expect(await step(43, 'не скажу', 'ru', 'ru')).toBeNull()
+    expect(await step(43, '123', 'ru', 'ru')).toContain('не похож')
   })
 })
 

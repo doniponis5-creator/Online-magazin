@@ -169,3 +169,20 @@ describe('узбекские слова кириллицей в шагах за�
     expect(OFFER.test('Буюртма килайликми? «Ха» деб ёзинг')).toBe(true)
   })
 })
+
+describe('вопрос вместо имени и телефона (случай «Есть скидка»)', () => {
+  it('«Есть скидка» — не имя; «Есть скидка на товар» — не «номер не похож»', async () => {
+    await start('web:test-disc', [product.id], 'ru', 'Заказ из чата на сайте')
+    expect(await step('web:test-disc', 'Есть скидка', 'ru', 'ru')).toBeNull()
+    expect(await step('web:test-disc', 'Азамат', 'ru', 'ru')).toMatch(/номер телефона/)
+    expect(await step('web:test-disc', 'Есть скидка на товар', 'ru', 'ru')).toBeNull()
+    expect(await step('web:test-disc', '0555 12', 'ru', 'ru')).toMatch(/не похож/)
+    expect(await step('web:test-disc', '0555 123456', 'ru', 'ru')).toMatch(/Куда везти/)
+  })
+  it('обычные имена и «канча турат» не путает', () => {
+    expect(looksLikeQuestion('Айгүл')).toBe(false)
+    expect(looksLikeQuestion('Нурлан Асанов')).toBe(false)
+    expect(looksLikeQuestion('Канча турат')).toBe(true)
+    expect(looksLikeQuestion('Чегирма борми')).toBe(true)
+  })
+})
