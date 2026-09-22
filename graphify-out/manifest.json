@@ -3960,9 +3960,9 @@
     "semantic_hash": ""
   },
   "__tests__/assistant.test.ts": {
-    "mtime": 1790052811.4289699,
-    "seen": 1790052865.8175209,
-    "ast_hash": "6d1012db7864b2474eeade68c76d9978",
+    "mtime": 1790052961.8786368,
+    "seen": 1790052982.197406,
+    "ast_hash": "d354fb1044ca20603924994637167476",
     "semantic_hash": ""
   },
   "src/app/api/assistant/route.ts": {
@@ -4512,14 +4512,14 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/policy.ts": {
-    "mtime": 1790007218.4702137,
-    "seen": 1790007423.215163,
-    "ast_hash": "bab1e431b6c5deaf412b39236ed52b6e",
+    "mtime": 1790052961.873804,
+    "seen": 1790052982.197549,
+    "ast_hash": "2bbea388590d61540fc49d6ef8f6474c",
     "semantic_hash": ""
   },
   "scripts/exam/questions.txt": {
-    "mtime": 1790052850.7895963,
-    "seen": 1790052865.817701,
+    "mtime": 1790052964.9513671,
+    "seen": 1790052982.197591,
     "ast_hash": "3a926c46d67e7c2d46c7ef2c677f4c93",
     "semantic_hash": ""
   },

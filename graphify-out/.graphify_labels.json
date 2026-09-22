@@ -149,11 +149,13 @@
   "147": "cdvpluginmanager",
   "148": "cdvpluginresult",
   "149": "corefoundation",
+  "150": "ref_node_path",
   "151": ".scene",
   "152": "digest.ts",
   "153": "process.cjs",
   "154": "build-appstore.sh",
   "155": "telegram-webhook.sh",
+  "156": "Capacitor",
   "157": "knowledge.ts",
   "158": "importlib_util",
   "159": "android.os.Bundle",
@@ -177,5 +179,5 @@
   "182": "urllib_parse",
   "183": "urllib_request",
   "184": "ref_node_assert",
-  "185": "telegram-bot.mjs"
+  "185": "ref_node_fs"
 }

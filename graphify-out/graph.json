@@ -555,8 +555,8 @@
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 151,
-      "community_name": ".scene",
+      "community": 156,
+      "community_name": "Capacitor",
       "file_type": "code",
       "norm_label": "scenedelegate",
       "source_file": "ios/App/App/SceneDelegate.swift",
@@ -3701,54 +3701,6 @@
       "source_location": "L27"
     },
     {
-      "id": "src_app_panel_questions_route_esc",
-      "label": "esc()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 105,
-      "community_name": "log.ts",
-      "file_type": "code",
-      "norm_label": "esc()",
-      "source_file": "src/app/panel/questions/route.ts",
-      "source_location": "L30"
-    },
-    {
-      "id": "src_app_panel_questions_route_get",
-      "label": "GET()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 105,
-      "community_name": "log.ts",
-      "file_type": "code",
-      "norm_label": "get()",
-      "source_file": "src/app/panel/questions/route.ts",
-      "source_location": "L15"
-    },
-    {
-      "id": "src_app_panel_questions_route_rowstable",
-      "label": "rowsTable()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 105,
-      "community_name": "log.ts",
-      "file_type": "code",
-      "norm_label": "rowstable()",
-      "source_file": "src/app/panel/questions/route.ts",
-      "source_location": "L42"
-    },
-    {
-      "id": "src_app_panel_questions_route_when",
-      "label": "when()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 105,
-      "community_name": "log.ts",
-      "file_type": "code",
-      "norm_label": "when()",
-      "source_file": "src/app/panel/questions/route.ts",
-      "source_location": "L38"
-    },
-    {
       "id": "src_lib_assistant_log_dir",
       "label": "dir()",
       "_callable": true,
@@ -6314,7 +6266,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 185,
-      "community_name": "telegram-bot.mjs",
+      "community_name": "ref_node_fs",
       "file_type": "code",
       "norm_label": "envvalue()",
       "source_file": "scripts/telegram-bot.mjs",
@@ -6326,7 +6278,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 185,
-      "community_name": "telegram-bot.mjs",
+      "community_name": "ref_node_fs",
       "file_type": "code",
       "norm_label": "tg()",
       "source_file": "scripts/telegram-bot.mjs",
@@ -7401,6 +7353,30 @@
       "source_location": "L12"
     },
     {
+      "id": "src_app_panel_questions_route_esc",
+      "label": "esc()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 21,
+      "community_name": "@playwright/test",
+      "file_type": "code",
+      "norm_label": "esc()",
+      "source_file": "src/app/panel/questions/route.ts",
+      "source_location": "L30"
+    },
+    {
+      "id": "src_app_panel_questions_route_get",
+      "label": "GET()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 21,
+      "community_name": "@playwright/test",
+      "file_type": "code",
+      "norm_label": "get()",
+      "source_file": "src/app/panel/questions/route.ts",
+      "source_location": "L15"
+    },
+    {
       "id": "src_app_panel_questions_route_page",
       "label": "page()",
       "_callable": true,
@@ -7411,6 +7387,30 @@
       "norm_label": "page()",
       "source_file": "src/app/panel/questions/route.ts",
       "source_location": "L58"
+    },
+    {
+      "id": "src_app_panel_questions_route_rowstable",
+      "label": "rowsTable()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 21,
+      "community_name": "@playwright/test",
+      "file_type": "code",
+      "norm_label": "rowstable()",
+      "source_file": "src/app/panel/questions/route.ts",
+      "source_location": "L42"
+    },
+    {
+      "id": "src_app_panel_questions_route_when",
+      "label": "when()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 21,
+      "community_name": "@playwright/test",
+      "file_type": "code",
+      "norm_label": "when()",
+      "source_file": "src/app/panel/questions/route.ts",
+      "source_location": "L38"
     },
     {
       "id": "ios_app_app_appdelegate_appdelegate_application",
@@ -14145,28 +14145,6 @@
       "source_location": ""
     },
     {
-      "id": "src_app_panel_questions_route",
-      "label": "questions/route.ts",
-      "_origin": "ast",
-      "community": 105,
-      "community_name": "log.ts",
-      "file_type": "code",
-      "norm_label": "questions/route.ts",
-      "source_file": "src/app/panel/questions/route.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "src_app_panel_questions_route_dynamic",
-      "label": "dynamic",
-      "_origin": "ast",
-      "community": 105,
-      "community_name": "log.ts",
-      "file_type": "code",
-      "norm_label": "dynamic",
-      "source_file": "src/app/panel/questions/route.ts",
-      "source_location": "L13"
-    },
-    {
       "id": "src_lib_assistant_log",
       "label": "log.ts",
       "_origin": "ast",
@@ -15434,16 +15412,103 @@
       "source_location": "L87"
     },
     {
-      "id": "capacitor",
-      "label": "Capacitor",
+      "id": "scripts_capture_polish_baseline",
+      "label": "capture-polish-baseline.cjs",
       "_origin": "ast",
-      "community": 151,
-      "community_name": ".scene",
+      "community": 150,
+      "community_name": "ref_node_path",
       "file_type": "code",
-      "norm_label": "capacitor",
-      "source_file": "ios/App/App/SceneDelegate.swift",
-      "source_location": "L2",
-      "type": "module"
+      "norm_label": "capture-polish-baseline.cjs",
+      "source_file": "scripts/capture-polish-baseline.cjs",
+      "source_location": "L1"
+    },
+    {
+      "id": "scripts_capture_polish_baseline_chromium",
+      "label": "{ chromium }",
+      "_origin": "ast",
+      "community": 150,
+      "community_name": "ref_node_path",
+      "file_type": "code",
+      "norm_label": "{ chromium }",
+      "source_file": "scripts/capture-polish-baseline.cjs",
+      "source_location": "L2"
+    },
+    {
+      "id": "scripts_capture_polish_baseline_path",
+      "label": "path",
+      "_origin": "ast",
+      "community": 150,
+      "community_name": "ref_node_path",
+      "file_type": "code",
+      "norm_label": "path",
+      "source_file": "scripts/capture-polish-baseline.cjs",
+      "source_location": "L3"
+    },
+    {
+      "id": "scripts_exam_vitest_config",
+      "label": "exam/vitest.config.ts",
+      "_origin": "ast",
+      "community": 150,
+      "community_name": "ref_node_path",
+      "file_type": "code",
+      "norm_label": "exam/vitest.config.ts",
+      "source_file": "scripts/exam/vitest.config.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "scripts_review_light_lemon",
+      "label": "review-light-lemon.cjs",
+      "_origin": "ast",
+      "community": 150,
+      "community_name": "ref_node_path",
+      "file_type": "code",
+      "norm_label": "review-light-lemon.cjs",
+      "source_file": "scripts/review-light-lemon.cjs",
+      "source_location": "L1"
+    },
+    {
+      "id": "scripts_review_light_lemon_chromium",
+      "label": "{ chromium }",
+      "_origin": "ast",
+      "community": 150,
+      "community_name": "ref_node_path",
+      "file_type": "code",
+      "norm_label": "{ chromium }",
+      "source_file": "scripts/review-light-lemon.cjs",
+      "source_location": "L2"
+    },
+    {
+      "id": "scripts_review_light_lemon_fs",
+      "label": "fs",
+      "_origin": "ast",
+      "community": 150,
+      "community_name": "ref_node_path",
+      "file_type": "code",
+      "norm_label": "fs",
+      "source_file": "scripts/review-light-lemon.cjs",
+      "source_location": "L3"
+    },
+    {
+      "id": "scripts_review_light_lemon_path",
+      "label": "path",
+      "_origin": "ast",
+      "community": 150,
+      "community_name": "ref_node_path",
+      "file_type": "code",
+      "norm_label": "path",
+      "source_file": "scripts/review-light-lemon.cjs",
+      "source_location": "L4"
+    },
+    {
+      "id": "vitest_config",
+      "label": "vitest.config.ts",
+      "_origin": "ast",
+      "community": 150,
+      "community_name": "ref_node_path",
+      "file_type": "code",
+      "norm_label": "vitest.config.ts",
+      "source_file": "vitest.config.ts",
+      "source_location": "L1"
     },
     {
       "id": "capbridgeviewcontroller",
@@ -15455,28 +15520,6 @@
       "norm_label": "capbridgeviewcontroller",
       "source_file": "",
       "source_location": ""
-    },
-    {
-      "id": "ios_app_app_appdelegate",
-      "label": "AppDelegate.swift",
-      "_origin": "ast",
-      "community": 151,
-      "community_name": ".scene",
-      "file_type": "code",
-      "norm_label": "appdelegate.swift",
-      "source_file": "ios/App/App/AppDelegate.swift",
-      "source_location": "L1"
-    },
-    {
-      "id": "ios_app_app_scenedelegate",
-      "label": "SceneDelegate.swift",
-      "_origin": "ast",
-      "community": 151,
-      "community_name": ".scene",
-      "file_type": "code",
-      "norm_label": "scenedelegate.swift",
-      "source_file": "ios/App/App/SceneDelegate.swift",
-      "source_location": "L1"
     },
     {
       "id": "ios_app_app_scenedelegate_swift_uiscene",
@@ -15497,17 +15540,6 @@
       "community_name": ".scene",
       "file_type": "code",
       "norm_label": "uiscenesession",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "ios_app_app_scenedelegate_swift_uiwindow",
-      "label": "UIWindow",
-      "_origin": "ast",
-      "community": 151,
-      "community_name": ".scene",
-      "file_type": "code",
-      "norm_label": "uiwindow",
       "source_file": "",
       "source_location": ""
     },
@@ -15534,18 +15566,6 @@
       "source_location": ""
     },
     {
-      "id": "uikit",
-      "label": "UIKit",
-      "_origin": "ast",
-      "community": 151,
-      "community_name": ".scene",
-      "file_type": "code",
-      "norm_label": "uikit",
-      "source_file": "ios/App/App/SceneDelegate.swift",
-      "source_location": "L1",
-      "type": "module"
-    },
-    {
       "id": "uiopenurlcontext",
       "label": "UIOpenURLContext",
       "_origin": "ast",
@@ -15553,28 +15573,6 @@
       "community_name": ".scene",
       "file_type": "code",
       "norm_label": "uiopenurlcontext",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "uiresponder",
-      "label": "UIResponder",
-      "_origin": "ast",
-      "community": 151,
-      "community_name": ".scene",
-      "file_type": "code",
-      "norm_label": "uiresponder",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "uiwindowscenedelegate",
-      "label": "UIWindowSceneDelegate",
-      "_origin": "ast",
-      "community": 151,
-      "community_name": ".scene",
-      "file_type": "code",
-      "norm_label": "uiwindowscenedelegate",
       "source_file": "",
       "source_location": ""
     },
@@ -15915,6 +15913,85 @@
       "source_location": "L21"
     },
     {
+      "id": "capacitor",
+      "label": "Capacitor",
+      "_origin": "ast",
+      "community": 156,
+      "community_name": "Capacitor",
+      "file_type": "code",
+      "norm_label": "capacitor",
+      "source_file": "ios/App/App/SceneDelegate.swift",
+      "source_location": "L2",
+      "type": "module"
+    },
+    {
+      "id": "ios_app_app_appdelegate",
+      "label": "AppDelegate.swift",
+      "_origin": "ast",
+      "community": 156,
+      "community_name": "Capacitor",
+      "file_type": "code",
+      "norm_label": "appdelegate.swift",
+      "source_file": "ios/App/App/AppDelegate.swift",
+      "source_location": "L1"
+    },
+    {
+      "id": "ios_app_app_scenedelegate",
+      "label": "SceneDelegate.swift",
+      "_origin": "ast",
+      "community": 156,
+      "community_name": "Capacitor",
+      "file_type": "code",
+      "norm_label": "scenedelegate.swift",
+      "source_file": "ios/App/App/SceneDelegate.swift",
+      "source_location": "L1"
+    },
+    {
+      "id": "ios_app_app_scenedelegate_swift_uiwindow",
+      "label": "UIWindow",
+      "_origin": "ast",
+      "community": 156,
+      "community_name": "Capacitor",
+      "file_type": "code",
+      "norm_label": "uiwindow",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "uikit",
+      "label": "UIKit",
+      "_origin": "ast",
+      "community": 156,
+      "community_name": "Capacitor",
+      "file_type": "code",
+      "norm_label": "uikit",
+      "source_file": "ios/App/App/SceneDelegate.swift",
+      "source_location": "L1",
+      "type": "module"
+    },
+    {
+      "id": "uiresponder",
+      "label": "UIResponder",
+      "_origin": "ast",
+      "community": 156,
+      "community_name": "Capacitor",
+      "file_type": "code",
+      "norm_label": "uiresponder",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "uiwindowscenedelegate",
+      "label": "UIWindowSceneDelegate",
+      "_origin": "ast",
+      "community": 156,
+      "community_name": "Capacitor",
+      "file_type": "code",
+      "norm_label": "uiwindowscenedelegate",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
       "id": "src_lib_assistant_budget",
       "label": "budget.ts",
       "_origin": "ast",
@@ -16032,17 +16109,6 @@
       "community_name": "android.os.Bundle",
       "file_type": "code",
       "norm_label": "com.getcapacitor.bridgeactivity",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "capplugin",
-      "label": "CAPPlugin",
-      "_origin": "ast",
-      "community": 16,
-      "community_name": "AppLockPlugin",
-      "file_type": "code",
-      "norm_label": "capplugin",
       "source_file": "",
       "source_location": ""
     },
@@ -16777,11 +16843,88 @@
       "source_location": ""
     },
     {
+      "id": "e2e_task05_spec",
+      "label": "task05.spec.ts",
+      "_origin": "ast",
+      "community": 185,
+      "community_name": "ref_node_fs",
+      "file_type": "code",
+      "norm_label": "task05.spec.ts",
+      "source_file": "e2e/task05.spec.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "e2e_visual_spec",
+      "label": "visual.spec.ts",
+      "_origin": "ast",
+      "community": 185,
+      "community_name": "ref_node_fs",
+      "file_type": "code",
+      "norm_label": "visual.spec.ts",
+      "source_file": "e2e/visual.spec.ts",
+      "source_location": "L1"
+    },
+    {
+      "id": "e2e_visual_spec_widths",
+      "label": "widths",
+      "_origin": "ast",
+      "community": 185,
+      "community_name": "ref_node_fs",
+      "file_type": "code",
+      "norm_label": "widths",
+      "source_file": "e2e/visual.spec.ts",
+      "source_location": "L60"
+    },
+    {
+      "id": "scripts_review_home_story",
+      "label": "review-home-story.cjs",
+      "_origin": "ast",
+      "community": 185,
+      "community_name": "ref_node_fs",
+      "file_type": "code",
+      "norm_label": "review-home-story.cjs",
+      "source_file": "scripts/review-home-story.cjs",
+      "source_location": "L1"
+    },
+    {
+      "id": "scripts_review_home_story_assert",
+      "label": "assert",
+      "_origin": "ast",
+      "community": 185,
+      "community_name": "ref_node_fs",
+      "file_type": "code",
+      "norm_label": "assert",
+      "source_file": "scripts/review-home-story.cjs",
+      "source_location": "L3"
+    },
+    {
+      "id": "scripts_review_home_story_chromium",
+      "label": "{ chromium }",
+      "_origin": "ast",
+      "community": 185,
+      "community_name": "ref_node_fs",
+      "file_type": "code",
+      "norm_label": "{ chromium }",
+      "source_file": "scripts/review-home-story.cjs",
+      "source_location": "L1"
+    },
+    {
+      "id": "scripts_review_home_story_fs",
+      "label": "fs",
+      "_origin": "ast",
+      "community": 185,
+      "community_name": "ref_node_fs",
+      "file_type": "code",
+      "norm_label": "fs",
+      "source_file": "scripts/review-home-story.cjs",
+      "source_location": "L2"
+    },
+    {
       "id": "scripts_telegram_bot",
       "label": "telegram-bot.mjs",
       "_origin": "ast",
       "community": 185,
-      "community_name": "telegram-bot.mjs",
+      "community_name": "ref_node_fs",
       "file_type": "code",
       "norm_label": "telegram-bot.mjs",
       "source_file": "scripts/telegram-bot.mjs",
@@ -16792,7 +16935,7 @@
       "label": "SECRET",
       "_origin": "ast",
       "community": 185,
-      "community_name": "telegram-bot.mjs",
+      "community_name": "ref_node_fs",
       "file_type": "code",
       "norm_label": "secret",
       "source_file": "scripts/telegram-bot.mjs",
@@ -16803,7 +16946,7 @@
       "label": "TOKEN",
       "_origin": "ast",
       "community": 185,
-      "community_name": "telegram-bot.mjs",
+      "community_name": "ref_node_fs",
       "file_type": "code",
       "norm_label": "token",
       "source_file": "scripts/telegram-bot.mjs",
@@ -17272,39 +17415,6 @@
       "source_location": "L1"
     },
     {
-      "id": "e2e_task05_spec",
-      "label": "task05.spec.ts",
-      "_origin": "ast",
-      "community": 21,
-      "community_name": "@playwright/test",
-      "file_type": "code",
-      "norm_label": "task05.spec.ts",
-      "source_file": "e2e/task05.spec.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "e2e_visual_spec",
-      "label": "visual.spec.ts",
-      "_origin": "ast",
-      "community": 21,
-      "community_name": "@playwright/test",
-      "file_type": "code",
-      "norm_label": "visual.spec.ts",
-      "source_file": "e2e/visual.spec.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "e2e_visual_spec_widths",
-      "label": "widths",
-      "_origin": "ast",
-      "community": 21,
-      "community_name": "@playwright/test",
-      "file_type": "code",
-      "norm_label": "widths",
-      "source_file": "e2e/visual.spec.ts",
-      "source_location": "L60"
-    },
-    {
       "id": "playwright_config",
       "label": "playwright.config.ts",
       "_origin": "ast",
@@ -17316,48 +17426,26 @@
       "source_location": "L1"
     },
     {
-      "id": "scripts_review_home_story",
-      "label": "review-home-story.cjs",
+      "id": "src_app_panel_questions_route",
+      "label": "questions/route.ts",
       "_origin": "ast",
       "community": 21,
       "community_name": "@playwright/test",
       "file_type": "code",
-      "norm_label": "review-home-story.cjs",
-      "source_file": "scripts/review-home-story.cjs",
+      "norm_label": "questions/route.ts",
+      "source_file": "src/app/panel/questions/route.ts",
       "source_location": "L1"
     },
     {
-      "id": "scripts_review_home_story_assert",
-      "label": "assert",
+      "id": "src_app_panel_questions_route_dynamic",
+      "label": "dynamic",
       "_origin": "ast",
       "community": 21,
       "community_name": "@playwright/test",
       "file_type": "code",
-      "norm_label": "assert",
-      "source_file": "scripts/review-home-story.cjs",
-      "source_location": "L3"
-    },
-    {
-      "id": "scripts_review_home_story_chromium",
-      "label": "{ chromium }",
-      "_origin": "ast",
-      "community": 21,
-      "community_name": "@playwright/test",
-      "file_type": "code",
-      "norm_label": "{ chromium }",
-      "source_file": "scripts/review-home-story.cjs",
-      "source_location": "L1"
-    },
-    {
-      "id": "scripts_review_home_story_fs",
-      "label": "fs",
-      "_origin": "ast",
-      "community": 21,
-      "community_name": "@playwright/test",
-      "file_type": "code",
-      "norm_label": "fs",
-      "source_file": "scripts/review-home-story.cjs",
-      "source_location": "L2"
+      "norm_label": "dynamic",
+      "source_file": "src/app/panel/questions/route.ts",
+      "source_location": "L13"
     },
     {
       "id": "ref_playwright_test",
@@ -19746,83 +19834,6 @@
       "source_location": "L7"
     },
     {
-      "id": "scripts_build_lg_series",
-      "label": "build-lg-series.mjs",
-      "_origin": "ast",
-      "community": 50,
-      "community_name": "make-ios-icon.mjs",
-      "file_type": "code",
-      "norm_label": "build-lg-series.mjs",
-      "source_file": "scripts/build-lg-series.mjs",
-      "source_location": "L1"
-    },
-    {
-      "id": "scripts_build_lg_series_files",
-      "label": "files",
-      "_origin": "ast",
-      "community": 50,
-      "community_name": "make-ios-icon.mjs",
-      "file_type": "code",
-      "norm_label": "files",
-      "source_file": "scripts/build-lg-series.mjs",
-      "source_location": "L27"
-    },
-    {
-      "id": "scripts_build_lg_series_variants",
-      "label": "variants",
-      "_origin": "ast",
-      "community": 50,
-      "community_name": "make-ios-icon.mjs",
-      "file_type": "code",
-      "norm_label": "variants",
-      "source_file": "scripts/build-lg-series.mjs",
-      "source_location": "L22"
-    },
-    {
-      "id": "scripts_capture_polish_baseline",
-      "label": "capture-polish-baseline.cjs",
-      "_origin": "ast",
-      "community": 50,
-      "community_name": "make-ios-icon.mjs",
-      "file_type": "code",
-      "norm_label": "capture-polish-baseline.cjs",
-      "source_file": "scripts/capture-polish-baseline.cjs",
-      "source_location": "L1"
-    },
-    {
-      "id": "scripts_capture_polish_baseline_chromium",
-      "label": "{ chromium }",
-      "_origin": "ast",
-      "community": 50,
-      "community_name": "make-ios-icon.mjs",
-      "file_type": "code",
-      "norm_label": "{ chromium }",
-      "source_file": "scripts/capture-polish-baseline.cjs",
-      "source_location": "L2"
-    },
-    {
-      "id": "scripts_capture_polish_baseline_path",
-      "label": "path",
-      "_origin": "ast",
-      "community": 50,
-      "community_name": "make-ios-icon.mjs",
-      "file_type": "code",
-      "norm_label": "path",
-      "source_file": "scripts/capture-polish-baseline.cjs",
-      "source_location": "L3"
-    },
-    {
-      "id": "scripts_exam_vitest_config",
-      "label": "exam/vitest.config.ts",
-      "_origin": "ast",
-      "community": 50,
-      "community_name": "make-ios-icon.mjs",
-      "file_type": "code",
-      "norm_label": "exam/vitest.config.ts",
-      "source_file": "scripts/exam/vitest.config.ts",
-      "source_location": "L1"
-    },
-    {
       "id": "scripts_make_ios_icon",
       "label": "make-ios-icon.mjs",
       "_origin": "ast",
@@ -19911,28 +19922,6 @@
       "source_location": "L20"
     },
     {
-      "id": "vitest_config",
-      "label": "vitest.config.ts",
-      "_origin": "ast",
-      "community": 50,
-      "community_name": "make-ios-icon.mjs",
-      "file_type": "code",
-      "norm_label": "vitest.config.ts",
-      "source_file": "vitest.config.ts",
-      "source_location": "L1"
-    },
-    {
-      "id": "ref_sharp",
-      "label": "sharp",
-      "_origin": "ast",
-      "community": 50,
-      "community_name": "make-ios-icon.mjs",
-      "file_type": "concept",
-      "norm_label": "sharp",
-      "source_file": "package.json",
-      "source_location": "L30"
-    },
-    {
       "id": "capbridgedplugin",
       "label": "CAPBridgedPlugin",
       "_origin": "ast",
@@ -19940,6 +19929,17 @@
       "community_name": "OfflineCatalogPlugin",
       "file_type": "code",
       "norm_label": "capbridgedplugin",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "capplugin",
+      "label": "CAPPlugin",
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "OfflineCatalogPlugin",
+      "file_type": "code",
+      "norm_label": "capplugin",
       "source_file": "",
       "source_location": ""
     },
@@ -23030,6 +23030,39 @@
       "source_location": ""
     },
     {
+      "id": "scripts_build_lg_series",
+      "label": "build-lg-series.mjs",
+      "_origin": "ast",
+      "community": 94,
+      "community_name": "make-app-icons.mjs",
+      "file_type": "code",
+      "norm_label": "build-lg-series.mjs",
+      "source_file": "scripts/build-lg-series.mjs",
+      "source_location": "L1"
+    },
+    {
+      "id": "scripts_build_lg_series_files",
+      "label": "files",
+      "_origin": "ast",
+      "community": 94,
+      "community_name": "make-app-icons.mjs",
+      "file_type": "code",
+      "norm_label": "files",
+      "source_file": "scripts/build-lg-series.mjs",
+      "source_location": "L27"
+    },
+    {
+      "id": "scripts_build_lg_series_variants",
+      "label": "variants",
+      "_origin": "ast",
+      "community": 94,
+      "community_name": "make-app-icons.mjs",
+      "file_type": "code",
+      "norm_label": "variants",
+      "source_file": "scripts/build-lg-series.mjs",
+      "source_location": "L22"
+    },
+    {
       "id": "scripts_make_app_icons",
       "label": "make-app-icons.mjs",
       "_origin": "ast",
@@ -23107,48 +23140,15 @@
       "source_location": "L16"
     },
     {
-      "id": "scripts_review_light_lemon",
-      "label": "review-light-lemon.cjs",
+      "id": "ref_sharp",
+      "label": "sharp",
       "_origin": "ast",
       "community": 94,
       "community_name": "make-app-icons.mjs",
-      "file_type": "code",
-      "norm_label": "review-light-lemon.cjs",
-      "source_file": "scripts/review-light-lemon.cjs",
-      "source_location": "L1"
-    },
-    {
-      "id": "scripts_review_light_lemon_chromium",
-      "label": "{ chromium }",
-      "_origin": "ast",
-      "community": 94,
-      "community_name": "make-app-icons.mjs",
-      "file_type": "code",
-      "norm_label": "{ chromium }",
-      "source_file": "scripts/review-light-lemon.cjs",
-      "source_location": "L2"
-    },
-    {
-      "id": "scripts_review_light_lemon_fs",
-      "label": "fs",
-      "_origin": "ast",
-      "community": 94,
-      "community_name": "make-app-icons.mjs",
-      "file_type": "code",
-      "norm_label": "fs",
-      "source_file": "scripts/review-light-lemon.cjs",
-      "source_location": "L3"
-    },
-    {
-      "id": "scripts_review_light_lemon_path",
-      "label": "path",
-      "_origin": "ast",
-      "community": 94,
-      "community_name": "make-app-icons.mjs",
-      "file_type": "code",
-      "norm_label": "path",
-      "source_file": "scripts/review-light-lemon.cjs",
-      "source_location": "L4"
+      "file_type": "concept",
+      "norm_label": "sharp",
+      "source_file": "package.json",
+      "source_location": "L30"
     },
     {
       "id": "scripts_exam_run",
@@ -26396,6 +26396,42 @@
       "type": "external"
     },
     {
+      "id": "ref_node_fs_promises",
+      "label": "ref_node_fs_promises",
+      "_origin": "semantic",
+      "community": 150,
+      "community_name": "ref_node_path",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "ref_node_fs_promises",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "ref_node_path",
+      "label": "ref_node_path",
+      "_origin": "semantic",
+      "community": 150,
+      "community_name": "ref_node_path",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "ref_node_path",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "ref_vitest_config",
+      "label": "ref_vitest_config",
+      "_origin": "semantic",
+      "community": 150,
+      "community_name": "ref_node_path",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "ref_vitest_config",
+      "source_file": "",
+      "type": "external"
+    },
+    {
       "id": "ref_fs",
       "label": "ref_fs",
       "_origin": "semantic",
@@ -26564,6 +26600,30 @@
       "type": "external"
     },
     {
+      "id": "ref_node_assert_strict",
+      "label": "ref_node_assert_strict",
+      "_origin": "semantic",
+      "community": 185,
+      "community_name": "ref_node_fs",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "ref_node_assert_strict",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "ref_node_fs",
+      "label": "ref_node_fs",
+      "_origin": "semantic",
+      "community": 185,
+      "community_name": "ref_node_fs",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "ref_node_fs",
+      "source_file": "",
+      "type": "external"
+    },
+    {
       "id": "uuid",
       "label": "uuid",
       "_origin": "semantic",
@@ -26584,30 +26644,6 @@
       "external": true,
       "file_type": "concept",
       "norm_label": "xml_sax_saxutils",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "ref_node_assert_strict",
-      "label": "ref_node_assert_strict",
-      "_origin": "semantic",
-      "community": 21,
-      "community_name": "@playwright/test",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "ref_node_assert_strict",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "ref_node_fs",
-      "label": "ref_node_fs",
-      "_origin": "semantic",
-      "community": 21,
-      "community_name": "@playwright/test",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "ref_node_fs",
       "source_file": "",
       "type": "external"
     },
@@ -26752,30 +26788,6 @@
       "external": true,
       "file_type": "concept",
       "norm_label": "ref_next_navigation",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "ref_node_path",
-      "label": "ref_node_path",
-      "_origin": "semantic",
-      "community": 50,
-      "community_name": "make-ios-icon.mjs",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "ref_node_path",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "ref_vitest_config",
-      "label": "ref_vitest_config",
-      "_origin": "semantic",
-      "community": 50,
-      "community_name": "make-ios-icon.mjs",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "ref_vitest_config",
       "source_file": "",
       "type": "external"
     },
@@ -27304,18 +27316,6 @@
       "external": true,
       "file_type": "concept",
       "norm_label": "ref_next_image",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "ref_node_fs_promises",
-      "label": "ref_node_fs_promises",
-      "_origin": "semantic",
-      "community": 94,
-      "community_name": "make-app-icons.mjs",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "ref_node_fs_promises",
       "source_file": "",
       "type": "external"
     },
@@ -40846,6 +40846,18 @@
       "weight": 1.0
     },
     {
+      "source": "tests_assistant_test",
+      "target": "src_lib_assistant_talk_detectlang",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "__tests__/assistant.test.ts",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
       "source": "tests_customer_test",
       "target": "src_lib_customer_gateway_waloginstart",
       "relation": "calls",
@@ -41311,18 +41323,6 @@
       "context": "call",
       "source_file": "src/lib/assistant/digest.ts",
       "source_location": "L50",
-      "weight": 1.0
-    },
-    {
-      "source": "src_lib_assistant_policy_storepolicy",
-      "target": "src_lib_assistant_policy_free_delivery_points",
-      "relation": "references",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "src/lib/assistant/policy.ts",
-      "source_location": "L43",
       "weight": 1.0
     },
     {
@@ -53179,18 +53179,6 @@
     {
       "source": "tests_assistant_test",
       "target": "src_lib_assistant_local_parseanswer",
-      "relation": "imports",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "import",
-      "source_file": "__tests__/assistant.test.ts",
-      "source_location": "L2",
-      "weight": 1.0
-    },
-    {
-      "source": "tests_assistant_test",
-      "target": "src_lib_assistant_talk_detectlang",
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -84558,5 +84546,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "c19591342bc27b652f8c32af0d8d7785ae7e5c11"
+  "built_at_commit": "e81487ad39ddebfe47edbcb53699438ed117ca73"
 }

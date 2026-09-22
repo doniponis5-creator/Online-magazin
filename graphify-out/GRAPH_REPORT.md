@@ -1,17 +1,17 @@
 # Graph Report - Online-magazin  (2026-09-22)
 
 ## Corpus Check
-- 310 files · ~4,897,143 words
+- 310 files · ~4,897,201 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 55 file(s) not represented in the graph (top: .xml 13, (none) 8, .css 8)
 
 ## Summary
-- 2145 nodes · 4874 edges · 179 communities (104 shown, 75 thin omitted)
+- 2145 nodes · 4873 edges · 181 communities (107 shown, 74 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 107 edges (avg confidence: 0.86)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `c1959134`
+- Built from commit: `e81487ad`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -159,11 +159,13 @@
 - cdvpluginmanager
 - cdvpluginresult
 - corefoundation
+- ref_node_path
 - .scene
 - digest.ts
 - process.cjs
 - build-appstore.sh
 - telegram-webhook.sh
+- Capacitor
 - knowledge.ts
 - importlib_util
 - android.os.Bundle
@@ -181,7 +183,7 @@
 - urllib_parse
 - urllib_request
 - ref_node_assert
-- telegram-bot.mjs
+- ref_node_fs
 
 ## God Nodes (most connected - your core abstractions)
 1. `useI18n()` - 70 edges
@@ -210,7 +212,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (179 total, 75 thin omitted)
+## Communities (181 total, 74 thin omitted)
 
 ### Community 1 - "build_model.py"
 Cohesion: 0.12
@@ -273,8 +275,8 @@ Cohesion: 0.10
 Nodes (32): app_payments, httpx, _b64(), _bundle(), _devices(), _drop(), enabled(), _fail() (+24 more)
 
 ### Community 16 - "AppLockPlugin"
-Cohesion: 0.13
-Nodes (12): CAPPlugin, Foundation, AppLockPlugin, AppLockStore, .base, Any, Bool, CAPPluginCall (+4 more)
+Cohesion: 0.14
+Nodes (11): Foundation, AppLockPlugin, AppLockStore, .base, Any, Bool, CAPPluginCall, CAPPluginMethod (+3 more)
 
 ### Community 17 - "BonusCardView"
 Cohesion: 0.13
@@ -293,8 +295,8 @@ Cohesion: 0.13
 Nodes (26): dynamic, POST(), tooOften(), backToChat(), call(), handleUpdate(), hello(), isPhoto() (+18 more)
 
 ### Community 21 - "@playwright/test"
-Cohesion: 0.14
-Nodes (8): widths, ref_node_assert_strict, ref_node_fs, @playwright/test, assert, { chromium }, fs, page()
+Cohesion: 0.19
+Nodes (7): @playwright/test, dynamic, esc(), GET(), page(), rowsTable(), when()
 
 ### Community 22 - "compilerOptions"
 Cohesion: 0.11
@@ -409,12 +411,12 @@ Cohesion: 0.29
 Nodes (8): HANDOFF.md — What Is Already Built, Known Issue — Only 1-2 Products Reach the Server Catalog, paymentMode() live vs mock Fallback, Assistant Never Types the Owner's Secrets, Wikimedia Brand Logo Sources and Licenses, Smart Centr Brand Logo Provenance, Manrope SIL Open Font License 1.1, ASSET_SOURCES.md Photo Licensing Ledger
 
 ### Community 50 - "make-ios-icon.mjs"
-Cohesion: 0.10
-Nodes (16): ref_node_path, sharp, ref_vitest_config, files, variants, { chromium }, path, glyph() (+8 more)
+Cohesion: 0.20
+Nodes (9): glyph(), ICON_YELLOW, iconSet, iconSource, INK, mark, root, splash() (+1 more)
 
 ### Community 51 - "OfflineCatalogPlugin"
-Cohesion: 0.33
-Nodes (4): CAPBridgedPlugin, OfflineCatalogPlugin, CAPPluginCall, CAPPluginMethod
+Cohesion: 0.29
+Nodes (5): CAPBridgedPlugin, CAPPlugin, OfflineCatalogPlugin, CAPPluginCall, CAPPluginMethod
 
 ### Community 52 - "set_shop_domain.sh"
 Cohesion: 0.53
@@ -505,8 +507,8 @@ Cohesion: 0.19
 Nodes (7): BonusCardActivity, Override, Row, Ui, android.graphics.drawable.GradientDrawable, android.widget.LinearLayout, android.widget.TextView
 
 ### Community 94 - "make-app-icons.mjs"
-Cohesion: 0.15
-Nodes (13): ref_node_fs_promises, androidDir, circle(), DENSITIES, glyph(), iconSet, root, splashSet (+5 more)
+Cohesion: 0.16
+Nodes (12): sharp, files, variants, androidDir, circle(), DENSITIES, glyph(), iconSet (+4 more)
 
 ### Community 96 - "respond.ts"
 Cohesion: 0.15
@@ -545,8 +547,8 @@ Cohesion: 0.24
 Nodes (6): Store, Store, Vault, android.content.Context, javax.crypto.SecretKey, org.json.JSONObject
 
 ### Community 105 - "log.ts"
-Cohesion: 0.23
-Nodes (9): dynamic, esc(), GET(), rowsTable(), when(), hideDigits(), LogRow, summarize() (+1 more)
+Cohesion: 0.36
+Nodes (4): hideDigits(), LogRow, summarize(), Summary
 
 ### Community 106 - "pathlib"
 Cohesion: 0.18
@@ -588,9 +590,13 @@ Nodes (4): Adapter, Override, android.view.ViewGroup, android.widget.BaseAdapter
 Cohesion: 0.83
 Nodes (3): fail(), update-all.sh script, step()
 
+### Community 150 - "ref_node_path"
+Cohesion: 0.18
+Nodes (8): ref_node_fs_promises, ref_node_path, ref_vitest_config, { chromium }, path, { chromium }, fs, path
+
 ### Community 151 - ".scene"
-Cohesion: 0.12
-Nodes (13): Capacitor, CAPBridgeViewController, MainViewController, SceneDelegate, UIScene, UISceneSession, UIWindow, NSUserActivity (+5 more)
+Cohesion: 0.22
+Nodes (7): CAPBridgeViewController, MainViewController, UIScene, UISceneSession, NSUserActivity, Set, UIOpenURLContext
 
 ### Community 152 - "digest.ts"
 Cohesion: 0.24
@@ -603,6 +609,10 @@ Nodes (20): ref_fs, ref_path, backgroundColor(), BRANDS, fs, INK, main(), MANIFE
 ### Community 154 - "build-appstore.sh"
 Cohesion: 0.83
 Nodes (3): fail(), build-appstore.sh script, step()
+
+### Community 156 - "Capacitor"
+Cohesion: 0.29
+Nodes (6): Capacitor, SceneDelegate, UIWindow, UIKit, UIResponder, UIWindowSceneDelegate
 
 ### Community 157 - "knowledge.ts"
 Cohesion: 0.15
@@ -628,22 +638,26 @@ Nodes (3): gradlew script, die(), warn()
 Cohesion: 0.83
 Nodes (3): fail(), restore(), deploy_cabinet_client.sh script
 
+### Community 185 - "ref_node_fs"
+Cohesion: 0.14
+Nodes (8): widths, ref_node_assert_strict, ref_node_fs, assert, { chromium }, fs, SECRET, TOKEN
+
 ## Knowledge Gaps
-- **370 isolated node(s):** `customer`, `Say`, `Draft`, `drafts`, `ASK_PHONE` (+365 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 740 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **75 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **371 isolated node(s):** `customer`, `FREE_DELIVERY_POINTS`, `Answer`, `Say`, `Topic` (+366 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 741 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **74 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `test` connect `package.json` to `manage.py`?**
-  _High betweenness centrality (0.297) - this node is a cross-community bridge._
+  _High betweenness centrality (0.276) - this node is a cross-community bridge._
 - **Why does `copy_base()` connect `manage.py` to `build_extension.py`, `package.json`?**
-  _High betweenness centrality (0.297) - this node is a cross-community bridge._
+  _High betweenness centrality (0.276) - this node is a cross-community bridge._
 - **Are the 17 inferred relationships involving `text()` (e.g. with `_notes()` and `save_notes()`) actually correct?**
   _`text()` has 17 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `customer`, `Say`, `Draft` to the rest of the system?**
-  _370 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **What connects `customer`, `FREE_DELIVERY_POINTS`, `Answer` to the rest of the system?**
+  _371 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `ProductArt.tsx` be split into smaller, more focused modules?**
   _Cohesion score 0.11764705882352941 - nodes in this community are weakly interconnected._
 - **Should `build_model.py` be split into smaller, more focused modules?**
