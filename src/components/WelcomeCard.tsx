@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { bonusRule } from '@/lib/customer/bonusRule'
 import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { IconArrowUpRight, IconGift } from './Icons'
@@ -20,7 +21,7 @@ const SPARKS = [
   [-100, 60], [116, 66], [-56, 52], [40, 50], [4, 104], [-24, 44],
 ]
 
-export function WelcomeCard({ amount, pct }: { amount: number; pct: number }) {
+export function WelcomeCard({ amount, pct, cap = 0 }: { amount: number; pct: number; cap?: number }) {
   const { t, lang } = useI18n()
   const a = t.account
   const [shown, setShown] = useState(amount)
@@ -62,7 +63,7 @@ export function WelcomeCard({ amount, pct }: { amount: number; pct: number }) {
         <span className="hello__sum">{formatSom(shown)}</span>
         <span className="hello__yours">{a.helloYours}</span>
       </p>
-      <p className="hello__text">{a.helloText.replace('{pct}', String(pct))}</p>
+      <p className="hello__text">{a.helloText.replace('{rule}', bonusRule(pct, cap, lang))}</p>
 
       <Link href={`/${lang}/catalog`} className="btn btn--lime btn--block hello__cta">
         {a.helloCta}

@@ -25,6 +25,7 @@ export function BonusPromo() {
   const p = t.promo
   const [welcome, setWelcome] = useState<number | null>(null)
   const [maxPct, setMaxPct] = useState<number | null>(null)
+  const [maxOrder, setMaxOrder] = useState(0)
 
   useEffect(() => {
     let alive = true
@@ -34,6 +35,7 @@ export function BonusPromo() {
         if (!alive || !d?.ok) return
         setWelcome(Number(d.welcomeBonus) || 0)
         setMaxPct(Number(d.bonusMaxPct) || 0)
+        setMaxOrder(Number(d.bonusMaxOrder) || 0)
       })
       .catch(() => {})
     return () => {
@@ -66,7 +68,14 @@ export function BonusPromo() {
                   <span>{p.factWelcome}</span>
                 </li>
               )}
-              {maxPct > 0 && (
+              {maxOrder > 0 && (
+                <li>
+                  <strong>{formatSom(maxOrder)}</strong>
+                  <span>{p.factMaxOrder}</span>
+                </li>
+              )}
+              {/* 100% при пределе в сомах ничего не добавляет — покажем только сумму. */}
+              {maxPct > 0 && !(maxOrder > 0 && maxPct >= 100) && (
                 <li>
                   <strong>{maxPct}%</strong>
                   <span>{p.factMaxPct}</span>

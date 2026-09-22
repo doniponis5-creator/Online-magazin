@@ -67,6 +67,15 @@ SETTINGS: list[dict] = [
         "max": 100,
         "default": "10",
     },
+    {
+        "key": "SITE_BONUS_MAX_ORDER_SOM",
+        "title": "Бонусами за один заказ — не больше, сом",
+        "hint": "Например, 334 — приветственные 1 000 сом уйдут на три покупки. 0 — без предела, действует только %.",
+        "type": "number",
+        "min": 0,
+        "max": 100000,
+        "default": "0",
+    },
     # Товар со склада, которого нет на сайте, чат продаёт по цене: себестоимость +
     # наценка (есть цена сайта — по ней). Крупная и мелкая техника — разные наценки;
     # какая техника крупная, решает 1С по группе и названию. 0 — такой товар чат не продаёт.
@@ -192,6 +201,7 @@ async def site_settings(request: Request, db: AsyncSession = Depends(get_db)):
         "ok": True,
         "guestCheckout": current["SITE_GUEST_CHECKOUT"] == "1",
         "bonusMaxPct": int(current["SITE_BONUS_MAX_PCT"]),
+        "bonusMaxOrder": int(current["SITE_BONUS_MAX_ORDER_SOM"]),
         "welcomeBonus": int(current["SITE_WELCOME_BONUS_AMOUNT"]),
     }
 

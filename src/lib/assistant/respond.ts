@@ -176,6 +176,7 @@ export async function customerBrief(phone: string | undefined): Promise<Customer
       name: profile.name,
       balance: profile.balance,
       maxSpendPct: profile.maxSpendPct,
+      maxSpendCap: profile.maxSpendCap ?? 0,
       orders: (profile.orders ?? []).map((o) => ({
         id: o.orderId,
         status: o.status,

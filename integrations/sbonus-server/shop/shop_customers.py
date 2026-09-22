@@ -23,6 +23,7 @@
 Настройки (таблица settings SBonus, меняются без перезапуска):
   SITE_WELCOME_BONUS_AMOUNT  — приветственный бонус сайта, сом (по умолчанию 1000)
   SITE_BONUS_MAX_PCT         — какую часть заказа на сайте можно оплатить бонусами, % (по умолчанию 10)
+  SITE_BONUS_MAX_ORDER_SOM   — сколько бонусов можно списать за один заказ, сом (0 — без предела)
 """
 from __future__ import annotations
 
@@ -84,6 +85,11 @@ async def max_spend_pct(db: AsyncSession) -> Decimal:
     return min(Decimal("100"), max(Decimal("0"), await _setting(db, "SITE_BONUS_MAX_PCT", DEFAULT_MAX_PCT)))
 
 
+async def max_spend_cap(db: AsyncSession) -> Decimal:
+    """Предел списания за один заказ, сом. 0 — предела нет, решает только процент."""
+    return max(Decimal("0"), await _setting(db, "SITE_BONUS_MAX_ORDER_SOM", Decimal("0")))
+
+
 async def branch_id(db: AsyncSession):
     """Филиал для операций сайта: SHOP_BRANCH_ID из settings, иначе первый активный («Смарт Центр»)."""
     from app.models import Branch
@@ -97,11 +103,16 @@ async def branch_id(db: AsyncSession):
     return br.id if br else None
 
 
-def max_spend(balance: Decimal, amount: Decimal, pct: Decimal) -> int:
-    """Сколько бонусов можно списать: не больше баланса и не больше pct% суммы, целые сомы."""
+def max_spend(balance: Decimal, amount: Decimal, pct: Decimal, cap: Decimal = Decimal("0")) -> int:
+    """
+    Сколько бонусов можно списать: не больше баланса, не больше pct% суммы
+    и не больше cap сом за заказ (cap = 0 — без предела). Целые сомы.
+    """
     if balance <= 0 or amount <= 0 or pct <= 0:
         return 0
     limit = min(balance, amount * pct / Decimal("100"))
+    if cap > 0:
+        limit = min(limit, cap)
     return int(limit.to_integral_value(rounding=ROUND_FLOOR))
 
 
@@ -157,6 +168,7 @@ async def profile(db: AsyncSession, customer: Customer, amount: Decimal = Decima
     account = await _account(db, customer)
     tier = (await db.execute(select(Tier).where(Tier.id == customer.tier_id))).scalar_one_or_none() if customer.tier_id else None
     pct = await max_spend_pct(db)
+    cap = await max_spend_cap(db)
     balance = Decimal(str(account.balance or 0))
     data = {
         "phone": customer.phone,
@@ -165,7 +177,8 @@ async def profile(db: AsyncSession, customer: Customer, amount: Decimal = Decima
         "tier": tier.name if tier else "Bronze",
         "tierPercent": float(tier.bonus_percent) if tier else 1.0,
         "maxSpendPct": float(pct),
-        "maxSpend": max_spend(balance, amount, pct),
+        "maxSpendCap": int(cap),
+        "maxSpend": max_spend(balance, amount, pct, cap),
         # Код клиента для кассы: приложение рисует из него QR и показывает без интернета.
         "qrCode": customer.qr_code or "",
     }

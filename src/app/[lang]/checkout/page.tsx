@@ -11,6 +11,7 @@ import { unitPrice } from '@/lib/cart/logic'
 import { getProduct, type Product } from '@/data/products'
 import { paymentMethods } from '@/data/payment-methods'
 import { variantLabel } from '@/lib/cart/sku'
+import { bonusRule } from '@/lib/customer/bonusRule'
 import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { deliveryPriceFor, normalizePhone, type DeliveryMethod, type OrderError } from '@/lib/orders/order'
@@ -336,7 +337,7 @@ export default function CheckoutPage() {
               </div>
               {maxBonus > 0 ? (
                 <>
-                  <p>{t.checkout.bonusMax.replace('{max}', formatSom(maxBonus)).replace('{pct}', String(customer.maxSpendPct))}</p>
+                  <p>{t.checkout.bonusMax.replace('{max}', formatSom(maxBonus)).replace('{rule}', bonusRule(customer.maxSpendPct, customer.maxSpendCap ?? 0, lang))}</p>
                   <div className="checkout-bonus__row">
                     <label>
                       <input

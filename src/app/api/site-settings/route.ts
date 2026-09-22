@@ -11,6 +11,7 @@ export async function GET() {
     ok: true,
     welcomeBonus: settings.welcomeBonus,
     bonusMaxPct: settings.bonusMaxPct,
+    bonusMaxOrder: settings.bonusMaxOrder,
     guestCheckout: settings.guestCheckout,
   })
 }

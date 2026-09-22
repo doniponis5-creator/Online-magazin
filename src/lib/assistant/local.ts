@@ -21,6 +21,7 @@ import type { Product } from '@/data/products'
 import { isInStock, searchProducts, type CustomerBrief } from './knowledge'
 import { orderStatusWord } from './orders'
 import { detectLang, type TalkLang, uzCyrillic } from './talk'
+import { bonusRule } from '@/lib/customer/bonusRule'
 
 export { detectLang }
 export type { TalkLang }
@@ -241,9 +242,9 @@ function bonusText(lang: TalkLang, customer: CustomerBrief | null): string {
   }
   return pick(
     {
-      ru: `У вас ${customer.balance} бонусов. Ими можно закрыть до ${customer.maxSpendPct}% заказа — выбор появится при оформлении.`,
-      ky: `Сизде ${customer.balance} бонус бар. Алар менен заказдын ${customer.maxSpendPct}%ине чейин жабууга болот — тандоо заказ берүүдө чыгат.`,
-      uz: `Sizda ${customer.balance} bonus bor. Ular bilan buyurtmaning ${customer.maxSpendPct}% gacha qismini yopish mumkin — tanlov buyurtma berishda chiqadi.`,
+      ru: `У вас ${customer.balance} бонусов. Ими можно оплатить ${bonusRule(customer.maxSpendPct, customer.maxSpendCap ?? 0, 'ru')} — выбор появится при оформлении.`,
+      ky: `Сизде ${customer.balance} бонус бар. Алар менен ${bonusRule(customer.maxSpendPct, customer.maxSpendCap ?? 0, 'ky')} төлөсөңүз болот — тандоо заказ берүүдө чыгат.`,
+      uz: `Sizda ${customer.balance} bonus bor. Ular bilan ${bonusRule(customer.maxSpendPct, customer.maxSpendCap ?? 0, 'uz')} to'lash mumkin — tanlov buyurtma berishda chiqadi.`,
     },
     lang,
   )

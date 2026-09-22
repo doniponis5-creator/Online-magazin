@@ -13,6 +13,7 @@ import type { Product } from '@/data/products'
 import { orderStatusWord } from './orders'
 import { LANG_NAME, type TalkLang } from './talk'
 import { storePolicy } from './policy'
+import { bonusRule } from '@/lib/customer/bonusRule'
 
 /** Метка, по которой ответ модели превращается в карточки товаров. */
 export const PRODUCTS_MARKER = 'TOVAR:'
@@ -212,7 +213,7 @@ function customerBlock(customer: CustomerBrief | null): string {
   return `ПОКУПАТЕЛЬ (он вошёл на сайт, это его собственные данные)
 Имя: ${customer.name}
 Бонусов SBonus: ${customer.balance}
-Бонусами можно закрыть до ${customer.maxSpendPct}% заказа
+Бонусами можно оплатить ${bonusRule(customer.maxSpendPct, customer.maxSpendCap ?? 0, 'ru')}
 Его заказы:
 ${orders}`
 }

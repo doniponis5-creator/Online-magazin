@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { bonusRule } from '@/lib/customer/bonusRule'
 import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { IconArrowUpRight, IconClose, IconGift } from './Icons'
@@ -23,7 +24,7 @@ const OFF_KEY = 'sc-bonus-bar-off'
 const CACHE_MS = 10 * 60_000
 const DELAY = 2200
 
-type Cached = { at: number; balance: number; pct: number }
+type Cached = { at: number; balance: number; pct: number; cap?: number }
 
 export function BonusReminder() {
   const { t, lang } = useI18n()
@@ -67,6 +68,7 @@ export function BonusReminder() {
         at: Date.now(),
         balance: Number(data.customer.balance ?? 0),
         pct: Number(data.customer.maxSpendPct ?? 0),
+        cap: Number(data.customer.maxSpendCap ?? 0),
       }
       setInfo(next)
       try {
@@ -97,7 +99,7 @@ export function BonusReminder() {
     <div className="bonus-bar" role="status">
       <span className="bonus-bar__icon" aria-hidden="true"><IconGift size={20} /></span>
       <span className="bonus-bar__text">
-        {a.bonusBarText.replace('{amount}', formatSom(info.balance)).replace('{pct}', String(info.pct))}
+        {a.bonusBarText.replace('{amount}', formatSom(info.balance)).replace('{rule}', bonusRule(info.pct, info.cap ?? 0, lang))}
       </span>
       <Link href={`/${lang}/catalog`} className="btn btn--lime btn--sm bonus-bar__cta" onClick={hide}>
         <span className="bonus-bar__cta-long">{a.bonusBarCta}</span>

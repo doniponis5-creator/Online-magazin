@@ -6,6 +6,7 @@ import { Brand } from '@/components/Brand'
 import { CustomerLogin } from '@/components/CustomerLogin'
 import { IconCart, IconGift, IconHeart } from '@/components/Icons'
 import { WelcomeCard } from '@/components/WelcomeCard'
+import { bonusRule } from '@/lib/customer/bonusRule'
 import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { forgetFaceId, hasLockKey, lockKind, loginWithFaceId, rememberForFaceId } from '@/lib/native/appLock'
@@ -237,7 +238,7 @@ export function AccountView() {
       <section className="account-loyalty">
         <Brand bonus />
         <h2>{customer.name}</h2>
-        {welcome > 0 && <WelcomeCard amount={welcome} pct={customer.maxSpendPct} />}
+        {welcome > 0 && <WelcomeCard amount={welcome} pct={customer.maxSpendPct} cap={customer.maxSpendCap ?? 0} />}
         <div className="account-balance">
           <span className="account-balance__label">{a.balance}</span>
           <strong className="account-balance__value">{formatSom(customer.balance)}</strong>
@@ -245,7 +246,7 @@ export function AccountView() {
         <p>
           {a.tier}: <strong>{customer.tier}</strong> · {a.tierPercent.replace('{pct}', String(customer.tierPercent))}
         </p>
-        <p>{a.bonusRule.replace('{pct}', String(customer.maxSpendPct))}</p>
+        <p>{a.bonusRule.replace('{rule}', bonusRule(customer.maxSpendPct, customer.maxSpendCap ?? 0, lang))}</p>
         <div className="account-actions">
           {nativeApp && customer.qrCode && (
             <button type="button" className="btn btn--primary" onClick={showBonusCard}>{a.bonusCard}</button>

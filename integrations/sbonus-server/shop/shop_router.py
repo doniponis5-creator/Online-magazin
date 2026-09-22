@@ -251,12 +251,13 @@ async def site_create_order(request: Request, db: AsyncSession = Depends(get_db)
 
     bonus = Decimal(payload.bonus)
     if bonus > 0:
-        from .shop_customers import _customer, _account, max_spend, max_spend_pct
+        from .shop_customers import _customer, _account, max_spend, max_spend_pct, max_spend_cap
         customer = await _customer(db, payload.customer.phone)
         if not customer or not customer.is_active:
             raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "бонусы: клиент не найден в SBonus")
         account = await _account(db, customer)
-        allowed = max_spend(Decimal(str(account.balance or 0)), Decimal(str(payload.total)), await max_spend_pct(db))
+        allowed = max_spend(Decimal(str(account.balance or 0)), Decimal(str(payload.total)), await max_spend_pct(db),
+                            await max_spend_cap(db))
         if bonus > allowed:
             raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"бонусы: можно списать не больше {allowed} сом")
 

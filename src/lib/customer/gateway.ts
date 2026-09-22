@@ -29,6 +29,8 @@ export type CustomerProfile = {
   tierPercent: number
   /** какую часть заказа на сайте можно оплатить бонусами, % */
   maxSpendPct: number
+  /** сколько бонусов можно списать за один заказ, сом; 0 — без предела */
+  maxSpendCap?: number
   /** сколько бонусов можно списать для переданной суммы */
   maxSpend: number
   /** код клиента в SBonus — то, что кассир сканирует с экрана телефона */
@@ -174,12 +176,15 @@ function demoProfile(_amount = 0): CustomerProfile {
 export type SiteSettings = {
   guestCheckout: boolean
   bonusMaxPct: number
+  /** бонусами за один заказ — не больше, сом; 0 — без предела */
+  bonusMaxOrder: number
   welcomeBonus: number
 }
 
 const SITE_SETTINGS_FALLBACK: SiteSettings = {
   guestCheckout: true,
   bonusMaxPct: 10,
+  bonusMaxOrder: 0,
   welcomeBonus: 1000,
 }
 
@@ -190,6 +195,7 @@ export async function getSiteSettings(): Promise<SiteSettings> {
     return {
       guestCheckout: data.guestCheckout !== false,
       bonusMaxPct: Number(data.bonusMaxPct ?? SITE_SETTINGS_FALLBACK.bonusMaxPct),
+      bonusMaxOrder: Number(data.bonusMaxOrder ?? 0) || 0,
       welcomeBonus: Number(data.welcomeBonus ?? SITE_SETTINGS_FALLBACK.welcomeBonus),
     }
   } catch (error) {

@@ -39,6 +39,8 @@ export type CustomerBrief = {
   balance: number
   /** какую часть заказа можно закрыть бонусами, % */
   maxSpendPct: number
+  /** бонусами за один заказ — не больше, сом; 0 — без предела */
+  maxSpendCap?: number
   orders: { id: string; status: string; total: number; createdAt: string | null }[]
   /**
    * Его рассрочка — цифры из 1С. null: долга нет или 1С их не прислала.
