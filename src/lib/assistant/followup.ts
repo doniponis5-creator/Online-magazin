@@ -33,7 +33,7 @@ export async function followUp(turns: ChatTurn[], shown: string[], lang: Lang, n
   const say = {
     ru: `${who}вы смотрели ${item}. Ещё актуально? Если остались вопросы — отвечу здесь. Оформить можно прямо в этом чате: напишите «беру».`,
     ky: `${who}${item} караган элеңиз. Дагы керекпи? Суроо болсо ушул жерде жооп берем. Заказды ушул чатта эле берсеңиз болот: «алам» деп жазыңыз.`,
-    uz: `${who}${item} ko'rgan edingiz. Hali kerakmi? Savol bo'lsa shu yerda javob beraman. Buyurtmani shu chatda berish mumkin: «olaman» deb yozing.`,
+    uz: `${who}${item} курган эдингиз. Хали керакми? Савол булса шу ерда жавоб бераман. Буюртмани шу чатда бериш мумкин: «оламан» деб ёзинг.`,
   }
   const text = say[talk]
   return { text: text.charAt(0).toUpperCase() + text.slice(1) }

@@ -20,7 +20,7 @@ import { PRODUCTS_MARKER } from './prompt'
 import type { Product } from '@/data/products'
 import { isInStock, searchProducts, type CustomerBrief } from './knowledge'
 import { orderStatusWord } from './orders'
-import { detectLang, type TalkLang } from './talk'
+import { detectLang, type TalkLang, uzCyrillic } from './talk'
 
 export { detectLang }
 export type { TalkLang }
@@ -29,7 +29,14 @@ export type Answer = { text: string; productIds: string[] }
 
 type Say = { ru: string; ky: string; uz: string }
 
-const pick = <T,>(say: Record<TalkLang, T>, lang: TalkLang): T => say[lang]
+// Узбекские фразы написаны латиницей — отдаём кириллицей (talk.ts uzCyrillic).
+const pick = <T,>(say: Record<TalkLang, T>, lang: TalkLang): T => {
+  const value = say[lang]
+  if (lang !== 'uz') return value
+  if (typeof value === 'string') return uzCyrillic(value) as T
+  if (Array.isArray(value)) return value.map((v) => (typeof v === 'string' ? uzCyrillic(v) : v)) as T
+  return value
+}
 
 /**
  * Ответ модели → текст + список товаров.
@@ -173,7 +180,8 @@ const MONTHS: Record<TalkLang, string[]> = {
 export function dayText(iso: string, lang: TalkLang): string {
   const [, m, d] = iso.slice(0, 10).split('-').map(Number)
   if (!m || !d || m > 12) return iso.slice(0, 10)
-  return lang === 'ru' ? `${d} ${MONTHS.ru[m - 1]}` : `${d}-${MONTHS[lang][m - 1]}`
+  if (lang === 'ru') return `${d} ${MONTHS.ru[m - 1]}`
+  return `${d}-${lang === 'uz' ? uzCyrillic(MONTHS.uz[m - 1]) : MONTHS.ky[m - 1]}`
 }
 
 /** «Азамат, по рассрочке…» — а без имени фраза начинается с заглавной буквы. */

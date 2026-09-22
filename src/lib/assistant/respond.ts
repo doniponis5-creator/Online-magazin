@@ -72,11 +72,11 @@ async function salesFlow(
   const who = { name: known.name ?? customer?.name ?? nameFromTurns(turns), phone: known.phone }
 
   // Передумал посреди шагов — выходим, не доспрашивая.
-  if (/^(отмена|стоп|bekor|токтот|жок|cancel|не надо)$/i.test(text.trim()) && (hasDraft(key) || hasLead(key))) {
+  if (/^(отмена|стоп|bekor|бекор|токтот|жок|cancel|не надо)$/i.test(text.trim()) && (hasDraft(key) || hasLead(key))) {
     cancel(key)
     cancelLead(key)
     return only(
-      talk === 'ky' ? 'Макул, токтоттук. Дагы эмне керек?' : talk === 'uz' ? "Mayli, to'xtatdik. Yana nima kerak?" : 'Хорошо, отменил. Чем ещё помочь?',
+      talk === 'ky' ? 'Макул, токтоттук. Дагы эмне керек?' : talk === 'uz' ? 'Майли, тухтатдик. Яна нима керак?' : 'Хорошо, отменил. Чем ещё помочь?',
     )
   }
 

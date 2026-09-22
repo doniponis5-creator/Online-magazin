@@ -11,10 +11,10 @@ describe('заказ в Telegram', () => {
     const first = await start(42, [product.id], 'uz')
     expect(first).toContain(product.nameRu)
 
-    expect(await step(42, 'Азамат', 'uz', 'ru')).toContain('raqam')
-    expect(await step(42, '0555123456', 'uz', 'ru')).toContain('Qayerga')
+    expect(await step(42, 'Азамат', 'uz', 'ru')).toContain('ракам')
+    expect(await step(42, '0555123456', 'uz', 'ru')).toContain('Каерга')
     const done = await step(42, "o'zim olaman", 'uz', 'ru')
-    expect(done).toContain("To'lash:")
+    expect(done).toContain('Тулаш:')
     expect(done).toContain('TEST-')
   })
 

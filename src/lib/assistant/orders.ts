@@ -6,7 +6,7 @@
  * объяснить по-разному.
  */
 
-import type { TalkLang } from './talk'
+import { uzCyrillic, type TalkLang } from './talk'
 
 const WORDS: Record<string, Record<TalkLang, string>> = {
   awaiting_payment: {
@@ -39,5 +39,6 @@ const WORDS: Record<string, Record<TalkLang, string>> = {
 }
 
 export function orderStatusWord(status: string, lang: TalkLang): string {
-  return WORDS[status]?.[lang] ?? status
+  const word = WORDS[status]?.[lang] ?? status
+  return lang === 'uz' ? uzCyrillic(word) : word
 }

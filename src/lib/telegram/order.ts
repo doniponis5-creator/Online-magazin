@@ -57,7 +57,7 @@ export function cancel(chatId: ChatKey): void {
 
 /** Покупатель собрался брать. Слова из трёх языков, включая «куда платить». */
 export const BUY_INTENT =
-  /(olaman|olsam|olamiz|sotib ol|buyurtma|zakaz|oformit|oformlyat|rasmiylashtir|заказ|беру|возьму|куплю|хочу купить|оформ|алам|алайын|pulini|pulni|qayerga to|qaerga to|куда плат|куда перевести|куда скинуть|как купить|как заказать|kuda plat)/i
+  /(olaman|olsam|olamiz|sotib ol|buyurtma|zakaz|oformit|oformlyat|rasmiylashtir|заказ|беру|возьму|куплю|хочу купить|оформ|алам|алайын|pulini|pulni|qayerga to|qaerga to|куда плат|куда перевести|куда скинуть|как купить|как заказать|kuda plat|оламан|олсам|оламиз|сотиб ол|буюртма|расмийлаштир|пулини|пулни|каерга тул|кайерга тул|кандай сотиб|кандай буюртма)/i
 
 /**
  * Короткое «да» в ответ на предложение оформить заказ.
@@ -69,59 +69,59 @@ export const BUY_INTENT =
 // Граница слова \b знает только латиницу, поэтому после «да» её нет и проверка
 // срывалась. Вместо неё — «дальше не буква».
 export const AFFIRM =
-  /^(ha|xa|давай|да|ооба|оба|макул|maqul|mayli|yes|ok|окей|хорошо|bo.?ladi|bop)(?![\p{L}])/iu
+  /^(ha|xa|давай|да|ооба|оба|макул|maqul|mayli|yes|ok|окей|хорошо|bo.?ladi|bop|ха|хоп|майли|булади|булади)(?![\p{L}])/iu
 
 /** Признак того, что бот предложил оформить заказ. */
 // Кыргызские «буйрутма» и «тариздейли» — обязательно: без них «ооба» на
 // «буйрутманы тариздейлиби?» уходило модели, и она заново спрашивала имя.
-export const OFFER = /(оформ|заказ|buyurtma|zakaz|rasmiylashtir|заказать|буйрутма|таризд|тариз)/i
+export const OFFER = /(оформ|заказ|buyurtma|zakaz|rasmiylashtir|заказать|буйрутма|таризд|тариз|буюртма|расмийлаштир)/i
 
 const ASK_NAME: Say = {
   ru: 'Хорошо, оформим. Как вас зовут?',
   ky: 'Жакшы, заказ берели. Атыңыз ким?',
-  uz: 'Yaxshi, buyurtma qilamiz. Ismingiz nima?',
+  uz: 'Яхши, буюртма киламиз. Исмингиз нима?',
 }
 
 const ASK_PHONE: Say = {
   ru: 'Ваш номер телефона? Напишите как есть, например 0555 123456.',
   ky: 'Телефон номериңиз? Мисалы: 0555 123456.',
-  uz: 'Telefon raqamingiz? Masalan: 0555 123456.',
+  uz: 'Телефон ракамингиз? Масалан: 0555 123456.',
 }
 
 const BAD_PHONE: Say = {
   ru: 'Что-то номер не похож на настоящий. Напишите ещё раз, например 0555 123456.',
   ky: 'Номер туура эмес окшойт. Кайра жазыңыз, мисалы 0555 123456.',
-  uz: "Raqam to'g'ri emasga o'xshaydi. Qaytadan yozing, masalan 0555 123456.",
+  uz: 'Ракам тугри эмасга ухшайди. Кайтадан ёзинг, масалан 0555 123456.',
 }
 
 const ASK_WHERE: Say = {
   ru: 'Куда везти? Напишите город или село. Если заберёте сами — напишите «заберу сам».',
   ky: 'Кайда жеткирели? Шаарды же айылды жазыңыз. Өзүңүз аласызбы — «өзүм алам» деп жазыңыз.',
-  uz: "Qayerga olib boramiz? Shahar yoki qishloqni yozing. O'zingiz olsangiz — «o'zim olaman» deb yozing.",
+  uz: 'Каерга олиб борамиз? Шахар ёки кишлокни ёзинг. Узингиз олсангиз — «узим оламан» деб ёзинг.',
 }
 
 const ASK_ADDRESS: Say = {
   ru: 'Адрес: улица и дом.',
   ky: 'Дарек: көчө жана үй.',
-  uz: "Manzil: ko'cha va uy.",
+  uz: 'Манзил: куча ва уй.',
 }
 
 const ASK_PICK: Say = {
   ru: 'Какой из них берём? Напишите номер.',
   ky: 'Кайсынысын аласыз? Номерин жазыңыз.',
-  uz: 'Qaysi birini olasiz? Raqamini yozing.',
+  uz: 'Кайси бирини оласиз? Ракамини ёзинг.',
 }
 
 const NO_PRODUCT: Say = {
   ru: 'Скажите, какой товар — название или модель, — и я всё оформлю.',
   ky: 'Кайсы товар экенин жазыңыз — аталышын же моделин, — баарын жасайм.',
-  uz: "Qaysi mahsulot ekanini yozing — nomi yoki modeli, — hammasini rasmiylashtiraman.",
+  uz: 'Кайси махсулот эканини ёзинг — номи ёки модели, — хаммасини расмийлаштираман.',
 }
 
 const FAILED: Say = {
   ru: 'Не получилось оформить заказ. Позвоните нам, оформим вручную: ',
   ky: 'Заказ берүү болбой калды. Бизге чалыңыз, колдон жасайбыз: ',
-  uz: "Buyurtma qilib bo'lmadi. Bizga qo'ng'iroq qiling, qo'lda rasmiylashtiramiz: ",
+  uz: 'Буюртма килиб булмади. Бизга кунгирок килинг, кулда расмийлаштирамиз: ',
 }
 
 /**
@@ -229,7 +229,7 @@ export async function step(chatId: ChatKey, text: string, lang: TalkLang, siteLa
 
   if (draft.step === 'where') {
     // «Заберу сам» — самовывоз, адрес не нужен.
-    if (/сам|өзүм|o.?zim|pickup|дүкөндөн|do.?kondan|магазин/i.test(value)) {
+    if (/сам|өзүм|o.?zim|узим|узимиз|pickup|дүкөндөн|do.?kondan|дукондан|магазин/i.test(value)) {
       return await finish(chatId, draft, 'pickup', lang, siteLang)
     }
     draft.city = value.slice(0, 80)
@@ -296,7 +296,7 @@ function done(total: number, orderId: string, payUrl: string, lang: TalkLang): s
   const say: Say = {
     ru: `Готово! Заказ ${orderId}, к оплате ${sum}.\n\nОплатить: ${payUrl}\n\nСсылка открывает страницу O!Деньги — платите из приложения своего банка. Как оплатите, наш сотрудник свяжется с вами и договорится, когда привезти.`,
     ky: `Даяр! Заказ ${orderId}, төлөмгө ${sum}.\n\nТөлөө: ${payUrl}\n\nШилтеме O!Деньги барагын ачат — өз банкыңыздын тиркемесинен төлөңүз. Төлөгөнүңүздөн кийин кызматкерибиз байланышып, качан жеткирерин келишет.`,
-    uz: `Tayyor! Buyurtma ${orderId}, to'lov ${sum}.\n\nTo'lash: ${payUrl}\n\nHavola O!Dengi sahifasini ochadi — o'z bankingiz ilovasidan to'lang. To'laganingizdan keyin xodimimiz siz bilan bog'lanib, qachon yetkazishni kelishadi.`,
+    uz: `Тайёр! Буюртма ${orderId}, тулов ${sum}.\n\nТулаш: ${payUrl}\n\nХавола O!Деньги сахифасини очади — уз банкингиз иловасидан туланг. Тулаганингиздан кейин ходимимиз сиз билан богланиб, качон етказишни келишади.`,
   }
   return pick(say, lang)
 }

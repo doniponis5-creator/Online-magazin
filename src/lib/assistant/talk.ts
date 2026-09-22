@@ -83,3 +83,33 @@ export function detectLang(text: string, fallback: TalkLang): TalkLang {
   if (/[а-я]/.test(low)) return 'ru'
   return fallback
 }
+
+/**
+ * Узбекский латиницей → кириллицей обычными русскими буквами (без ў, ғ, қ, ҳ —
+ * так здесь пишут все, латиницу многие не читают). Для готовых фраз запасного
+ * режима, статусов заказа и месяцев; ответы модели — сразу кириллицей.
+ *
+ * Слова с цифрами, ЗАГЛАВНЫЕ коды моделей и уже кириллические — не трогаем.
+ */
+const PAIRS: [RegExp, string][] = [
+  [/o[\u02bb\u2018\u2019']/g, 'у'],
+  [/g[\u02bb\u2018\u2019']/g, 'г'],
+  [/sh/g, 'ш'], [/ch/g, 'ч'], [/ya/g, 'я'], [/yo/g, 'ё'], [/yu/g, 'ю'], [/ye/g, 'е'],
+  [/[\u02bb\u2018\u2019']/g, 'ъ'],
+  [/^e/, 'э'],
+]
+const LETTERS: Record<string, string> = {
+  a: 'а', b: 'б', d: 'д', e: 'е', f: 'ф', g: 'г', h: 'х', i: 'и', j: 'ж', k: 'к', l: 'л', m: 'м', n: 'н',
+  o: 'о', p: 'п', q: 'к', r: 'р', s: 'с', t: 'т', u: 'у', v: 'в', x: 'х', y: 'й', z: 'з', c: 'ц', w: 'в',
+}
+
+export function uzCyrillic(text: string): string {
+  return text.replace(/[A-Za-z0-9\u02bb\u2018\u2019']+/g, (word) => {
+    if (/\d/.test(word) || (word.length > 1 && word === word.toUpperCase())) return word
+    const capital = word[0] === word[0].toUpperCase()
+    let out = word.toLowerCase()
+    for (const [from, to] of PAIRS) out = out.replace(from, to)
+    out = out.replace(/[a-z]/g, (ch) => LETTERS[ch] ?? ch)
+    return capital ? out.charAt(0).toUpperCase() + out.slice(1) : out
+  })
+}

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { detectLang, localAnswer, parseAnswer } from '@/lib/assistant/local'
+import { uzCyrillic } from '@/lib/assistant/talk'
 import { catalogForQuestion, searchProducts } from '@/lib/assistant/knowledge'
 import { systemInstruction } from '@/lib/assistant/prompt'
 import { products } from '@/data/products'
@@ -48,7 +49,7 @@ describe('detectLang', () => {
 describe('localAnswer', () => {
   it('отвечает про доставку на языке вопроса', () => {
     expect(localAnswer('Доставка есть?', 'ru').text).toMatch(/Возим по всему Кыргызстану/)
-    expect(localAnswer('Yetkazib berasizmi?', 'ru').text).toMatch(/olib boramiz/i)
+    expect(localAnswer('Yetkazib berasizmi?', 'ru').text).toMatch(/олиб борамиз/i)
     expect(localAnswer('Жеткирүү барбы?', 'ru').text).toMatch(/жеткиребиз/i)
   })
 
@@ -168,7 +169,7 @@ describe('рассрочка', () => {
     expect(ru).toMatch(/1 октября/)
     expect(ru).toMatch(/Осталось платежей: 5/)
     const uz = localAnswer("Nasiyam qancha qoldi?", 'ru', withDebt).text
-    expect(uz).toMatch(/1-oktabr/)
+    expect(uz).toMatch(/1-октабр/)
   })
 
   it('долга нет — так и говорит, без выдуманных цифр', () => {
@@ -236,5 +237,25 @@ describe('правила магазина в голове консультант
     expect(text).toContain('[Голосовое]')
     // Старые запреты «не знаешь часы работы» ушли — иначе они спорят с правилами.
     expect(text).not.toMatch(/Часы работы магазина\. Не пиши/)
+  })
+})
+
+describe('узбекский — всегда кириллицей', () => {
+  it('без ў/ғ/қ/ҳ, латиницу здесь не читают', () => {
+    expect(systemInstruction('ru', null, 'uz', products)).toMatch(/ТОЛЬКО кириллицей.*БЕЗ ў, ғ, қ, ҳ/)
+    expect(systemInstruction('ru', null, 'ru', products)).not.toMatch(/ТОЛЬКО кириллицей/)
+  })
+})
+
+describe('uzCyrillic — латиница в кириллицу без ў/ғ/қ/ҳ', () => {
+  it('переводит фразы запасного режима', () => {
+    expect(uzCyrillic("Assalomu alaykum! Qanday texnika kerak?")).toBe('Ассалому алайкум! Кандай техника керак?')
+    expect(uzCyrillic("o'zim olaman")).toBe('узим оламан')
+    expect(uzCyrillic("bo'lib to'lash qoldig'ini bilish uchun")).toBe('булиб тулаш колдигини билиш учун')
+    expect(uzCyrillic("ma'lumot, Yoki qo'ng'iroq qiling")).toBe('маълумот, Ёки кунгирок килинг')
+    expect(uzCyrillic('Erkin sentabr')).toBe('Эркин сентабр')
+  })
+  it('коды моделей, цифры и кириллицу не трогает', () => {
+    expect(uzCyrillic('MIDEA MF205W80WB 22 300 som «Кабинет»')).toBe('MIDEA MF205W80WB 22 300 сом «Кабинет»')
   })
 })

@@ -23,7 +23,7 @@ const pick = (say: Say, lang: TalkLang) => say[lang]
 
 /** Просит живого человека или звонок. Три языка, как пишут на самом деле. */
 export const CALL_INTENT =
-  /(перезвон|позвоните мне|позвонить мне|свяжитесь со мной|свяжитесь|менеджер|оператор|живой человек|живым человеком|с человеком|консультант.{0,10}человек|чалып кой|мага чал|чалыңыз мага|менеджер менен|qo.?ng.?iroq qiling menga|menga qo.?ng.?iroq|menga tel|qo.?ng.?iroq qilib|odam bilan|operator|menejer|телефон қилинг|менга қўнғироқ)/i
+  /(перезвон|позвоните мне|позвонить мне|свяжитесь со мной|свяжитесь|менеджер|оператор|живой человек|живым человеком|с человеком|консультант.{0,10}человек|чалып кой|мага чал|чалыңыз мага|менеджер менен|qo.?ng.?iroq qiling menga|menga qo.?ng.?iroq|menga tel|qo.?ng.?iroq qilib|odam bilan|operator|menejer|телефон қилинг|менга қўнғироқ|телефон килинг|менга кунгирок|кунгирок килинг|одам билан|менежер|оператор билан)/i
 
 type Draft = { context: string; name?: string; channel: 'site' | 'telegram' | 'whatsapp' }
 const drafts = store('lead-drafts', () => new Map<ChatKey, Draft>())
@@ -31,25 +31,25 @@ const drafts = store('lead-drafts', () => new Map<ChatKey, Draft>())
 const ASK_PHONE: Say = {
   ru: 'Конечно, сотрудник вам перезвонит. Напишите номер телефона, например 0555 123456.',
   ky: 'Албетте, кызматкер сизге чалат. Телефон номериңизди жазыңыз, мисалы 0555 123456.',
-  uz: "Albatta, xodimimiz sizga qo'ng'iroq qiladi. Telefon raqamingizni yozing, masalan 0555 123456.",
+  uz: 'Албатта, ходимимиз сизга кунгирок килади. Телефон ракамингизни ёзинг, масалан 0555 123456.',
 }
 
 const BAD_PHONE: Say = {
   ru: 'Номер не похож на настоящий. Напишите ещё раз, например 0555 123456 — или «отмена».',
   ky: 'Номер туура эмес окшойт. Кайра жазыңыз, мисалы 0555 123456 — же «жок».',
-  uz: "Raqam to'g'ri emasga o'xshaydi. Qaytadan yozing, masalan 0555 123456 — yoki «bekor».",
+  uz: 'Ракам тугри эмасга ухшайди. Кайтадан ёзинг, масалан 0555 123456 — ёки «бекор».',
 }
 
 const SENT: Say = {
   ru: 'Готово — передал сотруднику, он перезвонит вам в рабочее время. Пока можно продолжать спрашивать здесь.',
   ky: 'Даяр — кызматкерге өткөрдүм, иш убагында сизге чалат. Азырынча бул жерден сурай бериңиз.',
-  uz: "Tayyor — xodimga yetkazdim, ish vaqtida sizga qo'ng'iroq qiladi. Hozircha shu yerda so'rashda davom etishingiz mumkin.",
+  uz: 'Тайёр — ходимга етказдим, иш вактида сизга кунгирок килади. Хозирча шу ерда сурашда давом этишингиз мумкин.',
 }
 
 const FAILED: Say = {
   ru: 'Не получилось передать. Позвоните нам сами, пожалуйста: +996 557 100 505.',
   ky: 'Өткөрүү болбой калды. Өзүңүз чалыңызчы: +996 557 100 505.',
-  uz: "Yetkazib bo'lmadi. O'zingiz qo'ng'iroq qiling, iltimos: +996 557 100 505.",
+  uz: 'Етказиб булмади. Узингиз кунгирок килинг, илтимос: +996 557 100 505.',
 }
 
 export function hasLead(key: ChatKey): boolean {

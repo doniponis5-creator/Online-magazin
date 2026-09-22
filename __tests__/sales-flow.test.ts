@@ -3,7 +3,7 @@ vi.mock('server-only', () => ({}))
 process.env.SHOP_PAYMENT_MODE = 'mock'
 
 import { products } from '@/data/products'
-import { AFFIRM, OFFER, looksLikeQuestion, start, step } from '@/lib/telegram/order'
+import { AFFIRM, BUY_INTENT, OFFER, looksLikeQuestion, start, step } from '@/lib/telegram/order'
 import { detectLang } from '@/lib/assistant/talk'
 import { talkLang } from '@/lib/assistant/reply'
 import { followUp } from '@/lib/assistant/followup'
@@ -44,9 +44,9 @@ describe('перезвоните мне', () => {
   })
 
   it('гостя просит номер и не принимает мусор', async () => {
-    expect(await startLead('web:lead-2', 'uz', 'ctx')).toMatch(/raqamingiz/)
-    expect(await leadStep('web:lead-2', 'abc', 'uz')).toMatch(/to'g'ri emas/)
-    expect(await leadStep('web:lead-2', '0555 123 456', 'uz')).toMatch(/Tayyor/)
+    expect(await startLead('web:lead-2', 'uz', 'ctx')).toMatch(/ракамингизни/)
+    expect(await leadStep('web:lead-2', 'abc', 'uz')).toMatch(/тугри эмас/)
+    expect(await leadStep('web:lead-2', '0555 123 456', 'uz')).toMatch(/Тайёр/)
     expect(await leadStep('web:lead-2', '0555 123 456', 'uz')).toBeNull()
   })
 
@@ -111,7 +111,7 @@ describe('напоминание «ещё актуально?»', () => {
     const text = (r as { text: string }).text
     expect(text).toMatch(/^Aziz, /)
     expect(text).toContain(product.nameRu)
-    expect(text).toContain('olaman')
+    expect(text).toContain('оламан')
   })
   it('без товара — пропуск', async () => {
     expect(await followUp([{ role: 'user', text: 'привет' }], [], 'ru')).toEqual({ skip: 'not-shown' })
@@ -157,5 +157,15 @@ describe('узбекская кириллица без особых букв (с
     expect(detectLang('Менин суроомо жооп берсениз', 'ru')).toBe('ky')
     expect(detectLang('Канча турат, жеткирип бересизби', 'ru')).toBe('ky')
     expect(detectLang('Сколько стоит и когда привезёте', 'ru')).toBe('ru')
+  })
+})
+
+describe('узбекские слова кириллицей в шагах заказа', () => {
+  it('«оламан» — покупка, «ха» — согласие, «узим оламан» — самовывоз', () => {
+    expect(BUY_INTENT.test('оламан')).toBe(true)
+    expect(BUY_INTENT.test('буюртма килмокчиман')).toBe(true)
+    expect(AFFIRM.test('Ха')).toBe(true)
+    expect(AFFIRM.test('Хоп')).toBe(true)
+    expect(OFFER.test('Буюртма килайликми? «Ха» деб ёзинг')).toBe(true)
   })
 })
