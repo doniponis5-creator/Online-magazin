@@ -31,6 +31,8 @@ export function systemInstruction(
   ceiling: number | null = null,
   /** товар, страница которого открыта у покупателя (чат на сайте) */
   viewing: Product | null = null,
+  /** имя известно без входа — из телефона владельца или профиля WhatsApp */
+  knownName?: string,
 ): string {
   return `Ты — продавец-консультант интернет-магазина Smart Centr в Кыргызстане.
 Ты отвечаешь в чате на сайте. Покупатель пишет по-русски, по-кыргызски или по-узбекски.
@@ -162,7 +164,7 @@ ${storePolicy()}
 
 ${notesBlock(notes)}
 
-${customerBlock(customer)}
+${customerBlock(customer, knownName)}
 
 ${installmentBlock(customer)}
 
@@ -206,9 +208,11 @@ ${text}
  * Рассрочка отдельной строкой: сайт её остатка не получает, и модель должна
  * это знать, иначе она начнёт придумывать месяцы.
  */
-function customerBlock(customer: CustomerBrief | null): string {
+function customerBlock(customer: CustomerBrief | null, knownName?: string): string {
   if (!customer) {
+    const name = knownName?.trim()
     return `ПОКУПАТЕЛЬ
+${name ? `Имя известно: ${name} — так он записан в телефоне магазина. Там могут быть фамилия, город или пометка («Айтназар мечеть», «AMIR ideal»): обращайся только по имени человека, лишнее опусти; если это не имя, а пометка — просто не называй по имени. Имя НЕ спрашивай.` : 'Имени ты не знаешь.'}
 Он не вошёл на сайт. Про его бонусы и заказы ты ничего не знаешь.
 Спросил про свои бонусы или заказ — попроси войти по номеру телефона (кнопка «Кабинет») или дай телефон магазина.`
   }

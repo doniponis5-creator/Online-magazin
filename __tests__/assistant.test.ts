@@ -282,3 +282,12 @@ describe('кому адресовано (WhatsApp)', () => {
     expect(systemInstruction('ru', null, 'ky', products)).toContain('«чалып коюңуз»')
   })
 })
+
+describe('известное имя без входа (WhatsApp)', () => {
+  it('имя из телефона владельца — не спрашивать', () => {
+    const text = systemInstruction('ru', null, 'ru', products, '', '', null, null, 'Миргуль')
+    expect(text).toContain('Имя известно: Миргуль')
+    expect(text).toMatch(/имя НЕ спрашивай/)
+    expect(systemInstruction('ru', null, 'ru', products)).toContain('Имени ты не знаешь')
+  })
+})

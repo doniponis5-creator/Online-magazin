@@ -35,6 +35,8 @@ export async function answer(
   customer: CustomerBrief | null = null,
   /** id товара, страница которого сейчас открыта у покупателя */
   page?: string,
+  /** имя, которое уже известно (WhatsApp: из телефона владельца или профиля) */
+  knownName?: string,
 ): Promise<AssistantReply> {
   const lastQuestion = [...turns].reverse().find((t) => t.role === 'user')?.text ?? ''
   // Каталог берём сегодняшний: из 1С, если сервер настроен, иначе вшитый.
@@ -52,7 +54,7 @@ export async function answer(
     try {
       const lastAnswer = [...turns].reverse().find((t) => t.role === 'assistant')?.text ?? ''
       const ceiling = cheaperThan(lastQuestion, lastAnswer)
-      const raw = await askGemini(systemInstruction(lang, customer, talkLang(turns, lang), list, recent, notes, ceiling, viewing), turns)
+      const raw = await askGemini(systemInstruction(lang, customer, talkLang(turns, lang), list, recent, notes, ceiling, viewing, knownName), turns)
       const parsed = parseAnswer(raw)
       return { text: parsed.text, products: hits(parsed.productIds, lang, list), source: 'gemini', audience: parsed.audience }
     } catch (error) {

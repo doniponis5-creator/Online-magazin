@@ -220,7 +220,9 @@ async def poll_once() -> dict:
         await redis_client.delete(f"wa:nudge:{digits}")
         await redis_client.hset("wa:pending", digits, json.dumps({
             "ts": int(message.get("timestamp") or time.time()),
-            "name": str(message.get("senderName") or "")[:60],
+            # Имя из телефона владельца (senderContactName) важнее имени профиля WhatsApp:
+            # так покупателя зовут в магазине, и робот не переспрашивает.
+            "name": str(message.get("senderContactName") or message.get("senderName") or "")[:60],
             "voice": voice,
         }, ensure_ascii=False))
 

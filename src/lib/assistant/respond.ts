@@ -50,7 +50,7 @@ export async function respond(
 ): Promise<Reply> {
   const flow = await salesFlow(channel, turns, lang, customer, buy, shown, page)
   if (flow) return flow
-  const reply = await answer(turns, lang, customer, page)
+  const reply = await answer(turns, lang, customer, page, channel.known.name)
   // Сайт — там только покупатели. В WhatsApp модель ещё смотрит, кому адресовано.
   if (channel.leadChannel !== 'whatsapp') return reply
   if (reply.audience === 'personal') return { text: '', products: [], source: reply.source, silent: true }
