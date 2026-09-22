@@ -522,4 +522,5 @@ def run_cron() -> None:
         if result.get("answered") or result.get("nudged"):
             print(f"{datetime.now():%Y-%m-%d %H:%M} ответил: {result.get('answered', 0)}, напомнил: {result.get('nudged', 0)}")
     except Exception as error:
-        print(f"{datetime.now():%Y-%m-%d %H:%M} ошибка: {error}")
+        # У ConnectError текст пустой — без имени класса в журнале было «ошибка: ».
+        print(f"{datetime.now():%Y-%m-%d %H:%M} ошибка: {type(error).__name__}: {error}")
