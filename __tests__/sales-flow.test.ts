@@ -40,7 +40,7 @@ describe('перезвоните мне', () => {
   })
 
   it('вошедшему не задаёт вопрос про номер', async () => {
-    expect(await startLead('web:lead-1', 'ru', 'ctx', { phone: '+996555123456' })).toMatch(/перезвонит/)
+    expect(await startLead('web:lead-1', 'ru', 'ctx', { phone: '+996555123456' })).toMatch(/перезвонят/)
   })
 
   it('гостя просит номер и не принимает мусор', async () => {

@@ -291,3 +291,9 @@ describe('известное имя без входа (WhatsApp)', () => {
     expect(systemInstruction('ru', null, 'ru', products)).toContain('Имени ты не знаешь')
   })
 })
+
+describe('«руководство», не «сотрудник»', () => {
+  it('правило в подсказке', () => {
+    expect(systemInstruction('ru', null, 'ru', products)).toMatch(/Слов «сотрудник», «менеджер», «оператор» покупателю не говори/)
+  })
+})
