@@ -1,5 +1,5 @@
 {
-  "0": "reply.ts",
+  "0": "ref_server_only",
   "1": "build_model.py",
   "2": "build_extension.py",
   "3": "config.ts",
@@ -27,7 +27,7 @@
   "25": "knowledge.ts",
   "26": "shop_catalog.py",
   "27": "TASK 03A Report — review closure and LG scene",
-  "28": "bot.ts",
+  "28": "respond.ts",
   "29": "TASK 04 Report — Blender Model of LG F4X5ES5SB",
   "30": "Smart Centr Architecture (site, iOS, Android, 1C, SBonus)",
   "31": "CartProvider.tsx",
@@ -183,8 +183,10 @@
   "181": "@playwright/test",
   "182": "ref_node_path",
   "183": "urllib3",
+  "184": "bot.ts",
+  "185": "live.ts",
+  "186": "meta/route.ts",
   "190": "[lang]/layout.tsx",
   "191": "orders/order.ts",
-  "194": "telegram/order.ts",
-  "202": "@playwright/test"
+  "194": "telegram/order.ts"
 }

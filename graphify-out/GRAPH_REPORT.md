@@ -1,22 +1,22 @@
 # Graph Report - Online-magazin  (2026-09-22)
 
 ## Corpus Check
-- 315 files · ~4,901,524 words
+- 315 files · ~4,901,534 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 55 file(s) not represented in the graph (top: .xml 13, (none) 8, .css 8)
 
 ## Summary
-- 2171 nodes · 4955 edges · 188 communities (113 shown, 75 thin omitted)
+- 2170 nodes · 4949 edges · 190 communities (115 shown, 75 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 108 edges (avg confidence: 0.86)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `00fbe3d2`
+- Built from commit: `7974217b`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- reply.ts
+- ref_server_only
 - build_model.py
 - build_extension.py
 - config.ts
@@ -24,7 +24,6 @@
 - App Store га топшириш — 8-қадам
 - package.json
 - AccountView.tsx
-- ProductArt.tsx
 - AppLockPlugin.java
 - shop_customers.py
 - customer/gateway.ts
@@ -44,7 +43,7 @@
 - knowledge.ts
 - shop_catalog.py
 - TASK 03A Report — review closure and LG scene
-- bot.ts
+- respond.ts
 - TASK 04 Report — Blender Model of LG F4X5ES5SB
 - Smart Centr Architecture (site, iOS, Android, 1C, SBonus)
 - CartProvider.tsx
@@ -188,6 +187,9 @@
 - @playwright/test
 - ref_node_path
 - urllib3
+- bot.ts
+- live.ts
+- meta/route.ts
 - [lang]/layout.tsx
 - orders/order.ts
 - telegram/order.ts
@@ -195,8 +197,8 @@
 ## God Nodes (most connected - your core abstractions)
 1. `useI18n()` - 70 edges
 2. `formatSom()` - 38 edges
-3. `react` - 32 edges
-4. `handleUpdate()` - 32 edges
+3. `handleUpdate()` - 32 edges
+4. `react` - 32 edges
 5. `text()` - 31 edges
 6. `base()` - 30 edges
 7. `OfflineCatalogActivity` - 24 edges
@@ -219,11 +221,11 @@
 ## Import Cycles
 - None detected.
 
-## Communities (188 total, 75 thin omitted)
+## Communities (190 total, 75 thin omitted)
 
-### Community 0 - "reply.ts"
-Cohesion: 0.14
-Nodes (21): ref_server_only, dynamic, POST(), followUp, CustomerBrief, ProductHit, dailyLimit(), day (+13 more)
+### Community 0 - "ref_server_only"
+Cohesion: 0.27
+Nodes (8): ref_server_only, dailyLimit(), day, dayBudgetLeft(), hits, Cache, box, store()
 
 ### Community 1 - "build_model.py"
 Cohesion: 0.12
@@ -252,10 +254,6 @@ Nodes (40): config, dependencies, @capacitor/android, @capacitor/cli, @capacitor
 ### Community 7 - "AccountView.tsx"
 Cohesion: 0.12
 Nodes (28): src_components_account, AccountView(), formatDate(), src_components_home_merchandising, AppLockPlugin, CapacitorGlobal, forgetFaceId(), hasLockKey() (+20 more)
-
-### Community 8 - "ProductArt.tsx"
-Cohesion: 0.09
-Nodes (6): absolute(), cell(), COLUMNS, metaFeedCsv(), metaFeedRows(), base
 
 ### Community 9 - "AppLockPlugin.java"
 Cohesion: 0.05
@@ -322,8 +320,8 @@ Cohesion: 0.31
 Nodes (15): csv, main(), Почему товара нет на сайте — только чтение, база 1С не меняется. На сайт уходит…, reason(), connect(), detect_brand(), export_photos(), load_settings() (+7 more)
 
 ### Community 25 - "knowledge.ts"
-Cohesion: 0.12
-Nodes (24): vitest, fromJson(), withoutIds(), budgetFrom(), cheaperThan(), NOT_UNIT, PATTERNS, THOUSAND (+16 more)
+Cohesion: 0.09
+Nodes (38): fromJson(), withoutIds(), budgetFrom(), cheaperThan(), NOT_UNIT, PATTERNS, THOUSAND, catalogForQuestion() (+30 more)
 
 ### Community 26 - "shop_catalog.py"
 Cohesion: 0.11
@@ -333,9 +331,9 @@ Nodes (32): app_core_database, AsyncClient, collections, datetime, fastapi, _as_
 Cohesion: 0.27
 Nodes (14): Archived Pexels Category Photo Set, Asset Sources Contract (no active product photos), photo-sources.ts Canonical Machine List, LG F4X5ES5SB 3D Scroll Scene Brief, TASK 03A Brief — close design review, MotionProvider Empty-Deps and Reveal Cascade Defect, Photo Source Reconciliation Audit, ProductImage Always Uses altRu Defect (+6 more)
 
-### Community 28 - "bot.ts"
-Cohesion: 0.09
-Nodes (49): dynamic, POST(), ASK_PHONE, BAD_PHONE, CALL_INTENT, cancelLead(), Draft, drafts (+41 more)
+### Community 28 - "respond.ts"
+Cohesion: 0.14
+Nodes (24): ASK_PHONE, BAD_PHONE, cancelLead(), Draft, drafts, FAILED, hasLead(), leadContext() (+16 more)
 
 ### Community 29 - "TASK 04 Report — Blender Model of LG F4X5ES5SB"
 Cohesion: 0.27
@@ -526,8 +524,8 @@ Cohesion: 0.12
 Nodes (15): androidx.appcompat.app.AppCompatActivity, barcodeformat, bitmatrix, button, color, encodehinttype, enummap, errorcorrectionlevel (+7 more)
 
 ### Community 100 - "local.ts"
-Cohesion: 0.10
-Nodes (37): storeFacts(), allOutSay, Answer, AUDIENCE_MARKER, bonusText(), dayText(), foundSay, helloText() (+29 more)
+Cohesion: 0.11
+Nodes (29): allOutSay, Answer, Audience, AUDIENCE_MARKER, bonusText(), dayText(), foundSay, helloText() (+21 more)
 
 ### Community 101 - "check_installments.py"
 Cohesion: 0.19
@@ -618,8 +616,8 @@ Cohesion: 0.33
 Nodes (4): ALLOW, ASSISTANTS, PRIVATE, TRAINERS
 
 ### Community 165 - "assistant/route.ts"
-Cohesion: 0.14
-Nodes (24): ref_node_crypto, dynamic, ipOf(), POST(), readImage(), seen, tooOften(), dynamic (+16 more)
+Cohesion: 0.12
+Nodes (26): ref_node_crypto, dynamic, ipOf(), POST(), readImage(), seen, tooOften(), dynamic (+18 more)
 
 ### Community 166 - "gradlew"
 Cohesion: 0.83
@@ -661,6 +659,18 @@ Nodes (7): @playwright/test, dynamic, esc(), GET(), page(), rowsTable(), when()
 Cohesion: 0.18
 Nodes (8): ref_node_fs_promises, ref_node_path, ref_vitest_config, { chromium }, path, { chromium }, fs, path
 
+### Community 184 - "bot.ts"
+Cohesion: 0.15
+Nodes (22): dynamic, POST(), CALL_INTENT, tooOften(), backToChat(), call(), handleUpdate(), hello() (+14 more)
+
+### Community 185 - "live.ts"
+Cohesion: 0.27
+Nodes (12): productsFromOneC(), followUp, Cache, catalogNow(), chatExtraNow(), ExtraCache, liveCatalogConfigured(), lookupIn() (+4 more)
+
+### Community 186 - "meta/route.ts"
+Cohesion: 0.31
+Nodes (8): dynamic, GET(), absolute(), cell(), COLUMNS, metaFeedCsv(), metaFeedRows(), base
+
 ### Community 190 - "[lang]/layout.tsx"
 Cohesion: 0.14
 Nodes (14): A11 · P2 — Қирғизча HTML дастлаб рус тили деб белгиланган, LangLayout(), viewport, Header(), HtmlLang(), MotionProvider(), VisitCounter(), visitorId() (+6 more)
@@ -670,28 +680,28 @@ Cohesion: 0.20
 Nodes (14): POST(), getProfile(), isDemoPhone(), createOrder(), applyBonus(), DeliveryMethod, deliveryPriceFor(), OrderError (+6 more)
 
 ### Community 194 - "telegram/order.ts"
-Cohesion: 0.10
-Nodes (31): dynamic, GET(), productsFromOneC(), products, Cache, catalogNow(), chatExtraNow(), ExtraCache (+23 more)
+Cohesion: 0.12
+Nodes (25): vitest, products, SITE_URL, AFFIRM, ASK_ADDRESS, ASK_NAME, ASK_PHONE, ASK_PICK (+17 more)
 
 ## Knowledge Gaps
-- **376 isolated node(s):** `customer`, `phone`, `laptop`, `catalog`, `order` (+371 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 749 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **376 isolated node(s):** `Say`, `Draft`, `drafts`, `ASK_PHONE`, `BAD_PHONE` (+371 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 748 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **75 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `test` connect `package.json` to `manage.py`?**
-  _High betweenness centrality (0.245) - this node is a cross-community bridge._
+  _High betweenness centrality (0.257) - this node is a cross-community bridge._
 - **Why does `copy_base()` connect `manage.py` to `build_extension.py`, `package.json`?**
-  _High betweenness centrality (0.243) - this node is a cross-community bridge._
+  _High betweenness centrality (0.257) - this node is a cross-community bridge._
 - **Are the 17 inferred relationships involving `text()` (e.g. with `_notes()` and `save_notes()`) actually correct?**
   _`text()` has 17 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `customer`, `phone`, `laptop` to the rest of the system?**
+- **What connects `Say`, `Draft`, `drafts` to the rest of the system?**
   _376 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `reply.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.1396011396011396 - nodes in this community are weakly interconnected._
 - **Should `build_model.py` be split into smaller, more focused modules?**
   _Cohesion score 0.12380952380952381 - nodes in this community are weakly interconnected._
 - **Should `build_extension.py` be split into smaller, more focused modules?**
   _Cohesion score 0.10272536687631027 - nodes in this community are weakly interconnected._
+- **Should `OfflineCatalogView` be split into smaller, more focused modules?**
+  _Cohesion score 0.14623655913978495 - nodes in this community are weakly interconnected._
