@@ -3960,9 +3960,9 @@
     "semantic_hash": ""
   },
   "__tests__/assistant.test.ts": {
-    "mtime": 1790005533.4273956,
-    "seen": 1790005707.490606,
-    "ast_hash": "69dff80924d75356fa08a82af667a5c9",
+    "mtime": 1790052811.4289699,
+    "seen": 1790052865.8175209,
+    "ast_hash": "6d1012db7864b2474eeade68c76d9978",
     "semantic_hash": ""
   },
   "src/app/api/assistant/route.ts": {
@@ -3984,33 +3984,33 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/local.ts": {
-    "mtime": 1790002975.5082073,
-    "seen": 1790005707.4907289,
-    "ast_hash": "7bdb9886f260b7386174884235caa770",
+    "mtime": 1790052811.428769,
+    "seen": 1790052865.817657,
+    "ast_hash": "a1a13048cd804a8ecf8b5d2a2c1ea6e5",
     "semantic_hash": ""
   },
   "src/lib/assistant/orders.ts": {
-    "mtime": 1789980267.1284492,
-    "seen": 1790005707.490731,
-    "ast_hash": "e0de6a936713fcfa1e52a9500cd83574",
+    "mtime": 1790052774.7090995,
+    "seen": 1790052865.817659,
+    "ast_hash": "e5f760ad23652c5ceb341be581f53afd",
     "semantic_hash": ""
   },
   "src/lib/assistant/prompt.ts": {
-    "mtime": 1790007975.286175,
-    "seen": 1790008145.1120949,
-    "ast_hash": "39097caa6031a9d04108f8712f155c4c",
+    "mtime": 1790052693.1912584,
+    "seen": 1790052865.8176599,
+    "ast_hash": "bb9547164bfb46ae3055e7e61e358cd1",
     "semantic_hash": ""
   },
   "src/lib/assistant/reply.ts": {
-    "mtime": 1790007908.6983995,
-    "seen": 1790008145.1120949,
+    "mtime": 1790052693.1914365,
+    "seen": 1790052865.817661,
     "ast_hash": "d6336e815096c4e9c62a8b7049a3de62",
     "semantic_hash": ""
   },
   "src/lib/assistant/talk.ts": {
-    "mtime": 1790051985.140354,
-    "seen": 1790052033.993592,
-    "ast_hash": "29bdaafdfbe867a62deb32827b390f2f",
+    "mtime": 1790052811.4284995,
+    "seen": 1790052865.817662,
+    "ast_hash": "e157ce60534f15aaa948ed904f6da892",
     "semantic_hash": ""
   },
   "review/appstore-screenshots/01-home.png": {
@@ -4026,9 +4026,9 @@
     "semantic_hash": ""
   },
   "__tests__/telegram-order.test.ts": {
-    "mtime": 1789926447.7411904,
-    "seen": 1790005707.4906151,
-    "ast_hash": "f6668540850a00f1612b11c85236fb41",
+    "mtime": 1790052824.7026582,
+    "seen": 1790052865.8175302,
+    "ast_hash": "fc511d89027b2c141fc8706be4f85720",
     "semantic_hash": ""
   },
   "scripts/telegram-bot.mjs": {
@@ -4062,15 +4062,15 @@
     "semantic_hash": ""
   },
   "src/lib/telegram/bot.ts": {
-    "mtime": 1790002975.5094721,
-    "seen": 1790005707.490745,
+    "mtime": 1790052774.7092216,
+    "seen": 1790052865.817673,
     "ast_hash": "bd18eb18d44d03845ba0ef90ccae474e",
     "semantic_hash": ""
   },
   "src/lib/telegram/order.ts": {
-    "mtime": 1790008034.498022,
-    "seen": 1790008145.112385,
-    "ast_hash": "eeff56d0a15436a53de196b822344d55",
+    "mtime": 1790052693.191797,
+    "seen": 1790052865.817674,
+    "ast_hash": "2c7179556ff1ba29ad57859ed2c1f179",
     "semantic_hash": ""
   },
   "review/appstore-screenshots/02-catalog.png": {
@@ -4332,15 +4332,15 @@
     "semantic_hash": ""
   },
   "__tests__/sales-flow.test.ts": {
-    "mtime": 1790051985.1444268,
-    "seen": 1790052033.993453,
-    "ast_hash": "c5ca3e1862de294e2f5387bef8b0bb0e",
+    "mtime": 1790052693.193804,
+    "seen": 1790052865.8175292,
+    "ast_hash": "725f795c52a0f777ff50a84d665ab805",
     "semantic_hash": ""
   },
   "src/lib/assistant/leads.ts": {
-    "mtime": 1790002975.5078318,
-    "seen": 1790005707.490727,
-    "ast_hash": "553609dbdabe40597771b437831fd7cc",
+    "mtime": 1790052693.1920757,
+    "seen": 1790052865.817655,
+    "ast_hash": "fd4cdad238a5a819d5945662e79f2fc5",
     "semantic_hash": ""
   },
   "__tests__/budget.test.ts": {
@@ -4374,9 +4374,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/respond.ts": {
-    "mtime": 1790007975.2864103,
-    "seen": 1790008145.112096,
-    "ast_hash": "45e90e8dec9ac41e03dfc99c57666639",
+    "mtime": 1790052693.1926768,
+    "seen": 1790052865.817661,
+    "ast_hash": "bad47ea07b13464d0fa59e92a69be6da",
     "semantic_hash": ""
   },
   "docs/PC_2026-09-21.md": {
@@ -4518,8 +4518,8 @@
     "semantic_hash": ""
   },
   "scripts/exam/questions.txt": {
-    "mtime": 1790052009.2829614,
-    "seen": 1790052033.993631,
+    "mtime": 1790052850.7895963,
+    "seen": 1790052865.817701,
     "ast_hash": "3a926c46d67e7c2d46c7ef2c677f4c93",
     "semantic_hash": ""
   },
@@ -4644,9 +4644,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/followup.ts": {
-    "mtime": 1790006999.3650858,
-    "seen": 1790007423.2150478,
-    "ast_hash": "24b140560c60fb9169d20226592465d2",
+    "mtime": 1790052693.1923938,
+    "seen": 1790052865.8176541,
+    "ast_hash": "2337b5c1694e3a67ade46516f85ba7c8",
     "semantic_hash": ""
   },
   "docs/MAC_2026-09-21.md": {
