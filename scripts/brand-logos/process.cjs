@@ -168,7 +168,10 @@ async function processFile(file) {
     .webp({ quality: 92, alphaQuality: 100 })
     .toFile(target)
   const meta = await sharp(target).metadata()
-  manifest[key] = { src: `/brands/${brand.slug}.webp`, w: meta.width, h: meta.height }
+  // ?v=<хэш>: файл меняется — меняется адрес, и браузер не показывает старый логотип
+  // ещё 4 часа из своего кэша (Cache-Control max-age=14400).
+  const version = require('crypto').createHash('sha1').update(fs.readFileSync(target)).digest('hex').slice(0, 8)
+  manifest[key] = { src: `/brands/${brand.slug}.webp?v=${version}`, w: meta.width, h: meta.height }
   console.log(`  ${brand.slug}.webp  ${meta.width}×${meta.height}`)
 }
 

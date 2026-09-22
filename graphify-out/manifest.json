@@ -342,9 +342,9 @@
     "semantic_hash": ""
   },
   "scripts/brand-logos/process.cjs": {
-    "mtime": 1790069323.8568957,
-    "seen": 1790069351.0585456,
-    "ast_hash": "83e5b073d1780a6989087c16428d65c4",
+    "mtime": 1790077517.329085,
+    "seen": 1790077553.0587566,
+    "ast_hash": "fef58a9bf42c0d74a96cf309582765cf",
     "semantic_hash": ""
   },
   "scripts/brand-logos/render-svg.cjs": {
@@ -804,9 +804,9 @@
     "semantic_hash": ""
   },
   "src/data/brand-logos.json": {
-    "mtime": 1790069323.8568957,
-    "seen": 1790069351.058714,
-    "ast_hash": "18c994a8cc34420e5ed0568855f4b38b",
+    "mtime": 1790077517.3823047,
+    "seen": 1790077553.084501,
+    "ast_hash": "4b64eb81efb3bc6d00b0028b51a9cb96",
     "semantic_hash": ""
   },
   "src/data/categories.ts": {
@@ -5010,27 +5010,27 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/content.json": {
-    "mtime": 1790069345.1955755,
-    "seen": 1790069351.0584762,
-    "ast_hash": "fb6b265e6156a332d1d91bc129132a59",
+    "mtime": 1790077275.6970167,
+    "seen": 1790077553.0335853,
+    "ast_hash": "57464716308284ab3a38a01f8cf9a70c",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/current-1c.json": {
-    "mtime": 1790067807.484104,
-    "seen": 1790069351.0584772,
-    "ast_hash": "9f15cc7d530e420059f636a441cce26d",
+    "mtime": 1790069405.2571976,
+    "seen": 1790077553.0335877,
+    "ast_hash": "d0395d3958f78f51445edb858fb2b7de",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/downloaded-photos.json": {
-    "mtime": 1790067763.7469676,
-    "seen": 1790069351.0584776,
-    "ast_hash": "837f0bf5d0e2247b9cf575adde84ee82",
+    "mtime": 1790077275.6980164,
+    "seen": 1790077553.0335896,
+    "ast_hash": "2eb473987969b4cb0e605c74dfebcba0",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos.json": {
-    "mtime": 1790067765.5742662,
-    "seen": 1790069351.058478,
-    "ast_hash": "314e00d39f14bfc654b093c7347032a2",
+    "mtime": 1790077283.178608,
+    "seen": 1790077553.033591,
+    "ast_hash": "829f554028afc5f9fcee5e73f3b45ad4",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/found-pages.json": {
@@ -5700,9 +5700,9 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/STATUS.md": {
-    "mtime": 1790067890.6702604,
-    "seen": 1790069351.0587852,
-    "ast_hash": "a1c1f02280c6f9a2cc70905ef8ccffe3",
+    "mtime": 1790077336.9615088,
+    "seen": 1790077553.106328,
+    "ast_hash": "389122d40bcc18e1479a34384b541444",
     "semantic_hash": ""
   },
   "review/vacuum-enrichment/STATUS.md": {
@@ -7944,188 +7944,188 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/baoyu-700s5.jpg": {
-    "mtime": 1790067765.522,
-    "seen": 1790069351.0593085,
+    "mtime": 1790077283.096,
+    "seen": 1790077553.2831886,
     "ast_hash": "6a594d2e0143feded6bde5b6ea4c6439",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/baoyu-gt-282.jpg": {
-    "mtime": 1790067764.414,
-    "seen": 1790069351.059309,
+    "mtime": 1790077282.222,
+    "seen": 1790077553.2831907,
     "ast_hash": "acdc1c3ff2a144a9ef9db952bf00a6b3",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/bruce-q5.jpg": {
-    "mtime": 1790067764.493,
-    "seen": 1790069351.0593095,
-    "ast_hash": "098ffaf26fbe36343ed7bd9b3f8b2479",
+    "mtime": 1790077282.318,
+    "seen": 1790077553.2831926,
+    "ast_hash": "83cbd3db8d682f1eced17c0f3a898669",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/bruce-x5-overlock.jpg": {
-    "mtime": 1790067764.948,
-    "seen": 1790069351.0593102,
-    "ast_hash": "521bdcc81a198959610c5009a78a4461",
+    "mtime": 1790077282.667,
+    "seen": 1790077553.2831943,
+    "ast_hash": "621278fd143867f370b10688a93c1791",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/janome-2121.jpg": {
-    "mtime": 1790067765.463,
-    "seen": 1790069351.0593107,
+    "mtime": 1790077283.06,
+    "seen": 1790077553.283196,
     "ast_hash": "de2c40cdef4cc36125877ba99898f84a",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/midea-mj-bl6013w4.jpg": {
-    "mtime": 1790067764.03,
-    "seen": 1790069351.0593112,
+    "mtime": 1790077281.949,
+    "seen": 1790077553.2831998,
     "ast_hash": "8ab59142f10b3f79ee278bd6f242cf80",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/midea-mj-bl7001aw.jpg": {
-    "mtime": 1790067764.082,
-    "seen": 1790069351.0593119,
+    "mtime": 1790077281.978,
+    "seen": 1790077553.283201,
     "ast_hash": "2e42708abce5ef153682b790ed1d0904",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/overlok-ds-1sd.jpg": {
-    "mtime": 1790067765.556,
-    "seen": 1790069351.0593123,
+    "mtime": 1790077283.128,
+    "seen": 1790077553.2832024,
     "ast_hash": "6581e4b70fd1c0d94f3596ed65ba3695",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/raf-r-2841.jpg": {
-    "mtime": 1790067764.988,
-    "seen": 1790069351.0593128,
+    "mtime": 1790077282.688,
+    "seen": 1790077553.283204,
     "ast_hash": "5772fa8f0b8ebc1e268200e335e9b5be",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/raf-r-3400.jpg": {
-    "mtime": 1790067764.682,
-    "seen": 1790069351.0593133,
+    "mtime": 1790077282.475,
+    "seen": 1790077553.2832057,
     "ast_hash": "24018df4a3368a8fda055f0a17356bfa",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/sem-sk-234.jpg": {
-    "mtime": 1790067765.184,
-    "seen": 1790069351.059314,
+    "mtime": 1790077282.828,
+    "seen": 1790077553.2832074,
     "ast_hash": "201ecd5831b54e24e14f5798c86435d5",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-fc-980.jpg": {
-    "mtime": 1790067765.368,
-    "seen": 1790069351.0593145,
+    "mtime": 1790077282.989,
+    "seen": 1790077553.2832088,
     "ast_hash": "632ac2a2302f9b76a1a7c8b697ed40a0",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-fc-982.jpg": {
-    "mtime": 1790067765.416,
-    "seen": 1790069351.059315,
+    "mtime": 1790077283.018,
+    "seen": 1790077553.2832105,
     "ast_hash": "19b3732491549d447729b815e65713e4",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-mg-180a.jpg": {
-    "mtime": 1790067764.591,
-    "seen": 1790069351.0593157,
+    "mtime": 1790077282.388,
+    "seen": 1790077553.283213,
     "ast_hash": "9b29a898a7054047acd18008111de816",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-mg-190g.jpg": {
-    "mtime": 1790067764.753,
-    "seen": 1790069351.0593162,
+    "mtime": 1790077282.523,
+    "seen": 1790077553.2832143,
     "ast_hash": "b6de6741431eb623474b4adef35e378e",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-mg-300g.jpg": {
-    "mtime": 1790067764.541,
-    "seen": 1790069351.0593166,
+    "mtime": 1790077282.358,
+    "seen": 1790077553.2832165,
     "ast_hash": "a271cba7416fe86775bc4a101a068d3e",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-211.jpg": {
-    "mtime": 1790067765.275,
-    "seen": 1790069351.0593174,
+    "mtime": 1790077282.908,
+    "seen": 1790077553.2832177,
     "ast_hash": "7d56a5292252907a0ec803a8c00b2bd1",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-218.jpg": {
-    "mtime": 1790067764.843,
-    "seen": 1790069351.0593178,
+    "mtime": 1790077282.59,
+    "seen": 1790077553.2832189,
     "ast_hash": "64f9956454e225b860e4feb2691b5ee5",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-222.jpg": {
-    "mtime": 1790067764.885,
-    "seen": 1790069351.0593183,
+    "mtime": 1790077282.641,
+    "seen": 1790077553.2832203,
     "ast_hash": "7e75e1d99230274ff577969bdf18db7a",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-227.jpg": {
-    "mtime": 1790067764.79,
-    "seen": 1790069351.0593188,
+    "mtime": 1790077282.555,
+    "seen": 1790077553.283222,
     "ast_hash": "0e11c9f9167b771cf2320be945668b00",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-331.jpg": {
-    "mtime": 1790067765.235,
-    "seen": 1790069351.0593193,
+    "mtime": 1790077282.874,
+    "seen": 1790077553.2832234,
     "ast_hash": "38bf8625295c14686f31528a6a349b0b",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-6016.jpg": {
-    "mtime": 1790067765.046,
-    "seen": 1790069351.05932,
+    "mtime": 1790077282.734,
+    "seen": 1790077553.2832246,
     "ast_hash": "5f55b1a57a0b57e9c3e7c4abebbb762e",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-6035.jpg": {
-    "mtime": 1790067764.135,
-    "seen": 1790069351.0593207,
+    "mtime": 1790077282.016,
+    "seen": 1790077553.283226,
     "ast_hash": "2fbedff1e01cae3489f45a1fdadea19c",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-6037.jpg": {
-    "mtime": 1790067765.321,
-    "seen": 1790069351.0593212,
+    "mtime": 1790077282.948,
+    "seen": 1790077553.2832274,
     "ast_hash": "173255268bf84de7fc7f0a15cb177ab5",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-6038.jpg": {
-    "mtime": 1790067764.185,
-    "seen": 1790069351.0593216,
+    "mtime": 1790077282.048,
+    "seen": 1790077553.2832284,
     "ast_hash": "8b27f995714d0d35e5bfa8ddd4c88d5b",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-7913.jpg": {
-    "mtime": 1790067764.244,
-    "seen": 1790069351.059322,
+    "mtime": 1790077282.095,
+    "seen": 1790077553.2832296,
     "ast_hash": "1ed12104e5d32d67bc98e91bcecbe4e9",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-7915.jpg": {
-    "mtime": 1790067764.308,
-    "seen": 1790069351.0593226,
+    "mtime": 1790077282.138,
+    "seen": 1790077553.283231,
     "ast_hash": "89026c0a10f02d02c51f6a2bd624fe45",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-7998.jpg": {
-    "mtime": 1790067765.102,
-    "seen": 1790069351.059323,
+    "mtime": 1790077282.773,
+    "seen": 1790077553.2832325,
     "ast_hash": "80245f4c90ed1fa816da6f51ed7a9235",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-th-7999.jpg": {
-    "mtime": 1790067764.369,
-    "seen": 1790069351.0593235,
+    "mtime": 1790077282.188,
+    "seen": 1790077553.2832341,
     "ast_hash": "7ad5b5b0d889c5800f00ea814dfc5e4c",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/technomir-wmg-1800.jpg": {
-    "mtime": 1790067764.641,
-    "seen": 1790069351.0593245,
+    "mtime": 1790077282.428,
+    "seen": 1790077553.2832355,
     "ast_hash": "f9101087980af4494989df2193a2d739",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/final-photos/texnomir-th-213.jpg": {
-    "mtime": 1790067765.135,
-    "seen": 1790069351.059325,
+    "mtime": 1790077282.798,
+    "seen": 1790077553.2832377,
     "ast_hash": "23e66cea8ccbf557b4b8e8e8f4de6945",
     "semantic_hash": ""
   },
@@ -8136,14 +8136,14 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/baoyu-700s5.jpg": {
-    "mtime": 1790067763.7286313,
-    "seen": 1790069351.0593264,
+    "mtime": 1790069366.5145183,
+    "seen": 1790077553.2834725,
     "ast_hash": "d01b434e653e31ab74e0b6d04258bb4c",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/baoyu-gt-282.jpg": {
-    "mtime": 1790067752.491336,
-    "seen": 1790069351.059327,
+    "mtime": 1790069359.5135741,
+    "seen": 1790077553.2834747,
     "ast_hash": "d28e43b9383ef2adbe7df50d7b975e9c",
     "semantic_hash": ""
   },
@@ -8160,8 +8160,8 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/bruce-q5.jpg": {
-    "mtime": 1790067756.1949413,
-    "seen": 1790069351.0593286,
+    "mtime": 1790069363.2363398,
+    "seen": 1790077553.2839224,
     "ast_hash": "e84534a46674996500094c9eb897972e",
     "semantic_hash": ""
   },
@@ -8178,8 +8178,8 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/bruce-x5-overlock.jpg": {
-    "mtime": 1790067761.695456,
-    "seen": 1790069351.0593302,
+    "mtime": 1790069365.2773213,
+    "seen": 1790077553.2843509,
     "ast_hash": "c1857cf13d97902896b0acbcf48a62a7",
     "semantic_hash": ""
   },
@@ -8190,8 +8190,8 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/janome-2121.jpg": {
-    "mtime": 1790067763.7158997,
-    "seen": 1790069351.0593317,
+    "mtime": 1790069366.493162,
+    "seen": 1790077553.2845697,
     "ast_hash": "2fea6c421106448785ad80b5e50e55d6",
     "semantic_hash": ""
   },
@@ -8244,14 +8244,14 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/midea-mj-bl6013w4.png": {
-    "mtime": 1790067746.9466524,
-    "seen": 1790069351.0593562,
+    "mtime": 1790069357.937863,
+    "seen": 1790077553.286326,
     "ast_hash": "5cfb7ea197c05757009b748572c4129c",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/midea-mj-bl7001aw.jpg": {
-    "mtime": 1790067749.639932,
-    "seen": 1790069351.0593567,
+    "mtime": 1790069358.8842373,
+    "seen": 1790077553.2863278,
     "ast_hash": "34a2335bca97e97b87cc50476b032f38",
     "semantic_hash": ""
   },
@@ -8262,20 +8262,20 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/overlok-ds-1sd.jpg": {
-    "mtime": 1790067763.7459676,
-    "seen": 1790069351.059358,
+    "mtime": 1790069366.524781,
+    "seen": 1790077553.2865574,
     "ast_hash": "ae8bbd52b14dcdc29ca377c99c299c93",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/raf-r-2841.jpg": {
-    "mtime": 1790067761.7026656,
-    "seen": 1790069351.0593584,
+    "mtime": 1790069365.2788482,
+    "seen": 1790077553.2865596,
     "ast_hash": "57392cc61eb5287a6d8c0695a70e5841",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/raf-r-3400.jpg": {
-    "mtime": 1790067759.8531399,
-    "seen": 1790069351.059359,
+    "mtime": 1790069364.538845,
+    "seen": 1790077553.2865613,
     "ast_hash": "60b43a34014ff9b1864e62b3b81fcba2",
     "semantic_hash": ""
   },
@@ -8292,8 +8292,8 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/sem-sk-234.jpg": {
-    "mtime": 1790067763.5676937,
-    "seen": 1790069351.0593605,
+    "mtime": 1790069366.3472815,
+    "seen": 1790077553.2869895,
     "ast_hash": "5be53afd14026926ae13bcd9808377e8",
     "semantic_hash": ""
   },
@@ -8334,8 +8334,8 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-fc-980.jpg": {
-    "mtime": 1790067763.6793056,
-    "seen": 1790069351.0593646,
+    "mtime": 1790069366.463377,
+    "seen": 1790077553.2883487,
     "ast_hash": "67f67d7a5d3d7dba289168d64ba105dc",
     "semantic_hash": ""
   },
@@ -8358,14 +8358,14 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-fc-982.jpg": {
-    "mtime": 1790067763.6901827,
-    "seen": 1790069351.059367,
+    "mtime": 1790069366.4653957,
+    "seen": 1790077553.2889888,
     "ast_hash": "eeaf9c746bb334f5b7dba6c8503673c0",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-mg-180a.jpg": {
-    "mtime": 1790067757.0175645,
-    "seen": 1790069351.0593674,
+    "mtime": 1790069363.7641065,
+    "seen": 1790077553.2889915,
     "ast_hash": "69c6df4b038404020a020e41b4fe1aec",
     "semantic_hash": ""
   },
@@ -8376,8 +8376,8 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-mg-190g.jpg": {
-    "mtime": 1790067759.8845131,
-    "seen": 1790069351.0593684,
+    "mtime": 1790069364.574477,
+    "seen": 1790077553.2894208,
     "ast_hash": "f831bd0cd5b47791058a4ef6b9b027b6",
     "semantic_hash": ""
   },
@@ -8388,8 +8388,8 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-mg-300g.jpg": {
-    "mtime": 1790067756.210592,
-    "seen": 1790069351.05937,
+    "mtime": 1790069363.2751346,
+    "seen": 1790077553.2897084,
     "ast_hash": "c46e40303814e1cd991d7d481106cda7",
     "semantic_hash": ""
   },
@@ -8436,8 +8436,8 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-211.jpg": {
-    "mtime": 1790067763.6070676,
-    "seen": 1790069351.0593743,
+    "mtime": 1790069366.4032836,
+    "seen": 1790077553.2912722,
     "ast_hash": "e8507610a5f34452c738f12491f30fd8",
     "semantic_hash": ""
   },
@@ -8448,8 +8448,8 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-218.jpg": {
-    "mtime": 1790067761.618772,
-    "seen": 1790069351.0593755,
+    "mtime": 1790069365.20851,
+    "seen": 1790077553.2914927,
     "ast_hash": "cc608d7a5b1660565d1bf663fabc0a9e",
     "semantic_hash": ""
   },
@@ -8460,14 +8460,14 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-222.jpg": {
-    "mtime": 1790067761.649838,
-    "seen": 1790069351.0593767,
+    "mtime": 1790069365.2362714,
+    "seen": 1790077553.2917092,
     "ast_hash": "530269a311f31ce89c01777e94808c36",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-227.jpg": {
-    "mtime": 1790067761.5978096,
-    "seen": 1790069351.0593774,
+    "mtime": 1790069365.1804368,
+    "seen": 1790077553.2917116,
     "ast_hash": "c9c5a7afc269897aed4f6d516e3d0248",
     "semantic_hash": ""
   },
@@ -8502,8 +8502,8 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-331.jpg": {
-    "mtime": 1790067763.5863354,
-    "seen": 1790069351.0593808,
+    "mtime": 1790069366.3751945,
+    "seen": 1790077553.2927754,
     "ast_hash": "52121700b0f61c8d2142e258cc355cc2",
     "semantic_hash": ""
   },
@@ -8514,8 +8514,8 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-6016.jpg": {
-    "mtime": 1790067761.7123775,
-    "seen": 1790069351.059382,
+    "mtime": 1790069365.30964,
+    "seen": 1790077553.2929916,
     "ast_hash": "e026acca2876757427a031614b1f5354",
     "semantic_hash": ""
   },
@@ -8532,8 +8532,8 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-6035.jpg": {
-    "mtime": 1790067749.674894,
-    "seen": 1790069351.0593839,
+    "mtime": 1790069358.9051008,
+    "seen": 1790077553.29343,
     "ast_hash": "883581fd2d1ef3cbe76fbae6caea5f11",
     "semantic_hash": ""
   },
@@ -8562,8 +8562,8 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-6037.jpg": {
-    "mtime": 1790067763.636346,
-    "seen": 1790069351.0593867,
+    "mtime": 1790069366.425685,
+    "seen": 1790077553.2942777,
     "ast_hash": "d48a4d710d78be8c3c7c76200fe9c3d1",
     "semantic_hash": ""
   },
@@ -8580,8 +8580,8 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-6038.jpg": {
-    "mtime": 1790067749.700331,
-    "seen": 1790069351.0593882,
+    "mtime": 1790069358.921785,
+    "seen": 1790077553.2947145,
     "ast_hash": "f527c2ac7c925a59201628e8f8e0a00b",
     "semantic_hash": ""
   },
@@ -8592,8 +8592,8 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-7913.jpg": {
-    "mtime": 1790067749.7369409,
-    "seen": 1790069351.059389,
+    "mtime": 1790069358.939296,
+    "seen": 1790077553.2949283,
     "ast_hash": "a8dc1d23b44b6f8f8f720f7a3e60a9ae",
     "semantic_hash": ""
   },
@@ -8604,8 +8604,8 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-7915.jpg": {
-    "mtime": 1790067749.762881,
-    "seen": 1790069351.0593905,
+    "mtime": 1790069358.9570384,
+    "seen": 1790077553.2951481,
     "ast_hash": "becbfe948b2de020ec9f22f26b47a045",
     "semantic_hash": ""
   },
@@ -8622,8 +8622,8 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-7998.jpg": {
-    "mtime": 1790067761.7593267,
-    "seen": 1790069351.0593922,
+    "mtime": 1790069365.3473673,
+    "seen": 1790077553.2956128,
     "ast_hash": "c5522bf379eab725460616730a0de0e9",
     "semantic_hash": ""
   },
@@ -8652,20 +8652,20 @@
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-th-7999.jpg": {
-    "mtime": 1790067749.8063743,
-    "seen": 1790069351.059395,
+    "mtime": 1790069358.9795537,
+    "seen": 1790077553.296681,
     "ast_hash": "f4c96c848d810344f8a15905d300897e",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/technomir-wmg-1800.jpg": {
-    "mtime": 1790067757.8608086,
-    "seen": 1790069351.0593956,
+    "mtime": 1790069364.145206,
+    "seen": 1790077553.2966835,
     "ast_hash": "a6474ae7127a2d3b80235288bffa351f",
     "semantic_hash": ""
   },
   "review/small-appliances-enrichment/originals/texnomir-th-213.jpg": {
-    "mtime": 1790067763.056655,
-    "seen": 1790069351.059396,
+    "mtime": 1790069366.0150456,
+    "seen": 1790077553.2966855,
     "ast_hash": "044f905292a0f97776ef51b9f06e36d7",
     "semantic_hash": ""
   },
@@ -10431,6 +10431,936 @@
     "mtime": 1789815590.1582112,
     "seen": 1790069351.0596185,
     "ast_hash": "48d5c7da7dbfccf6455c5e34b5b7c2a1",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-155702/backup.json": {
+    "mtime": 1790071023.1359525,
+    "seen": 1790077553.0251317,
+    "ast_hash": "ac525f9170e42566dac13fe9aa92a35e",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-155903/backup.json": {
+    "mtime": 1790071144.017068,
+    "seen": 1790077553.0251362,
+    "ast_hash": "8f4367ac9684c16db0ab221e002a1d95",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-160045/backup.json": {
+    "mtime": 1790071245.2809832,
+    "seen": 1790077553.0251384,
+    "ast_hash": "8274a3f988b921b789cdb82570664fb0",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-160618/backup.json": {
+    "mtime": 1790071578.8839417,
+    "seen": 1790077553.02514,
+    "ast_hash": "a812fea0ec0a5625b74ba2258650bfe8",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161156/backup.json": {
+    "mtime": 1790071917.2220354,
+    "seen": 1790077553.0251415,
+    "ast_hash": "37d6f6983b35d61dab64e7c4f37af08a",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161406/backup.json": {
+    "mtime": 1790072046.9031324,
+    "seen": 1790077553.0251427,
+    "ast_hash": "957cc52c02e9b479f8119757ad7f3204",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161548/backup.json": {
+    "mtime": 1790072148.6290748,
+    "seen": 1790077553.0251446,
+    "ast_hash": "735b1e5ba41fa127081774e1029a11bf",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171308/backup.json": {
+    "mtime": 1790075589.048592,
+    "seen": 1790077553.025146,
+    "ast_hash": "3b1d1f7e0e247be2279b0efac73d974d",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171508/backup.json": {
+    "mtime": 1790075709.2317352,
+    "seen": 1790077553.0251477,
+    "ast_hash": "09d40f3ca610fab0d1076281c5d6a56a",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-172129/backup.json": {
+    "mtime": 1790076090.1056035,
+    "seen": 1790077553.025149,
+    "ast_hash": "6a1013bff2ee04d7d414f2a5a4115631",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-172620/backup.json": {
+    "mtime": 1790076381.0268278,
+    "seen": 1790077553.025151,
+    "ast_hash": "01c88f9bcff0cb7b0c074bce2157ad25",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/content.json": {
+    "mtime": 1790076256.684842,
+    "seen": 1790077553.025153,
+    "ast_hash": "60c8ec7db7ecbc94321be286e965bf32",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/current-1c.json": {
+    "mtime": 1790075690.0899682,
+    "seen": 1790077553.0251546,
+    "ast_hash": "95f2a9a9c73b4278001dc5cfb4182510",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/downloaded-photos.json": {
+    "mtime": 1790076256.6858432,
+    "seen": 1790077553.0251558,
+    "ast_hash": "386a452c768daae1d8d654304d10fb4f",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/final-photos.json": {
+    "mtime": 1790076263.6515162,
+    "seen": 1790077553.0251577,
+    "ast_hash": "0bfed3831257f1973c3983917f85f1f6",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/backups/prod-20260922-152952/backup.json": {
+    "mtime": 1790069392.4797277,
+    "seen": 1790077553.0327952,
+    "ast_hash": "3c2a441da26ed29dc931717217dd7d48",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/backups/prod-20260922-172550/backup.json": {
+    "mtime": 1790076350.8864207,
+    "seen": 1790077553.0327978,
+    "ast_hash": "01f20eb2f7c735f87c7691d1991b69a2",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/backups/prod-20260922-173746/backup.json": {
+    "mtime": 1790077066.8702958,
+    "seen": 1790077553.0327995,
+    "ast_hash": "8e446228a02fc04bffe207e39d0a05a8",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/backups/prod-20260922-174149/backup.json": {
+    "mtime": 1790077309.938769,
+    "seen": 1790077553.032801,
+    "ast_hash": "a5f0d0ea07e8f1e6eaa209b1f3072219",
+    "semantic_hash": ""
+  },
+  "scripts/1c-export/import_refrigerator_enrichment.py": {
+    "mtime": 1790070999.9212396,
+    "seen": 1790077553.053152,
+    "ast_hash": "6b7972442f05498da0bbcc5028dc3715",
+    "semantic_hash": ""
+  },
+  "scripts/1c-export/inspect_refrigerators.py": {
+    "mtime": 1790069554.2542267,
+    "seen": 1790077553.0542328,
+    "ast_hash": "7e6441c3cebe8592a61c4f45f85edc27",
+    "semantic_hash": ""
+  },
+  "scripts/1c-export/normalize_refrigerator_photos.cjs": {
+    "mtime": 1790070804.9104598,
+    "seen": 1790077553.0551274,
+    "ast_hash": "68aaea4ceb7d4a808a8a36737bb59578",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/STATUS.md": {
+    "mtime": 1790076435.0742025,
+    "seen": 1790077553.1063251,
+    "ast_hash": "d74048858e9bfb26ef3b1e8766503210",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-155903/\u0426\u0411-00001853-1.jpg": {
+    "mtime": 1790071144.0095966,
+    "seen": 1790077553.242718,
+    "ast_hash": "d61cecd3e61b346adcec62d3b0f412e5",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-155903/\u0426\u0411-00001912-1.jpg": {
+    "mtime": 1790071143.9995964,
+    "seen": 1790077553.2427206,
+    "ast_hash": "29d718b098fbd8edb3af7e385bcb8d2e",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-155903/\u0426\u0411-00002233-1.jpg": {
+    "mtime": 1790071143.9895964,
+    "seen": 1790077553.242722,
+    "ast_hash": "00d079dd68a8a2262490eb3ac70e497a",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-160045/\u0426\u0411-00001853-1.jpg": {
+    "mtime": 1790071245.254127,
+    "seen": 1790077553.242724,
+    "ast_hash": "d61cecd3e61b346adcec62d3b0f412e5",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-160045/\u0426\u0411-00001912-1.jpg": {
+    "mtime": 1790071245.2311938,
+    "seen": 1790077553.2427254,
+    "ast_hash": "29d718b098fbd8edb3af7e385bcb8d2e",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-160045/\u0426\u0411-00002129-1.jpg": {
+    "mtime": 1790071245.272924,
+    "seen": 1790077553.2427275,
+    "ast_hash": "0265fb5fb1da3f57400edfdfb6cb1cba",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-160045/\u0426\u0411-00002233-1.jpg": {
+    "mtime": 1790071245.2154982,
+    "seen": 1790077553.2427292,
+    "ast_hash": "00d079dd68a8a2262490eb3ac70e497a",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-160618/\u0426\u0411-00001140-1.jpg": {
+    "mtime": 1790071578.862046,
+    "seen": 1790077553.2427309,
+    "ast_hash": "a2e3d7a310da863f2a5ba96a31609089",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-160618/\u0426\u0411-00001853-1.jpg": {
+    "mtime": 1790071578.8327973,
+    "seen": 1790077553.2427323,
+    "ast_hash": "d61cecd3e61b346adcec62d3b0f412e5",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-160618/\u0426\u0411-00001912-1.jpg": {
+    "mtime": 1790071578.8225996,
+    "seen": 1790077553.2427342,
+    "ast_hash": "29d718b098fbd8edb3af7e385bcb8d2e",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-160618/\u0426\u0411-00002129-1.jpg": {
+    "mtime": 1790071578.8438687,
+    "seen": 1790077553.2427354,
+    "ast_hash": "0265fb5fb1da3f57400edfdfb6cb1cba",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-160618/\u0426\u0411-00002233-1.jpg": {
+    "mtime": 1790071578.8074965,
+    "seen": 1790077553.242737,
+    "ast_hash": "00d079dd68a8a2262490eb3ac70e497a",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161156/\u0426\u0411-00001140-1.jpg": {
+    "mtime": 1790071917.1653206,
+    "seen": 1790077553.242739,
+    "ast_hash": "a2e3d7a310da863f2a5ba96a31609089",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161156/\u0426\u0411-00001853-1.jpg": {
+    "mtime": 1790071917.125815,
+    "seen": 1790077553.2427402,
+    "ast_hash": "d61cecd3e61b346adcec62d3b0f412e5",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161156/\u0426\u0411-00001912-1.jpg": {
+    "mtime": 1790071917.107637,
+    "seen": 1790077553.2427418,
+    "ast_hash": "29d718b098fbd8edb3af7e385bcb8d2e",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161156/\u0426\u0411-00002129-1.jpg": {
+    "mtime": 1790071917.143188,
+    "seen": 1790077553.242743,
+    "ast_hash": "0265fb5fb1da3f57400edfdfb6cb1cba",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161156/\u0426\u0411-00002155-1.jpg": {
+    "mtime": 1790071917.2014115,
+    "seen": 1790077553.2427447,
+    "ast_hash": "d1755e9f7d9619f9bd9a626e6a0f648d",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161156/\u0426\u0411-00002156-1.jpg": {
+    "mtime": 1790071917.1859262,
+    "seen": 1790077553.2427466,
+    "ast_hash": "d114a76084365b3b0bc4effb606062af",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161156/\u0426\u0411-00002233-1.jpg": {
+    "mtime": 1790071917.090922,
+    "seen": 1790077553.242748,
+    "ast_hash": "00d079dd68a8a2262490eb3ac70e497a",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161406/\u0426\u0411-00000430-1.jpg": {
+    "mtime": 1790072046.872518,
+    "seen": 1790077553.2427497,
+    "ast_hash": "010bf8754ae7a67a1bb6cd17806e3de7",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161406/\u0426\u0411-00001140-1.jpg": {
+    "mtime": 1790072046.822533,
+    "seen": 1790077553.242751,
+    "ast_hash": "a2e3d7a310da863f2a5ba96a31609089",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161406/\u0426\u0411-00001853-1.jpg": {
+    "mtime": 1790072046.8040953,
+    "seen": 1790077553.2427533,
+    "ast_hash": "d61cecd3e61b346adcec62d3b0f412e5",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161406/\u0426\u0411-00001912-1.jpg": {
+    "mtime": 1790072046.7888591,
+    "seen": 1790077553.2427552,
+    "ast_hash": "29d718b098fbd8edb3af7e385bcb8d2e",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161406/\u0426\u0411-00001994-1.jpg": {
+    "mtime": 1790072046.887067,
+    "seen": 1790077553.2427564,
+    "ast_hash": "b9d499a9221df437333041ca7f5cb256",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161406/\u0426\u0411-00002129-1.jpg": {
+    "mtime": 1790072046.806658,
+    "seen": 1790077553.2427578,
+    "ast_hash": "0265fb5fb1da3f57400edfdfb6cb1cba",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161406/\u0426\u0411-00002155-1.jpg": {
+    "mtime": 1790072046.863085,
+    "seen": 1790077553.2427595,
+    "ast_hash": "d1755e9f7d9619f9bd9a626e6a0f648d",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161406/\u0426\u0411-00002156-1.jpg": {
+    "mtime": 1790072046.8383205,
+    "seen": 1790077553.2427614,
+    "ast_hash": "d114a76084365b3b0bc4effb606062af",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161406/\u0426\u0411-00002233-1.jpg": {
+    "mtime": 1790072046.771446,
+    "seen": 1790077553.242763,
+    "ast_hash": "00d079dd68a8a2262490eb3ac70e497a",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161548/\u0426\u0411-00000430-1.jpg": {
+    "mtime": 1790072148.5720837,
+    "seen": 1790077553.2427642,
+    "ast_hash": "010bf8754ae7a67a1bb6cd17806e3de7",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161548/\u0426\u0411-00001120-1.jpg": {
+    "mtime": 1790072148.6012607,
+    "seen": 1790077553.2427664,
+    "ast_hash": "e7ef418d1d9125f7789058f554b202e3",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161548/\u0426\u0411-00001140-1.jpg": {
+    "mtime": 1790072148.5288856,
+    "seen": 1790077553.2427683,
+    "ast_hash": "a2e3d7a310da863f2a5ba96a31609089",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161548/\u0426\u0411-00001639-1.jpg": {
+    "mtime": 1790072148.6158397,
+    "seen": 1790077553.2427702,
+    "ast_hash": "aa08358f20a42326da1e0a08d145b988",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161548/\u0426\u0411-00001853-1.jpg": {
+    "mtime": 1790072148.4997404,
+    "seen": 1790077553.2427716,
+    "ast_hash": "d61cecd3e61b346adcec62d3b0f412e5",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161548/\u0426\u0411-00001912-1.jpg": {
+    "mtime": 1790072148.4846518,
+    "seen": 1790077553.2427733,
+    "ast_hash": "29d718b098fbd8edb3af7e385bcb8d2e",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161548/\u0426\u0411-00001994-1.jpg": {
+    "mtime": 1790072148.5872037,
+    "seen": 1790077553.242775,
+    "ast_hash": "b9d499a9221df437333041ca7f5cb256",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161548/\u0426\u0411-00002129-1.jpg": {
+    "mtime": 1790072148.5148313,
+    "seen": 1790077553.2427769,
+    "ast_hash": "0265fb5fb1da3f57400edfdfb6cb1cba",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161548/\u0426\u0411-00002155-1.jpg": {
+    "mtime": 1790072148.5579903,
+    "seen": 1790077553.242778,
+    "ast_hash": "d1755e9f7d9619f9bd9a626e6a0f648d",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161548/\u0426\u0411-00002156-1.jpg": {
+    "mtime": 1790072148.5438864,
+    "seen": 1790077553.2427795,
+    "ast_hash": "d114a76084365b3b0bc4effb606062af",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-161548/\u0426\u0411-00002233-1.jpg": {
+    "mtime": 1790072148.4695516,
+    "seen": 1790077553.2427812,
+    "ast_hash": "00d079dd68a8a2262490eb3ac70e497a",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171308/\u0426\u0411-00000430-1.jpg": {
+    "mtime": 1790075588.9829583,
+    "seen": 1790077553.242783,
+    "ast_hash": "010bf8754ae7a67a1bb6cd17806e3de7",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171308/\u0426\u0411-00001074-1.jpg": {
+    "mtime": 1790075589.0325718,
+    "seen": 1790077553.242785,
+    "ast_hash": "5cd210db0787922372c2471f45476bd9",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171308/\u0426\u0411-00001120-1.jpg": {
+    "mtime": 1790075589.0135605,
+    "seen": 1790077553.2427864,
+    "ast_hash": "e7ef418d1d9125f7789058f554b202e3",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171308/\u0426\u0411-00001140-1.jpg": {
+    "mtime": 1790075588.9339993,
+    "seen": 1790077553.2427876,
+    "ast_hash": "a2e3d7a310da863f2a5ba96a31609089",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171308/\u0426\u0411-00001639-1.jpg": {
+    "mtime": 1790075589.0174818,
+    "seen": 1790077553.242789,
+    "ast_hash": "aa08358f20a42326da1e0a08d145b988",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171308/\u0426\u0411-00001853-1.jpg": {
+    "mtime": 1790075588.902268,
+    "seen": 1790077553.2427905,
+    "ast_hash": "d61cecd3e61b346adcec62d3b0f412e5",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171308/\u0426\u0411-00001912-1.jpg": {
+    "mtime": 1790075588.8722649,
+    "seen": 1790077553.2427917,
+    "ast_hash": "29d718b098fbd8edb3af7e385bcb8d2e",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171308/\u0426\u0411-00001994-1.jpg": {
+    "mtime": 1790075588.9975607,
+    "seen": 1790077553.2427928,
+    "ast_hash": "b9d499a9221df437333041ca7f5cb256",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171308/\u0426\u0411-00002129-1.jpg": {
+    "mtime": 1790075588.902268,
+    "seen": 1790077553.2427943,
+    "ast_hash": "0265fb5fb1da3f57400edfdfb6cb1cba",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171308/\u0426\u0411-00002155-1.jpg": {
+    "mtime": 1790075588.9658864,
+    "seen": 1790077553.2427955,
+    "ast_hash": "d1755e9f7d9619f9bd9a626e6a0f648d",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171308/\u0426\u0411-00002156-1.jpg": {
+    "mtime": 1790075588.9500823,
+    "seen": 1790077553.242797,
+    "ast_hash": "d114a76084365b3b0bc4effb606062af",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171308/\u0426\u0411-00002233-1.jpg": {
+    "mtime": 1790075588.8562267,
+    "seen": 1790077553.242798,
+    "ast_hash": "00d079dd68a8a2262490eb3ac70e497a",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171508/\u0426\u0411-00000430-1.jpg": {
+    "mtime": 1790075709.1559067,
+    "seen": 1790077553.2427995,
+    "ast_hash": "010bf8754ae7a67a1bb6cd17806e3de7",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171508/\u0426\u0411-00001074-1.jpg": {
+    "mtime": 1790075709.2159328,
+    "seen": 1790077553.242801,
+    "ast_hash": "5cd210db0787922372c2471f45476bd9",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171508/\u0426\u0411-00001120-1.jpg": {
+    "mtime": 1790075709.1845534,
+    "seen": 1790077553.2428026,
+    "ast_hash": "e7ef418d1d9125f7789058f554b202e3",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171508/\u0426\u0411-00001140-1.jpg": {
+    "mtime": 1790075709.1056335,
+    "seen": 1790077553.2428043,
+    "ast_hash": "a2e3d7a310da863f2a5ba96a31609089",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171508/\u0426\u0411-00001639-1.jpg": {
+    "mtime": 1790075709.200049,
+    "seen": 1790077553.2428055,
+    "ast_hash": "aa08358f20a42326da1e0a08d145b988",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171508/\u0426\u0411-00001853-1.jpg": {
+    "mtime": 1790075709.0747502,
+    "seen": 1790077553.2428071,
+    "ast_hash": "d61cecd3e61b346adcec62d3b0f412e5",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171508/\u0426\u0411-00001912-1.jpg": {
+    "mtime": 1790075709.0679421,
+    "seen": 1790077553.2428086,
+    "ast_hash": "29d718b098fbd8edb3af7e385bcb8d2e",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171508/\u0426\u0411-00001994-1.jpg": {
+    "mtime": 1790075709.171225,
+    "seen": 1790077553.24281,
+    "ast_hash": "b9d499a9221df437333041ca7f5cb256",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171508/\u0426\u0411-00002111-1.jpg": {
+    "mtime": 1790075709.2159328,
+    "seen": 1790077553.2428114,
+    "ast_hash": "34435133c9b06105d365c8a05b8eea5f",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171508/\u0426\u0411-00002129-1.jpg": {
+    "mtime": 1790075709.0939956,
+    "seen": 1790077553.2428129,
+    "ast_hash": "0265fb5fb1da3f57400edfdfb6cb1cba",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171508/\u0426\u0411-00002155-1.jpg": {
+    "mtime": 1790075709.1375453,
+    "seen": 1790077553.2428143,
+    "ast_hash": "d1755e9f7d9619f9bd9a626e6a0f648d",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171508/\u0426\u0411-00002156-1.jpg": {
+    "mtime": 1790075709.12166,
+    "seen": 1790077553.2428157,
+    "ast_hash": "d114a76084365b3b0bc4effb606062af",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-171508/\u0426\u0411-00002233-1.jpg": {
+    "mtime": 1790075709.05258,
+    "seen": 1790077553.2428172,
+    "ast_hash": "00d079dd68a8a2262490eb3ac70e497a",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-172129/\u0426\u0411-00000430-1.jpg": {
+    "mtime": 1790076090.0127301,
+    "seen": 1790077553.2428195,
+    "ast_hash": "010bf8754ae7a67a1bb6cd17806e3de7",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-172129/\u0426\u0411-00001074-1.jpg": {
+    "mtime": 1790076090.0899642,
+    "seen": 1790077553.2428212,
+    "ast_hash": "5cd210db0787922372c2471f45476bd9",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-172129/\u0426\u0411-00001120-1.jpg": {
+    "mtime": 1790076090.0631084,
+    "seen": 1790077553.2428226,
+    "ast_hash": "e7ef418d1d9125f7789058f554b202e3",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-172129/\u0426\u0411-00001140-1.jpg": {
+    "mtime": 1790076089.9796305,
+    "seen": 1790077553.2428238,
+    "ast_hash": "a2e3d7a310da863f2a5ba96a31609089",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-172129/\u0426\u0411-00001639-1.jpg": {
+    "mtime": 1790076090.0676355,
+    "seen": 1790077553.2428262,
+    "ast_hash": "aa08358f20a42326da1e0a08d145b988",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-172129/\u0426\u0411-00001853-1.jpg": {
+    "mtime": 1790076089.9435263,
+    "seen": 1790077553.2428281,
+    "ast_hash": "d61cecd3e61b346adcec62d3b0f412e5",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-172129/\u0426\u0411-00001912-1.jpg": {
+    "mtime": 1790076089.9178534,
+    "seen": 1790077553.2428293,
+    "ast_hash": "29d718b098fbd8edb3af7e385bcb8d2e",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-172129/\u0426\u0411-00001977-1.jpg": {
+    "mtime": 1790076090.1056035,
+    "seen": 1790077553.2428305,
+    "ast_hash": "27e942fcdc0d2bca695ee92aedade07e",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-172129/\u0426\u0411-00001994-1.jpg": {
+    "mtime": 1790076090.0459247,
+    "seen": 1790077553.242832,
+    "ast_hash": "b9d499a9221df437333041ca7f5cb256",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-172129/\u0426\u0411-00002111-1.jpg": {
+    "mtime": 1790076090.0899642,
+    "seen": 1790077553.2428334,
+    "ast_hash": "34435133c9b06105d365c8a05b8eea5f",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-172129/\u0426\u0411-00002129-1.jpg": {
+    "mtime": 1790076089.9589045,
+    "seen": 1790077553.2428348,
+    "ast_hash": "0265fb5fb1da3f57400edfdfb6cb1cba",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-172129/\u0426\u0411-00002155-1.jpg": {
+    "mtime": 1790076089.996776,
+    "seen": 1790077553.242837,
+    "ast_hash": "d1755e9f7d9619f9bd9a626e6a0f648d",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-172129/\u0426\u0411-00002156-1.jpg": {
+    "mtime": 1790076089.9806304,
+    "seen": 1790077553.2428386,
+    "ast_hash": "d114a76084365b3b0bc4effb606062af",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-172129/\u0426\u0411-00002233-1.jpg": {
+    "mtime": 1790076089.901883,
+    "seen": 1790077553.24284,
+    "ast_hash": "00d079dd68a8a2262490eb3ac70e497a",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/backups/prod-20260922-172620/\u0426\u0411-00001140-1.jpg": {
+    "mtime": 1790076381.0268278,
+    "seen": 1790077553.2428415,
+    "ast_hash": "a2e3d7a310da863f2a5ba96a31609089",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/final-photos/avangard-bcd-377ws.jpg": {
+    "mtime": 1790076263.323,
+    "seen": 1790077553.2428427,
+    "ast_hash": "b9d499a9221df437333041ca7f5cb256",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/final-photos/avangard-bcd-512g.jpg": {
+    "mtime": 1790076263.566,
+    "seen": 1790077553.2428439,
+    "ast_hash": "34435133c9b06105d365c8a05b8eea5f",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/final-photos/avangard-bcd-532g.jpg": {
+    "mtime": 1790076263.25,
+    "seen": 1790077553.2428453,
+    "ast_hash": "010bf8754ae7a67a1bb6cd17806e3de7",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/final-photos/avest-bcd-340wg.jpg": {
+    "mtime": 1790076263.015,
+    "seen": 1790077553.2428463,
+    "ast_hash": "99d25616dd257737b88ab368708a74f0",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/final-photos/biryusa-m649.jpg": {
+    "mtime": 1790076263.481,
+    "seen": 1790077553.242848,
+    "ast_hash": "5cd210db0787922372c2471f45476bd9",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/final-photos/elite-390-sn.jpg": {
+    "mtime": 1790076263.381,
+    "seen": 1790077553.2428493,
+    "ast_hash": "0a92c84a3cb2b3ef62932eef67774c32",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/final-photos/hisense-rb5k330gsfe.jpg": {
+    "mtime": 1790076262.97,
+    "seen": 1790077553.2428503,
+    "ast_hash": "0265fb5fb1da3f57400edfdfb6cb1cba",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/final-photos/hisense-rd-43wc-s-ix.jpg": {
+    "mtime": 1790076263.415,
+    "seen": 1790077553.2428515,
+    "ast_hash": "aa08358f20a42326da1e0a08d145b988",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/final-photos/kleo-ucr-345b.jpg": {
+    "mtime": 1790076262.696,
+    "seen": 1790077553.242853,
+    "ast_hash": "00d079dd68a8a2262490eb3ac70e497a",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/final-photos/levo-lv-278.jpg": {
+    "mtime": 1790076262.82,
+    "seen": 1790077553.242854,
+    "ast_hash": "29d718b098fbd8edb3af7e385bcb8d2e",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/final-photos/levo-lv-338.jpg": {
+    "mtime": 1790076262.934,
+    "seen": 1790077553.2428558,
+    "ast_hash": "d61cecd3e61b346adcec62d3b0f412e5",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/final-photos/levo-lv-349s.jpg": {
+    "mtime": 1790076263.087,
+    "seen": 1790077553.2428567,
+    "ast_hash": "d114a76084365b3b0bc4effb606062af",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/final-photos/levo-lv-358bg.jpg": {
+    "mtime": 1790076263.17,
+    "seen": 1790077553.242858,
+    "ast_hash": "d1755e9f7d9619f9bd9a626e6a0f648d",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/final-photos/toear-bcd-220.jpg": {
+    "mtime": 1790076263.649,
+    "seen": 1790077553.2428594,
+    "ast_hash": "27e942fcdc0d2bca695ee92aedade07e",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/avangard-512bg-47.1.jpg": {
+    "mtime": 1790075495.7298727,
+    "seen": 1790077553.2428606,
+    "ast_hash": "d764d856ca44203052a4b779d0209f4c",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/avangard-512bg-47.2.jpg": {
+    "mtime": 1790075495.917555,
+    "seen": 1790077553.2428617,
+    "ast_hash": "5404bafa608785609ed75f6b8bc7993c",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/avangard-512bg-47.3.jpg": {
+    "mtime": 1790075496.0980384,
+    "seen": 1790077553.2428632,
+    "ast_hash": "12fce9f5b80f40c3085c1464f52a2e0f",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/avangard-512bg-47.4.jpg": {
+    "mtime": 1790075496.2669127,
+    "seen": 1790077553.2428646,
+    "ast_hash": "c999c1109d772b9ae4071b3e7132a147",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/avangard-bcd-377ws-clean.png": {
+    "mtime": 1790071784.3141108,
+    "seen": 1790077553.2428658,
+    "ast_hash": "7fde770396d5743231743fe274f9ad0f",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/avangard-bcd-377ws.jpg": {
+    "mtime": 1790071748.8988602,
+    "seen": 1790077553.242868,
+    "ast_hash": "0548fc8dd593b1b3c8a12b2abf8c8b87",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/avangard-bcd-512g-clean.png": {
+    "mtime": 1790075535.2325363,
+    "seen": 1790077553.2428696,
+    "ast_hash": "8f3fd519f2c0e1d212bc8ed47501ca37",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/avangard-bcd-532g-clean.png": {
+    "mtime": 1790071823.768707,
+    "seen": 1790077553.2428706,
+    "ast_hash": "19b80d9c9417949d5ed678cc626076ba",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/avangard-bcd-532g.jpg": {
+    "mtime": 1790071749.1115465,
+    "seen": 1790077553.2428718,
+    "ast_hash": "87230f002b88f8345237d1190675d2bc",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/avest-bcd-340wg-user.png": {
+    "mtime": 1790076135.387242,
+    "seen": 1790077553.2428727,
+    "ast_hash": "d011e9fe2aa6eb4f073f5bf981e1ea97",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/avest-bcd-340wg.png": {
+    "mtime": 1790071192.1755104,
+    "seen": 1790077553.2428741,
+    "ast_hash": "fe52998554f06f4039664ab150b0ee25",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/biryusa-m649.webp": {
+    "mtime": 1790072095.224667,
+    "seen": 1790077553.2428753,
+    "ast_hash": "5678189edd4dfdd4e57c12c3c52654f6",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/elite-390-sn-user-cropped.png": {
+    "mtime": 1790076019.74,
+    "seen": 1790077553.2428768,
+    "ast_hash": "063d15e3c34bc89b589be4e54a3183cc",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/elite-390-sn-user.png": {
+    "mtime": 1790075980.3172922,
+    "seen": 1790077553.2428777,
+    "ast_hash": "eba59426f703db6be6df0e941531ae16",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/elite-390-sn.jpg": {
+    "mtime": 1790071974.6712267,
+    "seen": 1790077553.242879,
+    "ast_hash": "e2bc62499df42b104c8693f4b8c00600",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/hisense-rb5k330gsfe.png": {
+    "mtime": 1790071090.7325654,
+    "seen": 1790077553.2428808,
+    "ast_hash": "e5badeab5b3a15f0a2d06aabec9c9b86",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/hisense-rd-43wc-s-ix.png": {
+    "mtime": 1790071987.32523,
+    "seen": 1790077553.242882,
+    "ast_hash": "96049b94744d3aeb3837c0f6b5178b6e",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/kleo-ucr-345b.png": {
+    "mtime": 1790070738.6799395,
+    "seen": 1790077553.2428834,
+    "ast_hash": "35a54726892f56c29e14c54357962018",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/levo-lv-278-clean.png": {
+    "mtime": 1790070916.3445258,
+    "seen": 1790077553.242885,
+    "ast_hash": "216fb57a58aab727d4846b29b4d6d9d4",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/levo-lv-278.jpeg": {
+    "mtime": 1790070739.010613,
+    "seen": 1790077553.2428863,
+    "ast_hash": "b0bc969a74c8c57efa3bffe66eb77a4d",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/levo-lv-278.png": {
+    "mtime": 1790070834.153,
+    "seen": 1790077553.2428882,
+    "ast_hash": "e7770005abb217a04f6a496d11a14f85",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/levo-lv-338-clean.png": {
+    "mtime": 1790070961.7027152,
+    "seen": 1790077553.2428896,
+    "ast_hash": "2d90dedb724cc67fd470555d26c661f6",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/levo-lv-338.jpeg": {
+    "mtime": 1790070739.2051346,
+    "seen": 1790077553.242891,
+    "ast_hash": "df08cb058cdc1398a636025e51beaa6f",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/levo-lv-338.png": {
+    "mtime": 1790070834.444,
+    "seen": 1790077553.2428923,
+    "ast_hash": "35247037ecb0b75a15916edb0e009c16",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/levo-lv-349s-clean.png": {
+    "mtime": 1790071393.4507096,
+    "seen": 1790077553.2428935,
+    "ast_hash": "93aa7c9a76e6080048b40c60882281a4",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/levo-lv-349s.jpeg": {
+    "mtime": 1790071333.7772899,
+    "seen": 1790077553.242895,
+    "ast_hash": "19531f6bc31a57af4d848722586a743f",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/levo-lv-358bg-clean.png": {
+    "mtime": 1790071452.012544,
+    "seen": 1790077553.2428958,
+    "ast_hash": "fadbc420e71aafe4b466ba59921f3736",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/levo-lv-358bg.jpeg": {
+    "mtime": 1790071333.9935722,
+    "seen": 1790077553.2428968,
+    "ast_hash": "7a6aa7c0da5f37033ab0190f44ab7eeb",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/toear-bcd-220-clean.png": {
+    "mtime": 1790075664.714269,
+    "seen": 1790077553.2428982,
+    "ast_hash": "f0c1b3c57bf66c5d06d5a7cbae32fe61",
+    "semantic_hash": ""
+  },
+  "review/refrigerator-enrichment/originals/toear-bcd-220.jpg": {
+    "mtime": 1790075623.2943532,
+    "seen": 1790077553.2428994,
+    "ast_hash": "f9bbcbd7d3893e03befc954ebcbdda35",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/backups/prod-20260922-172550/\u0426\u0411-00000942-1.jpg": {
+    "mtime": 1790076350.8864207,
+    "seen": 1790077553.247222,
+    "ast_hash": "521bdcc81a198959610c5009a78a4461",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/backups/prod-20260922-173746/\u0426\u0411-00000849-1.jpg": {
+    "mtime": 1790077066.8702958,
+    "seen": 1790077553.2472246,
+    "ast_hash": "098ffaf26fbe36343ed7bd9b3f8b2479",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/backups/prod-20260922-174149/\u0426\u0411-00000849-1.jpg": {
+    "mtime": 1790077309.938769,
+    "seen": 1790077553.2472265,
+    "ast_hash": "13000e126739e2fd28ba5b8f359e1525",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/backups/prod-20260922-174149/\u0426\u0411-00000849-2.jpg": {
+    "mtime": 1790077309.938769,
+    "seen": 1790077553.247228,
+    "ast_hash": "098ffaf26fbe36343ed7bd9b3f8b2479",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/final-photos/jass-js-h8-4.jpg": {
+    "mtime": 1790077283.168,
+    "seen": 1790077553.2831979,
+    "ast_hash": "64af6ba69cd5c23dfffbf458dc6a81b0",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/originals/bruce-q5-bg-removed.png": {
+    "mtime": 1790077254.7827644,
+    "seen": 1790077553.283476,
+    "ast_hash": "d116aff18ec8ecd0001e8f5b6b5f05fa",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/originals/bruce-q5-user.jpg": {
+    "mtime": 1790077005.6425688,
+    "seen": 1790077553.28392,
+    "ast_hash": "05ffbb06d4be1d50269a5d5d405a8471",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/originals/bruce-x5-user.png": {
+    "mtime": 1790076037.0974889,
+    "seen": 1790077553.2843528,
+    "ast_hash": "1ad3951ce157e292c79f78150fa65481",
+    "semantic_hash": ""
+  },
+  "review/small-appliances-enrichment/originals/jass-js-h8-4.jpg": {
+    "mtime": 1790069366.5588322,
+    "seen": 1790077553.2847855,
+    "ast_hash": "9f493942160fd29598226a10e9510e2b",
     "semantic_hash": ""
   }
 }
