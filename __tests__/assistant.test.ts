@@ -259,3 +259,9 @@ describe('uzCyrillic — латиница в кириллицу без ў/ғ/қ/
     expect(uzCyrillic('MIDEA MF205W80WB 22 300 som «Кабинет»')).toBe('MIDEA MF205W80WB 22 300 сом «Кабинет»')
   })
 })
+
+describe('адрес по-узбекски — «райони»', () => {
+  it('в правилах есть точная запись', () => {
+    expect(systemInstruction('ru', null, 'uz', products)).toContain('Аравон райони, Ош-3000 кучаси, 86-уй')
+  })
+})
