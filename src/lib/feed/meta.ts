@@ -11,7 +11,7 @@
  */
 import type { Product } from '@/data/products'
 
-const COLUMNS = [
+export const COLUMNS = [
   'id',
   'title',
   'description',
