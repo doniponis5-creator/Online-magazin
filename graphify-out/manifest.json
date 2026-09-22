@@ -4008,9 +4008,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/talk.ts": {
-    "mtime": 1790003268.3183427,
-    "seen": 1790005707.4907331,
-    "ast_hash": "d6ff20127cae8151be4b29d6f4e6cdf8",
+    "mtime": 1790051985.140354,
+    "seen": 1790052033.993592,
+    "ast_hash": "29bdaafdfbe867a62deb32827b390f2f",
     "semantic_hash": ""
   },
   "review/appstore-screenshots/01-home.png": {
@@ -4332,9 +4332,9 @@
     "semantic_hash": ""
   },
   "__tests__/sales-flow.test.ts": {
-    "mtime": 1790008034.5053189,
-    "seen": 1790008145.107878,
-    "ast_hash": "73c93f3f461b7de4729bab9617f1e54e",
+    "mtime": 1790051985.1444268,
+    "seen": 1790052033.993453,
+    "ast_hash": "c5ca3e1862de294e2f5387bef8b0bb0e",
     "semantic_hash": ""
   },
   "src/lib/assistant/leads.ts": {
@@ -4518,8 +4518,8 @@
     "semantic_hash": ""
   },
   "scripts/exam/questions.txt": {
-    "mtime": 1790008013.341707,
-    "seen": 1790008145.11294,
+    "mtime": 1790052009.2829614,
+    "seen": 1790052033.993631,
     "ast_hash": "3a926c46d67e7c2d46c7ef2c677f4c93",
     "semantic_hash": ""
   },
