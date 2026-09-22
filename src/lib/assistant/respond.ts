@@ -24,6 +24,8 @@ export type Reply = {
   source: 'gemini' | 'local' | 'flow'
   /** покупатель попросил живого человека — заявка ушла сотруднику */
   handoff?: boolean
+  /** сообщение не для магазина (рабочие, родные) — ничего не отправлять */
+  silent?: boolean
 }
 
 export type Channel = {
@@ -48,8 +50,27 @@ export async function respond(
 ): Promise<Reply> {
   const flow = await salesFlow(channel, turns, lang, customer, buy, shown, page)
   if (flow) return flow
-  return await answer(turns, lang, customer, page)
+  const reply = await answer(turns, lang, customer, page)
+  // Сайт — там только покупатели. В WhatsApp модель ещё смотрит, кому адресовано.
+  if (channel.leadChannel !== 'whatsapp') return reply
+  if (reply.audience === 'personal') return { text: '', products: [], source: reply.source, silent: true }
+  if (reply.audience === 'staff') {
+    const talk = talkLang(turns, lang)
+    const last = turns[turns.length - 1]?.text ?? ''
+    const context = `Сообщение для сотрудника (WhatsApp):\n${last.slice(0, 600)}`
+    const who = { name: channel.known.name ?? customer?.name ?? nameFromTurns(turns), phone: channel.known.phone }
+    await startLead(channel.key, talk, context, who, 'whatsapp')
+    return { text: reply.text || pick(STAFF_ACK, talk), products: [], source: reply.source, handoff: true }
+  }
+  return reply
 }
+
+const STAFF_ACK = {
+  ru: 'Понятно — передам сотруднику, он свяжется с вами.',
+  ky: 'Түшүндүм — кызматкерге билдирем, ал сиз менен байланышат.',
+  uz: 'Тушундим — ходимга етказаман, у сиз билан богланади.',
+}
+const pick = (say: Record<'ru' | 'ky' | 'uz', string>, lang: 'ru' | 'ky' | 'uz') => say[lang]
 
 /**
  * Продавец доводит до покупки: «Заказать» у карточки, «беру», «да» на

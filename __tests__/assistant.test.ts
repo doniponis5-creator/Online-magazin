@@ -265,3 +265,20 @@ describe('адрес по-узбекски — «райони»', () => {
     expect(systemInstruction('ru', null, 'uz', products)).toContain('Аравон райони, Ош-3000 кучаси, 86-уй')
   })
 })
+
+describe('кому адресовано (WhatsApp)', () => {
+  it('fromJson переносит audience, parseAnswer читает', async () => {
+    const { fromJson } = await import('@/lib/assistant/answer-json')
+    const raw = fromJson(JSON.stringify({ reply: 'Тушундим', productIds: [], audience: 'staff' }))
+    expect(raw).toContain('KIMGA: staff')
+    const parsed = parseAnswer(raw)
+    expect(parsed.audience).toBe('staff')
+    expect(parsed.text).toBe('Тушундим')
+    expect(parseAnswer(fromJson(JSON.stringify({ reply: 'Цена 100', audience: 'customer' }))).audience).toBe('customer')
+    expect(parseAnswer('просто текст').audience).toBe('customer')
+  })
+  it('правило есть в подсказке', () => {
+    expect(systemInstruction('ru', null, 'ky', products)).toMatch(/КОМУ АДРЕСОВАНО/)
+    expect(systemInstruction('ru', null, 'ky', products)).toContain('«чалып коюңуз»')
+  })
+})

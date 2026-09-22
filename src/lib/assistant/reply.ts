@@ -16,7 +16,7 @@ import type { Lang } from '@/lib/i18n/config'
 import { askGemini, geminiConfigured, type ChatTurn } from './gemini'
 import { dayBudgetLeft } from './limits'
 import { toHit, type CustomerBrief, type ProductHit } from './knowledge'
-import { localAnswer, parseAnswer } from './local'
+import { localAnswer, parseAnswer, type Audience } from './local'
 import { detectLang } from './talk'
 import { systemInstruction } from './prompt'
 
@@ -25,6 +25,8 @@ export type AssistantReply = {
   products: ProductHit[]
   /** gemini — отвечала модель; local — запасной режим по каталогу */
   source: 'gemini' | 'local'
+  /** кому адресовано сообщение покупателя — решает модель (WhatsApp) */
+  audience?: Audience
 }
 
 export async function answer(
@@ -52,7 +54,7 @@ export async function answer(
       const ceiling = cheaperThan(lastQuestion, lastAnswer)
       const raw = await askGemini(systemInstruction(lang, customer, talkLang(turns, lang), list, recent, notes, ceiling, viewing), turns)
       const parsed = parseAnswer(raw)
-      return { text: parsed.text, products: hits(parsed.productIds, lang, list), source: 'gemini' }
+      return { text: parsed.text, products: hits(parsed.productIds, lang, list), source: 'gemini', audience: parsed.audience }
     } catch (error) {
       // Ошибку пишем в журнал сервера, покупателю её не показываем.
       console.error('[assistant] gemini:', error instanceof Error ? error.message : error)

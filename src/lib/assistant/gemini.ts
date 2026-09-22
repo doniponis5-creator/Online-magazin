@@ -85,8 +85,13 @@ async function once(key: string, system: string, turns: ChatTurn[]): Promise<str
           properties: {
             reply: { type: 'STRING', description: 'Готовый ответ покупателю, слово в слово' },
             productIds: { type: 'ARRAY', items: { type: 'STRING' }, description: 'id названных товаров, не больше трёх' },
+            audience: {
+              type: 'STRING',
+              enum: ['customer', 'staff', 'personal'],
+              description: 'кому адресовано сообщение: customer — покупатель спрашивает магазин; staff — покупатель говорит с сотрудником (передать); personal — не про магазин (молчать)',
+            },
           },
-          required: ['reply'],
+          required: ['reply', 'audience'],
         },
       },
     }),

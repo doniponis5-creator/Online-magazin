@@ -26,7 +26,12 @@ import { bonusRule } from '@/lib/customer/bonusRule'
 export { detectLang }
 export type { TalkLang }
 
-export type Answer = { text: string; productIds: string[] }
+/** Кому адресовано сообщение: покупатель магазину, сотруднику или вовсе не нам. */
+export type Audience = 'customer' | 'staff' | 'personal'
+/** Строка в ответе модели с адресатом (см. answer-json.ts). */
+export const AUDIENCE_MARKER = 'KIMGA:'
+
+export type Answer = { text: string; productIds: string[]; audience?: Audience }
 
 type Say = { ru: string; ky: string; uz: string }
 
@@ -50,8 +55,14 @@ export function parseAnswer(raw: string): Answer {
   const productIds: string[] = []
   const kept: string[] = []
 
+  let audience: Audience = 'customer'
   for (const line of lines) {
     const trimmed = line.trim()
+    if (trimmed.startsWith(AUDIENCE_MARKER)) {
+      const value = trimmed.slice(AUDIENCE_MARKER.length).trim()
+      if (value === 'staff' || value === 'personal') audience = value
+      continue
+    }
     if (trimmed.toUpperCase().startsWith(PRODUCTS_MARKER)) {
       const ids = trimmed
         .slice(PRODUCTS_MARKER.length)
@@ -67,6 +78,7 @@ export function parseAnswer(raw: string): Answer {
   return {
     text: kept.join('\n').trim(),
     productIds: [...new Set(productIds)].slice(0, 3),
+    audience,
   }
 }
 

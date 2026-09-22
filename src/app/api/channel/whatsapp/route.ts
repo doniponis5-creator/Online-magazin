@@ -79,6 +79,8 @@ export async function POST(request: Request) {
     // слать: пусть отвечает сотрудник (сервер смотрит на это поле).
     source: reply.source,
     handoff: Boolean(reply.handoff),
+    // Сообщение не для магазина (рабочие, родные владельца) — сервер ничего не шлёт.
+    silent: Boolean(reply.silent),
     products: reply.products.map((p) => ({
       id: p.id,
       name: p.name,

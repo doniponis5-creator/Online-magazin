@@ -10,11 +10,15 @@ export function fromJson(raw: string): string {
   } catch {
     return withoutIds(raw)
   }
-  const row = data as { reply?: unknown; productIds?: unknown }
+  const row = data as { reply?: unknown; productIds?: unknown; audience?: unknown }
   if (typeof row.reply !== 'string' || !row.reply.trim()) throw new Error('empty-reply')
   const reply = withoutIds(row.reply)
   const ids = Array.isArray(row.productIds) ? row.productIds.filter((id): id is string => typeof id === 'string') : []
-  return ids.length > 0 ? `${reply}\nTOVAR: ${ids.slice(0, 3).join(', ')}` : reply
+  const lines = [reply]
+  if (ids.length > 0) lines.push(`TOVAR: ${ids.slice(0, 3).join(', ')}`)
+  // Кому адресовано: покупатель, сотрудник или вовсе не магазин — см. parseAnswer.
+  if (row.audience === 'staff' || row.audience === 'personal') lines.push(`KIMGA: ${row.audience}`)
+  return lines.join('\n')
 }
 
 /**
@@ -26,7 +30,7 @@ export function withoutIds(text: string): string {
   return text
     .split('\n')
     .map((line) =>
-      line.startsWith('TOVAR:')
+      line.startsWith('TOVAR:') || line.startsWith('KIMGA:')
         ? line
         : line
             .replace(/\s*\[?\bid=[^\s\]|,]+\]?/gi, '')

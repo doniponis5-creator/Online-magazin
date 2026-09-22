@@ -320,6 +320,11 @@ async def _answer(digits: str, name: str) -> bool:
             return False
 
         reply = await _ask_site(digits, name)
+        if reply and reply.get("silent"):
+            # Не покупатель (рабочие, поставщики, родные) — робот в этом чате молчит 12 часов.
+            await redis_client.set(f"wa:human:{digits}", "1", ex=HUMAN_QUIET)
+            logger.info(f"wa bot: не для магазина, молчу ...{digits[-4:]}")
+            return False
         if not reply or not reply.get("text"):
             return False
         # Модель недоступна (кончился лимит Gemini) — шаблонный ответ в WhatsApp не шлём:
