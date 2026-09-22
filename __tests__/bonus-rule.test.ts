@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { bonusRule } from './bonusRule'
+import { bonusRule } from '@/lib/customer/bonusRule'
 
 describe('bonusRule', () => {
   it('без предела в сомах — только процент', () => {
