@@ -9,7 +9,7 @@ import { useFavorites } from '@/lib/favorites/FavoritesProvider'
 import { buildCatalogHref, buildLangHref } from '@/lib/links'
 import { otherLang, type Lang } from '@/lib/i18n/config'
 import { useI18n } from '@/lib/i18n/I18nProvider'
-import { IconCart, IconGrid, IconHeart, IconMapPin, IconSearch, IconUser } from './Icons'
+import { IconCart, IconClose, IconGrid, IconHeart, IconMapPin, IconSearch, IconUser } from './Icons'
 import { Brand } from './Brand'
 
 function HeaderInner() {
@@ -119,8 +119,20 @@ function HeaderInner() {
                 placeholder={t.nav.searchPlaceholder}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                aria-label={t.nav.searchPlaceholder}
+                aria-label={t.nav.searchLabel}
               />
+              {/* Стереть набранное одним нажатием: на телефоне выделять и
+                  удалять текст в поле неудобно. */}
+              {query ? (
+                <button
+                  type="button"
+                  className="search__clear"
+                  onClick={() => setQuery('')}
+                  aria-label={t.nav.searchClear}
+                >
+                  <IconClose size={16} />
+                </button>
+              ) : null}
             </div>
           </form>
 

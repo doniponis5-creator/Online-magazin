@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { address, developer, phones, telHref, telegramHref, whatsappHref } from '@/data/contacts'
+import { paymentMethods } from '@/data/payment-methods'
 import { IconTelegram, IconWhatsApp } from './Icons'
 import { InstagramLink } from './InstagramLink'
 import { Brand } from './Brand'
@@ -18,10 +19,19 @@ export function Footer() {
               <Brand />
             </span>
             <p className="footer__text">{t.footer.about}</p>
-            <Link href={`/${lang}/about`} className="footer__sources-link">
-              {t.footer.aboutLink}
-            </Link>
           </div>
+          {/* Средняя колонка: главные разделы. Раньше слева под описанием
+              пустовало полэкрана, а юридические ссылки стояли в контактах. */}
+          <nav aria-label={t.footer.navTitle}>
+            <h3 className="footer__title">{t.footer.navTitle}</h3>
+            <ul className="footer__nav">
+              <li><Link href={`/${lang}/catalog`}>{t.nav.catalog}</Link></li>
+              <li><Link href={`/${lang}/catalog?sale=1`}>{t.footer.saleLink}</Link></li>
+              <li><Link href={`/${lang}/favorites`}>{t.nav.favorites}</Link></li>
+              <li><Link href={`/${lang}/account`}>{t.footer.accountLink}</Link></li>
+              <li><Link href={`/${lang}/about`}>{t.footer.aboutLink}</Link></li>
+            </ul>
+          </nav>
           <div>
             <h3 className="footer__title">{t.footer.contacts}</h3>
             <p className="footer__note">{t.footer.contactsNote}</p>
@@ -59,20 +69,37 @@ export function Footer() {
             <p className="footer__note footer__address">
               {t.footer.address}: {lang === 'ky' ? address.shortKy : address.shortRu}
             </p>
-            <div className="footer__links">
-              <Link href={`/${lang}/sources`} className="footer__sources-link">
-                {t.footer.sourcesLink}
-              </Link>
-              {/* Политику требует App Store — ссылка должна быть на каждой странице */}
-              <Link href={`/${lang}/privacy`} className="footer__sources-link">
-                {t.footer.privacyLink}
-              </Link>
-            </div>
           </div>
+        </div>
+        {/* Чем платят: те же значки, что на оплате. Покупатель видит своё
+            банковское приложение ещё до заказа и не думает, что нужен
+            именно кошелёк O!Деньги. */}
+        <div className="footer__pay">
+          <span className="footer__pay-label">
+            {t.footer.payTitle}: <span>{t.footer.payNote}</span>
+          </span>
+          <ul className="footer__pay-row">
+            {paymentMethods.map((method) => (
+              <li key={method.name}>
+                {method.logo ? (
+                  <img src={method.logo} alt={method.name} title={method.name} width={64} height={64} loading="lazy" />
+                ) : (
+                  <span>{method.name}</span>
+                )}
+              </li>
+            ))}
+          </ul>
         </div>
         <div className="footer__bottom">
           <span>© {new Date().getFullYear()} · {t.footer.rights}</span>
           <span>{t.footer.currency}</span>
+          {/* Юридические ссылки — в нижней строке, как принято; там их не
+              закрывает плавающая кнопка «Спросить». Политику требует App Store —
+              ссылка должна быть на каждой странице. */}
+          <span className="footer__legal">
+            <Link href={`/${lang}/sources`}>{t.footer.sourcesLink}</Link>
+            <Link href={`/${lang}/privacy`}>{t.footer.privacyLink}</Link>
+          </span>
           {/* Кто сделал сайт: по этому номеру обращаются за доработками */}
           <span className="footer__author">
             {t.footer.madeBy}: <strong>{developer.name}</strong>

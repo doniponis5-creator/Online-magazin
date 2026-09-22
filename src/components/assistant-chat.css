@@ -48,7 +48,10 @@
   gap: 8px;
   height: 52px;
   padding: 0 18px;
-  border: 0;
+  /* Белая кайма отделяет кнопку от того, над чем она проезжает: лимонным на
+     сайте помечены и «Выбрать технику», и «В корзину», и без каймы две
+     жёлтые кнопки сливались в одно пятно. */
+  border: 3px solid #fff;
   border-radius: 26px;
   /* Тот же лимонный, что у кнопок «Каталог» и «Оплатить»: фирменный цвет действия */
   background: var(--color-lemon);
@@ -56,14 +59,14 @@
   font: inherit;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(38, 50, 68, 0.18);
+  box-shadow: 0 6px 20px rgba(38, 50, 68, 0.22);
   transition: transform 140ms ease-out, box-shadow 140ms ease-out, background-color 140ms ease-out;
 }
 
 .assistant__button:hover {
   background: var(--color-lemon-hover);
   transform: translateY(-1px);
-  box-shadow: 0 10px 26px rgba(38, 50, 68, 0.22);
+  box-shadow: 0 10px 26px rgba(38, 50, 68, 0.26);
 }
 
 .assistant__button:focus-visible {

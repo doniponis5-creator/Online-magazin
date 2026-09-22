@@ -64,13 +64,23 @@ input, textarea { caret-color: var(--color-primary); }
 .search__input { height: 46px; background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: none; font-size: 14px; }
 .search__input::placeholder { color: var(--color-muted); opacity: 1; }
 .search__input:focus { border-color: var(--color-primary); background: white; }
+/* Свой крестик «стереть» вместо браузерного: тот в каждом браузере свой и
+   на телефоне слишком мелкий. */
+.search__input { padding-right: 44px; }
+.search__input::-webkit-search-cancel-button, .search__input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; }
+.search__clear { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 50%; background: transparent; color: var(--color-muted); cursor: pointer; }
+.search__clear:hover { background: var(--color-border); color: var(--color-ink); }
 .header__actions { gap: 14px; }
 .header__actions .icon-btn { width: auto; min-width: 46px; height: 50px; display: flex; flex-direction: column; gap: 4px; border: 0; background: transparent; }
 .header__action-label { font-size: 10px; font-weight: 550; }
 .icon-btn__badge, .bottom-nav__badge { background: var(--color-lemon); color: var(--color-ink); }
-.lang-switch { background: transparent; padding: 0; gap: 2px; }
-.lang-switch__item { font-size: 11px; padding: 6px; border-radius: 6px; }
-.lang-switch__item[aria-current] { background: var(--color-primary-soft); color: #1d4ed8; box-shadow: none; }
+/* Переключатель языка — одна тихая надпись «RU | КЫР», без цветной плашки:
+   текущий язык тёмный и жирный, другой — серый. Синяя плашка спорила
+   с лимонным фирменным цветом и выглядела как отдельная кнопка. */
+.lang-switch { background: transparent; padding: 0; gap: 0; }
+.lang-switch__item { font-size: 12px; padding: 6px 8px; border-radius: 6px; font-weight: 600; letter-spacing: .02em; }
+.lang-switch__item + .lang-switch__item { border-left: 1px solid var(--color-border); border-radius: 0; }
+.lang-switch__item[aria-current] { background: transparent; color: var(--color-ink); font-weight: 800; box-shadow: none; }
 .header__subnav { min-height: 40px; gap: 24px; border-top: 0; }
 .subnav__link { font-size: 12px; color: var(--color-ink); font-weight: 600; }
 .header__city { display: none; }
@@ -166,12 +176,31 @@ input, textarea { caret-color: var(--color-primary); }
 .footer__text, .footer__note { color: var(--color-ink-soft); font-size: 12px; line-height: 1.8; }
 .footer__title { color: var(--color-ink); }
 .footer__bottom { color: var(--color-muted); border-color: var(--color-border); font-size: 11px; }
+/* Три колонки: о магазине · разделы · контакты. Правый край не доходит до
+   плавающей кнопки «Спросить» — подвал снизу и так с запасом (92px). */
+@media (min-width: 901px) { .footer__grid { grid-template-columns: 1.3fr .7fr 1.1fr; gap: 48px; } }
+.footer__nav { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.footer__nav a { color: var(--color-ink); font-size: 13px; font-weight: 600; }
+.footer__nav a:hover { color: var(--color-primary); }
+.footer__legal { display: inline-flex; flex-wrap: wrap; gap: 6px 16px; }
+.footer__legal a { color: var(--color-muted); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.footer__legal a:hover { color: var(--color-ink); }
+@media (max-width: 900px) { .footer__nav { flex-direction: row; flex-wrap: wrap; gap: 8px 18px; } }
+/* Строка «Принимаем к оплате» — значки банков в ряд над копирайтом. */
+.footer__pay { margin-top: 34px; padding-top: 20px; border-top: 1px solid var(--color-border); display: flex; align-items: center; justify-content: space-between; gap: 14px 24px; flex-wrap: wrap; }
+.footer__pay-label { font-size: 12px; font-weight: 700; color: var(--color-ink); }
+.footer__pay-label span { font-weight: 500; color: var(--color-ink-soft); }
+.footer__pay-row { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.footer__pay-row img { display: block; width: 28px; height: 28px; border-radius: 8px; object-fit: contain; background: #fff; border: 1px solid var(--color-border); }
+.footer__pay-row span { display: inline-flex; align-items: center; height: 28px; padding: 0 8px; border-radius: 8px; background: #fff; border: 1px solid var(--color-border); font-size: 11px; font-weight: 650; }
+.footer__bottom { margin-top: 18px; }
 .bottom-nav { border-top: 1px solid var(--color-border); box-shadow: none; background: #fff; }
-/* Активный раздел: чистый лимонный штрих сверху и заливка чуть насыщеннее.
-   Штрих отвечает за «я здесь», заливка — только фон. Заливать всю плитку
-   ярким лимоном нельзя: этим цветом на сайте помечены кнопки действия
-   («В корзину», «Оформить»), и одинаковый цвет у кнопки и у фона сбивает. */
-.bottom-nav__item.is-active { color: var(--color-ink); background: #f7fac9; font-weight: 750; }
+/* Активный раздел: чистый лимонный штрих сверху, тёмная подпись и залитая
+   лимоном иконка. Заливки плитки нет: прямоугольник во всю высоту панели
+   читался как «нажатая кнопка», а не как «я здесь». Ярким лимоном плитку
+   тем более не заливаем — этим цветом на сайте помечены кнопки действия
+   («В корзину», «Оформить»). */
+.bottom-nav__item.is-active { color: var(--color-ink); font-weight: 750; }
 .bottom-nav__item.is-active::before {
   content: '';
   position: absolute;
@@ -202,7 +231,10 @@ input, textarea { caret-color: var(--color-primary); }
 
 @media (max-width: 900px) {
   .container { padding-inline: 20px; }
-  .header__utility { min-height: 25px; font-size: 10px; }
+  /* «По всему Кыргызстану» на телефоне занимал целую строку над логотипом
+     и ничего не давал нажать. Строка убрана — витрина начинается выше;
+     про доставку сказано в карточке товара и в подвале. */
+  .header__utility { display: none; }
   .header__inner { display: flex; flex-wrap: wrap; gap: 12px; padding-block: 13px; }
   .header .logo { flex: 1; }
   .brand__name { font-size: 22px; }
@@ -232,6 +264,16 @@ input, textarea { caret-color: var(--color-primary); }
   .cat-tiles { grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
   .cat-tile { font-size: 11px; padding: 17px 6px; gap: 10px; }
   .cat-tile__icon { width: 48px; height: 48px; }
+}
+
+/* Планшет и узкое окно (601–900px): три колонки, но плитка лежит строкой —
+   значок слева, название справа. Стоячая плитка на такой ширине была
+   в 260px шириной и почти пустой: мелкий значок посреди большого поля. */
+@media (min-width: 601px) and (max-width: 900px) {
+  .cat-tiles { gap: 12px; }
+  .cat-tile { flex-direction: row; justify-content: flex-start; gap: 12px; padding: 12px 14px; font-size: 13px; font-weight: 700; text-align: left; }
+  .cat-tile__icon { width: 44px; height: 44px; padding: 0; flex: none; }
+  .cat-tile__icon svg { width: 44px; height: 44px; }
   .product-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
   .card__media { aspect-ratio: 1; }
   .card__media-link { padding: 20px; }

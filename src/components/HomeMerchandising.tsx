@@ -6,9 +6,12 @@ import { brands, products, getDailyProduct, getHits, getRecommended, getSale } f
 import { categories } from '@/data/categories'
 import { storefront } from '@/data/storefront'
 import { useI18n } from '@/lib/i18n/I18nProvider'
+import { formatSom } from '@/lib/format'
 import { InstagramPhone } from './InstagramLink'
 import { ProductCard } from './ProductCard'
 import { ProductArt } from './ProductArt'
+import { ProductImage } from './ProductImage'
+import { PromoCountdown } from './PromoCountdown'
 import { BrandLogo, hasBrandImage } from './BrandLogo'
 import { IconArrowUpRight, IconChevronRight, IconInstagram, IconUser } from './Icons'
 import './home-merchandising.css'
@@ -39,9 +42,59 @@ export function DailySelection() {
   </div>
 }
 
+const discountPct = (p: { price: number; oldPrice?: number }) =>
+  p.oldPrice && p.oldPrice > p.price ? Math.round((1 - p.price / p.oldPrice) * 100) : 0
+
+/**
+ * Баннер собирается из распродажи сам: самая большая скидка, число товаров,
+ * срок акции (если в 1С задан). Владелец ничего не пишет руками — поменял
+ * цены или отметку «Распродажа» в 1С, и баннер через 10 минут обновился.
+ * Распродажи нет — показывается редакционный текст из storefront.ts.
+ */
 export function CampaignBanner() {
   const { lang } = useI18n()
   const ky = lang === 'ky'
+  const sale = [...getSale()].filter(p => discountPct(p) > 0).sort((a, b) => discountPct(b) - discountPct(a))
+  const maxPct = sale[0] ? discountPct(sale[0]) : 0
+
+  // Товары распродажи сменяют друг друга каждые 6 секунд: сначала самая
+  // большая скидка. Наведение мыши останавливает смену — человек читает.
+  // Кому движение мешает (настройка телефона) — показывается только первый.
+  const [index, setIndex] = useState(0)
+  const [paused, setPaused] = useState(false)
+  const total = sale.length
+  useEffect(() => {
+    if (total < 2 || paused) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const id = setInterval(() => setIndex(i => (i + 1) % total), 6000)
+    return () => clearInterval(id)
+  }, [total, paused])
+  const best = sale[index % Math.max(1, total)]
+
+  if (best && maxPct > 0) {
+    return <section
+      className="campaign-band campaign-band--sale section"
+      aria-labelledby="campaign-title"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      {/* key = id товара: при смене блок перерисовывается и мягко проявляется */}
+      <Link key={best.id} className="campaign-band__media campaign-band__fade" href={`/${lang}/product/${best.id}`} aria-label={ky ? best.nameKy : best.nameRu}>
+        <span className="campaign-band__chip">−{discountPct(best)}%</span>
+        <ProductImage kind={best.art} image={best.image} alt="" />
+      </Link>
+      <div className="campaign-band__text">
+        <h2 id="campaign-title">{ky ? `Арзандатуу: ${maxPct}%га чейин` : `Распродажа: скидки до ${maxPct}%`}</h2>
+        {/* Одна строка: товар и цена. Без счётчика товаров и точек — на телефоне
+            баннер разрастался на пять строк и читался как объявление. */}
+        <p key={best.id} className="campaign-band__fade">{ky ? best.nameKy : best.nameRu} — <b>{formatSom(best.price)}</b>{best.oldPrice ? <s> {formatSom(best.oldPrice)}</s> : null}</p>
+        {/* Срок — у каждого товара свой (из 1С); нет срока — нет и строки */}
+        {best.promoUntil && <PromoCountdown key={best.id} until={best.promoUntil} />}
+      </div>
+      <Link className="btn btn--primary" href={`/${lang}/catalog?sale=1`}>{ky ? 'Арзандатууну көрүү' : 'Смотреть распродажу'}<IconChevronRight size={18} /></Link>
+    </section>
+  }
+
   const campaign = storefront.campaign
   const campaignCategory = categories.some(c => c.id === campaign.category) ? campaign.category : categories[0]?.id
   return <section className="campaign-band section" aria-labelledby="campaign-title">
