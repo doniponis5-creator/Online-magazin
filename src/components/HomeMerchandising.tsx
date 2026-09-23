@@ -36,8 +36,10 @@ export function DailySelection() {
       {/* Своя наклейка «Товар дня» и скидка поверх обычной карточки: без них
           она ничем не отличалась от соседних «Специально для вас». */}
       <div className="daily-selection__card">
-        <span className="daily-selection__label">{ky ? 'Күндүн товары' : 'Товар дня'}</span>
-        {discountPct(daily) > 0 && <span className="daily-selection__discount">−{discountPct(daily)}%</span>}
+        <span className="daily-selection__tags" aria-hidden="true">
+          <span className="daily-selection__label">{ky ? 'Күндүн товары' : 'Товар дня'}</span>
+          {discountPct(daily) > 0 && <span className="daily-selection__discount">−{discountPct(daily)}%</span>}
+        </span>
         <ProductCard product={daily} />
       </div>
     </section>

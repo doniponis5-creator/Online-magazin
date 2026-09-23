@@ -5,8 +5,16 @@
 .daily-selection__card { position: relative; display: flex; flex: 1; }
 .daily-selection__card .card { width: 100%; }
 .daily-selection__card .card__badges { display: none; }
-.daily-selection__label { position: absolute; top: 12px; left: 12px; z-index: 3; background: var(--color-lemon); color: var(--color-ink); border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 800; letter-spacing: .01em; pointer-events: none; }
-.daily-selection__discount { position: absolute; top: 46px; left: 12px; z-index: 3; background: var(--color-danger); color: #fff; border-radius: 6px; padding: 5px 9px; font-size: 13px; font-weight: 800; pointer-events: none; }
+/* Наклейки в одну строку в верхнем левом углу, не лезут на товар. */
+.daily-selection__tags { position: absolute; top: 12px; left: 12px; z-index: 3; display: flex; gap: 6px; pointer-events: none; }
+.daily-selection__label { background: var(--color-lemon); color: var(--color-ink); border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 800; letter-spacing: .01em; }
+.daily-selection__discount { background: var(--color-danger); color: #fff; border-radius: 8px; padding: 6px 9px; font-size: 12px; font-weight: 800; }
+/* Лишнюю высоту забирает фото, а не пустота между названием и ценой:
+   текстовая часть компактная, картинка растягивается до высоты ряда. */
+.daily-selection__card .card__media { flex: 1 1 auto; }
+.daily-selection__card .card__body { flex: 0 0 auto; }
+.daily-selection__card .card__name { min-height: auto; }
+.daily-selection__card .card__prices { margin-top: 6px; }
 /* Описания здесь не показываем — как в «Хитах»: ровные плитки, цена на виду. */
 .daily-selection .card__desc { display: none; }
 .daily-selection section { min-width: 0; display: flex; flex-direction: column; }
