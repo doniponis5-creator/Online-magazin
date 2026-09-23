@@ -1,2 +1,3 @@
 src/app/light-lemon.css
 src/components/Gallery.tsx
+src/components/PinchZoom.tsx
