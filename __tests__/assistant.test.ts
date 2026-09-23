@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+vi.mock('server-only', () => ({}))
 import { detectLang, localAnswer, parseAnswer } from '@/lib/assistant/local'
 import { uzCyrillic } from '@/lib/assistant/talk'
 import { catalogForQuestion, searchProducts } from '@/lib/assistant/knowledge'
@@ -295,5 +296,14 @@ describe('известное имя без входа (WhatsApp)', () => {
 describe('«руководство», не «сотрудник»', () => {
   it('правило в подсказке', () => {
     expect(systemInstruction('ru', null, 'ru', products)).toMatch(/Слов «сотрудник», «менеджер», «оператор» покупателю не говори/)
+  })
+})
+
+describe('houseStyle — правим то, что модель нарушает', () => {
+  it('узбекский без ў/ғ/қ/ҳ, «руководство» вместо сотрудника на трёх языках', async () => {
+    const { houseStyle } = await import('@/lib/assistant/reply')
+    expect(houseStyle('тулов ҳаволаси оркали, ходимга айтаман, рахбарият богланади', 'uz')).toBe('тулов хаволаси оркали, руководствога айтаман, руководство богланади')
+    expect(houseStyle('«чалып коюңуз» деп жазсаңыз, жетекчилик байланышып маалымат берет. Кызматкерге айтам.', 'ky')).toBe('«чалып коюңуз» деп жазсаңыз, руководство байланышып маалымат берет. Руководствого айтам.')
+    expect(houseStyle('Передам сотруднику, сотрудник перезвонит. Менеджер уточнит.', 'ru')).toBe('Передам руководству, руководство перезвонит. Руководство уточнит.')
   })
 })

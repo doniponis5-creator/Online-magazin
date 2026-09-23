@@ -186,3 +186,26 @@ describe('вопрос вместо имени и телефона (случай
     expect(looksLikeQuestion('Чегирма борми')).toBe(true)
   })
 })
+
+describe('«да, но денег пока нет» (случай Аиды)', () => {
+  it('условное «ооба» не начинает заказ; «потом» посреди анкеты снимает её', async () => {
+    const { DEFER } = await import('@/lib/telegram/order')
+    expect(DEFER.test('Ооба алат элем азыр акчам 12500с толук эмес 5.6куну болот буюрса,толуктап алып байланышайын')).toBe(true)
+    expect(DEFER.test('Толом жургузойун анан жазайын')).toBe(true)
+    expect(DEFER.test('Маслахат килиб олай рахмат')).toBe(true)
+    expect(DEFER.test('Ооба')).toBe(false)
+    expect(DEFER.test('Нурлан')).toBe(false)
+    expect(DEFER.test('айылга Колго')).toBe(false)
+    await start('wa:test-defer', [product.id], 'ky', 'Заказ из WhatsApp')
+    expect(await step('wa:test-defer', 'Толом жургузойун анан жазайын', 'ky', 'ky')).toBeNull()
+    // Заказ снят — следующее «Айгүл» уже не имя в анкете.
+    expect(await step('wa:test-defer', 'Айгүл', 'ky', 'ky')).toBeNull()
+  })
+  it('«Маслахат килиб олай рахмат» — узбекский, не кыргызский', () => {
+    expect(detectLang('Маслахат килиб олай рахмат', 'ru')).toBe('uz')
+    expect(detectLang('Адрес каерда', 'ru')).toBe('uz')
+    expect(detectLang('Толовни каерга киламиз Доставка борми', 'ru')).toBe('uz')
+    expect(detectLang('Ооба озумо алам, айылга Колго', 'ru')).toBe('ky')
+    expect(detectLang('Чон коломдогу выпечка бышырганга конвекциясы бар духовка издеп жаттым эле', 'ru')).toBe('ky')
+  })
+})

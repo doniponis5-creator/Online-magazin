@@ -11,7 +11,7 @@ import 'server-only'
 
 import type { Lang } from '@/lib/i18n/config'
 import { answer, talkLang } from './reply'
-import { AFFIRM, BUY_INTENT, OFFER, cancel, hasDraft, looksLikeQuestion, start, step } from '@/lib/telegram/order'
+import { AFFIRM, BUY_INTENT, DEFER, OFFER, cancel, hasDraft, looksLikeQuestion, start, step } from '@/lib/telegram/order'
 import { CALL_INTENT, cancelLead, hasLead, leadContext, leadStep, startLead } from './leads'
 import { lookupIn, salesCatalogNow } from './live'
 import type { ChatTurn } from './gemini'
@@ -57,9 +57,10 @@ export async function respond(
   if (reply.audience === 'staff') {
     const talk = talkLang(turns, lang)
     const last = turns[turns.length - 1]?.text ?? ''
-    const context = `Сообщение для сотрудника (WhatsApp):\n${last.slice(0, 600)}`
+    const context = `Сообщение для руководства (WhatsApp):\n${last.slice(0, 600)}`
     const who = { name: channel.known.name ?? customer?.name ?? nameFromTurns(turns), phone: channel.known.phone }
-    await startLead(channel.key, talk, context, who, 'whatsapp')
+    // Номер в WhatsApp известен всегда — заявка уходит молча. Без номера анкету не заводим: это не «перезвоните».
+    if (who.phone) await startLead(channel.key, talk, context, who, 'whatsapp')
     return { text: reply.text || pick(STAFF_ACK, talk), products: [], source: reply.source, handoff: true }
   }
   return reply
@@ -130,8 +131,10 @@ async function salesFlow(
   const lastAnswer = [...turns].reverse().find((t) => t.role === 'assistant')?.text ?? ''
   // Длинная фраза со словом «заказ» — обычно вопрос («если закажем, оплатить
   // при получении можно?»). На него отвечает консультант, а не анкета заказа.
-  const wantsToBuy = BUY_INTENT.test(text) && !looksLikeQuestion(text.replace(/\?/g, ''))
-  if (shown.length > 0 && (wantsToBuy || (AFFIRM.test(text) && OFFER.test(lastAnswer)))) {
+  const wantsToBuy = BUY_INTENT.test(text) && !looksLikeQuestion(text.replace(/\?/g, '')) && !DEFER.test(text)
+  // «Ооба, но денег пока нет, через 5 дней» — это не «да».
+  const agreed = AFFIRM.test(text) && OFFER.test(lastAnswer) && !looksLikeQuestion(text) && !DEFER.test(text)
+  if (shown.length > 0 && (wantsToBuy || agreed)) {
     return only(await start(key, shown, talk, orderSource, who))
   }
   return null

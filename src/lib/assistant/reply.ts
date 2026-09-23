@@ -17,7 +17,7 @@ import { askGemini, geminiConfigured, type ChatTurn } from './gemini'
 import { dayBudgetLeft } from './limits'
 import { toHit, type CustomerBrief, type ProductHit } from './knowledge'
 import { localAnswer, parseAnswer, type Audience } from './local'
-import { detectLang } from './talk'
+import { detectLang, type TalkLang } from './talk'
 import { systemInstruction } from './prompt'
 
 export type AssistantReply = {
@@ -56,7 +56,8 @@ export async function answer(
       const ceiling = cheaperThan(lastQuestion, lastAnswer)
       const raw = await askGemini(systemInstruction(lang, customer, talkLang(turns, lang), list, recent, notes, ceiling, viewing, knownName), turns)
       const parsed = parseAnswer(raw)
-      return { text: parsed.text, products: hits(parsed.productIds, lang, list), source: 'gemini', audience: parsed.audience }
+      const talk = talkLang(turns, lang)
+      return { text: houseStyle(parsed.text, talk), products: hits(parsed.productIds, lang, list), source: 'gemini', audience: parsed.audience }
     } catch (error) {
       // Ошибку пишем в журнал сервера, покупателю её не показываем.
       console.error('[assistant] gemini:', error instanceof Error ? error.message : error)
@@ -102,4 +103,39 @@ function hits(ids: string[], lang: Lang, list: Product[]): ProductHit[] {
     .map((id) => find(id))
     .filter((product): product is NonNullable<typeof product> => Boolean(product))
     .map((product) => toHit(product, lang))
+}
+
+/**
+ * Правила дома, которые модель иногда нарушает, — правим на выходе:
+ *  • узбекский — без ў, ғ, қ, ҳ (так здесь пишут все);
+ *  • кто перезвонит — «руководство», не «сотрудник», «кызматкер», «ходим», «рахбарият», «жетекчилик».
+ */
+const RU_ENDING: Record<string, string> = {
+  '': 'о', у: 'у', а: 'а', ом: 'ом', е: 'е', и: 'о', ы: 'о', ами: 'ом', ам: 'у', ах: 'е', ов: 'а',
+}
+const KY_ENDING: Record<string, string> = {
+  '': '', ке: 'го', ге: 'го', га: 'го', тен: 'дон', ден: 'дон', дан: 'дон', тин: 'нун', дин: 'нун', нин: 'нун', ти: 'ну', ди: 'ну', ни: 'ну',
+}
+const UZ_ENDING: Record<string, string> = { '': '', га: 'га', ни: 'ни', нинг: 'нинг', дан: 'дан' }
+
+function keepCase(sample: string, word: string): string {
+  return /^[А-ЯЁ]/.test(sample) ? word.charAt(0).toUpperCase() + word.slice(1) : word
+}
+
+export function houseStyle(text: string, talk: TalkLang): string {
+  let out = text
+  if (talk === 'uz') {
+    const map: Record<string, string> = { ў: 'у', ғ: 'г', қ: 'к', ҳ: 'х', Ў: 'У', Ғ: 'Г', Қ: 'К', Ҳ: 'Х' }
+    out = out.replace(/[ўғқҳЎҒҚҲ]/g, (ch) => map[ch] ?? ch)
+  }
+  out = out.replace(/(?<![\p{L}])(сотрудник|менеджер|оператор)(ами|ам|ах|ов|ом|у|а|е|и|ы)?(?![\p{L}])/giu, (m, _w, end = '') =>
+    keepCase(m, 'руководств' + (RU_ENDING[end.toLowerCase()] ?? 'о')),
+  )
+  out = out.replace(/(?<![\p{L}])(жетекчилик|кызматкер(?:лер)?(?:ибиз)?)(ке|ге|га|тен|ден|дан|тин|дин|нин|ти|ди|ни)?(?![\p{L}])/giu, (m, _w, end = '') =>
+    keepCase(m, 'руководство' + (KY_ENDING[end.toLowerCase()] ?? '')),
+  )
+  out = out.replace(/(?<![\p{L}])(рахбарият|ходим(?:лар)?(?:имиз)?)(нинг|га|ни|дан)?(?![\p{L}])/giu, (m, _w, end = '') =>
+    keepCase(m, 'руководство' + (UZ_ENDING[end.toLowerCase()] ?? '')),
+  )
+  return out
 }

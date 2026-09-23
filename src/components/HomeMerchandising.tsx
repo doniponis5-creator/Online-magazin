@@ -85,11 +85,14 @@ export function CampaignBanner() {
       </Link>
       <div className="campaign-band__text">
         <h2 id="campaign-title">{ky ? `Арзандатуу: ${maxPct}%га чейин` : `Распродажа: скидки до ${maxPct}%`}</h2>
-        {/* Одна строка: товар и цена. Без счётчика товаров и точек — на телефоне
-            баннер разрастался на пять строк и читался как объявление. */}
-        <p key={best.id} className="campaign-band__fade">{ky ? best.nameKy : best.nameRu} — <b>{formatSom(best.price)}</b>{best.oldPrice ? <s> {formatSom(best.oldPrice)}</s> : null}</p>
-        {/* Срок — у каждого товара свой (из 1С); нет срока — нет и строки */}
-        {best.promoUntil && <PromoCountdown key={best.id} until={best.promoUntil} />}
+        {/* Одна строка: товар и цена, ниже — срок, если он задан в 1С.
+            Оба — внутри ОДНОГО блока с key товара. Раньше key стоял и на <p>,
+            и на таймере — два соседа с одинаковым key, и React при смене товара
+            не убирал прежнюю строку: на сайте лента росла с каждым товаром. */}
+        <div key={best.id} className="campaign-band__slide campaign-band__fade">
+          <p>{ky ? best.nameKy : best.nameRu} — <b>{formatSom(best.price)}</b>{best.oldPrice ? <s> {formatSom(best.oldPrice)}</s> : null}</p>
+          {best.promoUntil && <PromoCountdown until={best.promoUntil} />}
+        </div>
       </div>
       <Link className="btn btn--primary" href={`/${lang}/catalog?sale=1`}>{ky ? 'Арзандатууну көрүү' : 'Смотреть распродажу'}<IconChevronRight size={18} /></Link>
     </section>
