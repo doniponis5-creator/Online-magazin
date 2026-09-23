@@ -9,6 +9,7 @@ import type { ProductPhoto } from '@/data/photos'
 import { ProductArt } from './ProductArt'
 import { ProductImage } from './ProductImage'
 import { IconSearch } from './Icons'
+import { PinchZoom } from './PinchZoom'
 
 /**
  * Галерея товара. Решение владельца 12.09: реальных фотографий моделей в
@@ -93,12 +94,17 @@ export function Gallery({
           type="button"
           ref={openerRef}
           className="gallery__main gallery__main--zoom"
-          onClick={() => setZoomOpen(true)}
+          onClick={() => {
+            // На телефоне окно не открываем: там фото приближают двумя пальцами
+            // прямо на странице (PinchZoom), а лупа спрятана стилями.
+            if (window.matchMedia('(hover: none) and (pointer: coarse)').matches) return
+            setZoomOpen(true)
+          }}
           aria-label={`${t.product.zoomOpen}: ${name}`}
           title={t.product.zoomOpen}
         >
-          {mainView}
-          {/* лупа в углу — подсказка, что фото можно увеличить */}
+          <PinchZoom className="gallery__pinch">{mainView}</PinchZoom>
+          {/* лупа в углу — подсказка, что фото можно увеличить (только с мышью) */}
           <span className="gallery__zoom-hint" aria-hidden="true">
             <IconSearch size={18} />
           </span>
@@ -171,7 +177,20 @@ export function Gallery({
           ) : (
             <div
               className={`zoom-overlay__stage zoom-overlay__stage--photo${zoomed ? ' is-zoomed' : ''}`}
-              onClick={() => setZoomed((z) => !z)}
+              onClick={(e) => {
+                // приближаем к месту нажатия, а не к левому верхнему углу
+                const stage = e.currentTarget
+                const r = stage.getBoundingClientRect()
+                const fx = (e.clientX - r.left + stage.scrollLeft) / Math.max(1, stage.scrollWidth)
+                const fy = (e.clientY - r.top + stage.scrollTop) / Math.max(1, stage.scrollHeight)
+                const next = !zoomed
+                setZoomed(next)
+                if (next) {
+                  requestAnimationFrame(() => {
+                    stage.scrollTo(fx * stage.scrollWidth - stage.clientWidth / 2, fy * stage.scrollHeight - stage.clientHeight / 2)
+                  })
+                }
+              }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={currentImage} alt={name} className="zoom-overlay__img" />

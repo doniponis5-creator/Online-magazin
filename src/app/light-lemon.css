@@ -222,7 +222,14 @@ input, textarea { caret-color: var(--color-primary); }
 .zoom-overlay__stage--photo::-webkit-scrollbar { display: none; }
 .zoom-overlay__img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
 .zoom-overlay__stage--photo.is-zoomed { cursor: zoom-out; align-items: flex-start; justify-content: flex-start; }
-.zoom-overlay__stage--photo.is-zoomed .zoom-overlay__img { max-width: none; max-height: none; width: 200%; }
+.zoom-overlay__stage--photo.is-zoomed { display: block; }
+.zoom-overlay__stage--photo.is-zoomed .zoom-overlay__img { max-width: none; max-height: none; width: 200%; height: auto; }
+.gallery__pinch { width: 100%; height: 100%; }
+/* На телефоне лупы нет — фото приближают двумя пальцами прямо на странице */
+@media (hover: none) and (pointer: coarse) {
+  .gallery__zoom-hint { display: none; }
+  .gallery__main--zoom { cursor: default; }
+}
 @media (max-width: 600px) {
   .zoom-overlay { padding: 10px; }
   .zoom-overlay__stage { width: 100%; height: min(80vh, 640px); border-radius: 20px; padding: 10px; }
