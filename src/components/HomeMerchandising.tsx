@@ -6,8 +6,9 @@ import { brands, products, getDailyProduct, getHits, getRecommended, getSale } f
 import { categories } from '@/data/categories'
 import { storefront } from '@/data/storefront'
 import { useI18n } from '@/lib/i18n/I18nProvider'
-import { formatSom } from '@/lib/format'
+import { countWithNoun, formatSom } from '@/lib/format'
 import { InstagramPhone } from './InstagramLink'
+import { REELS_FROM_SITE_KEY, REELS_INDEX_KEY, REELS_ORDER_KEY } from '@/lib/reelsSession'
 import { ProductCard } from './ProductCard'
 import { ProductArt } from './ProductArt'
 import { ProductImage } from './ProductImage'
@@ -125,22 +126,43 @@ export function ReelsEntry() {
   // Фото, которое не открылось (сменили в 1С, а каталог ещё старый), не
   // оставляет пустую рамку: карточка прячется, на её место встаёт следующая.
   const [broken, setBroken] = useState<string[]>([])
-  const priced = products.filter(p => p.price > 0)
-  if (priced.length < 3) return null
+  const stack = useRef<HTMLAnchorElement>(null)
+  const markBroken = (id: string) => setBroken(b => b.includes(id) ? b : [...b, id])
+  // Ошибка могла случиться до того, как React повесил onError (фото грузится
+  // быстрее, чем страница оживает) — проверяем уже загруженные картинки.
+  useEffect(() => {
+    stack.current?.querySelectorAll<HTMLImageElement>('img[data-id]').forEach(img => {
+      if (img.complete && img.naturalWidth === 0 && img.dataset.id) markBroken(img.dataset.id)
+    })
+  }, [])
+  // Число — весь каталог, как и в самой ленте (включая товары без цены)
+  if (products.length < 3) return null
   const hits = getHits(storefront.hits).filter(p => p.image)
-  const pool = [...hits, ...priced.filter(p => p.image && !hits.includes(p))]
+  const pool = [...hits, ...products.filter(p => p.image && !hits.includes(p))]
   const shown = pool.filter(p => !broken.includes(p.id)).slice(0, 3)
+  const [one, few, many] = t.reels.countForms
+  // С главной лента всегда начинается заново: стираем сохранённый порядок и
+  // помечаем, что пришли со своего сайта — тогда «Закрыть» вернёт сюда же.
+  const fresh = () => {
+    try {
+      sessionStorage.removeItem(REELS_ORDER_KEY)
+      sessionStorage.removeItem(REELS_INDEX_KEY)
+      sessionStorage.setItem(REELS_FROM_SITE_KEY, '1')
+    } catch {
+      // хранилище недоступно — лента просто откроется как обычно
+    }
+  }
   return <section className="reels-entry section" aria-labelledby="reels-entry-title">
     <div className="reels-entry__text">
       <span className="reels-entry__eyebrow">{t.reels.eyebrow}</span>
       <h2 id="reels-entry-title">{t.reels.entryTitle}</h2>
-      <p>{t.reels.entryText.replace('{n}', String(priced.length))}</p>
-      <Link href={`/${lang}/reels`} className="btn btn--primary">{t.reels.entryCta}<IconChevronRight size={18} /></Link>
+      <p>{t.reels.entryText.replace('{count}', countWithNoun(products.length, one, few, many))}</p>
+      <Link href={`/${lang}/reels`} className="btn btn--primary" onClick={fresh}>{t.reels.entryCta}<IconChevronRight size={18} /></Link>
     </div>
-    {shown.length === 3 && <Link href={`/${lang}/reels`} className="reels-entry__stack" aria-hidden="true" tabIndex={-1}>
+    {shown.length === 3 && <Link ref={stack} href={`/${lang}/reels`} className="reels-entry__stack" aria-hidden="true" tabIndex={-1} onClick={fresh}>
       {shown.map(p => <span key={p.id} className="reels-entry__card">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={p.image} alt="" loading="lazy" onError={() => setBroken(b => b.includes(p.id) ? b : [...b, p.id])} />
+        <img src={p.image} alt="" loading="lazy" data-id={p.id} onError={() => markBroken(p.id)} />
       </span>)}
     </Link>}
   </section>

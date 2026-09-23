@@ -30,7 +30,7 @@
   pointer-events: none;
 }
 .reels__bar > * { pointer-events: auto; }
-.reels__title { font-weight: 800; font-size: 15px; color: var(--color-ink); }
+.reels__title { margin: 0; font-weight: 800; font-size: 15px; line-height: 1.2; color: var(--color-ink); }
 .reels__counter {
   margin-left: auto;
   font-size: 12px;
@@ -43,8 +43,9 @@
   font-variant-numeric: tabular-nums;
 }
 .reels__icon-btn {
-  width: 40px;
-  height: 40px;
+  position: relative;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: 1px solid var(--color-border);
   background: #fff;
@@ -56,6 +57,21 @@
   transition: background-color var(--speed) var(--ease);
 }
 .reels__icon-btn:hover { background: var(--color-surface); }
+.reels__cart-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--color-lemon);
+  color: var(--color-ink);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 18px;
+  text-align: center;
+}
 
 /* Прокрутка с «прилипанием»: каждый свайп — ровно один товар. */
 .reels__scroller {
@@ -88,7 +104,10 @@
   padding: calc(env(safe-area-inset-top, 0px) + 64px) 20px 8px;
   background: #fff;
 }
-.reels__media-link { display: block; width: 100%; height: 100%; }
+/* position: relative обязателен: глобальный .product-placeholder — absolute с
+   inset:0 и без него растягивался на весь .reels__media вместе с отступами,
+   и фото уезжало под верхнюю полосу. */
+.reels__media-link { position: relative; display: block; width: 100%; height: 100%; overflow: hidden; border-radius: 12px; }
 .reels__media-link .product-placeholder { width: 100%; height: 100%; }
 .reels__media-link .product-placeholder--photo { padding: 0; }
 .reels__media-link .product-image-photo { width: 100%; height: 100%; object-fit: contain; }
@@ -109,12 +128,18 @@
   gap: 6px;
 }
 .reels__badge-sale { background: var(--color-danger); color: #fff; }
-.reels__fav {
+/* Справа столбиком: «избранное» и «поделиться». Кнопки 44px — минимум для пальца. */
+.reels__side {
   position: absolute;
   top: calc(env(safe-area-inset-top, 0px) + 64px);
   right: 14px;
   z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
+.reels__side .fav-btn,
+.reels__side .share-btn { width: 44px; height: 44px; }
 
 .reels__hint {
   position: absolute;
@@ -179,11 +204,15 @@
 .reels__prices { display: flex; align-items: baseline; gap: 10px; margin-top: 12px; }
 .reels__price { font-size: 26px; font-weight: 800; letter-spacing: -.02em; color: var(--color-ink); }
 .reels__price.is-sale { color: var(--color-danger); }
+.reels__price--request { font-size: 18px; color: var(--color-ink-soft); }
 .reels__old { font-size: 15px; color: var(--color-muted); }
 
-.reels__actions { display: flex; gap: 10px; margin-top: 14px; }
-.reels__actions > :first-child { flex: 1 1 auto; }
-.reels__more { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; }
+/* Кнопки в строку; длинная подпись («Нет в наличии») на узком экране переносит
+   «Подробнее» на свою строку, а не выталкивает за край. */
+.reels__actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.reels__actions > :first-child { flex: 1 1 150px; }
+.reels__more { flex: 1 0 auto; max-width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.reels__actions > :first-child:not(:last-child) + .reels__more { flex: 0 1 auto; }
 
 .reels__empty { padding: 120px 24px; text-align: center; color: var(--color-muted); }
 
