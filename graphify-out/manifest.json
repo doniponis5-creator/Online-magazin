@@ -1080,9 +1080,9 @@
     "semantic_hash": ""
   },
   "docs/HANDOFF.md": {
-    "mtime": 1790175732.5079236,
-    "seen": 1790175825.341758,
-    "ast_hash": "d6cb1288aaee93d09f7b208aa6a7808a",
+    "mtime": 1790178590.129348,
+    "seen": 1790178687.402859,
+    "ast_hash": "0bcbe3ffa18bd6fa5953964c4f4ef0a2",
     "semantic_hash": ""
   },
   "docs/IOS_APP_UZ.md": {
@@ -4818,9 +4818,9 @@
     "semantic_hash": ""
   },
   "src/components/kitchen/KitchenPromo.tsx": {
-    "mtime": 1790171054.3478193,
-    "seen": 1790173420.952338,
-    "ast_hash": "ad03250f75f199480a5d58c93aea7dcf",
+    "mtime": 1790178519.8166814,
+    "seen": 1790178687.402802,
+    "ast_hash": "cd62560fee5353fd2912abd554f370e5",
     "semantic_hash": ""
   },
   "src/components/kitchen/PlanSketch.tsx": {
@@ -4854,9 +4854,9 @@
     "semantic_hash": ""
   },
   "src/components/kitchen/three/build.ts": {
-    "mtime": 1790171054.351004,
-    "seen": 1790173420.952342,
-    "ast_hash": "668bca91ff2492dde359ef80ba746cdb",
+    "mtime": 1790177114.3666117,
+    "seen": 1790178687.402806,
+    "ast_hash": "342e3677a68f4b8c7c9fdb94e83cf023",
     "semantic_hash": ""
   },
   "src/components/kitchen/three/engine.ts": {
@@ -4949,16 +4949,16 @@
     "ast_hash": "046f817d9115c330188236ca0db41180",
     "semantic_hash": ""
   },
-  "public/kitchen/promo-1600.webp": {
-    "mtime": 1790171054.3403804,
-    "seen": 1790173420.952481,
-    "ast_hash": "06adf66e41825a07391af1ba9e3e2e25",
+  "scripts/kitchen/promo-iso.mjs": {
+    "mtime": 1790178567.9259229,
+    "seen": 1790178687.402741,
+    "ast_hash": "e3e3f677055fd2be8b9de4f92070e415",
     "semantic_hash": ""
   },
-  "public/kitchen/promo-960.webp": {
-    "mtime": 1790171054.340704,
-    "seen": 1790173420.952482,
-    "ast_hash": "9fa6f256c90446859704fbcf79b189ec",
+  "public/kitchen/kitchen-iso.svg": {
+    "mtime": 1790178513.3334017,
+    "seen": 1790178687.402954,
+    "ast_hash": "a92f0cb8287cf2ebd8b21d0fa941bc20",
     "semantic_hash": ""
   }
 }
