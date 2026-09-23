@@ -215,6 +215,19 @@ input, textarea { caret-color: var(--color-primary); }
 .bottom-nav__item.is-active svg { fill: #eaf500; stroke: #263244; }
 .bottom-nav__item { font-size: 10px; gap: 5px; }
 .purchase { box-shadow: none; border: 0; }
+/* Лупа в углу главного фото и окно увеличения для фото из 1С. */
+.gallery__main--zoom { position: relative; }
+.gallery__zoom-hint { position: absolute; right: 14px; bottom: 14px; width: 40px; height: 40px; border-radius: 50%; background: #fff; border: 1px solid var(--color-border); color: var(--color-ink); display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(38, 50, 68, .12); pointer-events: none; }
+.zoom-overlay__stage--photo { overflow: auto; touch-action: pinch-zoom; -webkit-overflow-scrolling: touch; cursor: zoom-in; background: #fff; scrollbar-width: none; }
+.zoom-overlay__stage--photo::-webkit-scrollbar { display: none; }
+.zoom-overlay__img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
+.zoom-overlay__stage--photo.is-zoomed { cursor: zoom-out; align-items: flex-start; justify-content: flex-start; }
+.zoom-overlay__stage--photo.is-zoomed .zoom-overlay__img { max-width: none; max-height: none; width: 200%; }
+@media (max-width: 600px) {
+  .zoom-overlay { padding: 10px; }
+  .zoom-overlay__stage { width: 100%; height: min(80vh, 640px); border-radius: 20px; padding: 10px; }
+  .zoom-overlay__close { top: 16px; right: 16px; width: 44px; height: 44px; }
+}
 /* «Поделиться» под «Спросить в WhatsApp»: та же форма, нейтральный цвет. */
 .purchase__share { margin-top: 8px; }
 .purchase__share:hover:not(:disabled) { background: var(--color-surface); border-color: var(--color-ink-soft); }

@@ -8,6 +8,7 @@ import type { Product } from '@/data/products'
 import type { ProductPhoto } from '@/data/photos'
 import { ProductArt } from './ProductArt'
 import { ProductImage } from './ProductImage'
+import { IconSearch } from './Icons'
 
 /**
  * Галерея товара. Решение владельца 12.09: реальных фотографий моделей в
@@ -38,6 +39,10 @@ export function Gallery({
   const images = product.images ?? []
   const [imageIndex, setImageIndex] = useState(0)
   const currentImage = images[imageIndex] ?? product.image
+  // Зум открывается и для фото из 1С (решение 12.09 было на время без фото).
+  // Внутри окна нажатие на фото приближает вдвое, второе — возвращает.
+  const canZoom = Boolean(photo || currentImage)
+  const [zoomed, setZoomed] = useState(false)
   const openerRef = useRef<HTMLButtonElement>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
 
@@ -83,7 +88,7 @@ export function Gallery({
 
   return (
     <div className="gallery">
-      {photo ? (
+      {canZoom ? (
         <button
           type="button"
           ref={openerRef}
@@ -93,6 +98,10 @@ export function Gallery({
           title={t.product.zoomOpen}
         >
           {mainView}
+          {/* лупа в углу — подсказка, что фото можно увеличить */}
+          <span className="gallery__zoom-hint" aria-hidden="true">
+            <IconSearch size={18} />
+          </span>
         </button>
       ) : (
         <div className="gallery__main">{mainView}</div>
@@ -139,22 +148,35 @@ export function Gallery({
       )}
 
       {/* нативный модальный dialog: backdrop и inert-фон обеспечивает браузер */}
-      {photo && (
+      {canZoom && (
         <dialog
           ref={dialogRef}
           className="zoom-overlay"
           aria-label={t.a11y.mainGallery}
-          onClose={onDialogClose}
+          onClose={() => {
+            setZoomed(false)
+            onDialogClose()
+          }}
         >
-          <div className="zoom-overlay__stage">
-            <Image
-              src={photo.src}
-              alt={alt}
-              fill
-              sizes="92vw"
-              className="product-photo gallery-photo"
-            />
-          </div>
+          {photo ? (
+            <div className="zoom-overlay__stage">
+              <Image
+                src={photo.src}
+                alt={alt}
+                fill
+                sizes="92vw"
+                className="product-photo gallery-photo"
+              />
+            </div>
+          ) : (
+            <div
+              className={`zoom-overlay__stage zoom-overlay__stage--photo${zoomed ? ' is-zoomed' : ''}`}
+              onClick={() => setZoomed((z) => !z)}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={currentImage} alt={name} className="zoom-overlay__img" />
+            </div>
+          )}
           <button
             type="button"
             className="zoom-overlay__close"
