@@ -266,14 +266,15 @@ input, textarea { caret-color: var(--color-primary); }
   .cat-tile__icon { width: 48px; height: 48px; }
 }
 
-/* Планшет и узкое окно (601–900px): три колонки, но плитка лежит строкой —
-   значок слева, название справа. Стоячая плитка на такой ширине была
-   в 260px шириной и почти пустой: мелкий значок посреди большого поля. */
-@media (min-width: 601px) and (max-width: 900px) {
-  .cat-tiles { gap: 12px; }
-  .cat-tile { flex-direction: row; justify-content: flex-start; gap: 12px; padding: 12px 14px; font-size: 13px; font-weight: 700; text-align: left; }
-  .cat-tile__icon { width: 44px; height: 44px; padding: 0; flex: none; }
-  .cat-tile__icon svg { width: 44px; height: 44px; }
+/* Планшет и компьютер (от 601px): три колонки, плитка лежит строкой —
+   значок слева, название справа. Стоячие плитки были почти пустыми (мелкий
+   значок посреди большого поля), а на компьютере девять категорий ложились
+   в 6 + 3 с полупустым вторым рядом. Три на три — ровный блок без хвоста. */
+@media (min-width: 601px) {
+  .cat-tiles { grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+  .cat-tile { flex-direction: row; justify-content: flex-start; gap: 14px; padding: 14px 18px; font-size: 14px; font-weight: 700; text-align: left; }
+  .cat-tile__icon { width: 48px; height: 48px; padding: 0; flex: none; }
+  .cat-tile__icon svg { width: 48px; height: 48px; }
   .product-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
   .card__media { aspect-ratio: 1; }
   .card__media-link { padding: 20px; }
