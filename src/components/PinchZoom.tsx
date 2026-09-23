@@ -21,6 +21,9 @@ export function PinchZoom({ children, className }: { children: ReactNode; classN
   const pinch = useRef<{ dist: number; mid: { x: number; y: number }; scale: number; tx: number; ty: number } | null>(null)
   const last = useRef<{ x: number; y: number } | null>(null)
   const lastTap = useRef(0)
+  // был ли в этом жесте щипок: отпустили пальцы — фото плавно возвращается,
+  // как в Instagram. Двойное нажатие держит приближение до следующего.
+  const didPinch = useRef(false)
 
   const apply = (animated = false) => {
     const el = inner.current
@@ -95,6 +98,7 @@ export function PinchZoom({ children, className }: { children: ReactNode; classN
       s.scale = scale
       s.tx = mid.x - px * scale
       s.ty = mid.y - py * scale
+      didPinch.current = true
       apply()
     } else if (pts.length === 1 && s.scale > 1.01 && last.current) {
       s.tx += e.clientX - last.current.x
@@ -111,6 +115,12 @@ export function PinchZoom({ children, className }: { children: ReactNode; classN
     if (pointers.current.size < 2) pinch.current = null
     if (pointers.current.size === 0) {
       last.current = null
+      if (didPinch.current) {
+        didPinch.current = false
+        reset()
+        lastTap.current = 0
+        return
+      }
       if (state.current.scale < 1.05) reset()
       // двойное нажатие: приблизить к точке или вернуть
       const now = Date.now()
