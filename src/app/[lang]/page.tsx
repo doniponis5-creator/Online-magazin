@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { categories } from '@/data/categories'
 import { getNew, getPopular } from '@/data/products'
 import { useI18n } from '@/lib/i18n/I18nProvider'
-import { DailySelection, CampaignBanner, HitMosaic, BrandStrip, SaleSection, SocialAndAccount } from '@/components/HomeMerchandising'
+import { DailySelection, CampaignBanner, HitMosaic, ReelsEntry, BrandStrip, SaleSection, SocialAndAccount } from '@/components/HomeMerchandising'
 import { StorefrontHero } from '@/components/StorefrontHero'
 import { Brand } from '@/components/Brand'
 import { ProductArt } from '@/components/ProductArt'
@@ -125,6 +125,7 @@ export default function HomePage() {
       <DailySelection />
       <CampaignBanner />
       <HitMosaic />
+      <ReelsEntry />
       <BrandStrip />
       <SaleSection />
       <BonusPromo />

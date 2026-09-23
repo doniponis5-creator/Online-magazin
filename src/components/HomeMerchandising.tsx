@@ -116,6 +116,36 @@ export function CampaignBanner() {
   </section>
 }
 
+/**
+ * Вход в ленту «как Reels» с главной: три фото товаров веером и кнопка.
+ * Сам каталог не меняется — лента живёт на отдельной странице /reels.
+ */
+export function ReelsEntry() {
+  const { t, lang } = useI18n()
+  // Фото, которое не открылось (сменили в 1С, а каталог ещё старый), не
+  // оставляет пустую рамку: карточка прячется, на её место встаёт следующая.
+  const [broken, setBroken] = useState<string[]>([])
+  const priced = products.filter(p => p.price > 0)
+  if (priced.length < 3) return null
+  const hits = getHits(storefront.hits).filter(p => p.image)
+  const pool = [...hits, ...priced.filter(p => p.image && !hits.includes(p))]
+  const shown = pool.filter(p => !broken.includes(p.id)).slice(0, 3)
+  return <section className="reels-entry section" aria-labelledby="reels-entry-title">
+    <div className="reels-entry__text">
+      <span className="reels-entry__eyebrow">{t.reels.eyebrow}</span>
+      <h2 id="reels-entry-title">{t.reels.entryTitle}</h2>
+      <p>{t.reels.entryText.replace('{n}', String(priced.length))}</p>
+      <Link href={`/${lang}/reels`} className="btn btn--primary">{t.reels.entryCta}<IconChevronRight size={18} /></Link>
+    </div>
+    {shown.length === 3 && <Link href={`/${lang}/reels`} className="reels-entry__stack" aria-hidden="true" tabIndex={-1}>
+      {shown.map(p => <span key={p.id} className="reels-entry__card">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={p.image} alt="" loading="lazy" onError={() => setBroken(b => b.includes(p.id) ? b : [...b, p.id])} />
+      </span>)}
+    </Link>}
+  </section>
+}
+
 export function HitMosaic() {
   const { lang } = useI18n()
   const ky = lang === 'ky'
