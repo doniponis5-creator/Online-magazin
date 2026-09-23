@@ -169,31 +169,31 @@
   },
   "integrations/sbonus-server/shop/001_shop_orders_migration.sql": {
     "mtime": 1789746574.7940266,
-    "seen": 1790085664.816913,
+    "seen": 1790097057.17961,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/002_shop_catalog_migration.sql": {
     "mtime": 1789746574.7941577,
-    "seen": 1790085664.816913,
+    "seen": 1790097057.179611,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/003_shop_bonus_migration.sql": {
     "mtime": 1789746574.7942019,
-    "seen": 1790085664.8169138,
+    "seen": 1790097057.179612,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/004_shop_stats_migration.sql": {
     "mtime": 1789746574.7942476,
-    "seen": 1790085664.8169138,
+    "seen": 1790097057.1796129,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/005_shop_push_migration.sql": {
     "mtime": 1789751144.4544964,
-    "seen": 1790085664.816915,
+    "seen": 1790097057.1796129,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -702,9 +702,9 @@
     "semantic_hash": ""
   },
   "src/components/HomeMerchandising.tsx": {
-    "mtime": 1790096223.8549867,
-    "seen": 1790097039.8462012,
-    "ast_hash": "3bed8fe8f68d73544d95d267e35aa6d8",
+    "mtime": 1790138701.9327505,
+    "seen": 1790138774.839848,
+    "ast_hash": "3dcdffcb194c3835d43ef207ed55ec40",
     "semantic_hash": ""
   },
   "src/components/HomeStory.tsx": {
@@ -3960,9 +3960,9 @@
     "semantic_hash": ""
   },
   "__tests__/assistant.test.ts": {
-    "mtime": 1790085400.193011,
-    "seen": 1790097039.846085,
-    "ast_hash": "7b8b236ceb03d310ece03fb191bcb8d2",
+    "mtime": 1790138656.2726576,
+    "seen": 1790138774.8397062,
+    "ast_hash": "7c64282ba2748153b8414616c9a11310",
     "semantic_hash": ""
   },
   "src/app/api/assistant/route.ts": {
@@ -3996,21 +3996,21 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/prompt.ts": {
-    "mtime": 1790085656.9049785,
-    "seen": 1790097039.8462248,
-    "ast_hash": "d7f1591b82b795157ce51eaa50aeefa8",
+    "mtime": 1790138723.3893201,
+    "seen": 1790138774.839875,
+    "ast_hash": "8bf8324b1c241c5969ee77b365e31480",
     "semantic_hash": ""
   },
   "src/lib/assistant/reply.ts": {
-    "mtime": 1790057341.6855416,
-    "seen": 1790097039.8462248,
-    "ast_hash": "6538367bb0898b5b5e8ea4ac51e9fbe5",
+    "mtime": 1790138638.3173811,
+    "seen": 1790138774.8398762,
+    "ast_hash": "56f565c4d5727beb10769bd10d577076",
     "semantic_hash": ""
   },
   "src/lib/assistant/talk.ts": {
-    "mtime": 1790052811.4284995,
-    "seen": 1790097039.846226,
-    "ast_hash": "e157ce60534f15aaa948ed904f6da892",
+    "mtime": 1790138765.7391648,
+    "seen": 1790138774.8398771,
+    "ast_hash": "6d5922697a4fee5e3ecf0c4ed733a712",
     "semantic_hash": ""
   },
   "review/appstore-screenshots/01-home.png": {
@@ -4068,9 +4068,9 @@
     "semantic_hash": ""
   },
   "src/lib/telegram/order.ts": {
-    "mtime": 1790085656.9047098,
-    "seen": 1790097039.84624,
-    "ast_hash": "1c17012e905d6c572dc8194ea5072bd4",
+    "mtime": 1790138606.0067348,
+    "seen": 1790138774.839892,
+    "ast_hash": "51358a3cf84e988a903d529e1bd7d320",
     "semantic_hash": ""
   },
   "review/appstore-screenshots/02-catalog.png": {
@@ -4303,13 +4303,13 @@
   },
   "integrations/sbonus-server/shop/006_shop_installments_migration.sql": {
     "mtime": 1789980267.1214871,
-    "seen": 1790085664.816916,
+    "seen": 1790097057.179614,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/007_shop_notes_migration.sql": {
     "mtime": 1789980267.1215398,
-    "seen": 1790085664.816916,
+    "seen": 1790097057.179614,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -4332,9 +4332,9 @@
     "semantic_hash": ""
   },
   "__tests__/sales-flow.test.ts": {
-    "mtime": 1790085400.193243,
-    "seen": 1790097039.846097,
-    "ast_hash": "98fe6157e9acc58da6af1f844df43c7d",
+    "mtime": 1790138765.7393744,
+    "seen": 1790138774.8397179,
+    "ast_hash": "74415fc5fa6ca6ddfefbc754286d725e",
     "semantic_hash": ""
   },
   "src/lib/assistant/leads.ts": {
@@ -4357,7 +4357,7 @@
   },
   "integrations/sbonus-server/shop/008_shop_chat_extra_migration.sql": {
     "mtime": 1790002975.5050404,
-    "seen": 1790085664.816917,
+    "seen": 1790097057.179615,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -4374,9 +4374,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/respond.ts": {
-    "mtime": 1790085656.904072,
-    "seen": 1790097039.846226,
-    "ast_hash": "f645cc8c093e442f2cb8f28751c54b5a",
+    "mtime": 1790138723.3895338,
+    "seen": 1790138774.8398762,
+    "ast_hash": "044578d4d1b1d165daf6fad75d799278",
     "semantic_hash": ""
   },
   "docs/PC_2026-09-21.md": {
@@ -4518,8 +4518,8 @@
     "semantic_hash": ""
   },
   "scripts/exam/questions.txt": {
-    "mtime": 1790056544.797498,
-    "seen": 1790097039.846267,
+    "mtime": 1790138731.046516,
+    "seen": 1790138774.839922,
     "ast_hash": "3a926c46d67e7c2d46c7ef2c677f4c93",
     "semantic_hash": ""
   },
