@@ -28,9 +28,18 @@ export default async function ProductPage({
   const product = getProduct(id)
   if (!product) notFound()
 
-  const similar = products
+  // «Похожие»: та же категория, ближе по цене — сначала; товары с фото
+  // раньше тех, у кого фото нет. Если в категории мало товаров, добираем
+  // той же марки из других категорий: человек, выбравший LG, часто смотрит LG.
+  const priceGap = (p: typeof product) =>
+    product.price > 0 && p.price > 0 ? Math.abs(p.price - product.price) : Number.MAX_SAFE_INTEGER
+  const sameCategory = products
     .filter((p) => p.categoryId === product.categoryId && p.id !== product.id)
-    .slice(0, 4)
+    .sort((a, b) => Number(Boolean(b.image)) - Number(Boolean(a.image)) || priceGap(a) - priceGap(b))
+  const sameBrand = product.brand
+    ? products.filter((p) => p.brand === product.brand && p.categoryId !== product.categoryId && p.id !== product.id)
+    : []
+  const similar = [...sameCategory, ...sameBrand].slice(0, 4)
 
   // Разметка товара: по ней Google рисует в выдаче цену, наличие и картинку.
   // Без неё страница товара выглядит для поиска как обычный текст.

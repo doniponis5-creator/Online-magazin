@@ -4,6 +4,7 @@ import { useI18n } from '@/lib/i18n/I18nProvider'
 import { phones, whatsappHref } from '@/data/contacts'
 import { SITE_URL } from '@/lib/seo'
 import { IconWhatsApp } from './Icons'
+import { ShareButton } from './ShareButton'
 import type { Product, ProductVariant } from '@/data/products'
 import { unitPrice } from '@/lib/cart/logic'
 import { formatSom } from '@/lib/format'
@@ -247,6 +248,14 @@ export function ProductPurchase({
         <IconWhatsApp size={22} />
         {t.product.askWhatsApp}
       </a>
+
+      {/* Отправить товар семье или другу — одним нажатием, без копирования адреса */}
+      <ShareButton
+        title={name}
+        text={price ? `${name} — ${formatSom(price)}` : name}
+        path={`/${lang}/product/${product.id}`}
+        className="purchase__ask purchase__share"
+      />
     </div>
   )
 }

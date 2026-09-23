@@ -215,6 +215,13 @@ input, textarea { caret-color: var(--color-primary); }
 .bottom-nav__item.is-active svg { fill: #eaf500; stroke: #263244; }
 .bottom-nav__item { font-size: 10px; gap: 5px; }
 .purchase { box-shadow: none; border: 0; }
+/* «Поделиться» под «Спросить в WhatsApp»: та же форма, нейтральный цвет. */
+.purchase__share { margin-top: 8px; }
+.purchase__share:hover:not(:disabled) { background: var(--color-surface); border-color: var(--color-ink-soft); }
+/* Круглый значок «поделиться» — в ленте, рядом с сердечком. */
+.share-btn { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--color-border); background: #fff; color: var(--color-ink); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: background-color var(--speed) var(--ease), color var(--speed) var(--ease); }
+.share-btn:hover { background: var(--color-surface); }
+.share-btn.is-done { color: #1a8f4a; border-color: #b8e5c8; }
 .summary { box-shadow: none; border: 1px solid var(--color-border); }
 .page-title { letter-spacing: -.035em; }
 .reveal, .reveal.is-in { opacity: 1; transform: none; transition: none; will-change: auto; }

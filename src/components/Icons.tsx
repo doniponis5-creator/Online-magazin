@@ -229,6 +229,17 @@ export function IconClose(props: IconProps) {
   )
 }
 
+/** «Поделиться» — стрелка из коробки, как на iPhone: этот знак покупатели узнают сразу. */
+export function IconShare(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M12 3v12" />
+      <path d="m8 7 4-4 4 4" />
+      <path d="M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7" />
+    </svg>
+  )
+}
+
 /*
  * Знак Telegram — основной канал кода входа. Нарисован фирменным цветом
  * и намеренно не подчиняется currentColor: узнаваемость тут важнее палитры.
