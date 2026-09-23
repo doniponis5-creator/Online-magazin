@@ -4788,9 +4788,9 @@
     "semantic_hash": ""
   },
   "src/components/PinchZoom.tsx": {
-    "mtime": 1790161315.4871054,
-    "seen": 1790161357.497691,
-    "ast_hash": "6761464c62d2f6fa3357f7b580ab0597",
+    "mtime": 1790162380.5319734,
+    "seen": 1790162420.5115032,
+    "ast_hash": "3fa2c63b99449d11491c9c2378ee2325",
     "semantic_hash": ""
   }
 }
