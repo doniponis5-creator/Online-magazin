@@ -109,8 +109,8 @@ type Ctx = {
   wave: number
   /** ваза с лимонами уже стоит — вторую не ставим */
   lemons: boolean
-  /** доска, чайник и полотенце уже стоят (по одному на кухню) */
-  props: { board: boolean; kettle: boolean; towel: boolean }
+  /** доска и чайник уже стоят (по одному на кухню) */
+  props: { board: boolean; kettle: boolean }
   /** сдвиг рисунка фасадов в текущем ряду */
   uvRun: number
   /* для мебельщика */
@@ -1024,11 +1024,11 @@ const COUNTER: Module['kind'][] = ['doors', 'drawers', 'bottle', 'oven', 'hob', 
 
 /**
  * Мелочи, без которых кухня выглядит выставочной: у плиты — доска и масло,
- * у мойки — чайник, на духовке — полотенце. Ставятся только на свободную
- * столешницу, мимо вазы с лимонами.
+ * у мойки — чайник. Ставятся только на свободную столешницу, мимо вазы с
+ * лимонами. Технику ничем не закрываем: её человек и выбирает.
  */
 function props(ctx: Ctx, run: Run, g: THREE.Group, taken?: Module) {
-  const { mats, counterY, input } = ctx
+  const { mats, counterY } = ctx
   const mods = run.modules
   const free = (i: number) => {
     const m = mods[i]
@@ -1103,22 +1103,9 @@ function props(ctx: Ctx, run: Run, g: THREE.Group, taken?: Module) {
     kettle.rotation.y = 0.5
     g.add(kettle)
   }
-  // полотенце на ручке духовки под столешницей
-  const ovenM = mods.find((m) => (m.kind === 'hob' && m.oven) || m.kind === 'oven')
-  if (ovenM && input.items.oven !== null && !done.towel) {
-    done.towel = true
-    const top = BODY_TOP - 0.05
-    const x = cm(ovenM.x + ovenM.w / 2) + 0.1
-    const cloth = mats.plain('#ebe5d9', 0.95)
-    const stripe = mats.plain('#8e9fb3', 0.9)
-    const towel = new THREE.Group()
-    towel.add(mesh(rounded(0.2, 0.34, 0.01, 0.004), cloth, 0, -0.17, 0))
-    for (const y of [-0.26, -0.28]) towel.add(mesh(box(0.201, 0.008, 0.011), stripe, 0, y, 0))
-    towel.add(mesh(rounded(0.2, 0.03, 0.03, 0.01), cloth, 0, -0.005, -0.006))
-    towel.position.set(x, top, CARCASS_D + FRONT_T + 0.035)
-    towel.rotation.x = 0.05
-    g.add(towel)
-  }
+  // Полотенца на ручке духовки больше нет: плоский светлый прямоугольник
+  // читался не как ткань, а как бумажка на стекле — и закрывал саму
+  // духовку, то есть товар, ради которого человек собирает кухню.
 }
 
 /* ───────────── остров ───────────── */
@@ -1416,7 +1403,7 @@ function assemble(input: BuildInput): Built {
     ghosts: [],
     wave: 0,
     lemons: false,
-    props: { board: false, kettle: false, towel: false },
+    props: { board: false, kettle: false },
     uvRun: 0,
     carcasses: [],
     nichePanels: [],

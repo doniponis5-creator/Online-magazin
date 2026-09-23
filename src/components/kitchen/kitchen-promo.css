@@ -2,7 +2,7 @@
 
 .kitchen-promo__link {
   display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
   align-items: stretch;
   overflow: hidden;
   border: 1px solid var(--color-border);
@@ -10,7 +10,9 @@
   background: var(--color-primary-soft);
   color: var(--color-ink);
   text-decoration: none;
-  transition: border-color var(--dur-hover) var(--ease-out), box-shadow var(--dur-hover) var(--ease-out);
+  transition:
+    border-color var(--dur-hover) var(--ease-out),
+    box-shadow var(--dur-hover) var(--ease-out);
 }
 
 .kitchen-promo__link:hover {
@@ -22,76 +24,176 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 14px;
-  padding: clamp(24px, 3.4vw, 44px);
+  padding: clamp(28px, 3.6vw, 48px);
 }
 
 .kitchen-promo__title {
   margin: 0;
-  font-size: clamp(24px, 2.5vw, 34px);
+  font-size: clamp(26px, 2.6vw, 36px);
   font-weight: 800;
-  line-height: 1.12;
+  line-height: 1.1;
   letter-spacing: -0.03em;
   text-wrap: balance;
 }
 
 .kitchen-promo__lead {
-  margin: 0;
-  max-width: 46ch;
-  font-size: 15px;
+  margin: 12px 0 0;
+  max-width: 42ch;
+  font-size: 15.5px;
   line-height: 1.55;
   color: var(--color-ink-soft);
+  text-wrap: pretty;
 }
 
-.kitchen-promo__styles {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 2px 0 6px;
+/* три шага — как в самом конструкторе: форма, стиль, техника */
+.kitchen-promo__steps {
+  display: grid;
+  gap: 14px;
+  margin: 26px 0 0;
   padding: 0;
   list-style: none;
 }
 
-.kitchen-promo__styles li {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 11px 0 8px;
-  border-radius: 15px;
-  background: #fff;
-  font-size: 12px;
-  font-weight: 650;
-  color: var(--color-ink-soft);
+.kitchen-promo__step {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  column-gap: 12px;
+  align-items: start;
 }
 
-.kitchen-promo__dot {
-  width: 12px;
-  height: 12px;
+.kitchen-promo__num {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  box-shadow: inset 0 0 0 1px rgb(38 50 68 / 18%);
+  background: #fff;
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  font: 800 14px/1 var(--font);
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.kitchen-promo__step-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 1px;
+}
+
+.kitchen-promo__step-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  font: 700 15.5px/1.3 var(--font);
+  color: var(--color-ink);
+}
+
+.kitchen-promo__step-note {
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--color-muted);
+}
+
+/* образцы фасадов пяти стилей — вместо списка из пятнадцати названий */
+.kitchen-promo__swatches {
+  display: inline-flex;
+}
+
+.kitchen-promo__swatches span {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 2px var(--color-primary-soft),
+    inset 0 0 0 1px rgb(38 50 68 / 16%);
+}
+
+.kitchen-promo__swatches span + span {
+  margin-left: -4px;
+}
+
+.kitchen-promo__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+  margin-top: 30px;
 }
 
 .kitchen-promo__cta {
-  margin-top: auto;
+  gap: 6px;
+  padding-right: 18px;
 }
 
+.kitchen-promo__bonus {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 30ch;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--color-ink-soft);
+}
+
+.kitchen-promo__bonus-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Холст конструктора: светлая сетка точек, на ней — макет кухни. */
 .kitchen-promo__media {
-  display: block;
-  min-height: 260px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 300px;
+  overflow: hidden;
+  border-left: 1px solid var(--color-border);
+  background:
+    radial-gradient(circle, rgb(37 99 235 / 14%) 1px, transparent 1.5px) 0 0 / 22px 22px,
+    #f7faff;
 }
 
-.kitchen-promo__media img {
-  display: block;
+.kitchen-promo__art {
+  position: relative;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: 40% 50%;
+  aspect-ratio: 5 / 4;
   transition: transform 600ms var(--ease-out);
 }
 
-.kitchen-promo__link:hover .kitchen-promo__media img {
-  transform: scale(1.025);
+.kitchen-promo__art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.kitchen-promo__link:hover .kitchen-promo__art {
+  transform: translateY(-4px);
+}
+
+/* подписи, как в самом конструкторе: размеры стен — графит, выбранное — кобальт */
+.kitchen-promo__tag {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 6px));
+  padding: 4px 9px;
+  border-radius: 8px;
+  background: var(--color-ink);
+  color: #fff;
+  font: 700 12px/1.3 var(--font);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgb(38 50 68 / 16%);
+}
+
+.kitchen-promo__tag--sel {
+  background: var(--color-primary);
 }
 
 @media (max-width: 900px) {
@@ -101,21 +203,45 @@
 
   .kitchen-promo__media {
     order: -1;
-    aspect-ratio: 16 / 10;
     min-height: 0;
+    border-left: 0;
+    border-bottom: 1px solid var(--color-border);
   }
 
   .kitchen-promo__text {
-    padding: 20px;
+    padding: 22px 20px 24px;
+  }
+
+  .kitchen-promo__lead {
+    font-size: 15px;
+  }
+
+  .kitchen-promo__steps {
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .kitchen-promo__actions {
+    width: 100%;
+    margin-top: 22px;
   }
 
   .kitchen-promo__cta {
     width: 100%;
   }
+
+  .kitchen-promo__bonus {
+    max-width: none;
+  }
+
+  .kitchen-promo__tag {
+    padding: 3px 7px;
+    font-size: 11px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .kitchen-promo__media img {
+  .kitchen-promo__art {
     transition: none;
   }
 }
