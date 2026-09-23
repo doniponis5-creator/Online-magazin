@@ -12536,7 +12536,7 @@
       "file_type": "code",
       "norm_label": "brandsforstrip()",
       "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L137"
+      "source_location": "L139"
     },
     {
       "id": "src_components_homemerchandising_brandstrip",
@@ -12548,7 +12548,7 @@
       "file_type": "code",
       "norm_label": "brandstrip()",
       "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L153"
+      "source_location": "L155"
     },
     {
       "id": "src_components_homemerchandising_campaignbanner",
@@ -12560,7 +12560,7 @@
       "file_type": "code",
       "norm_label": "campaignbanner()",
       "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L60"
+      "source_location": "L62"
     },
     {
       "id": "src_components_homemerchandising_dailyselection",
@@ -12584,7 +12584,7 @@
       "file_type": "code",
       "norm_label": "discountpct()",
       "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L51"
+      "source_location": "L53"
     },
     {
       "id": "src_components_homemerchandising_heading",
@@ -12608,7 +12608,7 @@
       "file_type": "code",
       "norm_label": "hitmosaic()",
       "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L117"
+      "source_location": "L119"
     },
     {
       "id": "src_components_homemerchandising_salesection",
@@ -12620,7 +12620,7 @@
       "file_type": "code",
       "norm_label": "salesection()",
       "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L207"
+      "source_location": "L209"
     },
     {
       "id": "src_components_homemerchandising_socialandaccount",
@@ -12632,7 +12632,7 @@
       "file_type": "code",
       "norm_label": "socialandaccount()",
       "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L219"
+      "source_location": "L221"
     },
     {
       "id": "src_components_homestory_homestory",
@@ -37379,7 +37379,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L141",
+      "source_location": "L143",
       "weight": 1.0
     },
     {
@@ -37391,7 +37391,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L154",
+      "source_location": "L156",
       "weight": 1.0
     },
     {
@@ -37403,43 +37403,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L155",
-      "weight": 1.0
-    },
-    {
-      "source": "src_components_homemerchandising_campaignbanner",
-      "target": "src_lib_i18n_i18nprovider_usei18n",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L61",
-      "weight": 1.0
-    },
-    {
-      "source": "src_components_homemerchandising_campaignbanner",
-      "target": "src_components_homemerchandising_discountpct",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L63",
-      "weight": 1.0
-    },
-    {
-      "source": "src_components_homemerchandising_campaignbanner",
-      "target": "src_data_products_getsale",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L63",
+      "source_location": "L157",
       "weight": 1.0
     },
     {
@@ -37451,7 +37415,43 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L99",
+      "source_location": "L101",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_homemerchandising_campaignbanner",
+      "target": "src_lib_i18n_i18nprovider_usei18n",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/components/HomeMerchandising.tsx",
+      "source_location": "L63",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_homemerchandising_campaignbanner",
+      "target": "src_components_homemerchandising_discountpct",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/components/HomeMerchandising.tsx",
+      "source_location": "L65",
+      "weight": 1.0
+    },
+    {
+      "source": "src_components_homemerchandising_campaignbanner",
+      "target": "src_data_products_getsale",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "src/components/HomeMerchandising.tsx",
+      "source_location": "L65",
       "weight": 1.0
     },
     {
@@ -37499,7 +37499,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L40",
+      "source_location": "L41",
       "weight": 1.0
     },
     {
@@ -37523,7 +37523,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L118",
+      "source_location": "L120",
       "weight": 1.0
     },
     {
@@ -37535,7 +37535,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L120",
+      "source_location": "L122",
       "weight": 1.0
     },
     {
@@ -37547,7 +37547,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L208",
+      "source_location": "L210",
       "weight": 1.0
     },
     {
@@ -37559,7 +37559,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L209",
+      "source_location": "L211",
       "weight": 1.0
     },
     {
@@ -37571,7 +37571,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L220",
+      "source_location": "L222",
       "weight": 1.0
     },
     {
@@ -73852,7 +73852,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L117",
+      "source_location": "L119",
       "weight": 1.0
     },
     {
@@ -73863,7 +73863,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L137",
+      "source_location": "L139",
       "weight": 1.0
     },
     {
@@ -73874,7 +73874,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L153",
+      "source_location": "L155",
       "weight": 1.0
     },
     {
@@ -73896,7 +73896,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L207",
+      "source_location": "L209",
       "weight": 1.0
     },
     {
@@ -73907,7 +73907,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L219",
+      "source_location": "L221",
       "weight": 1.0
     },
     {
@@ -73929,7 +73929,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L51",
+      "source_location": "L53",
       "weight": 1.0
     },
     {
@@ -73940,7 +73940,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/HomeMerchandising.tsx",
-      "source_location": "L60",
+      "source_location": "L62",
       "weight": 1.0
     },
     {
@@ -86698,5 +86698,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "b05a5f77fa34135ac25f343e1e44ab1bcf5ed2e7"
+  "built_at_commit": "cd2ceb8c446673234a46631a0ba790782724701a"
 }
