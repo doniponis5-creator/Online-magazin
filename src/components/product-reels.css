@@ -10,7 +10,10 @@
   z-index: 200;
   display: flex;
   flex-direction: column;
-  background: #eceff3;
+  /* На телефоне фон белый: Safari красит полоску с часами в цвет верха страницы,
+     и серый фон давал серую «шапку» над белой полосой ленты. Серые поля —
+     только на компьютере, по бокам узкой колонки (см. ниже). */
+  background: #fff;
 }
 
 /* Верхняя полоса: название, счётчик, «перемешать», «закрыть». Сама полоса
@@ -116,7 +119,7 @@
 .reels__slide.is-active .product-image-photo { animation: reels-zoom 9s ease-in-out infinite alternate; }
 @keyframes reels-zoom {
   from { transform: scale(1); }
-  to   { transform: scale(1.07); }
+  to   { transform: scale(1.04); }
 }
 
 .reels__badges {
@@ -218,6 +221,7 @@
 
 /* Компьютер: лента — колонка шириной с телефон посреди серого поля. */
 @media (min-width: 700px) {
+  .reels { background: #eceff3; }
   .reels__scroller { border-inline: 1px solid var(--color-border); }
   .reels__name { font-size: 21px; }
 }
