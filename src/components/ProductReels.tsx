@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type TouchEvent as ReactTouchEvent } from 'react'
 import { products, type Product } from '@/data/products'
 import { categoryName } from '@/data/categories'
 import { formatSom } from '@/lib/format'
@@ -197,6 +197,24 @@ export function ProductReels() {
     return () => window.removeEventListener('keydown', onKey)
   }, [close])
 
+  // Свайп вправо — закрыть, как в Instagram: жест привычный, до кнопки в углу
+  // тянуться не надо. Считаем только явный горизонтальный жест, чтобы не
+  // спорить с вертикальным листанием.
+  const touch = useRef<{ x: number; y: number; t: number } | null>(null)
+  const onTouchStart = (e: ReactTouchEvent) => {
+    const p = e.touches[0]
+    touch.current = { x: p.clientX, y: p.clientY, t: Date.now() }
+  }
+  const onTouchEnd = (e: ReactTouchEvent) => {
+    const start = touch.current
+    touch.current = null
+    if (!start) return
+    const p = e.changedTouches[0]
+    const dx = p.clientX - start.x
+    const dy = p.clientY - start.y
+    if (dx > 70 && Math.abs(dy) < Math.abs(dx) * 0.6 && Date.now() - start.t < 800) close()
+  }
+
   const total = list?.length ?? 0
   const cartCount = cart.hydrated ? cart.itemsCount : 0
 
@@ -230,6 +248,8 @@ export function ProductReels() {
         onScroll={(e) => {
           if (!scrolled && e.currentTarget.scrollTop > 1) setScrolled(true)
         }}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
       >
         {list && list.length === 0 && <p className="reels__empty">{t.reels.empty}</p>}
         {list?.map((p, i) => (
