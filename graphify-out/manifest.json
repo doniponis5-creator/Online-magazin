@@ -170,31 +170,31 @@
   "integrations/sbonus-server/shop/001_shop_orders_migration.sql": {
     "mtime": 1789746574.7940266,
     "seen": 1790138888.591446,
-    "ast_hash": "60be7d56cd2d952129a61d54d95ccbad",
+    "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/002_shop_catalog_migration.sql": {
     "mtime": 1789746574.7941577,
     "seen": 1790138888.591449,
-    "ast_hash": "323907e0405b2bceb84a441153a980bb",
+    "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/003_shop_bonus_migration.sql": {
     "mtime": 1789746574.7942019,
     "seen": 1790138888.5914502,
-    "ast_hash": "dbc01a01d56350ab572dec625b30a088",
+    "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/004_shop_stats_migration.sql": {
     "mtime": 1789746574.7942476,
     "seen": 1790138888.591452,
-    "ast_hash": "73f2ccafbc5d694f742539899e5a6c61",
+    "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/005_shop_push_migration.sql": {
     "mtime": 1789751144.4544964,
     "seen": 1790138888.5914528,
-    "ast_hash": "f9038580e7253c0cfd9fdcb52d3e5d8a",
+    "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/__init__.py": {
@@ -702,9 +702,9 @@
     "semantic_hash": ""
   },
   "src/components/HomeMerchandising.tsx": {
-    "mtime": 1790138701.9327505,
-    "seen": 1790138774.839848,
-    "ast_hash": "3dcdffcb194c3835d43ef207ed55ec40",
+    "mtime": 1790139260.552037,
+    "seen": 1790139311.655018,
+    "ast_hash": "f10185840b09f0405d822f109e18cac0",
     "semantic_hash": ""
   },
   "src/components/HomeStory.tsx": {
@@ -4304,13 +4304,13 @@
   "integrations/sbonus-server/shop/006_shop_installments_migration.sql": {
     "mtime": 1789980267.1214871,
     "seen": 1790138888.591455,
-    "ast_hash": "f24e719c22fcfec5106738efc270ee5d",
+    "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/007_shop_notes_migration.sql": {
     "mtime": 1789980267.1215398,
     "seen": 1790138888.5914571,
-    "ast_hash": "f5e4a392389d0c4c7e69be5b316d7c92",
+    "ast_hash": "",
     "semantic_hash": ""
   },
   "src/lib/assistant/answer-json.ts": {
@@ -4358,7 +4358,7 @@
   "integrations/sbonus-server/shop/008_shop_chat_extra_migration.sql": {
     "mtime": 1790002975.5050404,
     "seen": 1790138888.591459,
-    "ast_hash": "0645dcc3e8ec89bd55691b6a582002f3",
+    "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/shop_wa_bot.py": {
