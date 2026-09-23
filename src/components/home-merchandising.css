@@ -38,8 +38,10 @@
 .campaign-band__media .product-placeholder { width: 100%; height: 100%; }
 .campaign-band__chip { position: absolute; top: 10px; left: 10px; z-index: 3; background: var(--color-danger); color: #fff; border-radius: 6px; padding: 5px 9px; font-weight: 800; font-size: 13px; letter-spacing: .01em; }
 .campaign-band__text { flex: 1; min-width: 0; }
-.campaign-band__text p b { color: var(--color-danger); font-weight: 800; }
-.campaign-band__text p s { color: var(--color-muted); margin-left: 6px; }
+/* Название и цена — крупнее и темнее обычной подписи: на баннере это главное. */
+.campaign-band__text p { font-size: 16px; line-height: 1.5; color: var(--color-ink); font-weight: 600; margin-top: 10px; }
+.campaign-band__text p b { color: var(--color-danger); font-weight: 800; font-size: 19px; white-space: nowrap; }
+.campaign-band__text p s { color: var(--color-muted); font-weight: 500; font-size: 14px; margin-left: 6px; white-space: nowrap; }
 .campaign-band__text .promo-timer { margin-top: 10px; }
 .campaign-band__fade { animation: campaign-fade 320ms ease-out both; }
 @keyframes campaign-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
@@ -173,6 +175,8 @@
  .campaign-band { flex-direction: column; align-items: flex-start; padding: 24px; gap: 20px; }
  .campaign-band--sale { padding: 16px; gap: 14px; }
  .campaign-band--sale .campaign-band__media { width: 120px; height: 120px; }
+ .campaign-band__text p { font-size: 15px; }
+ .campaign-band__text p b { font-size: 17px; }
  .campaign-band--sale .btn { width: 100%; justify-content: center; }
  .hit-mosaic { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
  .hit-mosaic__item { grid-column: auto; grid-row: auto; }
