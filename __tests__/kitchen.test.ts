@@ -22,6 +22,7 @@ import { DEFAULT_STATE, queryFromState, stateFromQuery } from '@/lib/kitchen/sha
 import { cutList, frontList, hardware, hingesFor, modulesOf, topList, type SpecData } from '@/lib/kitchen/spec'
 import { STYLES } from '@/lib/kitchen/styles'
 import type { KitchenAppliance } from '@/lib/kitchen/types'
+import { SIDE_SHARE, sideShare } from '@/components/kitchen/three/photo'
 
 const spec = (label: string, value: string) => ({ labelRu: label, labelKy: label, valueRu: value, valueKy: value })
 
@@ -596,5 +597,35 @@ describe('проверка проекта', () => {
       ]),
     )
     expect(pick(list, 'hobSides')).toEqual({ id: 'hobSides', level: 'warn', left: 20, right: 75 })
+  })
+})
+
+describe('фото техники: снято спереди или «три четверти»', () => {
+  // верх товара в каждом столбце, как его видит photo.ts
+  const front = (n: number) => Array.from({ length: n }, (_, i) => (i < 3 || i > n - 4 ? 6 - Math.min(i, n - 1 - i) * 2 : 0))
+  const withSide = (n: number, share: number, where: 'left' | 'right') => {
+    const side = Math.round(n * share)
+    const tops = Array.from({ length: n }, (_, i) => {
+      const d = where === 'left' ? side - i : i - (n - 1 - side)
+      return d > 0 ? Math.round(d * 0.5) : 0
+    })
+    // светлая линия на ребре между боковиной и фасадом
+    tops[where === 'left' ? side : n - 1 - side] = 400
+    return tops
+  }
+
+  it('ровно спереди, со скруглёнными углами — боковины нет', () => {
+    expect(sideShare(front(300))).toBeLessThan(SIDE_SHARE)
+  })
+
+  it('боковина слева или справа — видна', () => {
+    expect(sideShare(withSide(300, 0.22, 'left'))).toBeGreaterThanOrEqual(SIDE_SHARE)
+    expect(sideShare(withSide(300, 0.22, 'right'))).toBeGreaterThanOrEqual(SIDE_SHARE)
+  })
+
+  it('кнопка или ручка на верхней кромке — не боковина', () => {
+    const tops = front(300)
+    for (let i = 200; i < 215; i++) tops[i] = -6
+    expect(sideShare(tops)).toBeLessThan(SIDE_SHARE)
   })
 })

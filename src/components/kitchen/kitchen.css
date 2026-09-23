@@ -2660,55 +2660,24 @@ html.kp-lock body {
     bottom: calc(60px + env(safe-area-inset-bottom, 0px));
   }
 
-  /* итог с корзиной — над меню сайта, справа для него место под кнопку консультанта */
+  /* Итог с корзиной — в конце шага, на своём месте, а не поверх выбора:
+     прилипшая к низу строка с меню сайта под ней отнимала у телефона
+     полэкрана. Долистали до конца шага — вот сумма и «Добавить всё в корзину». */
   .kp-sum {
-    position: sticky;
-    bottom: var(--kp-nav);
-    z-index: 15;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 4px 12px;
-    min-height: 66px;
-    padding: 8px 84px 8px 20px;
+    padding: 16px 20px 20px;
     border-radius: 0;
-    box-shadow: 0 -8px 20px rgb(38 50 68 / 7%);
-  }
-
-  .kp-sum__row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1px;
-    min-width: 0;
-    margin: 0;
-  }
-
-  .kp-sum__label {
-    font-size: 12px;
   }
 
   .kp-sum__price {
-    font-size: 19px;
+    font-size: 20px;
   }
 
   .kp-sum__cta {
-    width: auto;
-    height: 46px;
-    padding: 0 16px;
+    height: 50px;
   }
 
-  .kp-sum__done {
-    min-height: 46px;
-    font-size: 13px;
-  }
-
-  .kp-sum__honest {
-    display: none;
-  }
-
-  /* кнопка консультанта — в строке итога справа, а не поверх кнопок панели */
+  /* пока открыта карточка выбранного, кнопка консультанта не закрывает её кнопки */
   body:has(.kp) .assistant {
-    bottom: calc(var(--bottomnav-h) + 22px + env(safe-area-inset-bottom, 0px));
     transition:
       opacity 160ms var(--ease-out),
       visibility 160ms;
@@ -2728,16 +2697,6 @@ html.kp-lock body {
   to {
     opacity: 1;
     transform: none;
-  }
-}
-
-@media (max-width: 560px) and (min-height: 521px) {
-  .kp-sum__long {
-    display: none;
-  }
-
-  .kp-sum__short {
-    display: inline;
   }
 }
 
@@ -2877,15 +2836,6 @@ html.kp-lock body {
 
   .kp-shape {
     padding: 12px;
-  }
-
-  .kp-sum {
-    padding-left: 16px;
-  }
-
-  .kp-sum__cta {
-    font-size: 13px;
-    padding: 0 12px;
   }
 }
 

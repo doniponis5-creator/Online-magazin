@@ -4,9 +4,10 @@ import * as THREE from 'three'
  * Настоящее фото техники на лицевой стороне 3D-модели.
  *
  * Фото в каталоге — товар на белом фоне. Белые поля обрезаются, остаётся
- * сама техника. Если после обрезки пропорции совпадают с размерами товара,
- * значит фото снято спереди, и оно становится «лицом» модели. Фото сбоку или
- * с открытой дверцей не подходит — тогда модель рисуется без фото.
+ * сама техника. Если после обрезки пропорции совпадают с размерами товара и
+ * не видно боковины, значит фото снято спереди, и оно становится «лицом»
+ * модели. Фото сбоку, «три четверти» или с открытой дверцей не подходит —
+ * тогда модель рисуется без фото.
  */
 
 export type Photo = { texture: THREE.Texture; aspect: number }
@@ -79,6 +80,24 @@ function trim(img: HTMLImageElement): Photo | null {
   const y1 = last(rows, w * 0.01)
   if (x0 < 0 || y0 < 0 || x1 - x0 < 20 || y1 - y0 < 20) return null
 
+  // Верх товара в каждом столбце: три цветные точки подряд (одна — шум).
+  const at = (x: number, y: number) => ink((y * w + x) * 4)
+  const tops: number[] = []
+  for (let x = x0; x <= x1; x++) {
+    let top = -1
+    for (let y = y0; y <= y1 - 2; y++) {
+      if (at(x, y) && at(x, y + 1) && at(x, y + 2)) {
+        top = y - y0
+        break
+      }
+    }
+    tops.push(top)
+  }
+  // Снято «три четверти» — видна боковина. Пропорции такого фото бывают
+  // похожи на переднюю сторону (холодильник HISENSE RD-43WC прошёл по ним),
+  // а на 3D оно лежало косо, с белыми углами. Такое фото лицом не станет.
+  if (sideShare(tops) >= SIDE_SHARE) return null
+
   const cw = x1 - x0 + 1
   const ch = y1 - y0 + 1
   const out = document.createElement('canvas')
@@ -89,6 +108,50 @@ function trim(img: HTMLImageElement): Photo | null {
   texture.colorSpace = THREE.SRGBColorSpace
   texture.anisotropy = 8
   return { texture, aspect: cw / ch }
+}
+
+/** С этой доли ширины кромка со скосом — уже боковина, а не скруглённый угол фасада. */
+export const SIDE_SHARE = 0.06
+
+/**
+ * Какая доля ширины фото — боковина (0 — снято ровно спереди).
+ *
+ * tops — верх товара в каждом столбце, слева направо (−1 — пусто). У лицевой
+ * стороны верхняя кромка ровная, у боковины — скошена: чем дальше от угла,
+ * тем ниже. Идём от левого и от правого края внутрь, пока кромка круто и в
+ * одну сторону уходит вниз или вверх. Скруглённый угол фасада — 1–3% ширины,
+ * боковина — от 6%. Заодно отсеиваются фото со значками и подписями сбоку:
+ * их «кромка» тоже скачет.
+ */
+export function sideShare(tops: number[]): number {
+  const n = tops.length
+  if (n < 10) return 0
+  // медиана по окну убирает одиночные выбросы: светлую линию на ребре, ножку
+  const smooth = tops.map((_, i) => {
+    const win = tops
+      .slice(Math.max(0, i - 3), Math.min(n, i + 4))
+      .filter((t) => t >= 0)
+      .sort((a, b) => a - b)
+    return win.length ? win[win.length >> 1] : -1
+  })
+  const k = Math.max(2, Math.round(n * 0.015))
+  const slope = (i: number) => {
+    const a = Math.max(0, i - k)
+    const b = Math.min(n - 1, i + k)
+    return smooth[a] < 0 || smooth[b] < 0 ? 0 : (smooth[b] - smooth[a]) / (b - a)
+  }
+  const walk = (from: number, step: 1 | -1) => {
+    let len = 0
+    let sign = 0
+    for (let i = from; i >= 0 && i < n && len < n * 0.45; i += step) {
+      const s = slope(i)
+      if (Math.abs(s) < 0.15 || (sign && Math.sign(s) !== sign)) break
+      sign = Math.sign(s)
+      len++
+    }
+    return len / n
+  }
+  return Math.max(walk(0, 1), walk(n - 1, -1))
 }
 
 /** Фото годится как лицевая сторона: пропорции совпадают с размерами (±16%). */
