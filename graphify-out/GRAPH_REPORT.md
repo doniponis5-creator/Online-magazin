@@ -6,12 +6,12 @@
 - Unclassified: 55 file(s) not represented in the graph (top: .xml 13, (none) 8, .css 8)
 
 ## Summary
-- 2186 nodes · 5014 edges · 196 communities (120 shown, 76 thin omitted)
+- 2185 nodes · 5014 edges · 195 communities (120 shown, 75 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 108 edges (avg confidence: 0.86)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `2a6157fa`
+- Built from commit: `9713b93b`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -203,8 +203,8 @@
 ## God Nodes (most connected - your core abstractions)
 1. `useI18n()` - 70 edges
 2. `formatSom()` - 40 edges
-3. `react` - 32 edges
-4. `handleUpdate()` - 32 edges
+3. `handleUpdate()` - 32 edges
+4. `react` - 32 edges
 5. `text()` - 31 edges
 6. `base()` - 30 edges
 7. `OfflineCatalogActivity` - 24 edges
@@ -213,10 +213,10 @@
 10. `Lang` - 23 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Для PC: кабинет SBonus тоже шлёт код через Green API` --references--> `_scan_wa_logins()`  [INFERRED]
-  docs/MAC_2026-09-21.md → integrations/sbonus-server/shop/shop_customers.py
 - `A11 · P2 — Қирғизча HTML дастлаб рус тили деб белгиланган` --references--> `HtmlLang()`  [INFERRED]
   review/audit-20260915/AUDIT_UZ.md → src/components/HtmlLang.tsx
+- `Для PC: кабинет SBonus тоже шлёт код через Green API` --references--> `_scan_wa_logins()`  [INFERRED]
+  docs/MAC_2026-09-21.md → integrations/sbonus-server/shop/shop_customers.py
 - `window.imExport — JPEG data URL Export Bridge` --semantically_similar_to--> `window.Capacitor.Plugins.BonusCard Bridge`  [INFERRED] [semantically similar]
   integrations/1c-online-shop/src/РедакторФото.html → ios-web/index.html
 - `Bonus Hold Mechanism` --semantically_similar_to--> `normalizeLines Cart Restoration Guard`  [INFERRED] [semantically similar]
@@ -227,7 +227,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (196 total, 76 thin omitted)
+## Communities (195 total, 75 thin omitted)
 
 ### Community 0 - "ProductArt.tsx"
 Cohesion: 0.10
@@ -710,22 +710,22 @@ Cohesion: 0.20
 Nodes (9): Бонус виден покупателю, Вход через WhatsApp «наоборот» (главное за вечер), Для PC (1С): 1 000 сом — тратить целиком, Для PC: кабинет SBonus тоже шлёт код через Green API, Кому адресовано (WhatsApp) — 22.09, Проверить после выкатки (PC), Что сделано на MacBook 21.09.2026 — читать PC первым делом, _own_wa_number() (+1 more)
 
 ## Knowledge Gaps
-- **381 isolated node(s):** `customer`, `phone`, `laptop`, `catalog`, `order` (+376 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 754 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **76 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **381 isolated node(s):** `PAIRS`, `LETTERS`, `Answer`, `Say`, `Topic` (+376 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 753 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **75 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `scripts` connect `scripts` to `package.json`?**
-  _High betweenness centrality (0.249) - this node is a cross-community bridge._
+  _High betweenness centrality (0.271) - this node is a cross-community bridge._
 - **Why does `test` connect `scripts` to `manage.py`?**
-  _High betweenness centrality (0.248) - this node is a cross-community bridge._
+  _High betweenness centrality (0.270) - this node is a cross-community bridge._
 - **Why does `copy_base()` connect `manage.py` to `build_extension.py`, `scripts`?**
-  _High betweenness centrality (0.248) - this node is a cross-community bridge._
+  _High betweenness centrality (0.270) - this node is a cross-community bridge._
 - **Are the 17 inferred relationships involving `text()` (e.g. with `_notes()` and `save_notes()`) actually correct?**
   _`text()` has 17 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `customer`, `phone`, `laptop` to the rest of the system?**
+- **What connects `PAIRS`, `LETTERS`, `Answer` to the rest of the system?**
   _381 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `ProductArt.tsx` be split into smaller, more focused modules?**
   _Cohesion score 0.09538461538461539 - nodes in this community are weakly interconnected._

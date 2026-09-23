@@ -18457,17 +18457,6 @@
       "source_location": "L1"
     },
     {
-      "id": "playwright_test_test",
-      "label": "@playwright/test",
-      "_origin": "ast",
-      "community": 193,
-      "community_name": "@playwright/test",
-      "confidence": "EXTRACTED",
-      "file_type": "code",
-      "norm_label": "@playwright/test",
-      "source_file": "@playwright/test"
-    },
-    {
       "id": "integrations_sbonus_server_shop_shop_models",
       "label": "shop_models.py",
       "_origin": "ast",
@@ -86686,5 +86675,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "2a6157fa8f7f0988a9ea54ca81b571308d480876"
+  "built_at_commit": "9713b93bc02c48d9edcbc58d0354edd619438a4f"
 }
