@@ -1,0 +1,121 @@
+/* Приглашение в 3D-конструктор кухни на главной. */
+
+.kitchen-promo__link {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-primary-soft);
+  color: var(--color-ink);
+  text-decoration: none;
+  transition: border-color var(--dur-hover) var(--ease-out), box-shadow var(--dur-hover) var(--ease-out);
+}
+
+.kitchen-promo__link:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-card);
+}
+
+.kitchen-promo__text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  padding: clamp(24px, 3.4vw, 44px);
+}
+
+.kitchen-promo__title {
+  margin: 0;
+  font-size: clamp(24px, 2.5vw, 34px);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.kitchen-promo__lead {
+  margin: 0;
+  max-width: 46ch;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--color-ink-soft);
+}
+
+.kitchen-promo__styles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 2px 0 6px;
+  padding: 0;
+  list-style: none;
+}
+
+.kitchen-promo__styles li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 11px 0 8px;
+  border-radius: 15px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--color-ink-soft);
+}
+
+.kitchen-promo__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgb(38 50 68 / 18%);
+}
+
+.kitchen-promo__cta {
+  margin-top: auto;
+}
+
+.kitchen-promo__media {
+  display: block;
+  min-height: 260px;
+}
+
+.kitchen-promo__media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 40% 50%;
+  transition: transform 600ms var(--ease-out);
+}
+
+.kitchen-promo__link:hover .kitchen-promo__media img {
+  transform: scale(1.025);
+}
+
+@media (max-width: 900px) {
+  .kitchen-promo__link {
+    grid-template-columns: 1fr;
+  }
+
+  .kitchen-promo__media {
+    order: -1;
+    aspect-ratio: 16 / 10;
+    min-height: 0;
+  }
+
+  .kitchen-promo__text {
+    padding: 20px;
+  }
+
+  .kitchen-promo__cta {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kitchen-promo__media img {
+    transition: none;
+  }
+}

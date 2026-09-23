@@ -199,6 +199,9 @@ function HeaderInner() {
               {lang === 'ky' ? c.nameKy : c.nameRu}
             </Link>
           ))}
+          <Link href={`/${lang}/kitchen`} className="subnav__link subnav__link--kitchen">
+            {lang === 'ky' ? '3D-ашкана' : '3D-кухня'}
+          </Link>
           <span className="header__city">
             <IconMapPin size={16} />
             {t.city}

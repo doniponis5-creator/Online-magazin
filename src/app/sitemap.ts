@@ -11,7 +11,7 @@ import { SITE_URL } from '@/lib/seo'
  */
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date()
-  const pages = ['', '/catalog', '/about', '/sources']
+  const pages = ['', '/catalog', '/kitchen', '/about', '/sources']
 
   const entry = (path: string, priority: number): MetadataRoute.Sitemap[number] => ({
     url: `${SITE_URL}/ru${path}`,

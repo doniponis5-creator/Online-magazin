@@ -10,6 +10,7 @@ import { Brand } from '@/components/Brand'
 import { ProductArt } from '@/components/ProductArt'
 import { ProductCard } from '@/components/ProductCard'
 import { BonusPromo } from '@/components/BonusPromo'
+import { KitchenPromo } from '@/components/kitchen/KitchenPromo'
 import {
   IconCard,
   IconChevronRight,
@@ -122,6 +123,7 @@ export default function HomePage() {
     <div className="container">
       <StorefrontHero />
       <CategoryTiles />
+      <KitchenPromo />
       <DailySelection />
       <CampaignBanner />
       <HitMosaic />
