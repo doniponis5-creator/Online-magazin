@@ -1,17 +1,17 @@
 # Graph Report - Online-magazin  (2026-09-23)
 
 ## Corpus Check
-- 350 files · ~4,973,676 words
+- 350 files · ~4,974,373 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 58 file(s) not represented in the graph (top: .xml 13, .css 11, (none) 8)
 
 ## Summary
-- 2718 nodes · 6572 edges · 202 communities (126 shown, 76 thin omitted)
+- 2720 nodes · 6578 edges · 202 communities (122 shown, 80 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 117 edges (avg confidence: 0.86)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `b43f4e99`
+- Built from commit: `0c9ba91d`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -19,13 +19,13 @@
 - kitchen/catalog.ts
 - build_model.py
 - build_extension.py
-- isLang
+- config.ts
 - OfflineCatalogView
 - App Store га топшириш — 8-қадам
 - package.json
 - AccountView.tsx
 - layout.ts
-- AppLockPlugin.java
+- I18nProvider.tsx
 - shop_customers.py
 - customer/gateway.ts
 - Текшириладиган рўйхат
@@ -36,7 +36,7 @@
 - BonusCardView
 - KitchenPlanner.tsx
 - shop_admin.py
-- spec.ts
+- KitchenPlanner
 - @playwright/test
 - compilerOptions
 - AppDelegate
@@ -44,7 +44,7 @@
 - telegram/order.ts
 - sync-catalog.mjs
 - TASK 03A Report — review closure and LG scene
-- ProductReels.tsx
+- getProduct
 - TASK 04 Report — Blender Model of LG F4X5ES5SB
 - Smart Centr Architecture (site, iOS, Android, 1C, SBonus)
 - manage.py
@@ -55,7 +55,7 @@
 - app/shop Module on the SBonus Server
 - TASK 03 Brief — expressive storefront, photos, motion
 - TODO_NEXT.md — What To Do Next
-- reply.ts
+- knowledge.ts
 - shop_router.py
 - 1C Extension ИМ_ОнлайнМагазин
 - IOS_APP_UZ.md — App Store Guide
@@ -97,13 +97,13 @@
 - ref_d
 - SKILL.md
 - setup-demo-login.sh
-- config.ts
+- live.ts
 - pathlib
 - Что сделано на PC 21.09.2026 — читать MacBook первым делом
 - .scene
-- fronts.ts
+- styles.ts
 - useI18n
-- .filled
+- .dp
 - make-app-icons.mjs
 - capacitor_swift
 - (entry)/layout.tsx
@@ -112,9 +112,9 @@
 - share.ts
 - local.ts
 - build.ts
-- text
-- scripts
-- Product
+- shop_catalog.py
+- _post
+- vitest
 - bot.ts
 - cdvscreenorientationdelegate
 - cdvurlprotocol
@@ -139,7 +139,7 @@
 - usernotifications
 - webkit
 - native/catalog.ts
-- BonusCardPlugin.java
+- ProductReels.tsx
 - ExampleInstrumentedTest.java
 - deploy_cabinet_walogin.sh
 - currentSession
@@ -159,34 +159,33 @@
 - cdvpluginmanager
 - cdvpluginresult
 - corefoundation
-- CartProvider.tsx
+- adapter.ts
 - assistant/route.ts
 - log.ts
 - process.cjs
 - build-appstore.sh
 - telegram-webhook.sh
-- orders/order.ts
+- .setKitchen
 - checks.ts
 - importlib_util
 - android.os.Bundle
-- kitchen/page.tsx
+- seo.ts
 - argparse
-- robots.ts
+- .invalidate
 - engine.ts
-- next.config.ts
-- ref_server_only
+- reply.ts
 - gradlew
 - android-keystore.sh
 - deploy_cabinet_client.sh
 - bs4
-- knowledge.ts
+- AssistantChat.tsx
 - concurrent_futures
 - html
-- dependencies
-- whatsapp/route.ts
+- errorResponse
+- orders/route.ts
 - privacy.ts
-- com.getcapacitor.PluginCall
-- android.content.Context
+- AppLockPlugin.java
+- printSheet.ts
 - compare_model.py
 - ref_node_fs
 - Capacitor
@@ -198,10 +197,10 @@
 - urllib3
 - urllib_parse
 - shop_models.py
-- errorResponse
+- startSession
 - OfflineCatalogActivity
 - urllib_request
-- devDependencies
+- .resize
 - check_installments.py
 - sources/page.tsx
 - [lang]/layout.tsx
@@ -210,7 +209,7 @@
 1. `useI18n()` - 80 edges
 2. `KitchenEngine` - 58 edges
 3. `KitchenPlanner()` - 55 edges
-4. `three` - 47 edges
+4. `three` - 46 edges
 5. `formatSom()` - 45 edges
 6. `mesh()` - 36 edges
 7. `react` - 36 edges
@@ -219,6 +218,8 @@
 10. `base()` - 31 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `A11 · P2 — Қирғизча HTML дастлаб рус тили деб белгиланган` --references--> `HtmlLang()`  [INFERRED]
+  review/audit-20260915/AUDIT_UZ.md → src/components/HtmlLang.tsx
 - `Для PC: кабинет SBonus тоже шлёт код через Green API` --references--> `_scan_wa_logins()`  [INFERRED]
   docs/MAC_2026-09-21.md → integrations/sbonus-server/shop/shop_customers.py
 - `window.imExport — JPEG data URL Export Bridge` --semantically_similar_to--> `window.Capacitor.Plugins.BonusCard Bridge`  [INFERRED] [semantically similar]
@@ -227,13 +228,11 @@
   ARCHITECTURE_UZ.md → TASK_02_REPORT.md
 - `Smart Centr Project Working Rules` --semantically_similar_to--> `Owner's Work Standard (verify visually, no self-scoring)`  [INFERRED] [semantically similar]
   CLAUDE.md → TASK_03A_REVIEW_FIXES.md
-- `A11 · P2 — Қирғизча HTML дастлаб рус тили деб белгиланган` --references--> `HtmlLang()`  [INFERRED]
-  review/audit-20260915/AUDIT_UZ.md → src/components/HtmlLang.tsx
 
 ## Import Cycles
 - None detected.
 
-## Communities (202 total, 76 thin omitted)
+## Communities (202 total, 80 thin omitted)
 
 ### Community 0 - "kitchen/catalog.ts"
 Cohesion: 0.15
@@ -245,11 +244,11 @@ Nodes (11): area(), box(), camera(), digit(), look_at(), LG F4X5ES5SB — вне
 
 ### Community 2 - "build_extension.py"
 Cohesion: 0.10
-Nodes (37): build_adopted(), build_common_module(), build_configuration(), build_module(), build_processor(), build_register(), build_registers(), build_role() (+29 more)
+Nodes (38): build_adopted(), build_common_module(), build_configuration(), build_module(), build_processor(), build_register(), build_registers(), build_role() (+30 more)
 
-### Community 3 - "isLang"
-Cohesion: 0.21
-Nodes (11): next, generateMetadata(), generateMetadata(), generateMetadata(), generateMetadata(), generateMetadata(), generateMetadata(), SourcesPage() (+3 more)
+### Community 3 - "config.ts"
+Cohesion: 0.15
+Nodes (14): nextConfig, next, generateMetadata(), generateMetadata(), generateMetadata(), generateMetadata(), generateMetadata(), generateMetadata() (+6 more)
 
 ### Community 4 - "OfflineCatalogView"
 Cohesion: 0.13
@@ -260,28 +259,28 @@ Cohesion: 0.17
 Nodes (11): 1. Сайт ва сервер чиқарилсин, 2. Демо-кириш ёқилсин, 3. Apple калити жанговар режимга, App Store га топшириш — 8-қадам, Жанговар йиғилишни қандай қилиш, «Маълумотлар ёрлиғи» — App Store Connect даги жавоблар, Рад этилса, Сиздан керак — Apple сўрайдиган матнлар (+3 more)
 
 ### Community 6 - "package.json"
-Cohesion: 0.11
-Nodes (16): config, description, name, private, version, @capacitor/android, @capacitor/cli, @capacitor/core (+8 more)
+Cohesion: 0.05
+Nodes (42): config, dependencies, @capacitor/android, @capacitor/cli, @capacitor/core, @capacitor/ios, @capacitor/push-notifications, next (+34 more)
 
 ### Community 7 - "AccountView.tsx"
 Cohesion: 0.12
 Nodes (30): src_components_account, AccountView(), formatDate(), useCustomer(), src_components_home_merchandising, CustomerProfile, AppLockPlugin, CapacitorGlobal (+22 more)
 
 ### Community 8 - "layout.ts"
-Cohesion: 0.06
-Nodes (60): Dropped(), commitPinned(), FILL, PlanSketch(), Props, ALL_WALLS, allowedOn(), canChangeWall() (+52 more)
+Cohesion: 0.07
+Nodes (45): Dropped(), ALL_WALLS, allowedOn(), canChangeWall(), clampWindow(), copy(), CORNER_W, DEFAULT_ORDER (+37 more)
 
-### Community 9 - "AppLockPlugin.java"
-Cohesion: 0.10
-Nodes (22): android.content.SharedPreferences, base64, biometricmanager, biometricprompt, build, cipher, contextcompat, gcmparameterspec (+14 more)
+### Community 9 - "I18nProvider.tsx"
+Cohesion: 0.15
+Nodes (18): ref_next_image, react, AddToCartButton(), CartReminder(), PinchZoom(), ProductArt(), ProductImage(), msLeft() (+10 more)
 
 ### Community 10 - "shop_customers.py"
-Cohesion: 0.12
-Nodes (44): BonusAccount, Decimal, _account(), branch_id(), _code_hash(), _customer(), get_profile(), _logged_in() (+36 more)
+Cohesion: 0.11
+Nodes (45): app_models, BonusAccount, Decimal, _account(), branch_id(), _code_hash(), _customer(), get_profile() (+37 more)
 
 ### Community 11 - "customer/gateway.ts"
-Cohesion: 0.11
-Nodes (22): POST(), BonusHistoryItem, call(), CodeChannel, CustomerApiError, CustomerOrderItem, DEMO_BALANCE, DEMO_CODE (+14 more)
+Cohesion: 0.12
+Nodes (17): POST(), BonusHistoryItem, CodeChannel, CustomerOrderItem, DEMO_BALANCE, DEMO_CODE, DEMO_NAME, DEMO_PHONE (+9 more)
 
 ### Community 12 - "Текшириладиган рўйхат"
 Cohesion: 0.12
@@ -289,15 +288,15 @@ Nodes (16): 1. Илова очилиши, 2. Кириш, 3. Бонус карт�
 
 ### Community 13 - "Icons.tsx"
 Cohesion: 0.10
-Nodes (40): ref_next_link, react, Cached, Brand(), BrandMark(), frameUrl(), Hero3D(), src_components_home_story (+32 more)
+Nodes (38): ref_next_navigation, BonusReminder(), Cached, base(), IconArrowDown(), IconArrowUpRight(), IconCamera(), IconCard() (+30 more)
 
 ### Community 14 - "CatalogView.tsx"
-Cohesion: 0.17
-Nodes (16): metadata, src_components_catalog_filters, Badge, BADGES, CatalogView(), CatalogViewInner(), inStock(), normalize() (+8 more)
+Cohesion: 0.14
+Nodes (19): metadata, src_components_catalog_filters, Badge, BADGES, CatalogView(), CatalogViewInner(), inStock(), normalize() (+11 more)
 
 ### Community 15 - "shop_push.py"
-Cohesion: 0.10
-Nodes (34): app_payments, httpx, _b64(), _bundle(), _devices(), _drop(), enabled(), _fail() (+26 more)
+Cohesion: 0.23
+Nodes (17): _b64(), _bundle(), _devices(), _drop(), enabled(), _fail(), _host(), _jwt() (+9 more)
 
 ### Community 16 - "AppLockPlugin"
 Cohesion: 0.14
@@ -309,15 +308,15 @@ Nodes (19): CoreImage.CIFilterBuiltins, Double, Image, BonusCardData, BonusCardS
 
 ### Community 18 - "KitchenPlanner.tsx"
 Cohesion: 0.05
-Nodes (38): DRAWING_CSS, src_components_kitchen_kitchen, colorSwatch(), CORE, fmt(), hasWebGL(), iconProps, isStacked() (+30 more)
+Nodes (37): src_components_kitchen_kitchen, CORE, fmt(), iconProps, Items, MoveSel, OPTIONAL, SHAPES (+29 more)
 
 ### Community 19 - "shop_admin.py"
 Cohesion: 0.09
-Nodes (46): app_models, AsyncClient, Интернет-магазин Smart Centr: заказы с сайта (O!Деньги → 1С)., account_delete(), AccountDelete, _as_list(), _attention(), _clean() (+38 more)
+Nodes (47): Интернет-магазин Smart Centr: заказы с сайта (O!Деньги → 1С)., account_delete(), AccountDelete, _as_list(), _attention(), _clean(), _daily(), dashboard() (+39 more)
 
-### Community 20 - "spec.ts"
-Cohesion: 0.08
-Nodes (37): appliance(), CARCASS, DrawingLabels, elevationSvg(), esc(), fmt(), front(), n() (+29 more)
+### Community 20 - "KitchenPlanner"
+Cohesion: 0.09
+Nodes (35): colorSwatch(), hasWebGL(), isStacked(), KitchenPlanner(), cabSel(), commitPinned(), update(), makerList() (+27 more)
 
 ### Community 21 - "@playwright/test"
 Cohesion: 0.18
@@ -336,8 +335,8 @@ Cohesion: 0.31
 Nodes (15): csv, main(), Почему товара нет на сайте — только чтение, база 1С не меняется. На сайт уходит…, reason(), connect(), detect_brand(), export_photos(), load_settings() (+7 more)
 
 ### Community 25 - "telegram/order.ts"
-Cohesion: 0.15
-Nodes (25): followUp, lookupIn(), salesCatalogNow(), ASK_ADDRESS, ASK_NAME, ASK_PHONE, ASK_PICK, ASK_WHERE (+17 more)
+Cohesion: 0.09
+Nodes (48): ASK_PHONE, BAD_PHONE, CALL_INTENT, Draft, drafts, FAILED, hasLead(), leadContext() (+40 more)
 
 ### Community 26 - "sync-catalog.mjs"
 Cohesion: 0.25
@@ -347,9 +346,9 @@ Nodes (7): ref_node_url, apiUrl, CATALOG, fileEnv, log(), main(), ROOT
 Cohesion: 0.27
 Nodes (14): Archived Pexels Category Photo Set, Asset Sources Contract (no active product photos), photo-sources.ts Canonical Machine List, LG F4X5ES5SB 3D Scroll Scene Brief, TASK 03A Brief — close design review, MotionProvider Empty-Deps and Reveal Cascade Defect, Photo Source Reconciliation Audit, ProductImage Always Uses altRu Defect (+6 more)
 
-### Community 28 - "ProductReels.tsx"
-Cohesion: 0.10
-Nodes (26): FavoritesPage(), generateMetadata(), ProductPage(), AddToCartButton(), BottomNav(), FavoriteButton(), HeaderInner(), src_components_product_reels (+18 more)
+### Community 28 - "getProduct"
+Cohesion: 0.19
+Nodes (13): DevGalleryFixturePage(), FavoritesPage(), generateMetadata(), BottomNav(), FavoriteButton(), Gallery(), getProduct(), FavoritesContext (+5 more)
 
 ### Community 29 - "TASK 04 Report — Blender Model of LG F4X5ES5SB"
 Cohesion: 0.27
@@ -391,13 +390,13 @@ Nodes (10): The Flat-First Rule, Repository Structure Map, P0 Defect List (langu
 Cohesion: 0.28
 Nodes (9): SBonus Bonus Flow on the Site, Apple Guideline 4.2 — Repackaged Website Rejection, Path B — Capacitor Shell Plus Real Native Capabilities, TODO_NEXT.md — What To Do Next, SBonus BonusService earn/spend Semantics, Mixed+ iOS 26 Liquid Glass Plan, Owner Decisions (login, welcome bonus, site bonus cap), SBonus Tier Threshold Anomaly (Gold < Silver, two Platinum) (+1 more)
 
-### Community 39 - "reply.ts"
-Cohesion: 0.14
-Nodes (19): budgetFrom(), cheaperThan(), NOT_UNIT, PATTERNS, THOUSAND, productName(), toHit(), parseAnswer() (+11 more)
+### Community 39 - "knowledge.ts"
+Cohesion: 0.13
+Nodes (22): fromJson(), withoutIds(), budgetFrom(), cheaperThan(), NOT_UNIT, PATTERNS, THOUSAND, catalogForQuestion() (+14 more)
 
 ### Community 40 - "shop_router.py"
 Cohesion: 0.08
-Nodes (55): api_route, app_core_config, Base, fastapi_responses, Сколько клиент платит деньгами (для старых заказов без бонусов — total)., Для страницы заказа на сайте: без телефона и адреса., Для 1С: всё, что нужно для Заказа клиента, ПКО и Реализации., ShopOrder (+47 more)
+Nodes (51): api_route, app_core_config, Base, fastapi_responses, Сколько клиент платит деньгами (для старых заказов без бонусов — total)., Для страницы заказа на сайте: без телефона и адреса., Для 1С: всё, что нужно для Заказа клиента, ПКО и Реализации., ShopOrder (+43 more)
 
 ### Community 41 - "1C Extension ИМ_ОнлайнМагазин"
 Cohesion: 0.32
@@ -417,15 +416,15 @@ Nodes (8): BAD_WORDS, FORCE, GOOD_WORDS, main(), score(), searchTopic(), sleep()
 
 ### Community 45 - "formatSom"
 Cohesion: 0.11
-Nodes (25): CartPage(), CheckoutPage(), FieldErrors, OrderView(), BonusReminder(), CustomerLogin(), Step, askText() (+17 more)
+Nodes (28): CartPage(), CheckoutPage(), FieldErrors, OrderView(), CustomerLogin(), Step, askText(), ProductPurchase() (+20 more)
 
 ### Community 46 - "Smart Centr Project Working Rules"
 Cohesion: 0.25
 Nodes (8): Next.js Agent Rules Block, Installment Eligibility Flag (existing SBonus clients only), Phone + One-Time Code Login, Smart Centr Project Working Rules, Secrets Boundary (never type owner's credentials), Live System Overview (site, SBonus server, 1C UT 11.5), Telegram Gateway Login Code with WhatsApp Fallback, Owner's Work Standard (verify visually, no self-scoring)
 
 ### Community 47 - "3. Устувор топилмалар"
-Cohesion: 0.10
-Nodes (19): 1. Реализация яхлитлиги: ўтмади, 2. Умумий баҳо — 11/20, 3. Устувор топилмалар, 4. Детектор натижасини қандай талқин қилдим, 5. Яхши ишланган қисмлар, 6. Текширув ҳажми ва чегаралари, 7. Кейинги ишлар тартиби, A01 · P0 — 768–900 px экранда саватга ўтиш йўқолади (+11 more)
+Cohesion: 0.11
+Nodes (18): 1. Реализация яхлитлиги: ўтмади, 2. Умумий баҳо — 11/20, 3. Устувор топилмалар, 4. Детектор натижасини қандай талқин қилдим, 5. Яхши ишланган қисмлар, 6. Текширув ҳажми ва чегаралари, 7. Кейинги ишлар тартиби, A01 · P0 — 768–900 px экранда саватга ўтиш йўқолади (+10 more)
 
 ### Community 48 - "Hero3D Pure-CSS LG Scroll Scene"
 Cohesion: 0.43
@@ -436,8 +435,8 @@ Cohesion: 0.29
 Nodes (8): HANDOFF.md — What Is Already Built, Known Issue — Only 1-2 Products Reach the Server Catalog, paymentMode() live vs mock Fallback, Assistant Never Types the Owner's Secrets, Wikimedia Brand Logo Sources and Licenses, Smart Centr Brand Logo Provenance, Manrope SIL Open Font License 1.1, ASSET_SOURCES.md Photo Licensing Ledger
 
 ### Community 50 - "route-helpers.ts"
-Cohesion: 0.17
-Nodes (18): ref_next_headers, GET(), POST(), maxBonusSpend(), CustomerSession, decodeNativeKey(), decodeSession(), encodeNativeKey() (+10 more)
+Cohesion: 0.19
+Nodes (16): ref_next_headers, GET(), POST(), CustomerSession, decodeNativeKey(), decodeSession(), encodeNativeKey(), encodeSession() (+8 more)
 
 ### Community 51 - "CatalogStore"
 Cohesion: 0.16
@@ -461,7 +460,7 @@ Nodes (9): Бонус виден покупателю, Вход через Whats
 
 ### Community 56 - "shop_wa_bot.py"
 Cohesion: 0.08
-Nodes (49): app_core_redis, asyncio, Консультант, hashlib, hmac, Прочитать свежие входящие WhatsApp и отметить коды входа, которые прислали…, _scan_wa_logins(), _site_base_url() (+41 more)
+Nodes (47): app_core_redis, asyncio, Консультант, hmac, Прочитать свежие входящие WhatsApp и отметить коды входа, которые прислали…, _scan_wa_logins(), _site_base_url(), _site_secret() (+39 more)
 
 ### Community 57 - "make-ios-icon.mjs"
 Cohesion: 0.20
@@ -474,10 +473,6 @@ Nodes (4): Data Ownership Matrix (source of truth per entity), Technical Data Co
 ### Community 59 - "update_site.sh"
 Cohesion: 0.83
 Nodes (3): fail(), update_site.sh script, step()
-
-### Community 74 - "KitchenEngine"
-Cohesion: 0.09
-Nodes (3): buildKitchen(), easeInOut(), KitchenEngine
 
 ### Community 75 - "Смарт Центр — бош саҳифа янгиланиши"
 Cohesion: 0.29
@@ -496,16 +491,16 @@ Cohesion: 0.40
 Nodes (4): Натижа, Смарт Центр — аудит тузатишлари, Текширувлар, Чегаралар
 
 ### Community 83 - "products.ts"
-Cohesion: 0.06
-Nodes (34): ref_next_image, DevGalleryFixturePage(), HomePage(), Gallery(), PinchZoom(), ProductDetail(), src_data_1c_catalog, Category (+26 more)
+Cohesion: 0.07
+Nodes (26): ProductPage(), ProductDetail(), ReelsSlide(), src_data_1c_catalog, Category, CategoryId, categoryName(), demoCategories (+18 more)
 
 ### Community 85 - "SKILL.md"
 Cohesion: 0.25
 Nodes (7): Выключение, Где caveman выключается сам, Правила сжатия, Уровни, Что остаётся обычным текстом, Язык — главное правило, Ясность важнее краткости
 
-### Community 87 - "config.ts"
-Cohesion: 0.27
-Nodes (4): Lang, languages, otherLang, buildLangHref()
+### Community 87 - "live.ts"
+Cohesion: 0.15
+Nodes (18): ref_node_crypto, ref_server_only, dynamic, SnapshotItem, dynamic, POST(), GET(), productsFromOneC() (+10 more)
 
 ### Community 88 - "pathlib"
 Cohesion: 0.18
@@ -519,16 +514,16 @@ Nodes (6): WhatsApp-продавец (новое, проверено вживу�
 Cohesion: 0.22
 Nodes (7): CAPBridgeViewController, MainViewController, UIScene, UISceneSession, NSUserActivity, Set, UIOpenURLContext
 
-### Community 91 - "fronts.ts"
-Cohesion: 0.17
-Nodes (14): allowed(), BASE_FRONTS, BY_CODE, CODE, DRAWER_PARTS, frontsFromQuery(), frontsToQuery(), isUpperKey() (+6 more)
+### Community 91 - "styles.ts"
+Cohesion: 0.15
+Nodes (17): FinishLook, RoomLook, FrontTexture, getStyle(), getTone(), KitchenStyle, Metal, ORDER (+9 more)
 
 ### Community 92 - "useI18n"
-Cohesion: 0.10
-Nodes (37): A09 · P2 — Дизайн ҳужжати ва токенлар амалдаги бош баннердан ортда қолган, CategoryTiles(), InfoStrip(), NightBanner(), ProductSection(), BrandLogo(), hasBrandImage(), LOGOS (+29 more)
+Cohesion: 0.08
+Nodes (45): ref_next_link, A09 · P2 — Дизайн ҳужжати ва токенлар амалдаги бош баннердан ортда қолган, CategoryTiles(), HomePage(), InfoStrip(), NightBanner(), ProductSection(), BrandLogo() (+37 more)
 
-### Community 93 - ".filled"
-Cohesion: 0.19
+### Community 93 - ".dp"
+Cohesion: 0.22
 Nodes (7): BonusCardActivity, Override, Row, Ui, android.graphics.drawable.GradientDrawable, android.widget.LinearLayout, android.widget.TextView
 
 ### Community 94 - "make-app-icons.mjs"
@@ -540,48 +535,48 @@ Cohesion: 0.24
 Nodes (4): metadata, src_app_globals, src_app_light_lemon, NotFoundMessage()
 
 ### Community 97 - "OfflineCatalogActivity.java"
-Cohesion: 0.11
-Nodes (18): android.os.Handler, android.util.LruCache, arraylist, bitmapfactory, editable, edittext, executors, executorservice (+10 more)
+Cohesion: 0.10
+Nodes (19): android.os.Handler, android.util.LruCache, arraylist, bitmapfactory, editable, edittext, executors, executorservice (+11 more)
 
 ### Community 98 - "orders/gateway.ts"
-Cohesion: 0.18
-Nodes (16): ref_next_server, POST(), GET(), mockSpend(), API_URL, callServer(), CreateResult, getOrder() (+8 more)
+Cohesion: 0.16
+Nodes (17): ref_next_server, POST(), GET(), mockSpend(), API_URL, callServer(), CreateResult, getOrder() (+9 more)
 
 ### Community 99 - "share.ts"
-Cohesion: 0.06
-Nodes (57): src_components_kitchen_kitchen_promo, SizeField(), KitchenPromo(), FinishLook, RoomLook, FRONT_COLORS, FRONT_MATERIALS, frontColor (+49 more)
+Cohesion: 0.07
+Nodes (42): KitchenTexts, ky, ru, Texts, allowed(), BASE_FRONTS, BY_CODE, CODE (+34 more)
 
 ### Community 100 - "local.ts"
-Cohesion: 0.07
-Nodes (48): fromJson(), withoutIds(), catalogForQuestion(), expand(), isInStock(), productLine(), promoMarks(), searchProducts() (+40 more)
+Cohesion: 0.09
+Nodes (38): CustomerBrief, storeFacts(), allOutSay, Answer, Audience, AUDIENCE_MARKER, bonusText(), dayText() (+30 more)
 
 ### Community 101 - "build.ts"
-Cohesion: 0.07
-Nodes (99): three, three, ref_three_addons_geometries_roundedboxgeometry_js, ref_three_addons_utils_buffergeometryutils_js, chimneyHood(), cm(), dishwasherInside(), faucet() (+91 more)
+Cohesion: 0.05
+Nodes (120): three, three, ref_three_addons_geometries_roundedboxgeometry_js, ref_three_addons_utils_buffergeometryutils_js, appliance(), CARCASS, DrawingLabels, elevationSvg() (+112 more)
 
-### Community 103 - "text"
-Cohesion: 0.13
-Nodes (31): app_core_database, datetime, fastapi, text(), _as_jpeg(), chat_extra_items(), photos_index(), public_photo() (+23 more)
+### Community 103 - "shop_catalog.py"
+Cohesion: 0.10
+Nodes (37): app_core_database, datetime, fastapi, hashlib, _as_jpeg(), chat_extra_items(), photos_index(), public_photo() (+29 more)
 
-### Community 104 - "scripts"
-Cohesion: 0.25
-Nodes (8): scripts, build, dev, exam, start, test, test:e2e, typecheck
+### Community 104 - "_post"
+Cohesion: 0.16
+Nodes (15): app_payments, AsyncClient, httpx, enabled(), _post(), Интернет-магазин Smart Centr — код входа через Telegram Gateway. Зачем: код в…, Один вызов Gateway API. Возвращает result или None, если не вышло., Отправить код входа в Telegram. True — доставлено в Telegram, False — нет… (+7 more)
 
-### Community 105 - "Product"
-Cohesion: 0.15
-Nodes (22): vitest, dynamic, GET(), dynamic, GET(), productsFromOneC(), Product, products (+14 more)
+### Community 105 - "vitest"
+Cohesion: 0.19
+Nodes (13): vitest, dynamic, dynamic, GET(), googleFeedXml(), xml(), absolute(), cell() (+5 more)
 
 ### Community 106 - "bot.ts"
-Cohesion: 0.08
-Nodes (50): dynamic, POST(), CustomerBrief, ProductHit, ASK_PHONE, BAD_PHONE, CALL_INTENT, cancelLead() (+42 more)
+Cohesion: 0.15
+Nodes (23): dynamic, POST(), cancelLead(), tooOften(), backToChat(), call(), handleUpdate(), hello() (+15 more)
 
 ### Community 129 - "native/catalog.ts"
 Cohesion: 0.31
 Nodes (9): OfflineCatalogSync(), CapacitorGlobal, CatalogPlugin, markTried(), offlineCatalogState(), plugin(), showOfflineCatalog(), syncOfflineCatalog() (+1 more)
 
-### Community 130 - "BonusCardPlugin.java"
-Cohesion: 0.13
-Nodes (16): com.getcapacitor.annotation.CapacitorPlugin, com.getcapacitor.Plugin, decimalformat, decimalformatsymbols, file, fileinputstream, fileoutputstream, insets (+8 more)
+### Community 130 - "ProductReels.tsx"
+Cohesion: 0.22
+Nodes (9): src_components_product_reels, ProductReels(), readSaved(), saveOrder(), shuffle(), ShareButton(), REELS_FROM_SITE_KEY, REELS_INDEX_KEY (+1 more)
 
 ### Community 131 - "ExampleInstrumentedTest.java"
 Cohesion: 0.24
@@ -615,13 +610,13 @@ Nodes (3): fail(), update-all.sh script, step()
 Cohesion: 0.23
 Nodes (29): brick(), cache, canvas(), clear(), concrete(), Entry, finish(), floorTile() (+21 more)
 
-### Community 150 - "CartProvider.tsx"
+### Community 150 - "adapter.ts"
 Cohesion: 0.10
-Nodes (35): ART_BY_CATEGORY, BRAND_ALIASES, cleanName(), detectBrand(), KNOWN_BRANDS, OneCCatalog, OneCItem, productFromOneC() (+27 more)
+Nodes (32): ART_BY_CATEGORY, BRAND_ALIASES, cleanName(), detectBrand(), KNOWN_BRANDS, OneCCatalog, OneCItem, productFromOneC() (+24 more)
 
 ### Community 151 - "assistant/route.ts"
-Cohesion: 0.10
-Nodes (24): ref_node_crypto, dynamic, ipOf(), POST(), readImage(), seen, tooOften(), dynamic (+16 more)
+Cohesion: 0.18
+Nodes (16): dynamic, ipOf(), POST(), readImage(), seen, tooOften(), dynamic, POST() (+8 more)
 
 ### Community 152 - "log.ts"
 Cohesion: 0.17
@@ -635,33 +630,25 @@ Nodes (22): ref_fs, ref_path, backgroundColor(), BRANDS, firstBand(), fs, INK, m
 Cohesion: 0.83
 Nodes (3): fail(), build-appstore.sh script, step()
 
-### Community 156 - "orders/order.ts"
-Cohesion: 0.21
-Nodes (12): POST(), createOrder(), applyBonus(), DeliveryMethod, deliveryPriceFor(), OrderError, OrderLine, OrderRequest (+4 more)
-
 ### Community 157 - "checks.ts"
-Cohesion: 0.20
-Nodes (15): Check, CheckLevel, checkProject(), counterBeside(), dist(), find(), Found, front() (+7 more)
+Cohesion: 0.13
+Nodes (20): FILL, PlanSketch(), Props, Check, CheckLevel, checkProject(), counterBeside(), dist() (+12 more)
 
 ### Community 159 - "android.os.Bundle"
 Cohesion: 0.32
 Nodes (6): Override, MainActivity, android.os.Bundle, com.getcapacitor.BridgeActivity, onbackpressedcallback, webview
 
-### Community 160 - "kitchen/page.tsx"
-Cohesion: 0.47
-Nodes (5): generateMetadata(), KitchenPage(), META, kitchenAppliances(), canonical()
-
-### Community 162 - "robots.ts"
-Cohesion: 0.33
-Nodes (4): ALLOW, ASSISTANTS, PRIVATE, TRAINERS
+### Community 160 - "seo.ts"
+Cohesion: 0.13
+Nodes (13): generateMetadata(), KitchenPage(), META, ALLOW, ASSISTANTS, PRIVATE, TRAINERS, kitchenAppliances() (+5 more)
 
 ### Community 163 - "engine.ts"
 Cohesion: 0.08
-Nodes (26): ref_three_addons_controls_orbitcontrols_js, ref_three_addons_environments_roomenvironment_js, ref_three_addons_lights_rectarealightuniformslib_js, ref_three_addons_postprocessing_effectcomposer_js, ref_three_addons_postprocessing_gtaopass_js, ref_three_addons_postprocessing_outputpass_js, ref_three_addons_postprocessing_renderpass_js, ref_three_addons_postprocessing_shaderpass_js (+18 more)
+Nodes (24): ref_three_addons_controls_orbitcontrols_js, ref_three_addons_environments_roomenvironment_js, ref_three_addons_lights_rectarealightuniformslib_js, ref_three_addons_postprocessing_effectcomposer_js, ref_three_addons_postprocessing_gtaopass_js, ref_three_addons_postprocessing_outputpass_js, ref_three_addons_postprocessing_renderpass_js, ref_three_addons_postprocessing_shaderpass_js (+16 more)
 
-### Community 165 - "ref_server_only"
-Cohesion: 0.18
-Nodes (12): ref_server_only, cache, Entry, GET(), reply(), dailyLimit(), day, dayBudgetLeft() (+4 more)
+### Community 165 - "reply.ts"
+Cohesion: 0.11
+Nodes (23): cache, Entry, GET(), reply(), ProductHit, dailyLimit(), day, dayBudgetLeft() (+15 more)
 
 ### Community 166 - "gradlew"
 Cohesion: 0.83
@@ -671,37 +658,37 @@ Nodes (3): gradlew script, die(), warn()
 Cohesion: 0.83
 Nodes (3): fail(), restore(), deploy_cabinet_client.sh script
 
-### Community 176 - "knowledge.ts"
-Cohesion: 0.08
-Nodes (40): AboutPage(), metadata, src_components_assistant_chat, AssistantChat(), onKeyDown(), onPickFile(), send(), handoffText() (+32 more)
+### Community 176 - "AssistantChat.tsx"
+Cohesion: 0.10
+Nodes (36): AboutPage(), metadata, src_components_assistant_chat, AssistantChat(), onKeyDown(), onPickFile(), send(), handoffText() (+28 more)
 
-### Community 179 - "dependencies"
-Cohesion: 0.22
-Nodes (9): dependencies, @capacitor/android, @capacitor/cli, @capacitor/core, @capacitor/ios, @capacitor/push-notifications, next, react (+1 more)
+### Community 179 - "errorResponse"
+Cohesion: 0.50
+Nodes (6): clientIp(), errorResponse(), POST(), POST(), sendCode(), waLoginStart
 
-### Community 180 - "whatsapp/route.ts"
-Cohesion: 0.22
-Nodes (12): dynamic, POST(), DELETE(), GET(), endSession(), dynamic, GET(), customerBrief() (+4 more)
+### Community 180 - "orders/route.ts"
+Cohesion: 0.20
+Nodes (15): dynamic, POST(), DELETE(), GET(), endSession(), POST(), dynamic, GET() (+7 more)
 
 ### Community 181 - "privacy.ts"
 Cohesion: 0.25
 Nodes (9): metadata, PrivacyPage(), getPrivacy(), PRIVACY_UPDATED, PrivacyContent, privacyKy, privacyRu, PrivacySection (+1 more)
 
-### Community 182 - "com.getcapacitor.PluginCall"
-Cohesion: 0.18
-Nodes (6): AppLockPlugin, BonusCardPlugin, OfflineCatalogPlugin, com.getcapacitor.PluginCall, com.getcapacitor.PluginMethod, java.security.PublicKey
+### Community 182 - "AppLockPlugin.java"
+Cohesion: 0.05
+Nodes (48): AppLockPlugin, BonusCardPlugin, Store, OfflineCatalogPlugin, Store, Vault, android.content.Context, android.content.SharedPreferences (+40 more)
 
-### Community 183 - "android.content.Context"
-Cohesion: 0.24
-Nodes (6): Store, Store, Vault, android.content.Context, javax.crypto.SecretKey, org.json.JSONObject
+### Community 183 - "printSheet.ts"
+Cohesion: 0.40
+Nodes (5): DRAWING_CSS, esc(), SheetData, sheetHtml(), SheetTable
 
 ### Community 184 - "compare_model.py"
 Cohesion: 0.33
 Nodes (3): Листы проверки: только кадрирование/одинаковая высота, без ретуши модели., pil, shutil
 
 ### Community 185 - "ref_node_fs"
-Cohesion: 0.13
-Nodes (9): widths, ref_node_assert_strict, ref_node_fs, assert, { chromium }, fs, SECRET, TOKEN (+1 more)
+Cohesion: 0.14
+Nodes (8): widths, ref_node_assert_strict, ref_node_fs, assert, { chromium }, fs, SECRET, TOKEN
 
 ### Community 186 - "Capacitor"
 Cohesion: 0.29
@@ -712,52 +699,48 @@ Cohesion: 0.38
 Nodes (6): src_components_filter_select, FilterSelect(), choose(), keyboard(), show(), Option
 
 ### Community 194 - "shop_models.py"
-Cohesion: 0.33
-Nodes (5): Интернет-магазин Smart Centr — заказы с сайта (SQLAlchemy). Один заказ сайта =…, sqlalchemy, sqlalchemy_dialects_postgresql, sqlalchemy_orm, uuid
+Cohesion: 0.40
+Nodes (4): Интернет-магазин Smart Centr — заказы с сайта (SQLAlchemy). Один заказ сайта =…, sqlalchemy_dialects_postgresql, sqlalchemy_orm, uuid
 
-### Community 195 - "errorResponse"
-Cohesion: 0.25
-Nodes (13): POST(), clientIp(), errorResponse(), startSession(), POST(), POST(), POST(), POST() (+5 more)
+### Community 195 - "startSession"
+Cohesion: 0.23
+Nodes (12): POST(), startSession(), POST(), POST(), call(), CustomerApiError, demoProfile(), maxBonusSpend() (+4 more)
 
 ### Community 196 - "OfflineCatalogActivity"
-Cohesion: 0.37
-Nodes (3): Item, OfflineCatalogActivity, android.view.View
-
-### Community 198 - "devDependencies"
-Cohesion: 0.22
-Nodes (9): devDependencies, @playwright/test, sharp, @types/node, @types/react, @types/react-dom, @types/three, typescript (+1 more)
+Cohesion: 0.29
+Nodes (4): Item, OfflineCatalogActivity, android.view.View, org.json.JSONArray
 
 ### Community 205 - "check_installments.py"
 Cohesion: 0.21
 Nodes (9): getpass, os, main(), Проверка остатков по рассрочке перед выкатом — ничего не меняет и никуда не…, som(), onec_credentials(), Чтение настроек из .env.local в корне проекта — для программ 1С и сервера. Файл…, Пользователь и пароль 1С: из .env.local (ONEC_USER, ONEC_PASSWORD) или вопросом… (+1 more)
 
 ### Community 207 - "sources/page.tsx"
-Cohesion: 0.43
-Nodes (4): metadata, PEXELS_LICENSE, PhotoSource, photoSources
+Cohesion: 0.36
+Nodes (5): metadata, SourcesPage(), PEXELS_LICENSE, PhotoSource, photoSources
 
 ### Community 235 - "[lang]/layout.tsx"
-Cohesion: 0.17
-Nodes (13): ref_next_navigation, LangLayout(), viewport, CartReminder(), Header(), MotionProvider(), VisitCounter(), visitorId() (+5 more)
+Cohesion: 0.18
+Nodes (11): LangLayout(), viewport, Header(), HtmlLang(), MotionProvider(), VisitCounter(), visitorId(), Lang (+3 more)
 
 ## Knowledge Gaps
-- **468 isolated node(s):** `Step`, `STEPS`, `SHAPES`, `CORE`, `OPTIONAL` (+463 more)
+- **468 isolated node(s):** `cache`, `Size`, `Spec`, `Answer`, `Say` (+463 more)
   These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 879 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **76 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **80 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `scripts` connect `scripts` to `package.json`?**
-  _High betweenness centrality (0.333) - this node is a cross-community bridge._
-- **Why does `test` connect `scripts` to `manage.py`?**
-  _High betweenness centrality (0.325) - this node is a cross-community bridge._
-- **Why does `copy_base()` connect `manage.py` to `scripts`, `build_extension.py`?**
-  _High betweenness centrality (0.325) - this node is a cross-community bridge._
-- **What connects `Step`, `STEPS`, `SHAPES` to the rest of the system?**
+- **Why does `test` connect `package.json` to `manage.py`?**
+  _High betweenness centrality (0.306) - this node is a cross-community bridge._
+- **Why does `copy_base()` connect `manage.py` to `build_extension.py`, `package.json`?**
+  _High betweenness centrality (0.305) - this node is a cross-community bridge._
+- **What connects `cache`, `Size`, `Spec` to the rest of the system?**
   _468 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `build_model.py` be split into smaller, more focused modules?**
   _Cohesion score 0.12380952380952381 - nodes in this community are weakly interconnected._
 - **Should `build_extension.py` be split into smaller, more focused modules?**
-  _Cohesion score 0.0965166908563135 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.10272536687631027 - nodes in this community are weakly interconnected._
 - **Should `OfflineCatalogView` be split into smaller, more focused modules?**
   _Cohesion score 0.13068181818181818 - nodes in this community are weakly interconnected._
+- **Should `package.json` be split into smaller, more focused modules?**
+  _Cohesion score 0.045454545454545456 - nodes in this community are weakly interconnected._

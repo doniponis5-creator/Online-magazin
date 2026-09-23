@@ -1080,9 +1080,9 @@
     "semantic_hash": ""
   },
   "docs/HANDOFF.md": {
-    "mtime": 1790173405.1686459,
-    "seen": 1790173420.952393,
-    "ast_hash": "daff8c0bcc796674323430c19deb1fcc",
+    "mtime": 1790175732.5079236,
+    "seen": 1790175825.341758,
+    "ast_hash": "d6cb1288aaee93d09f7b208aa6a7808a",
     "semantic_hash": ""
   },
   "docs/IOS_APP_UZ.md": {
@@ -4794,9 +4794,9 @@
     "semantic_hash": ""
   },
   "__tests__/kitchen.test.ts": {
-    "mtime": 1790171054.2994142,
-    "seen": 1790173420.952223,
-    "ast_hash": "ce9583a8774141a0b5370256fbdc8610",
+    "mtime": 1790175693.8370433,
+    "seen": 1790175825.3411431,
+    "ast_hash": "a11c02517624cc6b162a7373217d6b0a",
     "semantic_hash": ""
   },
   "src/app/[lang]/kitchen/page.tsx": {
@@ -4878,9 +4878,9 @@
     "semantic_hash": ""
   },
   "src/components/kitchen/three/photo.ts": {
-    "mtime": 1790171054.3618836,
-    "seen": 1790173420.9523451,
-    "ast_hash": "2605b01c527757fda01a26db9ed89095",
+    "mtime": 1790175605.3128526,
+    "seen": 1790175825.341595,
+    "ast_hash": "899d82fa071d75237c69e4228a066ad0",
     "semantic_hash": ""
   },
   "src/components/kitchen/three/sharpen.ts": {
