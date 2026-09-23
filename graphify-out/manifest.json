@@ -684,9 +684,9 @@
     "semantic_hash": ""
   },
   "src/components/Gallery.tsx": {
-    "mtime": 1789746574.9972448,
-    "seen": 1790097039.8462,
-    "ast_hash": "03013166e3f0fec39385cc22e24a7259",
+    "mtime": 1790159246.9452138,
+    "seen": 1790159306.931537,
+    "ast_hash": "fb40d122ca57d37d961b3b036e451bbe",
     "semantic_hash": ""
   },
   "src/components/Header.tsx": {
