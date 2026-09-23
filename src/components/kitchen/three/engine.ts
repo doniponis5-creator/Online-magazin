@@ -864,8 +864,14 @@ export class KitchenEngine {
       const visible = v.z < 1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05
       el.style.visibility = visible ? 'visible' : 'hidden'
       if (!visible) continue
-      const x = ((v.x + 1) / 2) * rect.width
-      const y = ((1 - v.y) / 2) * rect.height
+      let x = ((v.x + 1) / 2) * rect.width
+      let y = ((1 - v.y) / 2) * rect.height
+      // Подпись стены («A · 300 см») стоит за стеной и на узком экране
+      // уезжала за край или под кнопки. Держим её внутри сцены.
+      if (key.startsWith('dim:')) {
+        x = Math.min(rect.width - 58, Math.max(58, x))
+        y = Math.min(rect.height - 56, Math.max(96, y))
+      }
       el.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`
     }
   }

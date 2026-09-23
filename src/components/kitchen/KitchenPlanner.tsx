@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { phones, whatsappHref } from '@/data/contacts'
 import { useCart } from '@/lib/cart/CartProvider'
 import { formatSom } from '@/lib/format'
@@ -105,6 +105,15 @@ function hasWebGL(): boolean {
   }
 }
 
+/**
+ * Телефон «стопкой»: 3D прилипает сверху, под ним вкладки шагов, итог внизу.
+ * Тот же запрос — в kitchen.css. Телефон боком (невысокий экран) собирается
+ * как компьютер: 3D слева, панель справа.
+ */
+const STACKED = '(max-width: 900px) and (min-height: 521px)'
+const isStacked = () => window.matchMedia(STACKED).matches
+const smooth = (): ScrollBehavior => (window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth')
+
 export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] }) {
   const { lang } = useI18n()
   const t = kitchenTexts(lang)
@@ -146,9 +155,17 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   const [, setHistTick] = useState(0)
   const [hint, setHint] = useState(true)
   const [origin, setOrigin] = useState('')
+  /** телефон: меню «ещё» с вечером, ценами, размерами и чёткостью */
+  const [menu, setMenu] = useState(false)
 
   const rootRef = useRef<HTMLDivElement>(null)
   const hostRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLElement>(null)
+  const stepsRef = useRef<HTMLElement>(null)
+  const bodyRef = useRef<HTMLDivElement>(null)
+  const toolsRef = useRef<HTMLDivElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const moreRef = useRef<HTMLButtonElement>(null)
   const engineRef = useRef<KitchenEngine | null>(null)
   const photos = useRef(new Map<string, Photo | null>())
   const autoView = useRef(false)
@@ -263,25 +280,91 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
 
   // Шапка сайта уезжает при прокрутке вниз и возвращается при прокрутке вверх.
   // 3D на телефоне прилипает прямо под ней — поэтому следим за её высотой.
+  // Мерить один раз мало: шапка приходит через Suspense, и в первый миг её
+  // высота бывает нулевой (было: 3D уезжал под шапку, а кнопка «Добавить всё
+  // в корзину» на компьютере — за нижний край экрана). Поэтому шапку ищем
+  // заново при каждом измерении и перемеряем при прокрутке и смене размера.
   useEffect(() => {
-    const header = document.querySelector<HTMLElement>('header.header')
     const root = rootRef.current
-    if (!header || !root) return
-    const update = () => {
+    if (!root) return
+    let header: HTMLElement | null = null
+    let last = ''
+    let frame = 0
+    const size = new ResizeObserver(() => update())
+    const cls = new MutationObserver(() => update())
+    // страница проявилась или выросла — шапка к этому времени уже на месте
+    const page = new ResizeObserver(() => update())
+    page.observe(document.body)
+    function update() {
+      const found = document.querySelector<HTMLElement>('header.header')
+      if (found !== header) {
+        size.disconnect()
+        cls.disconnect()
+        header = found
+        if (found) {
+          size.observe(found)
+          cls.observe(found, { attributes: true, attributeFilter: ['class'] })
+        }
+      }
+      if (!header || !root) return
       const h = Math.round(header.getBoundingClientRect().height)
+      const top = header.classList.contains('is-hidden') ? 0 : h
+      if (`${h}:${top}` === last) return
+      last = `${h}:${top}`
       root.style.setProperty('--kp-header', `${h}px`)
-      root.style.setProperty('--kp-top', header.classList.contains('is-hidden') ? '0px' : `${h}px`)
+      root.style.setProperty('--kp-top', `${top}px`)
+    }
+    const later = () => {
+      if (frame) return
+      frame = requestAnimationFrame(() => {
+        frame = 0
+        update()
+      })
     }
     update()
-    const size = new ResizeObserver(update)
-    size.observe(header)
-    const cls = new MutationObserver(update)
-    cls.observe(header, { attributes: true, attributeFilter: ['class'] })
+    window.addEventListener('scroll', later, { passive: true })
+    window.addEventListener('resize', later)
+    window.addEventListener('load', later)
     return () => {
       size.disconnect()
       cls.disconnect()
+      page.disconnect()
+      cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', later)
+      window.removeEventListener('resize', later)
+      window.removeEventListener('load', later)
     }
   }, [])
+
+  // Строка инструментов над 3D на узком экране переносится во вторую строку —
+  // карточка размеров встаёт под ней, а не поверх кнопок. Меряем до низа
+  // кнопки «на весь экран»: она всегда в верхней строке, а сама панель
+  // инструментов на невысоком экране растянута на всю сцену.
+  useEffect(() => {
+    const tools = toolsRef.current
+    const stage = hostRef.current
+    if (!tools || !stage) return
+    const measureTools = () => {
+      const last = tools.querySelector('.kp-tools__full') ?? tools
+      const h = last.getBoundingClientRect().bottom - tools.getBoundingClientRect().top
+      stage.style.setProperty('--kp-tools-h', `${Math.round(h)}px`)
+    }
+    const size = new ResizeObserver(measureTools)
+    size.observe(tools)
+    return () => size.disconnect()
+  }, [engineState])
+
+  // Меню «ещё» закрывается нажатием мимо него.
+  useEffect(() => {
+    if (!menu) return
+    const onDown = (e: PointerEvent) => {
+      const target = e.target as Node
+      if (menuRef.current?.contains(target) || moreRef.current?.contains(target)) return
+      setMenu(false)
+    }
+    document.addEventListener('pointerdown', onDown)
+    return () => document.removeEventListener('pointerdown', onDown)
+  }, [menu])
 
   /* ───────── 3D ───────── */
 
@@ -467,11 +550,43 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     engineRef.current?.setView(v)
   }
 
+  /**
+   * Показать часть панели. На компьютере панель листается сама. На телефоне
+   * листается страница, а сверху прилипли 3D и вкладки шагов, — ставим
+   * элемент прямо под них. Шапка сайта при прокрутке вниз уезжает, при
+   * прокрутке вверх возвращается и занимает место — это тоже учитываем.
+   */
+  const reveal = (el: Element | null | undefined, under: 'stage' | 'steps') => {
+    const root = rootRef.current
+    const stage = hostRef.current
+    const steps = stepsRef.current
+    if (!el || !root || !stage || !steps) return
+    if (!isStacked()) {
+      el.scrollIntoView({ block: 'nearest', behavior: smooth() })
+      return
+    }
+    const cover = stage.offsetHeight + (under === 'steps' ? steps.offsetHeight + 8 : 0)
+    const y = window.scrollY + el.getBoundingClientRect().top - cover
+    const headerStays = y <= window.scrollY || y <= 140
+    const header = headerStays ? parseFloat(root.style.getPropertyValue('--kp-header')) || 0 : 0
+    window.scrollTo({ top: Math.max(0, y - header), behavior: smooth() })
+  }
+
   // На шаге «Размер» кухня показывается сверху, как чертёж.
+  // Новый шаг всегда открывается с начала, а не там, где листали прошлый.
   const goStep = (s: Step) => {
     setStep(s)
     if (s === 'size' && view !== 'top') changeView('top', true)
     else if (s !== 'size' && autoView.current && view === 'top') changeView('angle', true)
+    requestAnimationFrame(() => {
+      bodyRef.current?.scrollTo({ top: 0 })
+      if (isStacked()) reveal(panelRef.current, 'stage')
+    })
+  }
+
+  /** Последний шаг пройден — к проверке проекта и чертежам для мастера. */
+  const finishSteps = () => {
+    rootRef.current?.querySelector('.kp-check')?.scrollIntoView({ block: 'start', behavior: smooth() })
   }
 
   // Превью стилей — ваша же кухня в каждом стиле.
@@ -508,7 +623,8 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
 
   useEffect(() => {
     if (!toast) return
-    const timer = setTimeout(() => setToast(null), 2400)
+    // длинное сообщение висит дольше — чтобы успели прочитать
+    const timer = setTimeout(() => setToast(null), Math.max(2400, toast.length * 60))
     return () => clearTimeout(timer)
   }, [toast])
 
@@ -554,7 +670,9 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     setCartResult(null)
     setState((s) => ({ ...s, picks: { ...s.picks, [slot]: id } }))
   }
-  const setShape = (shape: Shape) => update({ shape, a: Math.max(state.a, minA(shape)), arrangement: undefined })
+  // Своя расстановка сбрасывается вместе со своими шкафами: иначе они
+  // оставались в адресе и в счётчике «Вернуть шкафы как было», но не в кухне.
+  const setShape = (shape: Shape) => update({ shape, a: Math.max(state.a, minA(shape)), arrangement: undefined, cabinets: undefined })
   const setFront = (key: string, v: FrontVariant) => {
     track()
     setState((s) => {
@@ -670,8 +788,8 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       e.preventDefault()
       removeCab()
     } else if (e.key === 'Escape') {
-      closeMeasure()
-      setMoving(null)
+      setMenu(false)
+      closeSelection()
     } else if (['1', '2', '3', '4'].includes(e.key) && engineState === 'ready') {
       changeView((['angle', 'eye', 'front', 'top'] as View[])[Number(e.key) - 1])
     }
@@ -706,11 +824,22 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       : t.otherWall
   const canOtherWall = moving ? canChangeWall(state.shape, movingKey ?? 'k1') : false
 
+  // Выбрали шкаф или технику. На телефоне его карточка выезжает снизу —
+  // кнопка консультанта на это время прячется, чтобы не закрыть её кнопки.
+  const sheetOpen = engineState === 'ready' && built && Boolean(measure || (moving && movingShown))
+  useEffect(() => {
+    document.documentElement.classList.toggle('kp-picking', sheetOpen)
+    return () => document.documentElement.classList.remove('kp-picking')
+  }, [sheetOpen])
+
   const openSlot = (slot: SlotKind) => {
+    const opening = !(step === 'tech' && open === slot)
     setStep('tech')
-    setOpen((o) => (o === slot ? null : slot))
+    setOpen(opening ? slot : null)
     setSelected(slot)
     engineRef.current?.focus(slot)
+    // список вариантов — сразу на виду, а не где-то ниже под итогом
+    if (opening) requestAnimationFrame(() => reveal(document.getElementById(`kp-slot-${slot}`), 'steps'))
   }
 
   const addAll = () => {
@@ -744,6 +873,12 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     setMeasure(null)
     setEditing(null)
     engineRef.current?.showMeasure(null)
+  }
+  /** Одно нажатие «закрыть» убирает всё про выбранное: размеры, фасады, перестановку. */
+  const closeSelection = () => {
+    closeMeasure()
+    setMoving(null)
+    setSelected(null)
   }
 
   const measureTitle = (d: Dims) => {
@@ -797,7 +932,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     const saved = storeVariants(
       [{ id: Date.now().toString(36), name: t.variantName(n), label, q: queryFromState(state), img, at: Date.now() }, ...variants].slice(0, 8),
     )
-    if (saved) setToast(t.variantSaved)
+    setToast(saved ? t.variantSaved : t.variantFailed)
   }
   const openVariant = (v: Variant) => {
     track()
@@ -887,6 +1022,22 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       ...(topName ? [{ label: t.topTitle, value: topName }] : []),
       ...(splashSel ? [{ label: t.splashTitle, value: `${nameOf(SPLASH_GROUPS.find((g) => g.id === splashSel.group))} · ${nameOf(splashSel)}` }] : []),
     ]
+  }
+
+  /** Что выбрано в каждом разделе отделки — подпись в свёрнутой строке. */
+  const ownFront = (id: string | undefined) => (id && id !== 'style' ? frontDesc(id) : '')
+  const finishNow = {
+    fronts: (() => {
+      const lower = ownFront(state.facade) || `${t.asStyle} · ${nameOf(tone)}`
+      return state.upperFacade ? `${lower} / ${ownFront(state.upperFacade) || t.asStyle}` : lower
+    })(),
+    handles: handleless
+      ? t.handleless
+      : `${nameOf(HANDLES.find((h) => h.id === handle))} · ${nameOf(HANDLE_METALS.find((m) => m.id === (state.handleMetal ?? style.metal)))}`,
+    top: topSel ? `${nameOf(TOP_MATERIALS.find((m) => m.id === topSel.material))} · ${nameOf(topSel)}` : t.asStyle,
+    splash: splashSel ? `${nameOf(SPLASH_GROUPS.find((g) => g.id === splashSel.group))} · ${nameOf(splashSel)}` : t.asStyle,
+    floor: nameOf(FLOORS.find((f) => f.id === (state.floor ?? style.floor))),
+    walls: nameOf(WALL_COLORS[state.wallColor ?? 0]),
   }
 
   const sheetTables = () => {
@@ -994,8 +1145,10 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
 
           {engineState === 'ready' && built && (
             <div className="kp-tags">
+              {/* пока показаны размеры выбранного, ценники молчат — иначе цифры ложатся друг на друга */}
               {prices &&
                 view !== 'top' &&
+                !measure &&
                 placedTags.map((slot) => {
                   const a = items[slot]!
                   return (
@@ -1049,58 +1202,24 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
             </div>
           )}
 
+          {/*
+            Инструменты над 3D. На компьютере — одной строкой. На телефоне
+            сверху только «отменить / вернуть», «ещё» и «на весь экран», виды —
+            внизу по центру, а вечер, цены, размеры и чёткость — в меню «ещё»
+            с подписями: значки без слов покупателю непонятны.
+          */}
           {engineState === 'ready' && (
-            <div className="kp-tools" role="toolbar" aria-label={t.viewLabel}>
-              <div className="kp-seg" role="radiogroup" aria-label={t.viewLabel}>
+            <div className="kp-tools" role="toolbar" aria-label={t.viewLabel} ref={toolsRef}>
+              <div className="kp-seg kp-views" role="radiogroup" aria-label={t.viewLabel}>
                 {(['angle', 'eye', 'front', 'top'] as View[]).map((v) => (
                   <button key={v} type="button" role="radio" aria-checked={view === v} className="kp-seg__btn" onClick={() => changeView(v)}>
                     {t.view[v]}
                   </button>
                 ))}
               </div>
-              <button type="button" className="kp-toggle" aria-pressed={evening} onClick={() => setEvening((e) => !e)}>
-                {evening ? <IconMoon /> : <IconSun />}
-                <span>{evening ? t.evening : t.day}</span>
-              </button>
               <button
                 type="button"
-                className="kp-toggle"
-                aria-pressed={prices}
-                onClick={() => {
-                  setPrices((p) => !p)
-                  setShowDims(false)
-                }}
-              >
-                <IconTag />
-                <span>{t.prices}</span>
-              </button>
-              <button
-                type="button"
-                className="kp-toggle kp-toggle--icon"
-                aria-pressed={full}
-                aria-label={full ? t.fullOff : t.fullOn}
-                title={full ? t.fullOff : t.fullOn}
-                onClick={() => setFull((f) => !f)}
-              >
-                {full ? <IconShrink /> : <IconExpand />}
-              </button>
-              <button
-                type="button"
-                className="kp-toggle kp-toggle--icon"
-                aria-pressed={showDims}
-                aria-label={t.dimsToggle}
-                title={t.dimsToggle}
-                onClick={() => {
-                  // размеры и цены вместе закрывают кухню — показываем что-то одно
-                  setShowDims((d) => !d)
-                  setPrices(showDims)
-                }}
-              >
-                <IconRuler />
-              </button>
-              <button
-                type="button"
-                className="kp-toggle kp-toggle--icon"
+                className="kp-toggle kp-toggle--icon kp-tools__undo"
                 aria-label={t.undo}
                 title={`${t.undo} (Ctrl+Z)`}
                 disabled={!hist.current.past.length}
@@ -1110,7 +1229,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
               </button>
               <button
                 type="button"
-                className="kp-toggle kp-toggle--icon"
+                className="kp-toggle kp-toggle--icon kp-tools__redo"
                 aria-label={t.redo}
                 title={`${t.redo} (Ctrl+Shift+Z)`}
                 disabled={!hist.current.future.length}
@@ -1118,107 +1237,176 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
               >
                 <IconUndo redo />
               </button>
-              <div
-                className="kp-seg kp-quality"
-                role="radiogroup"
-                aria-label={t.qualityLabel}
-                title={qualityPx || t.qualityLabel}
-                onPointerEnter={qualityTitle}
-                onFocus={qualityTitle}
+              <button
+                type="button"
+                ref={moreRef}
+                className="kp-toggle kp-toggle--icon kp-tools__more"
+                aria-expanded={menu}
+                aria-controls="kp-tools-extra"
+                aria-label={t.toolsMore}
+                title={t.toolsMore}
+                onClick={() => setMenu((m) => !m)}
               >
-                {(['hd', '4k'] as Quality[]).map((q) => (
-                  <button key={q} type="button" role="radio" aria-checked={quality === q} className="kp-seg__btn" onClick={() => changeQuality(q)}>
-                    {q === 'hd' ? 'HD' : '4K'}
-                  </button>
-                ))}
+                <IconDots />
+              </button>
+              <div className={`kp-tools__extra${menu ? ' is-open' : ''}`} id="kp-tools-extra" ref={menuRef}>
+                <button type="button" className="kp-toggle kp-tools__evening" aria-pressed={evening} onClick={() => setEvening((e) => !e)}>
+                  {evening ? <IconMoon /> : <IconSun />}
+                  <span className="kp-toggle__text">{evening ? t.evening : t.day}</span>
+                  <span className="kp-toggle__menu">{t.eveningLight}</span>
+                </button>
+                <button
+                  type="button"
+                  className="kp-toggle kp-tools__prices"
+                  aria-pressed={prices}
+                  onClick={() => {
+                    setPrices((p) => !p)
+                    setShowDims(false)
+                  }}
+                >
+                  <IconTag />
+                  <span className="kp-toggle__text">{t.prices}</span>
+                  <span className="kp-toggle__menu">{t.prices}</span>
+                </button>
+                <button
+                  type="button"
+                  className="kp-toggle kp-toggle--icon kp-tools__dims"
+                  aria-pressed={showDims}
+                  aria-label={t.dimsToggle}
+                  title={t.dimsToggle}
+                  onClick={() => {
+                    // размеры и цены вместе закрывают кухню — показываем что-то одно
+                    setShowDims((d) => !d)
+                    setPrices(showDims)
+                  }}
+                >
+                  <IconRuler />
+                  <span className="kp-toggle__menu">{t.dimsToggle}</span>
+                </button>
+                <div
+                  className="kp-seg kp-quality"
+                  role="radiogroup"
+                  aria-label={t.qualityLabel}
+                  title={qualityPx || t.qualityLabel}
+                  onPointerEnter={qualityTitle}
+                  onFocus={qualityTitle}
+                >
+                  <span className="kp-quality__label" aria-hidden="true">
+                    {t.qualityLabel}
+                  </span>
+                  {(['hd', '4k'] as Quality[]).map((q) => (
+                    <button key={q} type="button" role="radio" aria-checked={quality === q} className="kp-seg__btn" onClick={() => changeQuality(q)}>
+                      {q === 'hd' ? 'HD' : '4K'}
+                    </button>
+                  ))}
+                </div>
               </div>
+              <button
+                type="button"
+                className="kp-toggle kp-toggle--icon kp-tools__full"
+                aria-pressed={full}
+                aria-label={full ? t.fullOff : t.fullOn}
+                title={full ? t.fullOff : t.fullOn}
+                onClick={() => setFull((f) => !f)}
+              >
+                {full ? <IconShrink /> : <IconExpand />}
+              </button>
             </div>
           )}
 
-          {engineState === 'ready' && built && measure && (
-            <div className={`kp-size-card${editing ? ' kp-size-card--edit' : ''}`} role="group" aria-label={measureTitle(measure)}>
-              <span className="kp-size-card__title">{measureTitle(measure)}</span>
-              <span className="kp-size-card__nums">
-                {fmt(measure.w)} × {fmt(measure.h)} × {fmt(measure.d)} {t.cm}
-              </span>
-              <span className="kp-size-card__axes">{t.sizeAxes}</span>
-              <button type="button" className="kp-size-card__close" aria-label={t.close} onClick={closeMeasure}>
-                <IconClose />
-              </button>
-              {movingCabW !== null && editing?.row === 'base' && (
-                <div className="kp-cabw">
-                  <span className="kp-cabw__label">{t.widthLabel}</span>
-                  <button
-                    type="button"
-                    className="kp-size__step"
-                    aria-label={`${t.less}: ${t.widthLabel}`}
-                    disabled={movingCabW <= 15}
-                    onClick={() => setCabWidth(-1)}
-                  >
-                    −
+          {/*
+            Выбранный шкаф или техника: размеры, фасады, ширина, перестановка.
+            На компьютере — карточка сверху и полоска снизу 3D; на телефоне
+            всё вместе выезжает снизу экрана, а 3D остаётся открытым.
+          */}
+          {sheetOpen && (
+            <div className="kp-sel">
+              {measure && (
+                <div className={`kp-size-card${editing ? ' kp-size-card--edit' : ''}`} role="group" aria-label={measureTitle(measure)}>
+                  <span className="kp-size-card__title">{measureTitle(measure)}</span>
+                  <span className="kp-size-card__nums">
+                    {fmt(measure.w)} × {fmt(measure.h)} × {fmt(measure.d)} {t.cm}
+                  </span>
+                  <span className="kp-size-card__axes">{t.sizeAxes}</span>
+                  <button type="button" className="kp-size-card__close" aria-label={t.close} onClick={closeSelection}>
+                    <IconClose />
                   </button>
-                  <output className="kp-counter__value">
-                    {movingCabW} {t.cm}
-                  </output>
-                  <button
-                    type="button"
-                    className="kp-size__step"
-                    aria-label={`${t.more}: ${t.widthLabel}`}
-                    disabled={movingCabW >= 120}
-                    onClick={() => setCabWidth(1)}
-                  >
-                    +
-                  </button>
-                  {movingKey && isCabinet(movingKey) && (
-                    <button type="button" className="kp-cabw__remove" onClick={removeCab}>
-                      {t.removeCab}
-                    </button>
+                  {editing && (
+                    <div className="kp-fronts" role="radiogroup" aria-label={t.cabAsk}>
+                      <span className="kp-fronts__ask">{t.cabAsk}</span>
+                      <div className="kp-fronts__list">
+                        {editOptions.map((v) => (
+                          <button
+                            key={v}
+                            type="button"
+                            role="radio"
+                            aria-checked={editing.variant === v}
+                            className="kp-front-opt"
+                            onClick={() => editing.variant !== v && setFront(editing.key, v)}
+                          >
+                            <FrontIcon variant={v} row={editing.row} />
+                            <span>{frontLabel(v)}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {movingCabW !== null && editing?.row === 'base' && (
+                    <div className="kp-cabw">
+                      <span className="kp-cabw__label">{t.widthLabel}</span>
+                      <button
+                        type="button"
+                        className="kp-size__step"
+                        aria-label={`${t.less}: ${t.widthLabel}`}
+                        disabled={movingCabW <= 15}
+                        onClick={() => setCabWidth(-1)}
+                      >
+                        −
+                      </button>
+                      <output className="kp-counter__value">
+                        {movingCabW} {t.cm}
+                      </output>
+                      <button
+                        type="button"
+                        className="kp-size__step"
+                        aria-label={`${t.more}: ${t.widthLabel}`}
+                        disabled={movingCabW >= 120}
+                        onClick={() => setCabWidth(1)}
+                      >
+                        +
+                      </button>
+                      {movingKey && isCabinet(movingKey) && (
+                        <button type="button" className="kp-cabw__remove" onClick={removeCab}>
+                          {t.removeCab}
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
-              {editing && (
-                <div className="kp-fronts" role="radiogroup" aria-label={t.cabAsk}>
-                  <span className="kp-fronts__ask">{t.cabAsk}</span>
-                  <div className="kp-fronts__list">
-                    {editOptions.map((v) => (
-                      <button
-                        key={v}
-                        type="button"
-                        role="radio"
-                        aria-checked={editing.variant === v}
-                        className="kp-front-opt"
-                        onClick={() => editing.variant !== v && setFront(editing.key, v)}
-                      >
-                        <FrontIcon variant={v} row={editing.row} />
-                        <span>{frontLabel(v)}</span>
-                      </button>
-                    ))}
-                  </div>
+
+              {moving && movingShown && (
+                <div className="kp-move" role="group" aria-label={movingName}>
+                  <span className="kp-move__name">
+                    {movingName}
+                    <small>{t.moveHint2}</small>
+                  </span>
+                  <button type="button" className="kp-move__btn" aria-label={t.moveLeft} onClick={() => stepMoving(-1)}>
+                    <IconArrow flip />
+                  </button>
+                  <button type="button" className="kp-move__btn" aria-label={t.moveRight} onClick={() => stepMoving(1)}>
+                    <IconArrow />
+                  </button>
+                  {canOtherWall && (
+                    <button type="button" className="kp-move__wall" onClick={toOtherWall}>
+                      {otherWallLabel}
+                    </button>
+                  )}
+                  <button type="button" className="kp-move__btn kp-move__close" aria-label={t.close} onClick={closeSelection}>
+                    <IconClose />
+                  </button>
                 </div>
               )}
-            </div>
-          )}
-
-          {engineState === 'ready' && built && moving && movingShown && (
-            <div className="kp-move" role="group" aria-label={movingName}>
-              <span className="kp-move__name">
-                {movingName}
-                <small>{t.moveHint2}</small>
-              </span>
-              <button type="button" className="kp-move__btn" aria-label={t.moveLeft} onClick={() => stepMoving(-1)}>
-                <IconArrow flip />
-              </button>
-              <button type="button" className="kp-move__btn" aria-label={t.moveRight} onClick={() => stepMoving(1)}>
-                <IconArrow />
-              </button>
-              {canOtherWall && (
-                <button type="button" className="kp-move__wall" onClick={toOtherWall}>
-                  {otherWallLabel}
-                </button>
-              )}
-              <button type="button" className="kp-move__btn kp-move__close" aria-label={t.close} onClick={() => setMoving(null)}>
-                <IconClose />
-              </button>
             </div>
           )}
 
@@ -1233,8 +1421,8 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
           )}
         </div>
 
-        <aside className="kp-panel" aria-label={t.title}>
-          <nav className="kp-steps" aria-label={t.title}>
+        <aside className="kp-panel" aria-label={t.title} ref={panelRef}>
+          <nav className="kp-steps" aria-label={t.title} ref={stepsRef}>
             {STEPS.map((s, i) => (
               <button key={s} type="button" className="kp-steps__btn" aria-current={step === s ? 'step' : undefined} onClick={() => goStep(s)}>
                 <span className="kp-steps__icon">{STEP_ICON[s]}</span>
@@ -1244,7 +1432,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
             ))}
           </nav>
 
-          <div className="kp-body">
+          <div className="kp-body" ref={bodyRef}>
             {step === 'shape' && (
               <div className="kp-shapes" role="radiogroup" aria-label={t.steps.shape}>
                 {SHAPES.map((s) => (
@@ -1354,212 +1542,226 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
             {step === 'finish' && (
               <div className="kp-finish">
                 <p className="kp-note">{t.finishLead}</p>
-                <h2 className="kp-sub kp-sub--first">{t.frontsTitle2}</h2>
-                <div className="kp-seg kp-seg--wide" role="radiogroup" aria-label={t.frontsTitle2}>
-                  {(['all', 'lower', 'upper'] as const).map((k) => (
-                    <button key={k} type="button" role="radio" aria-checked={paintFor === k} className="kp-seg__btn" onClick={() => setPaintFor(k)}>
-                      {t.finishTarget[k]}
-                    </button>
-                  ))}
-                </div>
-                <div className="kp-chips" role="tablist" aria-label={t.frontsTitle2}>
-                  {FRONT_MATERIALS.map((m) => (
-                    <button key={m.id} type="button" role="tab" aria-selected={frontMat === m.id} className="kp-chip" onClick={() => setFrontMat(m.id)}>
-                      {lang === 'ky' ? m.ky : m.ru}
-                    </button>
-                  ))}
-                </div>
-                <p className="kp-note kp-note--tight">
-                  {(() => {
-                    const m = FRONT_MATERIALS.find((x) => x.id === frontMat)!
-                    return lang === 'ky' ? m.noteKy : m.noteRu
-                  })()}
-                </p>
-                <div className="kp-colors" role="radiogroup" aria-label={t.frontsTitle2}>
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={paintFor === 'upper' ? !state.upperFacade : !state.facade}
-                    className="kp-color"
-                    onClick={() =>
-                      paintFor === 'upper'
-                        ? update({ upperFacade: undefined })
-                        : paintFor === 'lower'
-                          ? update({ facade: undefined })
-                          : update({ facade: undefined, upperFacade: undefined })
-                    }
-                  >
-                    <span className="kp-color__chip" style={{ background: toneSwatch(tone.facade, tone.upper, tone.texture) }} />
-                    <span>{t.asStyle}</span>
-                  </button>
-                  {FRONT_COLORS.filter((c) => c.material === frontMat).map((c) => {
-                    const on = paintFor === 'upper' ? state.upperFacade === c.id : state.facade === c.id && (paintFor === 'lower' || !state.upperFacade)
-                    return (
-                      <button
-                        key={c.id}
-                        type="button"
-                        role="radio"
-                        aria-checked={on}
-                        className="kp-color"
-                        onClick={() =>
-                          paintFor === 'upper'
-                            ? update({ upperFacade: c.id })
-                            : paintFor === 'lower'
-                              ? update({ facade: c.id, upperFacade: state.upperFacade ?? 'style' })
-                              : update({ facade: c.id, upperFacade: undefined })
-                        }
-                      >
-                        <span className={`kp-color__chip kp-color__chip--${c.material}`} style={{ background: colorSwatch(c.color, c.texture) }} />
-                        <span>{lang === 'ky' ? c.ky : c.ru}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-
-                <h2 className="kp-sub">{t.handlesTitle}</h2>
-                <Switch
-                  checked={handleless}
-                  title={t.handleless}
-                  note={t.handlelessNote}
-                  onChange={(on) => update({ handleless: on === (style.handle === 'gola') ? undefined : on })}
-                />
-                {!handleless && (
-                  <>
-                    <div className="kp-handles" role="radiogroup" aria-label={t.handlesTitle}>
-                      {HANDLES.map((h) => (
-                        <button
-                          key={h.id}
-                          type="button"
-                          role="radio"
-                          aria-checked={handle === h.id}
-                          className="kp-handle"
-                          onClick={() => update({ handle: h.id === style.handle ? undefined : h.id })}
-                        >
-                          <HandleIcon kind={h.id} />
-                          <span>{lang === 'ky' ? h.ky : h.ru}</span>
+                {/*
+                  Шесть разделов отделки свёрнуты в строки: в каждой — что
+                  выбрано сейчас. Открыт один раздел за раз, а не простыня
+                  из сотни образцов.
+                */}
+                <div className="kp-parts">
+                  <Part title={t.frontsTitle2} value={finishNow.fronts} open onOpen={(el) => reveal(el, 'steps')}>
+                    <div className="kp-seg kp-seg--wide" role="radiogroup" aria-label={t.frontsTitle2}>
+                      {(['all', 'lower', 'upper'] as const).map((k) => (
+                        <button key={k} type="button" role="radio" aria-checked={paintFor === k} className="kp-seg__btn" onClick={() => setPaintFor(k)}>
+                          {t.finishTarget[k]}
                         </button>
                       ))}
                     </div>
-                    <div className="kp-metals" role="radiogroup" aria-label={t.handleMetal}>
-                      <span className="kp-metals__label">{t.handleMetal}</span>
-                      {HANDLE_METALS.map((m) => (
-                        <button
-                          key={m.id}
-                          type="button"
-                          role="radio"
-                          aria-checked={(state.handleMetal ?? style.metal) === m.id}
-                          aria-label={lang === 'ky' ? m.ky : m.ru}
-                          title={lang === 'ky' ? m.ky : m.ru}
-                          className="kp-metal"
-                          style={{ background: m.swatch }}
-                          onClick={() => update({ handleMetal: m.id === style.metal ? undefined : m.id })}
-                        />
+                    <div className="kp-chips" role="tablist" aria-label={t.frontsTitle2}>
+                      {FRONT_MATERIALS.map((m) => (
+                        <button key={m.id} type="button" role="tab" aria-selected={frontMat === m.id} className="kp-chip" onClick={() => setFrontMat(m.id)}>
+                          {lang === 'ky' ? m.ky : m.ru}
+                        </button>
                       ))}
                     </div>
-                  </>
-                )}
-
-                <h2 className="kp-sub">{t.topTitle}</h2>
-                <div className="kp-chips" role="tablist" aria-label={t.topTitle}>
-                  {TOP_MATERIALS.map((m) => (
-                    <button key={m.id} type="button" role="tab" aria-selected={topMat === m.id} className="kp-chip" onClick={() => setTopMat(m.id)}>
-                      {lang === 'ky' ? m.ky : m.ru}
-                    </button>
-                  ))}
-                </div>
-                <p className="kp-note kp-note--tight">
-                  {(() => {
-                    const m = TOP_MATERIALS.find((x) => x.id === topMat)!
-                    return lang === 'ky' ? m.noteKy : m.noteRu
-                  })()}
-                </p>
-                <div className="kp-colors" role="radiogroup" aria-label={t.topTitle}>
-                  <button type="button" role="radio" aria-checked={!state.top} className="kp-color" onClick={() => update({ top: undefined })}>
-                    <span className="kp-color__chip" style={{ background: style.splashColor }} />
-                    <span>{t.asStyle}</span>
-                  </button>
-                  {TOPS.filter((c) => c.material === topMat).map((c) => (
-                    <button key={c.id} type="button" role="radio" aria-checked={state.top === c.id} className="kp-color" onClick={() => update({ top: c.id })}>
-                      <span className="kp-color__chip" style={{ background: topSwatch(c.look) }} />
-                      <span>
-                        {lang === 'ky' ? c.ky : c.ru}
-                        <small>{c.cm * 10} мм</small>
-                      </span>
-                    </button>
-                  ))}
-                </div>
-
-                <h2 className="kp-sub">{t.splashTitle}</h2>
-                <div className="kp-chips" role="tablist" aria-label={t.splashTitle}>
-                  {SPLASH_GROUPS.map((g) => (
-                    <button key={g.id} type="button" role="tab" aria-selected={splashGroup === g.id} className="kp-chip" onClick={() => setSplashGroup(g.id)}>
-                      {lang === 'ky' ? g.ky : g.ru}
-                    </button>
-                  ))}
-                </div>
-                <p className="kp-note kp-note--tight">
-                  {(() => {
-                    const g = SPLASH_GROUPS.find((x) => x.id === splashGroup)!
-                    return lang === 'ky' ? g.noteKy : g.noteRu
-                  })()}
-                </p>
-                <div className="kp-colors" role="radiogroup" aria-label={t.splashTitle}>
-                  <button type="button" role="radio" aria-checked={!state.splash} className="kp-color" onClick={() => update({ splash: undefined })}>
-                    <span className="kp-color__chip" style={{ background: style.splashColor }} />
-                    <span>{t.asStyle}</span>
-                  </button>
-                  {SPLASHES.filter((c) => c.group === splashGroup).map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={state.splash === c.id}
-                      className="kp-color"
-                      onClick={() => update({ splash: c.id })}
-                    >
-                      <span
-                        className={`kp-color__chip${c.kind === 'glass' ? ' kp-color__chip--acrylic' : ''}`}
-                        style={{ background: splashSwatch(c, topSel?.look.base ?? style.splashColor, wallColor ?? style.wall) }}
-                      />
-                      <span>{lang === 'ky' ? c.ky : c.ru}</span>
-                    </button>
-                  ))}
-                </div>
-
-                <h2 className="kp-sub">{t.floorTitle}</h2>
-                <div className="kp-swatches" role="radiogroup" aria-label={t.floorTitle}>
-                  {FLOORS.map((f) => {
-                    const on = (state.floor ?? style.floor) === f.id
-                    return (
+                    <p className="kp-note kp-note--tight">
+                      {(() => {
+                        const m = FRONT_MATERIALS.find((x) => x.id === frontMat)!
+                        return lang === 'ky' ? m.noteKy : m.noteRu
+                      })()}
+                    </p>
+                    <div className="kp-colors" role="radiogroup" aria-label={t.frontsTitle2}>
                       <button
-                        key={f.id}
                         type="button"
                         role="radio"
-                        aria-checked={on}
-                        className="kp-swatch"
-                        onClick={() => update({ floor: f.id === style.floor ? undefined : f.id })}
+                        aria-checked={paintFor === 'upper' ? !state.upperFacade : !state.facade}
+                        className="kp-color"
+                        onClick={() =>
+                          paintFor === 'upper'
+                            ? update({ upperFacade: undefined })
+                            : paintFor === 'lower'
+                              ? update({ facade: undefined })
+                              : update({ facade: undefined, upperFacade: undefined })
+                        }
                       >
-                        <span className="kp-swatch__chip" style={{ background: f.swatch }} />
-                        <span>{lang === 'ky' ? f.ky : f.ru}</span>
+                        <span className="kp-color__chip" style={{ background: toneSwatch(tone.facade, tone.upper, tone.texture) }} />
+                        <span>{t.asStyle}</span>
                       </button>
-                    )
-                  })}
-                </div>
-                <h2 className="kp-sub">{t.wallTitle}</h2>
-                <div className="kp-swatches" role="radiogroup" aria-label={t.wallTitle}>
-                  {WALL_COLORS.map((c, i) => (
-                    <button
-                      key={c.ru}
-                      type="button"
-                      role="radio"
-                      aria-checked={(state.wallColor ?? 0) === i}
-                      className="kp-swatch"
-                      onClick={() => update({ wallColor: i || undefined })}
-                    >
-                      <span className="kp-swatch__chip" style={{ background: c.color ?? style.wall }} />
-                      <span>{lang === 'ky' ? c.ky : c.ru}</span>
-                    </button>
-                  ))}
+                      {FRONT_COLORS.filter((c) => c.material === frontMat).map((c) => {
+                        const on = paintFor === 'upper' ? state.upperFacade === c.id : state.facade === c.id && (paintFor === 'lower' || !state.upperFacade)
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            role="radio"
+                            aria-checked={on}
+                            className="kp-color"
+                            onClick={() =>
+                              paintFor === 'upper'
+                                ? update({ upperFacade: c.id })
+                                : paintFor === 'lower'
+                                  ? update({ facade: c.id, upperFacade: state.upperFacade ?? 'style' })
+                                  : update({ facade: c.id, upperFacade: undefined })
+                            }
+                          >
+                            <span className={`kp-color__chip kp-color__chip--${c.material}`} style={{ background: colorSwatch(c.color, c.texture) }} />
+                            <span>{lang === 'ky' ? c.ky : c.ru}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </Part>
+
+                  <Part title={t.handlesTitle} value={finishNow.handles} onOpen={(el) => reveal(el, 'steps')}>
+                    <Switch
+                      checked={handleless}
+                      title={t.handleless}
+                      note={t.handlelessNote}
+                      onChange={(on) => update({ handleless: on === (style.handle === 'gola') ? undefined : on })}
+                    />
+                    {!handleless && (
+                      <>
+                        <div className="kp-handles" role="radiogroup" aria-label={t.handlesTitle}>
+                          {HANDLES.map((h) => (
+                            <button
+                              key={h.id}
+                              type="button"
+                              role="radio"
+                              aria-checked={handle === h.id}
+                              className="kp-handle"
+                              onClick={() => update({ handle: h.id === style.handle ? undefined : h.id })}
+                            >
+                              <HandleIcon kind={h.id} />
+                              <span>{lang === 'ky' ? h.ky : h.ru}</span>
+                            </button>
+                          ))}
+                        </div>
+                        <div className="kp-metals" role="radiogroup" aria-label={t.handleMetal}>
+                          <span className="kp-metals__label">{t.handleMetal}</span>
+                          {HANDLE_METALS.map((m) => (
+                            <button
+                              key={m.id}
+                              type="button"
+                              role="radio"
+                              aria-checked={(state.handleMetal ?? style.metal) === m.id}
+                              aria-label={lang === 'ky' ? m.ky : m.ru}
+                              title={lang === 'ky' ? m.ky : m.ru}
+                              className="kp-metal"
+                              style={{ background: m.swatch }}
+                              onClick={() => update({ handleMetal: m.id === style.metal ? undefined : m.id })}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </Part>
+
+                  <Part title={t.topTitle} value={finishNow.top} onOpen={(el) => reveal(el, 'steps')}>
+                    <div className="kp-chips" role="tablist" aria-label={t.topTitle}>
+                      {TOP_MATERIALS.map((m) => (
+                        <button key={m.id} type="button" role="tab" aria-selected={topMat === m.id} className="kp-chip" onClick={() => setTopMat(m.id)}>
+                          {lang === 'ky' ? m.ky : m.ru}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="kp-note kp-note--tight">
+                      {(() => {
+                        const m = TOP_MATERIALS.find((x) => x.id === topMat)!
+                        return lang === 'ky' ? m.noteKy : m.noteRu
+                      })()}
+                    </p>
+                    <div className="kp-colors" role="radiogroup" aria-label={t.topTitle}>
+                      <button type="button" role="radio" aria-checked={!state.top} className="kp-color" onClick={() => update({ top: undefined })}>
+                        <span className="kp-color__chip" style={{ background: style.splashColor }} />
+                        <span>{t.asStyle}</span>
+                      </button>
+                      {TOPS.filter((c) => c.material === topMat).map((c) => (
+                        <button key={c.id} type="button" role="radio" aria-checked={state.top === c.id} className="kp-color" onClick={() => update({ top: c.id })}>
+                          <span className="kp-color__chip" style={{ background: topSwatch(c.look) }} />
+                          <span>
+                            {lang === 'ky' ? c.ky : c.ru}
+                            <small>{c.cm * 10} мм</small>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </Part>
+
+                  <Part title={t.splashTitle} value={finishNow.splash} onOpen={(el) => reveal(el, 'steps')}>
+                    <div className="kp-chips" role="tablist" aria-label={t.splashTitle}>
+                      {SPLASH_GROUPS.map((g) => (
+                        <button key={g.id} type="button" role="tab" aria-selected={splashGroup === g.id} className="kp-chip" onClick={() => setSplashGroup(g.id)}>
+                          {lang === 'ky' ? g.ky : g.ru}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="kp-note kp-note--tight">
+                      {(() => {
+                        const g = SPLASH_GROUPS.find((x) => x.id === splashGroup)!
+                        return lang === 'ky' ? g.noteKy : g.noteRu
+                      })()}
+                    </p>
+                    <div className="kp-colors" role="radiogroup" aria-label={t.splashTitle}>
+                      <button type="button" role="radio" aria-checked={!state.splash} className="kp-color" onClick={() => update({ splash: undefined })}>
+                        <span className="kp-color__chip" style={{ background: style.splashColor }} />
+                        <span>{t.asStyle}</span>
+                      </button>
+                      {SPLASHES.filter((c) => c.group === splashGroup).map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={state.splash === c.id}
+                          className="kp-color"
+                          onClick={() => update({ splash: c.id })}
+                        >
+                          <span
+                            className={`kp-color__chip${c.kind === 'glass' ? ' kp-color__chip--acrylic' : ''}`}
+                            style={{ background: splashSwatch(c, topSel?.look.base ?? style.splashColor, wallColor ?? style.wall) }}
+                          />
+                          <span>{lang === 'ky' ? c.ky : c.ru}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </Part>
+
+                  <Part title={t.floorTitle} value={finishNow.floor} onOpen={(el) => reveal(el, 'steps')}>
+                    <div className="kp-swatches" role="radiogroup" aria-label={t.floorTitle}>
+                      {FLOORS.map((f) => {
+                        const on = (state.floor ?? style.floor) === f.id
+                        return (
+                          <button
+                            key={f.id}
+                            type="button"
+                            role="radio"
+                            aria-checked={on}
+                            className="kp-swatch"
+                            onClick={() => update({ floor: f.id === style.floor ? undefined : f.id })}
+                          >
+                            <span className="kp-swatch__chip" style={{ background: f.swatch }} />
+                            <span>{lang === 'ky' ? f.ky : f.ru}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </Part>
+
+                  <Part title={t.wallTitle} value={finishNow.walls} onOpen={(el) => reveal(el, 'steps')}>
+                    <div className="kp-swatches" role="radiogroup" aria-label={t.wallTitle}>
+                      {WALL_COLORS.map((c, i) => (
+                        <button
+                          key={c.ru}
+                          type="button"
+                          role="radio"
+                          aria-checked={(state.wallColor ?? 0) === i}
+                          className="kp-swatch"
+                          onClick={() => update({ wallColor: i || undefined })}
+                        >
+                          <span className="kp-swatch__chip" style={{ background: c.color ?? style.wall }} />
+                          <span>{lang === 'ky' ? c.ky : c.ru}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </Part>
                 </div>
                 {(state.facade || state.upperFacade || state.top || state.splash || state.handle || state.handleMetal || state.handleless !== undefined) && (
                   <button
@@ -1676,10 +1878,15 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
               </ul>
             )}
 
-            {step !== 'tech' && (
+            {step !== 'tech' ? (
               <button type="button" className="btn btn--outline kp-next" onClick={() => goStep(STEPS[stepIndex + 1])}>
                 {t.next}: {t.steps[STEPS[stepIndex + 1]]}
                 <IconArrow />
+              </button>
+            ) : (
+              <button type="button" className="btn btn--outline kp-next" onClick={finishSteps}>
+                {t.done}
+                <IconArrow down />
               </button>
             )}
           </div>
@@ -1687,7 +1894,10 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
           <div className="kp-sum">
             <div className="kp-sum__row">
               <span className="kp-sum__label">
-                {t.total} · {t.pieces(inProject.length)}
+                <span className="kp-sum__long">
+                  {t.total} · {t.pieces(inProject.length)}
+                </span>
+                <span className="kp-sum__short">{t.totalShort(inProject.length)}</span>
               </span>
               <span className="kp-sum__price">{formatSom(total)}</span>
             </div>
@@ -1702,7 +1912,8 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
               </p>
             ) : (
               <button type="button" className="btn btn--primary kp-sum__cta" disabled={inProject.length === 0} onClick={addAll}>
-                {t.addAll}
+                <span className="kp-sum__long">{t.addAll}</span>
+                <span className="kp-sum__short">{t.addAllShort}</span>
               </button>
             )}
             <p className="kp-sum__honest">{t.honest}</p>
@@ -1894,6 +2105,38 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
 
 /* ───────── части панели ───────── */
 
+/**
+ * Раздел отделки: строка «название — что выбрано сейчас», по нажатию
+ * раскрывается. Открыт один раздел за раз (name у details). Открыли рукой —
+ * раздел встаёт на виду целиком; первый раздел открыт сразу и никуда не листает.
+ */
+function Part(props: { title: string; value: string; open?: boolean; onOpen: (el: HTMLElement) => void; children: React.ReactNode }) {
+  const byHand = useRef(false)
+  return (
+    <details
+      className="kp-part"
+      name="kp-finish"
+      open={props.open}
+      onToggle={(e) => {
+        const hand = byHand.current
+        byHand.current = false
+        if (hand && e.currentTarget.open) props.onOpen(e.currentTarget)
+      }}
+    >
+      <summary
+        className="kp-part__head"
+        onClick={() => {
+          byHand.current = true
+        }}
+      >
+        <span className="kp-part__title">{props.title}</span>
+        <span className="kp-part__value">{props.value}</span>
+      </summary>
+      <div className="kp-part__body">{props.children}</div>
+    </details>
+  )
+}
+
 function Switch(props: { checked: boolean; disabled?: boolean; title: string; note?: string; className?: string; onChange: (on: boolean) => void }) {
   return (
     <label className={`kp-switch${props.className ? ` ${props.className}` : ''}`}>
@@ -1927,7 +2170,16 @@ function SizeField({
   const clamp = (v: number) => Math.min(max, Math.max(min, Math.round(v / 5) * 5))
   const [draft, setDraft] = useState(String(value))
   useEffect(() => setDraft(String(value)), [value])
-  const id = `kp-size-${label.replace(/\W+/g, '-')}`
+  // Своё число — в пределах и кратно 5. Если после поправки оно совпало с
+  // прежним, поле всё равно показывает поправленное, а не то, что набрали.
+  const commit = () => {
+    const next = clamp(Number(draft) || value)
+    setDraft(String(next))
+    if (next !== value) onChange(next)
+  }
+  // У русских и кыргызских подписей все буквы — «не \w»: прежний id выходил
+  // одинаковым у потолка и окна, и нажатие на подпись ставило курсор не туда.
+  const id = useId()
   return (
     <div className="kp-size">
       <label className="kp-size__label" htmlFor={id}>
@@ -1944,9 +2196,9 @@ function SizeField({
             inputMode="numeric"
             value={draft}
             onChange={(e) => setDraft(e.target.value.replace(/\D/g, '').slice(0, 3))}
-            onBlur={() => onChange(clamp(Number(draft) || value))}
+            onBlur={commit}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') onChange(clamp(Number(draft) || value))
+              if (e.key === 'Enter') commit()
             }}
           />
           <span>{t.cm}</span>
@@ -2015,7 +2267,7 @@ function SlotRow(props: {
   const optional = OPTIONAL.includes(slot)
   const listId = `kp-opts-${slot}`
   return (
-    <li className={`kp-slot${open ? ' is-open' : ''}${dropped ? ' is-dropped' : ''}`}>
+    <li className={`kp-slot${open ? ' is-open' : ''}${dropped ? ' is-dropped' : ''}`} id={`kp-slot-${slot}`}>
       <button type="button" className="kp-slot__head" aria-expanded={open} aria-controls={listId} onClick={props.onToggle}>
         <span className="kp-slot__thumb">{current?.image && !none ? <img src={current.image} alt="" loading="lazy" /> : <SlotIcon slot={slot} />}</span>
         <span className="kp-slot__text">
@@ -2331,10 +2583,18 @@ function IconFile() {
   )
 }
 
-function IconArrow({ flip = false }: { flip?: boolean }) {
+function IconArrow({ flip = false, down = false }: { flip?: boolean; down?: boolean }) {
   return (
-    <svg {...iconProps} style={flip ? { transform: 'scaleX(-1)' } : undefined}>
+    <svg {...iconProps} style={flip ? { transform: 'scaleX(-1)' } : down ? { transform: 'rotate(90deg)' } : undefined}>
       <path d="M5 12h14M13 6l6 6-6 6" {...stroke} />
+    </svg>
+  )
+}
+
+function IconDots() {
+  return (
+    <svg {...iconProps}>
+      <path d="M5.5 12h.01M12 12h.01M18.5 12h.01" {...stroke} strokeWidth={3.2} />
     </svg>
   )
 }
