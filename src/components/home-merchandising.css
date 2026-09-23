@@ -1,5 +1,14 @@
 /* Витринные подборки в существующей бело-лимонной системе. */
-.daily-selection { display: grid; grid-template-columns: 1fr 3fr; gap: 22px; }
+/* Между «Товаром дня» и «Специально для вас» зазор шире, чем между карточками
+   внутри ряда: иначе четыре карточки читались как один ряд. */
+.daily-selection { display: grid; grid-template-columns: 1fr 3fr; gap: 44px; }
+.daily-selection__card { position: relative; display: flex; flex: 1; }
+.daily-selection__card .card { width: 100%; }
+.daily-selection__card .card__badges { display: none; }
+.daily-selection__label { position: absolute; top: 12px; left: 12px; z-index: 3; background: var(--color-lemon); color: var(--color-ink); border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 800; letter-spacing: .01em; pointer-events: none; }
+.daily-selection__discount { position: absolute; top: 46px; left: 12px; z-index: 3; background: var(--color-danger); color: #fff; border-radius: 6px; padding: 5px 9px; font-size: 13px; font-weight: 800; pointer-events: none; }
+/* Описания здесь не показываем — как в «Хитах»: ровные плитки, цена на виду. */
+.daily-selection .card__desc { display: none; }
 .daily-selection section { min-width: 0; display: flex; flex-direction: column; }
 .daily-selection .section__head { min-height: 68px; margin-bottom: 16px; }
 .daily-selection .section__title { font-size: clamp(22px, 2.2vw, 30px); }
