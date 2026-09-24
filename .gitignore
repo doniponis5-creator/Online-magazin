@@ -61,3 +61,4 @@ build-play/
 
 # Журнал вопросов из чата — только на сервере, в git не нужен
 data/
+.autopilot/serve.*

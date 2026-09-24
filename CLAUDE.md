@@ -166,3 +166,27 @@ PC — сайт, расширение 1С и сервер SBonus: `src/`, `publi
 **Если GitHub не открывается** (в Кыргызстане так бывает): коммить локально и
 жди. Не пытайся обойти через новую ветку или второй remote — разведёшь копии,
 которые потом никто не сведёт.
+
+<!-- autopilot:start -->
+## Autopilot
+
+Крупные задачи ведутся навыком `/autopilot`. Требования, спецификация и таски — в
+`.autopilot/<дата>-<задача>/`, прогресс — `.autopilot/dashboard.html`. Правило:
+требование из `manifest.md` может снять только владелец.
+
+Если работа прервалась — скажи «продолжи автопилот»: состояние поднимется из
+`.autopilot/state.js`, переспрашивать ничего не нужно.
+
+### Подводные камни кухни (24.09.2026)
+
+- `src/app/api/kitchen/photo/route.ts`: белый список фото собран из `products[].image` при сборке сайта (`src/data/1c/catalog.json` — статический импорт) — новое фото из 1С прокси отдаст только после `deploy/site/update_site.sh`; чужой `src` → 400 без запроса наружу.
+- Тот же список живёт в `store('kitchen-photo-allow')` (`src/lib/store.ts`) — в `npm run dev` переживает перезагрузку файла: правишь список — перезапусти dev.
+- Заголовки безопасности (рамка, referrer, nosniff) — `headers()` в `next.config.ts`, в nginx их нет и не дублировать.
+- `src/components/kitchen/three/governor.ts` — чистая функция, чёткость только в движении; `engine.ts` зовёт её лишь на телефоне-ветке, `!this.mobile` не трогать. Порог «быстро» 17,5 мс (rAF на 60 Гц = 16,7 мс, ниже никогда не сработает), рывок обрезан 80 мс.
+- `lowEnd` в `engine.ts` = телефон и (`deviceMemory` ≤ 3 или ядер ≤ 4 или `LOW_END_GPU`); iPhone не называет ни память, ни видеокарту — там решают только ядра (iPhone 7 / SE 2016 → простой).
+- `KitchenPlanner.tsx`: движок рисует в `.kp-scene` (`hostRef`), не в `.kp-stage` (`stageRef`) — иначе полоса видов `.kp-stage__bar` попадает в кадр и в фото. Её высота — `--kp-strip` (40 px только в телефонной раскладке).
+- Раскладка телефона: одна и та же строка `(max-width: 900px) and (min-height: 521px)` — `STACKED` в `KitchenPlanner.tsx` и `@media` в `kitchen.css`; менять обе.
+- Полный экран с листом настроек: `fullPanel` → класс `is-panel` ставится только вместе с `kp--full` и стилизован только внутри телефонного `@media`; на компьютере полный экран прежний.
+- `src/lib/kitchen/variants.ts` `parseVariants` фильтрует `localStorage['kp-variants']` — битая запись раньше роняла страницу; сырой `JSON.parse` туда не возвращать.
+- Тесты: `npx vitest run` (23 файла, 247 passed на 24.09.2026); один — `npx vitest run __tests__/kitchen.test.ts`; также `kitchen-governor.test.ts`, `kitchen-variants.test.ts`.
+<!-- autopilot:end -->
