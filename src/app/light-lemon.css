@@ -56,10 +56,11 @@ input, textarea { caret-color: var(--color-primary); }
 .brand__name { font-size: 23px; line-height: 1.2; font-weight: 800; letter-spacing: -.035em; color: var(--color-ink); }
 .logo { font-family: var(--font); letter-spacing: normal; flex-shrink: 0; }
 .header { background: #fff; box-shadow: none; border-bottom: 1px solid var(--color-border); }
-.header__utility { display: flex; justify-content: space-between; align-items: center; min-height: 30px; font-size: 11px; color: var(--color-ink-soft); border-bottom: 1px solid #f1f3f6; }
+.header__utility { display: flex; justify-content: space-between; align-items: center; min-height: 30px; font-size: 12px; color: var(--color-ink-soft); border-bottom: 1px solid #f1f3f6; }
 .header__utility > span:first-child { display: flex; align-items: center; gap: 6px; }
 .header__inner { gap: 22px; min-height: 80px; }
-.header__catalog-btn { height: 44px; padding-inline: 20px; }
+/* Каталог и поиск одной высоты: их верх и низ стоят на одной линии. */
+.header__catalog-btn { height: 46px; padding-inline: 20px; }
 .header__search { min-width: 120px; }
 .search__input { height: 46px; background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: none; font-size: 14px; }
 .search__input::placeholder { color: var(--color-muted); opacity: 1; }
@@ -72,18 +73,64 @@ input, textarea { caret-color: var(--color-primary); }
 .search__clear:hover { background: var(--color-border); color: var(--color-ink); }
 .header__actions { gap: 14px; }
 .header__actions .icon-btn { width: auto; min-width: 46px; height: 50px; display: flex; flex-direction: column; gap: 4px; border: 0; background: transparent; }
-.header__action-label { font-size: 10px; font-weight: 550; }
+.header__actions .icon-btn:hover { color: var(--color-primary); }
+.header__action-label { font-size: 12px; font-weight: 600; }
+/* «Вы здесь» — тот же знак, что в нижней навигации телефона: тёмная жирная
+   подпись и залитая лимоном иконка. Синий цвет «в корзине что-то есть»
+   убран: об этом уже говорит число, а три значка стояли разного цвета. */
+.header__actions .icon-btn[aria-current='page'] { color: var(--color-ink); }
+.header__actions .icon-btn[aria-current='page'] .header__action-label { font-weight: 750; }
+.header__actions .icon-btn[aria-current='page'] svg { fill: var(--color-lemon); }
 .icon-btn__badge, .bottom-nav__badge { background: var(--color-lemon); color: var(--color-ink); }
+/* Белое кольцо отделяет лимонное число от иконки, когда иконка открытого
+   раздела сама залита лимоном. */
+.icon-btn__badge { box-shadow: 0 0 0 2px #fff; }
+/* Число прижато к самой иконке, а не к краю подписи: у «Избранного» и
+   «Корзины» подписи разной ширины, и числа стояли на разном расстоянии. */
+.header__actions .icon-btn__badge { top: 0; right: auto; left: calc(50% + 3px); }
 /* Переключатель языка — одна тихая надпись «RU | КЫР», без цветной плашки:
    текущий язык тёмный и жирный, другой — серый. Синяя плашка спорила
    с лимонным фирменным цветом и выглядела как отдельная кнопка. */
 .lang-switch { background: transparent; padding: 0; gap: 0; }
 .lang-switch__item { font-size: 12px; padding: 6px 8px; border-radius: 6px; font-weight: 600; letter-spacing: .02em; }
-.lang-switch__item + .lang-switch__item { border-left: 1px solid var(--color-border); border-radius: 0; }
+/* Черта между языками — короткая, в высоту букв, а не во всю кнопку. */
+.lang-switch__item + .lang-switch__item { position: relative; border-radius: 0; }
+.lang-switch__item + .lang-switch__item::before { content: ''; position: absolute; left: 0; top: 50%; width: 1px; height: 14px; transform: translateY(-50%); background: var(--color-border-strong); }
 .lang-switch__item[aria-current] { background: transparent; color: var(--color-ink); font-weight: 800; box-shadow: none; }
-.header__subnav { min-height: 40px; gap: 24px; border-top: 0; }
-.subnav__link { font-size: 12px; color: var(--color-ink); font-weight: 600; }
+.lang-switch__item:not([aria-current]):hover { color: var(--color-ink); }
+
+/* Разделы — всегда одной строкой. Раньше при нехватке места каждое название
+   ломалось на две строки («Стиральные / машины»). Теперь на широком экране
+   разделы расходятся по всей ширине, а где не влезают — строка листается
+   вбок, и край, за которым есть ещё разделы, мягко растворяется.
+   Поля −14px/4px: текст первого раздела стоит ровно под логотипом, а рамке
+   фокуса есть место внутри прокрутки. */
+.header__subnav { min-height: 40px; gap: 4px; border-top: 0; justify-content: space-between; margin-inline: -14px; padding: 2px 4px 8px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+.header__subnav::-webkit-scrollbar { display: none; }
+.subnav__link { position: relative; flex: none; white-space: nowrap; padding: 8px 10px; font-size: 12px; color: var(--color-ink); font-weight: 600; }
+.subnav__link:focus-visible { outline-offset: 0; }
 .subnav__link--kitchen { color: var(--color-primary); font-weight: 700; }
+/* Открытый раздел — лимонный штрих под названием, как в нижней навигации. */
+.subnav__link[aria-current='page'] { font-weight: 750; }
+.subnav__link[aria-current='page']::after { content: ''; position: absolute; left: 10px; right: 10px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--color-lemon); }
+@property --subnav-fade-start { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@property --subnav-fade-end { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@keyframes subnav-fade {
+  0% { --subnav-fade-start: 0px; --subnav-fade-end: 48px; }
+  6%, 94% { --subnav-fade-start: 48px; --subnav-fade-end: 48px; }
+  100% { --subnav-fade-start: 48px; --subnav-fade-end: 0px; }
+}
+/* Растворение края работает от прокрутки самой строки. Если строке нечего
+   листать, анимация не действует и края остаются чёткими. Браузер без этой
+   возможности просто листает строку без растворения. */
+@supports (animation-timeline: scroll()) {
+  .header__subnav {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--subnav-fade-start), #000 calc(100% - var(--subnav-fade-end)), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 var(--subnav-fade-start), #000 calc(100% - var(--subnav-fade-end)), transparent);
+    animation: subnav-fade linear both;
+    animation-timeline: scroll(self inline);
+  }
+}
 .header__city { display: none; }
 
 /* Объём товара остаётся главным визуальным акцентом. */
@@ -251,7 +298,6 @@ input, textarea { caret-color: var(--color-primary); }
   .header__inner { gap: 14px; }
   .brand__name { font-size: 20px; }
   .header__actions { gap: 6px; }
-  .header__subnav { gap: 18px; }
   .hero3d { --scene-h: 530px; }
   .hero3d__content { padding-left: 32px; }
   .hero3d__frame { top: 12%; }

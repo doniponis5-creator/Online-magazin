@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useEffect, useState, type FormEvent, type MouseEvent } from 'react'
+import { Suspense, useEffect, useRef, useState, type FormEvent, type MouseEvent } from 'react'
 import { categories } from '@/data/categories'
 import { useCart } from '@/lib/cart/CartProvider'
 import { useFavorites } from '@/lib/favorites/FavoritesProvider'
@@ -93,6 +93,23 @@ function HeaderInner() {
   const favCount = mounted ? fav.ids.length : 0
   const search = searchParams.toString() ? `?${searchParams.toString()}` : ''
 
+  // «Вы здесь» — как в нижней навигации телефона: отмечаем раздел, где
+  // человек сейчас, а не то, что в корзине что-то лежит (это видно по числу).
+  const here = (path: string) => (pathname.startsWith(`/${lang}/${path}`) ? 'page' : undefined)
+  const activeCat = pathname === `/${lang}/catalog` ? searchParams.get('cat') : null
+
+  // На узком экране строка разделов листается вбок. Открытый раздел
+  // подвозим в середину строки, чтобы он не прятался за краем.
+  const subnavRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const nav = subnavRef.current
+    const cur = nav?.querySelector<HTMLElement>('[aria-current="page"]')
+    if (!nav || !cur) return
+    const n = nav.getBoundingClientRect()
+    const c = cur.getBoundingClientRect()
+    if (c.left < n.left || c.right > n.right) nav.scrollLeft += c.left - n.left - (n.width - c.width) / 2
+  }, [pathname, activeCat])
+
   return (
     <>
       {/* Полоса под часами и значком батареи. Без неё товары видно сквозь них,
@@ -151,9 +168,8 @@ function HeaderInner() {
           </form>
 
           <div className="header__actions">
-            <Link href={`/${lang}/account`} className="icon-btn" aria-label={lang === 'ky' ? 'Жеке кабинет' : 'Личный кабинет'}>
-              <IconUser size={22} /><span className="header__action-label">{lang === 'ky' ? 'Кабинет' : 'Кабинет'}</span>
-            </Link>
+            {/* Язык стоит первым: три значка с подписями идут одной группой,
+                а не разорваны надписью «RU | КЫР». */}
             <nav className="lang-switch" aria-label={t.a11y.langSwitch}>
               <Link
                 href={buildLangHref(pathname, search, lang)}
@@ -174,9 +190,19 @@ function HeaderInner() {
             </nav>
 
             <Link
+              href={`/${lang}/account`}
+              className="icon-btn"
+              aria-label={lang === 'ky' ? 'Жеке кабинет' : 'Личный кабинет'}
+              aria-current={here('account')}
+            >
+              <IconUser size={22} /><span className="header__action-label">Кабинет</span>
+            </Link>
+
+            <Link
               href={`/${lang}/favorites`}
-              className={`icon-btn${favCount > 0 ? ' is-active' : ''}`}
+              className="icon-btn"
               aria-label={`${t.nav.toFavorites}${mounted && favCount ? ` (${favCount})` : ''}`}
+              aria-current={here('favorites')}
             >
               <IconHeart size={22} />
               <span className="header__action-label">{t.nav.favorites}</span>
@@ -189,8 +215,9 @@ function HeaderInner() {
 
             <Link
               href={`/${lang}/cart`}
-              className={`icon-btn${cartCount > 0 ? ' is-active' : ''}`}
+              className="icon-btn"
               aria-label={`${t.nav.toCart}${mounted && cartCount ? ` (${cartCount})` : ''}`}
+              aria-current={here('cart')}
             >
               <IconCart size={22} />
               <span className="header__action-label">{t.nav.cart}</span>
@@ -203,17 +230,18 @@ function HeaderInner() {
           </div>
         </div>
 
-        <nav className="header__subnav" aria-label={t.categories.title}>
+        <nav className="header__subnav" aria-label={t.categories.title} ref={subnavRef}>
           {categories.map((c) => (
             <Link
               key={c.id}
               href={buildCatalogHref(lang, { cat: c.id })}
               className="subnav__link"
+              aria-current={activeCat === c.id ? 'page' : undefined}
             >
               {lang === 'ky' ? c.nameKy : c.nameRu}
             </Link>
           ))}
-          <Link href={`/${lang}/kitchen`} className="subnav__link subnav__link--kitchen">
+          <Link href={`/${lang}/kitchen`} className="subnav__link subnav__link--kitchen" aria-current={here('kitchen')}>
             {lang === 'ky' ? '3D-ашкана' : '3D-кухня'}
           </Link>
           <span className="header__city">
