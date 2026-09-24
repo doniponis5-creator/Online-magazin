@@ -340,6 +340,7 @@ const ru = {
   removeVariant: 'Удалить',
   variantSaved: 'Вариант сохранён',
   qualityLabel: 'Чёткость 3D',
+  qualityLite: 'Лёгкий',
   qualityPixels: (w: number, h: number) => `В покое ${w} × ${h} точек`,
   /* удобство: телефон и последний шаг */
   toolsMore: 'Ещё настройки вида',
@@ -672,6 +673,7 @@ const ky: Texts = {
   removeVariant: 'Өчүрүү',
   variantSaved: 'Вариант сакталды',
   qualityLabel: '3D тактыгы',
+  qualityLite: 'Жеңил',
   qualityPixels: (w, h) => `Токтоп турганда ${w} × ${h} чекит`,
   toolsMore: 'Көрүнүштүн жөндөөлөрү',
   toolsMoreShort: 'Дагы',

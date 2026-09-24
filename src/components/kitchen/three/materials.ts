@@ -20,7 +20,8 @@ export type RoomLook = { floor?: FloorKind; wall?: string | null }
 /** upper: 'style' — верх в цвете стиля, даже если низ из каталога (двухцветная кухня) */
 export type FinishLook = { facade?: FrontColor; upper?: FrontColor | 'style'; top?: TopChoice }
 
-export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolean, room: RoomLook = {}, finish: FinishLook = {}) {
+/** lite — «Лёгкий»: те же цвета и картинки, но без рельефа (bump) и карт шероховатости. */
+export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolean, room: RoomLook = {}, finish: FinishLook = {}, lite = false) {
   const owned: THREE.Material[] = []
   const keep = <M extends THREE.Material>(m: M) => {
     owned.push(m)
@@ -31,7 +32,7 @@ export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolea
 
   const roughness = THREE.MathUtils.lerp(0.62, 0.1, style.gloss)
   // Матовая краска — с живой фактурой; глянец и шпон — без неё.
-  const paintGrain = style.gloss < 0.5 ? tex(scaled(T.grain(), 0.35)) : null
+  const paintGrain = style.gloss < 0.5 && !lite ? tex(scaled(T.grain(), 0.35)) : null
   const front = (color: string, texture?: FrontTexture) => {
     // Бетон — матовая шершавая плита; керамика под мрамор — полированный камень.
     if (texture === 'concrete') {
@@ -55,7 +56,7 @@ export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolea
         color: woodGrain ? '#ffffff' : color,
         map: woodMap,
         // волокна чуть рельефны — дерево не выглядит напечатанным
-        bumpMap: woodMap,
+        bumpMap: lite ? null : woodMap,
         bumpScale: 0.45,
         roughness: woodGrain ? 0.55 : roughness,
         roughnessMap: woodGrain ? null : paintGrain,
@@ -74,7 +75,7 @@ export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolea
    * ламинат — матовый (или с рисунком дерева и бетона), шпон — дерево под лаком.
    */
   const catalogFront = (c: FrontColor) => {
-    const grain = tex(scaled(T.grain(), 0.35))
+    const grain = lite ? null : tex(scaled(T.grain(), 0.35))
     switch (c.material) {
       case 'acrylic':
         return keep(new THREE.MeshPhysicalMaterial({ color: c.color, roughness: 0.06, clearcoat: 1, clearcoatRoughness: 0.015, reflectivity: 0.65 }))
@@ -86,12 +87,12 @@ export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolea
         return keep(new THREE.MeshPhysicalMaterial({ color: c.color, roughness: 0.42, roughnessMap: grain, clearcoat: 0.18, clearcoatRoughness: 0.5 }))
       case 'veneer': {
         const map = tex(scaled(T.wood(c.color, 31), 1, true))
-        return keep(new THREE.MeshPhysicalMaterial({ map, bumpMap: map, bumpScale: 0.6, roughness: 0.46, clearcoat: 0.3, clearcoatRoughness: 0.35 }))
+        return keep(new THREE.MeshPhysicalMaterial({ map, bumpMap: lite ? null : map, bumpScale: 0.6, roughness: 0.46, clearcoat: 0.3, clearcoatRoughness: 0.35 }))
       }
       case 'laminate':
         if (c.texture === 'wood') {
           const map = tex(scaled(T.wood(c.color, 41), 1, true))
-          return keep(new THREE.MeshStandardMaterial({ map, bumpMap: map, bumpScale: 0.35, roughness: 0.6 }))
+          return keep(new THREE.MeshStandardMaterial({ map, bumpMap: lite ? null : map, bumpScale: 0.35, roughness: 0.6 }))
         }
         if (c.texture === 'concrete') return keep(new THREE.MeshStandardMaterial({ map: tex(scaled(T.concrete(c.color, 17), 1.3, true)), roughness: 0.82 }))
         return keep(new THREE.MeshStandardMaterial({ color: c.color, roughness: 0.58, roughnessMap: grain }))
@@ -104,6 +105,8 @@ export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolea
   const fluted = (base: THREE.Material): THREE.Material => {
     const found = flutedCache.get(base)
     if (found) return found
+    // рейки — это только рельеф; без него в «Лёгком» фасад просто гладкий
+    if (lite) return base
     const m = (base as THREE.MeshPhysicalMaterial).clone()
     m.bumpMap = tex(scaled(T.flutes(), 0.03))
     m.bumpScale = 1.6
@@ -202,7 +205,7 @@ export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolea
 
   const wallMap = tex(scaled(T.paint(room.wall ?? style.wall), 0.8))
   // лёгкая фактура штукатурки
-  const wall = keep(new THREE.MeshStandardMaterial({ map: wallMap, bumpMap: wallMap, bumpScale: 0.5, roughness: 0.92 }))
+  const wall = keep(new THREE.MeshStandardMaterial({ map: wallMap, bumpMap: lite ? null : wallMap, bumpScale: 0.5, roughness: 0.92 }))
   // Белый потолок светлый от отражённого света — чуть светится сам.
   const ceiling = keep(new THREE.MeshStandardMaterial({ color: '#f7f6f3', roughness: 0.95, emissive: '#f3f1ec', emissiveIntensity: evening ? 0.06 : 0.42 }))
   // На фото (трассировка лучей) потолок светлеет от настоящего отражённого света.
@@ -212,6 +215,7 @@ export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolea
 
   /** Пол: швы досок и плитки чуть утоплены — рельеф из той же картинки. */
   const relief = <M extends THREE.MeshStandardMaterial>(m: M, scale: number) => {
+    if (lite) return m
     m.bumpMap = m.map
     m.bumpScale = scale
     return m
@@ -337,6 +341,8 @@ export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolea
   const rubber = keep(new THREE.MeshStandardMaterial({ color: '#17181a', roughness: 0.8 }))
 
   return {
+    /** лёгкая сборка: без рельефа; сборка по нему же пропускает внутренности */
+    lite,
     facade,
     upper,
     textured,

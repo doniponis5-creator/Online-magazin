@@ -2096,9 +2096,9 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                   <span className="kp-quality__label" aria-hidden="true">
                     {t.qualityLabel}
                   </span>
-                  {(['hd', '4k'] as Quality[]).map((q) => (
+                  {(['lite', 'hd', '4k'] as Quality[]).map((q) => (
                     <button key={q} type="button" role="radio" aria-checked={quality === q} className="kp-seg__btn" onClick={() => changeQuality(q)}>
-                      {q === 'hd' ? 'HD' : '4K'}
+                      {q === 'lite' ? t.qualityLite : q === 'hd' ? 'HD' : '4K'}
                     </button>
                   ))}
                 </div>

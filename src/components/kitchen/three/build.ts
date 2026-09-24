@@ -65,6 +65,13 @@ export type BuildInput = {
   fronts: Record<string, FrontVariant>
   /** детальность картинок: 2 — компьютер, 1 — телефон, 0,5 — превью */
   detail?: number
+  /**
+   * «Лёгкий» (слабый телефон): без внутренностей шкафов и техники, без мелочей
+   * на столешнице, без рельефа материалов (детальность картинок задаёт движок).
+   * Форма кухни, размеры и спецификация для мебельщика — те же. Внутри сборки
+   * признак читается из `mats.lite`.
+   */
+  lite?: boolean
   /** отделка из каталога: фасады, столешница */
   finish?: FinishLook
   /** своя высота пеналов и колонны с духовкой, см */
@@ -344,7 +351,8 @@ function carcass(
   const toCeiling = y1 >= ctx.wallH - 0.01
   if (opts.top && toCeiling) g.add(mesh(panels([[t, y1 - t, 0, w - t, y1, depth]]), sides))
   else if (opts.top) inner.push([t, y1 - t, 0, w - t, y1, depth])
-  for (const y of opts.shelves ?? []) inner.push([t, y - t / 2, 0.008, w - t, y + t / 2, depth - 0.02])
+  // «Лёгкий»: полки не рисуем, но мебельщику они считаются как прежде
+  if (!ctx.mats.lite) for (const y of opts.shelves ?? []) inner.push([t, y - t / 2, 0.008, w - t, y + t / 2, depth - 0.02])
   if (inner.length) g.add(mesh(panels(inner), ctx.mats.interior))
   ctx.carcasses.push({
     row: y0 >= 1 ? 'upper' : y1 - y0 > 1 ? 'tall' : 'base',
@@ -360,6 +368,7 @@ function carcass(
 
 /** Посуда на полке закрытого шкафа или витрины: стопка тарелок и стаканы. */
 function dishes(ctx: Ctx, g: THREE.Object3D, x0: number, x1: number, y: number, depth: number) {
+  if (ctx.mats.lite) return
   if (x1 - x0 < 0.3) return
   const plates: THREE.BufferGeometry[] = []
   for (let j = 0; j < 5; j++) plates.push(new THREE.CylinderGeometry(0.1, 0.085, 0.012, 28).translate(x0 + 0.13, y + 0.007 + j * 0.013, depth / 2))
@@ -676,6 +685,7 @@ function columnTopOf(ctx: Ctx, m: Module): number {
 
 /** Продукты в пенале: банки с крупами и коробки. */
 function pantryGoods(ctx: Ctx, g: THREE.Object3D, w: number, shelves: number[]) {
+  if (ctx.mats.lite) return
   const jars: THREE.BufferGeometry[] = []
   const boxes: THREE.BufferGeometry[] = []
   shelves.forEach((y, row) => {
@@ -1171,6 +1181,8 @@ function lemons(ctx: Ctx, g: THREE.Group, x: number, y: number, z: number) {
 
 function decorRun(ctx: Ctx, run: Run, g: THREE.Group) {
   if (run.id === 'I') return
+  // «Лёгкий»: ни лимонов, ни доски с чайником — десятки мелких деталей
+  if (ctx.mats.lite) return
   let spot: Module | undefined
   if (!ctx.lemons) {
     spot = run.modules.find((m) => m.role === 'work' && m.w >= 45) ?? run.modules.find((m) => m.role === 'side' && m.w >= 40)
@@ -1547,7 +1559,7 @@ export function buildKitchen(input: BuildInput): Built {
 }
 
 function assemble(input: BuildInput): Built {
-  const mats = createMaterials(input.style, input.tone, input.evening, { floor: input.room.floor, wall: input.room.wall }, input.finish)
+  const mats = createMaterials(input.style, input.tone, input.evening, { floor: input.room.floor, wall: input.room.wall }, input.finish, Boolean(input.lite))
   const counterY = BODY_TOP + cm(input.style.topCm)
   const h = heights(input)
   const ctx: Ctx = {

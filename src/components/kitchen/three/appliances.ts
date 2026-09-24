@@ -56,13 +56,16 @@ export function oven(a: KitchenAppliance | undefined, mats: Mats, photo?: Photo 
   const ch = doorH - 0.08
   const cd = 0.42
   g.add(mesh(box(cw, ch, cd), mats.enamel, w / 2, 0.04 + ch / 2, -cd / 2, false))
-  for (const y of [0.04 + ch * 0.28, 0.04 + ch * 0.58]) {
-    const rk = rack(mats, cw - 0.02, cd - 0.06, 9)
-    rk.position.set((w - cw) / 2 + 0.01, y, -cd + 0.03)
-    g.add(rk)
+  // «Лёгкий»: камера пустая — решётки это сотни прутьев
+  if (!mats.lite) {
+    for (const y of [0.04 + ch * 0.28, 0.04 + ch * 0.58]) {
+      const rk = rack(mats, cw - 0.02, cd - 0.06, 9)
+      rk.position.set((w - cw) / 2 + 0.01, y, -cd + 0.03)
+      g.add(rk)
+    }
+    // тёплая лампа в глубине — видна, когда дверца открыта
+    g.add(mesh(new THREE.PlaneGeometry(0.05, 0.05), mats.warm, w - 0.08, 0.04 + ch - 0.05, -cd + 0.002, false))
   }
-  // тёплая лампа в глубине — видна, когда дверца открыта
-  g.add(mesh(new THREE.PlaneGeometry(0.05, 0.05), mats.warm, w - 0.08, 0.04 + ch - 0.05, -cd + 0.002, false))
 
   // пульт
   g.add(slab(finish, 0, doorH, 0, w, h, d, true))
@@ -211,13 +214,14 @@ export function fridge(a: KitchenAppliance, mats: Mats, photo?: Photo | null): T
   // полки и продукты в холодильной камере
   const fresh0 = a.fridge === 'top' ? 0.05 : split ?? 0.05
   const fresh1 = a.fridge === 'top' ? (split ?? h) - 0.03 : h - t - 0.04
-  const shelves = 3
+  // «Лёгкий»: камера пустая — продукты это самая дорогая геометрия техники
+  const shelves = mats.lite ? 0 : 3
   for (let i = 1; i <= shelves; i++) {
     const y = fresh0 + ((fresh1 - fresh0) / (shelves + 1)) * i
     g.add(mesh(box(w - 2 * t - 0.01, 0.006, bd - t - 0.04), mats.shelfGlass, w / 2, y, t + (bd - t) / 2, false))
     g.add(groceries(w, y + 0.003, t + 0.02, bd - 0.05, i * 2 + Math.round(w * 10)))
   }
-  g.add(mesh(new THREE.PlaneGeometry(w * 0.4, 0.02), mats.led, w / 2, fresh1 - 0.01, t + 0.05, false))
+  if (!mats.lite) g.add(mesh(new THREE.PlaneGeometry(w * 0.4, 0.02), mats.led, w / 2, fresh1 - 0.01, t + 0.05, false))
 
   const usePhoto = fitsFront(photo, a.w, a.h)
   const bar = (door: THREE.Object3D, x: number, y0: number, y1: number) =>
@@ -230,7 +234,7 @@ export function fridge(a: KitchenAppliance, mats: Mats, photo?: Photo | null): T
     leaf.add(mesh(rounded(dwid, dh, doorT, 0.01), finish, dwid / 2, dh / 2, doorT / 2))
     // изнутри — белая панель с полочками
     leaf.add(slab(mats.plastic, 0.03, 0.03, -0.004, dwid - 0.03, dh - 0.03, 0.001))
-    if (dr.hinge !== 'drawer') {
+    if (dr.hinge !== 'drawer' && !mats.lite) {
       for (let k = 1; k <= 3; k++) leaf.add(slab(mats.plastic, 0.05, (dh / 4) * k - 0.04, -0.07, dwid - 0.05, (dh / 4) * k, -0.004))
     }
     if (usePhoto) {
@@ -310,6 +314,8 @@ export function dishwasherInside(mats: Mats, w: number, h: number, d: number): T
   const ih = h - 0.06
   const id = d - 0.04
   g.add(mesh(box(iw, ih, id), mats.tub, w / 2, 0.03 + ih / 2, id / 2 + 0.01, false))
+  // «Лёгкий»: пустой бак без корзин и посуды
+  if (mats.lite) return g
   const lower = rack(mats, iw - 0.04, id - 0.06, 8)
   lower.position.set(0.04, 0.09, 0.03)
   g.add(lower)

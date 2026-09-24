@@ -75,7 +75,8 @@ export type View = 'angle' | 'front' | 'top' | 'eye'
  * рисуется до 3840 точек в ширину (и в движении не ниже полуторной чёткости),
  * картинки материалов — самые подробные.
  */
-export type Quality = 'hd' | '4k'
+/** lite — «Лёгкий»: кухня собирается без внутренностей, теней и рельефа (слабый телефон). */
+export type Quality = 'lite' | 'hd' | '4k'
 
 export type Pick = { slot: SlotKind | null; item: ItemKey | null; dims: Dims | null; cab: CabInfo | null }
 
@@ -257,7 +258,9 @@ export class KitchenEngine {
     } catch {
       saved = null
     }
-    this.quality = saved === 'hd' || saved === '4k' ? saved : weak ? 'hd' : '4k'
+    // Простой телефон без сохранённого выбора — «Лёгкий»: ему не по силам
+    // даже HD с тенями и внутренностями шкафов.
+    this.quality = saved === 'lite' || saved === 'hd' || saved === '4k' ? saved : this.lowEnd ? 'lite' : weak ? 'hd' : '4k'
     this.applyQuality()
     this.canvasRatio = Math.min(window.devicePixelRatio || 1, 2)
     r.setPixelRatio(this.mobile ? this.baseRatio : this.canvasRatio)
@@ -280,7 +283,8 @@ export class KitchenEngine {
     this.scene.environmentIntensity = DAY.env
     this.scene.background = new THREE.Color('#eef0f3')
 
-    this.sun.castShadow = true
+    // в «Лёгком» теней нет: без источников с тенью рендерер их и не считает
+    this.sun.castShadow = !this.lite
     const size = this.shadowSize()
     this.sun.shadow.mapSize.set(size, size)
     this.sun.shadow.bias = -0.0003
@@ -291,7 +295,7 @@ export class KitchenEngine {
     // солнца в окне — иначе основной свет сверху не прошёл бы в комнату.
     this.camera.layers.enable(CEILING_LAYER)
     if (!this.mobile) {
-      this.windowSun.castShadow = true
+      this.windowSun.castShadow = !this.lite
       this.windowSun.shadow.mapSize.set(2048, 2048)
       this.windowSun.shadow.bias = -0.0004
       this.windowSun.shadow.normalBias = 0.02
@@ -375,7 +379,7 @@ export class KitchenEngine {
     const first = !this.built
     const old = this.built
     this.input = input
-    this.built = buildKitchen({ ...input, evening: this.evening, detail: this.detail })
+    this.built = buildKitchen({ ...input, evening: this.evening, detail: this.detail, lite: this.lite })
     this.scene.add(this.built.root)
     if (old) {
       this.scene.remove(old.root)
@@ -443,7 +447,8 @@ export class KitchenEngine {
     if (this.skyLight) this.skyLight.intensity = win ? k.sky : 0
     this.scene.environmentIntensity = this.scene.environment === this.roomEnv && this.roomEnv ? k.room : k.env
     if (this.bloom) {
-      this.bloom.enabled = e
+      // «Лёгкий» — без свечения ламп: это второй полный проход по кадру
+      this.bloom.enabled = e && !this.lite
       this.bloom.strength = k.bloom
       this.bloom.threshold = k.threshold
     }
@@ -1511,7 +1516,8 @@ export class KitchenEngine {
     this.probeDirty = false
     // Телефону снимок не по силам: шесть лишних кадров после каждой
     // пересборки, а отражения на маленьком экране и от студийной карты хороши.
-    if (this.mobile) return
+    // «Лёгкому» — тоже: отражения в нём из студийной карты.
+    if (this.mobile || this.lite) return
     const plan = this.input?.plan
     if (!plan || !this.built) return
     if (!this.probe) {
@@ -1576,8 +1582,10 @@ export class KitchenEngine {
       this.detail = 2
       setBudget(this.mobile ? 200e6 : 480e6)
     } else {
+      // «Лёгкий» — чёткость и память как у HD, а картинки материалов вчетверо
+      // мельче (0,5, как у превью стилей): экономит не точки, а сборку и видеопамять
       this.baseRatio = this.mobile ? 1 : Math.min(dpr, 1.5)
-      this.detail = this.mobile ? 1 : 2
+      this.detail = this.lite ? 0.5 : this.mobile ? 1 : 2
       // память под картинки не урезаем и простому телефону: при меньшей
       // выбрасывались картинки, на которых стоит сама кухня, — и она чернела
       setBudget(this.mobile ? 110e6 : 420e6)
@@ -1597,8 +1605,14 @@ export class KitchenEngine {
     return this.quality
   }
 
+  /** «Лёгкий» — единственный признак для всех веток движка. */
+  private get lite(): boolean {
+    return this.quality === 'lite'
+  }
+
   setQuality(q: Quality) {
     if (q === this.quality) return
+    const wasLite = this.lite
     this.quality = q
     try {
       window.localStorage.setItem('kp-quality', q)
@@ -1606,16 +1620,30 @@ export class KitchenEngine {
       // приватный режим — выбор просто не запомнится
     }
     const prevDetail = this.detail
+    const lite = this.lite
     this.applyQuality()
-    // на телефоне с чёткостью меняется и карта теней — старую отдаём, новую выделит сам рендерер
+    // тени включаются и выключаются источником: у света без тени рендерер
+    // пересобирает шейдеры сам, чёрных «дыр» от старой карты не остаётся.
+    // Свет окна есть только на компьютере — как в конструкторе.
+    this.sun.castShadow = !lite
+    if (!this.mobile) this.windowSun.castShadow = !lite
+    // снимка комнаты в «Лёгком» нет — отражения из студийной карты (яркость
+    // как в captureRoom); обратно снимок сделает пересборка (probeDirty)
+    if (lite && this.scene.environment === this.roomEnv) {
+      this.scene.environment = this.studioEnv
+      this.scene.environmentIntensity = (this.evening ? NIGHT : DAY).env
+    }
+    // на телефоне с чёткостью меняется и карта теней — старую отдаём, новую
+    // выделит сам рендерер; в «Лёгком» карта не нужна вовсе (на ПК это 4096²)
     const size = this.shadowSize()
-    if (this.mobile && this.sun.shadow.mapSize.x !== size) {
+    if (lite || (this.mobile && this.sun.shadow.mapSize.x !== size)) {
       this.sun.shadow.mapSize.set(size, size)
       this.sun.shadow.map?.dispose()
       this.sun.shadow.map = null
     }
-    // телефон в 4K берёт картинки материалов подробнее — кухню пересобираем
-    if (this.detail !== prevDetail && this.input) this.setKitchen(this.input, null, false)
+    // телефон в 4K берёт картинки материалов подробнее — кухню пересобираем;
+    // «Лёгкий» — другая сборка, пересобираем всегда
+    if ((this.detail !== prevDetail || lite !== wasLite) && this.input) this.setKitchen(this.input, null, false)
     this.resize()
   }
 
@@ -1808,7 +1836,7 @@ export class KitchenEngine {
     if (!this.built || !this.input) return ''
     const r = this.renderer
     // превью маленькое — ему хватает картинок вчетверо мельче
-    const temp = buildKitchen({ ...input, evening: false, detail: 0.5 })
+    const temp = buildKitchen({ ...input, evening: false, detail: 0.5, lite: this.lite })
     const prevEvening = this.evening
     this.built.root.visible = false
     if (this.outline) this.outline.visible = false
