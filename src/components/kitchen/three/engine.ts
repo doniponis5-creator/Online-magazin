@@ -13,6 +13,7 @@ import type { SpecData } from '@/lib/kitchen/spec'
 import type { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js'
 import { sharpenPass } from './sharpen'
 import { buildKitchen, CEILING_LAYER, WALL_H, WINDOW, type BuildInput, type Built, type CabInfo, type Dims } from './build'
+import { governStep, newGovernor, type GovernorState } from './governor'
 import type { PhotoTracer } from './photoreal'
 import { setBudget } from './textures'
 
@@ -104,7 +105,7 @@ const OPEN_AMOUNT: Record<OpenInfo['kind'], number> = { swing: 1.5, lift: 1.15, 
 /** Сколько держать палец на предмете, чтобы взять его. */
 const HOLD_MS = 380
 /** Видеокарты недорогих Android-телефонов: Mali-400/T-серии/G31–G52, PowerVR, младшие Adreno. */
-const LOW_END_GPU = /mali-(4\d\d|t\d+|g31|g51|g52)|powervr|adreno \(tm\) (3\d\d|4\d\d|50\d|51\d|60\d|610)|swiftshader|llvmpipe/i
+const LOW_END_GPU =/mali-(4\d\d|t\d+|g31|g51|g52)|powervr|adreno \(tm\) (3\d\d|4\d\d|50\d|51\d|60\d|610)|swiftshader|llvmpipe/i
 
 type Tween = { start: number; duration: number; step: (t: number) => void; done?: () => void }
 
@@ -196,8 +197,33 @@ export class KitchenEngine {
   private photo: PhotoRun | null = null
   /** встроенная или мобильная видеокарта: фото заранее не готовим */
   private weakGpu = false
-  /** простой телефон: 2–3 ГБ памяти или слабая видеокарта — рисуем ещё проще */
+  /** простой телефон: 2–3 ГБ памяти, слабая видеокарта или ≤ 4 ядер — рисуем ещё проще */
   private lowEnd = false
+  /**
+   * Губернатор кадров (governor.ts): рабочая чёткость в движении. Начинает с
+   * baseRatio и опускается сама, если кадры в движении тянутся дольше 30 мс, —
+   * на слабом телефоне кухня иначе дёргается. Возвращается вверх, когда кадры
+   * снова быстрые. Покой (fineRatio) не трогает: там дорисовка всегда полная.
+   */
+  private governor: GovernorState = newGovernor(1)
+  /** время прошлого кадра в движении; 0 — прошлый кадр был покоем */
+  private motionLast = 0
+  /** вкладку спрятали, а кадр просили — нарисуем, когда вернут */
+  private wake = false
+  private onVisibility = () => {
+    if (document.visibilityState === 'hidden') {
+      // спрятанной вкладке кадры не нужны; ждущий кадр снимаем, чтобы не
+      // проснуться посреди чужого экрана
+      if (this.raf) {
+        cancelAnimationFrame(this.raf)
+        this.raf = 0
+        this.wake = true
+      }
+    } else if (this.wake) {
+      this.wake = false
+      this.invalidate()
+    }
+  }
 
   constructor(
     private host: HTMLElement,
@@ -205,7 +231,9 @@ export class KitchenEngine {
   ) {
     this.mobile = window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 768
     this.reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' })
+    // На телефоне сглаживание выключено: холст там ровно в точках экрана и
+    // на dpr 2–3 ступенек не видно, а видеокарта на нём тратит до трети кадра.
+    this.renderer = new THREE.WebGLRenderer({ antialias: !this.mobile, powerPreference: 'high-performance' })
     const r = this.renderer
     // 4K — сразу на хорошей видеокарте; на телефоне и встроенной графике — HD.
     // Выбор покупателя помним.
@@ -214,10 +242,15 @@ export class KitchenEngine {
     this.weakGpu = weak
     // Простой телефон — ещё проще: холст в точках экрана и тени мельче.
     // Видеокарте такого телефона вдвое меньше точек на каждый кадр.
-    // Память называет только Chrome на Android. iPhone не называет ни памяти,
-    // ни видеокарты (у всех «Apple GPU») — он остаётся в обычном режиме телефона.
+    // Память называет только Chrome на Android; видеокарту iPhone не называет
+    // (у всех «Apple GPU»). Ядер процессора ≤ 4 — тоже простой телефон: столько
+    // у старых и дешёвых моделей, а сборку кухни и текстуры считает именно
+    // процессор. По ядрам в простые попадают и iPhone 7 / SE 2016 и старее
+    // (2–4 ядра); с 8-го (6 ядер) — обычный режим телефона. Для старых это
+    // верно: тени 1024 и фото 1536 там — единственное, что не подвесит их.
     const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8
-    this.lowEnd = this.mobile && (memory <= 3 || LOW_END_GPU.test(gpu))
+    const cores = navigator.hardwareConcurrency ?? 8
+    this.lowEnd = this.mobile && (memory <= 3 || cores <= 4 || LOW_END_GPU.test(gpu))
     let saved: string | null = null
     try {
       saved = window.localStorage.getItem('kp-quality')
@@ -248,7 +281,7 @@ export class KitchenEngine {
     this.scene.background = new THREE.Color('#eef0f3')
 
     this.sun.castShadow = true
-    const size = this.lowEnd ? 1024 : this.mobile ? 2048 : 4096
+    const size = this.shadowSize()
     this.sun.shadow.mapSize.set(size, size)
     this.sun.shadow.bias = -0.0003
     this.sun.shadow.normalBias = 0.015
@@ -327,6 +360,7 @@ export class KitchenEngine {
 
     this.resizeObserver = new ResizeObserver(() => this.resize())
     this.resizeObserver.observe(host)
+    document.addEventListener('visibilitychange', this.onVisibility)
     this.resize()
   }
 
@@ -1331,7 +1365,8 @@ export class KitchenEngine {
     if (!run || run.building || run.big || !this.pt) return Promise.resolve(null)
     return new Promise((resolve) => {
       const r = this.renderer
-      const W = this.mobile ? 2048 : 3840
+      // простому телефону — 1536: 2048 в ширину он копит минуты и рискует потерять видеокарту
+      const W = this.lowEnd ? 1536 : this.mobile ? 2048 : 3840
       const H = Math.round(Math.min(W, Math.max(W * 0.42, W / Math.max(0.5, this.camera.aspect))) / 2) * 2
       run.big = { resolve }
       // пока копится большое фото, камеру не трогаем — иначе всё заново
@@ -1377,7 +1412,30 @@ export class KitchenEngine {
 
   invalidate() {
     if (this.raf || this.disposed) return
+    if (document.visibilityState === 'hidden') {
+      this.wake = true
+      return
+    }
     this.raf = requestAnimationFrame(() => this.tick())
+  }
+
+  /**
+   * Кадр в движении: меряем, сколько прошло с прошлого такого кадра, и отдаём
+   * губернатору. Первый кадр после покоя не меряем — между ними была пауза.
+   */
+  private govern(now: number) {
+    const last = this.motionLast
+    this.motionLast = now
+    if (last) this.governor = governStep(this.governor, now - last)
+  }
+
+  /**
+   * Счётчики губернатора — с нуля: после покоя (пауза между жестами — не
+   * кадр) и при смене чёткости (тогда и рабочая чёткость снова базовая).
+   */
+  private resetGovernor(ratio = this.governor.ratio) {
+    this.motionLast = 0
+    this.governor = newGovernor(this.baseRatio, ratio)
   }
 
   private tick() {
@@ -1417,7 +1475,11 @@ export class KitchenEngine {
       }
     }
     if (!busy && this.probeDirty) this.captureRoom()
-    if ((busy || moved) && this.refined) this.setRatio(this.baseRatio)
+    if (busy || moved) {
+      this.govern(now)
+      const ratio = this.governor.ratio
+      if (this.refined || this.renderRatio !== ratio) this.setRatio(ratio)
+    } else if (this.motionLast) this.resetGovernor()
     this.draw()
     this.placeTags()
     if (busy || moved) {
@@ -1447,6 +1509,9 @@ export class KitchenEngine {
    */
   private captureRoom() {
     this.probeDirty = false
+    // Телефону снимок не по силам: шесть лишних кадров после каждой
+    // пересборки, а отражения на маленьком экране и от студийной карты хороши.
+    if (this.mobile) return
     const plan = this.input?.plan
     if (!plan || !this.built) return
     if (!this.probe) {
@@ -1479,8 +1544,9 @@ export class KitchenEngine {
     const dpr = window.devicePixelRatio || 1
     const k4 = this.quality === '4k'
     const budget = k4 ? (this.mobile ? 5e6 : 8.3e6) : this.mobile ? 2.4e6 : 4e6
-    // без своего уменьшения (телефон) — ровно точки экрана: крупнее браузер ужал бы грубо
-    const want = !this.composer ? dpr : k4 ? Math.min(dpr * 3, 3) : Math.min(dpr * 2, 2)
+    // без своего уменьшения (телефон) — ровно точки экрана: крупнее браузер ужал бы грубо;
+    // но не больше двух точек: на dpr 3 третья точка на 6" экране не видна, а кадр в 2,25 раза тяжелее
+    const want = !this.composer ? Math.min(dpr, 2) : k4 ? Math.min(dpr * 3, 3) : Math.min(dpr * 2, 2)
     return Math.max(this.baseRatio, Math.min(want, Math.sqrt(budget / Math.max(1, w * h))))
   }
 
@@ -1505,16 +1571,26 @@ export class KitchenEngine {
   private applyQuality() {
     const dpr = window.devicePixelRatio || 1
     if (this.quality === '4k') {
-      this.baseRatio = Math.min(Math.max(dpr, 1.5), 2)
+      // телефон в движении — ровно точки CSS: чёткость там нужна в покое, а в движении — плавность
+      this.baseRatio = this.mobile ? 1 : Math.min(Math.max(dpr, 1.5), 2)
       this.detail = 2
       setBudget(this.mobile ? 200e6 : 480e6)
     } else {
-      this.baseRatio = this.lowEnd ? 1 : Math.min(dpr, 1.5)
+      this.baseRatio = this.mobile ? 1 : Math.min(dpr, 1.5)
       this.detail = this.mobile ? 1 : 2
       // память под картинки не урезаем и простому телефону: при меньшей
       // выбрасывались картинки, на которых стоит сама кухня, — и она чернела
       setBudget(this.mobile ? 110e6 : 420e6)
     }
+    // новая база — губернатор начинает с неё заново
+    this.resetGovernor(this.baseRatio)
+  }
+
+  /** Размер карты теней: телефону в HD хватает 1024 — и это вчетверо меньше работы на кадр. */
+  private shadowSize(): number {
+    if (this.lowEnd) return 1024
+    if (this.mobile) return this.quality === '4k' ? 2048 : 1024
+    return 4096
   }
 
   getQuality(): Quality {
@@ -1531,6 +1607,13 @@ export class KitchenEngine {
     }
     const prevDetail = this.detail
     this.applyQuality()
+    // на телефоне с чёткостью меняется и карта теней — старую отдаём, новую выделит сам рендерер
+    const size = this.shadowSize()
+    if (this.mobile && this.sun.shadow.mapSize.x !== size) {
+      this.sun.shadow.mapSize.set(size, size)
+      this.sun.shadow.map?.dispose()
+      this.sun.shadow.map = null
+    }
     // телефон в 4K берёт картинки материалов подробнее — кухню пересобираем
     if (this.detail !== prevDetail && this.input) this.setKitchen(this.input, null, false)
     this.resize()
@@ -1789,6 +1872,7 @@ export class KitchenEngine {
     clearTimeout(this.refineTimer)
     cancelAnimationFrame(this.raf)
     cancelAnimationFrame(this.hoverFrame)
+    document.removeEventListener('visibilitychange', this.onVisibility)
     this.resizeObserver.disconnect()
     this.controls.dispose()
     this.built?.dispose()
