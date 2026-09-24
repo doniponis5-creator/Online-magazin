@@ -48,7 +48,7 @@ from app.payments import payments_greenapi as wa  # type: ignore
 
 from . import shop_telegram as tg
 from .shop_models import ShopEvent, ShopOrder
-from .shop_router import _money, _site_secret, _verify_site_body, _verify_site_path
+from .shop_router import _site_secret, _verify_site_body, _verify_site_path
 
 logger = logging.getLogger("sbonus.shop.customer")
 
@@ -446,11 +446,8 @@ async def register(request: Request, db: AsyncSession = Depends(get_db)):
     await db.commit()
     logger.info(f"site register ...{phone[-4:]} welcome={bonus}")
 
-    await _send_wa(phone, (
-        f"Добро пожаловать в Smart Centr, {name.split()[0]}! 🎉\n\n"
-        + (f"🎁 Вам начислено *{_money(bonus)}* приветственных бонусов.\n"
-           f"Оплачивайте ими часть покупки на сайте.\n" if bonus > 0 else "")
-    ))
+    # Поздравление только на сайте (WelcomeCard). В WhatsApp не пишем: покупатель
+    # нам сам написал код входа, а непрошеное сообщение в ответ — риск блокировки номера.
     await _track(db, "register", phone)
     return {"ok": True, "customer": await profile(db, customer), "welcomeBonus": float(bonus)}
 
