@@ -16,6 +16,7 @@ import {
   resolveRun,
   splitFill,
   stepItem,
+  WIDTH_LIMITS,
   type Plan,
 } from '@/lib/kitchen/layout'
 import { checkProject, type Check } from '@/lib/kitchen/checks'
@@ -324,6 +325,24 @@ describe('ссылка на проект', () => {
     expect(back.style).toBe(DEFAULT_STATE.style)
     expect(back.tone).toBe(2)
     expect(back.picks.fridge).toBeUndefined()
+  })
+  it('мусорные числа: бесконечность и NaN не проходят и не роняют разбор', () => {
+    const back = stateFromQuery(new URLSearchParams('f=straight&h=1e999&pn=Infinity&a=NaN&ww=-Infinity'), new Set())
+    expect(back.ceiling).toBeUndefined()
+    expect(back.pantries).toBe(2)
+    expect(back.a).toBe(DEFAULT_STATE.a)
+    expect(back.windowW).toBeUndefined()
+  })
+  it('длинная расстановка и сотня шкафов: не бросает, ширины в лимитах', () => {
+    const long = stateFromQuery(new URLSearchParams(`f=straight&o=${'60o'.repeat(167)}`), new Set())
+    expect(long.arrangement).toBeUndefined()
+    expect(long.cabinets).toBeUndefined()
+    const many = stateFromQuery(new URLSearchParams(`f=straight&o=${'999o'.repeat(100)}`), new Set())
+    const widths = Object.values(many.cabinets ?? {}).map((c) => c.w)
+    expect(widths.length).toBeGreaterThanOrEqual(100)
+    expect(Math.max(...widths)).toBe(WIDTH_LIMITS.cabinet.max)
+    const { shape, a, b, c, arrangement, cabinets } = many
+    expect(() => planKitchen({ shape, a, b, c, island: 0, arrangement, cabinets }, { shelves: false })).not.toThrow()
   })
 })
 
