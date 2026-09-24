@@ -98,7 +98,6 @@ export function Footer() {
               закрывает плавающая кнопка «Спросить». Политику требует App Store —
               ссылка должна быть на каждой странице. */}
           <span className="footer__legal">
-            <Link href={`/${lang}/sources`}>{t.footer.sourcesLink}</Link>
             <Link href={`/${lang}/privacy`}>{t.footer.privacyLink}</Link>
           </span>
           {/* Кто сделал сайт: по этому номеру обращаются за доработками */}

@@ -13,6 +13,6 @@ export type ProductPhoto = {
   src: string
   altRu: string
   altKy: string
-  /** краткая атрибуция; полный список — src/data/photo-sources.ts */
+  /** краткая атрибуция автора снимка */
   credit: string
 }

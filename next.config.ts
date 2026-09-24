@@ -26,6 +26,11 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   // Номер версии Next.js в заголовках ответа не показываем.
   poweredByHeader: false,
+  // Страницы «Источники фото» больше нет: её фото давно не показываются.
+  // Старые ссылки и поисковики ведём на главную, а не на 404.
+  redirects() {
+    return Promise.resolve([{ source: '/:lang(ru|ky)/sources', destination: '/:lang', permanent: true }])
+  },
   headers() {
     return Promise.resolve([{ source: '/:path*', headers: SECURITY_HEADERS }])
   },

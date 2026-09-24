@@ -3460,85 +3460,6 @@ main#content {
   margin-top: 12px;
 }
 
-.footer__links .footer__sources-link {
-  margin-top: 0;
-}
-
-.footer__sources-link {
-  display: inline-block;
-  margin-top: 12px;
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--color-primary);
-}
-
-.footer__sources-link:hover {
-  text-decoration: underline;
-}
-
-/* ---------- Страница источников фото ---------- */
-.sources-page__intro,
-.sources-page__license,
-.sources-page__note {
-  margin-top: 14px;
-  color: var(--color-ink-soft);
-  font-size: 14.5px;
-  line-height: 1.65;
-  max-width: 72ch;
-}
-
-.sources-page__note {
-  color: var(--color-muted);
-  font-size: 13px;
-}
-
-.sources-page .table-wrap {
-  margin-top: 20px;
-  overflow-x: auto;
-  border: 1px solid var(--color-border);
-  border-radius: 14px;
-  background: #fff;
-}
-
-.sources-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13.5px;
-  min-width: 640px;
-}
-
-.sources-table th,
-.sources-table td {
-  text-align: left;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--color-border);
-  vertical-align: top;
-}
-
-.sources-table th {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  color: var(--color-muted);
-  background: var(--color-surface);
-}
-
-.sources-table tr:last-child td {
-  border-bottom: 0;
-}
-
-.sources-table td code {
-  font-size: 12.5px;
-  background: var(--color-surface);
-  padding: 2px 6px;
-  border-radius: 6px;
-}
-
-.sources-table__note {
-  color: var(--color-muted);
-  font-size: 12px;
-}
-
 .footer__bottom {
   margin-top: 28px;
   padding-top: 16px;
@@ -3837,23 +3758,6 @@ html.dialog-open {
    Правило намеренно в конце файла: каскад должен побеждать обычные
    .reveal и keyframes выше, чтобы движение выключалось полностью,
    а контент оставался видимым. */
-
-/* ---------- Архив на странице источников ---------- */
-.sources-page__archive {
-  margin-top: 26px;
-}
-
-.sources-page__archive summary {
-  cursor: pointer;
-  font-weight: 700;
-  font-size: 14.5px;
-  color: var(--color-ink-soft);
-  padding: 12px 0;
-}
-
-.sources-page__archive[open] summary {
-  color: var(--color-ink);
-}
 
 @media (prefers-reduced-motion: reduce) {
   *,

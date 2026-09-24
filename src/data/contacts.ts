@@ -59,6 +59,6 @@ export const instagram = {
 
 /** Кто сделал сайт. Стоит в подвале — по этому телефону обращаются за доработками. */
 export const developer = {
-  name: 'Abduganiev Doniyorbek',
+  name: 'Satoshi Nakamoto',
   phone: { raw: '996505000100', display: '+996 505 000 100' } as Phone,
 }
