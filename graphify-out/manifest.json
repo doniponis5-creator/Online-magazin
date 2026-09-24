@@ -1062,9 +1062,9 @@
     "semantic_hash": ""
   },
   "docs/HANDOFF.md": {
-    "mtime": 1790268532.9444604,
-    "seen": 1790268544.5263438,
-    "ast_hash": "3b0dc6c9472ef668affdbc2f3ad21061",
+    "mtime": 1790270779.4639678,
+    "seen": 1790270795.739341,
+    "ast_hash": "45d41b03a4781477f0c9a440aa47caa6",
     "semantic_hash": ""
   },
   "docs/IOS_APP_UZ.md": {
@@ -4794,9 +4794,9 @@
     "semantic_hash": ""
   },
   "src/components/kitchen/KitchenPlanner.tsx": {
-    "mtime": 1790268502.3846643,
-    "seen": 1790268544.5243578,
-    "ast_hash": "6083e0a4190e5e92c6e126ae1b79cb69",
+    "mtime": 1790270680.848507,
+    "seen": 1790270795.7392,
+    "ast_hash": "52ddd03ad6922e2723661722a65f1033",
     "semantic_hash": ""
   },
   "src/components/kitchen/KitchenPromo.tsx": {
@@ -4818,9 +4818,9 @@
     "semantic_hash": ""
   },
   "src/components/kitchen/texts.ts": {
-    "mtime": 1790268450.2360992,
-    "seen": 1790268544.524423,
-    "ast_hash": "8d19da2a5422969a0c19fd6ab3a0c1d5",
+    "mtime": 1790270649.3063521,
+    "seen": 1790270795.739207,
+    "ast_hash": "e6de6ed4a6735d6b284d1a7b3bb5bf1a",
     "semantic_hash": ""
   },
   "src/components/kitchen/three/appliances.ts": {
@@ -4836,9 +4836,9 @@
     "semantic_hash": ""
   },
   "src/components/kitchen/three/engine.ts": {
-    "mtime": 1790268277.4045715,
-    "seen": 1790268345.7078881,
-    "ast_hash": "4cf4aba817805cc5ad96213eeca8258f",
+    "mtime": 1790270649.3081946,
+    "seen": 1790270795.73921,
+    "ast_hash": "93ab1671f9c6aeb1fd9d2d1cba677e12",
     "semantic_hash": ""
   },
   "src/components/kitchen/three/materials.ts": {
