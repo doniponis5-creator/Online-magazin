@@ -163,6 +163,8 @@ export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolea
         return keep(new THREE.MeshStandardMaterial({ map: tex(scaled(T.concrete('#9d9b96'), 1.4, true)), roughness: 0.78 }))
       case 'oak':
         return keep(new THREE.MeshStandardMaterial({ map: tex(scaled(T.wood('#c49a6c', 23), 1.2, true, true)), roughness: 0.48 }))
+      case 'travertine':
+        return keep(new THREE.MeshPhysicalMaterial({ map: tex(scaled(T.marble('#d9ccb6', '#b7a283', 7, 1.2), 1.6, true)), roughness: 0.34, clearcoat: 0.3, clearcoatRoughness: 0.2 }))
       case 'stone': {
         const st = tone.stone ?? { base: '#f2f0ec', vein: '#8d8a86' }
         return keep(new THREE.MeshPhysicalMaterial({ map: tex(scaled(T.marble(st.base, st.vein, 9, 1.8), 1.6, true)), roughness: 0.14, clearcoat: 0.85, clearcoatRoughness: 0.06 }))
@@ -230,6 +232,8 @@ export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolea
         return relief(keep(new THREE.MeshPhysicalMaterial({ map: tex(scaled(T.floorTile('#b9bcbf'), 1.2)), roughness: 0.3, clearcoat: 0.25 })), 0.9)
       case 'concrete':
         return relief(keep(new THREE.MeshStandardMaterial({ map: tex(scaled(T.concrete('#8f8e8a', 8), 2, true)), roughness: 0.7 })), 0.35)
+      case 'marble':
+        return relief(keep(new THREE.MeshPhysicalMaterial({ map: tex(scaled(T.marbleTile('#f1efeb', '#a9a49c'), 1.2)), roughness: 0.22, clearcoat: 0.35, clearcoatRoughness: 0.12 })), 0.5)
     }
   })()
 

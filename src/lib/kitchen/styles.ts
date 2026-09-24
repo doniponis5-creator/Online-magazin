@@ -21,7 +21,7 @@ export type DoorKind = 'slab' | 'shaker' | 'raised' | 'molding' | 'fluted' | 'fr
 export type HandleKind = 'knob' | 'bow' | 'bar' | 'gola' | 'edge' | 'woodKnob' | 'cup' | 'tbar' | 'long' | 'rail' | 'knurled' | 'ring' | 'leather'
 export type Metal = 'brass' | 'chrome' | 'black' | 'steel' | 'wood' | 'bronze' | 'gunmetal'
 /** stone — тот же камень, что на фасадах (керамика под мрамор) */
-export type TopKind = 'marbleWhite' | 'marbleDark' | 'marbleBlack' | 'quartzLight' | 'quartzBlack' | 'concrete' | 'oak' | 'stone'
+export type TopKind = 'marbleWhite' | 'marbleDark' | 'marbleBlack' | 'quartzLight' | 'quartzBlack' | 'concrete' | 'oak' | 'stone' | 'travertine'
 /**
  * Фартук: stone — камень своего цвета и прожилок, concrete — бетон, panel —
  * простая гладкая панель, paint — фартука нет, стена просто покрашена.
@@ -85,6 +85,24 @@ export type KitchenStyle = {
   /** цвета техники, которые лучше всего смотрятся в этом стиле */
   finishes: Finish[]
   tones: Tone[]
+  /**
+   * С чем стиль задуман: высокие колонны-пеналы по краям, духовка на уровне
+   * глаз. Ставится при выборе стиля (потом можно поменять) и в превью стиля.
+   */
+  layout?: { pantries?: number; tallOven?: boolean }
+  /**
+   * Портал: рабочая зона — ниша между колоннами. Над ней антресоли на всю
+   * глубину (вровень с колоннами), верхние шкафы утоплены, ниша обрамлена
+   * доской цвета верхних фасадов.
+   */
+  portal?: boolean
+  /**
+   * Вытяжка в декоративном коробе («камин»): над плитой короб с карнизом и
+   * кронштейнами, по бокам шкафа под плитой — пилястры, он чуть выступает.
+   */
+  mantel?: boolean
+  /** новинка — на карточке стиля метка «Новинка», чтобы покупатель её заметил */
+  isNew?: boolean
 }
 
 export const STYLES: KitchenStyle[] = [
@@ -117,9 +135,81 @@ export const STYLES: KitchenStyle[] = [
     finishes: ['white', 'inox', 'beige'],
     tones: [
       { ru: 'Серо-голубой', ky: 'Көк-боз', facade: '#8e9dab', upper: '#f1eee8' },
-      { ru: 'Шалфей', ky: 'Шалфей', facade: '#98a38e', upper: '#f1eee8' },
+      { ru: 'Жемчужно-серый', ky: 'Бермет-боз', facade: '#a9aba9' },
       { ru: 'Молочный', ky: 'Сүт түсү', facade: '#ebe6dc' },
     ],
+    mantel: true,
+  },
+  {
+    id: 'column',
+    group: 'modern',
+    ru: 'Колонны',
+    ky: 'Колонналар',
+    noteRu: 'Высокие колонны до потолка, духовка на уровне глаз',
+    noteKy: 'Шыпка чейин бийик колонналар, духовка көз деңгээлинде',
+    door: 'slab',
+    upperDoor: 'slab',
+    gloss: 0.08,
+    handle: 'gola',
+    metal: 'black',
+    top: 'quartzLight',
+    topCm: 2,
+    splash: 'marble',
+    splashColor: '#eeedea',
+    splashVein: '#8d8a86',
+    wall: '#e6e3de',
+    floor: 'tile',
+    upperCm: 90,
+    cornice: 'none',
+    shelves: false,
+    vitrine: 'none',
+    pendants: false,
+    led: true,
+    faucet: 'black',
+    sink: 'black',
+    finishes: ['black', 'inox'],
+    tones: [
+      { ru: 'Белый и графит', ky: 'Ак жана графит', facade: '#efeeeb', upper: '#6d6f72' },
+      { ru: 'Весь белый', ky: 'Толугу менен ак', facade: '#f0efec' },
+      { ru: 'Кашемир и дуб', ky: 'Кашемир жана эмен', facade: '#cfc5b8', upper: '#b58d63', upperTexture: 'wood' },
+    ],
+    layout: { pantries: 1, tallOven: true },
+  },
+  {
+    id: 'portal',
+    group: 'modern',
+    ru: 'Портал',
+    ky: 'Портал',
+    noteRu: 'Ниша между колоннами в раме, антресоли мостом',
+    noteKy: 'Колонналардын ортосундагы рамкалуу ниша, көпүрө антресолдор',
+    door: 'slab',
+    upperDoor: 'slab',
+    gloss: 0.06,
+    handle: 'rail',
+    metal: 'black',
+    top: 'oak',
+    topCm: 3,
+    splash: 'marble',
+    splashColor: '#eeedea',
+    splashVein: '#8d8a86',
+    wall: '#e3e1dd',
+    floor: 'oak',
+    upperCm: 72,
+    cornice: 'none',
+    shelves: false,
+    vitrine: 'none',
+    pendants: true,
+    led: true,
+    faucet: 'black',
+    sink: 'black',
+    finishes: ['black', 'inox', 'gray'],
+    tones: [
+      { ru: 'Графит и дуб', ky: 'Графит жана эмен', facade: '#5e6165', upper: '#b58d63', upperTexture: 'wood' },
+      { ru: 'Графит и белый', ky: 'Графит жана ак', facade: '#5e6165', upper: '#efeeeb' },
+      { ru: 'Белый и дуб', ky: 'Ак жана эмен', facade: '#efeeeb', upper: '#b58d63', upperTexture: 'wood' },
+    ],
+    layout: { pantries: 1, tallOven: true },
+    portal: true,
   },
   {
     id: 'classic',
@@ -153,6 +243,7 @@ export const STYLES: KitchenStyle[] = [
       { ru: 'Слоновая кость', ky: 'Пил сөөгү', facade: '#ece2cc' },
       { ru: 'Олива', ky: 'Зайтун', facade: '#7d7f5e' },
     ],
+    mantel: true,
   },
   {
     id: 'hitech',
@@ -583,6 +674,145 @@ export const STYLES: KitchenStyle[] = [
       { ru: 'Шампань', ky: 'Шампань', facade: '#cbbda6', upper: '#f1f0ee' },
     ],
   },
+  {
+    id: 'gold',
+    group: 'hitech',
+    isNew: true,
+    ru: 'Хай-тек Золото',
+    ky: 'Хай-тек Алтын',
+    noteRu: 'Белый с золотом, мрамор Калакатта, пол под мрамор',
+    noteKy: 'Ак жана алтын, Калакатта мрамору, мрамор сымал пол',
+    door: 'slab',
+    upperDoor: 'slab',
+    gloss: 0.55,
+    handle: 'long',
+    metal: 'brass',
+    top: 'stone',
+    topCm: 2,
+    splash: 'stone',
+    splashColor: '#f4f2ee',
+    splashVein: '#b49a74',
+    wall: '#ece9e4',
+    floor: 'marble',
+    upperCm: 90,
+    cornice: 'none',
+    shelves: false,
+    vitrine: 'none',
+    pendants: true,
+    led: true,
+    faucet: 'brass',
+    sink: 'white',
+    finishes: ['white', 'inox', 'beige'],
+    // stone у тона — не фасады (они гладкие), а мрамор столешницы: золотые прожилки
+    tones: [
+      { ru: 'Белый и золото', ky: 'Ак жана алтын', facade: '#f2f1ee', stone: { base: '#f4f2ee', vein: '#b49a74' } },
+      { ru: 'Капучино и золото', ky: 'Капучино жана алтын', facade: '#b8a28a', upper: '#efeae3', stone: { base: '#f4f2ee', vein: '#b49a74' } },
+      { ru: 'Графит и золото', ky: 'Графит жана алтын', facade: '#3a3d41', upper: '#efeeeb', stone: { base: '#f4f2ee', vein: '#b49a74' } },
+    ],
+  },
+  {
+    id: 'quiet',
+    group: 'modern',
+    isNew: true,
+    ru: 'Тихая роскошь',
+    ky: 'Токтоо люкс',
+    noteRu: 'Кашемир, травертин, бронза — дорого без блеска',
+    noteKy: 'Кашемир, травертин, коло — жылтырабай эле кымбат',
+    door: 'slab',
+    upperDoor: 'slab',
+    gloss: 0.03,
+    handle: 'long',
+    metal: 'bronze',
+    top: 'travertine',
+    topCm: 2,
+    splash: 'stone',
+    splashColor: '#d9ccb6',
+    splashVein: '#b7a283',
+    wall: '#e2dbd0',
+    floor: 'herringbone',
+    upperCm: 90,
+    cornice: 'none',
+    shelves: false,
+    vitrine: 'none',
+    pendants: true,
+    led: true,
+    faucet: 'bronze',
+    sink: 'steel',
+    finishes: ['beige', 'inox', 'black'],
+    tones: [
+      { ru: 'Кашемир', ky: 'Кашемир', facade: '#cdc1b1' },
+      { ru: 'Тауп и молочный', ky: 'Тауп жана сүт түсү', facade: '#8e8174', upper: '#e7e1d6' },
+      { ru: 'Молочный и орех', ky: 'Сүт түсү жана жаңгак', facade: '#e9e3d8', upper: '#6b4a33', upperTexture: 'wood' },
+    ],
+  },
+  {
+    id: 'midcentury',
+    group: 'modern',
+    isNew: true,
+    ru: 'Мид-сенчури',
+    ky: 'Мид-сенчури',
+    noteRu: 'Орех, горчица и петроль, латунь — ретро 60-х',
+    noteKy: 'Жаңгак, кычы жана петроль, жез — 60-жылдардын ретросу',
+    door: 'slab',
+    upperDoor: 'slab',
+    gloss: 0.1,
+    handle: 'tbar',
+    metal: 'brass',
+    top: 'quartzLight',
+    topCm: 2,
+    splash: 'subway',
+    splashColor: '#f1ede4',
+    wall: '#ebe4d6',
+    floor: 'herringbone',
+    upperCm: 72,
+    cornice: 'none',
+    shelves: true,
+    vitrine: 'none',
+    pendants: true,
+    led: true,
+    faucet: 'brass',
+    sink: 'steel',
+    finishes: ['inox', 'white', 'beige'],
+    tones: [
+      { ru: 'Горчица и орех', ky: 'Кычы жана жаңгак', facade: '#b58a35', upper: '#6b4a33', upperTexture: 'wood' },
+      { ru: 'Петроль и орех', ky: 'Петроль жана жаңгак', facade: '#2f5b61', upper: '#6b4a33', upperTexture: 'wood' },
+      { ru: 'Олива и орех', ky: 'Зайтун жана жаңгак', facade: '#6d6f4b', upper: '#6b4a33', upperTexture: 'wood' },
+    ],
+  },
+  {
+    id: 'english',
+    group: 'classic',
+    isNew: true,
+    ru: 'Английская',
+    ky: 'Англис',
+    noteRu: 'Глубокий цвет, рамочные фасады, латунь, белый мрамор',
+    noteKy: 'Терең түс, рамкалуу фасаддар, жез, ак мрамор',
+    door: 'shaker',
+    upperDoor: 'shaker',
+    gloss: 0.08,
+    handle: 'cup',
+    metal: 'brass',
+    top: 'marbleWhite',
+    topCm: 3,
+    splash: 'subway',
+    splashColor: '#f3f1ec',
+    wall: '#e6e1d8',
+    floor: 'herringbone',
+    upperCm: 90,
+    cornice: 'simple',
+    shelves: false,
+    vitrine: 'bars',
+    pendants: true,
+    led: true,
+    faucet: 'brass',
+    sink: 'white',
+    finishes: ['white', 'beige', 'inox'],
+    tones: [
+      { ru: 'Английский зелёный', ky: 'Англис жашылы', facade: '#2f4a3d' },
+      { ru: 'Королевский синий', ky: 'Падышалык көк', facade: '#26344d' },
+      { ru: 'Серо-зелёный', ky: 'Боз-жашыл', facade: '#7d8a7a', upper: '#ece8df' },
+    ],
+  },
 ]
 
 /** Порядок карточек: сначала хай-тек (самый спрос), потом современные, потом классика. */
@@ -592,13 +822,19 @@ const ORDER: StyleId[] = [
   'marble',
   'concrete',
   'glass',
+  'gold',
   'modern',
+  'quiet',
+  'column',
+  'portal',
   'minimal',
   'japandi',
+  'midcentury',
   'scandi',
   'loft',
   'artdeco',
   'neoclassic',
+  'english',
   'classic',
   'provence',
   'country',
@@ -616,6 +852,12 @@ export const FLOORS: { id: FloorKind; ru: string; ky: string; swatch: string }[]
   { id: 'tile', ru: 'Серая плитка', ky: 'Боз плитка', swatch: 'linear-gradient(90deg, #a9acaf 1px, transparent 1px) 0 0 / 14px 14px, linear-gradient(#a9acaf 1px, #c3c6c9 1px) 0 0 / 14px 14px' },
   { id: 'concrete', ru: 'Бетон', ky: 'Бетон', swatch: 'radial-gradient(circle at 30% 30%, #9d9c97, #82817c)' },
   { id: 'terracotta', ru: 'Терракота', ky: 'Терракота', swatch: 'linear-gradient(90deg, #8f624d 1px, transparent 1px) 0 0 / 12px 12px, linear-gradient(#8f624d 1px, #ad7b61 1px) 0 0 / 12px 12px' },
+  {
+    id: 'marble',
+    ru: 'Керамогранит под мрамор',
+    ky: 'Мрамор сымал керамогранит',
+    swatch: 'linear-gradient(90deg, #c9c5bf 1px, transparent 1px) 0 0 / 16px 100%, linear-gradient(125deg, #f1efeb 38%, #cfc9c1 47%, #f1efeb 56%)',
+  },
 ]
 
 /** Цвета стен. Первый — как задумано в стиле. */
@@ -626,6 +868,10 @@ export const WALL_COLORS: { ru: string; ky: string; color: string | null }[] = [
   { ru: 'Бежевый', ky: 'Беж', color: '#ddd2c1' },
   { ru: 'Шалфей', ky: 'Шалфей', color: '#c4ccbb' },
   { ru: 'Графит', ky: 'Графит', color: '#565b62' },
+  { ru: 'Пудровый', ky: 'Упа түсү', color: '#e5d5cd' },
+  { ru: 'Небесный', ky: 'Асман', color: '#cfdbe4' },
+  { ru: 'Олива', ky: 'Зайтун', color: '#b9b89d' },
+  { ru: 'Терракота', ky: 'Терракота', color: '#cf9e85' },
 ]
 
 export function getStyle(id: StyleId): KitchenStyle {

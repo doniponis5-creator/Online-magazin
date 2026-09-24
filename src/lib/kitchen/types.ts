@@ -57,8 +57,11 @@ export const isCabinet = (k: string): k is CabinetId => /^k\d{1,3}$/.test(k)
 /** Свой шкаф: ширина, см, и фасады. */
 export type Cabinet = { w: number; front: BaseFront }
 /** Предметы, которым покупатель может поменять ширину (кроме своих шкафов). */
-export type SizedItem = 'sink' | 'hob' | 'pantry' | 'pantry2'
-export const SIZED_ITEMS: SizedItem[] = ['sink', 'hob', 'pantry', 'pantry2']
+export type SizedItem = 'sink' | 'hob' | 'pantry' | 'pantry2' | 'tall'
+export const SIZED_ITEMS: SizedItem[] = ['sink', 'hob', 'pantry', 'pantry2', 'tall']
+/** Высокие колонны: им можно задать свою высоту (ниже потолка). */
+export type ColumnItem = 'pantry' | 'pantry2' | 'tall'
+export const COLUMN_ITEMS: ColumnItem[] = ['pantry', 'pantry2', 'tall']
 
 /** Стены: A — задняя, B — левая, C — правая; I — остров. */
 export type WallId = 'A' | 'B' | 'C' | 'I'
@@ -114,8 +117,16 @@ export type KitchenState = {
    * остаток стены.
    */
   at?: Partial<Record<ItemKey, number>>
-  /** своя ширина мойки, шкафа под плитой и пеналов, см */
+  /** своя ширина мойки, шкафа под плитой, пеналов и колонны с духовкой, см */
   widths?: Partial<Record<SizedItem, number>>
+  /** своя высота пеналов и колонны с духовкой от пола, см; нет — до верха (потолка) */
+  heights?: Partial<Record<ColumnItem, number>>
+  /**
+   * Шкафы, у которых одиночная дверца открывается вправо (петли справа).
+   * Ключ — как у фасадов (A120, a60), свой шкаф (k1) или предмет (sink, tall,
+   * pantry, hob). Остальные дверцы открываются влево.
+   */
+  doorsRight?: string[]
   /** отделка: цвет фасадов из каталога (ламинат, акрил, эмаль, шпон, Fenix) */
   facade?: string
   /** цвет верхних фасадов, если другой */
@@ -131,7 +142,7 @@ export type KitchenState = {
 }
 
 /** Пол комнаты. */
-export type FloorKind = 'herringbone' | 'herringboneDark' | 'oak' | 'darkOak' | 'tile' | 'terracotta' | 'concrete'
+export type FloorKind = 'herringbone' | 'herringboneDark' | 'oak' | 'darkOak' | 'tile' | 'terracotta' | 'concrete' | 'marble'
 
 /**
  * Как устроен шкаф спереди. Низ: дверцы, 2–4 ящика, ящик над дверцами,
@@ -153,7 +164,13 @@ export type StyleId =
   | 'loft'
   | 'scandi'
   | 'modern'
+  | 'column'
+  | 'portal'
   | 'japandi'
   | 'provence'
   | 'artdeco'
   | 'country'
+  | 'gold'
+  | 'quiet'
+  | 'midcentury'
+  | 'english'

@@ -45,6 +45,8 @@ export const WIDTH_LIMITS: Record<SizedItem | 'cabinet', { min: number; max: num
   hob: { min: HOB_W, max: 120 },
   pantry: { min: 30, max: 90 },
   pantry2: { min: 30, max: 90 },
+  // колонна с духовкой: сама духовка 60 см, шире — по бокам панели
+  tall: { min: TALL_W, max: 90 },
   cabinet: { min: 15, max: 120 },
 }
 
@@ -502,7 +504,7 @@ export function planKitchen(input: PlanInput, options: { shelves: boolean }): Pl
       case 'fridge':
         return input.fridge ? { kind: 'fridge', w: fridgeW, slot: 'fridge', item: k } : null
       case 'tall':
-        return hasTall ? { kind: 'tall', w: TALL_W, slot: input.microwave?.builtIn ? 'microwave' : 'oven', item: k } : null
+        return hasTall ? { kind: 'tall', w: sizedWidth('tall', input.widths?.tall ?? TALL_W), slot: input.microwave?.builtIn ? 'microwave' : 'oven', item: k } : null
       case 'sink':
         return { kind: 'sink', w: sinkW, item: k }
       case 'dishwasher':
@@ -781,6 +783,9 @@ function flip(at: Module['blindAt']): Module['blindAt'] {
 /** Окно: от 60 до 240 см и не шире стены. */
 export const WINDOW_LIMITS = { min: 60, max: 240 }
 const clampWindow = (w: number, wall: number) => Math.max(WINDOW_LIMITS.min, Math.min(WINDOW_LIMITS.max, wall - 40, Math.round(w)))
+
+/** Своя высота пенала: не ниже этого, см (колонне с духовкой нужно больше — см. KitchenPlanner). */
+export const COLUMN_HEIGHT = { min: 120 }
 
 /** Высота потолка, см. */
 export const CEILING = { min: 240, max: 320, base: 270 }

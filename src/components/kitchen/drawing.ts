@@ -24,6 +24,7 @@ const CARCASS: DimsKind[] = [
   'lift',
   'antresol',
   'overFridge',
+  'mantel',
   'shelf',
 ]
 

@@ -697,6 +697,36 @@ describe('своё место и своя ширина', () => {
     solid(plan, 'B', 0, 260 - DEPTH)
   })
 
+  it('колонна с духовкой шире; высота колонн — в адресе', () => {
+    const plan = planKitchen({ ...base, tallOven: true, widths: { tall: 80 } }, { shelves: false })
+    expect(itemPositions(plan).tall!.w).toBe(80)
+    expect(planKitchen({ ...base, tallOven: true, widths: { tall: 40 } }, { shelves: false }).runs[0].modules.find((m) => m.kind === 'tall')!.w).toBe(60)
+    const q = queryFromState({ ...DEFAULT_STATE, heights: { pantry: 210, tall: 230 }, widths: { tall: 75 } })
+    expect(q).toContain('ht=p210t230')
+    expect(q).toContain('wd=t75')
+    const back = stateFromQuery(new URLSearchParams(q), new Set())
+    expect(back.heights).toEqual({ pantry: 210, tall: 230 })
+    expect(back.widths).toEqual({ tall: 75 })
+    // ниже 120 см пенала не бывает
+    expect(stateFromQuery(new URLSearchParams('f=straight&ht=p050'), new Set()).heights).toEqual({ pantry: 120 })
+  })
+
+  it('дверцы, открывающиеся вправо, — в адресе; чужие ключи не проходят', () => {
+    const q = queryFromState({ ...DEFAULT_STATE, doorsRight: ['A120', 'a60', 'k1', 'sink'] })
+    expect(q).toContain('dr=A120.a60.k1.sink')
+    expect(stateFromQuery(new URLSearchParams(q), new Set()).doorsRight).toEqual(['A120', 'a60', 'k1', 'sink'])
+    expect(stateFromQuery(new URLSearchParams('f=straight&dr=A120.<b>.fridge'), new Set()).doorsRight).toEqual(['A120'])
+  })
+
+  it('стили «Колонны» и «Портал» задуманы с колоннами и духовкой наверху', () => {
+    for (const id of ['column', 'portal'] as const) {
+      const s = STYLES.find((x) => x.id === id)!
+      expect(s.layout).toEqual({ pantries: 1, tallOven: true })
+    }
+    expect(STYLES.find((x) => x.id === 'portal')!.portal).toBe(true)
+    expect(STYLES.filter((x) => x.mantel).map((x) => x.id).sort()).toEqual(['classic', 'neoclassic'])
+  })
+
   it('вместе с мойкой едет посудомойка, свои шкафы — каждый сам', () => {
     const plan = planKitchen(
       { ...base, cabinets: { k1: { w: 40, front: 'doors' }, k2: { w: 50, front: 'doors' } }, arrangement: { A: ['k1', 'k2', 'sink', 'dishwasher', 'hob'] } },

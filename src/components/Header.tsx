@@ -52,8 +52,19 @@ function HeaderInner() {
       })
     }
     window.addEventListener('scroll', onScroll, { passive: true })
+    // Конструктор кухни встал в экран (html.kp-pinned) — шапка уезжает сразу,
+    // не дожидаясь движения пальца. Телефон боком сам доводит страницу до
+    // конструктора, и шапка оставалась поверх 3D.
+    const onPin = () => {
+      if (document.documentElement.classList.contains('kp-pinned') && window.scrollY > 140) setHidden(true)
+    }
+    const pin = new MutationObserver(onPin)
+    pin.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    // шапка приходит позже конструктора: он мог встать в экран ещё до неё
+    onPin()
     return () => {
       window.removeEventListener('scroll', onScroll)
+      pin.disconnect()
       if (frame) cancelAnimationFrame(frame)
     }
   }, [])

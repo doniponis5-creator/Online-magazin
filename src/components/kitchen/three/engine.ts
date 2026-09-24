@@ -39,6 +39,25 @@ type PhotoRun = {
   big: { resolve: (b: Blob | null) => void } | null
 }
 
+/*
+  Рельеф поверхностей (bumpMap) в three.js делит на ноль там, где треугольник
+  меньше точки экрана: получается «не число» (NaN). Такая точка попадала в
+  снимок комнаты для отражений, размытие разносило её по всей карте — и на
+  телефоне, где снимок мельче, кухня становилась чёрной целиком (Неро, Модерн,
+  Японди, Арт-деко, Классика). Формула та же, только с защитой от нуля:
+  где делить не на что, поверхность остаётся без рельефа.
+*/
+THREE.ShaderChunk.bumpmap_pars_fragment = THREE.ShaderChunk.bumpmap_pars_fragment
+  .replace(
+    /vec3 vSigmaX = normalize\(\s*dFdx\(\s*surf_pos\.xyz\s*\)\s*\);/,
+    'vec3 dpx = dFdx( surf_pos.xyz );\n\t\tvec3 dpy = dFdy( surf_pos.xyz );\n\t\tif ( dot( dpx, dpx ) <= 1e-12 || dot( dpy, dpy ) <= 1e-12 ) return surf_norm;\n\t\tvec3 vSigmaX = normalize( dpx );',
+  )
+  .replace(/vec3 vSigmaY = normalize\(\s*dFdy\(\s*surf_pos\.xyz\s*\)\s*\);/, 'vec3 vSigmaY = normalize( dpy );')
+  .replace(
+    /return normalize\(\s*abs\(\s*fDet\s*\)\s*\*\s*surf_norm\s*-\s*vGrad\s*\);/,
+    'vec3 bumped = abs( fDet ) * surf_norm - vGrad;\n\t\treturn dot( bumped, bumped ) > 1e-12 ? normalize( bumped ) : surf_norm;',
+  )
+
 /** Дольше этого фото на экране не копится (если проходов уже хватает на чистую картинку). */
 const PHOTO_MAX_MS = 30000
 
@@ -84,6 +103,8 @@ type OpenInfo = { kind: 'swing' | 'lift' | 'fold' | 'slide'; dir: number }
 const OPEN_AMOUNT: Record<OpenInfo['kind'], number> = { swing: 1.5, lift: 1.15, fold: 1.42, slide: 0.36 }
 /** Сколько держать палец на предмете, чтобы взять его. */
 const HOLD_MS = 380
+/** Видеокарты недорогих Android-телефонов: Mali-400/T-серии/G31–G52, PowerVR, младшие Adreno. */
+const LOW_END_GPU = /mali-(4\d\d|t\d+|g31|g51|g52)|powervr|adreno \(tm\) (3\d\d|4\d\d|50\d|51\d|60\d|610)|swiftshader|llvmpipe/i
 
 type Tween = { start: number; duration: number; step: (t: number) => void; done?: () => void }
 
@@ -132,6 +153,10 @@ export class KitchenEngine {
   private outline: THREE.LineSegments | null = null
   private tags = new Map<string, HTMLElement>()
   private tagPoints = new Map<string, THREE.Vector3>()
+  /** рамка того, чьи размеры сейчас показаны (выбранный шкаф или техника) */
+  private selBox: THREE.Box3 | null = null
+  /** сдвиг картинки в точках экрана — чтобы выбранное выехало из-под карточки */
+  private shift = { x: 0, y: 0 }
   private resizeObserver: ResizeObserver
   private reduced: boolean
   private mobile: boolean
@@ -171,6 +196,8 @@ export class KitchenEngine {
   private photo: PhotoRun | null = null
   /** встроенная или мобильная видеокарта: фото заранее не готовим */
   private weakGpu = false
+  /** простой телефон: 2–3 ГБ памяти или слабая видеокарта — рисуем ещё проще */
+  private lowEnd = false
 
   constructor(
     private host: HTMLElement,
@@ -182,8 +209,15 @@ export class KitchenEngine {
     const r = this.renderer
     // 4K — сразу на хорошей видеокарте; на телефоне и встроенной графике — HD.
     // Выбор покупателя помним.
-    const weak = this.mobile || /intel|uhd|iris|mali|adreno|powervr|swiftshader|llvmpipe|basic render/i.test(this.gpuName())
+    const gpu = this.gpuName()
+    const weak = this.mobile || /intel|uhd|iris|mali|adreno|powervr|swiftshader|llvmpipe|basic render/i.test(gpu)
     this.weakGpu = weak
+    // Простой телефон — ещё проще: холст в точках экрана и тени мельче.
+    // Видеокарте такого телефона вдвое меньше точек на каждый кадр.
+    // Память называет только Chrome на Android. iPhone не называет ни памяти,
+    // ни видеокарты (у всех «Apple GPU») — он остаётся в обычном режиме телефона.
+    const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8
+    this.lowEnd = this.mobile && (memory <= 3 || LOW_END_GPU.test(gpu))
     let saved: string | null = null
     try {
       saved = window.localStorage.getItem('kp-quality')
@@ -214,7 +248,7 @@ export class KitchenEngine {
     this.scene.background = new THREE.Color('#eef0f3')
 
     this.sun.castShadow = true
-    const size = this.mobile ? 2048 : 4096
+    const size = this.lowEnd ? 1024 : this.mobile ? 2048 : 4096
     this.sun.shadow.mapSize.set(size, size)
     this.sun.shadow.bias = -0.0003
     this.sun.shadow.normalBias = 0.015
@@ -637,6 +671,24 @@ export class KitchenEngine {
     return { dims: (obj.userData.dims as Dims | undefined) ?? null }
   }
 
+  /**
+   * Открыть дверцы шкафа (ключ шкафа или предмета) — покупатель поменял,
+   * в какую сторону они открываются, и сразу видит это в 3D.
+   */
+  openDoors(key: string) {
+    let found: THREE.Object3D | null = null
+    this.built?.root.traverse((o) => {
+      if (found) return
+      if ((o.userData.cab as CabInfo | undefined)?.key === key) found = o
+      else if (o.userData.item === key && o.userData.dims && o.parent?.userData.item !== key) found = o
+    })
+    if (!found) return
+    ;(found as THREE.Object3D).traverse((o) => {
+      const info = o.userData.open as OpenInfo | undefined
+      if (info?.kind === 'swing' && !o.userData.isOpen) this.toggleOpen(o)
+    })
+  }
+
   /** Спецификация для мебельщика — ровно то, что нарисовано. */
   spec(): SpecData | null {
     return this.built?.spec ?? null
@@ -645,6 +697,81 @@ export class KitchenEngine {
   private dimsOwner(o: THREE.Object3D | null): THREE.Object3D | null {
     for (let cur = o; cur && cur !== this.built?.root; cur = cur.parent) if (cur.userData.dims) return cur
     return null
+  }
+
+  /**
+   * Где на экране выбранный шкаф или техника: прямоугольник в точках сцены
+   * (от левого верхнего угла 3D). По нему карточку с настройками ставят туда,
+   * где шкафа нет, — иначе она открывалась прямо поверх него.
+   */
+  selectionRect(): { x: number; y: number; w: number; h: number } | null {
+    const box = this.selBox
+    if (!box) return null
+    const el = this.renderer.domElement
+    const W = el.clientWidth
+    const H = el.clientHeight
+    const v = new THREE.Vector3()
+    let x0 = Infinity
+    let y0 = Infinity
+    let x1 = -Infinity
+    let y1 = -Infinity
+    for (const x of [box.min.x, box.max.x])
+      for (const y of [box.min.y, box.max.y])
+        for (const z of [box.min.z, box.max.z]) {
+          v.set(x, y, z).project(this.camera)
+          // угол за спиной камеры — на экран не проецируется
+          if (v.z > 1) continue
+          const sx = ((v.x + 1) / 2) * W
+          const sy = ((1 - v.y) / 2) * H
+          x0 = Math.min(x0, sx)
+          y0 = Math.min(y0, sy)
+          x1 = Math.max(x1, sx)
+          y1 = Math.max(y1, sy)
+        }
+    if (!Number.isFinite(x0)) return null
+    return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }
+  }
+
+  /**
+   * Сдвинуть картинку 3D, не двигая камеру: выбранный шкаф выезжает из-под
+   * карточки с настройками, как карта, когда рядом открылась панель.
+   * 0, 0 — вернуть как было. Плавно, за треть секунды.
+   */
+  setShift(x: number, y: number, instant = false) {
+    const from = { ...this.shift }
+    const to = { x: Math.round(x), y: Math.round(y) }
+    this.tweens = this.tweens.filter((t) => !(t as Tween & { shift?: boolean }).shift)
+    if (from.x === to.x && from.y === to.y) return
+    if (instant || this.reduced) {
+      this.shift = to
+      this.applyShift()
+      this.invalidate()
+      return
+    }
+    const tween: Tween & { shift: boolean } = {
+      shift: true,
+      start: performance.now(),
+      duration: 320,
+      step: (t) => {
+        const k = easeInOut(t)
+        this.shift = { x: from.x + (to.x - from.x) * k, y: from.y + (to.y - from.y) * k }
+        this.applyShift()
+      },
+    }
+    this.tweens.push(tween)
+    this.invalidate()
+  }
+
+  getShift(): { x: number; y: number } {
+    return { ...this.shift }
+  }
+
+  private applyShift() {
+    const w = this.host.clientWidth
+    const h = this.host.clientHeight
+    if (!w || !h) return
+    if (Math.abs(this.shift.x) < 0.5 && Math.abs(this.shift.y) < 0.5) this.camera.clearViewOffset()
+    else this.camera.setViewOffset(w, h, -this.shift.x, -this.shift.y, w, h)
   }
 
   /** Выбранное снаружи (карточка шкафа открыта) — его пальцем можно тащить сразу. */
@@ -796,12 +923,14 @@ export class KitchenEngine {
       this.measureLines = null
     }
     for (const k of ['m:w', 'm:h', 'm:d']) this.tagPoints.delete(k)
+    this.selBox = null
     if (!obj) {
       this.invalidate()
       return
     }
     obj.updateWorldMatrix(true, true)
     const box = new THREE.Box3().setFromObject(obj)
+    this.selBox = box.clone()
     const q = obj.getWorldQuaternion(new THREE.Quaternion())
     const front = new THREE.Vector3(0, 0, 1).applyQuaternion(q)
     // лицо смотрит вдоль x или вдоль z (кухня стоит под прямыми углами)
@@ -1048,6 +1177,7 @@ export class KitchenEngine {
    */
   async startPhoto(onState: (s: PhotoState | null) => void): Promise<'ok' | 'stopped' | 'failed'> {
     if (!this.built || this.disposed) return 'failed'
+    this.setShift(0, 0, true)
     if (this.photo) {
       this.photo.onState = onState
       return 'ok'
@@ -1379,8 +1509,10 @@ export class KitchenEngine {
       this.detail = 2
       setBudget(this.mobile ? 200e6 : 480e6)
     } else {
-      this.baseRatio = Math.min(dpr, 1.5)
+      this.baseRatio = this.lowEnd ? 1 : Math.min(dpr, 1.5)
       this.detail = this.mobile ? 1 : 2
+      // память под картинки не урезаем и простому телефону: при меньшей
+      // выбрасывались картинки, на которых стоит сама кухня, — и она чернела
       setBudget(this.mobile ? 110e6 : 420e6)
     }
   }
@@ -1466,11 +1598,46 @@ export class KitchenEngine {
     this.applyRatio(this.baseRatio, w, h)
     this.camera.aspect = w / h
     this.camera.updateProjectionMatrix()
+    this.applyShift()
     this.invalidate()
+  }
+
+  /**
+   * Картинка для листа мастера: всегда общий вид «3D» на всю кухню, как бы
+   * ни стояла камера сейчас (подлетели к духовке, смотрят сверху). После
+   * снимка камера возвращается туда, где была.
+   */
+  sheetShot(width = 1600, height = 1000): string {
+    if (!this.input || this.isPhoto()) return this.snapshot(width, height)
+    const pos = this.camera.position.clone()
+    const fov = this.camera.fov
+    const aspect = this.camera.aspect
+    const view = this.view
+    this.view = 'angle'
+    this.applyOverhead()
+    this.camera.fov = 36
+    this.camera.aspect = width / height
+    const f = this.framing('angle')
+    this.camera.aspect = aspect
+    this.camera.position.copy(f.pos)
+    this.camera.lookAt(f.target)
+    const url = this.snapshot(width, height)
+    this.view = view
+    this.applyOverhead()
+    this.camera.fov = fov
+    this.camera.position.copy(pos)
+    this.camera.lookAt(this.controls.target)
+    this.camera.updateProjectionMatrix()
+    this.redraw()
+    return url
   }
 
   /** Картинка текущего вида для сохранения или отправки. */
   snapshot(width = 1600, height = 1000): string {
+    // картинка — без сдвига под карточку: как кухня стоит на самом деле
+    const shifted = this.shift
+    this.shift = { x: 0, y: 0 }
+    this.applyShift()
     const r = this.renderer
     const prev = r.getSize(new THREE.Vector2())
     const prevRatio = r.getPixelRatio()
@@ -1491,6 +1658,8 @@ export class KitchenEngine {
     this.applyRatio(prevRender, prev.x, prev.y)
     this.camera.aspect = prevAspect
     this.camera.updateProjectionMatrix()
+    this.shift = shifted
+    this.applyShift()
     for (const o of hidden) o.visible = true
     this.redraw()
     return url
@@ -1542,6 +1711,7 @@ export class KitchenEngine {
     if (this.bloom) this.bloom.enabled = bloomOn
     this.camera.aspect = prevAspect
     this.camera.updateProjectionMatrix()
+    this.applyShift()
     for (const o of hidden) o.visible = true
     r.setPixelRatio(prevRatio)
     r.setSize(prevSize.x, prevSize.y, false)

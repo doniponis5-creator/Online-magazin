@@ -264,6 +264,25 @@ export function marble(base: string, vein: string, seed = 3, bold = 1): THREE.Te
   })
 }
 
+/**
+ * Керамогранит под мрамор 60×120 см — такой кладут на кухнях чаще всего.
+ * Текстура = 1,2 × 1,2 м: две плиты по 60 см в ряд, швы тонкие, в тон камню.
+ */
+export function marbleTile(base: string, vein: string): THREE.Texture {
+  return memo(`marbleTile:${base}:${vein}`, () => {
+    const src = marble(base, vein, 17).image as HTMLCanvasElement
+    const S = src.width
+    const { el, ctx } = canvas(S, S)
+    ctx.drawImage(src, 0, 0)
+    ctx.fillStyle = shade(base, -0.14)
+    const g = Math.max(2, Math.round(1.5 * K))
+    ctx.fillRect(0, 0, g, S)
+    ctx.fillRect(S / 2 - g / 2, 0, g, S)
+    ctx.fillRect(0, 0, S, g)
+    return finish(el, `marbleTile:${base}:${vein}`)
+  })
+}
+
 /** Кварц: ровный тон и мелкая крошка. */
 export function speckle(base: string, fleck: string, density: number, seed = 11): THREE.Texture {
   return memo(`speckle:${base}:${fleck}:${density}`, () => {

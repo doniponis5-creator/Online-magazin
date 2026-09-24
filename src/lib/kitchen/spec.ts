@@ -29,6 +29,7 @@ export type DimsKind =
   | 'lift'
   | 'antresol'
   | 'overFridge'
+  | 'mantel'
   | 'panel'
   | 'shelf'
   | 'top'
@@ -207,7 +208,7 @@ export function topList(runs: SpecRun[]): { rows: TopRow[]; total: number } {
 /* ───────── модули по стенам ───────── */
 
 const MODULE_KINDS: DimsKind[] = ['base', 'drawers', 'sinkBase', 'hobBase', 'ovenBase', 'corner', 'bottle', 'filler', 'openBase', 'tall', 'pantry', 'appliance']
-const UPPER_KINDS: DimsKind[] = ['upper', 'vitrine', 'lift', 'antresol', 'overFridge', 'shelf']
+const UPPER_KINDS: DimsKind[] = ['upper', 'vitrine', 'lift', 'antresol', 'overFridge', 'shelf', 'mantel']
 
 /** Нижний ряд (с колоннами и техникой) и верхний — слева направо. */
 export function modulesOf(run: SpecRun): { lower: SpecBox[]; upper: SpecBox[] } {

@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { phones, whatsappHref } from '@/data/contacts'
 import { useCart } from '@/lib/cart/CartProvider'
 import { formatSom } from '@/lib/format'
@@ -28,6 +28,7 @@ import { BASE_FRONTS, baseKey, UPPER_FRONTS, upperKey } from '@/lib/kitchen/fron
 import {
   canChangeWall,
   CEILING,
+  COLUMN_HEIGHT,
   companions,
   hobMinWidth,
   itemGaps,
@@ -60,6 +61,7 @@ import {
   SLOTS,
   type BaseFront,
   type CabinetId,
+  type ColumnItem,
   type FrontVariant,
   type ItemKey,
   type KitchenAppliance,
@@ -71,7 +73,6 @@ import {
 } from '@/lib/kitchen/types'
 import { DRAWING_CSS, elevationSvg } from './drawing'
 import { PlanSketch } from './PlanSketch'
-import { sheetHtml } from './printSheet'
 import { kitchenTexts, type KitchenTexts } from './texts'
 import type { BuildInput, CabInfo, Dims } from './three/build'
 import type { DragPreview, DragTarget, KitchenEngine, PhotoState, Pick, Quality, View } from './three/engine'
@@ -161,6 +162,48 @@ function hasWebGL(): boolean {
   }
 }
 
+/** Кнопка во всплывающей строке: ссылка (WhatsApp) или действие («Отправить»). */
+type ToastAct = { label: string; href?: string; run?: () => void }
+
+/** Сразу, если страница на экране; иначе — когда человек к ней вернётся. */
+function whenVisible(run: () => void) {
+  if (!document.hidden) return run()
+  const onShow = () => {
+    if (document.hidden) return
+    document.removeEventListener('visibilitychange', onShow)
+    run()
+  }
+  document.addEventListener('visibilitychange', onShow)
+}
+
+/**
+ * Встроенный браузер Instagram, Facebook, TikTok, Telegram и других программ
+ * (на Android — «; wv)»): файлы там часто молча не скачиваются.
+ */
+function inAppBrowser(): boolean {
+  return /FBAN|FBAV|FB_IAB|Instagram|Line\/|Snapchat|TikTok|musical_ly|Bytedance|Telegram|; wv\)/i.test(navigator.userAgent)
+}
+
+/**
+ * Файл — в окно «Поделиться» телефона (WhatsApp, Telegram, почта, «Файлы»).
+ * ok — отправили или человек сам закрыл окно; late — браузер не открыл окно
+ * без нового нажатия; no — этот браузер файлами делиться не умеет.
+ */
+async function shareFile(file: File, text: string, title: string): Promise<'ok' | 'late' | 'no'> {
+  const data: ShareData = text ? { files: [file], title, text } : { files: [file], title }
+  try {
+    if (!navigator.canShare?.(data)) return 'no'
+    await navigator.share(data)
+    return 'ok'
+  } catch (e) {
+    // DOMException в старых Safari — не Error, поэтому смотрим просто на имя
+    const name = (e as { name?: string } | null)?.name ?? ''
+    if (name === 'AbortError') return 'ok'
+    if (name === 'NotAllowedError') return 'late'
+    return 'no'
+  }
+}
+
 /**
  * Телефон «стопкой»: 3D прилипает сверху, под ним вкладки шагов, итог внизу.
  * Тот же запрос — в kitchen.css. Телефон боком (невысокий экран) собирается
@@ -168,6 +211,8 @@ function hasWebGL(): boolean {
  */
 const STACKED = '(max-width: 900px) and (min-height: 521px)'
 const isStacked = () => window.matchMedia(STACKED).matches
+/** Невысокий экран — телефон боком: конструктор встаёт ровно в экран. Тот же запрос — в kitchen.css. */
+const isShort = () => window.matchMedia('(max-height: 520px)').matches
 const smooth = (): ScrollBehavior => (window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth')
 
 export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] }) {
@@ -198,13 +243,16 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   const [frontMat, setFrontMat] = useState<FrontMaterial>('laminate')
   const [topMat, setTopMat] = useState<TopMaterial>('quartz')
   const [splashGroup, setSplashGroup] = useState<SplashGroup>('stone')
-  const [engineState, setEngineState] = useState<'loading' | 'ready' | 'error'>('loading')
+  /** lost — телефон несколько раз подряд забрал видеокарту: ждём нажатия «Запустить 3D снова» */
+  const [engineState, setEngineState] = useState<'loading' | 'ready' | 'error' | 'lost'>('loading')
   const [built, setBuilt] = useState(false)
   const [spec, setSpec] = useState<SpecData | null>(null)
   const [photosVersion, setPhotosVersion] = useState(0)
   const [thumbs, setThumbs] = useState<Partial<Record<string, string>>>({})
   const [cartResult, setCartResult] = useState<{ ok: number; failed: number } | null>(null)
-  const [toast, setToast] = useState<string | null>(null)
+  /** всплывающая строка внизу; act — кнопка в ней («Отправить», «WhatsApp») */
+  const [note, setNote] = useState<{ text: string; act?: ToastAct } | null>(null)
+  const setToast = useCallback((text: string | null) => setNote(text ? { text } : null), [])
   /** ширины всех шкафов прямо в 3D */
   const [showDims, setShowDims] = useState(false)
   const [variants, setVariants] = useState<Variant[]>([])
@@ -215,9 +263,10 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   const [menu, setMenu] = useState(false)
   /** фото трассировкой лучей: null — обычное 3D */
   const [photo, setPhoto] = useState<PhotoState | null>(null)
-  /** номер запуска 3D: после сброса видеокарты 3D создаётся заново (один раз) */
+  /** номер запуска 3D: после сброса видеокарты 3D создаётся заново */
   const [engineKey, setEngineKey] = useState(0)
-  const restarted = useRef(false)
+  /** сколько раз 3D пришлось запускать заново, пока страница была на экране */
+  const restarts = useRef(0)
 
   const rootRef = useRef<HTMLDivElement>(null)
   const hostRef = useRef<HTMLDivElement>(null)
@@ -238,6 +287,8 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   measureRef.current = measure
   /** ширину поменяли у верхнего шкафа — после перестройки найти его над этим предметом */
   const followRef = useRef<ItemKey | null>(null)
+  /** после перестройки открыть дверцы этого шкафа (выбрали сторону открывания) */
+  const openAfterRef = useRef<string | null>(null)
 
   /* ───────── каталог ───────── */
 
@@ -266,8 +317,10 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     return out
   }, [state.picks, byId, bySlot])
 
+  // preview — для карточки стиля: с тем, с чем стиль задуман (колонны, духовка наверху)
   const planFor = useCallback(
-    (s: KitchenStyle): Plan => planKitchen(planInput(state, chosen), { shelves: s.shelves }),
+    (s: KitchenStyle, preview = false): Plan =>
+      planKitchen({ ...planInput(state, chosen), ...(preview ? s.layout : undefined) }, { shelves: s.shelves }),
     // только то, от чего зависит раскладка: смена отделки план не пересчитывает
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
@@ -323,7 +376,8 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     return () => clearTimeout(timer)
   }, [state, hydrated])
 
-  const shareUrl = `${origin}/${lang}/kitchen?${queryFromState(state)}`
+  const query = queryFromState(state)
+  const shareUrl = `${origin}/${lang}/kitchen?${query}`
 
   // Шапка сайта уезжает при прокрутке вниз и возвращается при прокрутке вверх.
   // 3D на телефоне прилипает прямо под ней — поэтому следим за её высотой.
@@ -360,8 +414,15 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       // появлялась, то пряталась, и 3D с вкладками прыгали на её высоту.
       // Долистал выше конструктора или ниже него — шапка снова как везде.
       const work = root.querySelector('.kp-work')?.getBoundingClientRect()
-      const pinned = Boolean(work && isStacked() && work.top <= h + 2 && work.bottom > window.innerHeight * 0.6)
+      // Телефон боком — так же: конструктор занимает весь экран, и шапка
+      // с меню сайта закрывали бы треть 3D (раньше поверх вставали кнопки).
+      const pinned = Boolean(work && (isStacked() || isShort()) && work.top <= h + 2 && work.bottom > window.innerHeight * 0.6)
       document.documentElement.classList.toggle('kp-pinned', pinned)
+      // Компьютер: пока низ конструктора (кнопка «Добавить всё в корзину») у
+      // нижнего края экрана, кнопка консультанта стоит в углу 3D. Пролистали
+      // ниже — возвращается в обычный угол, а не висит посреди страницы.
+      const edge = window.innerHeight - 90
+      document.documentElement.classList.toggle('kp-over', Boolean(work && work.top < edge && work.bottom > edge))
       const top = header.classList.contains('is-hidden') ? 0 : h
       if (`${h}:${top}` === last) return
       last = `${h}:${top}`
@@ -384,7 +445,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       cls.disconnect()
       page.disconnect()
       cancelAnimationFrame(frame)
-      document.documentElement.classList.remove('kp-pinned')
+      document.documentElement.classList.remove('kp-pinned', 'kp-over')
       window.removeEventListener('scroll', later)
       window.removeEventListener('resize', later)
       window.removeEventListener('load', later)
@@ -499,20 +560,25 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
           onMove: (item, wall, pos) => moveRef.current(item, wall, pos),
           onPreview: (q) => previewRef.current(q),
           onError: () => {
-            // Видеокарту сбросили (бывает после тяжёлой работы или сна
-            // ноутбука) — один раз запускаем 3D заново, а не пишем «не работает».
+            // Видеокарту забрали. На телефоне так бывает часто: ушли в WhatsApp
+            // отправить ссылку и вернулись, или не хватило памяти. Запускаем 3D
+            // заново, когда страница снова на экране, — а не пишем «не работает».
+            // Сбрасывается раз за разом прямо на глазах — не мучаем телефон:
+            // показываем кнопку «Запустить 3D снова».
             setPhoto(null)
-            if (restarted.current) {
-              setEngineState('error')
+            setBuilt(false)
+            if (!document.hidden && restarts.current >= 2) {
+              setEngineState('lost')
               return
             }
-            restarted.current = true
-            setBuilt(false)
+            if (!document.hidden) restarts.current++
             setEngineState('loading')
-            setEngineKey((k) => k + 1)
+            whenVisible(() => setEngineKey((k) => k + 1))
           },
         })
         engineRef.current = engine
+        // только при разработке: доступ к 3D из консоли браузера для проверок
+        if (process.env.NODE_ENV !== 'production') (window as unknown as { __kp?: KitchenEngine }).__kp = engine
         setQuality(engine.getQuality())
         setEngineState('ready')
       })
@@ -569,11 +635,37 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       room: { ceiling, toCeiling: !state.lowUppers, floor: state.floor, wall: wallColor },
       fronts: state.fronts ?? {},
       finish,
+      columns: state.heights,
+      doorsRight: state.doorsRight,
     }),
     // photosVersion — фото пришло, картинку на технике надо обновить
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [plan, lookStyle, tone, items, photosVersion, ceiling, state.lowUppers, state.floor, wallColor, state.fronts, finish],
+    [plan, lookStyle, tone, items, photosVersion, ceiling, state.lowUppers, state.floor, wallColor, state.fronts, finish, state.heights, state.doorsRight],
   )
+
+  // 3D на этом телефоне нет (старый телефон, браузер без видеокарты) — чертёж
+  // и PDF для мастера всё равно считаем: та же сборка кухни, только без показа.
+  // Раньше без 3D кнопка «Скачать PDF» была серой, хотя страница обещала лист.
+  useEffect(() => {
+    if (engineState !== 'error' && engineState !== 'lost') return
+    let cancelled = false
+    const timer = setTimeout(() => {
+      import('./three/build')
+        .then(({ buildKitchen }) => {
+          if (cancelled) return
+          const kitchen = buildKitchen(buildInput)
+          setSpec(kitchen.spec)
+          kitchen.dispose()
+        })
+        .catch(() => {
+          // не собралось и без 3D — остаётся короткий список «что где стоит»
+        })
+    }, 250)
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [engineState, buildInput])
 
   const prev = useRef<{ style: string; tone: number; shape: Shape; ids: string } | null>(null)
   useEffect(() => {
@@ -610,6 +702,11 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     const byItem = !again && measureRef.current && mv && 'key' in mv ? engine.measureItem(mv.key) : null
     setMeasure(again?.dims ?? byItem?.dims ?? null)
     setEditing(again?.cab ?? null)
+    // поменяли сторону открывания — дверцы сразу открываются: видно, куда
+    if (openAfterRef.current) {
+      engine.openDoors(openAfterRef.current)
+      openAfterRef.current = null
+    }
     // moving намеренно не в списке: анимация — только при перестройке кухни
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [buildInput, engineState, items, state.style, state.tone, state.shape])
@@ -727,7 +824,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
         return
       }
       const s = STYLES[i++]
-      const url = engine?.thumbnail({ ...buildInput, style: s, tone: s.tones[0], plan: planFor(s), fronts: {}, finish: undefined })
+      const url = engine?.thumbnail({ ...buildInput, style: s, tone: s.tones[0], plan: planFor(s, true), fronts: {}, finish: undefined })
       if (url) setThumbs((prevThumbs) => ({ ...prevThumbs, [s.id]: url }))
       timer = window.setTimeout(next, 40)
     }
@@ -745,11 +842,11 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   }, [hint])
 
   useEffect(() => {
-    if (!toast) return
-    // длинное сообщение висит дольше — чтобы успели прочитать
-    const timer = setTimeout(() => setToast(null), Math.max(2400, toast.length * 60))
+    if (!note) return
+    // длинное сообщение висит дольше — чтобы успели прочитать; с кнопкой — ещё дольше
+    const timer = setTimeout(() => setNote(null), note.act ? 12000 : Math.max(2400, note.text.length * 60))
     return () => clearTimeout(timer)
-  }, [toast])
+  }, [note])
 
   /* ───────── действия ───────── */
 
@@ -852,7 +949,9 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     Object.keys(state.fronts ?? {}).length +
     Object.keys(state.cabinets ?? {}).length +
     Object.keys(state.at ?? {}).filter((k) => !isCabinet(k)).length +
-    Object.keys(state.widths ?? {}).length
+    Object.keys(state.widths ?? {}).length +
+    Object.keys(state.heights ?? {}).length +
+    (state.doorsRight?.length ?? 0)
 
   // Перестановка кнопками. У левой стены и у острова ряд идёт справа налево — поэтому наоборот.
   const present = useMemo(() => new Set(Object.keys(positions) as ItemKey[]), [positions])
@@ -1039,6 +1138,80 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     commitPinned({ cab, w: m.w, wall: run.id as WallId, center }, { w: next, at: center, keep: upper })
   }
 
+  /**
+   * Высота пенала и колонны с духовкой: по умолчанию — до верха (потолка
+   * или верхних шкафов), можно ниже. В колонну с духовкой и микроволновкой
+   * обе должны влезть — ниже 2 м её не сделать.
+   */
+  const heightCtl = useMemo(() => {
+    const k = target?.m.item
+    if (k !== 'pantry' && k !== 'pantry2' && k !== 'tall') return null
+    // верх колонн — как в 3D (build.ts, heights): до потолка или до верха шкафов,
+    // а над холодильником в нише — не ниже его и антресоли 30 см
+    const ceil = ceiling - 0.4
+    let top = ceil
+    if (state.lowUppers) {
+      top = Math.min(142 + style.upperCm, ceil)
+      if (items.fridge && !state.fridgeOpen) top = Math.min(ceil, Math.max(top, items.fridge.h + 35))
+    }
+    const max = Math.floor(top)
+    const min = k === 'tall' ? (items.microwave?.builtIn ? 200 : 160) : COLUMN_HEIGHT.min
+    return { key: k as ColumnItem, value: Math.min(max, Math.round(state.heights?.[k as ColumnItem] ?? max)), min, max }
+  }, [target, ceiling, state.lowUppers, state.fridgeOpen, state.heights, style.upperCm, items.fridge, items.microwave])
+
+  const setHeight = (dir: 1 | -1) => {
+    if (!heightCtl) return
+    const cur = heightCtl.value
+    const snapped = dir > 0 ? Math.floor(cur / 5) * 5 + 5 : Math.ceil(cur / 5) * 5 - 5
+    const next = Math.max(heightCtl.min, Math.min(heightCtl.max, snapped))
+    if (next === cur) return
+    const heights = { ...state.heights }
+    // до самого верха — это «как было», в адрес не пишем
+    if (next >= heightCtl.max) delete heights[heightCtl.key]
+    else heights[heightCtl.key] = next
+    update({ heights: nonEmpty(heights) })
+  }
+
+  /**
+   * В какую сторону открывается дверца: только у шкафа с одной распашной
+   * дверцей (двустворчатые открываются в обе стороны). Ключ — как в 3D:
+   * у верхнего шкафа его ключ, у нижнего — предмет или ряд и начало.
+   */
+  const hingeKey = useMemo((): string | null => {
+    const single = (wCm: number) => wCm >= 20 && wCm <= 62
+    if (editing?.row === 'upper') {
+      if (editing.variant !== 'doors' && editing.variant !== 'glass') return null
+      const run = plan.runs.find((r) => r.id === editing.key[0].toUpperCase())
+      const x = Number(editing.key.slice(1))
+      const u = run?.uppers.find((up) => Math.round(up.x) === x)
+      return u && single(u.w) ? editing.key : null
+    }
+    if (!target) return null
+    const { run, m } = target
+    const key = m.item ?? baseKey(run.id, m.x)
+    if (m.kind === 'tall' || m.kind === 'pantry') return key
+    if (m.kind === 'sink') return single(m.w) ? key : null
+    if (m.kind === 'doors' || m.kind === 'drawers' || m.kind === 'hob') {
+      if (m.kind === 'hob' && m.oven) return null
+      const front =
+        m.item && isCabinet(m.item)
+          ? state.cabinets?.[m.item]?.front
+          : ((state.fronts?.[baseKey(run.id, m.x)] as BaseFront | undefined) ?? (m.kind === 'doors' ? 'doors' : 'drawers3'))
+      return (front === 'doors' || front === 'mix') && single(m.w) ? key : null
+    }
+    return null
+  }, [editing, target, plan, state.cabinets, state.fronts])
+  const doorRight = Boolean(hingeKey && state.doorsRight?.includes(hingeKey))
+
+  const setDoorSide = (right: boolean) => {
+    if (!hingeKey || right === doorRight) return
+    const list = new Set(state.doorsRight)
+    if (right) list.add(hingeKey)
+    else list.delete(hingeKey)
+    openAfterRef.current = hingeKey
+    update({ doorsRight: list.size ? [...list] : undefined })
+  }
+
   const removeCab = () => {
     if (!moving || !('key' in moving) || !isCabinet(moving.key)) return
     const id = moving.key
@@ -1128,6 +1301,129 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     document.documentElement.classList.toggle('kp-picking', sheetOpen)
     return () => document.documentElement.classList.remove('kp-picking')
   }, [sheetOpen])
+
+  /*
+    Карточка выбранного на компьютере, планшете и телефоне боком стоит над 3D.
+    Раньше — всегда слева сверху, и у верхних шкафов закрывала тот самый
+    шкаф, который меняют. Теперь из четырёх углов берём тот, где карточка
+    меньше всего закрывает выбранное. Не нашлось свободного угла (окно узкое,
+    карточка большая) — картинка 3D сама отъезжает, и шкаф встаёт рядом с
+    карточкой. Повернули кухню — всё выбирается заново. Пока человек нажимает
+    кнопки в самой карточке, она не прыгает: иначе следующее «+» попало бы
+    мимо. На телефоне стоя карточка — лист снизу экрана, под 3D.
+  */
+  const cardRef = useRef<HTMLDivElement>(null)
+  const cardBusyUntil = useRef(0)
+  const placeCard = useCallback((force = false) => {
+    const card = cardRef.current
+    const stage = hostRef.current
+    if (!card || !stage) return
+    const engine = engineRef.current
+    if (isStacked()) {
+      card.style.left = ''
+      card.style.top = ''
+      engine?.setShift(0, 0)
+      return
+    }
+    const first = !card.dataset.placed
+    if (!first && !force && performance.now() < cardBusyUntil.current) return
+    // где выбранное стояло бы без сдвига картинки: сдвиг — ровный перенос на экране
+    const now = engine?.selectionRect() ?? null
+    const was = engine?.getShift() ?? { x: 0, y: 0 }
+    const sel = now && { ...now, x: now.x - was.x, y: now.y - was.y }
+    const W = stage.clientWidth
+    const H = stage.clientHeight
+    const cw = card.offsetWidth
+    const ch = card.offsetHeight
+    const pad = 14
+    const top = pad + (parseFloat(stage.style.getPropertyValue('--kp-tools-h')) || 42) + 10
+    const move = stage.querySelector<HTMLElement>('.kp-move')
+    const spots = [
+      { left: pad, top },
+      { left: W - pad - cw, top },
+      // снизу слева — над полоской «переставить», справа — над кнопкой консультанта
+      { left: pad, top: (move ? move.offsetTop - 10 : H - pad) - ch },
+      { left: W - pad - cw, top: H - 76 - ch },
+    ].filter((p) => p.top >= top - 1 && p.left >= pad - 1)
+    // Каждый угол пробуем как есть и со сдвигом картинки: шкаф встаёт под
+    // карточку, над ней, справа или слева, но не уходит за края 3D. Берём, где
+    // карточка закрывает меньше всего; сдвиг стоит «штраф», чтобы картинка
+    // не ездила ради пары точек.
+    const floor = move ? move.offsetTop - 8 : H - pad
+    const clamp = (v: number, lo: number, hi: number) => (lo > hi ? 0 : Math.min(hi, Math.max(lo, v)))
+    const overlap = (p: { left: number; top: number }, s: { x: number; y: number; w: number; h: number }) => {
+      const ix = Math.min(p.left + cw, s.x + s.w) - Math.max(p.left, s.x)
+      const iy = Math.min(p.top + ch, s.y + s.h) - Math.max(p.top, s.y)
+      return ix > 0 && iy > 0 ? ix * iy : 0
+    }
+    let best = { spot: spots[0] ?? { left: pad, top }, shift: { x: 0, y: 0 }, cost: Infinity }
+    for (const spot of spots.length ? spots : [best.spot]) {
+      const tries = [{ x: 0, y: 0 }]
+      if (sel) {
+        const m = 12
+        tries.push(
+          { x: 0, y: spot.top + ch + m - sel.y },
+          { x: 0, y: spot.top - m - (sel.y + sel.h) },
+          { x: spot.left + cw + m - sel.x, y: 0 },
+          { x: spot.left - m - (sel.x + sel.w), y: 0 },
+        )
+      }
+      for (const t of tries) {
+        // «без сдвига» — как есть; сдвиг — не дальше краёв 3D
+        const d =
+          sel && (t.x || t.y)
+            ? { x: clamp(t.x, pad - sel.x, W - pad - sel.x - sel.w), y: clamp(t.y, pad + 20 - sel.y, floor - sel.y - sel.h) }
+            : t
+        const covered = sel ? overlap(spot, { ...sel, x: sel.x + d.x, y: sel.y + d.y }) : 0
+        const cost = covered + Math.hypot(d.x, d.y) * (sel ? sel.w * sel.h * 0.002 : 0)
+        if (cost < best.cost - 1) best = { spot, shift: d, cost }
+      }
+    }
+    engine?.setShift(best.shift.x, best.shift.y)
+    // первый раз встаёт сразу, дальше — переезжает плавно
+    if (first) card.style.transition = 'none'
+    card.style.left = `${Math.round(best.spot.left)}px`
+    card.style.top = `${Math.round(best.spot.top)}px`
+    if (first) {
+      card.dataset.placed = '1'
+      requestAnimationFrame(() => (card.style.transition = ''))
+    }
+  }, [])
+  // карточку закрыли — картинка 3D возвращается на место
+  useEffect(() => {
+    if (!sheetOpen || !measure) engineRef.current?.setShift(0, 0)
+  }, [sheetOpen, measure])
+  useLayoutEffect(() => {
+    if (!sheetOpen) return
+    const card = cardRef.current
+    const canvas = hostRef.current?.querySelector('.kp-canvas')
+    placeCard()
+    let timer = 0
+    const settle = () => {
+      window.clearTimeout(timer)
+      timer = window.setTimeout(() => placeCard(true), 250)
+    }
+    const busy = () => (cardBusyUntil.current = performance.now() + 1500)
+    // техника: камера подлетает к ней почти секунду — ставим ещё раз, когда долетела
+    const flown = window.setTimeout(() => placeCard(), 900)
+    const size = new ResizeObserver(() => placeCard())
+    if (card) {
+      size.observe(card)
+      card.addEventListener('pointerdown', busy)
+    }
+    canvas?.addEventListener('pointerup', settle)
+    canvas?.addEventListener('wheel', settle, { passive: true })
+    window.addEventListener('resize', settle)
+    return () => {
+      window.clearTimeout(timer)
+      window.clearTimeout(flown)
+      size.disconnect()
+      card?.removeEventListener('pointerdown', busy)
+      canvas?.removeEventListener('pointerup', settle)
+      canvas?.removeEventListener('wheel', settle)
+      window.removeEventListener('resize', settle)
+    }
+  }, [sheetOpen, measure, placeCard])
 
   const openSlot = (slot: SlotKind) => {
     const opening = !(step === 'tech' && open === slot)
@@ -1407,49 +1703,158 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     ]
   }
 
-  const [sheetBusy, setSheetBusy] = useState(false)
-  const openSheet = () => {
+  /* ───────── PDF для мастера ───────── */
+
+  /*
+    Лист для мастера — настоящий файл PDF, он делается прямо в телефоне.
+    «Скачать» кладёт его в «Загрузки», «Отправить» открывает окно
+    «Поделиться» телефона — и PDF уходит в WhatsApp или Telegram файлом.
+    Готовый файл помним, пока кухня не изменилась: второе нажатие — сразу.
+  */
+  const pdfKey = `${lang}|${query}`
+  const pdfDone = useRef<{ key: string; file: File } | null>(null)
+  const pdfJob = useRef<{ key: string; job: Promise<File | null> } | null>(null)
+  const [pdfBusy, setPdfBusy] = useState(false)
+
+  const makePdf = (): Promise<File | null> => {
+    if (!drawing || !spec) return Promise.resolve(null)
+    const key = pdfKey
+    if (pdfDone.current?.key === key) return Promise.resolve(pdfDone.current.file)
+    if (pdfJob.current?.key === key) return pdfJob.current.job
     const engine = engineRef.current
-    if (!drawing || !spec || sheetBusy) return
-    // окно открываем сразу по нажатию — иначе браузер его заблокирует
-    const win = window.open('', '_blank')
-    setSheetBusy(true)
-    const image = engine ? engine.snapshot(1600, 1000) : null
-    const date = new Date().toLocaleDateString(lang === 'ky' ? 'ky-KG' : 'ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
-    const html = sheetHtml({
-      lang,
-      title: t.sheetTitle,
-      subtitle: t.sheetOf(t.shapes[state.shape][0], lang === 'ky' ? style.ky : style.ru, lang === 'ky' ? tone.ky : tone.ru),
-      date,
-      url: shareUrl,
-      image,
-      facts: [
-        { label: t.factWalls, value: wallsLine },
-        { label: t.factCeiling, value: `${ceiling} ${t.cm}` },
-        { label: t.factModules, value: String(drawing.modules) },
-        { label: t.factFronts, value: String(drawing.frontsTotal) },
-        ...finishFacts(),
-      ],
-      walls: drawing.walls.map((w) => ({ title: w.title, svg: w.svg })),
-      tables: sheetTables(),
-      note: t.specNote,
-      printLabel: t.specPdf,
-      wallsTitle: t.wallsTitle,
-    })
-    const url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }))
-    if (win) win.location.href = url
-    else {
-      // окна запрещены — отдаём лист файлом, он откроется в браузере
-      const a = document.createElement('a')
-      a.href = url
-      a.download = 'smarket-kitchen-master.html'
-      a.click()
-    }
-    setTimeout(() => URL.revokeObjectURL(url), 60000)
-    setSheetBusy(false)
+    const job = (async () => {
+      const { sheetPdf } = await import('./pdfSheet')
+      const now = new Date()
+      const blob = await sheetPdf({
+        title: t.sheetTitle,
+        subtitle: t.sheetOf(t.shapes[state.shape][0], lang === 'ky' ? style.ky : style.ru, lang === 'ky' ? tone.ky : tone.ru),
+        date: now.toLocaleDateString(lang === 'ky' ? 'ky-KG' : 'ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }),
+        url: shareUrl,
+        urlLabel: t.pdfOpen3d,
+        // картинка — всегда общий вид кухни, даже если сейчас подлетели к духовке
+        image: engine && built ? engine.sheetShot(1600, 1000) : null,
+        facts: [
+          { label: t.factWalls, value: wallsLine },
+          { label: t.factCeiling, value: `${ceiling} ${t.cm}` },
+          { label: t.factModules, value: String(drawing.modules) },
+          { label: t.factFronts, value: String(drawing.frontsTotal) },
+          { label: t.factTop, value: `${fmt(drawing.tops.total)} ${t.meters}` },
+          ...finishFacts(),
+        ],
+        wallsTitle: t.wallsTitle,
+        walls: drawing.walls.map((w) => ({ title: w.title, svg: w.svg })),
+        list: { title: t.makerTitle, text: makerText },
+        tables: [
+          {
+            title: t.techTitle,
+            head: [t.colWhat, t.colModel, t.colDims],
+            rows: inProject.map((a) => [t.slots[a.slot], a.name, `${fmt(a.w)} × ${fmt(a.h)} × ${fmt(a.d)}`]),
+            grow: 1,
+          },
+          ...sheetTables(),
+        ],
+        note: t.specNote,
+        page: t.pdfPage,
+      })
+      const file = new File([blob], `smarket-kitchen-${now.toISOString().slice(0, 10)}.pdf`, { type: 'application/pdf' })
+      pdfDone.current = { key, file }
+      return file
+    })()
+      .catch(() => null)
+      .finally(() => {
+        if (pdfJob.current?.key === key) pdfJob.current = null
+      })
+    pdfJob.current = { key, job }
+    return job
   }
 
-  const sendMaster = `https://wa.me/?text=${encodeURIComponent(t.sendText(shareUrl, wallsLine))}`
+  // PDF готовим заранее, пока человек листает лист для мастера: тогда
+  // «Отправить» открывает окно «Поделиться» сразу. Если файл делать после
+  // нажатия, iPhone может решить, что нажатие было слишком давно.
+  const specRef = useRef<HTMLElement>(null)
+  const makerRef = useRef<HTMLElement>(null)
+  const [pdfNear, setPdfNear] = useState(false)
+  useEffect(() => {
+    const els = [specRef.current, makerRef.current].filter((el): el is HTMLElement => Boolean(el))
+    if (!els.length || typeof IntersectionObserver === 'undefined') return
+    const seen = new Set<Element>()
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) seen.add(e.target)
+          else seen.delete(e.target)
+        }
+        setPdfNear(seen.size > 0)
+      },
+      { rootMargin: '300px 0px' },
+    )
+    els.forEach((el) => io.observe(el))
+    return () => io.disconnect()
+  }, [])
+  const makePdfRef = useRef(makePdf)
+  makePdfRef.current = makePdf
+  useEffect(() => {
+    // 3D ещё собирается — ждём, иначе в PDF не попадёт картинка кухни
+    if (!pdfNear || !drawing || engineState === 'loading' || (engineState === 'ready' && !built)) return
+    const timer = setTimeout(() => void makePdfRef.current(), 800)
+    return () => clearTimeout(timer)
+  }, [pdfNear, pdfKey, drawing, engineState, built])
+
+  const withPdf = async (use: (file: File) => Promise<void>) => {
+    if (pdfBusy) return
+    setPdfBusy(true)
+    const file = await makePdf()
+    setPdfBusy(false)
+    if (!file) {
+      setToast(t.pdfFailed)
+      return
+    }
+    await use(file)
+  }
+
+  /** PDF готов, но браузер не открыл «Поделиться» без нового нажатия — просим нажать ещё раз. */
+  const offerSend = (file: File, text: string) =>
+    setNote({ text: t.pdfReady, act: { label: t.pdfSendNow, run: () => void shareFile(file, text, t.sheetTitle) } })
+
+  const savePdf = () =>
+    withPdf(async (file) => {
+      // во встроенном браузере Instagram или Telegram файлы обычно не скачиваются —
+      // там пробуем окно «Поделиться»: из него PDF можно и сохранить, и отправить
+      if (inAppBrowser()) {
+        const res = await shareFile(file, '', t.sheetTitle)
+        if (res === 'ok') return
+        if (res === 'late') return offerSend(file, '')
+        download(file, file.name)
+        setToast(t.pdfInApp)
+        return
+      }
+      download(file, file.name)
+      setToast(t.pdfSaved)
+    })
+
+  /** Мастеру — PDF и текст со ссылкой; «Поделиться» — тот же PDF кому угодно. */
+  const sendPdf = (kind: 'master' | 'share') => {
+    if (!drawing) return kind === 'share' ? share() : undefined
+    return withPdf(async (file) => {
+      const text = kind === 'master' ? t.sendText(shareUrl, wallsLine) : t.shareText(shareUrl)
+      const res = await shareFile(file, text, t.sheetTitle)
+      if (res === 'ok') return
+      if (res === 'late') return offerSend(file, text)
+      // Отправлять файлы этот браузер не умеет (компьютер, старый телефон):
+      // PDF — в «Загрузки», а текст со ссылкой — в WhatsApp или в буфер.
+      download(file, file.name)
+      if (kind === 'master') {
+        setNote({ text: t.pdfAttach, act: { label: 'WhatsApp', href: `https://wa.me/?text=${encodeURIComponent(text)}` } })
+        return
+      }
+      try {
+        await navigator.clipboard.writeText(text)
+        setToast(t.pdfLinkCopied)
+      } catch {
+        setToast(t.pdfSaved)
+      }
+    })
+  }
 
   /* ───────── вёрстка ───────── */
 
@@ -1473,13 +1878,29 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
 
       <div className="kp-work">
         <div className="kp-stage" ref={hostRef} onPointerDown={() => setHint(false)}>
-          {engineState !== 'error' && !built && (
+          {engineState !== 'error' && engineState !== 'lost' && !built && (
             <div className="kp-loading" role="status">
               <span className="kp-loading__bar" />
               {t.loading}
             </div>
           )}
           {engineState === 'error' && <p className="kp-fallback">{t.noWebgl}</p>}
+          {engineState === 'lost' && (
+            <div className="kp-fallback">
+              <p>{t.lost3d}</p>
+              <button
+                type="button"
+                className="btn btn--primary btn--sm"
+                onClick={() => {
+                  restarts.current = 0
+                  setEngineState('loading')
+                  setEngineKey((k) => k + 1)
+                }}
+              >
+                {t.restart3d}
+              </button>
+            </div>
+          )}
 
           {engineState === 'ready' && built && (
             <div className="kp-tags">
@@ -1680,7 +2101,12 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
           {sheetOpen && (
             <div className="kp-sel">
               {measure && (
-                <div className={`kp-size-card${editing || widthCtl ? ' kp-size-card--edit' : ''}`} role="group" aria-label={measureTitle(measure)}>
+                <div
+                  ref={cardRef}
+                  className={`kp-size-card${editing || widthCtl ? ' kp-size-card--edit' : ''}`}
+                  role="group"
+                  aria-label={measureTitle(measure)}
+                >
                   <span className="kp-size-card__title">{measureTitle(measure)}</span>
                   <span className="kp-size-card__nums">
                     {fmt(measure.w)} × {fmt(measure.h)} × {fmt(measure.d)} {t.cm}
@@ -1706,6 +2132,20 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                             <span>{frontLabel(v)}</span>
                           </button>
                         ))}
+                      </div>
+                    </div>
+                  )}
+                  {/* в какую сторону открывается дверца — как удобнее самому */}
+                  {hingeKey && (
+                    <div className="kp-cabw" role="radiogroup" aria-label={t.openLabel}>
+                      <span className="kp-cabw__label">{t.openLabel}</span>
+                      <div className="kp-seg">
+                        <button type="button" role="radio" aria-checked={!doorRight} className="kp-seg__btn" onClick={() => setDoorSide(false)}>
+                          ← {t.openLeft}
+                        </button>
+                        <button type="button" role="radio" aria-checked={doorRight} className="kp-seg__btn" onClick={() => setDoorSide(true)}>
+                          {t.openRight} →
+                        </button>
                       </div>
                     </div>
                   )}
@@ -1742,6 +2182,33 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                           {t.removeCab}
                         </button>
                       )}
+                    </div>
+                  )}
+                  {/* высота пенала и колонны с духовкой — можно ниже потолка */}
+                  {heightCtl && (
+                    <div className="kp-cabw">
+                      <span className="kp-cabw__label">{t.heightLabel}</span>
+                      <button
+                        type="button"
+                        className="kp-size__step"
+                        aria-label={`${t.less}: ${t.heightLabel}`}
+                        disabled={heightCtl.value <= heightCtl.min}
+                        onClick={() => setHeight(-1)}
+                      >
+                        −
+                      </button>
+                      <output className="kp-counter__value" aria-live="polite">
+                        {heightCtl.value} {t.cm}
+                      </output>
+                      <button
+                        type="button"
+                        className="kp-size__step"
+                        aria-label={`${t.more}: ${t.heightLabel}`}
+                        disabled={heightCtl.value >= heightCtl.max}
+                        onClick={() => setHeight(1)}
+                      >
+                        +
+                      </button>
                     </div>
                   )}
                 </div>
@@ -1935,10 +2402,11 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                             role="radio"
                             aria-checked={state.style === s.id}
                             className="kp-style"
-                            onClick={() => update({ style: s.id, tone: 0 })}
+                            onClick={() => update({ style: s.id, tone: 0, ...(s.layout ?? {}) })}
                           >
                             <span className="kp-style__img" style={{ background: styleSwatch(s) }}>
                               {thumbs[s.id] && <img src={thumbs[s.id]} alt="" />}
+                              {s.isNew && <span className="kp-style__new">{t.styleNew}</span>}
                             </span>
                             <span className="kp-style__name">{lang === 'ky' ? s.ky : s.ru}</span>
                             <span className="kp-style__note">{lang === 'ky' ? s.noteKy : s.noteRu}</span>
@@ -2207,7 +2675,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                   <button
                     type="button"
                     className="btn btn--ghost btn--sm kp-reset"
-                    onClick={() => update({ fronts: undefined, cabinets: undefined, arrangement: undefined, at: undefined, widths: undefined })}
+                    onClick={() => update({ fronts: undefined, cabinets: undefined, arrangement: undefined, at: undefined, widths: undefined, heights: undefined, doorsRight: undefined })}
                   >
                     {t.resetFronts(frontCount)}
                   </button>
@@ -2362,7 +2830,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
         </ul>
       </section>
 
-      <section className="kp-spec" aria-labelledby="kp-spec-title">
+      <section className="kp-spec" aria-labelledby="kp-spec-title" ref={specRef}>
         <style>{DRAWING_CSS}</style>
         <div className="kp-spec__head">
           <div>
@@ -2372,13 +2840,13 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
             <p className="kp-maker__lead">{t.specLead}</p>
           </div>
           <div className="kp-spec__actions">
-            <button type="button" className="btn btn--primary" onClick={openSheet} disabled={!drawing || sheetBusy} aria-busy={sheetBusy}>
+            <button type="button" className="btn btn--primary" onClick={savePdf} disabled={!drawing || pdfBusy} aria-busy={pdfBusy}>
               <IconFile />
-              {sheetBusy ? t.specPreparing : t.specPdf}
+              {pdfBusy ? t.specPreparing : t.specPdf}
             </button>
-            <a className="btn btn--outline" href={sendMaster} target="_blank" rel="noopener noreferrer">
+            <button type="button" className="btn btn--outline" onClick={() => sendPdf('master')} disabled={!drawing || pdfBusy}>
               {t.specSend}
-            </a>
+            </button>
           </div>
         </div>
 
@@ -2456,7 +2924,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
         )}
       </section>
 
-      <section className="kp-maker" aria-labelledby="kp-maker-title">
+      <section className="kp-maker" aria-labelledby="kp-maker-title" ref={makerRef}>
         <div className="kp-maker__text">
           <h2 id="kp-maker-title" className="kp-maker__title kp-maker__title--small">
             {t.makerTitle}
@@ -2471,7 +2939,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                 {saving ? (photo?.big ? t.photoBig(Math.round(photo.progress * 100)) : t.saving) : t.saveImage}
               </button>
             )}
-            <button type="button" className="btn btn--outline btn--sm" onClick={share}>
+            <button type="button" className="btn btn--outline btn--sm" onClick={() => sendPdf('share')} disabled={pdfBusy} aria-busy={pdfBusy}>
               {t.share}
             </button>
             <a className="btn btn--ghost btn--sm" href={whatsappHref(phones[0], t.askText(shareUrl))} target="_blank" rel="noopener noreferrer">
@@ -2515,10 +2983,27 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
         )}
       </section>
 
-      {toast && (
-        <p className="kp-toast" role="status">
-          {toast}
-        </p>
+      {note && (
+        <div className={`kp-toast${note.act ? ' kp-toast--act' : ''}`} role="status">
+          <span>{note.text}</span>
+          {note.act?.href && (
+            <a className="kp-toast__act" href={note.act.href} target="_blank" rel="noopener noreferrer" onClick={() => setNote(null)}>
+              {note.act.label}
+            </a>
+          )}
+          {note.act?.run && (
+            <button
+              type="button"
+              className="kp-toast__act"
+              onClick={() => {
+                note.act?.run?.()
+                setNote(null)
+              }}
+            >
+              {note.act.label}
+            </button>
+          )}
+        </div>
       )}
     </div>
   )
@@ -2611,11 +3096,18 @@ function SizeField({
         <button type="button" className="kp-size__step" aria-label={`${t.less} ${label}`} onClick={() => onChange(clamp(value - 5))} disabled={value <= min}>
           −
         </button>
-        <span className="kp-size__field">
+        {/* вся рамка — подпись к полю: палец попадает не только в цифры, а в любое место */}
+        <label className="kp-size__field">
           <input
             id={id}
             inputMode="numeric"
             value={draft}
+            // нажали — число выделено: новое набирается сразу, без стирания старого.
+            // Через кадр: iPhone иначе сбрасывает выделение, ставя курсор под палец.
+            onFocus={(e) => {
+              const el = e.currentTarget
+              requestAnimationFrame(() => el.setSelectionRange(0, el.value.length))
+            }}
             onChange={(e) => setDraft(e.target.value.replace(/\D/g, '').slice(0, 3))}
             onBlur={commit}
             onKeyDown={(e) => {
@@ -2623,7 +3115,7 @@ function SizeField({
             }}
           />
           <span>{t.cm}</span>
-        </span>
+        </label>
         <button type="button" className="kp-size__step" aria-label={`${t.more} ${label}`} onClick={() => onChange(clamp(value + 5))} disabled={value >= max}>
           +
         </button>

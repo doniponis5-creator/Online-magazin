@@ -1,8 +1,9 @@
 import { HANDLE_METALS, HANDLES, frontColor, splashChoice, topChoice } from './finishes'
 import { frontsFromQuery, frontsToQuery } from './fronts'
-import { CEILING, LIMITS, minA, sizedWidth, WIDTH_LIMITS, WINDOW_LIMITS, wallsOf } from './layout'
+import { CEILING, COLUMN_HEIGHT, LIMITS, minA, sizedWidth, WIDTH_LIMITS, WINDOW_LIMITS, wallsOf } from './layout'
 import { FLOORS, STYLES, WALL_COLORS } from './styles'
 import {
+  COLUMN_ITEMS,
   isCabinet,
   SIZED_ITEMS,
   SLOTS,
@@ -48,7 +49,7 @@ const CODE_FRONT = Object.fromEntries(Object.entries(FRONT_CODE).map(([k, v]) =>
 /** Предмет может стоять на своём месте: «s_095» — мойка, середина в 95 см от угла (всегда три цифры). */
 const TOKEN = /(\d{2,3}[othfmn]|[ftsdwhpqv])(?:_(\d{3}))?/g
 /** Своя ширина: «wd=s80h90» — мойка 80 см, шкаф под плитой 90 см. */
-const WIDTH_CODE: Record<SizedItem, string> = { sink: 's', hob: 'h', pantry: 'p', pantry2: 'q' }
+const WIDTH_CODE: Record<SizedItem, string> = { sink: 's', hob: 'h', pantry: 'p', pantry2: 'q', tall: 't' }
 
 type Placed = { arrangement?: Arrangement; cabinets?: Record<CabinetId, Cabinet>; at?: Partial<Record<ItemKey, number>> }
 
@@ -96,11 +97,39 @@ function arrangementToQuery(arr: Arrangement, shape: Shape, cabinets: KitchenSta
 function widthsFromQuery(raw: string | null): KitchenState['widths'] {
   if (!raw || raw.length > 40) return undefined
   const out: NonNullable<KitchenState['widths']> = {}
-  for (const [, code, v] of raw.matchAll(/([shpq])(\d{2,3})/g)) {
+  for (const [, code, v] of raw.matchAll(/([shpqt])(\d{2,3})/g)) {
     const key = SIZED_ITEMS.find((k) => WIDTH_CODE[k] === code)
     if (key) out[key] = sizedWidth(key, Number(v))
   }
   return Object.keys(out).length ? out : undefined
+}
+
+/** Дверцы вправо: «dr=A120.a60.k1.sink» — ключи шкафов через точку. */
+const DOOR_KEY = /^(?:[ABCIabci]\d{1,3}|k\d{1,3}|sink|tall|pantry2?|hob)$/
+
+function doorsFromQuery(raw: string | null): string[] | undefined {
+  if (!raw || raw.length > 400) return undefined
+  const out = [...new Set(raw.split('.').filter((k) => DOOR_KEY.test(k)))]
+  return out.length ? out : undefined
+}
+
+/** Своя высота колонн: «ht=p200t230» — пенал 200 см, колонна с духовкой 230 см. */
+const HEIGHT_CODE: Record<(typeof COLUMN_ITEMS)[number], string> = { pantry: 'p', pantry2: 'q', tall: 't' }
+
+function heightsFromQuery(raw: string | null): KitchenState['heights'] {
+  if (!raw || raw.length > 20) return undefined
+  const out: NonNullable<KitchenState['heights']> = {}
+  for (const [, code, v] of raw.matchAll(/([pqt])(\d{3})/g)) {
+    const key = COLUMN_ITEMS.find((k) => HEIGHT_CODE[k] === code)
+    if (key) out[key] = clamp(Number(v), COLUMN_HEIGHT.min, CEILING.max)
+  }
+  return Object.keys(out).length ? out : undefined
+}
+
+function heightsToQuery(heights: KitchenState['heights']): string {
+  return COLUMN_ITEMS.filter((k) => heights?.[k] !== undefined)
+    .map((k) => `${HEIGHT_CODE[k]}${Math.round(heights![k]!)}`)
+    .join('')
 }
 
 function widthsToQuery(widths: KitchenState['widths']): string {
@@ -142,6 +171,8 @@ export function stateFromQuery(query: URLSearchParams, known: Set<string>): Kitc
   const a = Math.max(size(query.get('a'), 'a', DEFAULT_STATE.a), minA(shape))
   const { arrangement, cabinets, at } = arrangementFromQuery(query.get('o'), shape)
   const widths = widthsFromQuery(query.get('wd'))
+  const heights = heightsFromQuery(query.get('ht'))
+  const doorsRight = doorsFromQuery(query.get('dr'))
   const pantries = clamp(Math.round(Number(query.get('pn')) || 0), 0, 2)
   const num = (key: string, min: number, max: number) => {
     const raw = query.get(key)
@@ -184,6 +215,8 @@ export function stateFromQuery(query: URLSearchParams, known: Set<string>): Kitc
     ...(cabinets ? { cabinets } : {}),
     ...(at ? { at } : {}),
     ...(widths ? { widths } : {}),
+    ...(heights ? { heights } : {}),
+    ...(doorsRight ? { doorsRight } : {}),
     ...(facade ? { facade } : {}),
     ...(upperFacade ? { upperFacade } : {}),
     ...(top ? { top } : {}),
@@ -211,6 +244,10 @@ export function queryFromState(state: KitchenState): string {
   if (state.arrangement) q.set('o', arrangementToQuery(state.arrangement, state.shape, state.cabinets, state.at))
   const wd = widthsToQuery(state.widths)
   if (wd) q.set('wd', wd)
+  const ht = heightsToQuery(state.heights)
+  if (ht) q.set('ht', ht)
+  const dr = (state.doorsRight ?? []).filter((k) => DOOR_KEY.test(k))
+  if (dr.length) q.set('dr', dr.join('.'))
   if (state.tallOven) q.set('po', '1')
   if (state.pantries) q.set('pn', String(state.pantries))
   if (state.ceiling && state.ceiling !== CEILING.base) q.set('h', String(state.ceiling))
