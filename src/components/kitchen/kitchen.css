@@ -267,7 +267,7 @@
 }
 
 .kp-tools__full {
-  order: 7;
+  order: 8;
 }
 
 .kp-tools__more,
@@ -276,10 +276,130 @@
   display: none;
 }
 
-/* HD | 4K — справа в строке инструментов */
-.kp-quality {
+/* «Фото» и HD | 4K — справа в строке инструментов */
+.kp-tools__photo {
   order: 6;
   margin-left: auto;
+}
+
+.kp-quality {
+  order: 7;
+}
+
+/* фото включено — кнопка лимонная, как главные действия сайта */
+.kp-tools__photo[aria-pressed='true'] {
+  color: var(--kp-ink);
+  background: var(--color-lemon);
+  border-color: transparent;
+}
+
+/* Фото трассировкой лучей: сколько готово и что можно сделать */
+.kp-photo {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  z-index: 5;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% - 32px);
+  padding: 8px 8px 8px 16px;
+  border: 1px solid var(--kp-line);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 0 8px 24px rgb(38 50 68 / 14%);
+  backdrop-filter: blur(8px);
+}
+
+.kp-photo__info {
+  display: grid;
+  gap: 6px;
+  min-width: 180px;
+}
+
+.kp-photo__text {
+  font: 700 13px/1.25 var(--font);
+  color: var(--kp-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.kp-photo__text small {
+  display: block;
+  margin-top: 2px;
+  font-weight: 500;
+  font-size: 11.5px;
+  color: var(--kp-muted);
+}
+
+.kp-photo__bar {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--kp-line);
+  overflow: hidden;
+}
+
+.kp-photo__bar > span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--kp-cobalt);
+  transform-origin: left center;
+  transition: transform 0.3s var(--ease-out);
+}
+
+.kp-photo__save {
+  flex-shrink: 0;
+  height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--kp-cobalt);
+  color: #fff;
+  font: 700 13px/1 var(--font);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.kp-photo__save:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.kp-photo__close {
+  flex-shrink: 0;
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--kp-line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--kp-soft);
+  cursor: pointer;
+}
+
+@media (max-width: 560px) {
+  .kp-photo {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    transform: none;
+    max-width: none;
+    padding: 8px 8px 8px 12px;
+  }
+
+  .kp-photo__info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .kp-photo__save {
+    padding: 0 10px;
+    font-size: 12px;
+  }
 }
 
 .kp-quality .kp-seg__btn {
@@ -1592,6 +1712,21 @@
   font: 700 12px/1.3 var(--font);
 }
 
+.kp-cabw__label small {
+  display: block;
+  font-weight: 500;
+  font-size: 11px;
+  color: var(--kp-muted);
+}
+
+/* пока тащат: свободная столешница по бокам — зелёные подписи на краю столешницы */
+.kp-dim--gap .kp-dim__in {
+  bottom: 2px;
+  padding: 3px 8px;
+  background: #15803d;
+  box-shadow: 0 2px 8px rgb(21 128 61 / 30%);
+}
+
 .kp-cabw .kp-size__step {
   width: 40px;
   height: 36px;
@@ -2232,6 +2367,11 @@ html.kp-lock body {
   .kp-tools__more {
     display: inline-flex;
     order: 3;
+  }
+
+  /* «Фото» — справа, рядом с «ещё» и «на весь экран»: её должно быть видно */
+  .kp-tools__photo {
+    order: 3;
     margin-left: auto;
   }
 
@@ -2492,7 +2632,9 @@ html.kp-lock body {
 */
 @media (max-width: 900px) and (min-height: 521px) {
   .kp {
-    --kp-stage-h: clamp(260px, 42svh, 440px);
+    /* 3D чуть ниже, чем было (42 %): настройкам под ним нужно место, иначе
+       на телефоне для них оставалась четверть экрана */
+    --kp-stage-h: clamp(230px, 36svh, 400px);
     /* меню сайта снизу: 64 px кнопок + 4 и 10 px отступов + 1 px линии + «полоска» iPhone */
     --kp-nav: calc(var(--bottomnav-h) + 15px + env(safe-area-inset-bottom, 0px));
   }

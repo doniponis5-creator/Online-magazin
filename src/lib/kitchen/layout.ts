@@ -9,6 +9,7 @@ import {
   type ItemKey,
   type KitchenAppliance,
   type Shape,
+  type SizedItem,
   type SlotKind,
   type WallId,
 } from './types'
@@ -32,6 +33,20 @@ export const PANTRY_W = 60
 export const UPPER_DEPTH = 35
 /** боковины ниши холодильника: две по 1,6 см и зазоры для воздуха */
 export const NICHE_EXTRA = 3.2
+/**
+ * Предмет, поставленный рукой ближе этого (см) к соседу или к краю, встаёт
+ * вплотную: щель в 3 см между шкафами никому не нужна.
+ */
+export const SNAP = 6
+
+/** Ширина, которую покупатель может задать сам, см. */
+export const WIDTH_LIMITS: Record<SizedItem | 'cabinet', { min: number; max: number }> = {
+  sink: { min: 40, max: 120 },
+  hob: { min: HOB_W, max: 120 },
+  pantry: { min: 30, max: 90 },
+  pantry2: { min: 30, max: 90 },
+  cabinet: { min: 15, max: 120 },
+}
 
 export type ModuleKind =
   | 'doors'
@@ -127,10 +142,25 @@ export type PlanInput = {
   noOven?: boolean
   /** свои шкафы покупателя */
   cabinets?: Partial<Record<CabinetId, Cabinet>>
+  /** своё место предметов: середина, см от угла */
+  at?: Partial<Record<ItemKey, number>>
+  /** своя ширина мойки, шкафа под плитой, пеналов */
+  widths?: Partial<Record<SizedItem, number>>
 }
 
 type Item =
-  | { kind: ModuleKind; w: number; slot?: SlotKind; item?: ItemKey; blind?: number; blindAt?: 'start' | 'end'; oven?: boolean; front?: BaseFront }
+  | {
+      kind: ModuleKind
+      w: number
+      slot?: SlotKind
+      item?: ItemKey
+      blind?: number
+      blindAt?: 'start' | 'end'
+      oven?: boolean
+      front?: BaseFront
+      /** своё место: начало вдоль ряда, см (в системе координат ряда) */
+      at?: number
+    }
   | { fill: number; min: number; prefer: 'doors' | 'drawers'; role: 'work' | 'side' }
 
 const isFill = (i: Item): i is Extract<Item, { fill: number }> => 'fill' in i
@@ -138,6 +168,16 @@ const isFill = (i: Item): i is Extract<Item, { fill: number }> => 'fill' in i
 /** Ширина места под отдельностоящую технику: корпус + зазоры, округлено вверх. */
 const slotWidth = (a: KitchenAppliance | null | undefined, fallback: number, extra = 0) =>
   a ? Math.ceil(a.w + 1.5 + extra) : fallback
+
+/** Шкаф под варочной не уже самой панели (округлено до 5 см вверх). */
+export const hobMinWidth = (hob: KitchenAppliance | null | undefined) => Math.max(HOB_W, hob ? Math.ceil(hob.w / 5) * 5 : HOB_W)
+
+/** Своя ширина в пределах, целыми сантиметрами. */
+export function sizedWidth(kind: keyof typeof WIDTH_LIMITS, w: number | undefined): number {
+  const lim = WIDTH_LIMITS[kind]
+  const v = Math.round(Number(w))
+  return Number.isFinite(v) ? Math.max(lim.min, Math.min(lim.max, v)) : lim.min
+}
 
 /** Кусок столешницы шириной W — на шкафы, как их режет мебельщик. */
 export function splitFill(width: number, prefer: 'doors' | 'drawers', role: 'work' | 'side'): Omit<Module, 'x'>[] {
@@ -155,33 +195,94 @@ export function splitFill(width: number, prefer: 'doors' | 'drawers', role: 'wor
   }))
 }
 
+const sizeOf = (i: Item) => (isFill(i) ? i.min : i.w)
+
 /**
  * Расставляет элементы по ряду длиной `length`. Возвращает модули с
  * координатами или null, если фиксированные элементы не помещаются.
+ *
+ * Предмет со своим местом (`at`) встаёт туда, куда его поставили, — насколько
+ * пускают соседи и края стены. Такие предметы делят ряд на куски, и в каждом
+ * куске остаток столешницы делится между шкафами, как раньше: соседние шкафы
+ * становятся шире или уже.
  */
 export function resolveRun(length: number, start: number, items: Item[]): Module[] | null {
-  const available = length - start
-  const fixed = items.reduce((s, i) => s + (isFill(i) ? i.min : i.w), 0)
-  if (fixed > available + 0.01) return null
-  const weights = items.reduce((s, i) => s + (isFill(i) ? i.fill : 0), 0)
-  let extra = available - fixed
+  const fixed = items.reduce((s, i) => s + sizeOf(i), 0)
+  if (fixed > length - start + 0.01) return null
   const out: Module[] = []
-  let x = start
-  const fills = items.filter(isFill)
-  const lastFill = fills[fills.length - 1]
+  let from = start
+  let seg: Item[] = []
+  /** сумма ширин куска до предмета — ближе к началу он встать не может */
+  let before = 0
+  /** сумма ширин от текущего элемента до конца ряда */
+  let after = fixed
   for (const item of items) {
+    if (!isFill(item) && item.at !== undefined) {
+      const lo = from + before
+      const hi = length - after
+      let x = Math.min(hi, Math.max(lo, item.at))
+      if (x - lo < SNAP) x = lo
+      else if (hi - x < SNAP) x = hi
+      out.push(...fillSegment(from, x, seg))
+      out.push(moduleOf(item, x))
+      from = x + item.w
+      seg = []
+      before = 0
+      after -= item.w
+      continue
+    }
+    seg.push(item)
+    before += sizeOf(item)
+    after -= sizeOf(item)
+  }
+  out.push(...fillSegment(from, length, seg))
+  return out
+}
+
+function moduleOf(item: Extract<Item, { kind: ModuleKind }>, x: number): Module {
+  return { kind: item.kind, x, w: item.w, blind: item.blind, blindAt: item.blindAt, oven: item.oven, item: item.item, front: item.front }
+}
+
+/**
+ * Кусок ряда от `from` до `to`: предметы — своей ширины, остаток делят шкафы
+ * по весам. Заполнитель с весом 0 (щель перед предметом на своём месте)
+ * получает место, только если больше некому.
+ */
+function fillSegment(from: number, to: number, items: Item[]): Module[] {
+  let list = items
+  const fixedW = list.reduce((s, i) => s + sizeOf(i), 0)
+  // Остаток куска должен куда-то уйти: нет заполнителя — ставим в конец.
+  if (!list.some(isFill) && to - from - fixedW > 0.5) list = [...list, { fill: 1, min: 0, prefer: 'doors', role: 'side' }]
+  const fills = list.filter(isFill)
+  const weights = fills.reduce((s, i) => s + i.fill, 0)
+  const weighted = fills.filter((i) => i.fill > 0)
+  const lastFill = weighted[weighted.length - 1] ?? fills[fills.length - 1]
+  const total = Math.max(0, to - from - fixedW)
+  let extra = total
+  const out: Module[] = []
+  let lastPiece = -1
+  let x = from
+  for (const item of list) {
     if (!isFill(item)) {
-      out.push({ kind: item.kind, x, w: item.w, blind: item.blind, blindAt: item.blindAt, oven: item.oven, item: item.item, front: item.front })
+      out.push(moduleOf(item, x))
       x += item.w
       continue
     }
-    let w = item.min + (weights > 0 ? Math.round(((available - fixed) * item.fill) / weights) : 0)
+    let w = item.min + (weights > 0 ? Math.floor((total * item.fill) / weights) : 0)
     if (item === lastFill) w = item.min + extra
     extra -= w - item.min
     for (const m of splitFill(w, item.prefer, item.role)) {
       out.push({ ...m, x })
+      lastPiece = out.length - 1
       x += m.w
     }
+  }
+  // Шкафы режутся по целым сантиметрам — дробный остаток отдаём последнему,
+  // чтобы кусок кончался ровно там, где стоит следующий предмет.
+  const drift = x - to
+  if (lastPiece >= 0 && Math.abs(drift) > 0.001 && out[lastPiece].w - drift > 0.5) {
+    out[lastPiece].w -= drift
+    for (let k = lastPiece + 1; k < out.length; k++) out[k].x -= drift
   }
   return out
 }
@@ -341,11 +442,14 @@ function wallItems(
   prefer: 'doors' | 'drawers' = 'doors',
 ): Item[] {
   const out: Item[] = []
-  const gap = (left: Neighbour, right: Neighbour) => {
+  const gap = (left: Neighbour, right: Neighbour, placed = false) => {
+    // Перед предметом на своём месте щель нужна всегда — иначе его не
+    // отодвинуть от соседа. Вес 0: она растёт, только если больше некому.
+    const forced = () => placed && out.push({ fill: 0, min: 0, prefer, role: 'work' })
     // высокие шкафы и свои шкафы покупателя встают прямо к стене, без доборов
     const atEnd = (a: Neighbour, b: Neighbour) => a === null && b !== null && b !== 'corner' && (TALL_ITEMS.includes(b) || isCabinet(b))
-    if (atEnd(left, right) || atEnd(right, left)) return
-    if (left && right && left !== 'corner' && right !== 'corner' && glued(left, right)) return
+    if (atEnd(left, right) || atEnd(right, left)) return forced()
+    if (left && right && left !== 'corner' && right !== 'corner' && glued(left, right)) return forced()
     const nearHob = left === 'hob' || right === 'hob'
     const end = left === null || right === null
     const nearCorner = left === 'corner' || right === 'corner'
@@ -364,7 +468,7 @@ function wallItems(
   for (const k of keys) {
     const item = make(k)
     if (!item) continue
-    gap(prev, k)
+    gap(prev, k, !isFill(item) && item.at !== undefined)
     out.push(item)
     prev = k
   }
@@ -389,17 +493,18 @@ export function planKitchen(input: PlanInput, options: { shelves: boolean }): Pl
   // В нише у холодильника боковины: место шире на их толщину.
   const fridgeW = slotWidth(input.fridge, 0, input.fridgeOpen ? 0 : NICHE_EXTRA)
   const upperOpts: UpperOpts = { shelves: options.shelves, fridgeOpen: Boolean(input.fridgeOpen) }
-  const hobW = Math.max(HOB_W, input.hob ? Math.ceil(input.hob.w / 5) * 5 : HOB_W)
+  const hobW = Math.max(hobMinWidth(input.hob), sizedWidth('hob', input.widths?.hob))
   const dwW = input.dishwasher ? (input.dishwasher.w <= 46 ? 45 : 60) : 0
+  const sinkW = sizedWidth('sink', input.widths?.sink ?? SINK_W)
 
-  const make = (k: ItemKey): Item | null => {
+  const kindOf = (k: ItemKey): Extract<Item, { kind: ModuleKind }> | null => {
     switch (k) {
       case 'fridge':
         return input.fridge ? { kind: 'fridge', w: fridgeW, slot: 'fridge', item: k } : null
       case 'tall':
         return hasTall ? { kind: 'tall', w: TALL_W, slot: input.microwave?.builtIn ? 'microwave' : 'oven', item: k } : null
       case 'sink':
-        return { kind: 'sink', w: SINK_W, item: k }
+        return { kind: 'sink', w: sinkW, item: k }
       case 'dishwasher':
         return input.dishwasher ? { kind: 'dishwasher', w: dwW, slot: 'dishwasher', item: k } : null
       case 'washer':
@@ -407,16 +512,22 @@ export function planKitchen(input: PlanInput, options: { shelves: boolean }): Pl
       case 'hob':
         return { kind: 'hob', w: hobW, slot: 'hob', oven: !hasTall, item: k }
       case 'pantry':
-        return pantries >= 1 ? { kind: 'pantry', w: PANTRY_W, item: k } : null
+        return pantries >= 1 ? { kind: 'pantry', w: sizedWidth('pantry', input.widths?.pantry ?? PANTRY_W), item: k } : null
       case 'pantry2':
-        return pantries >= 2 ? { kind: 'pantry', w: PANTRY_W, item: k } : null
+        return pantries >= 2 ? { kind: 'pantry', w: sizedWidth('pantry2', input.widths?.pantry2 ?? PANTRY_W), item: k } : null
       case 'oven':
         return apart ? { kind: 'oven', w: 60, slot: 'oven', item: k } : null
     }
     const cab = input.cabinets?.[k]
     if (!cab) return null
-    const w = Math.max(15, Math.min(120, Math.round(cab.w)))
+    const w = sizedWidth('cabinet', cab.w)
     return { kind: cab.front === 'doors' || cab.front === 'open' ? 'doors' : 'drawers', w, item: k, front: cab.front }
+  }
+  // Предмет на своём месте: середина → начало вдоль ряда.
+  const make = (k: ItemKey): Item | null => {
+    const item = kindOf(k)
+    const center = input.at?.[k]
+    return item && center !== undefined && Number.isFinite(center) ? { ...item, at: center - item.w / 2 } : item
   }
   const order = resolveArrangement(shape, input.arrangement, input.cabinets)
 
@@ -587,6 +698,54 @@ export function pinCabinet(
   while (cabinets[`k${n}`]) n++
   const id: CabinetId = `k${n}`
   return { id, cabinets: { ...cabinets, [id]: cab }, order: moveItem(order, id, wall, center, positions) }
+}
+
+/**
+ * Кто стоит вплотную к предмету по правилам (мойка — посудомойка, плита —
+ * духовка, холодильник — пенал): их двигают вместе с ним. Свои шкафы
+ * покупателя сюда не входят — каждый двигается сам по себе.
+ */
+export function companions(plan: Plan, key: ItemKey): ItemKey[] {
+  for (const run of plan.runs) {
+    const i = run.modules.findIndex((m) => m.item === key)
+    if (i < 0) continue
+    const out: ItemKey[] = []
+    for (const step of [-1, 1]) {
+      let prev: ItemKey = key
+      for (let j = i + step; j >= 0 && j < run.modules.length; j += step) {
+        const k = run.modules[j].item
+        if (!k || isCabinet(k) || isCabinet(prev) || !glued(prev, k)) break
+        out.push(k)
+        prev = k
+      }
+    }
+    return out
+  }
+  return []
+}
+
+/**
+ * Свободная столешница по обе стороны предмета — обычные шкафы до ближайшего
+ * предмета или угла. Середина и ширина, см от угла: пока предмет тащат, эти
+ * числа видны прямо в 3D.
+ */
+export function itemGaps(plan: Plan, key: ItemKey): { center: number; w: number }[] {
+  for (const run of plan.runs) {
+    const i = run.modules.findIndex((m) => m.item === key)
+    if (i < 0) continue
+    const free = (m: Module) => !m.item && m.kind !== 'corner'
+    const span = (from: number, step: 1 | -1) => {
+      let x0 = Infinity
+      let x1 = -Infinity
+      for (let j = from; j >= 0 && j < run.modules.length && free(run.modules[j]); j += step) {
+        x0 = Math.min(x0, run.modules[j].x)
+        x1 = Math.max(x1, run.modules[j].x + run.modules[j].w)
+      }
+      return x1 - x0 >= 1 ? { center: moduleCenter(run, { x: x0, w: x1 - x0 }), w: Math.round((x1 - x0) * 10) / 10 } : null
+    }
+    return [span(i - 1, -1), span(i + 1, 1)].filter((g): g is { center: number; w: number } => g !== null)
+  }
+  return []
 }
 
 /** Где на стене стоит модуль (центр, см от угла) — как у itemPositions. */

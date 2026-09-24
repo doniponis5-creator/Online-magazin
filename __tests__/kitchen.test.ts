@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import type { Product } from '@/data/products'
 import { applianceFromProduct, defaultPick, finishOf, parseSize } from '@/lib/kitchen/catalog'
 import {
+  companions,
   DEPTH,
+  itemGaps,
   itemPositions,
   LIMITS,
   minA,
@@ -627,5 +629,111 @@ describe('фото техники: снято спереди или «три ч�
     const tops = front(300)
     for (let i = 200; i < 215; i++) tops[i] = -6
     expect(sideShare(tops)).toBeLessThan(SIDE_SHARE)
+  })
+})
+
+describe('своё место и своя ширина', () => {
+  const hob = appliance({ slot: 'hob', w: 60 })
+  const dishwasher = appliance({ slot: 'dishwasher', w: 60, builtIn: true })
+  const base = { shape: 'straight' as const, a: 400, b: 0, c: 0, island: 0, hob, dishwasher }
+  const run = (plan: Plan, id = 'A') => plan.runs.find((r) => r.id === id)!
+  /** ряд без щелей и нахлёстов, ровно во всю стену */
+  const solid = (plan: Plan, id = 'A', start = 0, end?: number) => {
+    const r = run(plan, id)
+    let x = start
+    for (const m of r.modules) {
+      expect(m.x).toBeCloseTo(x, 3)
+      x += m.w
+    }
+    expect(x).toBeCloseTo(end ?? r.length, 3)
+  }
+
+  it('мойка встаёт куда поставили, соседние шкафы подстраиваются', () => {
+    const plan = planKitchen({ ...base, at: { sink: 150 } }, { shelves: false })
+    expect(itemPositions(plan).sink!.center).toBe(150)
+    solid(plan)
+    // посудомойка по-прежнему вплотную к мойке — одна труба
+    const mods = run(plan).modules
+    const si = mods.findIndex((m) => m.kind === 'sink')
+    expect(mods[si + 1].kind).toBe('dishwasher')
+  })
+
+  it('ближе 6 см к краю — встаёт вплотную, за край стены не уходит', () => {
+    const two = { ...base, dishwasher: null, arrangement: { A: ['hob' as const, 'sink' as const] } }
+    const snapped = planKitchen({ ...two, at: { sink: 367 } }, { shelves: false })
+    expect(itemPositions(snapped).sink!.center).toBe(370)
+    const outside = planKitchen({ ...two, at: { sink: 520 } }, { shelves: false })
+    const mods = run(outside).modules
+    expect(mods[mods.length - 1].kind).toBe('sink')
+    solid(outside)
+    const plan = planKitchen({ ...base, at: { sink: 34 } }, { shelves: false })
+    expect(run(plan).modules[0].kind).toBe('sink')
+    solid(plan)
+  })
+
+  it('у плиты с обеих сторон остаётся 30 см столешницы', () => {
+    const plan = planKitchen({ ...base, arrangement: { A: ['sink', 'dishwasher', 'hob'] }, at: { sink: 30, hob: 160 } }, { shelves: false })
+    const pos = itemPositions(plan)
+    expect(pos.hob!.center - 30 - (pos.dishwasher!.center + 30)).toBeGreaterThanOrEqual(30)
+    solid(plan)
+  })
+
+  it('своя ширина мойки и пенала; шкаф под плитой не уже панели', () => {
+    const wide = appliance({ slot: 'hob', w: 88 })
+    const plan = planKitchen({ ...base, hob: wide, pantries: 1, widths: { sink: 80, pantry: 45, hob: 60 } }, { shelves: false })
+    const pos = itemPositions(plan)
+    expect(pos.sink!.w).toBe(80)
+    expect(pos.pantry!.w).toBe(45)
+    expect(pos.hob!.w).toBe(90)
+    solid(plan)
+  })
+
+  it('на боковой стене место считается от угла', () => {
+    const plan = planKitchen({ shape: 'corner', a: 300, b: 260, c: 0, island: 0, hob, at: { hob: 170 } }, { shelves: false })
+    const pos = itemPositions(plan)
+    expect(pos.hob!.wall).toBe('B')
+    expect(pos.hob!.center).toBe(170)
+    // ряд у левой стены кончается у углового шкафа задней стены
+    solid(plan, 'B', 0, 260 - DEPTH)
+  })
+
+  it('вместе с мойкой едет посудомойка, свои шкафы — каждый сам', () => {
+    const plan = planKitchen(
+      { ...base, cabinets: { k1: { w: 40, front: 'doors' }, k2: { w: 50, front: 'doors' } }, arrangement: { A: ['k1', 'k2', 'sink', 'dishwasher', 'hob'] } },
+      { shelves: false },
+    )
+    expect(companions(plan, 'sink')).toEqual(['dishwasher'])
+    expect(companions(plan, 'k2')).toEqual([])
+  })
+
+  it('пока тащат — видна свободная столешница по бокам', () => {
+    const plan = planKitchen({ ...base, at: { sink: 150 } }, { shelves: false })
+    const gaps = itemGaps(plan, 'sink')
+    expect(gaps).toHaveLength(1)
+    expect(gaps[0].w).toBeGreaterThan(0)
+    const hobGaps = itemGaps(plan, 'hob')
+    expect(hobGaps.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('в адресе: место и ширина туда и обратно', () => {
+    const state = {
+      ...DEFAULT_STATE,
+      shape: 'straight' as const,
+      a: 400,
+      cabinets: { k1: { w: 45, front: 'drawers3' as const } },
+      arrangement: { A: ['k1' as const, 'sink' as const, 'hob' as const] },
+      at: { sink: 95, k1: 30, hob: 250 },
+      widths: { sink: 80, pantry: 45 },
+    }
+    const q = queryFromState(state)
+    expect(q).toContain('o=45h_030s_095h_250')
+    expect(q).toContain('wd=s80p45')
+    const back = stateFromQuery(new URLSearchParams(q), new Set())
+    expect(back.at).toEqual({ k1: 30, sink: 95, hob: 250 })
+    expect(back.widths).toEqual({ sink: 80, pantry: 45 })
+    expect(back.cabinets).toEqual({ k1: { w: 45, front: 'drawers3' } })
+    // чужое не проходит: ширина за пределами, мусор в позиции
+    expect(stateFromQuery(new URLSearchParams('f=straight&wd=s999'), new Set()).widths).toEqual({ sink: 120 })
+    expect(stateFromQuery(new URLSearchParams('f=straight&o=s_12'), new Set()).at).toBeUndefined()
   })
 })

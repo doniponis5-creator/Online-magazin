@@ -44,8 +44,11 @@ function HeaderInner() {
         // Дрожание пальца и «резиновый» отскок в конце страницы не считаем.
         if (Math.abs(delta) < 8) return
         last = y
-        // У самого верха шапка всегда на месте: прятать нечего.
-        setHidden(y > 140 && delta > 0)
+        // У самого верха шапка всегда на месте: прятать нечего. В конструкторе
+        // кухни на телефоне (html.kp-pinned) шапка не возвращается, пока
+        // человек листает настройки под 3D, — иначе 3D прыгал на её высоту.
+        const pinned = document.documentElement.classList.contains('kp-pinned')
+        setHidden(y > 140 && (delta > 0 || pinned))
       })
     }
     window.addEventListener('scroll', onScroll, { passive: true })

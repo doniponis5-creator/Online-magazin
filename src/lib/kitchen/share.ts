@@ -1,10 +1,12 @@
 import { HANDLE_METALS, HANDLES, frontColor, splashChoice, topChoice } from './finishes'
 import { frontsFromQuery, frontsToQuery } from './fronts'
-import { CEILING, LIMITS, minA, WINDOW_LIMITS, wallsOf } from './layout'
+import { CEILING, LIMITS, minA, sizedWidth, WIDTH_LIMITS, WINDOW_LIMITS, wallsOf } from './layout'
 import { FLOORS, STYLES, WALL_COLORS } from './styles'
 import {
   isCabinet,
+  SIZED_ITEMS,
   SLOTS,
+  type SizedItem,
   type Arrangement,
   type BaseFront,
   type Cabinet,
@@ -43,44 +45,68 @@ const ITEM_CODE: Record<FixedItem, string> = { fridge: 'f', tall: 't', sink: 's'
 const CODE_ITEM = Object.fromEntries(Object.entries(ITEM_CODE).map(([k, v]) => [v, k])) as Record<string, FixedItem>
 const FRONT_CODE: Record<BaseFront, string> = { doors: 'o', drawers2: 't', drawers3: 'h', drawers4: 'f', mix: 'm', open: 'n' }
 const CODE_FRONT = Object.fromEntries(Object.entries(FRONT_CODE).map(([k, v]) => [v, k])) as Record<string, BaseFront>
-const TOKEN = /\d{2,3}[othfmn]|[ftsdwhpqv]/g
+/** Предмет может стоять на своём месте: «s_095» — мойка, середина в 95 см от угла (всегда три цифры). */
+const TOKEN = /(\d{2,3}[othfmn]|[ftsdwhpqv])(?:_(\d{3}))?/g
+/** Своя ширина: «wd=s80h90» — мойка 80 см, шкаф под плитой 90 см. */
+const WIDTH_CODE: Record<SizedItem, string> = { sink: 's', hob: 'h', pantry: 'p', pantry2: 'q' }
 
-function arrangementFromQuery(raw: string | null, shape: Shape): { arrangement?: Arrangement; cabinets?: Record<CabinetId, Cabinet> } {
-  if (!raw || raw.length > 240 || !/^(?:\d{2,3}[othfmn]|[ftsdwhpqv]|\.)+$/.test(raw)) return {}
+type Placed = { arrangement?: Arrangement; cabinets?: Record<CabinetId, Cabinet>; at?: Partial<Record<ItemKey, number>> }
+
+function arrangementFromQuery(raw: string | null, shape: Shape): Placed {
+  if (!raw || raw.length > 400 || !/^(?:\d{2,3}[othfmn]|[ftsdwhpqv]|_\d{3}|\.)+$/.test(raw)) return {}
   const arrangement: Arrangement = {}
   const cabinets: Record<CabinetId, Cabinet> = {}
+  const at: Partial<Record<ItemKey, number>> = {}
   let n = 0
   const walls = wallsOf(shape)
   raw.split('.').forEach((part, i) => {
     const wall = walls[i]
     if (!wall) return
     const list: ItemKey[] = []
-    for (const token of part.match(TOKEN) ?? []) {
-      if (token.length === 1) {
-        list.push(CODE_ITEM[token])
-        continue
+    for (const [, token, pos] of part.matchAll(TOKEN)) {
+      let key: ItemKey
+      if (token.length === 1) key = CODE_ITEM[token]
+      else {
+        key = `k${++n}`
+        cabinets[key] = { w: clamp(Number(token.slice(0, -1)), WIDTH_LIMITS.cabinet.min, WIDTH_LIMITS.cabinet.max), front: CODE_FRONT[token.slice(-1)] }
       }
-      const id: CabinetId = `k${++n}`
-      cabinets[id] = { w: clamp(Number(token.slice(0, -1)), 15, 120), front: CODE_FRONT[token.slice(-1)] }
-      list.push(id)
+      list.push(key)
+      if (pos !== undefined) at[key] = clamp(Number(pos), 0, 700)
     }
     arrangement[wall] = list
   })
-  return { arrangement, ...(n ? { cabinets } : {}) }
+  return { arrangement, ...(n ? { cabinets } : {}), ...(Object.keys(at).length ? { at } : {}) }
 }
 
-function arrangementToQuery(arr: Arrangement, shape: Shape, cabinets: KitchenState['cabinets']): string {
+function arrangementToQuery(arr: Arrangement, shape: Shape, cabinets: KitchenState['cabinets'], at: KitchenState['at']): string {
+  const pos = (k: ItemKey) => (at?.[k] !== undefined ? `_${String(Math.max(0, Math.min(700, Math.round(at[k]!)))).padStart(3, '0')}` : '')
   return wallsOf(shape)
     .map((w) =>
       (arr[w] ?? [])
         .map((k) => {
-          if (!isCabinet(k)) return ITEM_CODE[k]
+          if (!isCabinet(k)) return ITEM_CODE[k] + pos(k)
           const c = cabinets?.[k]
-          return c ? `${Math.round(c.w)}${FRONT_CODE[c.front]}` : ''
+          return c ? `${Math.round(c.w)}${FRONT_CODE[c.front]}${pos(k)}` : ''
         })
         .join(''),
     )
     .join('.')
+}
+
+function widthsFromQuery(raw: string | null): KitchenState['widths'] {
+  if (!raw || raw.length > 40) return undefined
+  const out: NonNullable<KitchenState['widths']> = {}
+  for (const [, code, v] of raw.matchAll(/([shpq])(\d{2,3})/g)) {
+    const key = SIZED_ITEMS.find((k) => WIDTH_CODE[k] === code)
+    if (key) out[key] = sizedWidth(key, Number(v))
+  }
+  return Object.keys(out).length ? out : undefined
+}
+
+function widthsToQuery(widths: KitchenState['widths']): string {
+  return SIZED_ITEMS.filter((k) => widths?.[k] !== undefined)
+    .map((k) => `${WIDTH_CODE[k]}${Math.round(widths![k]!)}`)
+    .join('')
 }
 
 export const DEFAULT_STATE: KitchenState = {
@@ -114,7 +140,8 @@ export function stateFromQuery(query: URLSearchParams, known: Set<string>): Kitc
     else if (v && known.has(v)) picks[slot] = v
   }
   const a = Math.max(size(query.get('a'), 'a', DEFAULT_STATE.a), minA(shape))
-  const { arrangement, cabinets } = arrangementFromQuery(query.get('o'), shape)
+  const { arrangement, cabinets, at } = arrangementFromQuery(query.get('o'), shape)
+  const widths = widthsFromQuery(query.get('wd'))
   const pantries = clamp(Math.round(Number(query.get('pn')) || 0), 0, 2)
   const num = (key: string, min: number, max: number) => {
     const raw = query.get(key)
@@ -155,6 +182,8 @@ export function stateFromQuery(query: URLSearchParams, known: Set<string>): Kitc
     ...(fronts ? { fronts } : {}),
     ...(query.get('oa') === '1' ? { ovenApart: true } : {}),
     ...(cabinets ? { cabinets } : {}),
+    ...(at ? { at } : {}),
+    ...(widths ? { widths } : {}),
     ...(facade ? { facade } : {}),
     ...(upperFacade ? { upperFacade } : {}),
     ...(top ? { top } : {}),
@@ -179,7 +208,9 @@ export function queryFromState(state: KitchenState): string {
     if (v === null) q.set(SLOT_KEYS[slot], '-')
     else if (v) q.set(SLOT_KEYS[slot], v)
   }
-  if (state.arrangement) q.set('o', arrangementToQuery(state.arrangement, state.shape, state.cabinets))
+  if (state.arrangement) q.set('o', arrangementToQuery(state.arrangement, state.shape, state.cabinets, state.at))
+  const wd = widthsToQuery(state.widths)
+  if (wd) q.set('wd', wd)
   if (state.tallOven) q.set('po', '1')
   if (state.pantries) q.set('pn', String(state.pantries))
   if (state.ceiling && state.ceiling !== CEILING.base) q.set('h', String(state.ceiling))

@@ -36,8 +36,11 @@ const PANEL_T = 0.016
 
 export type Anim = { obj: THREE.Object3D; kind: 'swing' | 'lift' | 'slide' | 'fold'; dir: number; delay: number; slot?: SlotKind }
 
-/** Шкаф, у которого покупатель может поменять фасады. */
-export type CabInfo = { key: string; row: 'base' | 'upper'; variant: FrontVariant }
+/**
+ * Шкаф, у которого покупатель может поменять фасады и ширину. narrow —
+ * узкий (бутылочница, планка): у него только ширина, фасад один.
+ */
+export type CabInfo = { key: string; row: 'base' | 'upper'; variant: FrontVariant; narrow?: boolean }
 
 const r5 = (v: number) => Math.round(v * 2) / 2
 
@@ -421,6 +424,9 @@ function baseModule(ctx: Ctx, run: Run, m: Module, i: number): THREE.Group {
   const auto: BaseFront = m.kind === 'doors' ? 'doors' : 'drawers3'
   const variant: BaseFront = editable ? ((own ? m.front : (input.fronts[key] as BaseFront | undefined)) ?? auto) : auto
   if (editable) g.userData.cab = { key, row: 'base', variant } satisfies CabInfo
+  // Узкий шкаф и планку тоже можно нажать, передвинуть и сделать шире.
+  else if (!own && (m.kind === 'bottle' || m.kind === 'filler' || m.kind === 'doors' || m.kind === 'drawers'))
+    g.userData.cab = { key, row: 'base', variant: 'doors', narrow: true } satisfies CabInfo
 
   const dk = editable && m.kind !== 'hob' ? BASE_DIMS[variant] : DIMS[m.kind]
   if (dk) dims(g, dk, m.w, BASE_H, D)

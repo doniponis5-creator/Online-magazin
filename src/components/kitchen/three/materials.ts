@@ -203,6 +203,8 @@ export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolea
   const wall = keep(new THREE.MeshStandardMaterial({ map: wallMap, bumpMap: wallMap, bumpScale: 0.5, roughness: 0.92 }))
   // Белый потолок светлый от отражённого света — чуть светится сам.
   const ceiling = keep(new THREE.MeshStandardMaterial({ color: '#f7f6f3', roughness: 0.95, emissive: '#f3f1ec', emissiveIntensity: evening ? 0.06 : 0.42 }))
+  // На фото (трассировка лучей) потолок светлеет от настоящего отражённого света.
+  ceiling.userData.photo = 'ceiling'
   // Лофт: стена за кухней — целиком кирпич.
   const featureWall = style.splash === 'brick' ? splash : wall
 
@@ -281,10 +283,14 @@ export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolea
     new THREE.MeshPhysicalMaterial({ color: '#dfe9ee', roughness: 0.02, metalness: 0, transparent: true, opacity: 0.22, depthWrite: false }),
   )
   const skyMat = keep(new THREE.MeshBasicMaterial({ map: T.sky(evening), toneMapped: false }))
+  // на фото небо в окне светит в комнату по-настоящему, а стекло не даёт тени
+  skyMat.userData.photo = 'sky'
+  glass.userData.photo = 'glass'
   const trim = keep(
     new THREE.MeshStandardMaterial({ color: style.id === 'loft' ? '#1e1f21' : '#f6f6f4', roughness: style.id === 'loft' ? 0.5 : 0.35, metalness: style.id === 'loft' ? 0.4 : 0 }),
   )
   const led = keep(new THREE.MeshBasicMaterial({ color: evening ? '#fff1d6' : '#f3efe6', toneMapped: !evening }))
+  led.userData.photo = 'lamp'
   const shade = keep(new THREE.MeshStandardMaterial({ color: '#555', roughness: 0.6 }))
 
   const finishes = new Map<Finish, THREE.Material>()
@@ -322,6 +328,7 @@ export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolea
   const shelfGlass = keep(new THREE.MeshPhysicalMaterial({ color: '#dfeef0', roughness: 0.05, transparent: true, opacity: 0.35, depthWrite: false }))
   const vitrine = keep(new THREE.MeshPhysicalMaterial({ color: '#e7eff2', roughness: 0.03, transparent: true, opacity: 0.16, depthWrite: false, clearcoat: 1 }))
   const warm = keep(new THREE.MeshBasicMaterial({ color: '#ffcf8a', toneMapped: false }))
+  warm.userData.photo = 'lamp'
   const darkGlass = keep(new THREE.MeshPhysicalMaterial({ color: '#07080a', roughness: 0.06, clearcoat: 1, clearcoatRoughness: 0.02 }))
   const rubber = keep(new THREE.MeshStandardMaterial({ color: '#17181a', roughness: 0.8 }))
 

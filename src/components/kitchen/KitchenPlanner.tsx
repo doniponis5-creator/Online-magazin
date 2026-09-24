@@ -24,10 +24,13 @@ import {
   type SplashGroup,
   type TopMaterial,
 } from '@/lib/kitchen/finishes'
-import { BASE_FRONTS, UPPER_FRONTS } from '@/lib/kitchen/fronts'
+import { BASE_FRONTS, baseKey, UPPER_FRONTS, upperKey } from '@/lib/kitchen/fronts'
 import {
   canChangeWall,
   CEILING,
+  companions,
+  hobMinWidth,
+  itemGaps,
   itemPositions,
   LIMITS,
   minA,
@@ -38,9 +41,14 @@ import {
   planKitchen,
   resolveArrangement,
   stepItem,
+  WIDTH_LIMITS,
   WINDOW_LIMITS,
   wallOf,
+  type ItemPlace,
+  type Module,
   type Plan,
+  type PlanInput,
+  type Run,
 } from '@/lib/kitchen/layout'
 import { DEFAULT_STATE, queryFromState, stateFromQuery } from '@/lib/kitchen/share'
 import { cutList, frontList, hardware, modulesOf, topList, type SpecData } from '@/lib/kitchen/spec'
@@ -48,6 +56,7 @@ import { FLOORS, getStyle, getTone, STYLE_GROUPS, STYLES, WALL_COLORS, type Kitc
 import type { HandleKind } from '@/lib/kitchen/styles'
 import {
   isCabinet,
+  SIZED_ITEMS,
   SLOTS,
   type BaseFront,
   type CabinetId,
@@ -56,6 +65,7 @@ import {
   type KitchenAppliance,
   type KitchenState,
   type Shape,
+  type SizedItem,
   type SlotKind,
   type WallId,
 } from '@/lib/kitchen/types'
@@ -64,7 +74,7 @@ import { PlanSketch } from './PlanSketch'
 import { sheetHtml } from './printSheet'
 import { kitchenTexts, type KitchenTexts } from './texts'
 import type { BuildInput, CabInfo, Dims } from './three/build'
-import type { DragTarget, KitchenEngine, Pick, Quality, View } from './three/engine'
+import type { DragPreview, DragTarget, KitchenEngine, PhotoState, Pick, Quality, View } from './three/engine'
 import type { Photo } from './three/photo'
 import './kitchen.css'
 
@@ -95,6 +105,52 @@ type Variant = { id: string; name: string; label: string; q: string; img: string
 
 /** Что сейчас переставляют: предмет (техника, мойка, свой шкаф) или обычный шкаф. */
 type MoveSel = { key: ItemKey } | { cab: CabInfo; w: number; wall: WallId; center: number }
+
+/** Шаг кнопок «левее / правее», см. */
+const NUDGE = 5
+/** Шкафы, которые раскладка ставит сама: им можно дать свою ширину. */
+const FLEX: Module['kind'][] = ['doors', 'drawers', 'bottle', 'filler']
+
+/** Всё, что нужно раскладке, из выбора покупателя. */
+function planInput(s: KitchenState, chosen: Items): PlanInput {
+  return {
+    shape: s.shape,
+    a: s.a,
+    b: s.b,
+    c: s.c,
+    island: s.island,
+    fridge: chosen.fridge,
+    dishwasher: chosen.dishwasher,
+    washer: chosen.washer,
+    microwave: chosen.microwave,
+    hob: chosen.hob,
+    arrangement: s.arrangement,
+    tallOven: s.tallOven,
+    pantries: s.pantries,
+    noWindow: s.noWindow,
+    windowW: s.windowW,
+    fridgeOpen: s.fridgeOpen,
+    ovenApart: s.ovenApart,
+    noOven: chosen.oven === null,
+    cabinets: s.cabinets,
+    at: s.at,
+    widths: s.widths,
+  }
+}
+
+/** Верхний шкаф над предметом — чтобы после смены ширины карточка осталась на нём. */
+function upperOver(plan: Plan, key: ItemKey): string | null {
+  for (const run of plan.runs) {
+    const m = run.modules.find((mod) => mod.item === key)
+    if (!m) continue
+    const mid = m.x + m.w / 2
+    const u = run.uppers.find((up) => up.x <= mid && up.x + up.w >= mid)
+    return u ? upperKey(run.id, u.x) : null
+  }
+  return null
+}
+
+const nonEmpty = <T extends object>(o: T): T | undefined => (Object.keys(o).length ? o : undefined)
 
 function hasWebGL(): boolean {
   try {
@@ -157,6 +213,11 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   const [origin, setOrigin] = useState('')
   /** телефон: меню «ещё» с вечером, ценами, размерами и чёткостью */
   const [menu, setMenu] = useState(false)
+  /** фото трассировкой лучей: null — обычное 3D */
+  const [photo, setPhoto] = useState<PhotoState | null>(null)
+  /** номер запуска 3D: после сброса видеокарты 3D создаётся заново (один раз) */
+  const [engineKey, setEngineKey] = useState(0)
+  const restarted = useRef(false)
 
   const rootRef = useRef<HTMLDivElement>(null)
   const hostRef = useRef<HTMLDivElement>(null)
@@ -171,6 +232,12 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   const autoView = useRef(false)
   const editingRef = useRef<CabInfo | null>(null)
   editingRef.current = editing
+  const movingRef = useRef<MoveSel | null>(null)
+  movingRef.current = moving
+  const measureRef = useRef<Dims | null>(null)
+  measureRef.current = measure
+  /** ширину поменяли у верхнего шкафа — после перестройки найти его над этим предметом */
+  const followRef = useRef<ItemKey | null>(null)
 
   /* ───────── каталог ───────── */
 
@@ -200,31 +267,9 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   }, [state.picks, byId, bySlot])
 
   const planFor = useCallback(
-    (s: KitchenStyle): Plan =>
-      planKitchen(
-        {
-          shape: state.shape,
-          a: state.a,
-          b: state.b,
-          c: state.c,
-          island: state.island,
-          fridge: chosen.fridge,
-          dishwasher: chosen.dishwasher,
-          washer: chosen.washer,
-          microwave: chosen.microwave,
-          hob: chosen.hob,
-          arrangement: state.arrangement,
-          tallOven: state.tallOven,
-          pantries: state.pantries,
-          noWindow: state.noWindow,
-          windowW: state.windowW,
-          fridgeOpen: state.fridgeOpen,
-          ovenApart: state.ovenApart,
-          noOven: chosen.oven === null,
-          cabinets: state.cabinets,
-        },
-        { shelves: s.shelves },
-      ),
+    (s: KitchenStyle): Plan => planKitchen(planInput(state, chosen), { shelves: s.shelves }),
+    // только то, от чего зависит раскладка: смена отделки план не пересчитывает
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       state.shape,
       state.a,
@@ -239,6 +284,8 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       state.fridgeOpen,
       state.ovenApart,
       state.cabinets,
+      state.at,
+      state.widths,
       chosen,
     ],
   )
@@ -308,6 +355,13 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       }
       if (!header || !root) return
       const h = Math.round(header.getBoundingClientRect().height)
+      // Телефон стоя: человек листает настройки под 3D — шапка сайта не
+      // возвращается при каждом движении пальца вверх. Иначе она то
+      // появлялась, то пряталась, и 3D с вкладками прыгали на её высоту.
+      // Долистал выше конструктора или ниже него — шапка снова как везде.
+      const work = root.querySelector('.kp-work')?.getBoundingClientRect()
+      const pinned = Boolean(work && isStacked() && work.top <= h + 2 && work.bottom > window.innerHeight * 0.6)
+      document.documentElement.classList.toggle('kp-pinned', pinned)
       const top = header.classList.contains('is-hidden') ? 0 : h
       if (`${h}:${top}` === last) return
       last = `${h}:${top}`
@@ -330,6 +384,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       cls.disconnect()
       page.disconnect()
       cancelAnimationFrame(frame)
+      document.documentElement.classList.remove('kp-pinned')
       window.removeEventListener('scroll', later)
       window.removeEventListener('resize', later)
       window.removeEventListener('load', later)
@@ -384,14 +439,49 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   moveRef.current = (what, wall, pos) => {
     setHint(false)
     if ('item' in what) {
-      setMoving({ key: what.item })
-      update({ arrangement: moveItem(order, what.item, wall, pos, positions) })
+      // предмет встаёт ровно туда, куда его отпустили; соседние шкафы подстраиваются
+      const key = what.item
+      if (apply({ arrangement: moveItem(order, key, wall, pos, positions), at: { ...frozen([key, ...companions(plan, key)]), [key]: pos } })) setMoving({ key })
       return
     }
     // обычный шкаф становится своим и встаёт туда, куда его отпустили
     const sel = cabSel(what.cab)
     if (!sel) return
-    commitPinned({ ...sel, wall, center: pos }, (o) => o)
+    commitPinned({ ...sel, wall, center: pos }, { at: pos })
+  }
+
+  /** Пока тащат: свободная столешница по бокам — подписи прямо в 3D. */
+  const [dragGaps, setDragGaps] = useState<{ center: number; w: number }[]>([])
+  const previewRef = useRef<(q: { what: DragTarget; wall: WallId; pos: number } | null) => DragPreview | null>(() => null)
+  previewRef.current = (q) => {
+    const show = (gaps: { center: number; w: number }[]) =>
+      setDragGaps((prevGaps) => (prevGaps.map((g) => Math.round(g.w)).join() === gaps.map((g) => Math.round(g.w)).join() ? prevGaps : gaps))
+    if (!q) {
+      setDragGaps([])
+      return null
+    }
+    const { what, wall, pos } = q
+    let key: ItemKey
+    let next: KitchenState
+    if ('item' in what) {
+      key = what.item
+      next = { ...state, arrangement: moveItem(order, key, wall, pos, positions), at: { ...frozen([key, ...companions(plan, key)]), [key]: pos } }
+    } else {
+      const sel = cabSel(what.cab)
+      if (!sel) return null
+      const pinned = pinCabinet(order, state.cabinets ?? {}, { w: sel.w, front: 'doors' }, wall, pos, positions)
+      key = pinned.id
+      next = { ...state, arrangement: pinned.order, cabinets: pinned.cabinets as KitchenState['cabinets'], at: { ...frozen([]), [key]: pos } }
+    }
+    const p = trial(next)
+    const place = itemPositions(p)[key]
+    if (!place || place.wall !== wall) {
+      show([])
+      return null
+    }
+    const gaps = itemGaps(p, key)
+    show(gaps)
+    return { center: place.center, w: place.w, gaps, fits: p.dropped.length <= plan.dropped.length }
   }
 
   useEffect(() => {
@@ -407,7 +497,20 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
         engine = new KitchenEngine(hostRef.current, {
           onPick: (pick) => pickRef.current(pick),
           onMove: (item, wall, pos) => moveRef.current(item, wall, pos),
-          onError: () => setEngineState('error'),
+          onPreview: (q) => previewRef.current(q),
+          onError: () => {
+            // Видеокарту сбросили (бывает после тяжёлой работы или сна
+            // ноутбука) — один раз запускаем 3D заново, а не пишем «не работает».
+            setPhoto(null)
+            if (restarted.current) {
+              setEngineState('error')
+              return
+            }
+            restarted.current = true
+            setBuilt(false)
+            setEngineState('loading')
+            setEngineKey((k) => k + 1)
+          },
         })
         engineRef.current = engine
         setQuality(engine.getQuality())
@@ -419,7 +522,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       engine?.dispose()
       engineRef.current = null
     }
-  }, [])
+  }, [engineKey])
 
   // Фото выбранной техники: грузим и перестраиваем, когда пришло.
   useEffect(() => {
@@ -492,14 +595,32 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     prev.current = { style: state.style, tone: state.tone, shape: state.shape, ids }
     setBuilt(true)
     setSpec(engine.spec())
-    // Шкафу поменяли фасады — карточка остаётся на нём же, с новыми размерами.
-    const cab = editingRef.current
+    // Шкафу поменяли фасады или ширину — карточка остаётся на нём же, с
+    // новыми размерами. Верхний шкаф ищем заново: его начало могло сдвинуться.
+    let cab = editingRef.current
+    const follow = followRef.current
+    followRef.current = null
+    if (follow && cab?.row === 'upper') {
+      const key = upperOver(buildInput.plan, follow)
+      if (key) cab = { ...cab, key }
+    }
     const again = cab ? engine.measureCab(cab.key) : null
-    setMeasure(again?.dims ?? null)
+    // у мойки, плиты и пенала фасадов не выбирают — размеры держим по предмету
+    const mv = movingRef.current
+    const byItem = !again && measureRef.current && mv && 'key' in mv ? engine.measureItem(mv.key) : null
+    setMeasure(again?.dims ?? byItem?.dims ?? null)
     setEditing(again?.cab ?? null)
     // moving намеренно не в списке: анимация — только при перестройке кухни
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [buildInput, engineState, items, state.style, state.tone, state.shape])
+
+  // Пока человек собирает кухню, видеокарта в фоне готовит «Фото» —
+  // нажмёт кнопку, и фото начнёт рисоваться сразу, без минуты ожидания.
+  useEffect(() => {
+    if (engineState !== 'ready' || !built) return
+    const timer = setTimeout(() => engineRef.current?.prewarmPhoto(), 6000)
+    return () => clearTimeout(timer)
+  }, [engineState, built])
 
   // Размер поменяли — через полсекунды камера отъезжает, чтобы всё влезло.
   const sizeKey = `${state.a}:${state.b}:${state.c}:${state.island}:${ceiling}`
@@ -567,7 +688,9 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     }
     const cover = stage.offsetHeight + (under === 'steps' ? steps.offsetHeight + 8 : 0)
     const y = window.scrollY + el.getBoundingClientRect().top - cover
-    const headerStays = y <= window.scrollY || y <= 140
+    // в конструкторе (kp-pinned) шапка не возвращается и при прокрутке вверх
+    const pinned = document.documentElement.classList.contains('kp-pinned')
+    const headerStays = y <= 140 || (!pinned && y <= window.scrollY)
     const header = headerStays ? parseFloat(root.style.getPropertyValue('--kp-header')) || 0 : 0
     window.scrollTo({ top: Math.max(0, y - header), behavior: smooth() })
   }
@@ -672,7 +795,50 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   }
   // Своя расстановка сбрасывается вместе со своими шкафами: иначе они
   // оставались в адресе и в счётчике «Вернуть шкафы как было», но не в кухне.
-  const setShape = (shape: Shape) => update({ shape, a: Math.max(state.a, minA(shape)), arrangement: undefined, cabinets: undefined })
+  const setShape = (shape: Shape) => update({ shape, a: Math.max(state.a, minA(shape)), arrangement: undefined, cabinets: undefined, at: undefined })
+
+  /**
+   * Длину стены поменяли — свои места предметов сбрасываются (порядок
+   * остаётся): иначе всё стояло бы в прежних сантиметрах от угла, а весь
+   * прирост стены уходил бы в один крайний шкаф.
+   */
+  const resize = (patch: Partial<KitchenState>) => update({ ...patch, at: undefined })
+
+  /** Раскладка для пробы: что будет, если принять изменение. */
+  const trial = (s: KitchenState) => planKitchen(planInput(s, chosen), { shelves: style.shelves })
+
+  /**
+   * Все предметы остаются там, где стоят сейчас, кроме перечисленных: двигают
+   * одно — меняются только шкафы рядом с ним, а не вся стена.
+   */
+  const frozen = (except: ItemKey[]): NonNullable<KitchenState['at']> => {
+    const at: NonNullable<KitchenState['at']> = {}
+    for (const [k, p] of Object.entries(positions) as [ItemKey, ItemPlace][]) if (!except.includes(k)) at[k] = p.center
+    return at
+  }
+
+  /**
+   * Принять изменение расстановки или ширины. Если из-за него что-то не
+   * помещается на стене — не принимаем и говорим почему. Свои места
+   * записываем туда, где предметы встали на самом деле: соседи и края стены
+   * могли не пустить дальше.
+   */
+  const apply = (patch: Partial<KitchenState>): boolean => {
+    const next = { ...state, ...patch }
+    const p = trial(next)
+    if (p.dropped.length > plan.dropped.length) {
+      setToast(t.noRoom)
+      return false
+    }
+    if (next.at) {
+      const pos = itemPositions(p)
+      const at: NonNullable<KitchenState['at']> = {}
+      for (const k of Object.keys(next.at) as ItemKey[]) if (pos[k]) at[k] = Math.round(pos[k]!.center * 2) / 2
+      patch = { ...patch, at: nonEmpty(at), arrangement: next.arrangement ?? order }
+    }
+    update(patch)
+    return true
+  }
   const setFront = (key: string, v: FrontVariant) => {
     track()
     setState((s) => {
@@ -681,7 +847,12 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       return { ...s, fronts: { ...s.fronts, [key]: v } }
     })
   }
-  const frontCount = Object.keys(state.fronts ?? {}).length + Object.keys(state.cabinets ?? {}).length
+  // свои фасады, свои шкафы, свои места и ширины — всё, что «Вернуть как было» сбросит
+  const frontCount =
+    Object.keys(state.fronts ?? {}).length +
+    Object.keys(state.cabinets ?? {}).length +
+    Object.keys(state.at ?? {}).filter((k) => !isCabinet(k)).length +
+    Object.keys(state.widths ?? {}).length
 
   // Перестановка кнопками. У левой стены и у острова ряд идёт справа налево — поэтому наоборот.
   const present = useMemo(() => new Set(Object.keys(positions) as ItemKey[]), [positions])
@@ -696,69 +867,195 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   }
 
   /**
-   * Обычный шкаф становится своим (k1, k2…): встаёт на своё место в порядке,
-   * забирает свои фасады, и к нему применяется действие act (сдвиг, другая стена).
+   * Обычный шкаф становится своим (k1, k2…): встаёт на своё место в порядке и
+   * забирает свои фасады. Можно сразу дать ширину (w), место (at) и
+   * действие с порядком (act — другая стена). keep — выбран верхний шкаф над
+   * ним: карточка остаётся на верхнем.
    */
   function commitPinned(
     sel: Extract<MoveSel, { cab: CabInfo }>,
-    act: (o: ReturnType<typeof resolveArrangement>, id: CabinetId) => ReturnType<typeof resolveArrangement>,
-    w = sel.w,
+    opts: {
+      w?: number
+      at?: number
+      act?: (o: ReturnType<typeof resolveArrangement>, id: CabinetId) => ReturnType<typeof resolveArrangement>
+      keep?: boolean
+    } = {},
   ) {
-    const front = (sel.cab.variant as BaseFront) ?? 'doors'
-    const pinned = pinCabinet(order, state.cabinets ?? {}, { w, front }, sel.wall, sel.center, positions)
+    const front: BaseFront = sel.cab.narrow ? 'doors' : ((sel.cab.variant as BaseFront) ?? 'doors')
+    const pinned = pinCabinet(order, state.cabinets ?? {}, { w: opts.w ?? sel.w, front }, sel.wall, sel.center, positions)
     const fronts = { ...state.fronts }
     delete fronts[sel.cab.key]
+    const ok = apply({
+      arrangement: opts.act ? opts.act(pinned.order, pinned.id) : pinned.order,
+      cabinets: pinned.cabinets as KitchenState['cabinets'],
+      fronts: nonEmpty(fronts),
+      ...(opts.at !== undefined ? { at: { ...frozen([]), [pinned.id]: opts.at } } : {}),
+    })
+    if (!ok) return
+    if (opts.keep) {
+      followRef.current = pinned.id
+      return
+    }
     const nextCab: CabInfo = { key: pinned.id, row: 'base', variant: front }
     editingRef.current = nextCab
     setEditing(nextCab)
     setMoving({ key: pinned.id })
-    update({
-      arrangement: act(pinned.order, pinned.id),
-      cabinets: pinned.cabinets as KitchenState['cabinets'],
-      fronts: Object.keys(fronts).length ? fronts : undefined,
-    })
   }
 
-  const stepMoving = (dir: 1 | -1) => {
+  /**
+   * «Левее / правее»: на 5 см, соседние шкафы подстраиваются. Упёрся в
+   * технику или в другой предмет — перепрыгивает через него.
+   */
+  const nudge = (dir: 1 | -1) => {
     if (!moving) return
-    const wallOfSel = 'key' in moving ? wallOf(order, moving.key) : moving.wall
-    const delta = (wallOfSel === 'B' || wallOfSel === 'I' ? -dir : dir) as 1 | -1
-    if ('key' in moving) {
-      update({ arrangement: stepItem(order, moving.key, delta, present) })
+    if (!('key' in moving)) {
+      const sign = moving.wall === 'B' || moving.wall === 'I' ? -dir : dir
+      commitPinned(moving, { at: moving.center + sign * NUDGE })
       return
     }
-    commitPinned(moving, (o, id) => stepItem(o, id, delta, new Set([...present, id])))
+    const key = moving.key
+    const p = positions[key]
+    if (!p) return
+    // У левой стены и у острова ряд идёт справа налево — поэтому наоборот.
+    const sign = (p.wall === 'B' || p.wall === 'I' ? -dir : dir) as 1 | -1
+    const at = { ...frozen([key, ...companions(plan, key)]), [key]: p.center + sign * NUDGE }
+    const moved = itemPositions(trial({ ...state, arrangement: order, at }))[key]
+    if (moved && moved.wall === p.wall && Math.abs(moved.center - p.center) >= 1) {
+      apply({ arrangement: order, at })
+      return
+    }
+    // Упёрся: встаёт вплотную по ту сторону соседа.
+    const list = order[p.wall]
+    let j = list.indexOf(key) + sign
+    while (j >= 0 && j < list.length && !present.has(list[j])) j += sign
+    const n = list[j] ? positions[list[j]] : undefined
+    if (!n) return
+    apply({ arrangement: stepItem(order, key, sign, present), at: { ...frozen([key]), [key]: n.center + sign * (n.w / 2 + p.w / 2) } })
   }
+  // кнопку держат — сдвигается дальше, как клавиша на клавиатуре
+  const nudgeRef = useRef(nudge)
+  nudgeRef.current = nudge
+  const repeat = useRef(0)
+  const stopRepeat = () => {
+    clearTimeout(repeat.current)
+    clearInterval(repeat.current)
+    repeat.current = 0
+  }
+  const startRepeat = (dir: 1 | -1) => {
+    stopRepeat()
+    nudgeRef.current(dir)
+    repeat.current = window.setTimeout(() => {
+      repeat.current = window.setInterval(() => nudgeRef.current(dir), 110)
+    }, 420)
+  }
+  useEffect(() => stopRepeat, [])
+  // выбор закрыли, пока кнопку держали, — кнопки уже нет, повтор останавливаем
+  useEffect(() => {
+    if (!moving) stopRepeat()
+  }, [moving])
+
   const toOtherWall = () => {
     if (!moving) return
-    if ('key' in moving) update({ arrangement: nextWall(order, moving.key, state.shape) })
-    else commitPinned(moving, (o, id) => nextWall(o, id, state.shape))
-  }
-  /** Ширина шкафа: свой меняем сразу, обычный сперва становится своим. */
-  const movingCabW = !moving ? null : 'key' in moving ? (isCabinet(moving.key) ? (state.cabinets?.[moving.key]?.w ?? null) : null) : Math.round(moving.w)
-  /** Ширина по 5 см: 78 → 80 → 85, и обратно 78 → 75. */
-  const setCabWidth = (dir: 1 | -1) => {
-    if (!moving || movingCabW === null) return
-    const snapped = dir > 0 ? Math.floor(movingCabW / 5) * 5 + 5 : Math.ceil(movingCabW / 5) * 5 - 5
-    const next = Math.max(15, Math.min(120, snapped))
     if ('key' in moving) {
-      const id = moving.key
-      if (!isCabinet(id) || !state.cabinets?.[id]) return
-      update({ cabinets: { ...state.cabinets, [id]: { ...state.cabinets[id], w: next } } })
+      const rest = { ...state.at }
+      delete rest[moving.key]
+      apply({ arrangement: nextWall(order, moving.key, state.shape), at: nonEmpty(rest) })
+    } else commitPinned(moving, { act: (o, id) => nextWall(o, id, state.shape) })
+  }
+
+  /* ───────── ширина ───────── */
+
+  /** Модуль, к которому относится выбранное: сам шкаф или шкаф под выбранным верхним. */
+  const target = useMemo((): { run: Run; m: Module } | null => {
+    const find = (ok: (run: Run, m: Module) => boolean) => {
+      for (const run of plan.runs) for (const m of run.modules) if (ok(run, m)) return { run, m }
+      return null
+    }
+    if (moving && 'key' in moving) return find((_, m) => m.item === moving.key)
+    if (moving) {
+      const x = Number(moving.cab.key.slice(1))
+      return find((run, m) => run.id === moving.cab.key[0] && Math.round(m.x) === x)
+    }
+    if (editing?.row === 'upper') {
+      const run = plan.runs.find((r) => r.id === editing.key[0].toUpperCase())
+      const x = Number(editing.key.slice(1))
+      const u = run?.uppers.find((up) => Math.round(up.x) === x)
+      if (!run || !u) return null
+      const mid = u.x + u.w / 2
+      const m = run.modules.find((mod) => mod.x <= mid && mod.x + mod.w >= mid)
+      return m ? { run, m } : null
+    }
+    return null
+  }, [plan, moving, editing])
+
+  /**
+   * Ширина выбранного: свой шкаф, мойка, шкаф под плитой, пенал или обычный
+   * шкаф (он сперва становится своим). У техники ширина — её собственная.
+   */
+  const widthCtl = useMemo(() => {
+    if (!target) return null
+    const { m } = target
+    const k = m.item
+    if (k && isCabinet(k)) {
+      const c = state.cabinets?.[k]
+      return c ? { value: Math.round(c.w), ...WIDTH_LIMITS.cabinet } : null
+    }
+    if (k && (SIZED_ITEMS as ItemKey[]).includes(k)) {
+      const lim = WIDTH_LIMITS[k as SizedItem]
+      return { value: Math.round(m.w), min: k === 'hob' ? hobMinWidth(items.hob) : lim.min, max: lim.max }
+    }
+    if (!k && FLEX.includes(m.kind)) return { value: Math.round(m.w), ...WIDTH_LIMITS.cabinet }
+    return null
+  }, [target, state.cabinets, items.hob])
+
+  /** Ширина по 5 см: 78 → 80 → 85, и обратно 78 → 75. Соседние шкафы подстраиваются. */
+  const setWidth = (dir: 1 | -1) => {
+    if (!target || !widthCtl) return
+    const cur = widthCtl.value
+    const snapped = dir > 0 ? Math.floor(cur / 5) * 5 + 5 : Math.ceil(cur / 5) * 5 - 5
+    const next = Math.max(widthCtl.min, Math.min(widthCtl.max, snapped))
+    if (next === cur) return
+    const { run, m } = target
+    const k = m.item
+    const upper = editing?.row === 'upper'
+    // Все стоят на местах, выбранное растёт от своей середины — меняются
+    // только шкафы рядом с ним.
+    if (k && isCabinet(k)) {
+      if (apply({ cabinets: { ...state.cabinets, [k]: { ...state.cabinets![k], w: next } }, at: frozen([]) }) && upper) followRef.current = k
       return
     }
-    commitPinned(moving, (o) => o, next)
+    if (k) {
+      if (apply({ widths: { ...state.widths, [k]: next }, at: frozen([]) }) && upper) followRef.current = k
+      return
+    }
+    const key = baseKey(run.id, m.x)
+    const cab: CabInfo = {
+      key,
+      row: 'base',
+      variant: (state.fronts?.[key] as BaseFront | undefined) ?? (m.kind === 'drawers' ? 'drawers3' : 'doors'),
+      narrow: m.kind === 'bottle' || m.kind === 'filler',
+    }
+    const center = moduleCenter(run, m)
+    commitPinned({ cab, w: m.w, wall: run.id as WallId, center }, { w: next, at: center, keep: upper })
   }
+
   const removeCab = () => {
     if (!moving || !('key' in moving) || !isCabinet(moving.key)) return
     const id = moving.key
     const cabinets = { ...state.cabinets }
     delete cabinets[id]
+    const at = { ...state.at }
+    delete at[id]
     const arrangement = Object.fromEntries(Object.entries(order).map(([w, list]) => [w, list.filter((k) => k !== id)]))
     setMoving(null)
     closeMeasure()
-    update({ arrangement, cabinets: Object.keys(cabinets).length ? cabinets : undefined })
+    update({ arrangement, cabinets: nonEmpty(cabinets), at: nonEmpty(at) })
   }
+
+  // Выбранное пальцем можно сразу тащить — без удержания.
+  useEffect(() => {
+    engineRef.current?.setGrab(moving ? ('key' in moving ? moving.key : moving.cab.key) : null)
+  }, [moving, engineState])
 
   const hobHasOven = plan.runs.some((r) => r.modules.some((m) => m.kind === 'hob' && m.oven)) && items.oven !== null
   const movingKey = moving && 'key' in moving ? moving.key : null
@@ -783,7 +1080,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     if (mod || e.altKey) return
     if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && moving) {
       e.preventDefault()
-      stepMoving(e.key === 'ArrowLeft' ? -1 : 1)
+      nudge(e.key === 'ArrowLeft' ? -1 : 1)
     } else if ((e.key === 'Delete' || e.key === 'Backspace') && movingKey && isCabinet(movingKey)) {
       e.preventDefault()
       removeCab()
@@ -852,21 +1149,62 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     setCartResult({ ok, failed })
   }
 
+  const download = (blob: Blob, name: string) => {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = name
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 5000)
+  }
+
+  /**
+   * Фото: кухня рисуется трассировкой лучей — свет, тени и отражения как на
+   * настоящей фотографии. Вторая кнопка — выйти обратно в обычное 3D.
+   */
+  const togglePhoto = async () => {
+    const engine = engineRef.current
+    if (!engine) return
+    if (engine.isPhoto()) {
+      engine.stopPhoto()
+      return
+    }
+    closeSelection()
+    setMenu(false)
+    setHint(false)
+    const res = await engine.startPhoto(setPhoto)
+    if (res === 'failed') setToast(t.photoFailed)
+  }
+
+  /**
+   * Большое фото 4K файлом. Трассировка на этом устройстве не работает —
+   * обычная картинка 4K. Фото отменили крестиком — ничего не скачиваем.
+   */
+  const savePhoto = async () => {
+    const engine = engineRef.current
+    if (!engine || saving) return
+    setSaving(true)
+    let blob: Blob | null = null
+    const started = engine.isPhoto() ? 'ok' : await engine.startPhoto(setPhoto)
+    if (started === 'ok') blob = await engine.photoBig()
+    else if (started === 'failed') blob = await engine.snapshot4k()
+    setSaving(false)
+    if (blob) download(blob, 'smarket-kitchen-photo-4k.jpg')
+  }
+
   const saveImage = async () => {
     const engine = engineRef.current
     if (!engine || saving) return
+    // На компьютере картинка — сразу фото трассировкой лучей. На телефоне —
+    // только если фото уже включено: большой кадр там копится долго и может
+    // не поместиться в память.
+    if (engine.isPhoto() || !window.matchMedia('(pointer: coarse)').matches) return savePhoto()
     setSaving(true)
     // даём кнопке показать «Готовим 4K…», потом рисуем
     await new Promise((r) => setTimeout(r, 30))
     const blob = await engine.snapshot4k()
     setSaving(false)
-    if (!blob) return
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'smarket-kitchen-4k.jpg'
-    a.click()
-    setTimeout(() => URL.revokeObjectURL(url), 5000)
+    if (blob) download(blob, 'smarket-kitchen-4k.jpg')
   }
 
   const closeMeasure = () => {
@@ -1149,6 +1487,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
               {prices &&
                 view !== 'top' &&
                 !measure &&
+                !photo &&
                 placedTags.map((slot) => {
                   const a = items[slot]!
                   return (
@@ -1175,7 +1514,16 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                     </span>
                   </span>
                 ))}
+              {/* пока тащат — сколько столешницы останется слева и справа */}
+              {dragGaps.map((g, i) => (
+                <span key={`gap:${i}`} className="kp-dim kp-dim--gap" ref={(el) => engineRef.current?.setTag(`gap:${i}`, el)}>
+                  <span className="kp-dim__in">
+                    {fmt(Math.round(g.w))} {t.cm}
+                  </span>
+                </span>
+              ))}
               {showDims &&
+                !photo &&
                 plan.runs.flatMap((run) =>
                   run.modules.map((m, i) =>
                     m.w >= 15 ? (
@@ -1236,6 +1584,16 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                 onClick={redo}
               >
                 <IconUndo redo />
+              </button>
+              <button
+                type="button"
+                className="kp-toggle kp-tools__photo"
+                aria-pressed={Boolean(photo)}
+                title={photo ? t.photoExit : t.photoTitle}
+                onClick={togglePhoto}
+              >
+                <IconCamera />
+                <span>{t.photo}</span>
               </button>
               <button
                 type="button"
@@ -1322,7 +1680,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
           {sheetOpen && (
             <div className="kp-sel">
               {measure && (
-                <div className={`kp-size-card${editing ? ' kp-size-card--edit' : ''}`} role="group" aria-label={measureTitle(measure)}>
+                <div className={`kp-size-card${editing || widthCtl ? ' kp-size-card--edit' : ''}`} role="group" aria-label={measureTitle(measure)}>
                   <span className="kp-size-card__title">{measureTitle(measure)}</span>
                   <span className="kp-size-card__nums">
                     {fmt(measure.w)} × {fmt(measure.h)} × {fmt(measure.d)} {t.cm}
@@ -1331,7 +1689,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                   <button type="button" className="kp-size-card__close" aria-label={t.close} onClick={closeSelection}>
                     <IconClose />
                   </button>
-                  {editing && (
+                  {editing && !editing.narrow && (
                     <div className="kp-fronts" role="radiogroup" aria-label={t.cabAsk}>
                       <span className="kp-fronts__ask">{t.cabAsk}</span>
                       <div className="kp-fronts__list">
@@ -1351,27 +1709,31 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                       </div>
                     </div>
                   )}
-                  {movingCabW !== null && editing?.row === 'base' && (
+                  {/* ширина — у каждого шкафа, у мойки и пенала; соседние шкафы подстраиваются */}
+                  {widthCtl && (
                     <div className="kp-cabw">
-                      <span className="kp-cabw__label">{t.widthLabel}</span>
+                      <span className="kp-cabw__label">
+                        {t.widthLabel}
+                        {editing?.row === 'upper' && <small>{t.widthWithLower}</small>}
+                      </span>
                       <button
                         type="button"
                         className="kp-size__step"
                         aria-label={`${t.less}: ${t.widthLabel}`}
-                        disabled={movingCabW <= 15}
-                        onClick={() => setCabWidth(-1)}
+                        disabled={widthCtl.value <= widthCtl.min}
+                        onClick={() => setWidth(-1)}
                       >
                         −
                       </button>
-                      <output className="kp-counter__value">
-                        {movingCabW} {t.cm}
+                      <output className="kp-counter__value" aria-live="polite">
+                        {widthCtl.value} {t.cm}
                       </output>
                       <button
                         type="button"
                         className="kp-size__step"
                         aria-label={`${t.more}: ${t.widthLabel}`}
-                        disabled={movingCabW >= 120}
-                        onClick={() => setCabWidth(1)}
+                        disabled={widthCtl.value >= widthCtl.max}
+                        onClick={() => setWidth(1)}
                       >
                         +
                       </button>
@@ -1391,10 +1753,40 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                     {movingName}
                     <small>{t.moveHint2}</small>
                   </span>
-                  <button type="button" className="kp-move__btn" aria-label={t.moveLeft} onClick={() => stepMoving(-1)}>
+                  {/* по 5 см; держите кнопку — едет дальше; упёрлось — перепрыгнет соседа */}
+                  <button
+                    type="button"
+                    className="kp-move__btn"
+                    aria-label={t.moveLeft}
+                    title={t.moveLeft}
+                    onPointerDown={(e) => {
+                      if (e.button === 0) startRepeat(-1)
+                    }}
+                    onPointerUp={stopRepeat}
+                    onPointerLeave={stopRepeat}
+                    onPointerCancel={stopRepeat}
+                    onClick={(e) => {
+                      // клавиатура и программы чтения экрана нажимают без пальца (detail = 0)
+                      if (e.detail === 0) nudge(-1)
+                    }}
+                  >
                     <IconArrow flip />
                   </button>
-                  <button type="button" className="kp-move__btn" aria-label={t.moveRight} onClick={() => stepMoving(1)}>
+                  <button
+                    type="button"
+                    className="kp-move__btn"
+                    aria-label={t.moveRight}
+                    title={t.moveRight}
+                    onPointerDown={(e) => {
+                      if (e.button === 0) startRepeat(1)
+                    }}
+                    onPointerUp={stopRepeat}
+                    onPointerLeave={stopRepeat}
+                    onPointerCancel={stopRepeat}
+                    onClick={(e) => {
+                      if (e.detail === 0) nudge(1)
+                    }}
+                  >
                     <IconArrow />
                   </button>
                   {canOtherWall && (
@@ -1410,7 +1802,36 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
             </div>
           )}
 
-          {engineState === 'ready' && built && hint && !moving && !measure && (
+          {/* фото: сколько готово, скачать 4K, выйти */}
+          {photo && (
+            <div className="kp-photo" role="status" aria-live="polite">
+              <span className="kp-photo__info">
+                <span className="kp-photo__text">
+                  {photo.phase === 'build'
+                    ? t.photoBuild
+                    : photo.phase === 'done'
+                      ? t.photoDone
+                      : photo.big
+                        ? t.photoBig(Math.round(photo.progress * 100))
+                        : t.photoTrace(Math.round(photo.progress * 100))}
+                  <small>{photo.phase === 'done' ? t.photoTurn : photo.phase === 'build' ? t.photoFirst : t.photoWait}</small>
+                </span>
+                {photo.phase !== 'done' && (
+                  <span className="kp-photo__bar" aria-hidden="true">
+                    <span style={{ transform: `scaleX(${photo.progress.toFixed(3)})` }} />
+                  </span>
+                )}
+              </span>
+              <button type="button" className="kp-photo__save" disabled={photo.phase === 'build' || photo.big || saving} onClick={savePhoto}>
+                {t.photoSave}
+              </button>
+              <button type="button" className="kp-photo__close" aria-label={t.photoExit} title={t.photoExit} onClick={() => engineRef.current?.stopPhoto()}>
+                <IconClose />
+              </button>
+            </div>
+          )}
+
+          {engineState === 'ready' && built && hint && !moving && !measure && !photo && (
             <p className="kp-hint">
               <span className="kp-hint__long">
                 {t.hint}
@@ -1449,12 +1870,12 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
               <div className="kp-sizes">
                 <PlanSketch plan={plan} labels={wallLabels} className="kp-sketch" />
                 <p className="kp-note">{t.measureHint}</p>
-                <SizeField label={`A · ${t.walls.a}`} value={state.a} min={minA(state.shape)} max={LIMITS.a.max} t={t} onChange={(a) => update({ a })} />
+                <SizeField label={`A · ${t.walls.a}`} value={state.a} min={minA(state.shape)} max={LIMITS.a.max} t={t} onChange={(a) => resize({ a })} />
                 {(state.shape === 'corner' || state.shape === 'u') && (
-                  <SizeField label={`B · ${t.walls.b}`} value={state.b} min={LIMITS.b.min} max={LIMITS.b.max} t={t} onChange={(b) => update({ b })} />
+                  <SizeField label={`B · ${t.walls.b}`} value={state.b} min={LIMITS.b.min} max={LIMITS.b.max} t={t} onChange={(b) => resize({ b })} />
                 )}
                 {state.shape === 'u' && (
-                  <SizeField label={`C · ${t.walls.c}`} value={state.c} min={LIMITS.c.min} max={LIMITS.c.max} t={t} onChange={(c) => update({ c })} />
+                  <SizeField label={`C · ${t.walls.c}`} value={state.c} min={LIMITS.c.min} max={LIMITS.c.max} t={t} onChange={(c) => resize({ c })} />
                 )}
                 {state.shape === 'island' && (
                   <SizeField
@@ -1463,7 +1884,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                     min={LIMITS.island.min}
                     max={Math.min(LIMITS.island.max, state.a)}
                     t={t}
-                    onChange={(island) => update({ island })}
+                    onChange={(island) => resize({ island })}
                   />
                 )}
                 <Dropped plan={plan} state={state} t={t} onFix={update} />
@@ -1786,7 +2207,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                   <button
                     type="button"
                     className="btn btn--ghost btn--sm kp-reset"
-                    onClick={() => update({ fronts: undefined, cabinets: undefined, arrangement: undefined })}
+                    onClick={() => update({ fronts: undefined, cabinets: undefined, arrangement: undefined, at: undefined, widths: undefined })}
                   >
                     {t.resetFronts(frontCount)}
                   </button>
@@ -2047,7 +2468,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
             </button>
             {engineState === 'ready' && (
               <button type="button" className="btn btn--outline btn--sm" onClick={saveImage} disabled={saving} aria-busy={saving}>
-                {saving ? t.saving : t.saveImage}
+                {saving ? (photo?.big ? t.photoBig(Math.round(photo.progress * 100)) : t.saving) : t.saveImage}
               </button>
             )}
             <button type="button" className="btn btn--outline btn--sm" onClick={share}>
@@ -2539,6 +2960,14 @@ function IconTag() {
   return (
     <svg {...iconProps}>
       <path d="M3 12V4h8l10 10-8 8zM7.5 8.5h.01" {...stroke} />
+    </svg>
+  )
+}
+
+function IconCamera() {
+  return (
+    <svg {...iconProps}>
+      <path d="M4 8h3l2-3h6l2 3h3v11H4zM12 10.5a3.25 3.25 0 1 0 0 6.5a3.25 3.25 0 1 0 0-6.5" {...stroke} />
     </svg>
   )
 }

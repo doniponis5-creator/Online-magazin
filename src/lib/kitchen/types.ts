@@ -56,6 +56,9 @@ export type ItemKey = FixedItem | CabinetId
 export const isCabinet = (k: string): k is CabinetId => /^k\d{1,3}$/.test(k)
 /** Свой шкаф: ширина, см, и фасады. */
 export type Cabinet = { w: number; front: BaseFront }
+/** Предметы, которым покупатель может поменять ширину (кроме своих шкафов). */
+export type SizedItem = 'sink' | 'hob' | 'pantry' | 'pantry2'
+export const SIZED_ITEMS: SizedItem[] = ['sink', 'hob', 'pantry', 'pantry2']
 
 /** Стены: A — задняя, B — левая, C — правая; I — остров. */
 export type WallId = 'A' | 'B' | 'C' | 'I'
@@ -105,6 +108,14 @@ export type KitchenState = {
   ovenApart?: boolean
   /** свои шкафы (перетащенные или с другой шириной) */
   cabinets?: Record<CabinetId, Cabinet>
+  /**
+   * Своё место предмета на стене: середина, см от угла (как в itemPositions).
+   * Нет — предмет стоит там, куда его ставят правила, а шкафы вокруг делят
+   * остаток стены.
+   */
+  at?: Partial<Record<ItemKey, number>>
+  /** своя ширина мойки, шкафа под плитой и пеналов, см */
+  widths?: Partial<Record<SizedItem, number>>
   /** отделка: цвет фасадов из каталога (ламинат, акрил, эмаль, шпон, Fenix) */
   facade?: string
   /** цвет верхних фасадов, если другой */
