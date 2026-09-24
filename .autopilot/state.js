@@ -11,8 +11,8 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-24T21:12:05+06:00",
-  "updatedAt": "2026-09-24T21:46:26+06:00",
-  "finishedAt": "2026-09-24T21:46:26+06:00",
+  "updatedAt": "2026-09-24T22:03:35+06:00",
+  "finishedAt": "2026-09-24T22:03:35+06:00",
   "stages": [
     {
       "id": "preflight",
@@ -131,10 +131,10 @@ window.STATE =
   },
   "additions": [],
   "coverage": { "found": 7, "fixed": 7, "deferred": 0 },
-  "concerns": ["[закрыто таском 04] __tests__/kitchen-governor.test.ts:22 — рывок в тесте ровно 80 мс = кап; нужен 400 мс", "[снято] engine.ts:1575 — ревьюер Craft подтвердил: composer создаётся только при !mobile, ветка без composer = телефон"],
+  "concerns": ["engine.ts — в lite карта теней окна (windowSun, 2048² на ПК, ≈16 МБ) не освобождается; отдать той же строкой, что у sun", "Built.spec в lite тестом не закреплён: сборка требует канвас, пути без three нет — проверено чтением кода (carcass пишет shelves независимо от lite)", "[закрыто таском 04] __tests__/kitchen-governor.test.ts:22 — рывок в тесте ровно 80 мс = кап; нужен 400 мс", "[снято] engine.ts:1575 — ревьюер Craft подтвердил: composer создаётся только при !mobile, ветка без composer = телефон"],
   "reviewers": {
     "manifestSpec": null,
     "craft": null
   },
-  "blind": { "verdict": "расхождений с манифестом нет", "implemented": 8, "partial": 0, "missing": 0, "limit": "телефонное поведение проверено в коде и в эмуляции 390×844, не на реальном iPhone" }
+  "blind": { "verdict": "расхождений с манифестом нет; G01 (лёгкая модель) — реализовано", "implemented": 9, "partial": 0, "missing": 0, "limit": "телефонное поведение проверено в коде и в эмуляции 390×844, не на реальном iPhone" }
 }

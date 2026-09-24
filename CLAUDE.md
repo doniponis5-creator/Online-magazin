@@ -188,5 +188,6 @@ PC — сайт, расширение 1С и сервер SBonus: `src/`, `publi
 - Раскладка телефона: одна и та же строка `(max-width: 900px) and (min-height: 521px)` — `STACKED` в `KitchenPlanner.tsx` и `@media` в `kitchen.css`; менять обе.
 - Полный экран с листом настроек: `fullPanel` → класс `is-panel` ставится только вместе с `kp--full` и стилизован только внутри телефонного `@media`; на компьютере полный экран прежний.
 - `src/lib/kitchen/variants.ts` `parseVariants` фильтрует `localStorage['kp-variants']` — битая запись раньше роняла страницу; сырой `JSON.parse` туда не возвращать.
+- Качество «Лёгкий» (`lite`): в `engine.ts` единый `get lite()`, в сборку флаг едет только через `Mats.lite` (`materials.ts`) — новых `quality === 'lite'` не рассыпать; `Built.spec` (числа для мебельщика) от `lite` не зависит.
 - Тесты: `npx vitest run` (23 файла, 247 passed на 24.09.2026); один — `npx vitest run __tests__/kitchen.test.ts`; также `kitchen-governor.test.ts`, `kitchen-variants.test.ts`.
 <!-- autopilot:end -->

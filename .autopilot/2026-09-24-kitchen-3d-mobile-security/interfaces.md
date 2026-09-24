@@ -47,3 +47,7 @@
 
 - `src/lib/kitchen/variants.ts`: `parseVariants(raw)`, тип `Variant`; тест `__tests__/kitchen-variants.test.ts`.
 - Планировщик: `fullPanel` + класс `is-panel` (только телефон в полном экране); `hostRef` = `.kp-scene` (холст), `stageRef` = `.kp-stage`; полоса `.kp-stage__bar`; переменные `--kp-strip`, `--kp-steps-h`, `--kp-full-foot`; тексты `toolsMoreShort`, `panelHide`.
+
+## Из таска 05 — лёгкая модель
+
+- `Quality = 'lite' | 'hd' | '4k'`; в движке единый `get lite()`; `BuildInput.lite` → `createMaterials(..., lite)` → `Mats.lite` (сборка читает только его). lowEnd без сохранённого `kp-quality` → lite. Тексты `qualityLite`.
