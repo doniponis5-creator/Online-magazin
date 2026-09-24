@@ -2083,6 +2083,16 @@ html.kp-lock body {
   display: none;
 }
 
+/* цвет шкафа над холодильником: материалы и цвета — строкой, листаются вбок, не сжимаясь */
+.kp-fronts__list > .kp-chip,
+.kp-fronts__list > .kp-color {
+  flex: 0 0 auto;
+}
+
+.kp-fronts__list + .kp-fronts__list {
+  margin-top: 6px;
+}
+
 .kp-front-opt {
   flex: 0 0 auto;
   display: flex;

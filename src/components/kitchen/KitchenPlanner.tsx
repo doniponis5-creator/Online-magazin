@@ -24,7 +24,7 @@ import {
   type SplashGroup,
   type TopMaterial,
 } from '@/lib/kitchen/finishes'
-import { BASE_FRONTS, baseKey, UPPER_FRONTS, upperKey } from '@/lib/kitchen/fronts'
+import { BASE_FRONTS, baseKey, OVER_FRIDGE_FRONTS, UPPER_FRONTS, upperKey } from '@/lib/kitchen/fronts'
 import {
   canChangeWall,
   CEILING,
@@ -242,6 +242,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   /** отделка: что красим (весь гарнитур, низ, верх) и какой материал открыт */
   const [paintFor, setPaintFor] = useState<'all' | 'lower' | 'upper'>('all')
   const [frontMat, setFrontMat] = useState<FrontMaterial>('laminate')
+  const [ofMat, setOfMat] = useState<FrontMaterial | null>(null)
   const [topMat, setTopMat] = useState<TopMaterial>('quartz')
   const [splashGroup, setSplashGroup] = useState<SplashGroup>('stone')
   /** lost — телефон несколько раз подряд забрал видеокарту: ждём нажатия «Запустить 3D снова» */
@@ -626,8 +627,13 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     [style, handle, state.handleMetal, topSel, splashSel],
   )
   const finish = useMemo(
-    () => ({ facade: frontColor(state.facade), upper: state.upperFacade === 'style' ? ('style' as const) : frontColor(state.upperFacade), top: topSel }),
-    [state.facade, state.upperFacade, topSel],
+    () => ({
+      facade: frontColor(state.facade),
+      upper: state.upperFacade === 'style' ? ('style' as const) : frontColor(state.upperFacade),
+      top: topSel,
+      overFridge: frontColor(state.overFridgeFacade),
+    }),
+    [state.facade, state.upperFacade, topSel, state.overFridgeFacade],
   )
   const buildInput: BuildInput = useMemo(
     () => ({
@@ -963,7 +969,8 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     Object.keys(state.at ?? {}).filter((k) => !isCabinet(k)).length +
     Object.keys(state.widths ?? {}).length +
     Object.keys(state.heights ?? {}).length +
-    (state.doorsRight?.length ?? 0)
+    (state.doorsRight?.length ?? 0) +
+    (state.overFridgeFacade ? 1 : 0)
 
   // Перестановка кнопками. У левой стены и у острова ряд идёт справа налево — поэтому наоборот.
   const present = useMemo(() => new Set(Object.keys(positions) as ItemKey[]), [positions])
@@ -1192,6 +1199,8 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   const hingeKey = useMemo((): string | null => {
     const single = (wCm: number) => wCm >= 20 && wCm <= 62
     if (editing?.row === 'upper') {
+      // над холодильником дверцы всегда парой — открываются в обе стороны
+      if (editing.fridge) return null
       if (editing.variant !== 'doors' && editing.variant !== 'glass') return null
       const run = plan.runs.find((r) => r.id === editing.key[0].toUpperCase())
       const x = Number(editing.key.slice(1))
@@ -1702,7 +1711,12 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       [t.hw.splash, `${fmt(spec.splash)} ${t.m2}`],
     ].filter((r) => !/^0([.,]0+)?\s/.test(String(r[1])))
     return [
-      { title: t.frontsTitle, head: [t.colPart, t.colSize, t.colQty], rows: drawing.fronts.map((f) => [t.frontTypes[f.type], size(f.w, f.h), f.count]) },
+      {
+        title: t.frontsTitle,
+        head: [t.colPart, t.colSize, t.colQty],
+        // свой цвет (шкаф над холодильником) — словами, чтобы мастер заказал его отдельно
+        rows: drawing.fronts.map((f) => [f.color ? `${t.frontTypes[f.type]} · ${frontDesc(f.color)}` : t.frontTypes[f.type], size(f.w, f.h), f.count]),
+      },
       { title: t.cutTitle, head: [t.colPart, t.colSize, t.colQty], rows: drawing.cuts.map((c) => [t.cutNames[c.name], size(c.a, c.b), c.count]) },
       {
         title: t.topTitle,
@@ -1876,9 +1890,22 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     b: state.shape === 'corner' || state.shape === 'u' ? `B · ${state.b} ${t.cm}` : undefined,
     c: state.shape === 'u' ? `C · ${state.c} ${t.cm}` : undefined,
   }
-  const editOptions: FrontVariant[] = editing ? (editing.row === 'base' ? BASE_FRONTS : UPPER_FRONTS) : []
+  const editOptions: FrontVariant[] = editing ? (editing.row === 'base' ? BASE_FRONTS : editing.fridge ? OVER_FRIDGE_FRONTS : UPPER_FRONTS) : []
   const frontLabel = (v: FrontVariant) =>
-    editing?.row === 'upper' ? t.upperFronts[v as keyof typeof t.upperFronts] : t.baseFronts[v as keyof typeof t.baseFronts]
+    editing?.fridge
+      ? (t.overFridgeFronts[v as keyof typeof t.overFridgeFronts] ?? '')
+      : editing?.row === 'upper'
+        ? t.upperFronts[v as keyof typeof t.upperFronts]
+        : t.baseFronts[v as keyof typeof t.baseFronts]
+  // цвет фасада шкафа над холодильником: у открытого фасада нет — и цвета тоже
+  const overFridgeColors = Boolean(editing?.fridge && editing.variant !== 'open')
+  // вкладка материала: выбранная руками, иначе — материал уже выбранного цвета
+  const ofMatShown: FrontMaterial = ofMat ?? frontColor(state.overFridgeFacade)?.material ?? 'laminate'
+  // «как у гарнитура» — образец того цвета, который у верха сейчас
+  const kitchenUpper = state.upperFacade === 'style' ? undefined : frontColor(state.upperFacade ?? state.facade)
+  const kitchenUpperSwatch = kitchenUpper
+    ? colorSwatch(kitchenUpper.color, kitchenUpper.texture)
+    : toneSwatch(tone.upper ?? tone.facade, undefined, tone.upper ? tone.upperTexture : tone.texture)
 
   return (
     <div className={`kp${full ? ' kp--full' : ''}${full && fullPanel ? ' is-panel' : ''}`} ref={rootRef}>
@@ -2153,6 +2180,44 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                           >
                             <FrontIcon variant={v} row={editing.row} />
                             <span>{frontLabel(v)}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {/* шкаф над холодильником: свой цвет фасада (у стекла — рамки) из того же каталога, что в «Отделке» */}
+                  {overFridgeColors && (
+                    <div className="kp-fronts" role="group" aria-label={editing?.variant === 'glass' ? t.overFridgeGlassColor : t.overFridgeColor}>
+                      <span className="kp-fronts__ask">{editing?.variant === 'glass' ? t.overFridgeGlassColor : t.overFridgeColor}</span>
+                      <div className="kp-fronts__list" role="tablist" aria-label={t.frontsTitle2}>
+                        {FRONT_MATERIALS.map((m) => (
+                          <button key={m.id} type="button" role="tab" aria-selected={ofMatShown === m.id} className="kp-chip" onClick={() => setOfMat(m.id)}>
+                            {lang === 'ky' ? m.ky : m.ru}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="kp-fronts__list" role="radiogroup" aria-label={t.overFridgeColor}>
+                        <button
+                          type="button"
+                          role="radio"
+                          aria-checked={!state.overFridgeFacade}
+                          className="kp-color"
+                          onClick={() => state.overFridgeFacade && update({ overFridgeFacade: undefined })}
+                        >
+                          <span className="kp-color__chip" style={{ background: kitchenUpperSwatch }} />
+                          <span>{t.asKitchen}</span>
+                        </button>
+                        {FRONT_COLORS.filter((c) => c.material === ofMatShown).map((c) => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            role="radio"
+                            aria-checked={state.overFridgeFacade === c.id}
+                            className="kp-color"
+                            onClick={() => state.overFridgeFacade !== c.id && update({ overFridgeFacade: c.id })}
+                          >
+                            <span className={`kp-color__chip kp-color__chip--${c.material}`} style={{ background: colorSwatch(c.color, c.texture) }} />
+                            <span>{lang === 'ky' ? c.ky : c.ru}</span>
                           </button>
                         ))}
                       </div>
@@ -2722,7 +2787,18 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                   <button
                     type="button"
                     className="btn btn--ghost btn--sm kp-reset"
-                    onClick={() => update({ fronts: undefined, cabinets: undefined, arrangement: undefined, at: undefined, widths: undefined, heights: undefined, doorsRight: undefined })}
+                    onClick={() =>
+                      update({
+                        fronts: undefined,
+                        cabinets: undefined,
+                        arrangement: undefined,
+                        at: undefined,
+                        widths: undefined,
+                        heights: undefined,
+                        doorsRight: undefined,
+                        overFridgeFacade: undefined,
+                      })
+                    }
                   >
                     {t.resetFronts(frontCount)}
                   </button>

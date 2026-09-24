@@ -173,6 +173,11 @@ const ru = {
     open: 'Открытые полки',
   } as Record<BaseFront, string>,
   upperFronts: { doors: 'Дверцы', glass: 'Стекло', lift: 'Вверх', open: 'Полки', none: 'Без шкафа' } as Record<UpperFront, string>,
+  /** шкаф над холодильником: убрать нельзя, «открытый» — одна полка без фасада */
+  overFridgeFronts: { lift: 'Вверх', glass: 'Стекло', doors: 'Дверцы', open: 'Открытый' } as Partial<Record<UpperFront, string>>,
+  overFridgeColor: 'Цвет фасада',
+  overFridgeGlassColor: 'Цвет рамки',
+  asKitchen: 'Как у гарнитура',
   resetFronts: (n: number) => `Вернуть шкафы как было (${n})`,
   /* телефон */
   fullOn: 'На весь экран',
@@ -513,6 +518,10 @@ const ky: Texts = {
     open: 'Ачык текчелер',
   },
   upperFronts: { doors: 'Эшиктер', glass: 'Айнек', lift: 'Өйдө', open: 'Текчелер', none: 'Шкафсыз' },
+  overFridgeFronts: { lift: 'Өйдө', glass: 'Айнек', doors: 'Эшиктер', open: 'Ачык' },
+  overFridgeColor: 'Фасаддын түсү',
+  overFridgeGlassColor: 'Алкактын түсү',
+  asKitchen: 'Гарнитурдагыдай',
   resetFronts: (n) => `Шкафтарды мурдагыдай кылуу (${n})`,
   fullOn: 'Толук экран',
   fullOff: 'Кичирейтүү',

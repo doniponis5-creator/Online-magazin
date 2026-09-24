@@ -50,6 +50,8 @@ export type SpecFront = {
   glass: boolean
   framed: boolean
   handle: boolean
+  /** свой цвет фасада (id из каталога отделки) — у шкафа над холодильником; нет — как у гарнитура */
+  color?: string
 }
 
 export type SpecBox = Dims & { x: number; y: number }
@@ -123,7 +125,7 @@ export function cutList(carcasses: SpecCarcass[], panels: SpecData['panels'] = [
 /* ───────── фасады ───────── */
 
 export type FrontType = 'door' | 'glass' | 'framed' | 'drawer' | 'lift' | 'dw' | 'panel'
-export type FrontRow = { type: FrontType; w: number; h: number; count: number }
+export type FrontRow = { type: FrontType; w: number; h: number; count: number; color?: string }
 
 export function frontType(f: SpecFront): FrontType {
   if (f.hinge === 'drawer') return 'drawer'
@@ -142,10 +144,11 @@ export function frontList(runs: SpecRun[]): FrontRow[] {
       const type = frontType(f)
       const w = mm(f.w)
       const h = mm(f.h)
-      const key = `${type}:${w}:${h}`
+      // фасад своего цвета мастер заказывает отдельно — в одну строку с остальными не складываем
+      const key = `${type}:${w}:${h}:${f.color ?? ''}`
       const row = rows.get(key)
       if (row) row.count++
-      else rows.set(key, { type, w, h, count: 1 })
+      else rows.set(key, { type, w, h, count: 1, ...(f.color ? { color: f.color } : {}) })
     }
   }
   const order: FrontType[] = ['door', 'framed', 'glass', 'drawer', 'lift', 'dw', 'panel']

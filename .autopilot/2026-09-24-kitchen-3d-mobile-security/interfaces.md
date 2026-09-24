@@ -51,3 +51,11 @@
 ## Из таска 05 — лёгкая модель
 
 - `Quality = 'lite' | 'hd' | '4k'`; в движке единый `get lite()`; `BuildInput.lite` → `createMaterials(..., lite)` → `Mats.lite` (сборка читает только его). lowEnd без сохранённого `kp-quality` → lite. Тексты `qualityLite`.
+
+## Из таска 06 — шкаф над холодильником
+
+- `fronts.ts`: `OVER_FRIDGE_FRONTS = ['lift','glass','doors','open']`; ключ — `upperKey(run.id, u.x)` в `fx=…`.
+- Состояние `overFridgeFacade?: string` ↔ адрес `ofc=<id из FRONT_COLORS>` (неизвестный — игнор).
+- `FinishLook.overFridge` → `Mats.overFridge` (иначе = `upper`); `CabInfo.fridge?: true`.
+- `SpecFront.color?` / `FrontRow.color?` — фасад своего цвета отдельной строкой.
+- Тексты: `overFridgeFronts`, `overFridgeColor`, `overFridgeGlassColor`, `asKitchen`.

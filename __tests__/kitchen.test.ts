@@ -20,7 +20,7 @@ import {
   type Plan,
 } from '@/lib/kitchen/layout'
 import { checkProject, type Check } from '@/lib/kitchen/checks'
-import { frontsFromQuery, frontsToQuery } from '@/lib/kitchen/fronts'
+import { frontsFromQuery, frontsToQuery, OVER_FRIDGE_FRONTS, upperKey } from '@/lib/kitchen/fronts'
 import { DEFAULT_STATE, queryFromState, stateFromQuery } from '@/lib/kitchen/share'
 import { cutList, frontList, hardware, hingesFor, modulesOf, topList, type SpecData } from '@/lib/kitchen/spec'
 import { STYLES } from '@/lib/kitchen/styles'
@@ -354,6 +354,27 @@ describe('свои фасады', () => {
     expect(frontsFromQuery('A120g.a60t')).toBeUndefined()
     expect(frontsFromQuery('<script>')).toBeUndefined()
   })
+  it('шкаф над холодильником: свой цвет фасада в ссылке (ofc), чужой id — мимо', () => {
+    const q = new URLSearchParams(queryFromState({ ...DEFAULT_STATE, overFridgeFacade: 'acr-emerald' }))
+    expect(q.get('ofc')).toBe('acr-emerald')
+    expect(stateFromQuery(q, new Set()).overFridgeFacade).toBe('acr-emerald')
+    expect(stateFromQuery(new URLSearchParams('f=corner&ofc=zzz'), new Set()).overFridgeFacade).toBeUndefined()
+    expect(stateFromQuery(new URLSearchParams('f=corner&ofc=%3Cb%3E'), new Set()).overFridgeFacade).toBeUndefined()
+    // без выбора в адресе ничего нет — ссылка как раньше
+    expect(new URLSearchParams(queryFromState(DEFAULT_STATE)).has('ofc')).toBe(false)
+  })
+  it('шкаф над холодильником: четыре фасада, каждый живёт в ссылке (fx) по ключу верхнего ряда', () => {
+    // из брифа: подъёмная (как было), стекло, дверцы, открытая полка
+    expect(OVER_FRIDGE_FRONTS).toEqual(['lift', 'glass', 'doors', 'open'])
+    const fridge = appliance({ slot: 'fridge', w: 59.5 })
+    const plan = planKitchen({ shape: 'straight', a: 400, b: 0, c: 0, island: 0, fridge }, { shelves: false })
+    const over = plan.runs[0].uppers.find((u) => u.kind === 'fridge')!
+    const key = upperKey(plan.runs[0].id, over.x)
+    for (const v of OVER_FRIDGE_FRONTS) {
+      const back = stateFromQuery(new URLSearchParams(queryFromState({ ...DEFAULT_STATE, fronts: { [key]: v } })), new Set())
+      expect(back.fronts).toEqual({ [key]: v })
+    }
+  })
 })
 
 describe('окно, потолок, ниша холодильника', () => {
@@ -427,6 +448,19 @@ describe('для мебельщика', () => {
     const rows = frontList(data.runs)
     expect(rows.find((r) => r.type === 'door' && r.w === 297)).toMatchObject({ h: 716, count: 2 })
     expect(rows.find((r) => r.type === 'lift')).toMatchObject({ w: 597, h: 720, count: 1 })
+  })
+  it('фасад своего цвета — отдельной строкой, с цветом; стекло над холодильником — стекло', () => {
+    const over = [
+      { x: 120.15, y: 190, w: 59.7, h: 60, hinge: 'top' as const, glass: true, framed: false, handle: true, color: 'acr-emerald' },
+      { x: 0.15, y: 142, w: 59.7, h: 72, hinge: 'top' as const, glass: false, framed: false, handle: false },
+    ]
+    const rows = frontList([{ ...data.runs[0], fronts: over }])
+    expect(rows).toHaveLength(2)
+    expect(rows.find((r) => r.type === 'glass')).toMatchObject({ w: 597, h: 600, count: 1, color: 'acr-emerald' })
+    expect(rows.find((r) => r.type === 'lift')?.color).toBeUndefined()
+    // тот же размер, но свой цвет — не складывается с фасадами гарнитура
+    const same = frontList([{ ...data.runs[0], fronts: [over[1], { ...over[1], color: 'en-sage' }] }])
+    expect(same.map((r) => r.count)).toEqual([1, 1])
   })
   it('раскрой: боковины, дно, царги у нижних, ниша отдельно', () => {
     const cuts = cutList(data.carcasses, data.panels)

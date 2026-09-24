@@ -20,3 +20,4 @@
 | R14i | *(подразумевается)* найденные дыры безопасности — закрыть, а не только перечислить | done (37462a7) | — | spec §ист.27 → T01 |
 | D01 | *(сборка доказала)* порог возврата чёткости 14 мс недостижим на 60 Гц (rAF ≥ 16,7 мс) — порог 17,5 мс | done (1bef6fc) | служит R07; таск 03 | spec §ист.18 → T03 |
 | G01 | «Kuchsiz telefon uchun alohida yengil 3D model shu bolmadimi hali ?» — лёгкая 3D-модель для слабого телефона | done (e351f1b) | слова владельца после сдачи | spec §ист.28 → T05 |
+| G02 | «holodilnikni ustidegi polkani hohlasam oynelik yokida boshka rang qilishim mumkun qilip qoy» — шкаф над холодильником: стекло или другой цвет | done | слова владельца | → T06 |

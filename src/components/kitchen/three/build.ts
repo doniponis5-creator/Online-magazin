@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { baseKey, DRAWER_PARTS, MIN_EDIT_W, upperKey } from '@/lib/kitchen/fronts'
+import { baseKey, DRAWER_PARTS, MIN_EDIT_W, OVER_FRIDGE_FRONTS, upperKey } from '@/lib/kitchen/fronts'
 import type { Module, Plan, Run } from '@/lib/kitchen/layout'
 import type { Dims, DimsKind, SpecBox, SpecCarcass, SpecData, SpecFront, SpecRun, SpecTop } from '@/lib/kitchen/spec'
 import type { DoorKind, KitchenStyle, Tone } from '@/lib/kitchen/styles'
@@ -38,9 +38,10 @@ export type Anim = { obj: THREE.Object3D; kind: 'swing' | 'lift' | 'slide' | 'fo
 
 /**
  * Шкаф, у которого покупатель может поменять фасады и ширину. narrow —
- * узкий (бутылочница, планка): у него только ширина, фасад один.
+ * узкий (бутылочница, планка): у него только ширина, фасад один. fridge —
+ * шкаф над холодильником: свои варианты фасада и свой цвет.
  */
-export type CabInfo = { key: string; row: 'base' | 'upper'; variant: FrontVariant; narrow?: boolean }
+export type CabInfo = { key: string; row: 'base' | 'upper'; variant: FrontVariant; narrow?: boolean; fridge?: boolean }
 
 const r5 = (v: number) => Math.round(v * 2) / 2
 
@@ -184,6 +185,8 @@ function addFront(
     glass?: boolean
     /** глубина ящика за фасадом */
     depth?: number
+    /** свой цвет фасада (id из каталога) — мебельщику в таблицу фасадов */
+    color?: string
   },
 ) {
   const { style, mats } = ctx
@@ -209,7 +212,15 @@ function addFront(
       withHandle = true
     }
   }
-  panel.userData.front = { w: w * 100, h: h * 100, hinge: opts.hinge, glass: Boolean(opts.glass), framed: doorKind === 'framed', handle: withHandle }
+  panel.userData.front = {
+    w: w * 100,
+    h: h * 100,
+    hinge: opts.hinge,
+    glass: Boolean(opts.glass),
+    framed: doorKind === 'framed',
+    handle: withHandle,
+    ...(opts.color ? { color: opts.color } : {}),
+  }
 
   const pivot = new THREE.Group()
   const delay = 0.03 * ctx.wave++
@@ -309,11 +320,11 @@ function doorsIn(
 }
 
 /** Подъёмные дверцы (вверх): одна, а на широком шкафу — две рядом. */
-function liftsIn(ctx: Ctx, parent: THREE.Object3D, x: number, y0: number, y1: number, z: number, w: number, glass = false, mat?: THREE.Material) {
+function liftsIn(ctx: Ctx, parent: THREE.Object3D, x: number, y0: number, y1: number, z: number, w: number, glass = false, mat?: THREE.Material, color?: string) {
   const n = w > 0.92 ? 2 : 1
   const each = w / n
   for (let k = 0; k < n; k++) {
-    addFront(ctx, parent, { x: x + each * k + GAP / 2, y: y0, z, w: each - GAP, h: y1 - y0, hinge: 'top', upper: true, glass, mat })
+    addFront(ctx, parent, { x: x + each * k + GAP / 2, y: y0, z, w: each - GAP, h: y1 - y0, hinge: 'top', upper: true, glass, mat, color })
   }
 }
 
@@ -988,12 +999,31 @@ function uppers(ctx: Ctx, run: Run, g: THREE.Group) {
         const top = ctx.columnTop
         if (top - bottom < 0.18) break
         const cw = w - 2 * PANEL_T
+        const key = upperKey(run.id, u.x)
+        // Фасад выбирает покупатель: подъёмная (как было), стекло, дверцы, полка.
+        const picked = input.fronts[key] as UpperFront | undefined
+        const variant: UpperFront = picked && OVER_FRIDGE_FRONTS.includes(picked) ? picked : 'lift'
+        const mat = mats.overFridge
+        const color = input.finish?.overFridge?.id
+        const h = top - bottom
+        // За стеклом и в открытом шкафу пустота смотрится как ошибка — ставим полку.
+        const shelves = variant !== 'lift' && h >= 0.3 ? [bottom + h / 2] : []
         const cab = new THREE.Group()
         cab.position.x = x + PANEL_T
-        carcass(ctx, cab, cw, bottom, top, CARCASS_D, { top: true, sides: mats.upper })
-        dims(cab, 'overFridge', cw * 100, (top - bottom) * 100, (CARCASS_D + FRONT_T) * 100)
+        carcass(ctx, cab, cw, bottom, top, CARCASS_D, { top: true, sides: mats.upper, shelves })
+        dims(cab, 'overFridge', cw * 100, h * 100, (CARCASS_D + FRONT_T) * 100)
+        cab.userData.cab = { key, row: 'upper', variant, fridge: true } satisfies CabInfo
         g.add(cab)
-        liftsIn(ctx, cab, 0, bottom + GAP / 2, top - GAP / 2, CARCASS_D, cw)
+        if (variant === 'glass' && shelves.length && top - shelves[0] > 0.16) dishes(ctx, cab, 0.02, cw - 0.02, shelves[0] + 0.008, CARCASS_D)
+        const y0 = bottom + GAP / 2
+        const y1 = top - GAP / 2
+        if (variant === 'lift' || variant === 'glass') liftsIn(ctx, cab, 0, y0, y1, CARCASS_D, cw, variant === 'glass', mat, color)
+        else if (variant === 'doors') {
+          // две створки, как просили в брифе: широкая одиночная дверца под потолком открывается неудобно
+          const half = cw / 2
+          addFront(ctx, cab, { x: GAP / 2, y: y0, z: CARCASS_D, w: half - GAP, h: y1 - y0, hinge: 'left', upper: true, mat, color })
+          addFront(ctx, cab, { x: half + GAP / 2, y: y0, z: CARCASS_D, w: half - GAP, h: y1 - y0, hinge: 'right', upper: true, mat, color })
+        }
         addCornice(x, x + w, CARCASS_D + FRONT_T, top)
         break
       }

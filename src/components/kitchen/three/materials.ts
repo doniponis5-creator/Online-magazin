@@ -17,8 +17,11 @@ export type Mats = ReturnType<typeof createMaterials>
 export type RoomLook = { floor?: FloorKind; wall?: string | null }
 
 /** Отделка из каталога вместо цвета стиля: фасады низа и верха, столешница. */
-/** upper: 'style' — верх в цвете стиля, даже если низ из каталога (двухцветная кухня) */
-export type FinishLook = { facade?: FrontColor; upper?: FrontColor | 'style'; top?: TopChoice }
+/**
+ * upper: 'style' — верх в цвете стиля, даже если низ из каталога (двухцветная кухня);
+ * overFridge — свой цвет фасада шкафа над холодильником
+ */
+export type FinishLook = { facade?: FrontColor; upper?: FrontColor | 'style'; top?: TopChoice; overFridge?: FrontColor }
 
 /** lite — «Лёгкий»: те же цвета и картинки, но без рельефа (bump) и карт шероховатости. */
 export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolean, room: RoomLook = {}, finish: FinishLook = {}, lite = false) {
@@ -118,6 +121,8 @@ export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolea
   const styleUpper = () => (tone.upper ? front(tone.upper, tone.upperTexture) : finish.facade ? front(tone.facade, tone.texture) : facade)
   const upper =
     finish.upper === 'style' ? styleUpper() : finish.upper ? catalogFront(finish.upper) : finish.facade ? facade : tone.upper ? front(tone.upper, tone.upperTexture) : facade
+  // Шкаф над холодильником может быть своего цвета; нет — как верх.
+  const overFridge = finish.overFridge ? catalogFront(finish.overFridge) : upper
   /** у фасада своя фактура — рисунок надо сдвигать от дверцы к дверце */
   const texturedOf = (c: FrontColor | undefined, t: FrontTexture | undefined) => (c ? Boolean(c.texture) || c.material === 'veneer' : Boolean(t))
   const textured = texturedOf(finish.facade, tone.texture)
@@ -345,6 +350,7 @@ export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolea
     lite,
     facade,
     upper,
+    overFridge,
     textured,
     upperTextured,
     trimMetal,

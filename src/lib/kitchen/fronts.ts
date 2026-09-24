@@ -10,6 +10,12 @@ import type { BaseFront, FrontVariant, UpperFront } from './types'
 
 export const BASE_FRONTS: BaseFront[] = ['doors', 'drawers3', 'drawers2', 'drawers4', 'mix', 'open']
 export const UPPER_FRONTS: UpperFront[] = ['doors', 'glass', 'lift', 'open', 'none']
+/**
+ * Шкаф над холодильником (в нише): подъёмная дверца, как всегда было, стекло
+ * в рамке, две распашные дверцы или открытая полка. Убрать его нельзя —
+ * боковины ниши без него остались бы голыми. Ключ — как у верхнего шкафа.
+ */
+export const OVER_FRIDGE_FRONTS: UpperFront[] = ['lift', 'glass', 'doors', 'open']
 
 /** Ящики: доли высоты фасада сверху вниз. */
 export const DRAWER_PARTS: Record<'drawers2' | 'drawers3' | 'drawers4' | 'mix', number[]> = {

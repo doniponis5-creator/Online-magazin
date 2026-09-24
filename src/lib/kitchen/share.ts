@@ -186,6 +186,7 @@ export function stateFromQuery(query: URLSearchParams, known: Set<string>): Kitc
   const fronts = frontsFromQuery(query.get('fx'))
   const facade = frontColor(query.get('fc') ?? undefined)?.id
   const upperFacade = query.get('uf') === 'style' ? 'style' : frontColor(query.get('uf') ?? undefined)?.id
+  const overFridgeFacade = frontColor(query.get('ofc') ?? undefined)?.id
   const top = topChoice(query.get('tp') ?? undefined)?.id
   const splash = splashChoice(query.get('sp') ?? undefined)?.id
   const handle = HANDLES.find((h) => h.id === query.get('hd'))?.id
@@ -219,6 +220,7 @@ export function stateFromQuery(query: URLSearchParams, known: Set<string>): Kitc
     ...(doorsRight ? { doorsRight } : {}),
     ...(facade ? { facade } : {}),
     ...(upperFacade ? { upperFacade } : {}),
+    ...(overFridgeFacade ? { overFridgeFacade } : {}),
     ...(top ? { top } : {}),
     ...(splash ? { splash } : {}),
     ...(handle ? { handle } : {}),
@@ -262,6 +264,7 @@ export function queryFromState(state: KitchenState): string {
   if (state.ovenApart) q.set('oa', '1')
   if (state.facade) q.set('fc', state.facade)
   if (state.upperFacade) q.set('uf', state.upperFacade)
+  if (state.overFridgeFacade) q.set('ofc', state.overFridgeFacade)
   if (state.top) q.set('tp', state.top)
   if (state.splash) q.set('sp', state.splash)
   if (state.handle) q.set('hd', state.handle)
