@@ -183,7 +183,7 @@ PC — сайт, расширение 1С и сервер SBonus: `src/`, `publi
 - Тот же список живёт в `store('kitchen-photo-allow')` (`src/lib/store.ts`) — в `npm run dev` переживает перезагрузку файла: правишь список — перезапусти dev.
 - Заголовки безопасности (рамка, referrer, nosniff) — `headers()` в `next.config.ts`, в nginx их нет и не дублировать.
 - `src/components/kitchen/three/governor.ts` — чистая функция, чёткость только в движении; `engine.ts` зовёт её лишь на телефоне-ветке, `!this.mobile` не трогать. Порог «быстро» 17,5 мс (rAF на 60 Гц = 16,7 мс, ниже никогда не сработает), рывок обрезан 80 мс.
-- `lowEnd` в `engine.ts` = телефон и (`deviceMemory` ≤ 3 или ядер ≤ 4 или `LOW_END_GPU`); iPhone не называет ни память, ни видеокарту — там решают только ядра (iPhone 7 / SE 2016 → простой).
+- `lowEnd` в `engine.ts` = телефон и (`deviceMemory` ≤ 3 или `LOW_END_GPU` или Android с ≤ 4 ядрами). iPhone по ядрам не судить: Safari отдаёт не настоящее число, и новый iPhone попадал в «простые». Телефон в 4K рисует в покое все точки экрана (`fineRatio`) — с ограничением в 2 точки 4K на iPhone был мыльным.
 - `KitchenPlanner.tsx`: движок рисует в `.kp-scene` (`hostRef`), не в `.kp-stage` (`stageRef`) — иначе полоса видов `.kp-stage__bar` попадает в кадр и в фото. Её высота — `--kp-strip` (40 px только в телефонной раскладке).
 - Раскладка телефона: одна и та же строка `(max-width: 900px) and (min-height: 521px)` — `STACKED` в `KitchenPlanner.tsx` и `@media` в `kitchen.css`; менять обе.
 - Полный экран с листом настроек: `fullPanel` → класс `is-panel` ставится только вместе с `kp--full` и стилизован только внутри телефонного `@media`; на компьютере полный экран прежний.

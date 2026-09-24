@@ -232,9 +232,12 @@ export class KitchenEngine {
   ) {
     this.mobile = window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 768
     this.reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    // На телефоне сглаживание выключено: холст там ровно в точках экрана и
-    // на dpr 2–3 ступенек не видно, а видеокарта на нём тратит до трети кадра.
-    this.renderer = new THREE.WebGLRenderer({ antialias: !this.mobile, powerPreference: 'high-performance' })
+    // Сглаживание выключаем только простому Android (память ≤ 3 ГБ — её называет
+    // Chrome): там оно съедает до трети кадра. На iPhone и хороших телефонах
+    // без него кромки шкафов в движении «лесенкой» — 4K выглядел хуже HD.
+    // Решается до создания холста: потом сглаживание не переключить.
+    const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8
+    this.renderer = new THREE.WebGLRenderer({ antialias: !(this.mobile && memory <= 3), powerPreference: 'high-performance' })
     const r = this.renderer
     // 4K — сразу на хорошей видеокарте; на телефоне и встроенной графике — HD.
     // Выбор покупателя помним.
@@ -244,14 +247,13 @@ export class KitchenEngine {
     // Простой телефон — ещё проще: холст в точках экрана и тени мельче.
     // Видеокарте такого телефона вдвое меньше точек на каждый кадр.
     // Память называет только Chrome на Android; видеокарту iPhone не называет
-    // (у всех «Apple GPU»). Ядер процессора ≤ 4 — тоже простой телефон: столько
-    // у старых и дешёвых моделей, а сборку кухни и текстуры считает именно
-    // процессор. По ядрам в простые попадают и iPhone 7 / SE 2016 и старее
-    // (2–4 ядра); с 8-го (6 ядер) — обычный режим телефона. Для старых это
-    // верно: тени 1024 и фото 1536 там — единственное, что не подвесит их.
-    const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8
+    // (у всех «Apple GPU»). Ядер процессора ≤ 4 — простой Android: столько у
+    // старых и дешёвых моделей. iPhone по ядрам не судим: Safari называет не
+    // настоящее число (защита от слежки), и новый iPhone попадал в «простые» —
+    // с мелкими тенями даже в 4K.
     const cores = navigator.hardwareConcurrency ?? 8
-    this.lowEnd = this.mobile && (memory <= 3 || cores <= 4 || LOW_END_GPU.test(gpu))
+    const apple = /apple/i.test(gpu)
+    this.lowEnd = this.mobile && (memory <= 3 || (!apple && cores <= 4) || LOW_END_GPU.test(gpu))
     let saved: string | null = null
     try {
       saved = window.localStorage.getItem('kp-quality')
@@ -1514,10 +1516,10 @@ export class KitchenEngine {
    */
   private captureRoom() {
     this.probeDirty = false
-    // Телефону снимок не по силам: шесть лишних кадров после каждой
-    // пересборки, а отражения на маленьком экране и от студийной карты хороши.
-    // «Лёгкому» — тоже: отражения в нём из студийной карты.
-    if (this.mobile || this.lite) return
+    // Снимок — шесть лишних кадров после каждой пересборки. Телефону в HD и
+    // «Лёгкому» он не по силам: отражения там из студийной карты. Телефон в 4K
+    // (не простой) снимок делает — 4K выбран ради картинки, а не батареи.
+    if (!this.roomShot) return
     const plan = this.input?.plan
     if (!plan || !this.built) return
     if (!this.probe) {
@@ -1550,9 +1552,10 @@ export class KitchenEngine {
     const dpr = window.devicePixelRatio || 1
     const k4 = this.quality === '4k'
     const budget = k4 ? (this.mobile ? 5e6 : 8.3e6) : this.mobile ? 2.4e6 : 4e6
-    // без своего уменьшения (телефон) — ровно точки экрана: крупнее браузер ужал бы грубо;
-    // но не больше двух точек: на dpr 3 третья точка на 6" экране не видна, а кадр в 2,25 раза тяжелее
-    const want = !this.composer ? Math.min(dpr, 2) : k4 ? Math.min(dpr * 3, 3) : Math.min(dpr * 2, 2)
+    // без своего уменьшения (телефон) — ровно точки экрана: крупнее браузер ужал бы грубо.
+    // В HD — не больше двух точек (бережёт батарею). В 4K — все точки экрана: на
+    // iPhone их 3 на точку CSS, и кадр в 2 точки растягивался — картинка мылилась.
+    const want = !this.composer ? (k4 ? dpr : Math.min(dpr, 2)) : k4 ? Math.min(dpr * 3, 3) : Math.min(dpr * 2, 2)
     return Math.max(this.baseRatio, Math.min(want, Math.sqrt(budget / Math.max(1, w * h))))
   }
 
@@ -1577,8 +1580,9 @@ export class KitchenEngine {
   private applyQuality() {
     const dpr = window.devicePixelRatio || 1
     if (this.quality === '4k') {
-      // телефон в движении — ровно точки CSS: чёткость там нужна в покое, а в движении — плавность
-      this.baseRatio = this.mobile ? 1 : Math.min(Math.max(dpr, 1.5), 2)
+      // телефон в движении — полторы точки (простой — одна): в 4K и в движении
+      // кромки не должны рассыпаться; медленные кадры губернатор снизит сам
+      this.baseRatio = this.mobile ? (this.lowEnd ? 1 : Math.min(dpr, 1.5)) : Math.min(Math.max(dpr, 1.5), 2)
       this.detail = 2
       setBudget(this.mobile ? 200e6 : 480e6)
     } else {
@@ -1610,6 +1614,12 @@ export class KitchenEngine {
     return this.quality === 'lite'
   }
 
+  /** Делаем ли снимок комнаты для отражений: компьютер (кроме «Лёгкого») и хороший телефон в 4K. */
+  private get roomShot(): boolean {
+    if (this.lite) return false
+    return !this.mobile || (this.quality === '4k' && !this.lowEnd)
+  }
+
   setQuality(q: Quality) {
     if (q === this.quality) return
     const wasLite = this.lite
@@ -1627,11 +1637,13 @@ export class KitchenEngine {
     // Свет окна есть только на компьютере — как в конструкторе.
     this.sun.castShadow = !lite
     if (!this.mobile) this.windowSun.castShadow = !lite
-    // снимка комнаты в «Лёгком» нет — отражения из студийной карты (яркость
-    // как в captureRoom); обратно снимок сделает пересборка (probeDirty)
-    if (lite && this.scene.environment === this.roomEnv) {
+    // без снимка комнаты («Лёгкий», телефон в HD) — отражения из студийной карты
+    // (яркость как в captureRoom); где снимок нужен — сделаем его в покое
+    if (!this.roomShot && this.scene.environment === this.roomEnv) {
       this.scene.environment = this.studioEnv
       this.scene.environmentIntensity = (this.evening ? NIGHT : DAY).env
+    } else if (this.roomShot && this.scene.environment !== this.roomEnv) {
+      this.probeDirty = true
     }
     // на телефоне с чёткостью меняется и карта теней — старую отдаём, новую
     // выделит сам рендерер; в «Лёгком» карта не нужна вовсе (на ПК это 4096²)

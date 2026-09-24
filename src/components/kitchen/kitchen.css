@@ -1026,7 +1026,13 @@ html:has(.kp-photo) .assistant {
 }
 
 .kp-size__field input {
-  width: 3.4ch;
+  /* 4ch и без своих отступов: iPhone добавляет полю внутренний отступ, и при
+     3,4ch третья цифра («490») обрезалась до «49» */
+  width: 4ch;
+  min-width: 0;
+  padding: 0;
+  -webkit-appearance: none;
+  appearance: none;
   border: 0;
   background: transparent;
   font: 800 20px/1 var(--font);
