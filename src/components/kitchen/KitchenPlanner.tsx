@@ -74,6 +74,7 @@ import {
 import { DRAWING_CSS, elevationSvg } from './drawing'
 import { PlanSketch } from './PlanSketch'
 import { kitchenTexts, type KitchenTexts } from './texts'
+import { parseVariants, type Variant } from '@/lib/kitchen/variants'
 import type { BuildInput, CabInfo, Dims } from './three/build'
 import type { DragPreview, DragTarget, KitchenEngine, PhotoState, Pick, Quality, View } from './three/engine'
 import type { Photo } from './three/photo'
@@ -100,9 +101,6 @@ const SLOT_OF: Record<ItemKey, SlotKind | null> = {
   pantry2: null,
   oven: 'oven',
 }
-
-/** Сохранённый вариант кухни: ссылка-адрес и картинка. */
-type Variant = { id: string; name: string; label: string; q: string; img: string; at: number }
 
 /** Что сейчас переставляют: предмет (техника, мойка, свой шкаф) или обычный шкаф. */
 type MoveSel = { key: ItemKey } | { cab: CabInfo; w: number; wall: WallId; center: number }
@@ -236,6 +234,9 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   const [view, setView] = useState<View>('angle')
   const [prices, setPrices] = useState(true)
   const [full, setFull] = useState(false)
+  // Полный экран на телефоне: настройки шага выезжают листом поверх 3D.
+  // Вход и выход из полного экрана всегда начинаются со спрятанным листом.
+  const [fullPanel, setFullPanel] = useState(false)
   const [quality, setQuality] = useState<Quality>('hd')
   const [qualityPx, setQualityPx] = useState('')
   /** отделка: что красим (весь гарнитур, низ, верх) и какой материал открыт */
@@ -269,6 +270,10 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   const restarts = useRef(0)
 
   const rootRef = useRef<HTMLDivElement>(null)
+  // stageRef — весь прилипший блок (3D + полоса видов на телефоне);
+  // hostRef — только та его часть, где рисует движок: он меряет свой размер
+  // по этому элементу, и полоса под холстом не должна попадать в кадр.
+  const stageRef = useRef<HTMLDivElement>(null)
   const hostRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLElement>(null)
   const stepsRef = useRef<HTMLElement>(null)
@@ -458,7 +463,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   // инструментов на невысоком экране растянута на всю сцену.
   useEffect(() => {
     const tools = toolsRef.current
-    const stage = hostRef.current
+    const stage = stageRef.current
     if (!tools || !stage) return
     const measureTools = () => {
       const last = tools.querySelector('.kp-tools__full') ?? tools
@@ -737,11 +742,17 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   }, [selected, engineState, buildInput])
 
   // На весь экран: страница под 3D не прокручивается, Esc — свернуть.
+  const toggleFull = (on: boolean) => {
+    setFull(on)
+    setFullPanel(false)
+  }
   useEffect(() => {
     if (!full) return
     document.documentElement.classList.add('kp-lock')
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setFull(false)
+      if (e.key !== 'Escape') return
+      setFull(false)
+      setFullPanel(false)
     }
     window.addEventListener('keydown', onKey)
     const timer = setTimeout(() => engineRef.current?.reframe(), 80)
@@ -776,7 +787,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
    */
   const reveal = (el: Element | null | undefined, under: 'stage' | 'steps') => {
     const root = rootRef.current
-    const stage = hostRef.current
+    const stage = stageRef.current
     const steps = stepsRef.current
     if (!el || !root || !stage || !steps) return
     if (!isStacked()) {
@@ -800,7 +811,8 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     else if (s !== 'size' && autoView.current && view === 'top') changeView('angle', true)
     requestAnimationFrame(() => {
       bodyRef.current?.scrollTo({ top: 0 })
-      if (isStacked()) reveal(panelRef.current, 'stage')
+      // в полном экране страница под 3D заперта — её не двигаем
+      if (isStacked() && !full) reveal(panelRef.current, 'stage')
     })
   }
 
@@ -1316,7 +1328,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   const cardBusyUntil = useRef(0)
   const placeCard = useCallback((force = false) => {
     const card = cardRef.current
-    const stage = hostRef.current
+    const stage = stageRef.current
     if (!card || !stage) return
     const engine = engineRef.current
     if (isStacked()) {
@@ -1543,8 +1555,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
 
   useEffect(() => {
     try {
-      const raw = window.localStorage.getItem('kp-variants')
-      if (raw) setVariants(JSON.parse(raw) as Variant[])
+      setVariants(parseVariants(window.localStorage.getItem('kp-variants')))
     } catch {
       // нет доступа к хранилищу — просто без сохранённых вариантов
     }
@@ -1870,14 +1881,23 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     editing?.row === 'upper' ? t.upperFronts[v as keyof typeof t.upperFronts] : t.baseFronts[v as keyof typeof t.baseFronts]
 
   return (
-    <div className={`kp${full ? ' kp--full' : ''}`} ref={rootRef}>
+    <div className={`kp${full ? ' kp--full' : ''}${full && fullPanel ? ' is-panel' : ''}`} ref={rootRef}>
       <header className="kp-head">
         <h1 className="kp-head__title">{t.title}</h1>
         <p className="kp-head__lead">{t.lead}</p>
       </header>
 
       <div className="kp-work">
-        <div className="kp-stage" ref={hostRef} onPointerDown={() => setHint(false)}>
+        <div className="kp-stage" ref={stageRef} onPointerDown={() => setHint(false)}>
+          {/* сюда движок кладёт холст; на телефоне под ним остаётся полоса видов */}
+          <div className="kp-scene" ref={hostRef} />
+          {/*
+            Телефон стоя: полоса под 3D — сплошной фон для переключателя видов
+            (он остаётся в строке инструментов и встаёт сюда абсолютно) и место
+            справа под кнопку консультанта. На картинке кнопок внизу нет —
+            кухню крутят, не задевая их. На компьютере полосы нет.
+          */}
+          <div className="kp-stage__bar" aria-hidden="true" />
           {engineState !== 'error' && engineState !== 'lost' && !built && (
             <div className="kp-loading" role="status">
               <span className="kp-loading__bar" />
@@ -2027,6 +2047,9 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                 onClick={() => setMenu((m) => !m)}
               >
                 <IconDots />
+                <span className="kp-tools__more-text" aria-hidden="true">
+                  {t.toolsMoreShort}
+                </span>
               </button>
               <div className={`kp-tools__extra${menu ? ' is-open' : ''}`} id="kp-tools-extra" ref={menuRef}>
                 <button type="button" className="kp-toggle kp-tools__evening" aria-pressed={evening} onClick={() => setEvening((e) => !e)}>
@@ -2086,7 +2109,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                 aria-pressed={full}
                 aria-label={full ? t.fullOff : t.fullOn}
                 title={full ? t.fullOff : t.fullOn}
-                onClick={() => setFull((f) => !f)}
+                onClick={() => toggleFull(!full)}
               >
                 {full ? <IconShrink /> : <IconExpand />}
               </button>
@@ -2312,7 +2335,21 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
         <aside className="kp-panel" aria-label={t.title} ref={panelRef}>
           <nav className="kp-steps" aria-label={t.title} ref={stepsRef}>
             {STEPS.map((s, i) => (
-              <button key={s} type="button" className="kp-steps__btn" aria-current={step === s ? 'step' : undefined} onClick={() => goStep(s)}>
+              <button
+                key={s}
+                type="button"
+                className="kp-steps__btn"
+                aria-current={step === s ? 'step' : undefined}
+                onClick={() => {
+                  // полный экран на телефоне: та же вкладка прячет или показывает
+                  // лист настроек, другая — открывает свой шаг листом.
+                  // На компьютере вкладки в полном экране под сценой — как было.
+                  if (!full || !isStacked()) return goStep(s)
+                  if (step === s) return setFullPanel((p) => !p)
+                  goStep(s)
+                  setFullPanel(true)
+                }}
+              >
                 <span className="kp-steps__icon">{STEP_ICON[s]}</span>
                 <span className="kp-steps__label">{t.steps[s]}</span>
                 <span className={`kp-steps__bar${i <= stepIndex ? ' is-done' : ''}`} />
@@ -2321,6 +2358,16 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
           </nav>
 
           <div className="kp-body" ref={bodyRef}>
+            {/* шапка листа в полном экране: какой шаг открыт и «Скрыть» — прячет только лист */}
+            {full && (
+              <div className="kp-body__head">
+                <span className="kp-body__title">{t.steps[step]}</span>
+                <button type="button" className="kp-toggle kp-toggle--hide" aria-label={t.panelHide} title={t.panelHide} onClick={() => setFullPanel(false)}>
+                  <IconClose />
+                  <span>{t.panelHide}</span>
+                </button>
+              </div>
+            )}
             {step === 'shape' && (
               <div className="kp-shapes" role="radiogroup" aria-label={t.steps.shape}>
                 {SHAPES.map((s) => (

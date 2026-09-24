@@ -24,8 +24,16 @@
   /* высота шапки сайта и где сейчас её низ — задаёт KitchenPlanner */
   --kp-header: var(--header-h);
   --kp-top: var(--header-h);
+  /* полоса видов под 3D: есть только на телефоне стоя (там 40 px) */
+  --kp-strip: 0px;
   padding-bottom: 56px;
   color: var(--kp-ink);
+}
+
+/* iOS подсвечивает нажатие серым прямоугольником — на кнопках 3D он читался
+   как «залипшая» кнопка */
+.kp button {
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* ───────── заголовок ───────── */
@@ -82,6 +90,11 @@
   isolation: isolate;
 }
 
+.kp-scene {
+  position: absolute;
+  inset: 0 0 var(--kp-strip);
+}
+
 .kp-canvas {
   position: absolute;
   inset: 0;
@@ -90,7 +103,15 @@
   display: block;
   cursor: grab;
   touch-action: none;
+  /* долгое нажатие на телефоне — не «копировать картинку», а поворот */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
   outline: none;
+}
+
+.kp-stage__bar {
+  display: none;
 }
 
 .kp-canvas:active {
@@ -205,8 +226,11 @@ div.kp-fallback {
     color var(--dur-hover) var(--ease-out);
 }
 
-.kp-seg__btn:hover {
-  color: var(--kp-cobalt);
+/* только мышь: на пальце hover «прилипал» к нажатой кнопке до следующего касания */
+@media (hover: hover) {
+  .kp-seg__btn:hover {
+    color: var(--kp-cobalt);
+  }
 }
 
 .kp-seg__btn[aria-checked='true'] {
@@ -233,9 +257,11 @@ div.kp-fallback {
     border-color var(--dur-hover) var(--ease-out);
 }
 
-.kp-toggle:hover {
-  color: var(--kp-cobalt);
-  border-color: var(--kp-line-strong);
+@media (hover: hover) {
+  .kp-toggle:hover {
+    color: var(--kp-cobalt);
+    border-color: var(--kp-line-strong);
+  }
 }
 
 .kp-toggle--icon {
@@ -253,6 +279,30 @@ div.kp-fallback {
 
 .kp-views {
   order: 0;
+}
+
+/*
+  Переключатель видов — как сегмент iOS: тёмная дорожка, выбранный — белая
+  таблетка с тенью. Кобальтовая заливка читалась как нажатая кнопка
+  («3D» синяя — значит, застряла). Дорожка лежит на белой подложке, чтобы
+  на компьютере поверх 3D не пропадать. HD / 4K остаются как были.
+*/
+.kp-seg.kp-views {
+  padding: 3px;
+  gap: 0;
+  background: linear-gradient(rgb(38 50 68 / 8%), rgb(38 50 68 / 8%)) rgb(255 255 255 / 92%);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.kp-views .kp-seg__btn[aria-checked='true'] {
+  background: #fff;
+  color: var(--kp-ink);
+  box-shadow: 0 1px 2px rgb(38 50 68 / 18%);
+}
+
+.kp-tools__more-text {
+  display: none;
 }
 
 .kp-tools__evening {
@@ -814,6 +864,16 @@ html:has(.kp-photo) .assistant {
   padding: 18px 18px 20px;
   scrollbar-width: thin;
   scrollbar-color: var(--kp-line-strong) transparent;
+}
+
+/* шапка листа настроек в полном экране на телефоне; в остальных режимах её нет */
+.kp-body__head {
+  display: none;
+}
+
+.kp-body__title {
+  font: 700 15px/1.2 var(--font);
+  color: var(--kp-ink);
 }
 
 .kp-note {
@@ -2719,12 +2779,17 @@ html.kp-lock body {
      на телефоне для них оставалась четверть экрана. Задано на всей странице,
      а не только в .kp: по этой высоте встаёт и кнопка консультанта. */
   html:has(.kp) {
-    --kp-stage-h: clamp(230px, 36svh, 400px);
+    /* 38 % с полосой видов: сама картинка чуть меньше прежних 36 %, зато на ней нет кнопок */
+    --kp-stage-h: clamp(260px, 38svh, 420px);
   }
 
   .kp {
     /* меню сайта снизу: 64 px кнопок + 4 и 10 px отступов + 1 px линии + «полоска» iPhone */
     --kp-nav: calc(var(--bottomnav-h) + 15px + env(safe-area-inset-bottom, 0px));
+    --kp-strip: 40px;
+    /* вкладки шагов: высота их кнопок здесь; в полном экране они внизу экрана */
+    --kp-steps-h: 56px;
+    --kp-full-foot: calc(var(--kp-steps-h) + env(safe-area-inset-bottom, 0px));
   }
 
   .kp-work {
@@ -2744,20 +2809,66 @@ html.kp-lock body {
     border-radius: 0;
   }
 
-  /* строка инструментов занимает всю сцену, чтобы виды встали вниз */
+  /* строка инструментов тянется до низа сцены, чтобы виды встали в полосу */
   .kp-tools {
-    inset: 10px;
+    inset: 10px 10px 0;
   }
 
-  /* виды — внизу 3D слева: справа в углу встаёт кнопка консультанта */
+  /* Полоса под картинкой: виды слева, справа 44 px под кнопку консультанта.
+     Сплошной фон — это уже не 3D, тут можно нажимать не глядя. */
+  .kp-stage__bar {
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: var(--kp-strip);
+    z-index: 3;
+    background: #fff;
+    border-top: 1px solid var(--kp-line);
+  }
+
   .kp-views {
     position: absolute;
     left: 0;
-    bottom: 0;
+    bottom: 4px;
+    padding: 2px;
+  }
+
+  /* 32 px в полосе 40 px; поле нажатия добираем до 44 px псевдоэлементом:
+     вверх — на кромку картинки, там кнопок нет */
+  .kp .kp-views .kp-seg__btn {
+    position: relative;
+    height: 32px;
+  }
+
+  .kp .kp-views .kp-seg__btn::before {
+    content: '';
+    position: absolute;
+    inset: -8px 0 -4px;
+  }
+
+  /* кнопка «ещё» — со словом: значок «⋯» покупатель не узнавал */
+  .kp-tools__more {
+    gap: 6px;
+    padding: 0 12px 0 9px;
+  }
+
+  .kp-tools__more-text {
+    display: inline;
   }
 
   .kp-hint {
-    bottom: 60px;
+    bottom: calc(var(--kp-strip) + 16px);
+  }
+
+  .kp-photo {
+    bottom: calc(var(--kp-strip) + 12px);
+  }
+
+  /* лист «ещё» — выше нижнего меню сайта (100) и консультанта (120) */
+  html:has(.kp-tools__extra.is-open) .kp-stage {
+    z-index: 130;
   }
 
   .kp-panel {
@@ -2769,17 +2880,18 @@ html.kp-lock body {
     --kp-nav: env(safe-area-inset-bottom, 0px);
   }
 
-  /* Кнопка консультанта, пока 3D прилип сверху, — в правом нижнем углу 3D.
-     Внизу экрана она закрывала «+» у размеров и края карточек. */
+  /* Кнопка консультанта, пока 3D прилип сверху, — в полосе под картинкой,
+     справа от видов. Внизу экрана она закрывала «+» у размеров и края
+     карточек, а на самой картинке мешала крутить кухню. */
   html.kp-pinned .assistant:not(.is-open) {
-    top: calc(var(--kp-stage-h) - 54px);
+    top: calc(var(--kp-stage-h) - 40px + 2px);
     right: 10px;
     bottom: auto;
   }
 
   html.kp-pinned .assistant:not(.is-open) .assistant__button {
-    width: 44px;
-    height: 44px;
+    width: 36px;
+    height: 36px;
     border-width: 2px;
   }
 
@@ -2839,8 +2951,7 @@ html.kp-lock body {
   }
 
   .kp--full .kp-sel {
-    bottom: 0;
-    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    bottom: var(--kp-full-foot);
   }
 
   /* Меню «ещё» — листом снизу экрана, как карточка шкафа. В невысоком 3D
@@ -2863,8 +2974,7 @@ html.kp-lock body {
   }
 
   .kp--full .kp-tools__extra.is-open {
-    bottom: 0;
-    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    bottom: var(--kp-full-foot);
   }
 
   /* лист меню открыт — кнопка консультанта его не закрывает */
@@ -2930,12 +3040,92 @@ html.kp-lock body {
     min-width: 44px;
   }
 
-  .kp--full .kp-tools {
-    inset: calc(10px + env(safe-area-inset-top, 0px)) 10px calc(10px + env(safe-area-inset-bottom, 0px));
+  /*
+    Полный экран на телефоне: 3D занимает экран до вкладок шагов, вкладки —
+    закреплённая полоса внизу, настройки шага выезжают листом поверх 3D
+    (класс is-panel на корне). Кухню можно собрать, не выходя из полного
+    экрана. Сцена кончается над вкладками, поэтому её можно поднимать
+    по z-index: карточка шкафа и лист «ещё» встают выше листа настроек.
+  */
+  .kp--full .kp-stage {
+    inset: 0 0 var(--kp-full-foot);
+    height: auto;
   }
 
-  .kp--full .kp-hint {
-    bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+  .kp--full .kp-stage:has(.kp-sel),
+  .kp--full .kp-stage:has(.kp-tools__extra.is-open) {
+    z-index: 203;
+  }
+
+  .kp--full .kp-tools {
+    inset: calc(10px + env(safe-area-inset-top, 0px)) 10px 0;
+  }
+
+  .kp--full .kp-steps {
+    position: fixed;
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 202;
+    box-sizing: border-box;
+    height: var(--kp-full-foot);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    border-top: 1px solid var(--kp-line);
+    border-bottom: 0;
+    transition: none;
+  }
+
+  .kp--full .kp-body {
+    display: none;
+  }
+
+  .kp--full.is-panel .kp-body {
+    display: block;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: var(--kp-full-foot);
+    z-index: 201;
+    max-width: 620px;
+    max-height: 55dvh;
+    margin: 0 auto;
+    padding: 0 20px 20px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: #fff;
+    border: 1px solid var(--kp-line);
+    border-bottom: 0;
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -10px 30px rgb(38 50 68 / 14%);
+    animation: kp-sheet 260ms var(--ease-out) both;
+  }
+
+  /* шапка листа прилипает при прокрутке: ручка, название шага и «Скрыть» */
+  .kp--full.is-panel .kp-body__head {
+    display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 14px;
+    padding: 18px 0 10px;
+    background: #fff;
+    border-bottom: 1px solid var(--kp-line);
+  }
+
+  .kp--full.is-panel .kp-body__head::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    width: 36px;
+    height: 4px;
+    margin-left: -18px;
+    border-radius: 2px;
+    background: var(--kp-line-strong);
   }
 
   /* Итог с корзиной — в конце шага, на своём месте, а не поверх выбора:
@@ -3139,6 +3329,18 @@ html.kp-lock body {
   были 16–36 px: по ним промахивались и попадали в соседнюю кнопку.
 */
 @media (pointer: coarse) {
+  /* размытие фона под кнопками WebKit на телефоне рисует «призраком» после
+     нажатия — на пальце фон просто непрозрачный */
+  .kp-seg,
+  .kp-toggle {
+    backdrop-filter: none;
+    background: #fff;
+  }
+
+  .kp-seg.kp-views {
+    background: linear-gradient(rgb(38 50 68 / 8%), rgb(38 50 68 / 8%)) #fff;
+  }
+
   .kp .kp-seg__btn,
   .kp .kp-quality .kp-seg__btn {
     height: 44px;
@@ -3206,7 +3408,8 @@ html.kp-lock body {
   .kp-toast,
   .kp-move,
   .kp-sel,
-  .kp-tools__extra.is-open {
+  .kp-tools__extra.is-open,
+  .kp--full.is-panel .kp-body {
     animation: none;
   }
 

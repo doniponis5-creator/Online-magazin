@@ -343,6 +343,10 @@ const ru = {
   qualityPixels: (w: number, h: number) => `В покое ${w} × ${h} точек`,
   /* удобство: телефон и последний шаг */
   toolsMore: 'Ещё настройки вида',
+  /* телефон: у кнопки «⋯» одно слово, иначе покупатель её не узнаёт */
+  toolsMoreShort: 'Ещё',
+  /* полный экран на телефоне: крестик листа настроек — прячет только лист */
+  panelHide: 'Скрыть',
   eveningLight: 'Вечерний свет',
   totalShort: (n: number) => `Техника · ${n} ${goods(n)}`,
   addAllShort: 'Всё в корзину',
@@ -670,6 +674,8 @@ const ky: Texts = {
   qualityLabel: '3D тактыгы',
   qualityPixels: (w, h) => `Токтоп турганда ${w} × ${h} чекит`,
   toolsMore: 'Көрүнүштүн жөндөөлөрү',
+  toolsMoreShort: 'Дагы',
+  panelHide: 'Жашыруу',
   eveningLight: 'Кечки жарык',
   totalShort: (n) => `Техника · ${n} товар`,
   addAllShort: 'Баары себетке',
