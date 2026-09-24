@@ -1,7 +1,7 @@
 # Graph Report - Online-magazin  (2026-09-24)
 
 ## Corpus Check
-- 375 files · ~5,018,932 words
+- 375 files · ~5,018,948 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 58 file(s) not represented in the graph (top: .xml 13, .css 11, (none) 8)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `e351f1b9`
+- Built from commit: `aae68875`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -222,21 +222,21 @@
 5. `mesh()` - 37 edges
 6. `react` - 36 edges
 7. `handleUpdate()` - 32 edges
-8. `base()` - 31 edges
-9. `text()` - 31 edges
+8. `text()` - 31 edges
+9. `base()` - 31 edges
 10. `slab()` - 27 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Аудит безопасности 3D-конструктора (2026-09-24, читал агент, ничего не менял)` --references--> `planKitchen()`  [INFERRED]
-  .autopilot/2026-09-24-kitchen-3d-mobile-security--wip/audit-security.md → src/lib/kitchen/layout.ts
+  .autopilot/2026-09-24-kitchen-3d-mobile-security/audit-security.md → src/lib/kitchen/layout.ts
 - `Что уже хорошо` --references--> `clamp()`  [INFERRED]
-  .autopilot/2026-09-24-kitchen-3d-mobile-security--wip/audit-security.md → src/lib/kitchen/share.ts
+  .autopilot/2026-09-24-kitchen-3d-mobile-security/audit-security.md → src/lib/kitchen/share.ts
 - `Границы, решённые в спецификации` --references--> `stateFromQuery()`  [INFERRED]
-  .autopilot/2026-09-24-kitchen-3d-mobile-security--wip/interfaces.md → src/lib/kitchen/share.ts
+  .autopilot/2026-09-24-kitchen-3d-mobile-security/interfaces.md → src/lib/kitchen/share.ts
 - `Решения по реализации` --references--> `KitchenPlanner()`  [INFERRED]
-  .autopilot/2026-09-24-kitchen-3d-mobile-security--wip/spec.md → src/components/kitchen/KitchenPlanner.tsx
+  .autopilot/2026-09-24-kitchen-3d-mobile-security/spec.md → src/components/kitchen/KitchenPlanner.tsx
 - `Границы и швы` --references--> `stateFromQuery()`  [INFERRED]
-  .autopilot/2026-09-24-kitchen-3d-mobile-security--wip/spec.md → src/lib/kitchen/share.ts
+  .autopilot/2026-09-24-kitchen-3d-mobile-security/spec.md → src/lib/kitchen/share.ts
 
 ## Import Cycles
 - None detected.
@@ -780,9 +780,9 @@ Nodes (4): generateMetadata(), KitchenPage(), META, kitchenAppliances()
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `test` connect `package.json` to `manage.py`?**
-  _High betweenness centrality (0.288) - this node is a cross-community bridge._
+  _High betweenness centrality (0.275) - this node is a cross-community bridge._
 - **Why does `copy_base()` connect `manage.py` to `build_extension.py`, `package.json`?**
-  _High betweenness centrality (0.287) - this node is a cross-community bridge._
+  _High betweenness centrality (0.274) - this node is a cross-community bridge._
 - **What connects `Дополнения`, `Находки`, `Что реально защищает от копирования (честно)` to the rest of the system?**
   _542 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `build_model.py` be split into smaller, more focused modules?**
