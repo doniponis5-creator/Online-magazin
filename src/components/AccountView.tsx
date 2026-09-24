@@ -56,7 +56,7 @@ function formatDate(value: string | null, lang: string) {
 export function AccountView() {
   const { t, lang } = useI18n()
   const a = t.account
-  const { customer, failed, reload, logout } = useCustomer(0, true)
+  const { customer, failed, guestCheckout, reload, logout } = useCustomer(0, true)
   const [welcome, setWelcome] = useState(0)
   const [nativeApp] = useState(inNativeApp)
   // 'none' — телефон не умеет или ключ ещё не сохранён; иначе 'face' или 'touch'.
@@ -214,7 +214,10 @@ export function AccountView() {
               {faceIdFailed && <p className="field__error">{a.faceIdFailed}</p>}
             </div>
           )}
-          <p>{a.loginText}</p>
+          {/* Правда только пока заказ без входа включён в «Панели сайта». Apple
+              проверяет именно это: приложение работает без чужих мессенджеров. */}
+          {guestCheckout && <p className="account-optional">{a.loginOptional}</p>}
+          <p>{nativeApp ? a.loginTextApp : a.loginText}</p>
           <CustomerLogin
             onDone={(_, bonus) => {
               // Баланс изменился — полоска «у вас есть бонусы» пусть спросит заново.

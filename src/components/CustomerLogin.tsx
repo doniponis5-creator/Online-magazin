@@ -4,8 +4,9 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { formatSom } from '@/lib/format'
 import { IconGift, IconTelegram, IconWhatsApp } from '@/components/Icons'
 import { useI18n } from '@/lib/i18n/I18nProvider'
+import { inNativeApp } from '@/lib/native/bonusCard'
 import { normalizePhone } from '@/lib/orders/order'
-import type { CustomerProfile } from '@/lib/customer/gateway'
+import type { CodeChannel, CustomerProfile } from '@/lib/customer/gateway'
 
 type Step = 'phone' | 'code' | 'name' | 'wa'
 
@@ -19,6 +20,11 @@ type Step = 'phone' | 'code' | 'name' | 'wa'
  *
  * Запасной путь — код: телефон → код в Telegram (если Telegram нет — в
  * WhatsApp) → (новый номер) имя.
+ *
+ * В приложении для iPhone порядок обратный: форма с номером открыта сразу,
+ * WhatsApp — ниже. Apple вернула приложение (4.2.3), потому что проверяющий
+ * увидел одну кнопку WhatsApp, а WhatsApp у него нет. Демо-номер для Apple
+ * входит через эту форму без всяких приложений.
  */
 const WA_POLL_MS = 3000
 const WA_WAIT_MS = 5 * 60_000
@@ -34,10 +40,14 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
   const [welcome, setWelcome] = useState(0)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
-  const [channel, setChannel] = useState<'telegram' | 'whatsapp'>('telegram')
+  const [channel, setChannel] = useState<CodeChannel>('telegram')
   const [wa, setWa] = useState<{ code: string; waPhone: string; startedAt: number } | null>(null)
-  // Код в Telegram — запасной путь: форма свёрнута, пока не попросят.
-  const [showCode, setShowCode] = useState(false)
+  // Форма появляется после загрузки профиля, не при первой отрисовке, —
+  // поэтому спросить «мы в приложении?» прямо здесь безопасно.
+  const [nativeApp] = useState(inNativeApp)
+  // На сайте код в Telegram — запасной путь: форма свёрнута, пока не попросят.
+  // В приложении форма открыта сразу.
+  const [showCode, setShowCode] = useState(nativeApp)
   const waTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const post = async (url: string, body: unknown) => {
@@ -119,7 +129,7 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
     setBusy(false)
     if (!data?.ok) return setError(status === 422 ? a.errorPhone : serverError(status, data))
     setNormalized(value)
-    setChannel(data.channel === 'whatsapp' ? 'whatsapp' : 'telegram')
+    setChannel(data.channel === 'whatsapp' || data.channel === 'demo' ? data.channel : 'telegram')
     setCode('')
     setStep('code')
   }
@@ -155,21 +165,27 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
     onDone(data.customer, data.welcomeBonus ?? 0)
   }
 
+  const waButton = (
+    <>
+      <button type="button" className="btn btn--block login-card__wa" onClick={() => void waStart()} disabled={busy} aria-busy={busy}>
+        <IconWhatsApp size={22} />
+        {a.waLogin}
+      </button>
+      <p className="login-card__hint">{a.waHint}</p>
+    </>
+  )
+
   return (
     <div className="login-card">
       {step === 'phone' && (
         <form onSubmit={requestCode} noValidate>
-          <button type="button" className="btn btn--block login-card__wa" onClick={() => void waStart()} disabled={busy} aria-busy={busy}>
-            <IconWhatsApp size={22} />
-            {a.waLogin}
-          </button>
-          <p className="login-card__hint">{a.waHint}</p>
-          {!showCode && (
+          {!nativeApp && waButton}
+          {!nativeApp && !showCode && (
             <button type="button" className="link-btn login-card__other" onClick={() => setShowCode(true)}>
               {a.waOther}
             </button>
           )}
-          {showCode && <p className="login-card__or">{a.waOther}</p>}
+          {!nativeApp && showCode && <p className="login-card__or">{a.waOther}</p>}
           {showCode && (
           <div className="field">
             <label className="field__label" htmlFor="login-phone">{a.phone}</label>
@@ -194,6 +210,8 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
             {busy ? a.sending : a.sendCode}
           </button>
           )}
+          {nativeApp && <p className="login-card__or">{a.or}</p>}
+          {nativeApp && waButton}
         </form>
       )}
 
@@ -227,12 +245,13 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
           <p className="login-card__hint login-card__channel">
             {channel === 'telegram' && <IconTelegram size={20} />}
             <span>
-              {channel === 'telegram' ? a.codeSentTelegram : a.codeSent} <strong>{normalized}</strong>
+              {channel === 'telegram' ? a.codeSentTelegram : channel === 'demo' ? a.codeDemo : a.codeSent}{' '}
+              <strong>{normalized}</strong>
             </span>
           </p>
           <div className="field">
             <label className="field__label" htmlFor="login-code">
-              {channel === 'telegram' ? a.codeTelegram : a.code}
+              {channel === 'telegram' ? a.codeTelegram : channel === 'demo' ? a.codeShort : a.code}
             </label>
             <input
               id="login-code"

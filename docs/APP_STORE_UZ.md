@@ -131,3 +131,79 @@ Apple **6.9 дюймли** iPhone учун расм сўрайди (iPhone 17 Pr
 Қўрқмаслик керак: биринчи мартада рад этиш оддий ҳол. Apple сабабини
 ёзади. Сабабни менга юборасиз — тузатиб, қайта топширамиз. Иккинчи
 топшириш одатда тезроқ ўтади.
+
+---
+
+## 1-рад этиш: 4.2.3(i), 23.09.2026 (build 1.0 (3))
+
+**Сабаби.** Текширувчи кириш экранида фақат иккита йўлни кўрди: «Войти через
+WhatsApp» ва «Получить код в Telegram». Унинг телефонида иккаласи ҳам йўқ эди.
+Apple: илова бошқа илова ўрнатмасдан ишлаши керак.
+
+**Танланган йўл — пулсиз (24.09.2026, эга билан келишилди):** SMS қўшмаймиз,
+Apple га тушунтирамиз — илова киришсиз тўлиқ ишлайди, кириш фақат бонуслар учун.
+Apple яна қайтарса — SMS захира (SMSPRO, `smspro.nikita.kg`, 1 SMS = 1 сом).
+
+**Нима ўзгарди (сайт, илова қайта йиғилмайди):**
+- Иловада кириш формаси (рақам + код) энди **биринчи**, очиқ турибди;
+  WhatsApp — ундан пастда, «или» дан кейин. Браузерда ҳаммаси аввалгидек.
+- «Кабинет» да ёзув: «Вход нужен только для бонусов SBonus. Каталог,
+  конструктор кухни, корзина и заказ работают без входа.» Фақат «Панели
+  сайта» да киришсиз буюртма ёқиқ бўлса кўринади.
+- Демо-рақам энди «код отправлен в Telegram» демайди: «Введите код для номера».
+- Код: `src/components/CustomerLogin.tsx`, `src/components/AccountView.tsx`,
+  `src/components/account.css`, `src/lib/customer/gateway.ts` (канал `demo`),
+  `src/lib/i18n/dictionaries.ts`. Тест: `__tests__/demo-login.test.ts`.
+
+**Сайт чиқарилди 24.09.2026** (бэкап `/opt/smartcentr-site-backups/20260924_115417`).
+Симуляторда синалди: иловада форма биринчи, «или», кейин WhatsApp.
+Қайта топшириш учун **build 1.0 (4)** тайёрланди — ичида фақат рақам ўзгарди,
+кириш экрани жонли сайтдан келади.
+
+**⚠ «Панели сайта» да киришсиз буюртмани (`guestCheckout`) ўчирманг**, илова
+App Store да бўлса ҳам. Ўчса — киришсиз буюртма бўлмайди ва бу рад этишнинг
+сабаби қайтади.
+
+**Apple га жавоб — App Store Connect → App Review → хабарга жавоб:**
+
+```text
+Hello, and thank you for the review.
+
+We would like to clarify how S Market works: the app does not require
+WhatsApp, Telegram or any other app to be used.
+
+1. No sign-in is needed to use the app. Without an account, anyone can:
+   - browse and search the full catalog of our store;
+   - open the saved catalog offline, without internet;
+   - design a kitchen in the 3D kitchen planner, with real appliances
+     from our store and live prices;
+   - add products to the cart and place an order.
+
+2. Sign-in is optional. It is used only for the SBonus loyalty program:
+   the bonus balance, the bonus QR card for our store checkout (it works
+   offline) and Face ID quick sign-in. The sign-in screen now says this
+   directly: "Sign-in is needed only for SBonus bonuses. The catalog,
+   kitchen planner, cart and ordering work without signing in."
+
+3. To review the loyalty features, please use the demo account from
+   App Review Information. No other app is needed:
+   - open the "Кабинет" (Account) tab;
+   - enter the demo phone number and tap "Получить код" (Get code);
+   - enter the demo code and tap "Войти" (Sign in).
+   For the demo number no message is sent anywhere: the code is entered
+   directly in the app.
+
+We have also changed the sign-in screen in the app: the phone number and
+code form is now shown first, above the WhatsApp option.
+
+Thank you!
+```
+
+**App Review Information → Notes** (қисқаси, ўша ерга):
+
+```text
+Sign-in is optional: catalog, offline catalog, 3D kitchen planner, cart and
+ordering work without an account. Sign-in is only for SBonus loyalty (bonus
+QR card, Face ID). Demo account: Account tab → enter the demo phone → "Получить
+код" → enter the demo code → "Войти". No SMS, Telegram or WhatsApp needed.
+```

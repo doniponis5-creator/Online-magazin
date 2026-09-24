@@ -225,8 +225,11 @@ export async function recordVisit(visitor: string, path: string): Promise<void> 
   await call('/api/v1/webhook/site/visit', { method: 'POST', body: { visitor, path } })
 }
 
-/** Куда ушёл код: сервер сначала пробует Telegram, потом WhatsApp. */
-export type CodeChannel = 'telegram' | 'whatsapp'
+/**
+ * Куда ушёл код: сервер сначала пробует Telegram, потом WhatsApp.
+ * 'demo' — демо-номер для Apple: код никуда не уходит, он уже у проверяющего.
+ */
+export type CodeChannel = 'telegram' | 'whatsapp' | 'demo'
 
 /** Вход через WhatsApp «наоборот»: покупатель сам шлёт код магазину. */
 export type WaLoginStart = { code: string; waPhone: string; ttl: number }
@@ -261,8 +264,9 @@ export async function waLoginCheck(code: string): Promise<WaLoginCheck> {
 }
 
 export async function sendCode(phone: string, ip: string): Promise<CodeChannel> {
-  // Демо-номеру отправлять нечего: код у проверяющего уже есть.
-  if (isDemoPhone(phone)) return 'telegram'
+  // Демо-номеру отправлять нечего: код у проверяющего уже есть. Писать ему
+  // «код ушёл в Telegram» нельзя — Apple именно за Telegram приложение и вернула.
+  if (isDemoPhone(phone)) return 'demo'
   if (paymentMode() === 'mock') {
     console.info(`[customer] тестовый код для ${phone}: ${MOCK_CODE}`)
     return 'whatsapp'
