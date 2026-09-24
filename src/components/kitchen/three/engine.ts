@@ -230,7 +230,10 @@ export class KitchenEngine {
     private host: HTMLElement,
     private events: EngineEvents,
   ) {
-    this.mobile = window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 768
+    // Телефон — по устройству, а не по ширине окна: палец и нет мыши/тачпада.
+    // Раньше узкое окно на MacBook или ПК (< 768 px) считалось телефоном — и
+    // компьютер терял 4K, сглаживание и эффекты.
+    this.mobile = window.matchMedia('(pointer: coarse)').matches && !window.matchMedia('(any-pointer: fine)').matches
     this.reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     // Сглаживание выключаем только простому Android (память ≤ 3 ГБ — её называет
     // Chrome): там оно съедает до трети кадра. На iPhone и хороших телефонах
@@ -239,8 +242,8 @@ export class KitchenEngine {
     const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8
     this.renderer = new THREE.WebGLRenderer({ antialias: !(this.mobile && memory <= 3), powerPreference: 'high-performance' })
     const r = this.renderer
-    // 4K — сразу на хорошей видеокарте; на телефоне и встроенной графике — HD.
-    // Выбор покупателя помним.
+    // Слабая видеокарта (встроенная) качество больше не снижает — только не
+    // собирает заранее программу фото-трассировки. Выбор покупателя помним.
     const gpu = this.gpuName()
     const weak = this.mobile || /intel|uhd|iris|mali|adreno|powervr|swiftshader|llvmpipe|basic render/i.test(gpu)
     this.weakGpu = weak
@@ -260,9 +263,11 @@ export class KitchenEngine {
     } catch {
       saved = null
     }
-    // Простой телефон без сохранённого выбора — «Лёгкий»: ему не по силам
-    // даже HD с тенями и внутренностями шкафов.
-    this.quality = saved === 'lite' || saved === 'hd' || saved === '4k' ? saved : this.lowEnd ? 'lite' : weak ? 'hd' : '4k'
+    // Без сохранённого выбора: компьютер (ПК, MacBook — любая видеокарта) — 4K
+    // в полном качестве, владелец так решил 24.09.2026; медленные кадры в
+    // движении снизит губернатор, в покое кадр всегда полный. Телефон — HD,
+    // простой телефон — «Лёгкий»: ему не по силам даже HD.
+    this.quality = saved === 'lite' || saved === 'hd' || saved === '4k' ? saved : this.lowEnd ? 'lite' : this.mobile ? 'hd' : '4k'
     this.applyQuality()
     this.canvasRatio = Math.min(window.devicePixelRatio || 1, 2)
     r.setPixelRatio(this.mobile ? this.baseRatio : this.canvasRatio)
