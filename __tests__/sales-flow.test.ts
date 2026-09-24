@@ -209,3 +209,19 @@ describe('«да, но денег пока нет» (случай Аиды)', ()
     expect(detectLang('Чон коломдогу выпечка бышырганга конвекциясы бар духовка издеп жаттым эле', 'ru')).toBe('ky')
   })
 })
+
+describe('«Ок» после напоминания — молчим (случай Баходиржона и Чолпон)', () => {
+  it('в WhatsApp «Ок»/«👍»/«рахмат» без вопроса — silent; на «оформим?» — нет', async () => {
+    const { respond } = await import('@/lib/assistant/respond')
+    const wa = { key: 'wa:ack-1', orderSource: 'Заказ из WhatsApp', leadChannel: 'whatsapp' as const, known: { phone: '+996555000001' } }
+    const reminder = { role: 'assistant' as const, text: 'Завтра, 25.09.2026, — день оплаты по рассрочке: 9 600 сом. Для оплаты нажмите кнопку ниже 👇' }
+    for (const ack of ['Ок', 'ок.', '👍', 'Рахмат', 'Спасибо!', 'Макул', 'Тушундим']) {
+      const r = await respond(wa, [reminder, { role: 'user', text: ack }], 'ru', null)
+      expect(r.silent, ack).toBe(true)
+    }
+    const first = await respond(wa, [{ role: 'user', text: 'Ок' }], 'ru', null)
+    expect(first.silent).toBe(true)
+    const question = await respond({ ...wa, key: 'wa:ack-2' }, [{ role: 'assistant', text: 'Сколько человек в семье?' }, { role: 'user', text: 'Ок' }], 'ru', null)
+    expect(question.silent).not.toBe(true)
+  })
+})

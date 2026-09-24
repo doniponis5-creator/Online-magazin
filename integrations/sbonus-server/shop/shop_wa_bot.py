@@ -177,11 +177,21 @@ async def poll_once() -> dict:
     # Сначала ответы людей: написал сотрудник — робот в этом чате молчит.
     for message in await _journal("lastOutgoingMessages"):
         chat = str(message.get("chatId") or "")
-        if message.get("sendByApi") or not chat.endswith("@c.us") or chat == own:
+        if not chat.endswith("@c.us") or chat == own:
             continue
         if not await _first_time(str(message.get("idMessage"))):
             continue
         digits = chat.removesuffix("@c.us")
+        if message.get("sendByApi"):
+            # Напоминание о рассрочке, ссылка на оплату, welcome — их шлёт сервер, не человек.
+            # Кладём в память разговора, иначе на «Ок» после напоминания робот спрашивал
+            # «какую технику ищете?». Свои ответы робот уже запомнил — не дублируем.
+            text = _journal_text(message).strip()
+            if text:
+                recent = [t.get("text") for t in (await _turns(digits))[-3:] if t.get("role") == "assistant"]
+                if text[:800] not in recent:
+                    await _remember(digits, "assistant", text)
+            continue
         # Автоответ WhatsApp Business («Сейчас мы не на связи…») уходит «с телефона»,
         # но это не человек. Без этой проверки он глушил робота в каждом чате.
         if await _auto_reply(digits, _journal_text(message)):

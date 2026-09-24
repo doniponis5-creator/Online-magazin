@@ -50,6 +50,11 @@ export async function respond(
 ): Promise<Reply> {
   const flow = await salesFlow(channel, turns, lang, customer, buy, shown, page)
   if (flow) return flow
+  // «Ок», «👍», «рахмат» в ответ на напоминание или наш ответ — это не вопрос.
+  // Отвечать «какую технику ищете?» на «Ок» — верный способ выглядеть роботом.
+  if (channel.leadChannel === 'whatsapp' && isAcknowledgement(turns)) {
+    return { text: '', products: [], source: 'flow', silent: true }
+  }
   const reply = await answer(turns, lang, customer, page, channel.known.name)
   // Сайт — там только покупатели. В WhatsApp модель ещё смотрит, кому адресовано.
   if (channel.leadChannel !== 'whatsapp') return reply
@@ -64,6 +69,20 @@ export async function respond(
     return { text: reply.text || pick(STAFF_ACK, talk), products: [], source: reply.source, handoff: true }
   }
   return reply
+}
+
+/** Короткое «понял/спасибо» на трёх языках, эмодзи и знаки — без единого вопроса. */
+const ACK =
+  /^[\s\p{P}\p{S}]*(ок|ok|окей|okay|хорошо|ладно|понял|поняла|понятно|спасибо|благодарю|макул|болду|болот|түшүндүм|тушундум|рахмат|ырахмат|жарайт|хоп|хуп|яхши|яхшимисиз|тушундим|раxмат|катта рахмат|тушунарли|майли|mayli|xop|rahmat|yaxshi|tushundim|ha|ха|да|ооба|ok\.?|👍|👌|🙏|✅|❤️|👍🏻|👍🏼|👍🏽|🤝)?[\s\p{P}\p{S}]*$/iu
+
+function isAcknowledgement(turns: ChatTurn[]): boolean {
+  const last = turns[turns.length - 1]
+  if (!last || last.role !== 'user') return false
+  const text = last.text.trim()
+  if (!text || text.length > 40 || !ACK.test(text)) return false
+  // На вопрос («оформим?», «как вас зовут?») «да»/«ок» — это ответ, его разбирают выше или модель.
+  const before = [...turns].reverse().find((t) => t.role === 'assistant')
+  return !before || !before.text.includes('?')
 }
 
 const STAFF_ACK = {
