@@ -76,7 +76,7 @@ import { PlanSketch } from './PlanSketch'
 import { kitchenTexts, type KitchenTexts } from './texts'
 import { parseVariants, type Variant } from '@/lib/kitchen/variants'
 import type { BuildInput, CabInfo, Dims } from './three/build'
-import type { DragPreview, DragTarget, KitchenEngine, PhotoState, Pick, Quality, View } from './three/engine'
+import type { DragPreview, DragTarget, EngineEvents, KitchenEngine, PhotoState, Pick, Quality, View } from './three/engine'
 import type { Photo } from './three/photo'
 import './kitchen.css'
 
@@ -151,13 +151,26 @@ function upperOver(plan: Plan, key: ItemKey): string | null {
 
 const nonEmpty = <T extends object>(o: T): T | undefined => (Object.keys(o).length ? o : undefined)
 
-function hasWebGL(): boolean {
+/** three.js с версии r163 рисует только через WebGL 2 — старый WebGL 1 ему не годится. */
+function hasWebGL2(): boolean {
   try {
-    const c = document.createElement('canvas')
-    return Boolean(c.getContext('webgl2') ?? c.getContext('webgl'))
+    return Boolean(document.createElement('canvas').getContext('webgl2'))
   } catch {
     return false
   }
+}
+
+/** Почему 3D не поднялось: у каждой причины своя подсказка и свой код на экране. */
+type Fail3d = 'no-webgl2' | 'load' | 'start'
+
+/**
+ * Эта же страница в Chrome — из встроенного браузера Telegram, Instagram и
+ * других программ на Android. Там 3D часто выключено, а Chrome есть почти у всех.
+ */
+function chromeIntent(): string | null {
+  if (!/Android/i.test(navigator.userAgent)) return null
+  const { host, pathname, search } = window.location
+  return `intent://${host}${pathname}${search}#Intent;scheme=https;package=com.android.chrome;end`
 }
 
 /** Кнопка во всплывающей строке: ссылка (WhatsApp) или действие («Отправить»). */
@@ -269,6 +282,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   const [engineKey, setEngineKey] = useState(0)
   /** сколько раз 3D пришлось запускать заново, пока страница была на экране */
   const restarts = useRef(0)
+  const [fail3d, setFail3d] = useState<Fail3d | null>(null)
 
   const rootRef = useRef<HTMLDivElement>(null)
   // stageRef — весь прилипший блок (3D + полоса видов на телефоне);
@@ -552,16 +566,24 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   }
 
   useEffect(() => {
-    if (!hasWebGL()) {
+    if (!hasWebGL2()) {
+      setFail3d('no-webgl2')
       setEngineState('error')
       return
     }
     let engine: KitchenEngine | null = null
     let cancelled = false
-    import('./three/engine')
+    // Файл 3D на медленном интернете иногда не приходит с первого раза —
+    // пробуем ещё дважды, а не пишем сразу «не работает».
+    const load = (tries: number): Promise<typeof import('./three/engine')> =>
+      import('./three/engine').catch((e: unknown) => {
+        if (tries <= 0 || cancelled) throw Object.assign(new Error('load'), { cause: e, fail: 'load' as const })
+        return new Promise((ok) => setTimeout(ok, 1500)).then(() => load(tries - 1))
+      })
+    load(2)
       .then(({ KitchenEngine }) => {
         if (cancelled || !hostRef.current) return
-        engine = new KitchenEngine(hostRef.current, {
+        const events: EngineEvents = {
           onPick: (pick) => pickRef.current(pick),
           onMove: (item, wall, pos) => moveRef.current(item, wall, pos),
           onPreview: (q) => previewRef.current(q),
@@ -581,14 +603,31 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
             setEngineState('loading')
             whenVisible(() => setEngineKey((k) => k + 1))
           },
-        })
+        }
+        // Обычный запуск упал (капризная видеокарта, мало памяти) — второй раз
+        // запускаем бережно: без сглаживания, без мощного режима, в «Лёгком».
+        try {
+          engine = new KitchenEngine(hostRef.current, events)
+        } catch {
+          hostRef.current.querySelector('canvas')?.remove()
+          try {
+            engine = new KitchenEngine(hostRef.current, events, true)
+          } catch (e) {
+            throw Object.assign(new Error('start'), { cause: e, fail: 'start' as const })
+          }
+        }
         engineRef.current = engine
         // только при разработке: доступ к 3D из консоли браузера для проверок
         if (process.env.NODE_ENV !== 'production') (window as unknown as { __kp?: KitchenEngine }).__kp = engine
         setQuality(engine.getQuality())
+        setFail3d(null)
         setEngineState('ready')
       })
-      .catch(() => setEngineState('error'))
+      .catch((e: { fail?: Fail3d }) => {
+        if (cancelled) return
+        setFail3d(e?.fail ?? 'start')
+        setEngineState('error')
+      })
     return () => {
       cancelled = true
       engine?.dispose()
@@ -1931,7 +1970,40 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
               {t.loading}
             </div>
           )}
-          {engineState === 'error' && <p className="kp-fallback">{t.noWebgl}</p>}
+          {engineState === 'error' && (
+            <div className="kp-fallback">
+              <p>
+                {fail3d === 'load' ? t.fail3dLoad : fail3d === 'start' ? t.fail3dStart : inAppBrowser() ? t.fail3dInApp : t.noWebgl}
+                {fail3d !== 'no-webgl2' || inAppBrowser() ? ` ${t.fail3dRest}` : ''}
+              </p>
+              {inAppBrowser() && chromeIntent() && (
+                <a className="btn btn--primary btn--sm" href={chromeIntent() ?? undefined}>
+                  {t.openInChrome}
+                </a>
+              )}
+              {inAppBrowser() && !chromeIntent() && <p className="kp-fallback__hint">{t.openInSafariHint}</p>}
+              {fail3d !== 'no-webgl2' && (
+                <button
+                  type="button"
+                  className="btn btn--outline btn--sm"
+                  onClick={() => {
+                    restarts.current = 0
+                    setFail3d(null)
+                    setEngineState('loading')
+                    setEngineKey((k) => k + 1)
+                  }}
+                >
+                  {t.retry3d}
+                </button>
+              )}
+              {/* по коду владелец со скриншота видит, что именно случилось */}
+              {fail3d && (
+                <small className="kp-fallback__code">
+                  {t.fail3dCode}: {fail3d}
+                </small>
+              )}
+            </div>
+          )}
           {engineState === 'lost' && (
             <div className="kp-fallback">
               <p>{t.lost3d}</p>

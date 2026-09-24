@@ -229,6 +229,10 @@ export class KitchenEngine {
   constructor(
     private host: HTMLElement,
     private events: EngineEvents,
+    /** Запасной запуск после неудачного: без сглаживания, без запроса мощной
+     *  видеокарты, в «Лёгком». Так 3D поднимается на телефонах, где обычный
+     *  запуск падал (мало видеопамяти, капризный драйвер, встроенный браузер). */
+    safe = false,
   ) {
     // Телефон — по устройству, а не по ширине окна: палец и нет мыши/тачпада.
     // Раньше узкое окно на MacBook или ПК (< 768 px) считалось телефоном — и
@@ -240,7 +244,10 @@ export class KitchenEngine {
     // без него кромки шкафов в движении «лесенкой» — 4K выглядел хуже HD.
     // Решается до создания холста: потом сглаживание не переключить.
     const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8
-    this.renderer = new THREE.WebGLRenderer({ antialias: !(this.mobile && memory <= 3), powerPreference: 'high-performance' })
+    this.renderer = new THREE.WebGLRenderer({
+      antialias: !safe && !(this.mobile && memory <= 3),
+      powerPreference: safe ? 'default' : 'high-performance',
+    })
     const r = this.renderer
     // Слабая видеокарта (встроенная) качество больше не снижает — только не
     // собирает заранее программу фото-трассировки. Выбор покупателя помним.
@@ -267,7 +274,7 @@ export class KitchenEngine {
     // в полном качестве, владелец так решил 24.09.2026; медленные кадры в
     // движении снизит губернатор, в покое кадр всегда полный. Телефон — HD,
     // простой телефон — «Лёгкий»: ему не по силам даже HD.
-    this.quality = saved === 'lite' || saved === 'hd' || saved === '4k' ? saved : this.lowEnd ? 'lite' : this.mobile ? 'hd' : '4k'
+    this.quality = safe ? 'lite' : saved === 'lite' || saved === 'hd' || saved === '4k' ? saved : this.lowEnd ? 'lite' : this.mobile ? 'hd' : '4k'
     this.applyQuality()
     this.canvasRatio = Math.min(window.devicePixelRatio || 1, 2)
     r.setPixelRatio(this.mobile ? this.baseRatio : this.canvasRatio)
