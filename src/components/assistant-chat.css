@@ -442,8 +442,14 @@
   }
 
   .assistant.is-open .assistant__form {
-    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
     background: #fff;
+  }
+
+  /* Отступ под системные кнопки — у самого нижнего блока, а не у строки ввода:
+     под строкой ввода ещё «Связаться с магазином», и на Android с тремя
+     кнопками внизу она уходила под них. Фон блока тянется под кнопки. */
+  .assistant.is-open .assistant__people {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   /* 16px и больше: иначе iPhone сам увеличивает страницу при нажатии на поле */
