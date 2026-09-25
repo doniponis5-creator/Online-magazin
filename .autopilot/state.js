@@ -1,7 +1,7 @@
 window.STATE =
 {
   "slug": "android-app",
-  "dir": "2026-09-25-android-app--wip",
+  "dir": "2026-09-25-android-app",
   "title": "Android-приложение S Маркет для Google Play",
   "mode": "semi",
   "depth": "normal",
@@ -11,8 +11,8 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-25T17:21:44+06:00",
-  "updatedAt": "2026-09-25T21:59:44+06:00",
-  "finishedAt": null,
+  "updatedAt": "2026-09-25T22:11:03+06:00",
+  "finishedAt": "2026-09-25T22:11:03+06:00",
   "stages": [
     {
       "id": "preflight",
@@ -61,9 +61,10 @@ window.STATE =
     },
     {
       "id": "final",
-      "status": "active",
+      "status": "done",
       "startedAt": "2026-09-25T21:14:35+06:00",
-      "note": "слепая приёмка, память, таск 03"
+      "note": "слепая приёмка согласна; проверено и на Samsung A55",
+      "finishedAt": "2026-09-25T22:11:03+06:00"
     }
   ],
   "requirements": {
@@ -163,11 +164,20 @@ window.STATE =
       "zone": [
         "docs/ANDROID_PLAY_UZ.md"
       ],
-      "status": "review",
+      "status": "done",
       "startedAt": "2026-09-25T21:22:16+06:00",
       "retries": 0,
       "repairs": 0,
-      "handoffs": 0
+      "handoffs": 0,
+      "finishedAt": "2026-09-25T21:59:57+06:00",
+      "commit": "5310416",
+      "tests": {
+        "passed": 249,
+        "failed": 0
+      },
+      "files": [
+        "docs/ANDROID_PLAY_UZ.md"
+      ]
     }
   ],
   "singlePass": null,
@@ -192,19 +202,33 @@ window.STATE =
     ]
   },
   "concerns": [
-    "T01 craft · MainActivity.java:68-73 — скрипт моста для «Нет связи» собран копией закрытого Bridge.getJSInjector(); есть открытый JSInjector.getScriptString() — копия отстанет при обновлении Capacitor",
-    "T01 craft · MainActivity.java:21,65 — имена плагинов строками второй раз; ненайденный плагин пропускается без записи в logcat",
-    "T01 craft · MainActivity.java:51 — комментарий выдаёт список плагинов в JS за границу доступа; настоящая граница — адрес и главное окно",
-    "T02 · сайт (src/, половина PC) — на Android блок «Быстрый вход» пишет «войдёте лицом», а там отпечаток пальца",
-    "План: таск 02 потребовал 2 передачи (3 контекста) — нарезка была крупной: проверка на эмуляторе + сборка + инструкция в одном таске",
-    "T02 craft · docs/ANDROID_PLAY_UZ.md:178,254,263-266 — номер версии в четырёх местах (code3, «hozir 3», «keyingisi — 4», cp …code4.aab); после следующего повышения cp положит code5 под именем code4",
-    "T02 craft · docs/ANDROID_PLAY_UZ.md:15,20-33 — раздел 1.1 «что проверено» не перечисляет проверки таска 01 (заставка, «Назад», внешние ссылки, офлайн-каталог)",
-    "T02 manifest · docs/ANDROID_PLAY_UZ.md:32 — история 6 «Ishlaydi» без оговорки, что сайт отправляет фото сразу при выборе (превью нет); для истории 5 ограничение раскрыто, для 6 — нет",
-    "T03 craft · docs/ANDROID_PLAY_UZ.md:275-289 — если app-release.aab нет вовсе, блок копирования доходит до cp и печатает английское «No such file or directory» вместо причины по-узбекски; файл не портится"
+    "REPORT · MainActivity: скрипт моста для «Нет связи» — копия закрытого кода Capacitor; при обновлении Capacitor перепроверить кнопки «Каталог»/«Бонусная карта» офлайн (записано в CLAUDE.md)",
+    "REPORT · MainActivity: ненайденный плагин пропускается молча, без записи в logcat; комментарий выдаёт список плагинов за границу доступа",
+    "REPORT · сайт (src/, PC) — на Android «Быстрый вход» пишет «войдёте лицом», а там отпечаток",
+    "REPORT · docs/ANDROID_PLAY_UZ.md — если app-release.aab нет вовсе, блок копирования печатает английскую ошибку; строка «Saytga chiqarish kerak» про политику устарела",
+    "REPORT · план: таск 02 потребовал 2 передачи — нарезка крупная",
+    "DROP · docs: номер версии в 4 местах, неполный раздел «что проверено», история 6 без оговорки — исправлено таском 03 (5310416)"
   ],
   "reviewers": {
     "manifestSpec": "a5deef7a16496a83a",
     "craft": "ad04a17b7c69fbfe1"
   },
-  "blind": null
+  "blind": {
+    "verdict": "согласовано, расхождений нет",
+    "checked": [
+      "R01 реализовано — release ставится, заставка, smarket.kg без адресной строки",
+      "R02 реализовано — «Назад», tel/WhatsApp наружу, выбор фото, «Нет связи» + «Каталог» + «Повторить», logcat без падений",
+      "файл code3: versionCode 3, подпись, https://smarket.kg, targetSdk 36",
+      "инструкция есть"
+    ],
+    "notChecked": [
+      "бонусная карта, отпечаток, оплата — слепой проверке вход запрещён (проверены в таске 02 в тестовом режиме)",
+      "настоящий телефон"
+    ],
+    "findings": [
+      "docs/ANDROID_PLAY_UZ.md: строка «Saytga chiqarish kerak» про политику — устарела, политика уже на сайте",
+      "эмулятор smarket-api36 заперт PIN после проверки отпечатка — приложение после холодного старта не запускается, пока экран не разблокирован"
+    ],
+    "realPhone": "Samsung Galaxy A55 (SM-A556E, Android 16): release-APK code 3 установлен, открывается, страница товара и нижнее меню на месте, падений нет — 25.09 22:10"
+  }
 }
