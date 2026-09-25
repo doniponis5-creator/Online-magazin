@@ -118,6 +118,11 @@ def t_date():
     return "<v8:Type>xs:dateTime</v8:Type><v8:DateQualifiers><v8:DateFractions>DateTime</v8:DateFractions></v8:DateQualifiers>"
 
 
+def t_day():
+    """Только дата, без времени: в поле не будет лишних «0:00:00»."""
+    return "<v8:Type>xs:dateTime</v8:Type><v8:DateQualifiers><v8:DateFractions>Date</v8:DateFractions></v8:DateQualifiers>"
+
+
 def t_nomenclature():
     return "<v8:Type>cfg:CatalogRef.Номенклатура</v8:Type>"
 
@@ -427,6 +432,10 @@ AVAILABILITY = ["По остатку", "В наличии", "Нет в нали�
 SHOW_MODES = ["Все", "На сайте", "Скрытые", "Без цены", "С ценой", "Без фото",
               "Без описания", "Распродажа", "Товар дня", "Специально для вас",
               "Хит", "Новинка"]
+# Панель сайта: за какой срок считать сводку. Порядок = порядок в списке.
+PANEL_PERIODS = ["Сегодня", "Вчера", "7 дней", "30 дней", "Этот месяц", "Прошлый месяц", "Свой период"]
+# Какие заказы показать в таблице внизу панели. Ключи для сервера — в ПанельСайтаМодуль.bsl.
+PANEL_ORDER_FILTERS = ["Все заказы", "Продажи", "Ждут оплаты", "Не оплатили", "Оплачены, не отгружены", "Отменены"]
 
 
 def list_form():
@@ -725,15 +734,21 @@ def settings_form():
 
 
 def panel_form():
-    """Панель сайта: сводка рисуется как HTML-дашборд, настройки — обычные поля 1С.
+    """Панель сайта: сверху период, под ним сводка HTML-дашбордом, внизу настройки.
 
-    Двадцать полей ввода в столбик читались как свалка, поэтому сводка теперь
-    одно HTML-поле: плитки, графики за 14 дней и карточки разделов. Настройки
-    остались полями формы — их правят и сохраняют, а HTML для этого не годится.
+    Двадцать полей ввода в столбик читались как свалка, поэтому сводка —
+    одно HTML-поле: плитки со сравнением, графики по дням, путь покупателя,
+    что покупают и смотрят, заказы за период. Период и отбор заказов — обычные
+    поля 1С над сводкой: их меняют, и сводка пересобирается. Настройки тоже
+    поля формы — их правят и сохраняют, а HTML для этого не годится.
     """
     f = Form()
     f.attribute("Объект", f"<v8:Type>cfg:DataProcessorObject.{PROCESSOR}</v8:Type>", main=True)
     f.attribute("ТекстHTML", t_str(0), title="Сводка")
+    f.attribute("Период", t_str(20), title="Период")
+    f.attribute("ДатаС", t_day(), title="с")
+    f.attribute("ДатаПо", t_day(), title="по")
+    f.attribute("ОтборЗаказов", t_str(30), title="Заказы в списке")
 
     f.attribute("ПриветственныйБонус", t_num(6, 0), title="Приветственный бонус новому покупателю, сом", saved_data=True)
     f.attribute("МаксимумБонусами", t_num(3, 0), title="Можно оплатить бонусами, % от заказа", saved_data=True)
@@ -755,6 +770,15 @@ def panel_form():
         f.command(name, title, tip)
 
     items = [
+        f.group("ГруппаПериод", [
+            # Меняют поле — сводка пересобирается сразу, отдельная кнопка не нужна.
+            f.input("Период", "Период", width=14, stretch=False, choices=PANEL_PERIODS,
+                    events={"OnChange": "ПериодПриИзменении"}),
+            f.input("ДатаС", "ДатаС", width=10, stretch=False, events={"OnChange": "ДатаПриИзменении"}),
+            f.input("ДатаПо", "ДатаПо", width=10, stretch=False, events={"OnChange": "ДатаПриИзменении"}),
+            f.input("ОтборЗаказов", "ОтборЗаказов", width=22, stretch=False, choices=PANEL_ORDER_FILTERS,
+                    events={"OnChange": "ОтборЗаказовПриИзменении"}),
+        ], direction="AlwaysHorizontal"),
         f.html("Сводка", "ТекстHTML", width=150, height=28, v_stretch=False),
         f.group("ГруппаНастройки", [
             # Две строки, а не одна: в одну не влезало, и наценка с кнопкой
@@ -950,7 +974,7 @@ def build_configuration(out, variant):
           '<v8:Value xsi:type="app:ApplicationUsePurpose">PlatformApplication</v8:Value></UsePurposes>'
           "<ScriptVariant>Russian</ScriptVariant><DefaultRoles>"
           f'<xr:Item xsi:type="xr:MDObjectRef">Role.{ROLE}</xr:Item></DefaultRoles>'
-          "<Vendor>Smart Centr</Vendor><Version>1.5.0.1</Version>"
+          "<Vendor>Smart Centr</Vendor><Version>1.6.0.0</Version>"
           f"<DefaultLanguage>Language.{variant['default_language']}</DefaultLanguage>"
           "<BriefInformation/><DetailedInformation/><Copyright/><VendorInformationAddress/>"
           "<ConfigurationInformationAddress/><InterfaceCompatibilityMode>TaxiEnableVersion8_2</InterfaceCompatibilityMode>"
