@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-25T17:21:44+06:00",
-  "updatedAt": "2026-09-25T21:14:22+06:00",
+  "updatedAt": "2026-09-25T21:59:44+06:00",
   "finishedAt": null,
   "stages": [
     {
@@ -47,25 +47,29 @@ window.STATE =
     },
     {
       "id": "build",
-      "status": "active",
+      "status": "done",
       "startedAt": "2026-09-25T17:53:58+06:00",
-      "note": "1 из 2 тасков готов"
+      "note": "2 из 2 тасков готовы",
+      "finishedAt": "2026-09-25T21:14:35+06:00"
     },
     {
       "id": "review",
-      "status": "active",
+      "status": "done",
       "startedAt": "2026-09-25T18:16:46+06:00",
-      "note": "проверяется таск 02"
+      "note": "проверено 2 из 2",
+      "finishedAt": "2026-09-25T21:14:35+06:00"
     },
     {
       "id": "final",
-      "status": "pending"
+      "status": "active",
+      "startedAt": "2026-09-25T21:14:35+06:00",
+      "note": "слепая приёмка, память, таск 03"
     }
   ],
   "requirements": {
     "total": 8,
-    "done": 2,
-    "inTicket": 6,
+    "done": 8,
+    "inTicket": 0,
     "inSpec": 0,
     "placeholder": 0,
     "deferred": 0,
@@ -129,11 +133,41 @@ window.STATE =
         "capacitor.config.ts",
         "docs/ANDROID_PLAY_UZ.md"
       ],
-      "status": "review",
+      "status": "done",
       "retries": 0,
       "repairs": 0,
       "handoffs": 2,
-      "startedAt": "2026-09-25T18:21:18+06:00"
+      "startedAt": "2026-09-25T18:21:18+06:00",
+      "finishedAt": "2026-09-25T21:14:35+06:00",
+      "commit": "cbd26bc",
+      "tests": {
+        "passed": 249,
+        "failed": 0
+      },
+      "files": [
+        "android/app/build.gradle",
+        "docs/ANDROID_PLAY_UZ.md"
+      ]
+    },
+    {
+      "id": "03",
+      "title": "Инструкция для Google Play: точность (из разбора замечаний)",
+      "requirements": [
+        "R03i",
+        "R02"
+      ],
+      "blockedBy": [
+        "02"
+      ],
+      "wave": 3,
+      "zone": [
+        "docs/ANDROID_PLAY_UZ.md"
+      ],
+      "status": "review",
+      "startedAt": "2026-09-25T21:22:16+06:00",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0
     }
   ],
   "singlePass": null,
@@ -165,7 +199,8 @@ window.STATE =
     "План: таск 02 потребовал 2 передачи (3 контекста) — нарезка была крупной: проверка на эмуляторе + сборка + инструкция в одном таске",
     "T02 craft · docs/ANDROID_PLAY_UZ.md:178,254,263-266 — номер версии в четырёх местах (code3, «hozir 3», «keyingisi — 4», cp …code4.aab); после следующего повышения cp положит code5 под именем code4",
     "T02 craft · docs/ANDROID_PLAY_UZ.md:15,20-33 — раздел 1.1 «что проверено» не перечисляет проверки таска 01 (заставка, «Назад», внешние ссылки, офлайн-каталог)",
-    "T02 manifest · docs/ANDROID_PLAY_UZ.md:32 — история 6 «Ishlaydi» без оговорки, что сайт отправляет фото сразу при выборе (превью нет); для истории 5 ограничение раскрыто, для 6 — нет"
+    "T02 manifest · docs/ANDROID_PLAY_UZ.md:32 — история 6 «Ishlaydi» без оговорки, что сайт отправляет фото сразу при выборе (превью нет); для истории 5 ограничение раскрыто, для 6 — нет",
+    "T03 craft · docs/ANDROID_PLAY_UZ.md:275-289 — если app-release.aab нет вовсе, блок копирования доходит до cp и печатает английское «No such file or directory» вместо причины по-узбекски; файл не портится"
   ],
   "reviewers": {
     "manifestSpec": "a5deef7a16496a83a",

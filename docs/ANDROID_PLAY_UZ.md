@@ -19,23 +19,32 @@ Yangilandi: 25.09.2026, MacBook da. Shoxa (branch) `feature/ios-app`.
 
 ### 1.1. Emulyatorda nima tekshirildi (25.09.2026)
 
-Kirish saytning sinov rejimida (test rejimi — Telegram/WhatsApp kodi o'rniga 1234) tekshirildi,
-kompyuterdagi sayt nusxasida. Jonli `smarket.kg` da hech narsa buyurtma qilinmadi.
+Kirish va undan keyingisi (bonus karta, «Выйти», barmoq izi), buyurtma va chatdagi rasm
+saytning sinov rejimida (test rejimi — Telegram/WhatsApp kodi o'rniga 1234) tekshirildi,
+kompyuterdagi sayt nusxasida. Qolgani — jonli `smarket.kg` da. Jonli `smarket.kg` da
+hech narsa buyurtma qilinmadi.
 
 | Nima | Natija |
 |---|---|
+| Ochilish: sariq zastavka (ilova ochilayotgandagi birinchi ekran), foni ikonka rangida, qora «S» → bosh sahifa `smarket.kg`, manzil qatori yo'q. Ilovalar ro'yxatida «S Маркет» ikonkasi | Ishlaydi |
+| Ekran chetlari: sayt sarlavhasi soat/batareya qatori ostida, pastki menyu telefonning pastki chizig'i (ishora paneli) ustida | Ishlaydi |
+| «Назад» (Android dagi orqaga qaytish): tovar → katalog → bosh sahifa → ilovadan chiqish | Ishlaydi |
+| Telefon, WhatsApp, Telegram, Instagram havolalari ilovadan tashqarida ochiladi: telefon — qo'ng'iroq ilovasida, qolganlari — brauzerda (emulyatorda bu ilovalar yo'q). Qaytganda ilova o'sha sahifada | Ishlaydi |
+| «Кабинет» → kirish formasi: avval telefon raqami va kod, WhatsApp — pastda | Ishlaydi |
 | Kirish → bonus karta telefonda saqlanadi; internetsiz «Бонусная карта» QR bilan ochiladi, ekran eng yorug' | Ishlaydi |
 | «Выйти» → internetsiz karta endi yo'q | Ishlaydi |
 | Barmoq izi: «Быстрый вход» → «Включён», «Проверить» o'tadi; sessiya tugagach «Войти по отпечатку» kiritadi | Ishlaydi |
 | Barmoq izi yo'q telefon — tushunarli yozuv, ilova yiqilmaydi | Ishlaydi |
 | Buyurtma: tovar sahifasidan savatga → rasmiylashtirish (o'zi olib ketish) → to'lov → «Оплачен», ilova tirik | Ishlaydi (sinov to'lovi bilan) |
-| Chat: galereyadan rasm tanlash → rasm chatda ko'rinadi | Ishlaydi |
-| Internet yo'q → o'zimizning «Нет связи» sahifasi, «Повторить» | Ishlaydi |
+| Chat: «Прислать фото товара» → galereyadan rasm tanlash → rasm chatga yetib boradi va chatda ko'rinadi. Tanlashni bekor qilib, qayta ochsa ham ishlaydi | Ishlaydi. Lekin sayt rasmni **tanlangan zahoti yuboradi** — «ko'rib, keyin yuborish» qadami yo'q. Bu saytning ishlashi, ilovaniki emas. Juda katta rasmga sayt «Фото слишком большое» deydi |
+| Internet yo'q — ilova ochilganda ham, ishlab turganda ham → o'zimizning «Нет связи» sahifasi. Internet qaytgach «Повторить» bosh sahifani ochadi (turgan sahifani emas) | Ishlaydi |
+| Internetsiz katalog: «Нет связи» → «Каталог» ochiladi, qidiruv tovarni topadi, bo'lim bo'yicha saralaydi, «Закрыть» orqaga qaytaradi | Ishlaydi |
 
 **Tekshirilmagan:**
 
 - Push-xabar — Android da umuman yo'q (buning uchun Firebase kerak).
 - Haqiqiy Android telefon — hali birorta telefonda sinalmagan.
+- WhatsApp, Telegram, Instagram o'rnatilgan telefonda havola shu ilovaning o'zida ochilishi — emulyatorda ular yo'q, havolalar brauzerda ochildi.
 - Haqiqiy O!Деньги sahifasiga o'tish — sinov rejimida to'lov sahifasi saytning o'zida ochiladi.
 
 Ilova ichida — jonli sayt `https://smarket.kg`. Saytdagi o'zgarish ilovada
@@ -175,7 +184,7 @@ Qirg'iz tilini qo'shish: **Store listing → Manage translations → Add your ow
 2. **Create new release**.
 3. «Play App Signing» taklif qilinsa — **rozi bo'ling**. Google o'z kalitini
    saqlaydi, bizning kalit faqat yuklash uchun.
-4. Fayl: `build-play/smarket-1.0-code3.aab`
+4. Fayl: `build-play/smarket-1.0-code3.aab` (keyingi versiyalarda — 5-bo'limdagi buyruq yozgan fayl)
 5. Release notes (ru-RU):
 
 ```
@@ -251,8 +260,8 @@ S Маркет — «Смарт Центр» (Smart Centr) электроник�
 ## 5. Keyingi versiyani yig'ish
 
 Faqat `android/` papkasida nimadir o'zgarsa kerak. Avval
-`android/app/build.gradle` da `versionCode` ni 1 ga oshiring (hozir 3, keyingisi — **4**).
-Google Play bir xil `versionCode` ni ikki marta qabul qilmaydi.
+`android/app/build.gradle` da `versionCode` ni 1 ga oshiring (25.09.2026 da 3 edi, keyingisi — **4**,
+undan keyin 5 va hokazo). Google Play bir xil `versionCode` ni ikki marta qabul qilmaydi.
 Keyin:
 
 ```bash
@@ -260,11 +269,28 @@ cd ~/Online-magazin && npx cap sync android && cd android && JAVA_HOME=/opt/home
 ```
 
 Tayyor fayl: `android/app/build/outputs/bundle/release/app-release.aab`.
-Uni `build-play/smarket-1.0-code4.aab` nomi bilan nusxa qilib qo'ying:
+Uni `build-play/` ga nusxa qiling. Buyruq raqamni `android/app/build.gradle` dan o'zi oladi:
+`versionCode 4` bo'lsa — `smarket-1.0-code4.aab`, `5` bo'lsa — `smarket-1.0-code5.aab`.
+Buyruqda hech narsani qo'lda o'zgartirmang:
 
 ```bash
-cp ~/Online-magazin/android/app/build/outputs/bundle/release/app-release.aab ~/Online-magazin/build-play/smarket-1.0-code4.aab
+cd ~/Online-magazin
+CODE=$(sed -nE 's/^[[:space:]]*versionCode[[:space:]=]+([0-9]+).*/\1/p' android/app/build.gradle)
+AAB=android/app/build/outputs/bundle/release/app-release.aab
+F="build-play/smarket-1.0-code$CODE.aab"
+if [ -z "$CODE" ]; then echo "XATO: build.gradle da versionCode topilmadi"
+elif [ -e "$F" ]; then echo "TO'XTADI: $F allaqachon bor — versionCode oshirilmagan"
+elif [ android/app/build.gradle -nt "$AAB" ]; then echo "TO'XTADI: $AAB eski — yig'ish xato bilan tugagan, yuqoridagi buyruqni qayta ishga tushiring"
+else cp "$AAB" "$F" && echo "Tayyor: $F"
+fi
 ```
+
+Buyruq nusxa qilmasdan to'xtaydi va sababini yozadi, agar:
+
+- shu nomli fayl allaqachon bor bo'lsa — `versionCode` oshirilmagan;
+- `app-release.aab` fayli `build.gradle` dan eski bo'lsa — yig'ish xato bilan tugagan.
+
+«Tayyor: …» chiqsa — o'sha yozilgan faylni Play Console ga yuklang (3.8-bo'lim).
 
 Rasmlarni qayta chizish skriptlari git da yo'q — kerak bo'lsa Claude qayta yasaydi
 (sayt telefon o'lchamida suratga olinadi, ustiga sarlavha qo'yiladi).

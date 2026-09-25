@@ -190,4 +190,19 @@ PC — сайт, расширение 1С и сервер SBonus: `src/`, `publi
 - `src/lib/kitchen/variants.ts` `parseVariants` фильтрует `localStorage['kp-variants']` — битая запись раньше роняла страницу; сырой `JSON.parse` туда не возвращать.
 - Качество «Лёгкий» (`lite`): в `engine.ts` единый `get lite()`, в сборку флаг едет только через `Mats.lite` (`materials.ts`) — новых `quality === 'lite'` не рассыпать; `Built.spec` (числа для мебельщика) от `lite` не зависит.
 - Тесты: `npx vitest run` (23 файла, 247 passed на 24.09.2026); один — `npx vitest run __tests__/kitchen.test.ts`; также `kitchen-governor.test.ts`, `kitchen-variants.test.ts`.
+
+### Android (25.09.2026)
+
+- `android/` — оболочка Capacitor 8 (`kg.smarket.app`) над `https://smarket.kg`; свои плагины `BonusCard`, `AppLock`, `OfflineCatalog` регистрирует `MainActivity.onCreate` до `super.onCreate`; контракт с сайтом общий с iPhone (`src/lib/native/*.ts`) — имена плагинов и вызовов не менять.
+- Java 21 keg-only, в PATH нет, `adb`/`emulator` тоже — всегда полные пути. AAB для Play, из корня: `npx cap sync android && cd android && JAVA_HOME=/opt/homebrew/opt/openjdk@21 ./gradlew bundleRelease` → `android/app/build/outputs/bundle/release/app-release.aab`; копию — в `build-play/smarket-1.0-code<versionCode>.aab` (`build-play/` вне git).
+- `versionCode` в `android/app/build.gradle` — сейчас 3 (`build-play/smarket-1.0-code3.aab`); перед каждой загрузкой в Play +1, тот же номер Play не примет.
+- Подпись: ключ `~/smarket-keys/smarket-upload.jks` (алиас `smarket-upload`) и `android/keystore.properties` вне git, создаёт один раз `scripts/android-keystore.sh`; без `keystore.properties` release выйдет неподписанным. Файл не открывать, пароли не печатать.
+- Эмулятор: AVD `smarket-api36` (API 36 Play Store arm64, Pixel 7, датчик отпечатка) сделан руками в `~/.android/avd/` — brew-овский `avdmanager` SDK не видит. Запуск: `~/Library/Android/sdk/emulator/emulator -avd smarket-api36 -no-window -no-audio -no-boot-anim -no-snapshot-save -gpu swiftshader_indirect`.
+- APK на эмулятор, из корня: `npx cap sync android && cd android && JAVA_HOME=/opt/homebrew/opt/openjdk@21 ./gradlew assembleRelease && cd .. && ~/Library/Android/sdk/platform-tools/adb install -r android/app/build/outputs/apk/release/app-release.apk`.
+- Подвох: Capacitor 8 вставляет свой JS (`window.Capacitor` и плагины) только в страницы адреса `server.url`; «Нет связи» — `https://localhost/index.html` из `ios-web/` (`errorPath`, общая с iPhone), мост и `BonusCard`/`OfflineCatalog` ей даёт `MainActivity.connectOfflinePage()` (`androidx.webkit` 1.14.0). Обновил Capacitor — выключи сеть (`~/Library/Android/sdk/platform-tools/adb shell svc wifi disable`, то же `svc data disable`) и проверь кнопки «Каталог» и «Бонусная карта».
+- «Повторить» на «Нет связи» открывает главную smarket.kg, не ту страницу, где был покупатель; «Назад» листает историю сайта, на первой странице сворачивает приложение.
+- Вход без демо-кода (он секрет владельца, не искать): временно в `capacitor.config.ts` `server.url: 'http://10.0.2.2:3100'` и `server.cleartext: true`, сайт `SHOP_PAYMENT_MODE=mock npx next dev -p 3100` (код 1234, оплата понарошку), `npx cap sync android` и пересборка; потом вернуть `https://smarket.kg`, убрать `cleartext`, снова `npx cap sync android`.
+- Конец сессии (180 дней) для «Войти по отпечатку» — перевести часы эмулятора вперёд, потом `~/Library/Android/sdk/platform-tools/adb shell settings put global auto_time 1`.
+- Push на Android выключен: `android.includePlugins: []` в `capacitor.config.ts` — без Firebase плагин роняет приложение; включать только вместе с `android/app/google-services.json` (сейчас нет) и отправкой через FCM на сервере SBonus.
+- Шаги для владельца (Play Console, картинки, следующая версия) — `docs/ANDROID_PLAY_UZ.md`; снимки и логи проверок — `build-play/android-check/<таск>/`.
 <!-- autopilot:end -->
