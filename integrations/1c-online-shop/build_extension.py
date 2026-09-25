@@ -320,14 +320,21 @@ class Form:
         return (f'<InputField name="{name}" id="{self.next_id()}">{props}'
                 f"{self._tail(name)}{self._events(events)}</InputField>")
 
-    def check(self, name, path, readonly=False, title_location=None, events=None, table=False):
+    def check(self, name, path, readonly=False, title_location=None, events=None, table=False, title=None, width=None,
+              hint=None):
         props = f"<DataPath>{path}</DataPath>"
+        if title:
+            props += f"<Title>{text(title)}</Title>"
+        if hint:
+            props += f"<ToolTip>{text(hint)}</ToolTip>"
         if readonly:
             props += "<ReadOnly>true</ReadOnly>"
         if title_location:
             props += f"<TitleLocation>{title_location}</TitleLocation>"
         if table:
             props += "<EditMode>EnterOnInput</EditMode>"
+        if width:
+            props += f"<Width>{width}</Width>"
         props += "<CheckBoxType>Auto</CheckBoxType>"
         return (f'<CheckBoxField name="{name}" id="{self.next_id()}">{props}'
                 f"{self._tail(name)}{self._events(events)}</CheckBoxField>")
@@ -506,10 +513,13 @@ def list_form():
     ]:
         f.command(name, title, tip)
 
+    # Колонки в том порядке, в каком их смотрят каждый день: товар и цена с маржой,
+    # потом как он виден на сайте, потом метки витрины. Группа — в конце: у большинства
+    # товаров её нет, а в начале таблицы пустая колонка съедала место у кода и наличия.
+    # Метки — узкие колонки с коротким заголовком, полное название — в подсказке.
     table_columns = [
-        f.input("ТоварыНоменклатура", "Товары.Номенклатура", readonly=True, width=36, table=True),
-        f.input("ТоварыКод", "Товары.Код", readonly=True, width=8, table=True),
-        f.input("ТоварыГруппа", "Товары.ГруппаТовара", readonly=True, width=16, table=True),
+        f.input("ТоварыНоменклатура", "Товары.Номенклатура", readonly=True, width=34, table=True),
+        f.input("ТоварыКод", "Товары.Код", readonly=True, width=14, table=True),
         f.input("ТоварыОстаток", "Товары.Остаток", readonly=True, width=7, table=True),
         f.input("ТоварыСебестоимость", "Товары.Себестоимость", readonly=True, width=10, table=True),
         f.input("ТоварыЦенаСайта", "Товары.ЦенаСайта", width=10, table=True),
@@ -517,40 +527,34 @@ def list_form():
         f.input("ТоварыСкидка", "Товары.Скидка", readonly=True, width=6, table=True),
         f.input("ТоварыМаржа", "Товары.Маржа", readonly=True, width=10, table=True, negatives=True),
         f.input("ТоварыМаржаПроцент", "Товары.МаржаПроцент", readonly=True, width=7, table=True, negatives=True),
+        f.input("ТоварыНаличие", "Товары.Наличие", width=13, choices=AVAILABILITY, table=True, title="Наличие"),
+        f.check("ТоварыСкрыть", "Товары.Скрыть", table=True, width=6),
         f.input("ТоварыФото", "Товары.Фото", readonly=True, width=5, table=True),
-        f.check("ТоварыЕстьОписание", "Товары.ЕстьОписание", readonly=True, table=True),
-        f.check("ТоварыСкрыть", "Товары.Скрыть", table=True),
-        f.input("ТоварыНаличие", "Товары.Наличие", width=12, choices=AVAILABILITY, table=True),
-        f.check("ТоварыРаспродажа", "Товары.Распродажа", table=True),
-        f.check("ТоварыТоварДня", "Товары.ТоварДня", table=True),
-        f.check("ТоварыДляВас", "Товары.ДляВас", table=True),
-        f.check("ТоварыХит", "Товары.Хит", table=True),
-        f.check("ТоварыНовинка", "Товары.Новинка", table=True),
+        f.check("ТоварыЕстьОписание", "Товары.ЕстьОписание", readonly=True, table=True, width=8),
+        f.check("ТоварыРаспродажа", "Товары.Распродажа", table=True, title="Расп.", width=5, hint="Распродажа"),
+        f.check("ТоварыТоварДня", "Товары.ТоварДня", table=True, title="Дня", width=4, hint="Товар дня"),
+        f.check("ТоварыДляВас", "Товары.ДляВас", table=True, title="Вам", width=4, hint="Специально для вас"),
+        f.check("ТоварыХит", "Товары.Хит", table=True, width=4),
+        f.check("ТоварыНовинка", "Товары.Новинка", table=True, title="Нов.", width=4, hint="Новинка"),
         f.input("ТоварыСтоимостьДоставки", "Товары.СтоимостьДоставки", width=8, table=True),
-        f.input("ТоварыАкцияДо", "Товары.АкцияДо", width=16, table=True),
+        f.input("ТоварыАкцияДо", "Товары.АкцияДо", width=14, table=True),
+        f.input("ТоварыГруппа", "Товары.ГруппаТовара", readonly=True, width=16, table=True),
     ]
     items = [
-        # Отбор отдельной строкой сверху: поиск, группа и «что показывать»
-        # владелец меняет каждый день, кнопки — реже.
+        # Отбор одной строкой: поля узкие, чтобы «Только в наличии» и «Сбросить отбор»
+        # помещались рядом, а не уезжали за правый край окна.
         f.group("ГруппаОтбор", [
-            f.input("Поиск", "Поиск", width=34, hint="Название, артикул или код",
+            f.input("Поиск", "Поиск", width=28, stretch=False, hint="Название, артикул или код",
                     events={"OnChange": "ОтборПриИзменении"}),
-            f.input("ГруппаОтбора", "ГруппаОтбора", width=26, list_choice=True,
+            f.input("ГруппаОтбора", "ГруппаОтбора", width=22, stretch=False, list_choice=True,
                     hint="все группы", events={"OnChange": "ОтборПриИзменении"}),
-            f.input("Показывать", "Показывать", width=20, choices=SHOW_MODES,
+            f.input("Показывать", "Показывать", width=18, stretch=False, choices=SHOW_MODES,
                     events={"OnChange": "ОтборПриИзменении"}),
             f.check("ТолькоВНаличии", "ТолькоВНаличии", title_location="Right",
                     events={"OnChange": "ОтборПриИзменении"}),
             f.button("ФормаСбросОтбора", "СброситьОтбор"),
         ], direction="AlwaysHorizontal"),
-        f.group("ГруппаКнопки", [
-            f.button("ФормаОбновить", "Обновить"),
-            f.button("ФормаСохранить", "Сохранить", default=True),
-            f.button("ФормаОтправитьНаСайт", "ОтправитьКаталогНаСайт"),
-            f.button("ФормаНастройкиЗаказов", "ОткрытьНастройкиЗаказов"),
-            f.button("ФормаПанельСайта", "ОткрытьПанельСайта"),
-        ], direction="AlwaysHorizontal"),
-        f.input("Итог", "Итог", readonly=True, title_location="None"),
+        f.input("Итог", "Итог", readonly=True, title_location="None", stretch=True, full_width=True),
         f.table("Товары", "Товары", table_columns, bar_buttons=[
             f.button("ТоварыОткрытьКарточку", "ОткрытьКарточкуТовара", bar=True),
             f.button("ТоварыСкрытьВыделенные", "СкрытьВыделенные", bar=True),
@@ -560,6 +564,13 @@ def list_form():
     return f.render("Онлайн магазин", items,
                     {"OnCreateAtServer": "ПриСозданииНаСервере", "BeforeClose": "ПередЗакрытием",
                      "OnLoadDataFromSettingsAtServer": "ПриЗагрузкеДанныхИзНастроекНаСервере"},
+                    bar_buttons=[
+                        f.button("ФормаСохранить", "Сохранить", bar=True, default=True),
+                        f.button("ФормаОтправитьНаСайт", "ОтправитьКаталогНаСайт", bar=True),
+                        f.button("ФормаОбновить", "Обновить", bar=True),
+                        f.button("ФормаПанельСайта", "ОткрытьПанельСайта", bar=True),
+                        f.button("ФормаНастройкиЗаказов", "ОткрытьНастройкиЗаказов", bar=True),
+                    ],
                     save_settings=True)
 
 
