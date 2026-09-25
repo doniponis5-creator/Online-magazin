@@ -150,9 +150,9 @@
     "semantic_hash": ""
   },
   "integrations/1c-online-shop/build_extension.py": {
-    "mtime": 1790330937.2599077,
-    "seen": 1790331723.6326058,
-    "ast_hash": "34e1fdcd9415f70769dd7144c8dcb94a",
+    "mtime": 1790332407.2332246,
+    "seen": 1790332536.948578,
+    "ast_hash": "52cd3529eae835b25b546a05b9c2d8e7",
     "semantic_hash": ""
   },
   "integrations/1c-online-shop/manage.py": {
@@ -210,9 +210,9 @@
     "semantic_hash": "de546f09e6a5fe14fc84b6f27abd37b5"
   },
   "integrations/sbonus-server/shop/shop_admin.py": {
-    "mtime": 1790331210.6904705,
-    "seen": 1790331723.632618,
-    "ast_hash": "84346b1a99a492751ee8395074de4a4d",
+    "mtime": 1790332247.575821,
+    "seen": 1790332536.949425,
+    "ast_hash": "0851f8101f6b247288ea7b48ddc776c9",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/shop_catalog.py": {
@@ -1062,9 +1062,9 @@
     "semantic_hash": ""
   },
   "docs/HANDOFF.md": {
-    "mtime": 1790331424.0184286,
-    "seen": 1790331723.6330986,
-    "ast_hash": "93aebe8bbbef72c00860708d084cf89b",
+    "mtime": 1790332247.575821,
+    "seen": 1790332537.0608292,
+    "ast_hash": "299fbafe389ffb5a9ec79172a35a8838",
     "semantic_hash": ""
   },
   "docs/IOS_APP_UZ.md": {
