@@ -192,9 +192,12 @@
 .instagram-panel .ig-phone__veil img { width: 112px; height: 112px; margin-bottom: 10px; padding: 8px; }
 .instagram-panel .ig-phone__veil strong { font-size: 14px; }
 .account-panel { background: #f9fbdc; }
+/* Содержимое кабинета — по центру высоты, как текст Instagram рядом.
+   Раньше оно прилипало к верху, и нижняя половина жёлтой панели пустовала. */
+.account-panel { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
 .social-account h2 { font-size: clamp(25px,2.6vw,34px); letter-spacing: -.025em; line-height: 1.2; margin-top: 20px; }
 .social-account h2 span { display: block; }
-.social-account p { color: var(--color-ink-soft); font-size: 15px; line-height: 1.7; max-width: 40ch; margin: 18px 0 26px; }
+.social-account p { color: var(--color-ink-soft); font-size: 15px; line-height: 1.7; max-width: 40ch; margin: 18px 0 26px; text-wrap: pretty; }
 .instagram-panel__handle { display: flex; align-items: center; gap: 10px; width: fit-content; min-height: 44px; font-size: 22px; font-weight: 800; margin-bottom: 18px; }
 .account-panel .btn { margin-top: 10px; }
 .account-layout { display: grid; grid-template-columns: 1.05fr 1fr; gap: 32px; padding-top: 24px; }

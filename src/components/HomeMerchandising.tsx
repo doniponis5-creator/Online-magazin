@@ -278,15 +278,19 @@ export function SocialAndAccount() {
       <div className="instagram-panel__text">
         <IconInstagram size={38} />
         <h2>{ky ? 'Биз Instagram’дабыз' : 'Мы в Instagram'}</h2>
-        <p>{ky ? 'Жаңылыктар, арзандатуулар жана техника жөнүндө видео — 73 миң жазылуучу.' : 'Новинки, распродажи и видео о технике — 73 тысячи подписчиков.'}</p>
-        <a href={storefront.instagram} target="_blank" rel="noopener noreferrer" className="instagram-panel__handle">{storefront.instagramHandle}<IconArrowUpRight size={18} /></a>
-        <a href={storefront.instagram} target="_blank" rel="noopener noreferrer" className="btn btn--outline">{ky ? 'Instagram’ды ачуу' : 'Открыть Instagram'}</a>
+        {/* Неразрывный пробел перед тире и после «73»: строка не начинается
+            с тире, а число не отрывается от слова. */}
+        <p>{ky ? 'Жаңылыктар, арзандатуулар жана техника жөнүндө видео\u00a0— 73\u00a0миң жазылуучу.' : 'Новинки, распродажи и видео о технике\u00a0— 73\u00a0тысячи подписчиков.'}</p>
+        {/* Имя аккаунта — просто подпись: в Instagram ведут кнопка и телефон,
+            третья ссылка туда же была лишней остановкой для клавиатуры. */}
+        <span className="instagram-panel__handle">{storefront.instagramHandle}</span>
+        <a href={storefront.instagram} target="_blank" rel="noopener noreferrer" className="btn btn--outline">{ky ? 'Instagram’ды ачуу' : 'Открыть Instagram'}<IconArrowUpRight size={18} /></a>
       </div>
       {/* Живой профиль в рамке телефона: наведение гасит экран и показывает QR */}
       <InstagramPhone />
     </div>
-    <div className="account-panel"><IconUser size={36} /><h2>{ky ? 'Жеке кабинет' : 'Личный кабинет'} <span>SBonus</span></h2>
-      <p>{ky ? 'Бонустар, буйрутмалар жана сатып алуулардын тарыхы — бир жерде.' : 'Бонусы, заказы и история покупок — в одном месте.'}</p>
+    <div className="account-panel"><IconUser size={38} /><h2>{ky ? 'Жеке кабинет' : 'Личный кабинет'} <span>SBonus</span></h2>
+      <p>{ky ? 'Бонустар, буйрутмалар жана сатып алуулардын тарыхы\u00a0— бир жерде.' : 'Бонусы, заказы и история покупок\u00a0— в\u00a0одном месте.'}</p>
       <Link href={`/${lang}/account`} className="btn btn--primary">{ky ? 'Кабинетке өтүү' : 'Перейти в кабинет'}<IconChevronRight size={18}/></Link>
     </div>
   </section>
