@@ -1,0 +1,241 @@
+/*
+ * Лента товаров (/reels): один товар на экран, листается вверх.
+ * Светлая, как весь сайт. Поверх шапки, нижней панели и кнопки «Спросить»
+ * (z-index выше всех), потому что это отдельный режим просмотра.
+ */
+
+.reels {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  /* На телефоне фон белый: Safari красит полоску с часами в цвет верха страницы,
+     и серый фон давал серую «шапку» над белой полосой ленты. Серые поля —
+     только на компьютере, по бокам узкой колонки (см. ниже). */
+  background: #fff;
+}
+
+/* Верхняя полоса: название, счётчик, «перемешать», «закрыть». Сама полоса
+   клики не ловит — только её кнопки, иначе она закрывала бы верх фото. */
+.reels__bar {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(480px, 100%);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) 12px 14px;
+  background: linear-gradient(#fff 55%, rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+.reels__bar > * { pointer-events: auto; }
+.reels__title { margin: 0; font-weight: 800; font-size: 15px; line-height: 1.2; color: var(--color-ink); }
+.reels__counter {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-ink-soft);
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-variant-numeric: tabular-nums;
+}
+.reels__icon-btn {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: #fff;
+  color: var(--color-ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color var(--speed) var(--ease);
+}
+.reels__icon-btn:hover { background: var(--color-surface); }
+.reels__cart-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--color-lemon);
+  color: var(--color-ink);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 18px;
+  text-align: center;
+}
+
+/* Прокрутка с «прилипанием»: каждый свайп — ровно один товар. */
+.reels__scroller {
+  width: min(480px, 100%);
+  height: 100%;
+  margin: 0 auto;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  background: #fff;
+}
+.reels__scroller::-webkit-scrollbar { display: none; }
+
+.reels__slide {
+  height: 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+/* Фото занимает всё, что остаётся над текстом. */
+.reels__media {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: calc(env(safe-area-inset-top, 0px) + 64px) 20px 8px;
+  background: #fff;
+}
+/* position: relative обязателен: глобальный .product-placeholder — absolute с
+   inset:0 и без него растягивался на весь .reels__media вместе с отступами,
+   и фото уезжало под верхнюю полосу. */
+.reels__media-link { position: relative; display: block; width: 100%; height: 100%; overflow: hidden; border-radius: 12px; }
+.reels__media-link .product-placeholder { width: 100%; height: 100%; }
+.reels__media-link .product-placeholder--photo { padding: 0; }
+.reels__media-link .product-image-photo { width: 100%; height: 100%; object-fit: contain; }
+
+/* На активном экране фото медленно приближается — кадр живёт без видео. */
+.reels__slide.is-active .product-image-photo { animation: reels-zoom 9s ease-in-out infinite alternate; }
+@keyframes reels-zoom {
+  from { transform: scale(1); }
+  to   { transform: scale(1.04); }
+}
+
+.reels__badges {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 68px);
+  left: 16px;
+  z-index: 2;
+  display: flex;
+  gap: 6px;
+}
+.reels__badge-sale { background: var(--color-danger); color: #fff; }
+/* Справа столбиком: «избранное» и «поделиться». Кнопки 44px — минимум для пальца. */
+.reels__side {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 64px);
+  right: 14px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.reels__side .fav-btn,
+.reels__side .share-btn { width: 44px; height: 44px; }
+
+.reels__hint {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--color-ink);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  animation: reels-bob 1.6s ease-in-out infinite;
+}
+.reels__hint svg { transform: rotate(180deg); }
+@keyframes reels-bob {
+  0%, 100% { transform: translate(-50%, 0); }
+  50%      { transform: translate(-50%, -6px); }
+}
+
+.reels__body {
+  flex: 0 0 auto;
+  padding: 14px 20px calc(env(safe-area-inset-bottom, 0px) + 18px);
+  border-top: 1px solid var(--color-border);
+  background: #fff;
+}
+.reels__cat { font-size: 12px; color: var(--color-muted); }
+.reels__name { margin: 4px 0 0; font-size: 19px; line-height: 1.3; font-weight: 800; letter-spacing: -.01em; }
+.reels__name a { color: var(--color-ink); }
+.reels__name a:hover { color: var(--color-primary); }
+
+.reels__specs {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.reels__specs li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: var(--color-surface);
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--color-ink);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.reels__specs li span { color: var(--color-muted); font-weight: 500; }
+
+.reels__prices { display: flex; align-items: baseline; gap: 10px; margin-top: 12px; }
+.reels__price { font-size: 26px; font-weight: 800; letter-spacing: -.02em; color: var(--color-ink); }
+.reels__price.is-sale { color: var(--color-danger); }
+.reels__price--request { font-size: 18px; color: var(--color-ink-soft); }
+.reels__old { font-size: 15px; color: var(--color-muted); }
+
+/* Кнопки в строку; длинная подпись («Нет в наличии») на узком экране переносит
+   «Подробнее» на свою строку, а не выталкивает за край. */
+.reels__actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.reels__actions > :first-child { flex: 1 1 150px; }
+.reels__more { flex: 1 0 auto; max-width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.reels__actions > :first-child:not(:last-child) + .reels__more { flex: 0 1 auto; }
+
+.reels__empty { padding: 120px 24px; text-align: center; color: var(--color-muted); }
+
+/* Компьютер: лента — колонка шириной с телефон посреди серого поля. */
+@media (min-width: 700px) {
+  .reels { background: #eceff3; }
+  .reels__scroller { border-inline: 1px solid var(--color-border); }
+  .reels__name { font-size: 21px; }
+}
+
+/* Низкие экраны (телефон боком): текстовая часть компактнее, чтобы фото осталось. */
+@media (max-height: 600px) {
+  .reels__specs { display: none; }
+  .reels__body { padding-top: 10px; }
+  .reels__name { font-size: 16px; }
+  .reels__price { font-size: 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reels__slide.is-active .product-image-photo,
+  .reels__hint { animation: none; }
+  .reels__scroller { scroll-behavior: auto; }
+}

@@ -1,0 +1,442 @@
+/* Светлая фирменная витрина. Отдельный слой сохраняет работу TASK_05. */
+@font-face {
+  font-family: 'Manrope';
+  src: url('/fonts/manrope-variable.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+}
+
+:root {
+  --font: 'Manrope', 'Segoe UI', sans-serif;
+  --color-bg: #ffffff;
+  --color-ink: #263244;
+  --color-ink-soft: #4b5b70;
+  --color-muted: #5d6d7e;
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-soft: #eaf3ff;
+  --color-lime: #eaf500;
+  --color-lime-soft: #f9fbdc;
+  --color-surface: #f7f9fc;
+  --color-border: #e3e8ee;
+  --color-border-strong: #c4cdd8;
+  --color-lemon: #eaf500;
+  --color-lemon-hover: #dce600;
+  --radius-btn: 12px;
+  --radius-card: 16px;
+  --radius-tile: 14px;
+  --radius-input: 12px;
+  --container: 1328px;
+  --shadow-card: 0 6px 24px rgb(38 50 68 / 6%);
+  --shadow-pop: 0 10px 32px rgb(38 50 68 / 12%);
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+}
+
+body { font-weight: 450; }
+h1, h2, h3 { text-wrap: balance; }
+a { text-underline-offset: .22em; }
+input, textarea { caret-color: var(--color-primary); }
+::selection { background: var(--color-lemon); color: var(--color-ink); }
+* { scrollbar-color: #bdc8d5 #f7f9fc; scrollbar-width: thin; }
+.container { padding-inline: 32px; }
+.btn { font-weight: 750; gap: 10px; transition: background-color 160ms, transform 160ms, box-shadow 160ms; }
+.btn--primary { background: var(--color-lemon); color: var(--color-ink); border-color: transparent; box-shadow: none; }
+.btn--primary:hover:not(:disabled) { background: var(--color-lemon-hover); color: var(--color-ink); box-shadow: 0 4px 12px rgb(38 50 68 / 8%); }
+.btn--primary:active:not(:disabled) { transform: scale(.98); }
+.btn:disabled { opacity: .65; cursor: not-allowed; }
+.btn--outline { background: white; border-color: var(--color-border-strong); }
+.skip-link { background: var(--color-lemon); color: var(--color-ink); }
+:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 4px; }
+
+/* Фирменный знак и общая навигация. */
+.brand { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; }
+/* #fef102 — жёлтый из оригинального файла логотипа, не из палитры сайта */
+.brand__mark { flex: none; color: #fef102; width: 27px; height: 36px; }
+.brand__name { font-size: 23px; line-height: 1.2; font-weight: 800; letter-spacing: -.035em; color: var(--color-ink); }
+.logo { font-family: var(--font); letter-spacing: normal; flex-shrink: 0; }
+.header { background: #fff; box-shadow: none; border-bottom: 1px solid var(--color-border); }
+.header__utility { display: flex; justify-content: space-between; align-items: center; min-height: 30px; font-size: 12px; color: var(--color-ink-soft); border-bottom: 1px solid #f1f3f6; }
+.header__utility > span:first-child { display: flex; align-items: center; gap: 6px; }
+.header__inner { gap: 22px; min-height: 80px; }
+/* Каталог и поиск одной высоты: их верх и низ стоят на одной линии. */
+.header__catalog-btn { height: 46px; padding-inline: 20px; }
+.header__search { min-width: 120px; }
+.search__input { height: 46px; background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: none; font-size: 14px; }
+.search__input::placeholder { color: var(--color-muted); opacity: 1; }
+.search__input:focus { border-color: var(--color-primary); background: white; }
+/* Свой крестик «стереть» вместо браузерного: тот в каждом браузере свой и
+   на телефоне слишком мелкий. */
+.search__input { padding-right: 44px; }
+.search__input::-webkit-search-cancel-button, .search__input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; }
+.search__clear { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 50%; background: transparent; color: var(--color-muted); cursor: pointer; }
+.search__clear:hover { background: var(--color-border); color: var(--color-ink); }
+.header__actions { gap: 14px; }
+.header__actions .icon-btn { width: auto; min-width: 46px; height: 50px; display: flex; flex-direction: column; gap: 4px; border: 0; background: transparent; }
+.header__actions .icon-btn:hover { color: var(--color-primary); }
+.header__action-label { font-size: 12px; font-weight: 600; }
+/* «Вы здесь» — тот же знак, что в нижней навигации телефона: тёмная жирная
+   подпись и залитая лимоном иконка. Синий цвет «в корзине что-то есть»
+   убран: об этом уже говорит число, а три значка стояли разного цвета. */
+.header__actions .icon-btn[aria-current='page'] { color: var(--color-ink); }
+.header__actions .icon-btn[aria-current='page'] .header__action-label { font-weight: 750; }
+.header__actions .icon-btn[aria-current='page'] svg { fill: var(--color-lemon); }
+.icon-btn__badge, .bottom-nav__badge { background: var(--color-lemon); color: var(--color-ink); }
+/* Белое кольцо отделяет лимонное число от иконки, когда иконка открытого
+   раздела сама залита лимоном. */
+.icon-btn__badge { box-shadow: 0 0 0 2px #fff; }
+/* Число прижато к самой иконке, а не к краю подписи: у «Избранного» и
+   «Корзины» подписи разной ширины, и числа стояли на разном расстоянии. */
+.header__actions .icon-btn__badge { top: 0; right: auto; left: calc(50% + 3px); }
+/* Переключатель языка — одна тихая надпись «RU | КЫР», без цветной плашки:
+   текущий язык тёмный и жирный, другой — серый. Синяя плашка спорила
+   с лимонным фирменным цветом и выглядела как отдельная кнопка. */
+.lang-switch { background: transparent; padding: 0; gap: 0; }
+.lang-switch__item { font-size: 12px; padding: 6px 8px; border-radius: 6px; font-weight: 600; letter-spacing: .02em; }
+/* Черта между языками — короткая, в высоту букв, а не во всю кнопку. */
+.lang-switch__item + .lang-switch__item { position: relative; border-radius: 0; }
+.lang-switch__item + .lang-switch__item::before { content: ''; position: absolute; left: 0; top: 50%; width: 1px; height: 14px; transform: translateY(-50%); background: var(--color-border-strong); }
+.lang-switch__item[aria-current] { background: transparent; color: var(--color-ink); font-weight: 800; box-shadow: none; }
+.lang-switch__item:not([aria-current]):hover { color: var(--color-ink); }
+
+/* Разделы — всегда одной строкой. Раньше при нехватке места каждое название
+   ломалось на две строки («Стиральные / машины»). Теперь на широком экране
+   разделы расходятся по всей ширине, а где не влезают — строка листается
+   вбок, и край, за которым есть ещё разделы, мягко растворяется.
+   Поля −14px/4px: текст первого раздела стоит ровно под логотипом, а рамке
+   фокуса есть место внутри прокрутки. */
+.header__subnav { min-height: 40px; gap: 4px; border-top: 0; justify-content: space-between; margin-inline: -14px; padding: 2px 4px 8px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+.header__subnav::-webkit-scrollbar { display: none; }
+.subnav__link { position: relative; flex: none; white-space: nowrap; padding: 8px 10px; font-size: 12px; color: var(--color-ink); font-weight: 600; }
+.subnav__link:focus-visible { outline-offset: 0; }
+.subnav__link--kitchen { color: var(--color-primary); font-weight: 700; }
+/* Открытый раздел — лимонный штрих под названием, как в нижней навигации. */
+.subnav__link[aria-current='page'] { font-weight: 750; }
+.subnav__link[aria-current='page']::after { content: ''; position: absolute; left: 10px; right: 10px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--color-lemon); }
+@property --subnav-fade-start { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@property --subnav-fade-end { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@keyframes subnav-fade {
+  0% { --subnav-fade-start: 0px; --subnav-fade-end: 48px; }
+  6%, 94% { --subnav-fade-start: 48px; --subnav-fade-end: 48px; }
+  100% { --subnav-fade-start: 48px; --subnav-fade-end: 0px; }
+}
+/* Растворение края работает от прокрутки самой строки. Если строке нечего
+   листать, анимация не действует и края остаются чёткими. Браузер без этой
+   возможности просто листает строку без растворения. */
+@supports (animation-timeline: scroll()) {
+  .header__subnav {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--subnav-fade-start), #000 calc(100% - var(--subnav-fade-end)), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 var(--subnav-fade-start), #000 calc(100% - var(--subnav-fade-end)), transparent);
+    animation: subnav-fade linear both;
+    animation-timeline: scroll(self inline);
+  }
+}
+.header__city { display: none; }
+
+/* Объём товара остаётся главным визуальным акцентом. */
+.hero3d { --scene-h: 568px; --scroll-range: 470px; margin-top: 20px; }
+.hero3d__sticky { border-radius: 16px; background: #eaf3ff; }
+.hero3d__stage { perspective: none; transform: none; }
+.hero3d__sky { background: linear-gradient(115deg, #f5faff 10%, #eaf3ff 60%, #e2efff 100%); transform: none; }
+.hero3d__grid, .hero3d__orb, .hero3d__eyebrow { display: none; }
+.hero3d__frame { left: auto; right: 0; top: 4%; width: 49%; max-width: 560px; transform: none; }
+.hero3d__content { width: 54%; max-width: none; padding: 42px 22px 42px 48px; justify-content: center; }
+.hero3d__title { font-family: var(--font); font-size: clamp(38px, 4.25vw, 61px); font-weight: 800; letter-spacing: -.04em; line-height: 1.09; max-width: 11ch; color: #182b43; }
+.hero3d__phases { min-height: 99px; margin-top: 20px; }
+.hero3d__subtitle { margin-top: 0; max-width: 30ch; font-size: 17px; line-height: 1.55; }
+.hero3d__hint { margin-top: 14px; max-width: 40ch; font-size: 12px; color: #285493; font-weight: 650; }
+.hero3d__phase-label { font-size: 24px; margin-top: 0; }
+.hero3d__phase-note { font-size: 16px; }
+.hero3d__cta { margin-top: 12px; min-height: 50px; height: auto; padding-block: 13px; }
+.hero3d__demo { color: #526279; font-size: 11px; max-width: 43ch; line-height: 1.5; }
+
+/* Категории, товары и информационные разделы. */
+.section { margin-top: 60px; }
+.section__head { margin-bottom: 24px; align-items: baseline; }
+.section__title { font-size: clamp(24px, 2.5vw, 32px); font-weight: 800; letter-spacing: -.025em; }
+.section__cta { font-size: 13px; font-weight: 700; }
+.cat-tiles { gap: 14px; }
+.cat-tile { background: var(--color-surface); border: 0; padding: 22px 12px; color: var(--color-ink); font-size: 13px; box-shadow: none; gap: 16px; }
+.cat-tile:hover { background: #eef3f9; color: var(--color-ink); transform: translateY(-2px); box-shadow: none; }
+.cat-tile__icon { background: transparent; width: 64px; height: 64px; padding: 4px; }
+.product-grid { gap: 22px; }
+.card { background: #fff; border: 1px solid var(--color-border); box-shadow: none; border-radius: 16px; overflow: hidden; transition: border-color 160ms, transform 160ms; }
+.card:hover { border-color: #b6c2d1; transform: translateY(-3px); box-shadow: none; }
+.card__media { background: #f7f9fc; aspect-ratio: 1.15; }
+.card__media-link { padding: 34px; }
+.card__body { padding: 19px; }
+.card__cat { color: var(--color-muted); font-size: 11px; font-weight: 550; }
+.card__name { font-size: 15px; line-height: 1.5; font-weight: 700; min-height: 45px; }
+.card__price { font-size: 22px; font-weight: 800; letter-spacing: -.025em; font-variant-numeric: tabular-nums; }
+.card__old-price { color: var(--color-muted); font-size: 12px; }
+/* Красным — только когда есть скидка. Обычная цена красной быть не должна:
+   иначе красный перестаёт что-либо значить. */
+.card__price--sale, .purchase__price--sale { color: var(--color-danger); }
+.card__actions { margin-top: 20px; }
+.card__actions .btn { font-size: 13px; }
+.badge { border-radius: 6px; font-weight: 700; }
+.badge--hit { color: #344000; background: #eff5b2; }
+.badge--new { color: #24508c; background: #eaf3ff; }
+/* Две фирменные витрины: лимонная — программа SBonus+, синяя — рассрочка.
+   Мягкий переход цвета и тонкая рамка вместо плоской заливки: блок выглядит
+   как витрина магазина, а не как цветной прямоугольник. */
+.promo-grid { gap: 24px; }
+.promo { padding: 36px; border-radius: 20px; box-shadow: none; border: 1px solid transparent; }
+.promo--lime {
+  background: radial-gradient(120% 130% at 0% 0%, #fdffe4 0%, #f4f9c8 46%, #eaf3a8 100%);
+  border-color: #e4eda9;
+  color: var(--color-ink);
+}
+.promo--soft {
+  background: radial-gradient(120% 130% at 100% 0%, #ffffff 0%, #f3f7fc 45%, #e7eefa 100%);
+  border-color: #dde5f2;
+  color: var(--color-ink);
+}
+.promo__watermark { color: #c9d84a; }
+.promo--soft .promo__watermark { color: #7d9bd0; }
+.promo .brand__mark { height: 44px; width: 32px; }
+.promo .brand__name { font-size: 32px; }
+.brand__plus { margin-left: 2px; color: var(--color-primary); font-weight: 800; }
+.promo__subheading { font-size: 21px; line-height: 1.4; margin-top: 18px; font-weight: 750; }
+.promo__title { font-size: 24px; letter-spacing: -.025em; margin-top: 14px; }
+.promo__note { color: #4b5b3a; font-size: 14px; line-height: 1.7; max-width: 54ch; }
+.promo--soft .promo__note { color: var(--color-ink-soft); }
+.promo__tag { background: rgba(255, 255, 255, .82); color: #5c6b12; box-shadow: 0 1px 4px rgba(38, 50, 68, .07); }
+.promo__tag--soft { color: #2b5391; }
+.promo-facts li { background: rgba(255, 255, 255, .8); box-shadow: 0 2px 10px rgba(38, 50, 68, .05); }
+.promo-facts strong { color: var(--color-ink); }
+.promo-facts span { color: #55663f; }
+.promo-steps__num { background: #fff; color: var(--color-primary); box-shadow: 0 2px 8px rgba(40, 84, 147, .12); }
+.promo--soft .btn--outline { background: #fff; border-color: #d3dceb; }
+.night-banner { background: #eaf3ff; color: var(--color-ink); border: 0; border-radius: 14px; padding: 28px 32px; }
+/* Белый кружок под значком: на светло-голубом блоке он иначе теряется. */
+.night-banner__icon { background: #fff; border-radius: 50%; color: #285493; box-shadow: 0 2px 8px rgba(40, 84, 147, 0.14); }
+.night-banner__title { color: var(--color-ink); font-size: 19px; }
+.night-banner__text { color: #405878; font-size: 14px; max-width: 85ch; }
+.info-strip { border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); border-radius: 0; background: white; padding-block: 28px; box-shadow: none; }
+.info-item { background: transparent; border: 0; }
+.info-item__icon { color: var(--color-ink); background: #f8facf; border-radius: 8px; }
+.info-item__title { font-size: 13px; }
+.info-item__note { color: var(--color-muted); font-size: 12px; }
+.footer { margin-top: 48px; background: var(--color-surface); color: var(--color-ink); border-top: 1px solid var(--color-border); padding-block: 46px 24px; }
+/* Кнопка «Связаться» висит в правом нижнем углу и закрывала подпись в подвале. */
+@media (min-width: 901px) { .footer { padding-bottom: 92px; } }
+.footer__text, .footer__note { color: var(--color-ink-soft); font-size: 12px; line-height: 1.8; }
+.footer__title { color: var(--color-ink); }
+.footer__bottom { color: var(--color-muted); border-color: var(--color-border); font-size: 11px; }
+/* Три колонки: о магазине · разделы · контакты. Правый край не доходит до
+   плавающей кнопки «Спросить» — подвал снизу и так с запасом (92px). */
+@media (min-width: 901px) { .footer__grid { grid-template-columns: 1.3fr .7fr 1.1fr; gap: 48px; } }
+.footer__nav { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.footer__nav a { color: var(--color-ink); font-size: 13px; font-weight: 600; }
+.footer__nav a:hover { color: var(--color-primary); }
+.footer__legal { display: inline-flex; flex-wrap: wrap; gap: 6px 16px; }
+.footer__legal a { color: var(--color-muted); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.footer__legal a:hover { color: var(--color-ink); }
+@media (max-width: 900px) { .footer__nav { flex-direction: row; flex-wrap: wrap; gap: 8px 18px; } }
+/* Строка «Принимаем к оплате» — значки банков в ряд над копирайтом. */
+.footer__pay { margin-top: 34px; padding-top: 20px; border-top: 1px solid var(--color-border); display: flex; align-items: center; justify-content: space-between; gap: 14px 24px; flex-wrap: wrap; }
+.footer__pay-label { font-size: 12px; font-weight: 700; color: var(--color-ink); }
+.footer__pay-label span { font-weight: 500; color: var(--color-ink-soft); }
+.footer__pay-row { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.footer__pay-row img { display: block; width: 28px; height: 28px; border-radius: 8px; object-fit: contain; background: #fff; border: 1px solid var(--color-border); }
+.footer__pay-row span { display: inline-flex; align-items: center; height: 28px; padding: 0 8px; border-radius: 8px; background: #fff; border: 1px solid var(--color-border); font-size: 11px; font-weight: 650; }
+.footer__bottom { margin-top: 18px; }
+.bottom-nav { border-top: 1px solid var(--color-border); box-shadow: none; background: #fff; }
+/* Активный раздел: чистый лимонный штрих сверху, тёмная подпись и залитая
+   лимоном иконка. Заливки плитки нет: прямоугольник во всю высоту панели
+   читался как «нажатая кнопка», а не как «я здесь». Ярким лимоном плитку
+   тем более не заливаем — этим цветом на сайте помечены кнопки действия
+   («В корзину», «Оформить»). */
+.bottom-nav__item.is-active { color: var(--color-ink); font-weight: 750; }
+.bottom-nav__item.is-active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 30px;
+  height: 3px;
+  transform: translateX(-50%);
+  border-radius: 0 0 3px 3px;
+  background: var(--color-lemon);
+}
+.bottom-nav__item.is-active svg { fill: #eaf500; stroke: #263244; }
+.bottom-nav__item { font-size: 10px; gap: 5px; }
+.purchase { box-shadow: none; border: 0; }
+/* Лупа в углу главного фото и окно увеличения для фото из 1С. */
+.gallery__main--zoom { position: relative; }
+.gallery__zoom-hint { position: absolute; right: 14px; bottom: 14px; width: 40px; height: 40px; border-radius: 50%; background: #fff; border: 1px solid var(--color-border); color: var(--color-ink); display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(38, 50, 68, .12); pointer-events: none; }
+.zoom-overlay__stage--photo { overflow: auto; touch-action: pinch-zoom; -webkit-overflow-scrolling: touch; cursor: zoom-in; background: #fff; scrollbar-width: none; }
+.zoom-overlay__stage--photo::-webkit-scrollbar { display: none; }
+.zoom-overlay__img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
+.zoom-overlay__stage--photo.is-zoomed { cursor: zoom-out; align-items: flex-start; justify-content: flex-start; }
+.zoom-overlay__stage--photo.is-zoomed { display: block; }
+.zoom-overlay__stage--photo.is-zoomed .zoom-overlay__img { max-width: none; max-height: none; width: 200%; height: auto; }
+.gallery__pinch { width: 100%; height: 100%; }
+/* На телефоне лупы нет — фото приближают двумя пальцами прямо на странице */
+@media (hover: none) and (pointer: coarse) {
+  .gallery__zoom-hint { display: none; }
+  .gallery__main--zoom { cursor: default; }
+}
+@media (max-width: 600px) {
+  .zoom-overlay { padding: 10px; }
+  .zoom-overlay__stage { width: 100%; height: min(80vh, 640px); border-radius: 20px; padding: 10px; }
+  .zoom-overlay__close { top: 16px; right: 16px; width: 44px; height: 44px; }
+}
+/* «Поделиться» под «Спросить в WhatsApp»: та же форма, нейтральный цвет. */
+.purchase__share { margin-top: 8px; }
+.purchase__share:hover:not(:disabled) { background: var(--color-surface); border-color: var(--color-ink-soft); }
+/* Круглый значок «поделиться» — в ленте, рядом с сердечком. */
+.share-btn { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--color-border); background: #fff; color: var(--color-ink); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: background-color var(--speed) var(--ease), color var(--speed) var(--ease); }
+.share-btn:hover { background: var(--color-surface); }
+.share-btn.is-done { color: #1a8f4a; border-color: #b8e5c8; }
+.summary { box-shadow: none; border: 1px solid var(--color-border); }
+.page-title { letter-spacing: -.035em; }
+.reveal, .reveal.is-in { opacity: 1; transform: none; transition: none; will-change: auto; }
+
+@media (min-width: 901px) and (max-width: 1150px) {
+  .header__inner { gap: 14px; }
+  .brand__name { font-size: 20px; }
+  .header__actions { gap: 6px; }
+  .hero3d { --scene-h: 530px; }
+  .hero3d__content { padding-left: 32px; }
+  .hero3d__frame { top: 12%; }
+}
+
+@media (max-width: 900px) {
+  .container { padding-inline: 20px; }
+  /* «По всему Кыргызстану» на телефоне занимал целую строку над логотипом
+     и ничего не давал нажать. Строка убрана — витрина начинается выше;
+     про доставку сказано в карточке товара и в подвале. */
+  .header__utility { display: none; }
+  .header__inner { display: flex; flex-wrap: wrap; gap: 12px; padding-block: 13px; }
+  .header .logo { flex: 1; }
+  .brand__name { font-size: 22px; }
+  .brand__mark { width: 24px; height: 31px; }
+  .header__catalog-btn { display: none; }
+  .header__actions { gap: 6px; }
+  .header__actions > .icon-btn { display: none; }
+  .header__search { display: block; order: 3; flex: 0 0 100%; width: 100%; }
+  .search__input { height: 43px; }
+  .header__subnav { display: none; }
+  .hero3d { --scene-h: 596px; --scroll-range: 400px; margin-top: 12px; }
+  .hero3d__sticky { border-radius: 14px; }
+  .hero3d__content { width: 100%; height: auto; padding: 26px 24px 0; max-width: none; justify-content: flex-start; }
+  .hero3d__title { font-size: 36px; line-height: 1.12; max-width: 16ch; }
+  .hero3d__phases { margin-top: 12px; min-height: 56px; }
+  .hero3d__subtitle { font-size: 13px; max-width: 38ch; }
+  .hero3d__hint { font-size: 10px; margin-top: 7px; }
+  .hero3d__phase-label { font-size: 17px; }
+  .hero3d__phase-note { font-size: 13px; }
+  .hero3d__cta { margin-top: 10px; min-height: 44px; padding: 11px 18px; font-size: 12px; }
+  .hero3d__demo { font-size: 10px; margin-top: 8px; max-width: 42ch; }
+  .hero3d__frame { left: auto; right: 0; top: auto; bottom: -6px; width: 100%; max-width: 310px; transform: none; }
+  .section { margin-top: 38px; }
+  .section__head { gap: 16px; margin-bottom: 19px; }
+  .section__title { font-size: 25px; }
+  .section__cta { font-size: 11px; }
+  .cat-tiles { grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
+  .cat-tile { font-size: 11px; padding: 17px 6px; gap: 10px; }
+  .cat-tile__icon { width: 48px; height: 48px; }
+  .product-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+  .card__media { aspect-ratio: 1; }
+  .card__media-link { padding: 20px; }
+  .card__body { padding: 13px 11px; }
+  .card__name { font-size: 12px; min-height: 54px; }
+  .card__cat { font-size: 10px; }
+  .card__price { font-size: 17px; }
+  .card__prices { gap: 4px; flex-wrap: wrap; }
+  .card__old-price { font-size: 10px; }
+  .card__actions { margin-top: 15px; }
+  .card__actions .btn { font-size: 11px; padding-inline: 8px; }
+  .promo-grid { grid-template-columns: 1fr; gap: 16px; }
+  .promo { padding: 26px; }
+  .promo__title { font-size: 22px; }
+  .promo__note { font-size: 13px; }
+  .night-banner { padding: 24px; }
+  .night-banner__title { font-size: 17px; }
+  .night-banner__text { font-size: 13px; }
+  .info-strip { grid-template-columns: 1fr; gap: 0; padding-block: 8px; }
+  .info-item { padding: 15px 4px; border-bottom: 1px solid var(--color-border); }
+  .info-item:last-child { border-bottom: 0; }
+  .info-item > div { min-width: 0; }
+  .info-item__note { overflow-wrap: normal; }
+  .footer { margin-top: 34px; padding-top: 32px; }
+}
+
+/* Планшет и компьютер (от 601px): три колонки, плитка лежит строкой —
+   значок слева, название справа. Стоячие плитки были почти пустыми (мелкий
+   значок посреди большого поля), а на компьютере девять категорий ложились
+   в 6 + 3 с полупустым вторым рядом. Три на три — ровный блок без хвоста.
+   Блок стоит ПОСЛЕ телефонного (max-width: 900px) и содержит только плитки
+   категорий: однажды сюда попали телефонные правила карточек, и на
+   компьютере «Новинки» встали в две колонки. */
+@media (min-width: 601px) {
+  .cat-tiles { grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+  .cat-tile { flex-direction: row; justify-content: flex-start; gap: 14px; padding: 14px 18px; font-size: 14px; font-weight: 700; text-align: left; }
+  .cat-tile__icon { width: 48px; height: 48px; padding: 0; flex: none; }
+  .cat-tile__icon svg { width: 48px; height: 48px; }
+}
+
+@media (min-width: 540px) and (max-width: 900px) {
+  .hero3d { --scene-h: 540px; }
+  .hero3d__content { width: 65%; }
+  .hero3d__frame { max-width: 340px; }
+}
+
+@media (max-width: 370px) {
+  .container { padding-inline: 14px; }
+  .brand__name { font-size: 20px; }
+  .hero3d__content { padding-inline: 18px; }
+  .hero3d__title { font-size: 32px; }
+  .hero3d__frame { max-width: 286px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero3d { height: var(--scene-h); }
+  .hero3d__sticky { position: relative; top: 0; }
+  .hero3d__frame { transform: none; }
+  .btn, .card, .cat-tile { transition: none; }
+  .card:hover, .cat-tile:hover, .btn:active:not(:disabled) { transform: none; }
+}
+
+/* Доступные размеры элементов управления и нативный выбор клиента. */
+:root { --h-btn-sm: 44px; --color-story-surface: #f3f2ed; --color-story-mobile: #f7f8f5; --color-story-copy: #435064; }
+.lang-switch__item { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+.chip, .swatch, .icon-btn, .fav-btn { min-height: 44px; min-width: 44px; }
+.btn { min-height: 44px; }
+.section__cta { min-height: 44px; display: inline-flex; align-items: center; }
+.install-demo__choice { cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
+.install-demo__choice input { accent-color: var(--color-primary); }
+.install-demo__choice:has(:checked) { border-color: var(--color-primary); background: var(--color-primary-soft); }
+.install-demo__choice:has(:focus-visible) { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+@media (max-width: 900px) {
+  .field input, .field textarea, .field select { min-height: 44px; }
+  /* iPhone увеличивает всю страницу, как только трогаешь поле, где текст мельче
+     16 пикселей, — и покупатель вместо поиска получает съехавший экран.
+     Поэтому 16 здесь не про красоту, а про то, чтобы экран не прыгал.
+     Классы перечислены поимённо: у них выше вес, иначе своё правило останется. */
+  input,
+  textarea,
+  select,
+  .search__input,
+  .field input,
+  .field textarea,
+  .field select,
+  .price-range__field input {
+    font-size: 16px;
+  }
+}
+.card__price--request, .purchase__price--request { color: var(--color-ink-soft); font-size: 15px; font-weight: 700; letter-spacing: 0; }
+.gallery__thumb--photo { padding: 4px; background: #fff; overflow: hidden; }
+.gallery__thumb--photo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
+/* ---------- Страница заказа ---------- */
+.order-status { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; padding: 6px 12px; border-radius: 999px; font-size: 14px; font-weight: 700; background: var(--color-surface); color: var(--color-ink-soft); }
+.order-status__dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.order-status--awaiting_payment { background: var(--color-lemon-soft, #f9fbdc); color: #7a6a00; }
+.order-status--paid, .order-status--in_1c { background: #e7f6ee; color: var(--color-success); }
+.order-status--cancelled, .order-status--failed { background: #fdecea; color: var(--color-danger); }
+.order-page__note { color: var(--color-ink-soft); font-size: 15px; line-height: 1.55; margin-bottom: 16px; }
+.order-page__actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.checkout-pay { white-space: normal; text-align: center; line-height: 1.3; min-height: 52px; }

@@ -225,3 +225,33 @@ describe('«Ок» после напоминания — молчим (случ�
     expect(question.silent).not.toBe(true)
   })
 })
+
+describe('«Хорошо спасибо» после прощания — не заказ (случай Юлдуз)', () => {
+  it('OFFER — только вопрос; «хорошо спасибо» — не согласие; в WhatsApp молчим', async () => {
+    expect(OFFER.test('Если позже решите приобрести — пишите, быстро оформим!')).toBe(false)
+    expect(OFFER.test('Буйрутма бересизби?')).toBe(true)
+    expect(OFFER.test('Оформим? Напишите «да» — оформлю прямо здесь.')).toBe(true)
+    expect(AFFIRM.test('Хорошо спасибо')).toBe(false)
+    expect(AFFIRM.test('Хорошо')).toBe(true)
+    expect(AFFIRM.test('Ок, рахмат')).toBe(false)
+    const { respond } = await import('@/lib/assistant/respond')
+    const wa = { key: 'wa:bye-1', orderSource: 'Заказ из WhatsApp', leadChannel: 'whatsapp' as const, known: { phone: '+996555000002', name: 'Юлдуз' } }
+    const turns = [
+      { role: 'assistant' as const, text: 'Юлдуз, вы смотрели Стиральная машина FLAGMAN — 21 400 сом. Ещё актуально?' },
+      { role: 'user' as const, text: 'Извините, мы передумали' },
+      { role: 'assistant' as const, text: 'Понял вас, Юлдуз, ничего страшного. Если позже решите приобрести технику — пишите, всегда поможем выбрать и быстро оформим!' },
+      { role: 'user' as const, text: 'Хорошо спасибо' },
+    ]
+    const r = await respond(wa, turns, 'ru', null, undefined, [product.id])
+    expect(r.silent).toBe(true)
+  })
+  it('«Ок» после «Чем могу помочь? …вариант.» — молчим; после «Как вас зовут?» — нет', async () => {
+    const { respond } = await import('@/lib/assistant/respond')
+    const wa = { key: 'wa:ok-3', orderSource: 'Заказ из WhatsApp', leadChannel: 'whatsapp' as const, known: { phone: '+996555000003' } }
+    expect((await respond(wa, [{ role: 'assistant', text: 'Чем могу помочь? Если ищете технику, подберу отличный вариант.' }, { role: 'user', text: 'Ок' }], 'ru', null)).silent).toBe(true)
+    expect((await respond({ ...wa, key: 'wa:ok-4' }, [{ role: 'assistant', text: 'Как вас зовут?' }, { role: 'user', text: 'Ок' }], 'ru', null)).silent).not.toBe(true)
+  })
+  it('кыргызский с русскими словами — кыргызский', () => {
+    expect(detectLang('Levo под заказ 5 же 5.2 кг алып келип бере аласынарбы?', 'ru')).toBe('ky')
+  })
+})

@@ -120,10 +120,16 @@ async def _journal(method: str, minutes: int = JOURNAL_MINUTES) -> list[dict]:
 
 
 def _journal_text(message: dict) -> str:
-    if message.get("typeMessage") == "textMessage":
+    kind = message.get("typeMessage")
+    if kind == "textMessage":
         return str(message.get("textMessage") or "")
-    if message.get("typeMessage") in ("extendedTextMessage", "quotedMessage"):
+    if kind in ("extendedTextMessage", "quotedMessage"):
         return str((message.get("extendedTextMessage") or {}).get("text") or message.get("textMessage") or "")
+    # Напоминания о рассрочке идут с кнопкой «Оплатить онлайн» — текст лежит внутри.
+    if kind in ("interactiveButtons", "buttonsMessage", "templateMessage", "listMessage"):
+        body = message.get(kind) or {}
+        if isinstance(body, dict):
+            return str(body.get("contentText") or body.get("text") or body.get("title") or "")
     return ""
 
 

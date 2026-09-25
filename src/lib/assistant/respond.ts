@@ -72,17 +72,20 @@ export async function respond(
 }
 
 /** Короткое «понял/спасибо» на трёх языках, эмодзи и знаки — без единого вопроса. */
-const ACK =
-  /^[\s\p{P}\p{S}]*(ок|ok|окей|okay|хорошо|ладно|понял|поняла|понятно|спасибо|благодарю|макул|болду|болот|түшүндүм|тушундум|рахмат|ырахмат|жарайт|хоп|хуп|яхши|яхшимисиз|тушундим|раxмат|катта рахмат|тушунарли|майли|mayli|xop|rahmat|yaxshi|tushundim|ha|ха|да|ооба|ok\.?|👍|👌|🙏|✅|❤️|👍🏻|👍🏼|👍🏽|🤝)?[\s\p{P}\p{S}]*$/iu
+const ACK_WORD =
+  '(ок|ok|окей|okay|хорошо|ладно|понял|поняла|понятно|спасибо|благодарю|макул|болду|болот|түшүндүм|тушундум|рахмат|ырахмат|чоң рахмат|катта рахмат|жарайт|хоп|хуп|яхши|тушундим|тушунарли|майли|mayli|xop|rahmat|yaxshi|tushundim|ha|ха|да|ооба|вам|сизге|сизга|👍|👌|🙏|✅|❤️|👍🏻|👍🏼|👍🏽|🤝)'
+/** До трёх «ок/спасибо/рахмат» подряд, с любыми знаками и эмодзи вокруг. */
+const ACK = new RegExp(`^[\\s\\p{P}\\p{S}]*(?:${ACK_WORD}[\\s\\p{P}\\p{S}]*){0,3}$`, 'iu')
 
 function isAcknowledgement(turns: ChatTurn[]): boolean {
   const last = turns[turns.length - 1]
   if (!last || last.role !== 'user') return false
   const text = last.text.trim()
   if (!text || text.length > 40 || !ACK.test(text)) return false
-  // На вопрос («оформим?», «как вас зовут?») «да»/«ок» — это ответ, его разбирают выше или модель.
+  // Бот ждёт ответа, только если его последняя фраза — вопрос («Как вас зовут?»).
+  // «Чем могу помочь? Если ищете технику — подберу.» вопросом не считается.
   const before = [...turns].reverse().find((t) => t.role === 'assistant')
-  return !before || !before.text.includes('?')
+  return !before || !before.text.trim().endsWith('?')
 }
 
 const STAFF_ACK = {

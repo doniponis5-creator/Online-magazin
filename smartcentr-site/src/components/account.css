@@ -1,0 +1,200 @@
+/* Вход по коду WhatsApp, кабинет покупателя и бонусы в оформлении заказа */
+
+.login-card { display: grid; gap: 14px; max-width: 420px; }
+.login-card form, .login-card__wa-step { display: grid; gap: 14px; }
+.login-card__title { font-size: 20px; margin: 0; }
+.login-card__hint { margin: 0; color: var(--color-ink-soft); line-height: 1.6; }
+/* Значок Telegram или WhatsApp рядом с подсказкой: видно, где искать код */
+.login-card__channel { display: flex; align-items: flex-start; gap: 8px; }
+.login-card__channel svg { flex: 0 0 auto; margin-top: 2px; }
+.login-card__code { font-size: 26px; letter-spacing: 0.4em; text-align: center; font-variant-numeric: tabular-nums; }
+/* Вход через WhatsApp: зелёная кнопка — главный путь, код в Telegram — запасной */
+.login-card__wa { background: #25d366; color: #fff; gap: 10px; }
+.login-card__wa:hover:not(:disabled) { background: #1fb85a; }
+.login-card__wa svg { background: #fff; border-radius: 50%; padding: 2px; box-sizing: content-box; }
+.login-card__other { justify-self: center; font-size: 14px; }
+.login-card__or { display: flex; align-items: center; gap: 12px; color: var(--color-muted); font-size: 13px; }
+.login-card__or::before, .login-card__or::after { content: ''; flex: 1; height: 1px; background: var(--color-border); }
+.login-card__wait { display: flex; align-items: center; gap: 10px; color: var(--color-ink-soft); }
+.login-card__spinner { width: 18px; height: 18px; border: 2px solid var(--color-border-strong); border-top-color: #25d366; border-radius: 50%; animation: login-spin 0.9s linear infinite; flex: 0 0 auto; }
+@keyframes login-spin { to { transform: rotate(360deg); } }
+.login-card__manual { margin: 0; font-size: 13px; color: var(--color-muted); line-height: 1.5; }
+.login-card__manual code { display: inline-block; margin-top: 4px; padding: 6px 10px; border-radius: 10px; background: var(--color-surface); color: var(--color-ink); font-size: 15px; font-weight: 650; letter-spacing: 0.04em; }
+.login-card__welcome { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--color-lime-soft); font-weight: 650; display: flex; align-items: flex-start; gap: 10px; }
+.login-card__welcome-icon { flex: 0 0 auto; margin-top: 1px; }
+.login-card__links { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+
+.link-btn { background: none; border: 0; padding: 6px 0; color: var(--color-ink-soft); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.link-btn:hover { color: var(--color-ink); }
+.link-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* Карточка после регистрации — единственный авторский момент кабинета:
+   поднимается, значок «выстреливает» искрами, сумма набегает от нуля. */
+.hello { margin-top: 24px; padding: 24px; border-radius: 16px; background: #fff; border: 1px solid var(--color-border); box-shadow: 0 12px 28px -12px rgba(38, 50, 68, 0.18); display: grid; gap: 8px; animation: hello-in 520ms cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+.hello__badge { position: relative; width: 56px; height: 56px; border-radius: 16px; background: var(--color-lime); color: var(--color-ink); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 8px; animation: hello-pop 640ms cubic-bezier(0.34, 1.56, 0.64, 1) 120ms both; }
+.hello__sparks { position: absolute; inset: 0; pointer-events: none; }
+.hello__spark { position: absolute; left: 50%; top: 50%; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; opacity: 0; transform: rotate(var(--a)) translateY(0); animation: hello-spark 900ms cubic-bezier(0.2, 0.8, 0.3, 1) calc(240ms + var(--i) * 18ms) both; }
+.hello__spark--0 { background: var(--color-lime); }
+.hello__spark--1 { background: var(--color-primary); width: 5px; height: 5px; }
+.hello__spark--2 { background: #9cc4ff; border-radius: 2px; }
+.account-loyalty .hello__title, .hello__title { margin: 0; font-size: 15px; font-weight: 700; line-height: 1.4; color: var(--color-ink-soft); letter-spacing: 0; }
+.hello__amount { margin: 0; display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 10px; }
+.hello__sum { font-size: clamp(34px, 5vw, 44px); font-weight: 800; line-height: 1.05; letter-spacing: -0.03em; color: var(--color-ink); font-variant-numeric: tabular-nums; }
+.hello__yours { font-size: 18px; font-weight: 700; color: var(--color-ink); }
+.hello__text { margin: 4px 0 0; font-size: 15px; line-height: 1.55; color: var(--color-ink-soft) !important; max-width: 46ch; }
+.hello__cta { margin-top: 12px; gap: 8px; }
+@keyframes hello-in { from { opacity: 0; transform: translateY(14px) scale(0.985); } to { opacity: 1; transform: none; } }
+@keyframes hello-pop { from { transform: scale(0.6); } to { transform: scale(1); } }
+@keyframes hello-spark { 0% { opacity: 0; transform: rotate(var(--a)) translateY(0) scale(0.6); } 18% { opacity: 1; } 100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(-1 * var(--d))) scale(1); } }
+@media (max-width: 640px) { .hello { padding: 20px; } }
+@media (prefers-reduced-motion: reduce) { .hello, .hello__badge, .hello__spark { animation: none; } .hello__spark { display: none; } }
+
+.account-welcome { margin-top: 20px; padding: 14px 16px; border-radius: 12px; background: var(--color-surface); font-weight: 700; color: var(--color-ink); display: flex; align-items: flex-start; gap: 10px; }
+.account-welcome__icon { flex: 0 0 auto; margin-top: 1px; }
+.account-welcome__note { font-size: 14px; margin-top: 8px; }
+.account-balance { display: grid; gap: 4px; margin: 20px 0 12px; }
+.account-balance__label { color: var(--color-ink-soft); font-weight: 600; }
+.account-balance__value { font-size: clamp(34px, 5vw, 48px); line-height: 1.05; font-variant-numeric: tabular-nums; }
+.account-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+.account-actions .btn { margin-top: 0; }
+
+/* Вход по Face ID — предлагаем первым, до формы с кодом */
+.account-faceid { display: grid; gap: 8px; margin: 16px 0 20px; }
+.account-faceid .btn { margin-top: 0; }
+.account-access__second { margin-top: 36px; }
+/* «Вход нужен только для бонусов» — чтобы никто не решил, что без входа магазин закрыт */
+.account-optional { margin: 12px 0 16px; padding: 12px 14px; border-radius: 12px; background: var(--color-surface); color: var(--color-ink); font-size: 15px; line-height: 1.5; }
+.account-access > .login-card { margin-top: 16px; }
+
+.account-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.account-list li > a,
+.account-list li > div { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px 14px; border: 1px solid var(--color-border); border-radius: 12px; }
+.account-list li > a:hover { border-color: var(--color-border-strong); }
+.account-list span { display: grid; gap: 2px; min-width: 0; }
+.account-list small { color: var(--color-muted); font-size: 13px; overflow-wrap: anywhere; }
+.account-list__sum { text-align: right; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.account-list__sum.is-plus { color: var(--color-success); }
+.account-list__sum.is-minus { color: var(--color-ink); }
+
+/* Оформление заказа */
+/* Вход при оформлении заказа — сворачиваемое предложение: заказать можно и без него */
+.checkout-login { margin-bottom: 24px; }
+.checkout-login[open] { display: grid; gap: 12px; }
+.checkout-login summary { cursor: pointer; }
+.checkout-login summary::marker { color: var(--color-ink-soft); }
+.checkout-login p { margin: 0; color: var(--color-ink-soft); }
+.checkout-user { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; color: var(--color-ink-soft); }
+.checkout-bonus { display: grid; gap: 10px; padding: 16px; border-radius: 12px; background: var(--color-lime-soft); }
+.checkout-bonus__head { display: flex; justify-content: space-between; gap: 12px; font-weight: 700; }
+.checkout-bonus p { margin: 0; color: var(--color-ink-soft); }
+.checkout-bonus__row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.checkout-bonus__row label { display: inline-flex; align-items: center; gap: 8px; font-weight: 650; cursor: pointer; }
+.checkout-bonus__row input[type='number'] { width: 130px; }
+.order-row--bonus strong { color: var(--color-success); }
+
+/* ── Быстрый вход (Face ID) ─────────────────────────────────────────────
+   Виден только внутри приложения для телефона: в браузере такого нет.
+   Владельцу нужен ответ на два вопроса — включено ли и работает ли. */
+.account-lock {
+  background: var(--color-card, #fff);
+  border: 1px solid var(--color-border, #e3e8ee);
+  border-radius: 18px;
+  padding: 20px;
+  margin-top: 16px;
+}
+
+.account-lock h2 {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  margin: 0;
+}
+
+.account-lock__state {
+  margin-top: 10px;
+  font-size: 15px;
+}
+
+.account-lock__state .is-on {
+  color: #1f8a4c;
+}
+
+.account-lock__state .is-off {
+  color: var(--color-muted, #a8b4c4);
+}
+
+.account-lock__note {
+  margin-top: 8px;
+  color: var(--color-ink-soft, #5d6d7e);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.account-lock__ok {
+  margin-top: 12px;
+  color: #1f8a4c;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* Покупатель отказался от уведомлений: окно iPhone второй раз не покажет,
+   поэтому объясняем словами, где их включить. */
+.account-push-off {
+  margin-top: 12px;
+  color: var(--color-ink-soft, #5d6d7e);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+/* ── Удаление учётной записи ────────────────────────────────────────────
+   Apple требует, чтобы человек мог удалить запись там же, где её завёл.
+   Блок стоит в самом низу кабинета и спрашивает подтверждение: случайное
+   нажатие не должно стирать карту и вход. */
+.account-wipe {
+  background: var(--color-card, #fff);
+  border: 1px solid var(--color-border, #e3e8ee);
+  border-radius: 18px;
+  padding: 20px;
+  margin-top: 16px;
+}
+
+.account-wipe h2 {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  margin: 0;
+}
+
+.account-wipe__text {
+  margin-top: 10px;
+  color: var(--color-ink-soft, #5d6d7e);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.account-wipe__kept {
+  margin-top: 8px;
+  color: var(--color-muted, #a8b4c4);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.account-wipe__ask {
+  margin-top: 12px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.account-wipe__start {
+  color: #b3261e;
+  border-color: #e9c9c6;
+}
+
+.btn--danger {
+  background: #b3261e;
+  color: #fff;
+}
+
+.btn--danger:hover {
+  background: #9c211a;
+}

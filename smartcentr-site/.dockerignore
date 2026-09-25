@@ -1,0 +1,27 @@
+node_modules
+.next
+.git
+.env
+.env.*
+!.env.example
+test-results
+playwright-report
+assets-src
+reference
+review
+integrations
+e2e
+__tests__
+scripts/1c-export/output
+public/Бренд лого
+.agent
+.agents
+.claude
+.claude-install
+.codex
+.cursor
+.gemini
+.zcode
+.impeccable
+deploy/site/backups
+*.log

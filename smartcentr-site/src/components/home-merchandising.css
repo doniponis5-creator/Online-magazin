@@ -1,0 +1,264 @@
+/* Витринные подборки в существующей бело-лимонной системе. */
+/* Между «Товаром дня» и «Специально для вас» зазор шире, чем между карточками
+   внутри ряда: иначе четыре карточки читались как один ряд. */
+.daily-selection { display: grid; grid-template-columns: 1fr 3fr; gap: 44px; }
+.daily-selection__card { position: relative; display: flex; flex: 1; }
+.daily-selection__card .card { width: 100%; }
+.daily-selection__card .card__badges { display: none; }
+/* Наклейки в одну строку в верхнем левом углу, не лезут на товар. */
+/* Наклейкам оставлено место до сердечка (right: 12px + 44px): в узкой
+   колонке фото «−24%» переносится под «Товар дня», а не ложится на кнопку. */
+.daily-selection__tags { position: absolute; top: 12px; left: 12px; z-index: 3; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; pointer-events: none; }
+.daily-selection__label { background: var(--color-lemon); color: var(--color-ink); border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 800; letter-spacing: .01em; }
+/* Скидка всегда ПОД «Товаром дня», столбиком: в одну строку они упирались
+   в сердечко на узкой колонке фото. */
+.daily-selection__discount { background: var(--color-danger); color: #fff; border-radius: 8px; padding: 6px 9px; font-size: 12px; font-weight: 800; }
+/* Лишнюю высоту забирает фото, а не пустота между названием и ценой:
+   текстовая часть компактная, картинка растягивается до высоты ряда. */
+.daily-selection__card .card__media { flex: 1 1 auto; }
+.daily-selection__card .card__body { flex: 0 0 auto; }
+.daily-selection__card .card__name { min-height: auto; }
+.daily-selection__card .card__prices { margin-top: 6px; }
+/* Описания здесь не показываем — как в «Хитах»: ровные плитки, цена на виду. */
+.daily-selection .card__desc { display: none; }
+.daily-selection section { min-width: 0; display: flex; flex-direction: column; }
+.daily-selection .section__head { min-height: 68px; margin-bottom: 16px; }
+.daily-selection .section__title { font-size: clamp(22px, 2.2vw, 30px); }
+.daily-selection__cards { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px; }
+.daily-selection .card { height: auto; flex: 1; }
+.daily-selection__cards { flex: 1; }
+.daily-selection .section__head { flex-shrink: 0; }
+.daily-selection__day .card { border-color: var(--color-lemon); background: var(--color-lemon-soft, #f9fbdc); }
+.daily-selection__day .card__media { background: #f9fbdc; }
+.daily-selection .card__media { aspect-ratio: 1.3; }
+.daily-selection .card__body { padding: 16px; }
+.campaign-band { display: flex; align-items: center; justify-content: space-between; gap: 28px; padding: 26px 32px; border-radius: 16px; background: var(--color-primary-soft); }
+.campaign-band h2 { font-size: clamp(22px,2.4vw,30px); line-height: 1.2; letter-spacing: -.025em; }
+.campaign-band p { margin-top: 9px; color: var(--color-ink-soft); font-size: 14px; }
+.campaign-band .btn { flex-shrink: 0; }
+/* Баннер распродажи: фото товара с самой большой скидкой слева, текст, кнопка. */
+/* Крупный формат: фото товара 230px, заголовок как у разделов, цена крупная.
+   Мелкая полоска на широком экране терялась между «Товаром дня» и «Хитами». */
+.campaign-band--sale { gap: 36px; padding: 28px 40px 28px 28px; min-height: 250px; background: linear-gradient(100deg, #fff1ec, #fff8f6 60%, #fff); border: 1px solid #f5ded9; border-radius: 20px; }
+.campaign-band--sale h2 { font-size: clamp(26px, 2.6vw, 36px); }
+.campaign-band--sale .btn { min-height: 56px; padding-inline: 28px; font-size: 16px; }
+.campaign-band__media { position: relative; flex: none; width: 230px; height: 230px; border-radius: 18px; background: #fff; overflow: hidden; display: block; box-shadow: 0 8px 24px rgba(214, 64, 45, .10); }
+.campaign-band__media .product-placeholder { width: 100%; height: 100%; padding: 14px; }
+.campaign-band__media .product-image-photo { width: 100%; height: 100%; }
+.campaign-band__chip { position: absolute; top: 12px; left: 12px; z-index: 3; background: var(--color-danger); color: #fff; border-radius: 8px; padding: 7px 11px; font-weight: 800; font-size: 16px; letter-spacing: .01em; }
+.campaign-band__text { flex: 1; min-width: 0; }
+/* Название и цена — крупнее и темнее обычной подписи: на баннере это главное. */
+.campaign-band__text p { font-size: 18px; line-height: 1.5; color: var(--color-ink); font-weight: 600; margin-top: 12px; }
+.campaign-band__text p b { color: var(--color-danger); font-weight: 800; font-size: 24px; white-space: nowrap; }
+.campaign-band__text p s { color: var(--color-muted); font-weight: 500; font-size: 15px; margin-left: 6px; white-space: nowrap; }
+.campaign-band__text .promo-timer { margin-top: 10px; }
+.campaign-band__fade { animation: campaign-fade 320ms ease-out both; }
+@keyframes campaign-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .campaign-band__fade { animation: none; } }
+/* Планшет и узкое окно (651–1100px): в строку не помещается — фото ужималось,
+   заголовок ломался по слову, кнопка наезжала на текст. Здесь сетка: фото
+   слева, текст справа, кнопка под текстом. */
+@media (min-width: 651px) and (max-width: 1100px) {
+  .campaign-band--sale { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 12px 24px; align-items: center; padding: 22px 26px; min-height: 0; }
+  .campaign-band--sale .campaign-band__media { width: 170px; height: 170px; grid-row: 1 / 3; }
+  .campaign-band--sale h2 { font-size: 26px; }
+  .campaign-band__text p { font-size: 16px; }
+  .campaign-band__text p b { font-size: 20px; }
+  .campaign-band--sale .btn { grid-column: 2; justify-self: start; min-height: 48px; font-size: 14px; }
+}
+.merch-note { color: var(--color-muted); font-size: 13px; margin: -12px 0 20px; }
+
+/* Баннер «Смотрите товары как Reels»: голубой, чтобы не путался с розовым
+   баннером распродажи; справа три фото товаров веером. */
+.reels-entry { display: flex; align-items: center; justify-content: space-between; gap: 32px; padding: 28px 36px; border-radius: 20px; background: linear-gradient(100deg, #eef3ff, #f7f9ff 60%, #fff); border: 1px solid #dfe7f8; }
+.reels-entry__text { flex: 1; min-width: 0; }
+.reels-entry__eyebrow { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--color-primary); }
+.reels-entry h2 { margin-top: 8px; font-size: clamp(24px, 2.4vw, 32px); line-height: 1.2; letter-spacing: -.025em; }
+.reels-entry p { margin-top: 10px; font-size: 15px; line-height: 1.5; color: var(--color-ink-soft); max-width: 48ch; }
+.reels-entry .btn { margin-top: 18px; min-height: 52px; padding-inline: 24px; font-size: 15px; }
+.reels-entry__stack { position: relative; flex: none; width: 300px; height: 230px; display: block; }
+.reels-entry__card { position: absolute; width: 150px; height: 200px; border-radius: 18px; background: #fff; border: 1px solid var(--color-border); box-shadow: 0 12px 30px rgba(38, 50, 68, .12); overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 14px; transition: transform var(--speed) var(--ease); }
+.reels-entry__card img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.reels-entry__card:nth-child(1) { left: 0; top: 30px; transform: rotate(-8deg); z-index: 1; }
+.reels-entry__card:nth-child(2) { left: 75px; top: 0; z-index: 3; }
+.reels-entry__card:nth-child(3) { left: 150px; top: 30px; transform: rotate(8deg); z-index: 2; }
+.reels-entry__stack:hover .reels-entry__card:nth-child(2) { transform: translateY(-6px); }
+@media (max-width: 1100px) {
+  .reels-entry { padding: 24px; gap: 20px; }
+  .reels-entry__stack { width: 240px; height: 190px; }
+  .reels-entry__card { width: 120px; height: 160px; }
+  .reels-entry__card:nth-child(2) { left: 60px; }
+  .reels-entry__card:nth-child(3) { left: 120px; }
+}
+@media (max-width: 650px) {
+  .reels-entry { flex-direction: column-reverse; align-items: stretch; padding: 20px; gap: 6px; border-radius: 16px; }
+  .reels-entry__stack { width: 100%; height: 180px; }
+  .reels-entry__card { width: 120px; height: 160px; }
+  .reels-entry__card:nth-child(1) { left: calc(50% - 130px); top: 16px; }
+  .reels-entry__card:nth-child(2) { left: calc(50% - 60px); top: 0; }
+  .reels-entry__card:nth-child(3) { left: calc(50% + 10px); top: 16px; }
+  .reels-entry h2 { font-size: 24px; }
+  .reels-entry p { font-size: 14px; }
+  .reels-entry .btn { width: 100%; justify-content: center; margin-top: 14px; }
+}
+.hit-mosaic { display: grid; grid-template-columns: 1.5fr 1fr 1fr .85fr .85fr .95fr; grid-template-rows: repeat(2,minmax(285px,auto)); gap: 16px; }
+.hit-mosaic__item { min-width: 0; }
+.hit-mosaic__item .card { height: 100%; }
+.hit-mosaic__item--0 { grid-column: 1; grid-row: 1 / 3; }
+.hit-mosaic__item--1 { grid-column: 2; grid-row: 1; }
+.hit-mosaic__item--2 { grid-column: 3; grid-row: 1; }
+.hit-mosaic__item--3 { grid-column: 4 / 6; grid-row: 1; }
+.hit-mosaic__item--4 { grid-column: 2 / 4; grid-row: 2; }
+.hit-mosaic__item--5 { grid-column: 4; grid-row: 2; }
+.hit-mosaic__item--6 { grid-column: 5; grid-row: 2; }
+/* Лишнюю высоту забирает картинка, а не текст. Иначе в высокой плитке между
+   описанием и ценой зияла пустая полоса в пол-карточки. */
+.hit-mosaic__item .card__media { flex: 1 1 auto; }
+.hit-mosaic__item .card__body { flex: 0 0 auto; }
+.hit-mosaic__item--0 .card__media { min-height: 330px; aspect-ratio: auto; }
+/* Высокая плитка: фото занимает всю область, а не квадрат посередине —
+   иначе над и под товаром зияли пустые полосы в треть карточки. */
+.hit-mosaic__item--0 .card__media-link { position: absolute; inset: 0; aspect-ratio: auto; padding: 28px 24px; display: flex; align-items: center; justify-content: center; }
+.hit-mosaic__item--0 .card__media-link .product-placeholder { width: 100%; height: 100%; }
+.hit-mosaic__item--0 .card__media-link .product-image-photo { width: 100%; height: 100%; }
+.hit-mosaic__item .card__body { padding: 14px; }
+.hit-mosaic__item .card__name { font-size: 13px; min-height: 40px; }
+.hit-mosaic__item .card__price { font-size: clamp(17px,1.65vw,23px); }
+.hit-mosaic__item .card__media { aspect-ratio: 1.3; }
+.hit-mosaic__item .card__media-link { padding: 24px 14px; }
+.hit-mosaic__item .card__actions { margin-top: 12px; }
+.hit-mosaic__item .card__actions .btn { padding-inline: 8px; font-size: 12px; }
+.hit-mosaic__item--3 .card, .hit-mosaic__item--4 .card { display: grid; grid-template-columns: 44% 56%; }
+.hit-mosaic__item--3 .card__media, .hit-mosaic__item--4 .card__media { height: 100%; aspect-ratio: auto; }
+/* Широкие плитки: текст стоит рядом с картинкой во всю высоту, выравниваем
+   его по центру колонки. */
+.hit-mosaic__item--3 .card__body, .hit-mosaic__item--4 .card__body { justify-content: center; }
+.hit-mosaic__item--3 .card__prices, .hit-mosaic__item--4 .card__prices { margin-top: 10px; }
+/* В «Хитах» описания нет: обрезанные «…» строки шумели и толкали цену вниз,
+   плитки выходили неровными. Здесь смотрят на фото, название и цену. */
+.hit-mosaic__item .card__desc { display: none; }
+.hit-mosaic__rail { grid-column: 6; grid-row: 1 / 3; display: grid; grid-template-rows: repeat(4,1fr); gap: 14px; }
+.hit-mosaic__rail a { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 14px 8px; gap: 10px; border: 1px solid var(--color-border); border-radius: 14px; text-align: center; font-size: 12px; font-weight: 650; background: #fff; }
+.hit-mosaic__rail a:hover { background: var(--color-primary-soft); }
+.hit-mosaic__rail svg { width: 68px; height: 68px; }
+/* Лента брендов. Стоит на месте, пока логотипы помещаются; не помещаются —
+   едет по кругу. По краям лёгкое затухание, чтобы логотипы не обрезались
+   ножом, а уходили за край. */
+.brand-rail { overflow: hidden; border-top: 1px solid var(--color-border); border-left: 1px solid var(--color-border); }
+.brand-rail.is-running { -webkit-mask-image: linear-gradient(90deg, transparent, #000 48px, #000 calc(100% - 48px), transparent); mask-image: linear-gradient(90deg, transparent, #000 48px, #000 calc(100% - 48px), transparent); }
+.brand-rail__track { display: flex; }
+.brand-rail__set { display: flex; flex: 1 0 auto; }
+.brand-rail.is-running .brand-rail__set { flex: none; }
+.brand-rail.is-running .brand-rail__track { width: max-content; animation-name: brand-rail; animation-timing-function: linear; animation-iteration-count: infinite; }
+/* Палец или мышь на ленте — остановились, иначе по логотипу не попасть */
+.brand-rail:hover .brand-rail__track, .brand-rail:active .brand-rail__track, .brand-rail:focus-within .brand-rail__track { animation-play-state: paused; }
+@keyframes brand-rail { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .brand-rail.is-running .brand-rail__track { animation: none; } }
+
+.brand-rail__set > a, .brand-rail__set > span { min-width: 0; min-height: 88px; padding: 12px; display: flex; align-items: center; justify-content: center; font-size: clamp(14px,1.5vw,21px); border-right: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
+/* Ширина плитки одна и та же в обоих режимах. Если бы в покое она была
+   другой, включение бега меняло бы ширину ленты, измерение давало бы обратный
+   ответ — и лента переключалась бы между режимами без остановки. */
+.brand-rail:not(.is-running) .brand-rail__set > a { flex: 1 1 clamp(150px, 17vw, 215px); }
+.brand-rail.is-running .brand-rail__set > a, .brand-rail.is-running .brand-rail__set > span { width: clamp(150px, 17vw, 215px); flex: none; }
+.brand-rail__set > a { color: #5d6d7e; transition: background-color 160ms ease-out, color 160ms ease-out; }
+.brand-rail__set > a:hover { background: var(--color-surface); }
+.brand-rail__set > a:hover .brand-logo { color: var(--brand-color); }
+.brand-rail__set > a:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+.brand-logo { display: inline-flex; align-items: center; gap: .4em; max-width: 100%; color: inherit; font-size: inherit; line-height: 1; white-space: nowrap; transition: color 160ms ease-out; }
+.brand-logo__mark { width: 1.25em; height: 1.25em; flex: none; }
+.brand-logo__word { overflow: hidden; text-overflow: ellipsis; letter-spacing: -.02em; }
+.brand-logo__word-light { font-weight: 450; }
+.brand-logo--image img { display: block; max-width: 100%; height: auto; transition: transform 160ms ease-out; }
+.brand-rail__set > a:hover .brand-logo--image img { transform: scale(1.04); }
+.sale-section__grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 20px; }
+.sale-section__item { position: relative; }
+.sale-section__item .card { height: 100%; }
+/* Процент скидки красный, а не лимонный: на распродаже он главное число
+   на карточке, а лимонный сливался с кнопкой «В корзину». */
+.sale-section__discount { position: absolute; top: 16px; left: 14px; z-index: 3; background: var(--color-danger); color: #fff; border-radius: 6px; padding: 5px 9px; font-weight: 800; font-size: 13px; letter-spacing: .01em; box-shadow: 0 2px 8px rgba(214, 64, 45, .28); }
+.sale-section .card__badges { display: none; }
+.social-account { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.instagram-panel, .account-panel { padding: clamp(24px,3vw,40px); border-radius: 16px; }
+/* Текст слева, телефон справа: панель была наполовину пустой */
+.instagram-panel { background: var(--color-primary-soft); display: flex; flex-wrap: wrap; align-items: center; gap: 24px 28px; }
+.instagram-panel__text { flex: 1 1 200px; min-width: 0; }
+/* Внутри панели телефон меньше, чем на странице «О магазине»: иначе не влезает
+   рядом с текстом и сваливается под него, оставляя колонку пустой. */
+.instagram-panel .ig-phone { flex: none; margin-inline: auto; }
+.instagram-panel .ig-phone__frame { width: 210px; padding: 8px; border-radius: 30px; }
+.instagram-panel .ig-phone__shot { border-radius: 22px; }
+.instagram-panel .ig-phone__veil { border-radius: 30px; }
+.instagram-panel .ig-phone__veil img { width: 112px; height: 112px; margin-bottom: 10px; padding: 8px; }
+.instagram-panel .ig-phone__veil strong { font-size: 14px; }
+.account-panel { background: #f9fbdc; }
+.social-account h2 { font-size: clamp(25px,2.6vw,34px); letter-spacing: -.025em; line-height: 1.2; margin-top: 20px; }
+.social-account h2 span { display: block; }
+.social-account p { color: var(--color-ink-soft); font-size: 15px; line-height: 1.7; max-width: 40ch; margin: 18px 0 26px; }
+.instagram-panel__handle { display: flex; align-items: center; gap: 10px; width: fit-content; min-height: 44px; font-size: 22px; font-weight: 800; margin-bottom: 18px; }
+.account-panel .btn { margin-top: 10px; }
+.account-layout { display: grid; grid-template-columns: 1.05fr 1fr; gap: 32px; padding-top: 24px; }
+.account-loyalty { background: #f9fbdc; border-radius: 16px; padding: 32px; }
+.account-loyalty h2 { font-size: 30px; margin: 24px 0 12px; }
+.account-loyalty p, .account-access p { color: var(--color-ink-soft); line-height: 1.7; }
+.account-access { padding: 24px 0; }
+.account-access h2 { font-size: 24px; margin-bottom: 18px; }
+.account-access .btn { margin-top: 24px; }
+.account-links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+.account-links a { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 12px 18px; border: 1px solid var(--color-border); border-radius: 12px; font-weight: 650; }
+@media (max-width: 1100px) {
+ .hit-mosaic { grid-template-columns: repeat(4,minmax(0,1fr)); grid-template-rows: auto; }
+ .hit-mosaic__item--0 { grid-column: 1; grid-row: 1 / 3; }
+ .hit-mosaic__item--1 { grid-column: 2; grid-row: 1; }
+ .hit-mosaic__item--2 { grid-column: 3; grid-row: 1; }
+ .hit-mosaic__item--3 { grid-column: 2 / 4; grid-row: 2; }
+ .hit-mosaic__item--4 { grid-column: 1 / 3; grid-row: 3; }
+ .hit-mosaic__item--5 { grid-column: 3; grid-row: 3; }
+ .hit-mosaic__item--6 { grid-column: 4; grid-row: 3; }
+ .hit-mosaic__rail { grid-column: 4; grid-row: 1 / 3; }
+ .daily-selection { grid-template-columns: 1fr; }
+ .daily-selection__day .card { display: grid; grid-template-columns: 45% 55%; }
+ .daily-selection__day .card__media { height: 100%; aspect-ratio: auto; }
+ .daily-selection .section__head { min-height: auto; }
+ .sale-section__grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+}
+@media (max-width: 650px) {
+ .daily-selection__cards { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+ .daily-selection__cards > .card:last-child { grid-column: 1 / -1; display: grid; grid-template-columns: 45% 55%; }
+ .daily-selection__cards > .card:last-child .card__media { height: 100%; aspect-ratio: auto; }
+ .campaign-band { flex-direction: column; align-items: flex-start; padding: 24px; gap: 20px; }
+ .campaign-band--sale { padding: 16px; gap: 14px; min-height: 0; border-radius: 16px; }
+ .campaign-band--sale h2 { font-size: 24px; }
+ .campaign-band--sale .btn { min-height: 48px; font-size: 14px; }
+ .campaign-band--sale .campaign-band__media { width: 140px; height: 140px; }
+ .campaign-band__chip { font-size: 13px; padding: 5px 9px; }
+ .campaign-band__text p { font-size: 15px; }
+ .campaign-band__text p b { font-size: 18px; }
+ .campaign-band--sale .btn { width: 100%; justify-content: center; }
+ .hit-mosaic { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+ .hit-mosaic__item { grid-column: auto; grid-row: auto; }
+ .hit-mosaic__item--0, .hit-mosaic__item--3, .hit-mosaic__item--4 { grid-column: 1 / -1; }
+ .hit-mosaic__item--0 .card { display: grid; grid-template-columns: 45% 55%; }
+ .hit-mosaic__item--0 .card__media { min-height: 0; height: 100%; aspect-ratio: auto; }
+ .hit-mosaic__rail { grid-column: 1 / -1; grid-row: auto; grid-template-columns: repeat(4,minmax(0,1fr)); grid-template-rows: auto; gap: 8px; }
+ .hit-mosaic__rail a { font-size: 10px; padding: 12px 4px; }
+ .hit-mosaic__rail svg { width: 44px; height: 44px; }
+ .brand-rail__set > a, .brand-rail__set > span { min-height: 76px; font-size: 13px; padding: 8px; }
+ .brand-rail .brand-logo { flex-direction: column; gap: 7px; }
+ .brand-rail .brand-logo__mark { width: 20px; height: 20px; }
+ .sale-section__grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+ .social-account, .account-layout { grid-template-columns: 1fr; }
+ .account-loyalty { padding: 24px; }
+ .social-account p { font-size: 14px; }
+}
+
+/* Медиа заполняет выделенную ячейку, подпись и цены не обрезаются. */
+.daily-selection .card__media-link, .hit-mosaic .card__media-link, .sale-section .card__media-link { height: 100%; width: 100%; aspect-ratio: auto; }
+.daily-selection .card__prices, .hit-mosaic .card__prices, .sale-section .card__prices { flex-wrap: wrap; }
+.hit-mosaic .card__body { min-width: 0; }
+.sale-section__grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+@media (min-width: 651px) {
+ .sale-section .card { display: grid; grid-template-columns: 45% 55%; }
+ .sale-section .card__media { height: 100%; aspect-ratio: auto; min-height: 240px; }
+}
+.daily-selection h2, .hits-section h2 { scroll-margin-top: 90px; }

@@ -1,0 +1,612 @@
+/*
+ * Кнопка помощи в углу экрана.
+ *
+ * Кнопка одна на весь сайт: раньше их было две — чат слева, «Связаться»
+ * справа, — и в углах телефона было тесно. Цвет и повадки остались от
+ * «Связаться»: тот же лимонный, то же кольцо раз в несколько секунд, тот же
+ * угол. Покупатель, который привык к жёлтому кругу справа, найдёт его там же.
+ */
+
+.assistant {
+  position: fixed;
+  right: 16px;
+  bottom: calc(var(--bottomnav-h) + 16px + env(safe-area-inset-bottom, 0px));
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+@media (min-width: 901px) {
+  .assistant {
+    right: 24px;
+    bottom: 24px;
+  }
+}
+
+/* Подложка: ловит нажатие в любом пустом месте и слегка притемняет страницу,
+   чтобы переписка читалась поверх каталога. */
+.assistant__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(38, 50, 68, 0.24);
+  animation: assistant-veil 180ms ease-out both;
+}
+
+.assistant__panel,
+.assistant__button {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- Сама кнопка ---------- */
+
+.assistant__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 52px;
+  padding: 0 18px;
+  /* Белая кайма отделяет кнопку от того, над чем она проезжает: лимонным на
+     сайте помечены и «Выбрать технику», и «В корзину», и без каймы две
+     жёлтые кнопки сливались в одно пятно. */
+  border: 3px solid #fff;
+  border-radius: 26px;
+  /* Тот же лимонный, что у кнопок «Каталог» и «Оплатить»: фирменный цвет действия */
+  background: var(--color-lemon);
+  color: var(--color-ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(38, 50, 68, 0.22);
+  transition: transform 140ms ease-out, box-shadow 140ms ease-out, background-color 140ms ease-out;
+}
+
+.assistant__button:hover {
+  background: var(--color-lemon-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 26px rgba(38, 50, 68, 0.26);
+}
+
+.assistant__button:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 3px;
+}
+
+@media (max-width: 560px) {
+  /* На узком экране подпись убираем — остаётся круглая кнопка со значком */
+  .assistant__label {
+    display: none;
+  }
+
+  .assistant__button {
+    width: 52px;
+    padding: 0;
+    justify-content: center;
+  }
+}
+
+/* Кнопку легко не заметить в углу: раз в несколько секунд от неё расходится
+   мягкое кольцо, а значок коротко качается. Пока панель открыта — тишина. */
+.assistant__button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0 0 rgba(224, 212, 0, 0.75);
+  animation: assistant-ring 3.4s ease-out infinite;
+  pointer-events: none;
+}
+
+.assistant__icon {
+  display: inline-flex;
+  animation: assistant-nudge 3.4s ease-in-out infinite;
+}
+
+.assistant.is-open .assistant__button::after,
+.assistant.is-open .assistant__icon,
+.assistant__button:hover::after,
+.assistant__button:hover .assistant__icon {
+  animation: none;
+}
+
+@keyframes assistant-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(224, 212, 0, 0.75); }
+  60%  { box-shadow: 0 0 0 16px rgba(224, 212, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(224, 212, 0, 0); }
+}
+
+@keyframes assistant-nudge {
+  0%, 74%, 100% { transform: rotate(0); }
+  80%           { transform: rotate(-10deg); }
+  86%           { transform: rotate(8deg); }
+  92%           { transform: rotate(-3deg); }
+}
+
+@keyframes assistant-veil {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes assistant-open {
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Кому движение мешает — тому его нет, кнопка остаётся обычной. */
+@media (prefers-reduced-motion: reduce) {
+  .assistant__button::after,
+  .assistant__icon,
+  .assistant__panel,
+  .assistant__backdrop,
+  .assistant__people-body {
+    animation: none;
+  }
+}
+
+/* ---------- Панель ---------- */
+
+.assistant__panel {
+  transform-origin: bottom right;
+  animation: assistant-open 200ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  width: min(360px, calc(100vw - 32px));
+  max-height: min(78vh, 620px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 16px 40px rgba(38, 50, 68, 0.18);
+  overflow: hidden;
+}
+
+.assistant__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 10px;
+}
+
+.assistant__head button {
+  display: inline-flex;
+  padding: 4px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--color-ink-soft);
+  cursor: pointer;
+}
+
+.assistant__head button:hover {
+  background: var(--color-surface);
+}
+
+.assistant__note {
+  margin: 0;
+  padding: 0 16px 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--color-muted);
+}
+
+/* ---------- Переписка ---------- */
+
+.assistant__feed {
+  /* Уступает место, когда снизу разворачивают телефоны: иначе панель упиралась
+     в край экрана и номера оказывались за ним. */
+  flex: 1 1 auto;
+  min-height: 72px;
+  overflow-y: auto;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid var(--color-border);
+}
+
+.assistant__msg {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 92%;
+}
+
+.assistant__msg--user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.assistant__bubble {
+  padding: 9px 12px;
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.assistant__msg--assistant .assistant__bubble {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border-bottom-left-radius: 6px;
+}
+
+.assistant__msg--user .assistant__bubble {
+  background: var(--color-ink);
+  color: #fff;
+  border-bottom-right-radius: 6px;
+}
+
+.assistant__bubble--typing {
+  color: var(--color-muted);
+}
+
+.assistant__hits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.assistant__hits a {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  text-decoration: none;
+  color: var(--color-ink);
+  font-size: 13px;
+  background: #fff;
+  transition: border-color 140ms ease-out, background-color 140ms ease-out;
+}
+
+.assistant__hit-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  color: var(--color-ink);
+  font-size: 13px;
+}
+
+.assistant__hit-note {
+  flex-basis: 100%;
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.assistant__hits a:hover {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface);
+}
+
+.assistant__hit-name {
+  font-weight: 600;
+  flex: 1 1 auto;
+}
+
+.assistant__hit-price {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.assistant__hit-out {
+  flex-basis: 100%;
+  color: var(--color-danger);
+  font-size: 12px;
+}
+
+/* «Заказать» под карточкой: оформление прямо в чате, лимонный — цвет действия */
+.assistant__buy {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--color-lemon);
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 140ms ease-out;
+}
+
+.assistant__buy:hover:not(:disabled) {
+  background: var(--color-lemon-hover);
+}
+
+.assistant__buy:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Ссылка на оплату в ответе — кнопкой, а не длинным адресом */
+.assistant__paylink {
+  display: inline-block;
+  margin: 6px 0 2px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  background: var(--color-ink);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.assistant__bubble a:not(.assistant__paylink) {
+  color: var(--color-primary);
+  word-break: break-all;
+}
+
+/* ---------- Строка ввода ---------- */
+
+.assistant__form {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--color-border);
+  align-items: flex-end;
+}
+
+.assistant__attach {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  background: #fff;
+  color: var(--color-ink-muted, #666);
+  cursor: pointer;
+}
+
+.assistant__attach:hover:not(:disabled) {
+  color: var(--color-ink);
+}
+
+.assistant__attach:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.assistant__img {
+  display: block;
+  max-width: 220px;
+  max-height: 220px;
+  border-radius: 10px;
+  margin-bottom: 4px;
+}
+
+.assistant__form textarea {
+  flex: 1;
+  min-height: 42px;
+  max-height: 120px;
+  resize: none;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-input);
+  font: inherit;
+  font-size: 14px;
+  color: var(--color-ink);
+  background: #fff;
+}
+
+/* ---------- Телефон: чат во весь экран ----------
+   Окошко 360 px в углу на телефоне превращалось в полоску между шапкой и
+   клавиатурой. Здесь чат занимает ровно видимую часть экрана: --vv-h и
+   --vv-top ставит AssistantChat.tsx по visualViewport, поэтому строка ввода
+   всегда стоит прямо над клавиатурой. */
+@media (max-width: 560px) {
+  .assistant.is-open .assistant__panel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: var(--vv-top, 0px);
+    width: 100%;
+    height: var(--vv-h, 100dvh);
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    animation: assistant-sheet 220ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  }
+
+  .assistant.is-open .assistant__head {
+    padding-top: calc(12px + env(safe-area-inset-top, 0px));
+  }
+
+  .assistant.is-open .assistant__head button {
+    padding: 8px;
+    background: var(--color-surface);
+    border-radius: 50%;
+  }
+
+  /* Закрывает крестик в шапке, круглая кнопка поверх переписки только мешает */
+  .assistant.is-open .assistant__button,
+  .assistant.is-open .assistant__backdrop {
+    display: none;
+  }
+
+  .assistant.is-open .assistant__form {
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    background: #fff;
+  }
+
+  /* 16px и больше: иначе iPhone сам увеличивает страницу при нажатии на поле */
+  .assistant__form textarea {
+    font-size: 16px;
+  }
+
+  .assistant__people-body {
+    max-height: 28vh;
+  }
+}
+
+@keyframes assistant-sheet {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Страница под открытым чатом не прокручивается */
+html.assistant-lock,
+html.assistant-lock body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.assistant__form textarea:focus {
+  outline: none;
+  border-color: var(--color-ink);
+}
+
+.assistant__form .btn {
+  height: var(--h-btn-sm);
+  padding: 0 16px;
+  white-space: nowrap;
+}
+
+/* ---------- Живые люди ---------- */
+
+.assistant__people {
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.assistant__people-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 16px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--color-ink-soft);
+  cursor: pointer;
+  text-align: left;
+}
+
+.assistant__people-toggle strong {
+  color: var(--color-ink);
+}
+
+.assistant__people-toggle span:first-of-type {
+  flex: 1 1 auto;
+}
+
+.assistant__people-toggle:hover {
+  background: rgba(38, 50, 68, 0.04);
+}
+
+/* Галочка вниз; открыли — повернулась вверх. */
+.assistant__chev {
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform 180ms ease-out;
+}
+
+.assistant__people.is-open .assistant__chev {
+  transform: rotate(-135deg) translate(-2px, -2px);
+}
+
+.assistant__people-body {
+  padding: 0 16px 14px;
+  max-height: min(34vh, 260px);
+  overflow-y: auto;
+  animation: assistant-open 180ms ease-out both;
+}
+
+.assistant__hint {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-ink-soft);
+}
+
+.assistant__phones {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.assistant__phones li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.assistant__phones li:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.assistant__number {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.assistant__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.assistant__actions a {
+  display: inline-flex;
+  border-radius: 50%;
+  transition: opacity 140ms ease-out;
+}
+
+.assistant__actions a:hover {
+  opacity: 0.8;
+}
+
+.assistant__call {
+  width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: var(--color-ink);
+}
+
+.assistant__ig {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+  font-weight: 650;
+  color: var(--color-ink);
+  text-decoration: none;
+}
+
+.assistant__ig:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
