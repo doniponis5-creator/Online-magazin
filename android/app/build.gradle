@@ -57,6 +57,8 @@ dependencies {
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    // Мост Capacitor для страницы «Нет связи» (MainActivity.connectOfflinePage).
+    implementation "androidx.webkit:webkit:$androidxWebkitVersion"
     implementation project(':capacitor-android')
     // Вход по отпечатку и QR бонусной карты, который телефон рисует сам.
     implementation "androidx.biometric:biometric:1.1.0"
