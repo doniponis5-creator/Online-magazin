@@ -11628,16 +11628,16 @@
       "source_location": "L119"
     },
     {
-      "id": "smartcentr_site_src_components_kitchen_three_engine_kitchenengine_measureitem",
-      "label": ".measureItem()",
+      "id": "smartcentr_site_src_components_kitchen_three_engine_kitchenengine_measurecab",
+      "label": ".measureCab()",
       "_callable": true,
       "_origin": "ast",
       "community": 163,
       "community_name": "smartcentr-site/src/components/kitchen/three/engine.ts",
       "file_type": "code",
-      "norm_label": ".measureitem()",
+      "norm_label": ".measurecab()",
       "source_file": "smartcentr-site/src/components/kitchen/three/engine.ts",
-      "source_location": "L716"
+      "source_location": "L701"
     },
     {
       "id": "smartcentr_site_src_components_kitchen_three_sharpen_sharpenpass",
@@ -15823,7 +15823,7 @@
       "file_type": "code",
       "norm_label": "build_adopted()",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L988"
+      "source_location": "L999"
     },
     {
       "id": "integrations_1c_online_shop_build_extension_build_common_module",
@@ -15835,7 +15835,7 @@
       "file_type": "code",
       "norm_label": "build_common_module()",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L931"
+      "source_location": "L942"
     },
     {
       "id": "integrations_1c_online_shop_build_extension_build_configuration",
@@ -15847,7 +15847,7 @@
       "file_type": "code",
       "norm_label": "build_configuration()",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L1015"
+      "source_location": "L1026"
     },
     {
       "id": "integrations_1c_online_shop_build_extension_build_module",
@@ -15859,7 +15859,7 @@
       "file_type": "code",
       "norm_label": "build_module()",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L948"
+      "source_location": "L959"
     },
     {
       "id": "integrations_1c_online_shop_build_extension_build_processor",
@@ -15871,7 +15871,7 @@
       "file_type": "code",
       "norm_label": "build_processor()",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L891"
+      "source_location": "L902"
     },
     {
       "id": "integrations_1c_online_shop_build_extension_build_register",
@@ -15907,7 +15907,7 @@
       "file_type": "code",
       "norm_label": "build_role()",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L976"
+      "source_location": "L987"
     },
     {
       "id": "integrations_1c_online_shop_build_extension_build_subsystem",
@@ -15919,7 +15919,7 @@
       "file_type": "code",
       "norm_label": "build_subsystem()",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L962"
+      "source_location": "L973"
     },
     {
       "id": "integrations_1c_online_shop_build_extension_card_form",
@@ -15931,7 +15931,7 @@
       "file_type": "code",
       "norm_label": "card_form()",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L566"
+      "source_location": "L577"
     },
     {
       "id": "integrations_1c_online_shop_build_extension_editor_form",
@@ -15943,7 +15943,7 @@
       "file_type": "code",
       "norm_label": "editor_form()",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L685"
+      "source_location": "L696"
     },
     {
       "id": "integrations_1c_online_shop_build_extension_field_properties",
@@ -15991,7 +15991,7 @@
       "file_type": "code",
       "norm_label": "list_form()",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L460"
+      "source_location": "L467"
     },
     {
       "id": "integrations_1c_online_shop_build_extension_main",
@@ -16003,7 +16003,7 @@
       "file_type": "code",
       "norm_label": "main()",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L1047"
+      "source_location": "L1058"
     },
     {
       "id": "integrations_1c_online_shop_build_extension_panel_form",
@@ -16015,7 +16015,7 @@
       "file_type": "code",
       "norm_label": "panel_form()",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L755"
+      "source_location": "L766"
     },
     {
       "id": "integrations_1c_online_shop_build_extension_settings_form",
@@ -16027,7 +16027,7 @@
       "file_type": "code",
       "norm_label": "settings_form()",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L704"
+      "source_location": "L715"
     },
     {
       "id": "integrations_1c_online_shop_build_extension_t_bool",
@@ -22790,16 +22790,16 @@
       "source_location": "L1919"
     },
     {
-      "id": "smartcentr_site_src_components_kitchen_three_engine_kitchenengine_measurecab",
-      "label": ".measureCab()",
+      "id": "smartcentr_site_src_components_kitchen_three_engine_kitchenengine_measureitem",
+      "label": ".measureItem()",
       "_callable": true,
       "_origin": "ast",
       "community": 232,
       "community_name": ".setKitchen",
       "file_type": "code",
-      "norm_label": ".measurecab()",
+      "norm_label": ".measureitem()",
       "source_file": "smartcentr-site/src/components/kitchen/three/engine.ts",
-      "source_location": "L701"
+      "source_location": "L716"
     },
     {
       "id": "smartcentr_site_src_components_kitchen_three_engine_kitchenengine_placesun",
@@ -23111,7 +23111,7 @@
       "file_type": "code",
       "norm_label": ".attribute()",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L404"
+      "source_location": "L411"
     },
     {
       "id": "integrations_1c_online_shop_build_extension_form_button",
@@ -23123,7 +23123,7 @@
       "file_type": "code",
       "norm_label": ".button()",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L350"
+      "source_location": "L357"
     },
     {
       "id": "integrations_1c_online_shop_build_extension_form_check",
@@ -23147,7 +23147,7 @@
       "file_type": "code",
       "norm_label": ".command()",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L422"
+      "source_location": "L429"
     },
     {
       "id": "integrations_1c_online_shop_build_extension_form_events",
@@ -23171,7 +23171,7 @@
       "file_type": "code",
       "norm_label": ".group()",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L357"
+      "source_location": "L364"
     },
     {
       "id": "integrations_1c_online_shop_build_extension_form_html",
@@ -23183,7 +23183,7 @@
       "file_type": "code",
       "norm_label": ".html()",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L342"
+      "source_location": "L349"
     },
     {
       "id": "integrations_1c_online_shop_build_extension_form_init",
@@ -23219,7 +23219,7 @@
       "file_type": "code",
       "norm_label": ".page()",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L372"
+      "source_location": "L379"
     },
     {
       "id": "integrations_1c_online_shop_build_extension_form_pages",
@@ -23231,7 +23231,7 @@
       "file_type": "code",
       "norm_label": ".pages()",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L366"
+      "source_location": "L373"
     },
     {
       "id": "integrations_1c_online_shop_build_extension_form_parameter",
@@ -23243,7 +23243,7 @@
       "file_type": "code",
       "norm_label": ".parameter()",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L427"
+      "source_location": "L434"
     },
     {
       "id": "integrations_1c_online_shop_build_extension_form_picture",
@@ -23255,7 +23255,7 @@
       "file_type": "code",
       "norm_label": ".picture()",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L335"
+      "source_location": "L342"
     },
     {
       "id": "integrations_1c_online_shop_build_extension_form_render",
@@ -23267,7 +23267,7 @@
       "file_type": "code",
       "norm_label": ".render()",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L430"
+      "source_location": "L437"
     },
     {
       "id": "integrations_1c_online_shop_build_extension_form_table",
@@ -23279,7 +23279,7 @@
       "file_type": "code",
       "norm_label": ".table()",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L377"
+      "source_location": "L384"
     },
     {
       "id": "integrations_1c_online_shop_build_extension_form_table_addition",
@@ -23291,7 +23291,7 @@
       "file_type": "code",
       "norm_label": "addition()",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L378"
+      "source_location": "L385"
     },
     {
       "id": "integrations_1c_online_shop_build_extension_form_tail",
@@ -39640,7 +39640,7 @@
       "source_location": "L122"
     },
     {
-      "id": "integrations_1c_online_shop_build_extension_rationale_461",
+      "id": "integrations_1c_online_shop_build_extension_rationale_468",
       "label": "\u0421\u043f\u0438\u0441\u043e\u043a \u0442\u043e\u0432\u0430\u0440\u043e\u0432: \u0431\u044b\u0441\u0442\u0440\u044b\u0435 \u043f\u0440\u0430\u0432\u043a\u0438 \u0432 \u0442\u0430\u0431\u043b\u0438\u0446\u0435, \u0434\u0432\u043e\u0439\u043d\u043e\u0439 \u0449\u0435\u043b\u0447\u043e\u043a \u2014 \u043a\u0430\u0440\u0442\u043e\u0447\u043a\u0430 \u0441 \u0444\u043e\u0442\u043e.",
       "_origin": "ast",
       "community": 2,
@@ -39648,10 +39648,10 @@
       "file_type": "rationale",
       "norm_label": "\u0441\u043f\u0438\u0441\u043e\u043a \u0442\u043e\u0432\u0430\u0440\u043e\u0432: \u0431\u044b\u0441\u0442\u0440\u044b\u0435 \u043f\u0440\u0430\u0432\u043a\u0438 \u0432 \u0442\u0430\u0431\u043b\u0438\u0446\u0435, \u0434\u0432\u043e\u0438\u043d\u043e\u0438 \u0449\u0435\u043b\u0447\u043e\u043a \u2014 \u043a\u0430\u0440\u0442\u043e\u0447\u043a\u0430 \u0441 \u0444\u043e\u0442\u043e.",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L461"
+      "source_location": "L468"
     },
     {
-      "id": "integrations_1c_online_shop_build_extension_rationale_567",
+      "id": "integrations_1c_online_shop_build_extension_rationale_578",
       "label": "\u041a\u0430\u0440\u0442\u043e\u0447\u043a\u0430 \u0442\u043e\u0432\u0430\u0440\u0430: \u0444\u043e\u0442\u043e \u0441\u043b\u0435\u0432\u0430 (\u043f\u0440\u043e\u0441\u043c\u043e\u0442\u0440 + \u0441\u043f\u0438\u0441\u043e\u043a), \u043d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438 \u0441\u0430\u0439\u0442\u0430 \u0441\u043f\u0440\u0430\u0432\u0430.",
       "_origin": "ast",
       "community": 2,
@@ -39659,10 +39659,10 @@
       "file_type": "rationale",
       "norm_label": "\u043a\u0430\u0440\u0442\u043e\u0447\u043a\u0430 \u0442\u043e\u0432\u0430\u0440\u0430: \u0444\u043e\u0442\u043e \u0441\u043b\u0435\u0432\u0430 (\u043f\u0440\u043e\u0441\u043c\u043e\u0442\u0440 + \u0441\u043f\u0438\u0441\u043e\u043a), \u043d\u0430\u0441\u0442\u0440\u043e\u0438\u043a\u0438 \u0441\u0430\u0438\u0442\u0430 \u0441\u043f\u0440\u0430\u0432\u0430.",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L567"
+      "source_location": "L578"
     },
     {
-      "id": "integrations_1c_online_shop_build_extension_rationale_686",
+      "id": "integrations_1c_online_shop_build_extension_rationale_697",
       "label": "\u0420\u0435\u0434\u0430\u043a\u0442\u043e\u0440 \u0444\u043e\u0442\u043e: HTML-\u043f\u043e\u043b\u0435 \u0441 \u0445\u043e\u043b\u0441\u0442\u043e\u043c (\u043e\u0431\u0440\u0435\u0437\u043a\u0430, \u043c\u0430\u0441\u0448\u0442\u0430\u0431, \u043f\u043e\u0432\u043e\u0440\u043e\u0442, \u0431\u0435\u043b\u044b\u0439 \u0444\u043e\u043d).",
       "_origin": "ast",
       "community": 2,
@@ -39670,10 +39670,10 @@
       "file_type": "rationale",
       "norm_label": "\u0440\u0435\u0434\u0430\u043a\u0442\u043e\u0440 \u0444\u043e\u0442\u043e: html-\u043f\u043e\u043b\u0435 \u0441 \u0445\u043e\u043b\u0441\u0442\u043e\u043c (\u043e\u0431\u0440\u0435\u0437\u043a\u0430, \u043c\u0430\u0441\u0448\u0442\u0430\u0431, \u043f\u043e\u0432\u043e\u0440\u043e\u0442, \u0431\u0435\u043b\u044b\u0438 \u0444\u043e\u043d).",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L686"
+      "source_location": "L697"
     },
     {
-      "id": "integrations_1c_online_shop_build_extension_rationale_705",
+      "id": "integrations_1c_online_shop_build_extension_rationale_716",
       "label": "\u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438 \u0437\u0430\u043a\u0430\u0437\u043e\u0432 \u0441 \u0441\u0430\u0439\u0442\u0430: \u043a\u0443\u0434\u0430 1\u0421 \u043e\u0444\u043e\u0440\u043c\u043b\u044f\u0435\u0442 \u043e\u043f\u043b\u0430\u0447\u0435\u043d\u043d\u044b\u0435 \u0437\u0430\u043a\u0430\u0437\u044b.",
       "_origin": "ast",
       "community": 2,
@@ -39681,10 +39681,10 @@
       "file_type": "rationale",
       "norm_label": "\u043d\u0430\u0441\u0442\u0440\u043e\u0438\u043a\u0438 \u0437\u0430\u043a\u0430\u0437\u043e\u0432 \u0441 \u0441\u0430\u0438\u0442\u0430: \u043a\u0443\u0434\u0430 1\u0441 \u043e\u0444\u043e\u0440\u043c\u043b\u044f\u0435\u0442 \u043e\u043f\u043b\u0430\u0447\u0435\u043d\u043d\u044b\u0435 \u0437\u0430\u043a\u0430\u0437\u044b.",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L705"
+      "source_location": "L716"
     },
     {
-      "id": "integrations_1c_online_shop_build_extension_rationale_756",
+      "id": "integrations_1c_online_shop_build_extension_rationale_767",
       "label": "\u041f\u0430\u043d\u0435\u043b\u044c \u0441\u0430\u0439\u0442\u0430: \u0441\u0432\u0435\u0440\u0445\u0443 \u043f\u0435\u0440\u0438\u043e\u0434, \u043f\u043e\u0434 \u043d\u0438\u043c \u0441\u0432\u043e\u0434\u043a\u0430 HTML-\u0434\u0430\u0448\u0431\u043e\u0440\u0434\u043e\u043c, \u0432\u043d\u0438\u0437\u0443 \u043d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438.\u2026",
       "_origin": "ast",
       "community": 2,
@@ -39692,7 +39692,7 @@
       "file_type": "rationale",
       "norm_label": "\u043f\u0430\u043d\u0435\u043b\u044c \u0441\u0430\u0438\u0442\u0430: \u0441\u0432\u0435\u0440\u0445\u0443 \u043f\u0435\u0440\u0438\u043e\u0434, \u043f\u043e\u0434 \u043d\u0438\u043c \u0441\u0432\u043e\u0434\u043a\u0430 html-\u0434\u0430\u0448\u0431\u043e\u0440\u0434\u043e\u043c, \u0432\u043d\u0438\u0437\u0443 \u043d\u0430\u0441\u0442\u0440\u043e\u0438\u043a\u0438....",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L756"
+      "source_location": "L767"
     },
     {
       "id": "src_components_kitchen_drawing_drawing_css",
@@ -43208,7 +43208,7 @@
       "source_location": "L31"
     },
     {
-      "id": "integrations_1c_online_shop_build_extension_rationale_367",
+      "id": "integrations_1c_online_shop_build_extension_rationale_374",
       "label": "\u0412\u043a\u043b\u0430\u0434\u043a\u0438. \u041a\u0430\u0436\u0434\u0430\u044f \u0432\u043a\u043b\u0430\u0434\u043a\u0430 \u2014 page().",
       "_origin": "ast",
       "community": 234,
@@ -43216,7 +43216,7 @@
       "file_type": "rationale",
       "norm_label": "\u0432\u043a\u043b\u0430\u0434\u043a\u0438. \u043a\u0430\u0436\u0434\u0430\u044f \u0432\u043a\u043b\u0430\u0434\u043a\u0430 \u2014 page().",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L367"
+      "source_location": "L374"
     },
     {
       "id": "smartcentr_site_src_lib_kitchen_checks",
@@ -58461,7 +58461,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L990",
+      "source_location": "L1001",
       "weight": 1.0
     },
     {
@@ -58473,7 +58473,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L991",
+      "source_location": "L1002",
       "weight": 1.0
     },
     {
@@ -58485,7 +58485,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L996",
+      "source_location": "L1007",
       "weight": 1.0
     },
     {
@@ -58497,7 +58497,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L932",
+      "source_location": "L943",
       "weight": 1.0
     },
     {
@@ -58509,7 +58509,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L934",
+      "source_location": "L945",
       "weight": 1.0
     },
     {
@@ -58521,7 +58521,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L935",
+      "source_location": "L946",
       "weight": 1.0
     },
     {
@@ -58533,7 +58533,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L936",
+      "source_location": "L947",
       "weight": 1.0
     },
     {
@@ -58545,7 +58545,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L1017",
+      "source_location": "L1028",
       "weight": 1.0
     },
     {
@@ -58557,7 +58557,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L1029",
+      "source_location": "L1040",
       "weight": 1.0
     },
     {
@@ -58569,7 +58569,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L1032",
+      "source_location": "L1043",
       "weight": 1.0
     },
     {
@@ -58581,7 +58581,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L949",
+      "source_location": "L960",
       "weight": 1.0
     },
     {
@@ -58593,7 +58593,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L950",
+      "source_location": "L961",
       "weight": 1.0
     },
     {
@@ -58605,7 +58605,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L951",
+      "source_location": "L962",
       "weight": 1.0
     },
     {
@@ -58617,7 +58617,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L892",
+      "source_location": "L903",
       "weight": 1.0
     },
     {
@@ -58629,7 +58629,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L896",
+      "source_location": "L907",
       "weight": 1.0
     },
     {
@@ -58641,7 +58641,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L897",
+      "source_location": "L908",
       "weight": 1.0
     },
     {
@@ -58653,7 +58653,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L898",
+      "source_location": "L909",
       "weight": 1.0
     },
     {
@@ -58821,7 +58821,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L977",
+      "source_location": "L988",
       "weight": 1.0
     },
     {
@@ -58833,7 +58833,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L978",
+      "source_location": "L989",
       "weight": 1.0
     },
     {
@@ -58845,7 +58845,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L979",
+      "source_location": "L990",
       "weight": 1.0
     },
     {
@@ -58857,7 +58857,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L964",
+      "source_location": "L975",
       "weight": 1.0
     },
     {
@@ -58869,7 +58869,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L965",
+      "source_location": "L976",
       "weight": 1.0
     },
     {
@@ -58881,7 +58881,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L966",
+      "source_location": "L977",
       "weight": 1.0
     },
     {
@@ -58893,7 +58893,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L568",
+      "source_location": "L579",
       "weight": 1.0
     },
     {
@@ -58905,7 +58905,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L569",
+      "source_location": "L580",
       "weight": 1.0
     },
     {
@@ -58917,7 +58917,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L572",
+      "source_location": "L583",
       "weight": 1.0
     },
     {
@@ -58929,7 +58929,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L574",
+      "source_location": "L585",
       "weight": 1.0
     },
     {
@@ -58941,7 +58941,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L576",
+      "source_location": "L587",
       "weight": 1.0
     },
     {
@@ -58953,7 +58953,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L584",
+      "source_location": "L595",
       "weight": 1.0
     },
     {
@@ -58965,7 +58965,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L687",
+      "source_location": "L698",
       "weight": 1.0
     },
     {
@@ -58977,7 +58977,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L688",
+      "source_location": "L699",
       "weight": 1.0
     },
     {
@@ -58989,7 +58989,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L689",
+      "source_location": "L700",
       "weight": 1.0
     },
     {
@@ -59001,7 +59001,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L692",
+      "source_location": "L703",
       "weight": 1.0
     },
     {
@@ -59037,7 +59037,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L408",
+      "source_location": "L415",
       "weight": 1.0
     },
     {
@@ -59049,7 +59049,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L353",
+      "source_location": "L360",
+      "weight": 1.0
+    },
+    {
+      "source": "integrations_1c_online_shop_build_extension_form_check",
+      "target": "integrations_1c_online_shop_build_extension_text",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "integrations/1c-online-shop/build_extension.py",
+      "source_location": "L327",
       "weight": 1.0
     },
     {
@@ -59061,7 +59073,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L332",
+      "source_location": "L339",
       "weight": 1.0
     },
     {
@@ -59073,7 +59085,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L333",
+      "source_location": "L340",
       "weight": 1.0
     },
     {
@@ -59085,7 +59097,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L333",
+      "source_location": "L340",
       "weight": 1.0
     },
     {
@@ -59097,7 +59109,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L424",
+      "source_location": "L431",
       "weight": 1.0
     },
     {
@@ -59109,7 +59121,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L358",
+      "source_location": "L365",
       "weight": 1.0
     },
     {
@@ -59121,7 +59133,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L361",
+      "source_location": "L368",
       "weight": 1.0
     },
     {
@@ -59133,7 +59145,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L346",
+      "source_location": "L353",
       "weight": 1.0
     },
     {
@@ -59145,7 +59157,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L348",
+      "source_location": "L355",
       "weight": 1.0
     },
     {
@@ -59157,7 +59169,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L348",
+      "source_location": "L355",
       "weight": 1.0
     },
     {
@@ -59217,7 +59229,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L373",
+      "source_location": "L380",
       "weight": 1.0
     },
     {
@@ -59229,7 +59241,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L373",
+      "source_location": "L380",
       "weight": 1.0
     },
     {
@@ -59241,7 +59253,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L368",
+      "source_location": "L375",
       "weight": 1.0
     },
     {
@@ -59253,7 +59265,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L336",
+      "source_location": "L343",
       "weight": 1.0
     },
     {
@@ -59265,7 +59277,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L340",
+      "source_location": "L347",
       "weight": 1.0
     },
     {
@@ -59277,7 +59289,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L434",
+      "source_location": "L441",
       "weight": 1.0
     },
     {
@@ -59289,7 +59301,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L436",
+      "source_location": "L443",
       "weight": 1.0
     },
     {
@@ -59301,7 +59313,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L387",
+      "source_location": "L394",
       "weight": 1.0
     },
     {
@@ -59313,7 +59325,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L400",
+      "source_location": "L407",
       "weight": 1.0
     },
     {
@@ -59325,7 +59337,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L380",
+      "source_location": "L387",
       "weight": 1.0
     },
     {
@@ -59337,7 +59349,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L381",
+      "source_location": "L388",
       "weight": 1.0
     },
     {
@@ -59373,48 +59385,12 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L462",
+      "source_location": "L469",
       "weight": 1.0
     },
     {
       "source": "integrations_1c_online_shop_build_extension_list_form",
       "target": "integrations_1c_online_shop_build_extension_t_nomenclature",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L464",
-      "weight": 1.0
-    },
-    {
-      "source": "integrations_1c_online_shop_build_extension_list_form",
-      "target": "integrations_1c_online_shop_build_extension_t_str",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L465",
-      "weight": 1.0
-    },
-    {
-      "source": "integrations_1c_online_shop_build_extension_list_form",
-      "target": "integrations_1c_online_shop_build_extension_t_num",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L468",
-      "weight": 1.0
-    },
-    {
-      "source": "integrations_1c_online_shop_build_extension_list_form",
-      "target": "integrations_1c_online_shop_build_extension_t_bool",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -59426,6 +59402,42 @@
     },
     {
       "source": "integrations_1c_online_shop_build_extension_list_form",
+      "target": "integrations_1c_online_shop_build_extension_t_str",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "integrations/1c-online-shop/build_extension.py",
+      "source_location": "L472",
+      "weight": 1.0
+    },
+    {
+      "source": "integrations_1c_online_shop_build_extension_list_form",
+      "target": "integrations_1c_online_shop_build_extension_t_num",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "integrations/1c-online-shop/build_extension.py",
+      "source_location": "L475",
+      "weight": 1.0
+    },
+    {
+      "source": "integrations_1c_online_shop_build_extension_list_form",
+      "target": "integrations_1c_online_shop_build_extension_t_bool",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "integrations/1c-online-shop/build_extension.py",
+      "source_location": "L478",
+      "weight": 1.0
+    },
+    {
+      "source": "integrations_1c_online_shop_build_extension_list_form",
       "target": "integrations_1c_online_shop_build_extension_t_date",
       "relation": "calls",
       "_origin": "ast",
@@ -59433,7 +59445,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L484",
+      "source_location": "L491",
       "weight": 1.0
     },
     {
@@ -59445,7 +59457,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L1056",
+      "source_location": "L1067",
       "weight": 1.0
     },
     {
@@ -59457,7 +59469,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L1057",
+      "source_location": "L1068",
       "weight": 1.0
     },
     {
@@ -59469,7 +59481,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L1058",
+      "source_location": "L1069",
       "weight": 1.0
     },
     {
@@ -59481,7 +59493,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L1059",
+      "source_location": "L1070",
       "weight": 1.0
     },
     {
@@ -59493,7 +59505,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L1060",
+      "source_location": "L1071",
       "weight": 1.0
     },
     {
@@ -59505,7 +59517,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L1061",
+      "source_location": "L1072",
       "weight": 1.0
     },
     {
@@ -59517,60 +59529,12 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L1062",
+      "source_location": "L1073",
       "weight": 1.0
     },
     {
       "source": "integrations_1c_online_shop_build_extension_panel_form",
       "target": "integrations_1c_online_shop_build_extension_form",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L764",
-      "weight": 1.0
-    },
-    {
-      "source": "integrations_1c_online_shop_build_extension_panel_form",
-      "target": "integrations_1c_online_shop_build_extension_t_str",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L766",
-      "weight": 1.0
-    },
-    {
-      "source": "integrations_1c_online_shop_build_extension_panel_form",
-      "target": "integrations_1c_online_shop_build_extension_t_day",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L768",
-      "weight": 1.0
-    },
-    {
-      "source": "integrations_1c_online_shop_build_extension_panel_form",
-      "target": "integrations_1c_online_shop_build_extension_t_nomenclature",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L773",
-      "weight": 1.0
-    },
-    {
-      "source": "integrations_1c_online_shop_build_extension_panel_form",
-      "target": "integrations_1c_online_shop_build_extension_t_num",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -59582,6 +59546,54 @@
     },
     {
       "source": "integrations_1c_online_shop_build_extension_panel_form",
+      "target": "integrations_1c_online_shop_build_extension_t_str",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "integrations/1c-online-shop/build_extension.py",
+      "source_location": "L777",
+      "weight": 1.0
+    },
+    {
+      "source": "integrations_1c_online_shop_build_extension_panel_form",
+      "target": "integrations_1c_online_shop_build_extension_t_day",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "integrations/1c-online-shop/build_extension.py",
+      "source_location": "L779",
+      "weight": 1.0
+    },
+    {
+      "source": "integrations_1c_online_shop_build_extension_panel_form",
+      "target": "integrations_1c_online_shop_build_extension_t_nomenclature",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "integrations/1c-online-shop/build_extension.py",
+      "source_location": "L784",
+      "weight": 1.0
+    },
+    {
+      "source": "integrations_1c_online_shop_build_extension_panel_form",
+      "target": "integrations_1c_online_shop_build_extension_t_num",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "integrations/1c-online-shop/build_extension.py",
+      "source_location": "L786",
+      "weight": 1.0
+    },
+    {
+      "source": "integrations_1c_online_shop_build_extension_panel_form",
       "target": "integrations_1c_online_shop_build_extension_t_bool",
       "relation": "calls",
       "_origin": "ast",
@@ -59589,7 +59601,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L789",
+      "source_location": "L800",
       "weight": 1.0
     },
     {
@@ -59601,7 +59613,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L706",
+      "source_location": "L717",
       "weight": 1.0
     },
     {
@@ -59613,7 +59625,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L709",
+      "source_location": "L720",
       "weight": 1.0
     },
     {
@@ -59625,7 +59637,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L710",
+      "source_location": "L721",
       "weight": 1.0
     },
     {
@@ -59637,7 +59649,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L715",
+      "source_location": "L726",
       "weight": 1.0
     },
     {
@@ -81405,7 +81417,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/components/BonusPromo.tsx",
-      "source_location": "L116",
+      "source_location": "L118",
       "weight": 1.0
     },
     {
@@ -81417,7 +81429,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/components/BonusPromo.tsx",
-      "source_location": "L124",
+      "source_location": "L126",
       "weight": 1.0
     },
     {
@@ -94833,7 +94845,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L378",
+      "source_location": "L385",
       "weight": 1.0
     },
     {
@@ -114123,7 +114135,7 @@
     },
     {
       "source": "src_components_bonuspromo",
-      "target": "src_components_icons_iconarrowupright",
+      "target": "src_components_icons_iconchevronright",
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -146494,7 +146506,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L1015",
+      "source_location": "L1026",
       "weight": 1.0
     },
     {
@@ -146516,7 +146528,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L1047",
+      "source_location": "L1058",
       "weight": 1.0
     },
     {
@@ -146714,7 +146726,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L891",
+      "source_location": "L902",
       "weight": 1.0
     },
     {
@@ -146725,7 +146737,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L931",
+      "source_location": "L942",
       "weight": 1.0
     },
     {
@@ -146736,7 +146748,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L948",
+      "source_location": "L959",
       "weight": 1.0
     },
     {
@@ -146747,7 +146759,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L962",
+      "source_location": "L973",
       "weight": 1.0
     },
     {
@@ -146758,7 +146770,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L976",
+      "source_location": "L987",
       "weight": 1.0
     },
     {
@@ -146769,7 +146781,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L988",
+      "source_location": "L999",
       "weight": 1.0
     },
     {
@@ -179160,7 +179172,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L335",
+      "source_location": "L342",
       "weight": 1.0
     },
     {
@@ -179171,7 +179183,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L342",
+      "source_location": "L349",
       "weight": 1.0
     },
     {
@@ -179182,7 +179194,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L350",
+      "source_location": "L357",
       "weight": 1.0
     },
     {
@@ -179193,7 +179205,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L357",
+      "source_location": "L364",
       "weight": 1.0
     },
     {
@@ -179204,7 +179216,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L366",
+      "source_location": "L373",
       "weight": 1.0
     },
     {
@@ -179215,7 +179227,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L372",
+      "source_location": "L379",
       "weight": 1.0
     },
     {
@@ -179226,7 +179238,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L377",
+      "source_location": "L384",
       "weight": 1.0
     },
     {
@@ -179237,7 +179249,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L404",
+      "source_location": "L411",
       "weight": 1.0
     },
     {
@@ -179248,7 +179260,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L422",
+      "source_location": "L429",
       "weight": 1.0
     },
     {
@@ -179259,7 +179271,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L427",
+      "source_location": "L434",
       "weight": 1.0
     },
     {
@@ -179270,7 +179282,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L430",
+      "source_location": "L437",
       "weight": 1.0
     },
     {
@@ -182541,69 +182553,69 @@
       "weight": 1.0
     },
     {
-      "source": "integrations_1c_online_shop_build_extension_rationale_367",
+      "source": "integrations_1c_online_shop_build_extension_rationale_374",
       "target": "integrations_1c_online_shop_build_extension_form_pages",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L367",
+      "source_location": "L374",
       "weight": 1.0
     },
     {
-      "source": "integrations_1c_online_shop_build_extension_rationale_461",
+      "source": "integrations_1c_online_shop_build_extension_rationale_468",
       "target": "integrations_1c_online_shop_build_extension_list_form",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L461",
+      "source_location": "L468",
       "weight": 1.0
     },
     {
-      "source": "integrations_1c_online_shop_build_extension_rationale_567",
+      "source": "integrations_1c_online_shop_build_extension_rationale_578",
       "target": "integrations_1c_online_shop_build_extension_card_form",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L567",
+      "source_location": "L578",
       "weight": 1.0
     },
     {
-      "source": "integrations_1c_online_shop_build_extension_rationale_686",
+      "source": "integrations_1c_online_shop_build_extension_rationale_697",
       "target": "integrations_1c_online_shop_build_extension_editor_form",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L686",
+      "source_location": "L697",
       "weight": 1.0
     },
     {
-      "source": "integrations_1c_online_shop_build_extension_rationale_705",
+      "source": "integrations_1c_online_shop_build_extension_rationale_716",
       "target": "integrations_1c_online_shop_build_extension_settings_form",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L705",
+      "source_location": "L716",
       "weight": 1.0
     },
     {
-      "source": "integrations_1c_online_shop_build_extension_rationale_756",
+      "source": "integrations_1c_online_shop_build_extension_rationale_767",
       "target": "integrations_1c_online_shop_build_extension_panel_form",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L756",
+      "source_location": "L767",
       "weight": 1.0
     },
     {
@@ -184358,7 +184370,7 @@
       "confidence_score": 0.85,
       "context": "collection",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L882",
+      "source_location": "L893",
       "weight": 1.0
     },
     {
@@ -184370,7 +184382,7 @@
       "confidence_score": 0.85,
       "context": "collection",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L883",
+      "source_location": "L894",
       "weight": 1.0
     },
     {
@@ -184382,7 +184394,7 @@
       "confidence_score": 0.85,
       "context": "collection",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L884",
+      "source_location": "L895",
       "weight": 1.0
     },
     {
@@ -184394,7 +184406,7 @@
       "confidence_score": 0.85,
       "context": "collection",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L885",
+      "source_location": "L896",
       "weight": 1.0
     },
     {
@@ -184406,7 +184418,7 @@
       "confidence_score": 0.85,
       "context": "collection",
       "source_file": "integrations/1c-online-shop/build_extension.py",
-      "source_location": "L886",
+      "source_location": "L897",
       "weight": 1.0
     },
     {
@@ -186985,5 +186997,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "4c390bb9441f5d693e1fae61b050750fc1aa676c"
+  "built_at_commit": "7b14895359a0546cd21a83174fd9b43dff487e0a"
 }

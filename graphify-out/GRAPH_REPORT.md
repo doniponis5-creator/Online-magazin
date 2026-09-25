@@ -1,17 +1,17 @@
 # Graph Report - 1c-panel-saytani-okib-chik-ad07ff  (2026-09-25)
 
 ## Corpus Check
-- 545 files · ~5,364,078 words
+- 545 files · ~5,364,319 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 74 file(s) not represented in the graph (top: .css 22, .xml 13, (none) 11)
 
 ## Summary
-- 4596 nodes · 11146 edges · 330 communities (176 shown, 154 thin omitted)
+- 4596 nodes · 11147 edges · 330 communities (176 shown, 154 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 114 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `4c390bb9`
+- Built from commit: `7b148953`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 

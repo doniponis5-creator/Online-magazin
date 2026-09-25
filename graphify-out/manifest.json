@@ -150,9 +150,9 @@
     "semantic_hash": ""
   },
   "integrations/1c-online-shop/build_extension.py": {
-    "mtime": 1790332407.2332246,
-    "seen": 1790332536.948578,
-    "ast_hash": "52cd3529eae835b25b546a05b9c2d8e7",
+    "mtime": 1790334299.1369963,
+    "seen": 1790334316.6943204,
+    "ast_hash": "1d63a1e72a04c805b29b60a4d18b37f6",
     "semantic_hash": ""
   },
   "integrations/1c-online-shop/manage.py": {
@@ -690,9 +690,9 @@
     "semantic_hash": ""
   },
   "src/components/HomeMerchandising.tsx": {
-    "mtime": 1790329287.8036537,
-    "seen": 1790331723.6329527,
-    "ast_hash": "9a2af1f6876413597d0a14a2c73188d7",
+    "mtime": 1790334299.0216913,
+    "seen": 1790334316.810714,
+    "ast_hash": "29b1c864c601681c2c80fba4f38593d6",
     "semantic_hash": ""
   },
   "src/components/HomeStory.tsx": {
@@ -1062,9 +1062,9 @@
     "semantic_hash": ""
   },
   "docs/HANDOFF.md": {
-    "mtime": 1790332247.575821,
-    "seen": 1790332537.0608292,
-    "ast_hash": "299fbafe389ffb5a9ec79172a35a8838",
+    "mtime": 1790334299.1359963,
+    "seen": 1790334316.872111,
+    "ast_hash": "911d1e97247fcd7b8e6026a41f3742e1",
     "semantic_hash": ""
   },
   "docs/IOS_APP_UZ.md": {
@@ -3744,9 +3744,9 @@
     "semantic_hash": ""
   },
   "src/components/BonusPromo.tsx": {
-    "mtime": 1790329287.7878609,
-    "seen": 1790331723.6329389,
-    "ast_hash": "cc5911727165cfdf2dacdf6539387305",
+    "mtime": 1790334299.0216913,
+    "seen": 1790334316.8056827,
+    "ast_hash": "93754920f8243bd5b895242cbb7f4a1c",
     "semantic_hash": ""
   },
   "src/components/InstagramLink.tsx": {
