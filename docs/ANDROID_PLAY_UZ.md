@@ -1,20 +1,42 @@
 # Android ilova — Google Play ga yo'riqnoma
 
-Yangilandi: 24.09.2026, MacBook da. Shoxa (branch) `feature/ios-app`.
+Yangilandi: 25.09.2026, MacBook da. Shoxa (branch) `feature/ios-app`.
 
 ## 1. Hozirgi holat
 
 | Nima | Holat |
 |---|---|
-| Ilova fayli (AAB — Google Play qabul qiladigan fayl) | **Tayyor**: `build-play/smarket-1.0-code2.aab` |
+| Ilova fayli (AAB — Google Play qabul qiladigan fayl) | **Tayyor**: `build-play/smarket-1.0-code3.aab` (versionCode 3, versiya 1.0). Eski `smarket-1.0-code2.aab` endi kerak emas |
 | Imzo kaliti (ilovani sizniki deb tasdiqlaydigan fayl) | Bor: `~/smarket-keys/smarket-upload.jks`. Nusxasi fleshkada bo'lishi **shart** |
 | Ikonka 512×512 | `app-icons/store/google-play-512.png` |
 | Katta rasm 1024×500 (Feature graphic) | `build-play/listing/feature-graphic-1024x500.png` |
 | Telefon rasmlari, 6 ta | `build-play/listing/phone-01.png` … `phone-06.png` |
 | Maxfiylik sahifasi | Android va chat qo'shildi (`src/data/privacy.ts`). **Saytga chiqarish kerak** |
-| Haqiqiy Android telefonda sinov | **Qilinmagan**. MacBook da Android emulyator (kompyuterdagi soxta telefon) yo'q |
+| Emulyatorda sinov (emulyator — kompyuterdagi soxta telefon) | **Qilindi**: `smarket-api36` (Android 16, Pixel 7). Nima tekshirilgani — 1.1-bo'limda |
+| Haqiqiy Android telefonda sinov | **Qilinmagan** |
 
 `build-play/` git ga tushmaydi. Rasmlar va AAB faqat shu MacBook da.
+
+### 1.1. Emulyatorda nima tekshirildi (25.09.2026)
+
+Kirish saytning sinov rejimida (test rejimi — Telegram/WhatsApp kodi o'rniga 1234) tekshirildi,
+kompyuterdagi sayt nusxasida. Jonli `smarket.kg` da hech narsa buyurtma qilinmadi.
+
+| Nima | Natija |
+|---|---|
+| Kirish → bonus karta telefonda saqlanadi; internetsiz «Бонусная карта» QR bilan ochiladi, ekran eng yorug' | Ishlaydi |
+| «Выйти» → internetsiz karta endi yo'q | Ishlaydi |
+| Barmoq izi: «Быстрый вход» → «Включён», «Проверить» o'tadi; sessiya tugagach «Войти по отпечатку» kiritadi | Ishlaydi |
+| Barmoq izi yo'q telefon — tushunarli yozuv, ilova yiqilmaydi | Ishlaydi |
+| Buyurtma: tovar sahifasidan savatga → rasmiylashtirish (o'zi olib ketish) → to'lov → «Оплачен», ilova tirik | Ishlaydi (sinov to'lovi bilan) |
+| Chat: galereyadan rasm tanlash → rasm chatda ko'rinadi | Ishlaydi |
+| Internet yo'q → o'zimizning «Нет связи» sahifasi, «Повторить» | Ishlaydi |
+
+**Tekshirilmagan:**
+
+- Push-xabar — Android da umuman yo'q (buning uchun Firebase kerak).
+- Haqiqiy Android telefon — hali birorta telefonda sinalmagan.
+- Haqiqiy O!Деньги sahifasiga o'tish — sinov rejimida to'lov sahifasi saytning o'zida ochiladi.
 
 Ilova ichida — jonli sayt `https://smarket.kg`. Saytdagi o'zgarish ilovada
 darrov ko'rinadi, Google ga qayta yuborish shart emas. Qayta yuborish faqat
@@ -153,7 +175,7 @@ Qirg'iz tilini qo'shish: **Store listing → Manage translations → Add your ow
 2. **Create new release**.
 3. «Play App Signing» taklif qilinsa — **rozi bo'ling**. Google o'z kalitini
    saqlaydi, bizning kalit faqat yuklash uchun.
-4. Fayl: `build-play/smarket-1.0-code2.aab`
+4. Fayl: `build-play/smarket-1.0-code3.aab`
 5. Release notes (ru-RU):
 
 ```
@@ -229,7 +251,8 @@ S Маркет — «Смарт Центр» (Smart Centr) электроник�
 ## 5. Keyingi versiyani yig'ish
 
 Faqat `android/` papkasida nimadir o'zgarsa kerak. Avval
-`android/app/build.gradle` da `versionCode` ni 1 ga oshiring (hozir 2).
+`android/app/build.gradle` da `versionCode` ni 1 ga oshiring (hozir 3, keyingisi — **4**).
+Google Play bir xil `versionCode` ni ikki marta qabul qilmaydi.
 Keyin:
 
 ```bash
@@ -237,6 +260,11 @@ cd ~/Online-magazin && npx cap sync android && cd android && JAVA_HOME=/opt/home
 ```
 
 Tayyor fayl: `android/app/build/outputs/bundle/release/app-release.aab`.
+Uni `build-play/smarket-1.0-code4.aab` nomi bilan nusxa qilib qo'ying:
+
+```bash
+cp ~/Online-magazin/android/app/build/outputs/bundle/release/app-release.aab ~/Online-magazin/build-play/smarket-1.0-code4.aab
+```
 
 Rasmlarni qayta chizish skriptlari git da yo'q — kerak bo'lsa Claude qayta yasaydi
 (sayt telefon o'lchamida suratga olinadi, ustiga sarlavha qo'yiladi).

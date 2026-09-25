@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-25T17:21:44+06:00",
-  "updatedAt": "2026-09-25T18:19:06+06:00",
+  "updatedAt": "2026-09-25T21:14:22+06:00",
   "finishedAt": null,
   "stages": [
     {
@@ -49,13 +49,13 @@ window.STATE =
       "id": "build",
       "status": "active",
       "startedAt": "2026-09-25T17:53:58+06:00",
-      "note": "0 из 2 тасков готовы"
+      "note": "1 из 2 тасков готов"
     },
     {
       "id": "review",
       "status": "active",
       "startedAt": "2026-09-25T18:16:46+06:00",
-      "note": "проверяется таск 01"
+      "note": "проверяется таск 02"
     },
     {
       "id": "final",
@@ -64,8 +64,8 @@ window.STATE =
   ],
   "requirements": {
     "total": 8,
-    "done": 0,
-    "inTicket": 8,
+    "done": 2,
+    "inTicket": 6,
     "inSpec": 0,
     "placeholder": 0,
     "deferred": 0,
@@ -89,11 +89,27 @@ window.STATE =
         "android/",
         "capacitor.config.ts"
       ],
-      "status": "review",
+      "status": "done",
       "retries": 0,
       "repairs": 0,
       "handoffs": 1,
-      "startedAt": "2026-09-25T17:53:58+06:00"
+      "startedAt": "2026-09-25T17:53:58+06:00",
+      "finishedAt": "2026-09-25T18:21:18+06:00",
+      "commit": "41d6105",
+      "tests": {
+        "passed": 249,
+        "failed": 0
+      },
+      "files": [
+        "android/app/src/main/java/kg/smarket/app/MainActivity.java",
+        "android/app/build.gradle",
+        "android/app/src/main/res/values/styles.xml",
+        "android/app/src/main/res/values/colors.xml",
+        "android/app/src/main/res/drawable-nodpi/splash_logo.png"
+      ],
+      "concerns": [
+        "истории 5 (оплата) и 6 (фото в чат) перенесены в таск 02"
+      ]
     },
     {
       "id": "02",
@@ -113,10 +129,11 @@ window.STATE =
         "capacitor.config.ts",
         "docs/ANDROID_PLAY_UZ.md"
       ],
-      "status": "pending",
+      "status": "review",
       "retries": 0,
       "repairs": 0,
-      "handoffs": 0
+      "handoffs": 2,
+      "startedAt": "2026-09-25T18:21:18+06:00"
     }
   ],
   "singlePass": null,
@@ -143,10 +160,15 @@ window.STATE =
   "concerns": [
     "T01 craft · MainActivity.java:68-73 — скрипт моста для «Нет связи» собран копией закрытого Bridge.getJSInjector(); есть открытый JSInjector.getScriptString() — копия отстанет при обновлении Capacitor",
     "T01 craft · MainActivity.java:21,65 — имена плагинов строками второй раз; ненайденный плагин пропускается без записи в logcat",
-    "T01 craft · MainActivity.java:51 — комментарий выдаёт список плагинов в JS за границу доступа; настоящая граница — адрес и главное окно"
+    "T01 craft · MainActivity.java:51 — комментарий выдаёт список плагинов в JS за границу доступа; настоящая граница — адрес и главное окно",
+    "T02 · сайт (src/, половина PC) — на Android блок «Быстрый вход» пишет «войдёте лицом», а там отпечаток пальца",
+    "План: таск 02 потребовал 2 передачи (3 контекста) — нарезка была крупной: проверка на эмуляторе + сборка + инструкция в одном таске",
+    "T02 craft · docs/ANDROID_PLAY_UZ.md:178,254,263-266 — номер версии в четырёх местах (code3, «hozir 3», «keyingisi — 4», cp …code4.aab); после следующего повышения cp положит code5 под именем code4",
+    "T02 craft · docs/ANDROID_PLAY_UZ.md:15,20-33 — раздел 1.1 «что проверено» не перечисляет проверки таска 01 (заставка, «Назад», внешние ссылки, офлайн-каталог)",
+    "T02 manifest · docs/ANDROID_PLAY_UZ.md:32 — история 6 «Ishlaydi» без оговорки, что сайт отправляет фото сразу при выборе (превью нет); для истории 5 ограничение раскрыто, для 6 — нет"
   ],
   "reviewers": {
-    "manifestSpec": "af2bc23b6012940f4",
+    "manifestSpec": "a5deef7a16496a83a",
     "craft": "ad04a17b7c69fbfe1"
   },
   "blind": null
