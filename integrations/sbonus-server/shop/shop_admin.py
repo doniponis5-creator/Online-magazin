@@ -962,49 +962,6 @@ async def _period(db: AsyncSession, period: dict, orders_filter: str, now: datet
     }
 
 
-# ── Склад и сайт не совпадают ────────────────────────────────────────────────
-# Каталог приходит из 1С раз в 10 минут: остаток по всем складам, цена сайта и
-# «Наличие» из карточки. Владелец иногда ставит «В наличии», чтобы продавать без
-# склада, — тогда покупатель платит, а товар ещё надо привезти. Об этом лучше
-# знать заранее, а не после оплаты. Скрытые товары в каталог не попадают.
-
-STOCK_ALERT_LIMIT = 15
-
-
-def _number(value) -> float:
-    try:
-        return float(value or 0)
-    except (TypeError, ValueError):
-        return 0.0
-
-
-def stock_alerts(items: list[dict]) -> dict:
-    """Три расхождения склада и сайта: списки (первые STOCK_ALERT_LIMIT) и сколько всего."""
-    from .shop_stock import FORCED_IN_STOCK, FORCED_OUT
-
-    groups: dict[str, list[dict]] = {"soldWithoutStock": [], "stockNoPrice": [], "stockMarkedOut": []}
-    for item in items:
-        stock, price = _number(item.get("stock")), _number(item.get("price"))
-        availability = str(item.get("availability") or "")
-        row = {
-            "name": (str(item.get("name") or "").strip() or str(item.get("code") or ""))[:120],
-            "code": str(item.get("code") or ""),
-            "stock": stock,
-            "price": price,
-        }
-        if availability == FORCED_IN_STOCK and stock <= 0 and price > 0:
-            groups["soldWithoutStock"].append(row)     # сайт продаёт, на складе пусто
-        elif stock > 0 and price <= 0 and availability != FORCED_OUT:
-            groups["stockNoPrice"].append(row)         # лежит на складе, купить нельзя — нет цены
-        elif stock > 0 and availability == FORCED_OUT:
-            groups["stockMarkedOut"].append(row)       # лежит на складе, а на сайте «нет в наличии»
-
-    groups["soldWithoutStock"].sort(key=lambda r: -r["price"])
-    groups["stockNoPrice"].sort(key=lambda r: -r["stock"])
-    groups["stockMarkedOut"].sort(key=lambda r: -r["stock"])
-    return {key: {"count": len(rows), "items": rows[:STOCK_ALERT_LIMIT]} for key, rows in groups.items()}
-
-
 async def _catalog(db: AsyncSession) -> list[dict]:
     from .shop_router import catalog_items
 
@@ -1076,7 +1033,6 @@ async def dashboard(
         "recentOrders": recent,
         "attention": attention,
         "period": period_block,
-        "stockAlerts": stock_alerts(items),
         "orders": {
             "today": _int(o, "orders_today"),
             "week": _int(o, "orders_week"),

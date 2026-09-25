@@ -278,7 +278,9 @@ class Form:
 
     def input(self, name, path, readonly=False, title_location=None, width=None, height=None,
               stretch=None, choices=None, hint=None, events=None, table=False, title=None, negatives=False,
-              password=False, multiline=False, list_choice=False):
+              password=False, multiline=False, list_choice=False, full_width=False, fmt=None):
+        # full_width — снять предел ширины: иначе длинная строка обрезается, хоть поле и растянуто.
+        # fmt — формат числа, например «ЧН=0», чтобы ноль был виден, а не пустая клетка.
         props = f"<DataPath>{path}</DataPath>"
         if title:
             props += f"<Title>{text(title)}</Title>"
@@ -292,6 +294,8 @@ class Form:
             props += "<PasswordMode>true</PasswordMode>"
         if width:
             props += f"<Width>{width}</Width>"
+        if full_width:
+            props += "<AutoMaxWidth>false</AutoMaxWidth>"
         if height:
             props += f"<Height>{height}</Height>"
         if stretch is not None:
@@ -300,6 +304,8 @@ class Form:
             props += "<MultiLine>true</MultiLine>"
         if negatives:
             props += "<MarkNegatives>true</MarkNegatives>"
+        if fmt:
+            props += f"<Format>{text(fmt)}</Format>"
         if list_choice and not choices:
             # Список наполняется в модуле формы: группы номенклатуры заранее не известны.
             props += "<ListChoiceMode>true</ListChoiceMode><ChoiceList/>"
@@ -356,6 +362,17 @@ class Form:
                 f"<Behavior>Usual</Behavior><Representation>{representation}</Representation><ShowTitle>{show}</ShowTitle>"
                 f'<ExtendedTooltip name="{name}РасширеннаяПодсказка" id="{self.next_id()}"/>'
                 f"<ChildItems>{''.join(children)}</ChildItems></UsualGroup>")
+
+    def pages(self, name, children):
+        """Вкладки. Каждая вкладка — page()."""
+        return (f'<Pages name="{name}" id="{self.next_id()}">'
+                f'<ExtendedTooltip name="{name}РасширеннаяПодсказка" id="{self.next_id()}"/>'
+                f"<ChildItems>{''.join(children)}</ChildItems></Pages>")
+
+    def page(self, name, title, children):
+        return (f'<Page name="{name}" id="{self.next_id()}"><Title>{text(title)}</Title>'
+                f'<ExtendedTooltip name="{name}РасширеннаяПодсказка" id="{self.next_id()}"/>'
+                f"<ChildItems>{''.join(children)}</ChildItems></Page>")
 
     def table(self, name, path, columns, bar_buttons=(), events=None, height=None, search=True, editable=False):
         def addition(tag, kind):
@@ -436,6 +453,8 @@ SHOW_MODES = ["Все", "На сайте", "Скрытые", "Без цены", 
 PANEL_PERIODS = ["Сегодня", "Вчера", "7 дней", "30 дней", "Этот месяц", "Прошлый месяц", "Свой период"]
 # Какие заказы показать в таблице внизу панели. Ключи для сервера — в ПанельСайтаМодуль.bsl.
 PANEL_ORDER_FILTERS = ["Все заказы", "Продажи", "Ждут оплаты", "Не оплатили", "Оплачены, не отгружены", "Отменены"]
+# Вкладка «Склад и сайт»: слова те же, что пишет РасхожденияСкладаИСайта в ЗаказыСайтаСервер.bsl.
+PANEL_STOCK_FILTERS = ["Все", "Продаётся без остатка", "Нет цены на сайте", "«Нет в наличии» при остатке"]
 
 
 def list_form():
@@ -749,6 +768,20 @@ def panel_form():
     f.attribute("ДатаС", t_day(), title="с")
     f.attribute("ДатаПо", t_day(), title="по")
     f.attribute("ОтборЗаказов", t_str(30), title="Заказы в списке")
+    f.attribute("Расхождения", "<v8:Type>v8:ValueTable</v8:Type>", title="Склад и сайт", columns=[
+        ("Проблема", "Что не так", t_str(40)),
+        ("Номенклатура", "Товар", t_nomenclature()),
+        ("Код", "Код", t_str(20)),
+        ("Остаток", "На складе", t_num(15, 3, "Any")),
+        ("ЦенаСайта", "Цена на сайте", t_num(15, 2)),
+        ("Наличие", "Наличие на сайте", t_str(20)),
+        ("Порядок", "Порядок", t_num(1, 0)),
+    ])
+    f.attribute("ПоказатьРасхождения", t_str(40), title="Показать")
+    f.attribute("ИтогСклад", t_str(0))
+    f.attribute("СкладБезОстатка", t_num(6, 0))
+    f.attribute("СкладБезЦены", t_num(6, 0))
+    f.attribute("СкладНетВНаличии", t_num(6, 0))
 
     f.attribute("ПриветственныйБонус", t_num(6, 0), title="Приветственный бонус новому покупателю, сом", saved_data=True)
     f.attribute("МаксимумБонусами", t_num(3, 0), title="Можно оплатить бонусами, % от заказа", saved_data=True)
@@ -766,47 +799,77 @@ def panel_form():
         ("Обновить", "Обновить", "Забрать свежие цифры с сервера"),
         ("СохранитьНастройки", "Сохранить настройки", "Отправить настройки на сервер — сайт применит их сразу"),
         ("ОткрытьСайт", "Открыть сайт", "Открыть smarket.kg в браузере"),
+        ("ОткрытьКарточкуРасхождения", "Карточка товара", "Открыть карточку: цена сайта и «Наличие на сайте»"),
     ]:
         f.command(name, title, tip)
 
+    stock_columns = [
+        f.input("РасхожденияПроблема", "Расхождения.Проблема", readonly=True, width=24, table=True),
+        f.input("РасхожденияНоменклатура", "Расхождения.Номенклатура", readonly=True, width=44, table=True),
+        f.input("РасхожденияКод", "Расхождения.Код", readonly=True, width=12, table=True),
+        f.input("РасхожденияОстаток", "Расхождения.Остаток", readonly=True, width=8, table=True, fmt="ЧН=0"),
+        f.input("РасхожденияЦенаСайта", "Расхождения.ЦенаСайта", readonly=True, width=10, table=True),
+        f.input("РасхожденияНаличие", "Расхождения.Наличие", readonly=True, width=14, table=True),
+    ]
+    # Три вкладки: сводка на всю высоту, склад отдельно (длинный список не заслоняет
+    # графики), настройки отдельно. Строка состояния — под вкладками, её видно всегда.
     items = [
-        f.group("ГруппаПериод", [
-            # Меняют поле — сводка пересобирается сразу, отдельная кнопка не нужна.
-            f.input("Период", "Период", width=14, stretch=False, choices=PANEL_PERIODS,
-                    events={"OnChange": "ПериодПриИзменении"}),
-            f.input("ДатаС", "ДатаС", width=10, stretch=False, events={"OnChange": "ДатаПриИзменении"}),
-            f.input("ДатаПо", "ДатаПо", width=10, stretch=False, events={"OnChange": "ДатаПриИзменении"}),
-            f.input("ОтборЗаказов", "ОтборЗаказов", width=22, stretch=False, choices=PANEL_ORDER_FILTERS,
-                    events={"OnChange": "ОтборЗаказовПриИзменении"}),
-        ], direction="AlwaysHorizontal"),
-        f.html("Сводка", "ТекстHTML", width=150, height=28, v_stretch=False),
-        f.group("ГруппаНастройки", [
-            # Две строки, а не одна: в одну не влезало, и наценка с кнопкой
-            # «Сохранить» уезжали за правый край окна.
-            f.group("ГруппаНастройкиПоля", [
-                f.input("ПриветственныйБонус", "ПриветственныйБонус", width=10),
-                f.input("МаксимумБонусами", "МаксимумБонусами", width=10),
-                # 334 — приветственные 1 000 сом уходят на три покупки. 0 — без предела.
-                f.input("МаксимумБонусамиСом", "МаксимумБонусамиСом", width=8, hint="0 — без предела"),
-                f.check("ЗаказБезВхода", "ЗаказБезВхода", title_location="Right"),
-            ], direction="AlwaysHorizontal"),
-            f.group("ГруппаНастройкиЧат", [
-                # Себестоимость + этот % — цена в чате для товаров со склада, которых нет на сайте. 0 — не продавать.
-                f.input("НаценкаКрупная", "НаценкаКрупная", width=6, hint="0 — выкл."),
-                f.input("НаценкаМелкая", "НаценкаМелкая", width=6, hint="0 — выкл."),
-                # Робот на WhatsApp магазина: отвечает, если сотрудник молчит столько минут.
-                f.check("РоботВотсАп", "РоботВотсАп", title_location="Right"),
-                f.input("РоботЖдатьМинут", "РоботЖдатьМинут", width=4),
-                f.button("КнопкаСохранить", "СохранитьНастройки"),
-            ], direction="AlwaysHorizontal"),
-        ], title="Настройки сайта (действуют сразу)"),
-        f.group("ГруппаЗнания", [
-            f.input("ЗнанияДляЧата", "ЗнанияДляЧата", title_location="None", multiline=True, stretch=True, height=8,
-                    hint="Обычными словами, по строке на тему. Например: «Часы работы: каждый день "
-                         "с 9:00 до 20:00». «Гарантия на холодильники — 1 год». «Возврат — в течение 14 дней, "
-                         "если товар не был в работе». «Акция до 30 сентября: стиральные машины с доставкой бесплатно»."),
-        ], title="Знания для чата: что чат должен знать о магазине (сохраняется кнопкой «Сохранить настройки»)"),
-        f.input("Состояние", "Состояние", readonly=True, title_location="None", stretch=True, height=2),
+        f.pages("Страницы", [
+            f.page("СтраницаСводка", "Сводка", [
+                f.group("ГруппаПериод", [
+                    # Меняют поле — сводка пересобирается сразу, отдельная кнопка не нужна.
+                    f.input("Период", "Период", width=14, stretch=False, choices=PANEL_PERIODS,
+                            events={"OnChange": "ПериодПриИзменении"}),
+                    f.input("ДатаС", "ДатаС", width=10, stretch=False, events={"OnChange": "ДатаПриИзменении"}),
+                    f.input("ДатаПо", "ДатаПо", width=10, stretch=False, events={"OnChange": "ДатаПриИзменении"}),
+                    f.input("ОтборЗаказов", "ОтборЗаказов", width=22, stretch=False, choices=PANEL_ORDER_FILTERS,
+                            events={"OnChange": "ОтборЗаказовПриИзменении"}),
+                ], direction="AlwaysHorizontal"),
+                f.html("Сводка", "ТекстHTML", width=150, height=20, v_stretch=True,
+                       events={"OnClick": "СводкаПриНажатии"}),
+            ]),
+            f.page("СтраницаСклад", "Склад и сайт", [
+                f.group("ГруппаСкладОтбор", [
+                    f.input("ПоказатьРасхождения", "ПоказатьРасхождения", width=26, stretch=False,
+                            choices=PANEL_STOCK_FILTERS, events={"OnChange": "ПоказатьРасхожденияПриИзменении"}),
+                    f.input("ИтогСклад", "ИтогСклад", readonly=True, title_location="None", stretch=True,
+                            full_width=True),
+                ], direction="AlwaysHorizontal"),
+                f.table("Расхождения", "Расхождения", stock_columns, bar_buttons=[
+                    f.button("РасхожденияКарточка", "ОткрытьКарточкуРасхождения", bar=True),
+                ], events={"Selection": "РасхожденияВыбор"}),
+            ]),
+            f.page("СтраницаНастройки", "Настройки сайта", [
+                f.group("ГруппаНастройки", [
+                    # Две строки, а не одна: в одну не влезало, и наценка с кнопкой
+                    # «Сохранить» уезжали за правый край окна.
+                    f.group("ГруппаНастройкиПоля", [
+                        f.input("ПриветственныйБонус", "ПриветственныйБонус", width=10),
+                        f.input("МаксимумБонусами", "МаксимумБонусами", width=10),
+                        # 334 — приветственные 1 000 сом уходят на три покупки. 0 — без предела.
+                        f.input("МаксимумБонусамиСом", "МаксимумБонусамиСом", width=8, hint="0 — без предела"),
+                        f.check("ЗаказБезВхода", "ЗаказБезВхода", title_location="Right"),
+                    ], direction="AlwaysHorizontal"),
+                    f.group("ГруппаНастройкиЧат", [
+                        # Себестоимость + этот % — цена в чате для товаров со склада, которых нет на сайте. 0 — не продавать.
+                        f.input("НаценкаКрупная", "НаценкаКрупная", width=6, hint="0 — выкл."),
+                        f.input("НаценкаМелкая", "НаценкаМелкая", width=6, hint="0 — выкл."),
+                        # Робот на WhatsApp магазина: отвечает, если сотрудник молчит столько минут.
+                        f.check("РоботВотсАп", "РоботВотсАп", title_location="Right"),
+                        f.input("РоботЖдатьМинут", "РоботЖдатьМинут", width=4),
+                        f.button("КнопкаСохранить", "СохранитьНастройки"),
+                    ], direction="AlwaysHorizontal"),
+                ], title="Настройки сайта (действуют сразу)"),
+                f.group("ГруппаЗнания", [
+                    f.input("ЗнанияДляЧата", "ЗнанияДляЧата", title_location="None", multiline=True, stretch=True, height=8,
+                            hint="Обычными словами, по строке на тему. Например: «Часы работы: каждый день "
+                                 "с 9:00 до 20:00». «Гарантия на холодильники — 1 год». «Возврат — в течение 14 дней, "
+                                 "если товар не был в работе». «Акция до 30 сентября: стиральные машины с доставкой бесплатно»."),
+                ], title="Знания для чата: что чат должен знать о магазине (сохраняется кнопкой «Сохранить настройки»)"),
+            ]),
+        ]),
+        f.input("Состояние", "Состояние", readonly=True, title_location="None", stretch=True, height=2,
+                full_width=True),
     ]
     return f.render("Панель сайта", items, {"OnCreateAtServer": "ПриСозданииНаСервере"},
                     bar_buttons=[
