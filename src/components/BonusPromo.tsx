@@ -6,7 +6,7 @@ import { phones, telHref, whatsappHref } from '@/data/contacts'
 import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { Brand, BrandMark } from './Brand'
-import { IconArrowUpRight, IconPhone, IconStore, IconWhatsApp } from './Icons'
+import { IconChevronRight, IconPhone, IconStore, IconWhatsApp } from './Icons'
 
 /**
  * Две карточки на главной: бонусы SBonus+ и рассрочка.
@@ -88,9 +88,11 @@ export function BonusPromo() {
             </ul>
           )}
 
+          {/* Кабинет — страница этого же сайта: стрелка «›», как у «Перейти
+              в кабинет» ниже. Косая ↗ на сайте значит «откроется другой сайт». */}
           <Link href={`/${lang}/account`} className="btn btn--primary promo__cta">
             {p.bonusCta}
-            <IconArrowUpRight size={18} />
+            <IconChevronRight size={18} />
           </Link>
         </div>
 

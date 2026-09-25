@@ -204,6 +204,19 @@ input, textarea { caret-color: var(--color-primary); }
 .promo__tag { background: rgba(255, 255, 255, .82); color: #5c6b12; box-shadow: 0 1px 4px rgba(38, 50, 68, .07); }
 .promo__tag--soft { color: #2b5391; }
 .promo-facts li { background: rgba(255, 255, 255, .8); box-shadow: 0 2px 10px rgba(38, 50, 68, .05); }
+/* Плитки с числами — всегда по две в ряд. Четыре в ряд на компьютере были
+   по 142px: «1 000 сом» вылезал за край плитки, а подписи ломались на четыре
+   строки. Две в ряд дают числу место и укладывают подпись в одну-две строки. */
+.promo-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 359px) { .promo-facts { grid-template-columns: 1fr; } }
+/* Кнопки обеих витрин стоят на одной линии внизу, сколько бы текста ни было
+   выше: лимонная стала выше, и у синей снизу оставалась пустота. */
+.promo { display: flex; flex-direction: column; }
+.promo__tag, .promo--lime .promo__cta { align-self: flex-start; }
+.promo-facts, .promo-steps { margin-bottom: 20px; }
+.promo__cta, .promo__actions { margin-top: auto; }
+/* Пока числа не пришли с сервера, плиток нет — кнопке нужен свой отступ. */
+.promo__note + .promo__cta { margin-top: 20px; }
 .promo-facts strong { color: var(--color-ink); }
 .promo-facts span { color: #55663f; }
 .promo-steps__num { background: #fff; color: var(--color-primary); box-shadow: 0 2px 8px rgba(40, 84, 147, .12); }
