@@ -226,12 +226,14 @@ input, textarea { caret-color: var(--color-primary); }
 .night-banner__icon { background: #fff; border-radius: 50%; color: #285493; box-shadow: 0 2px 8px rgba(40, 84, 147, 0.14); }
 .night-banner__title { color: var(--color-ink); font-size: 19px; }
 .night-banner__text { color: #405878; font-size: 14px; max-width: 85ch; }
-.info-strip { border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); border-radius: 0; background: white; padding-block: 28px; box-shadow: none; }
+/* Нижней линии у полосы нет: сразу под ней начинается подвал со своей
+   линией. Две линии через пустую белую полосу выглядели как дыра. */
+.info-strip { border-top: 1px solid var(--color-border); border-radius: 0; background: white; padding-block: 28px; box-shadow: none; }
 .info-item { background: transparent; border: 0; }
 .info-item__icon { color: var(--color-ink); background: #f8facf; border-radius: 8px; }
 .info-item__title { font-size: 13px; }
 .info-item__note { color: var(--color-muted); font-size: 12px; }
-.footer { margin-top: 48px; background: var(--color-surface); color: var(--color-ink); border-top: 1px solid var(--color-border); padding-block: 46px 24px; }
+.footer { margin-top: 16px; background: var(--color-surface); color: var(--color-ink); border-top: 1px solid var(--color-border); padding-block: 46px 24px; }
 /* Кнопка «Связаться» висит в правом нижнем углу и закрывала подпись в подвале. */
 @media (min-width: 901px) { .footer { padding-bottom: 92px; } }
 .footer__text, .footer__note { color: var(--color-ink-soft); font-size: 12px; line-height: 1.8; }
@@ -240,7 +242,11 @@ input, textarea { caret-color: var(--color-primary); }
 /* Три колонки: о магазине · разделы · контакты. Правый край не доходит до
    плавающей кнопки «Спросить» — подвал снизу и так с запасом (92px). */
 @media (min-width: 901px) { .footer__grid { grid-template-columns: 1.3fr .7fr 1.1fr; gap: 48px; } }
-.footer__nav { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+/* Отступ под заголовком «Разделы» — как под «Контакты» рядом: список
+   прилипал к заголовку. */
+.footer__nav { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+/* Значки WhatsApp и Telegram — по середине строки с номером, а не выше неё. */
+.footer__phones li { align-items: center; }
 .footer__nav a { color: var(--color-ink); font-size: 13px; font-weight: 600; }
 .footer__nav a:hover { color: var(--color-primary); }
 .footer__legal { display: inline-flex; flex-wrap: wrap; gap: 6px 16px; }
@@ -374,7 +380,16 @@ input, textarea { caret-color: var(--color-primary); }
   .info-item:last-child { border-bottom: 0; }
   .info-item > div { min-width: 0; }
   .info-item__note { overflow-wrap: normal; }
-  .footer { margin-top: 34px; padding-top: 32px; }
+  /* Снизу подвал оставляет место под нижнее меню: иначе строки «© 2026…»
+     и «Сайт создал» уезжали под него и их нельзя было прочитать. */
+  .footer { margin-top: 34px; padding-top: 32px; padding-bottom: calc(var(--bottomnav-h) + env(safe-area-inset-bottom, 0px) + 24px); }
+  /* Место под нижнее меню оставляет сам подвал (его нижний отступ). Когда
+     подвал идёт сразу за страницей, запас у страницы лишний: между полосой
+     «Доставка…» и подвалом стояло 144px пустоты. */
+  main#content:has(+ .footer) { padding-bottom: 24px; }
+  /* Нижняя строка подвала — столбиком у левого края. Справа висит круглая
+     кнопка чата и закрывала «Политику конфиденциальности». */
+  .footer__bottom { flex-direction: column; align-items: flex-start; gap: 8px; }
 }
 
 /* Планшет и компьютер (от 601px): три колонки, плитка лежит строкой —

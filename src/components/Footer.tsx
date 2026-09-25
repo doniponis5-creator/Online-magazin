@@ -100,10 +100,9 @@ export function Footer() {
           <span className="footer__legal">
             <Link href={`/${lang}/privacy`}>{t.footer.privacyLink}</Link>
           </span>
-          {/* Кто сделал сайт: по этому номеру обращаются за доработками */}
+          {/* Кто сделал сайт — только имя. Телефон убран по просьбе владельца. */}
           <span className="footer__author">
             {t.footer.madeBy}: <strong>{developer.name}</strong>
-            <a href={telHref(developer.phone)}>{developer.phone.display}</a>
           </span>
         </div>
       </div>
