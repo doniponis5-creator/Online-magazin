@@ -14,7 +14,8 @@ import { ProductArt } from './ProductArt'
 import { ProductImage } from './ProductImage'
 import { PromoCountdown } from './PromoCountdown'
 import { BrandLogo, hasBrandImage } from './BrandLogo'
-import { IconArrowUpRight, IconChevronRight, IconInstagram, IconUser } from './Icons'
+import { IconArrowUpRight, IconCart, IconChevronRight, IconClock, IconGift, IconInstagram, IconUser } from './Icons'
+import { Brand } from './Brand'
 import './home-merchandising.css'
 
 function Heading({ title, href, id, extra }: { title: string; href?: string; id: string; extra?: React.ReactNode }) {
@@ -271,7 +272,7 @@ export function SaleSection() {
 }
 
 export function SocialAndAccount() {
-  const { lang } = useI18n()
+  const { t, lang } = useI18n()
   const ky = lang === 'ky'
   return <section className="section social-account" aria-label={ky ? 'Байланышта болуңуз' : 'Оставайтесь на связи'}>
     <div className="instagram-panel">
@@ -289,9 +290,23 @@ export function SocialAndAccount() {
       {/* Живой профиль в рамке телефона: наведение гасит экран и показывает QR */}
       <InstagramPhone />
     </div>
-    <div className="account-panel"><IconUser size={38} /><h2>{ky ? 'Жеке кабинет' : 'Личный кабинет'} <span>SBonus</span></h2>
-      <p>{ky ? 'Бонустар, буйрутмалар жана сатып алуулардын тарыхы\u00a0— бир жерде.' : 'Бонусы, заказы и история покупок\u00a0— в\u00a0одном месте.'}</p>
-      <Link href={`/${lang}/account`} className="btn btn--primary">{ky ? 'Кабинетке өтүү' : 'Перейти в кабинет'}<IconChevronRight size={18}/></Link>
+    <div className="account-panel">
+      <div className="account-panel__text"><IconUser size={38} /><h2>{ky ? 'Жеке кабинет' : 'Личный кабинет'} <span>SBonus</span></h2>
+        <p>{ky ? 'Бонустар, буйрутмалар жана сатып алуулардын тарыхы\u00a0— бир жерде.' : 'Бонусы, заказы и история покупок\u00a0— в\u00a0одном месте.'}</p>
+        <Link href={`/${lang}/account`} className="btn btn--primary">{ky ? 'Кабинетке өтүү' : 'Перейти в кабинет'}<IconChevronRight size={18}/></Link>
+      </div>
+      {/* Карта кабинета — пара к телефону Instagram слева: три раздела теми же
+          словами, что на странице кабинета. Без чисел: баланс у каждого свой,
+          придуманный был бы неправдой. Для мыши это ещё один вход в кабинет,
+          для клавиатуры и чтения с экрана — нет: там уже есть кнопка. */}
+      <Link href={`/${lang}/account`} className="account-pass" tabIndex={-1} aria-hidden="true">
+        <Brand bonus />
+        <span className="account-pass__rows">
+          <span><IconGift size={18} />{t.account.balance}<IconChevronRight size={16} /></span>
+          <span><IconCart size={18} />{t.account.orders}<IconChevronRight size={16} /></span>
+          <span><IconClock size={18} />{t.account.history}<IconChevronRight size={16} /></span>
+        </span>
+      </Link>
     </div>
   </section>
 }
