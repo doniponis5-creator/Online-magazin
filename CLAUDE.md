@@ -210,4 +210,7 @@ PC — сайт, расширение 1С и сервер SBonus: `src/`, `publi
 - Конец сессии (180 дней) для «Войти по отпечатку» — перевести часы эмулятора вперёд, потом `~/Library/Android/sdk/platform-tools/adb shell settings put global auto_time 1`.
 - Push на Android выключен: `android.includePlugins: []` в `capacitor.config.ts` — без Firebase плагин роняет приложение; включать только вместе с `android/app/google-services.json` (сейчас нет) и отправкой через FCM на сервере SBonus.
 - Шаги для владельца (Play Console, картинки, следующая версия) — `docs/ANDROID_PLAY_UZ.md`; снимки и логи проверок — `build-play/android-check/<таск>/`.
+- Play Console → «Финансовые функции» — только «В моем приложении нет финансовых функций». Бонусы SBonus отмечены как «поощрительные программы» → 26.09.2026 отказ: финансовые функции публикуют лишь аккаунты-организации, а наш аккаунт личный.
+- Аккаунт Play личный: в «Рабочую версию» только после закрытого теста ≥ 12 тестировщиков × ≥ 14 дней (канал «Закрытое тестирование – Alpha», список «Smart Centr testers», страна — Киргизия).
+- `smarket.kg` за Cloudflare Bot Fight Mode: проверка ссылок Play Console получает 403 (у нас и у Googlebot — 200). Это предупреждение, не ошибка.
 <!-- autopilot:end -->
