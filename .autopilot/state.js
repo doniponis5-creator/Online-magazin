@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-26T22:48:52+06:00",
-  "updatedAt": "2026-09-27T00:42:53+06:00",
+  "updatedAt": "2026-09-27T01:28:52+06:00",
   "finishedAt": null,
   "stages": [
     {
@@ -49,13 +49,13 @@ window.STATE =
       "id": "build",
       "status": "active",
       "startedAt": "2026-09-26T23:37:00+06:00",
-      "note": "4 из 7 тасков готовы"
+      "note": "5 из 7 тасков готовы"
     },
     {
       "id": "review",
       "status": "active",
       "startedAt": "2026-09-26T23:45:48+06:00",
-      "note": "проверено 4 из 7"
+      "note": "проверено 5 из 7"
     },
     {
       "id": "final",
@@ -254,11 +254,35 @@ window.STATE =
         "src/components/kitchen/kitchen.css",
         "src/components/kitchen/texts.ts"
       ],
-      "status": "in-progress",
+      "status": "done",
       "retries": 0,
-      "repairs": 0,
-      "handoffs": 0,
-      "startedAt": "2026-09-27T00:42:53+06:00"
+      "repairs": 1,
+      "handoffs": 1,
+      "startedAt": "2026-09-27T00:42:53+06:00",
+      "repairFindings": [
+        "kp-last перезаписывается до выбора «Продолжить»",
+        "«Начать заново» на плашке без отмены (история 34)",
+        "последняя правка теряется при уходе",
+        "?ov= не работает в Safari < 17",
+        "пустой слот назван «Не нужно» (истории 37, 42)",
+        "вытяжка под окном — совет «удлините стену»",
+        "«это предел» при округлении",
+        "CORE и правила 3D продублированы"
+      ],
+      "finishedAt": "2026-09-27T01:28:52+06:00",
+      "commit": "c630360",
+      "tests": {
+        "passed": 355,
+        "failed": 0
+      },
+      "files": [
+        "src/lib/kitchen/order.ts",
+        "__tests__/kitchen-order.test.ts",
+        "src/components/kitchen/KitchenPlanner.tsx",
+        "src/components/kitchen/kitchen.css",
+        "src/components/kitchen/texts.ts",
+        "src/components/kitchen/three/engine.ts"
+      ]
     },
     {
       "id": "06",
@@ -282,10 +306,11 @@ window.STATE =
         "src/components/kitchen/kitchen.css",
         "src/components/kitchen/texts.ts"
       ],
-      "status": "pending",
+      "status": "in-progress",
       "retries": 0,
       "repairs": 0,
-      "handoffs": 0
+      "handoffs": 0,
+      "startedAt": "2026-09-27T01:28:52+06:00"
     },
     {
       "id": "07",
@@ -313,7 +338,7 @@ window.STATE =
   ],
   "singlePass": null,
   "tests": {
-    "passed": 346,
+    "passed": 355,
     "failed": 0
   },
   "debt": {
@@ -357,7 +382,12 @@ window.STATE =
     "T04 · __tests__/kitchen-build.test.ts:101-105 — 192 сборки на уровне модуля, падение без имени кухни",
     "T04 · parts.ts — стержневая ручка 32 см на фасадах уже 32 см (бутылочница 16, антресоль 20) в 3D",
     "T04 · build.ts hoodAt — без plan.hoodHeight 3D сама выбирает газ/электро; после таска 05 высота должна браться только из плана",
-    "T04 · spec.ts modulesOf().fillers — доборы в двух списках; таск 06 строит таблицу только из extraList, fillers — лишь для чертежа"
+    "T04 · spec.ts modulesOf().fillers — доборы в двух списках; таск 06 строит таблицу только из extraList, fillers — лишь для чертежа",
+    "T05 · order.ts:132 wallsText и KitchenPlanner.tsx:1709 wallsLine — две функции строки стен с разным форматом (wallsLine в зоне 06)",
+    "T05 · order.ts:10 — lib импортирует kitchenTexts из components",
+    "T05 · kitchen-order.test.ts — KY-текст WhatsApp проверен частично, пометка «под варочной панелью» не проверена",
+    "T05 · order.ts wanted() — угадывает «слот по умолчанию» через подставную технику в defaultPick; нужна явная функция в catalog.ts",
+    "T05 · правки при видимой плашке «Продолжить» не возвращаются отменой после «Начать заново»"
   ],
   "reviewers": {
     "manifestSpec": "a30dafafe6ec2f04c",
