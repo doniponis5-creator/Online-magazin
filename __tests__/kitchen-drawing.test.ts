@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { buildKitchen, WINDOW } from '@/components/kitchen/three/build'
+import { buildKitchen } from '@/components/kitchen/three/build'
+import { WINDOW } from '@/lib/kitchen/dims'
 import {
   elevationSvg,
   islandOverhang,

@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
+import * as KD from '@/lib/kitchen/dims'
 import type { DoorKind, HandleKind } from '@/lib/kitchen/styles'
 
 /**
@@ -9,7 +10,8 @@ import type { DoorKind, HandleKind } from '@/lib/kitchen/styles'
  * x ∈ [0, w], y ∈ [0, h], z ∈ [0, толщина]; лицевая сторона смотрит в +z.
  */
 
-export const FRONT_T = 0.018
+/** Толщина фасада, м — из dims.ts (см). */
+export const FRONT_T = KD.FRONT_T / 100
 export const GAP = 0.003
 
 /** UV в метрах: текстура ложится в реальном масштабе на любую грань. */
@@ -173,7 +175,10 @@ export function front(kind: DoorKind, w: number, h: number, mat: Mat, glass?: { 
 }
 
 /** len — длина ручки, м (для длинных и профильных ручек) */
-export type HandleAt = { x: number; y: number; vertical: boolean; long: boolean; len?: number }
+/** max — не длиннее этого, м: фасад минус поля `HANDLE_EDGE` с двух сторон. */
+export type HandleAt = { x: number; y: number; vertical: boolean; long: boolean; len?: number; max?: number }
+/** Поле от края фасада до конца ручки, м. */
+export const HANDLE_EDGE = 0.03
 
 /** Стержень ручки на двух стойках: рейлинг, длинная, с насечкой. */
 function rodOnPosts(g: THREE.Group, at: HandleAt, mat: THREE.Material, rod: THREE.BufferGeometry, len: number, posts: number[]) {
@@ -189,6 +194,8 @@ function rodOnPosts(g: THREE.Group, at: HandleAt, mat: THREE.Material, rod: THRE
 /** Ручка в точке (x, y) на лицевой стороне фасада. */
 export function handle(kind: HandleKind, at: HandleAt, mat: THREE.Material): THREE.Object3D | null {
   const g = new THREE.Group()
+  // ручка не длиннее своего фасада минус поля (бутылочница 16, антресоль 20)
+  const fit = (len: number) => Math.max(0.04, Math.min(len, at.max ?? len))
   const zf = FRONT_T
   switch (kind) {
     case 'gola':
@@ -220,7 +227,7 @@ export function handle(kind: HandleKind, at: HandleAt, mat: THREE.Material): THR
       break
     }
     case 'bar': {
-      const len = at.long ? 0.32 : 0.16
+      const len = fit(at.len ?? (at.long ? 0.32 : 0.16))
       const rod = new THREE.CylinderGeometry(0.006, 0.006, len, 14)
       if (!at.vertical) rod.rotateZ(Math.PI / 2)
       g.add(mesh(rod, mat, 0, 0, 0.032))
@@ -239,7 +246,7 @@ export function handle(kind: HandleKind, at: HandleAt, mat: THREE.Material): THR
       break
     }
     case 'edge': {
-      const len = at.len ?? (at.long ? 0.3 : 0.16)
+      const len = fit(at.len ?? (at.long ? 0.3 : 0.16))
       const w = at.vertical ? 0.008 : len
       const h = at.vertical ? len : 0.008
       g.add(mesh(box(w, h, 0.026), mat, 0, 0, 0.013))
@@ -247,7 +254,7 @@ export function handle(kind: HandleKind, at: HandleAt, mat: THREE.Material): THR
     }
     case 'tbar': {
       // Т-образная: короткий стержень на одной стойке
-      const len = at.long ? 0.2 : 0.13
+      const len = fit(at.len ?? (at.long ? 0.2 : 0.13))
       const rod = new THREE.CylinderGeometry(0.006, 0.006, len, 16)
       if (!at.vertical) rod.rotateZ(Math.PI / 2)
       g.add(mesh(rod, mat, 0, 0, 0.03))
@@ -256,14 +263,14 @@ export function handle(kind: HandleKind, at: HandleAt, mat: THREE.Material): THR
     }
     case 'long': {
       // длинная квадратная ручка почти на всю дверцу — модно в хай-теке
-      const len = at.len ?? 0.5
+      const len = fit(at.len ?? 0.5)
       const rod = rounded(0.012, len, 0.012, 0.003)
       rodOnPosts(g, at, mat, rod, len, [-1, 1])
       break
     }
     case 'rail': {
       // тонкий плоский профиль на стойках
-      const len = at.len ?? (at.long ? 0.4 : 0.22)
+      const len = fit(at.len ?? (at.long ? 0.4 : 0.22))
       const bar = rounded(0.006, len, 0.02, 0.002)
       if (!at.vertical) bar.rotateZ(Math.PI / 2)
       g.add(mesh(bar, mat, 0, 0, 0.03))
@@ -275,7 +282,7 @@ export function handle(kind: HandleKind, at: HandleAt, mat: THREE.Material): THR
     }
     case 'knurled': {
       // рейлинг с насечкой: частые кольца по всей длине
-      const len = at.len ?? (at.long ? 0.3 : 0.18)
+      const len = fit(at.len ?? (at.long ? 0.3 : 0.18))
       const pts: THREE.Vector2[] = [new THREE.Vector2(0, -len / 2), new THREE.Vector2(0.0062, -len / 2)]
       const step = 0.0035
       for (let y = -len / 2 + 0.012; y < len / 2 - 0.012; y += step) {

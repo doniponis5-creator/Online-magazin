@@ -13,6 +13,7 @@ import {
   type SlotKind,
   type WallId,
 } from './types'
+import { CARCASS_D, FRONT_T, hoodNorm, isTall, UPPER_CARCASS_D, up5 } from './dims'
 
 /**
  * Раскладка кухни по стенам — как её сделал бы мебельщик.
@@ -23,14 +24,16 @@ import {
  * покупатель видит, сколько сантиметров не хватило.
  */
 
-export const DEPTH = 60
+/** Глубина нижнего ряда с фасадом: корпус + фасад (58 + 1,8 → 60). */
+export const DEPTH = Math.round(CARCASS_D + FRONT_T)
 export const CORNER_W = 100
 export const SINK_W = 60
 export const HOB_W = 60
 export const TALL_W = 60
 export const WASHER_W = 60
 export const PANTRY_W = 60
-export const UPPER_DEPTH = 35
+/** Глубина верхнего ряда с фасадом: корпус + фасад (33 + 1,8 → 35). */
+export const UPPER_DEPTH = Math.round(UPPER_CARCASS_D + FRONT_T)
 /** боковины ниши холодильника: две по 1,6 см и зазоры для воздуха */
 export const NICHE_EXTRA = 3.2
 /**
@@ -100,8 +103,6 @@ export type Upper = {
 }
 /** Верхний шкаф уже этого (см) не делают — ставят доборную панель. */
 export const UPPER_MIN = 20
-/** Низ вытяжки над варочной панелью, см: над газовой выше. */
-export const HOOD_OVER = { gas: 75, electric: 65 }
 
 /** Не поместилось: что, сколько см не хватило и на какой стене. */
 export type Dropped = { item: ItemKey; slot?: SlotKind; need: number; wall: RunId }
@@ -213,7 +214,7 @@ const slotWidth = (a: KitchenAppliance | null | undefined, fallback: number, ext
   a ? Math.ceil(a.w + 1.5 + extra) : fallback
 
 /** Шкаф под варочной не уже самой панели (округлено до 5 см вверх). */
-export const hobMinWidth = (hob: KitchenAppliance | null | undefined) => Math.max(HOB_W, hob ? Math.ceil(hob.w / 5) * 5 : HOB_W)
+export const hobMinWidth = (hob: KitchenAppliance | null | undefined) => Math.max(HOB_W, hob ? up5(hob.w) : HOB_W)
 
 /** Своя ширина в пределах, целыми сантиметрами. */
 export function sizedWidth(kind: keyof typeof WIDTH_LIMITS, w: number | undefined): number {
@@ -661,7 +662,7 @@ export function planKitchen(input: PlanInput, options: { shelves: boolean }): Pl
   const fridgeW = slotWidth(input.fridge, 0, input.fridgeOpen ? 0 : NICHE_EXTRA)
   const upperOpts: UpperOpts = { shelves: options.shelves, fridgeOpen: Boolean(input.fridgeOpen) }
   // Шкаф под духовкой (и колонна с ней) не уже самой духовки, кратно 5 см.
-  const ovenW = input.oven ? Math.max(HOB_W, Math.ceil(input.oven.w / 5) * 5) : HOB_W
+  const ovenW = input.oven ? Math.max(HOB_W, up5(input.oven.w)) : HOB_W
   const ovenUnderHob = !hasTall && !apart
   const hobFloor = Math.max(hobMinWidth(input.hob), ovenUnderHob ? ovenW : 0)
   const hobW = Math.max(hobFloor, sizedWidth('hob', input.widths?.hob))
@@ -733,7 +734,7 @@ export function planKitchen(input: PlanInput, options: { shelves: boolean }): Pl
     const want = clampWindow(input.windowW ?? width, a.length)
     const sinkModule = a.modules.find((m) => m.kind === 'sink')
     const mid = sinkModule ? sinkModule.x + sinkModule.w / 2 : fallback
-    const { at, w } = windowSpot(a.length, want, mid, a.modules.filter((m) => TALL_MODULES.includes(m.kind)))
+    const { at, w } = windowSpot(a.length, want, mid, a.modules.filter((m) => isTall(m.kind)))
     a.uppers = uppersFor(a.modules, upperOpts, { from: at - w / 2, to: at + w / 2 })
     return { wall: 'back', at, w }
   }
@@ -803,7 +804,7 @@ export function planKitchen(input: PlanInput, options: { shelves: boolean }): Pl
     const hobM = r.modules.find((m) => m.kind === 'hob')
     if (r.wall && hobM && input.hood) {
       if (r.uppers.some((u) => u.kind === 'hood')) {
-        const w = widenHood(r.uppers, hobM, Math.ceil(input.hood.w / 5) * 5)
+        const w = widenHood(r.uppers, hobM, up5(input.hood.w))
         if (w < input.hood.w - 0.01) tooWide.push({ slot: 'hood', w: input.hood.w, room: w, wall: r.id })
       } else {
         // Плита под окном: вытяжку не повесить (C18).
@@ -817,7 +818,7 @@ export function planKitchen(input: PlanInput, options: { shelves: boolean }): Pl
   const hoodHangs = Boolean(input.hood) && runs.some((r) => r.modules.some((m) => m.kind === 'hob')) && !dropped.some((d) => d.slot === 'hood')
   if (hoodHangs) {
     const gas = input.hob?.hob === 'gas'
-    hoodHeight = { over: gas ? HOOD_OVER.gas : HOOD_OVER.electric, gas }
+    hoodHeight = { over: hoodNorm(gas), gas }
   }
 
   const plan: Plan = { shape, runs, room, window, placed, dropped, island }
@@ -834,8 +835,6 @@ export function needByWall(plan: Pick<Plan, 'dropped'>): Partial<Record<RunId, n
   for (const d of plan.dropped) if (d.slot !== 'hood') out[d.wall] = Math.max(out[d.wall] ?? 0, d.need)
   return out
 }
-
-const TALL_MODULES: ModuleKind[] = ['fridge', 'tall', 'pantry']
 
 /**
  * Где встать окну шириной `want` у задней стены длиной `length`: не ближе 10 см
@@ -1043,7 +1042,7 @@ function flip(at: Module['blindAt']): Module['blindAt'] {
 export const WINDOW_LIMITS = { min: 60, max: 240 }
 const clampWindow = (w: number, wall: number) => Math.max(WINDOW_LIMITS.min, Math.min(WINDOW_LIMITS.max, wall - 40, Math.round(w)))
 
-/** Своя высота пенала: не ниже этого, см (колонне с духовкой нужно больше — см. KitchenPlanner). */
+/** Своя высота пенала: не ниже этого, см (колонне с духовкой нужно больше — `tallMin` в dims.ts). */
 export const COLUMN_HEIGHT = { min: 120 }
 
 /** Высота потолка, см. */
@@ -1064,5 +1063,5 @@ export function minA(shape: Shape, widths?: Partial<Record<SizedItem, number>>):
   if (shape === 'u') return 2 * CORNER_W + sink + 20
   if (shape === 'corner') return CORNER_W + sink + 40
   // прямая и остров: мойка и плита на одной стене
-  return Math.max(LIMITS.a.min, Math.ceil((sink + hob) / 5) * 5)
+  return Math.max(LIMITS.a.min, up5(sink + hob))
 }

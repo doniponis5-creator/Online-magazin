@@ -1,3 +1,4 @@
+import { WINDOW_GAP } from '@/lib/kitchen/dims'
 import { DEPTH, UPPER_DEPTH, type Plan } from '@/lib/kitchen/layout'
 import { modulesOf, type DimsKind, type SpecBox, type SpecData, type SpecFront, type SpecRun } from '@/lib/kitchen/spec'
 import type { KitchenAppliance, SlotKind } from '@/lib/kitchen/types'
@@ -532,12 +533,12 @@ export function planSvg(plan: Plan, labels: PlanLabels, opts: PlanOpts): string 
 
 /* ───────── окно, остров, списки для мастера ───────── */
 
-/** Окно на развёртке: высоты задаёт 3D (`WINDOW` в build.ts, метры), верх — не выше потолка минус 25, как там. */
+/** Окно на развёртке, см: высоты — `WINDOW` из dims.ts (их же ставит 3D), верх — не ближе `WINDOW_GAP` к потолку, как там. */
 export type WindowSizes = { backSill: number; top: number }
 export function windowFor(plan: Pick<Plan, 'window'>, runId: string, ceiling: number, sizes: WindowSizes | null): { at: number; w: number; sill: number; top: number } | null {
   const win = plan.window
   if (!win || !sizes || runId !== 'A' || win.wall !== 'back') return null
-  return { at: win.at, w: win.w, sill: sizes.backSill * 100, top: Math.min(sizes.top * 100, ceiling - 25) }
+  return { at: win.at, w: win.w, sill: sizes.backSill, top: Math.min(sizes.top, ceiling - WINDOW_GAP) }
 }
 
 /** Свес столешницы острова в сторону стульев: столешница острова минус столешница у стены (обе — из сборки). */

@@ -21,6 +21,8 @@
   --kp-sk-window: #93bdf6;
   --kp-sk-top: #f1efe9;
   --kp-panel-w: 404px;
+  /* фон панели настроек — и прилипшего к её низу ряда «Дальше» */
+  --kp-panel-bg: #fff;
   /* высота шапки сайта и где сейчас её низ — задаёт KitchenPlanner */
   --kp-header: var(--header-h);
   --kp-top: var(--header-h);
@@ -808,7 +810,7 @@ html:has(.kp-photo) .assistant {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background: #fff;
+  background: var(--kp-panel-bg);
   border: 1px solid var(--kp-line);
   border-radius: 0 var(--radius-card) var(--radius-card) 0;
 }
@@ -3671,5 +3673,52 @@ html.kp-lock body {
 @media (min-width: 901px) {
   html.kp-over .cart-bar ~ .assistant {
     bottom: calc(24px + 70px + 12px);
+  }
+}
+
+/* Та же полоска над «Для мебельщика»: пока она есть на странице кухни,
+   прокрутка к чертежу (Tab, scrollIntoView) останавливается над ней, а не
+   прячет под неё размеры развёртки. Отступ снизу — у кухни, полоску не трогаем;
+   поменял её высоту — поправь и тут (слепая приёмка, 1440×900). */
+@media (min-width: 901px) {
+  html:has(.kp-spec):has(.cart-bar) {
+    scroll-padding-bottom: calc(24px + 70px + 12px);
+  }
+}
+
+/* Ряд «Начать заново» + «Дальше». В телефонной раскладке ряда как будто нет:
+   кнопки стоят одна под другой, как раньше. Вне её (условие — отрицание
+   STACKED из KitchenPlanner.tsx, строка та же) ряд прилипает к низу прокрутки
+   панели: блок суммы «Дальше» не закрывает, и «Начать заново» не уходит под
+   неё (слепая приёмка, 1440×900). */
+.kp-next-row {
+  display: contents;
+}
+
+@media not all and (max-width: 900px) and (min-height: 521px) {
+  .kp-next-row {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 18px;
+    background: var(--kp-panel-bg);
+    box-shadow: 0 -12px 14px -2px var(--kp-panel-bg);
+  }
+
+  /* поуже — чтобы и по-кыргызски обе кнопки встали в одну строку */
+  .kp-next-row .kp-restart {
+    flex: none;
+    margin: 0;
+    padding-inline: 8px;
+  }
+
+  .kp-next-row .kp-next {
+    flex: 1 1 auto;
+    width: auto;
+    margin: 0;
   }
 }

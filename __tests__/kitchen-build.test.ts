@@ -2,6 +2,8 @@ import * as THREE from 'three'
 import { describe, expect, it } from 'vitest'
 import { buildKitchen, type Built } from '@/components/kitchen/three/build'
 import { planKitchen, type Plan, type PlanInput } from '@/lib/kitchen/layout'
+import { UNDER_COUNTER } from '@/lib/kitchen/checks'
+import { BASE_H, BODY, PLINTH } from '@/lib/kitchen/dims'
 import { cutList, extraList, frontList, modulesOf, type SpecData } from '@/lib/kitchen/spec'
 import { getStyle, getTone, STYLES, type KitchenStyle } from '@/lib/kitchen/styles'
 import type { HobKind, KitchenAppliance, Shape } from '@/lib/kitchen/types'
@@ -365,4 +367,52 @@ describe('числа 3D и спецификации совпадают', () => {
       }
       expect(checked).toBeGreaterThan(10)
     })
+})
+
+/* ───────────── 08: размеры кухни из одного места ───────────── */
+
+describe('08: высоты из dims.ts — одни для проверки, 3D и спецификации', () => {
+  it('низ столешницы = цоколь 10 + корпус 72 = 82: проверка «выше столешницы», высоты 3D и проём ПММ', () => {
+    // спецификация §5: стиральная/ПММ — «высота техники > низа столешницы»; цоколь 10 + корпус 72
+    expect(PLINTH + BODY).toBe(82)
+    expect(BASE_H).toBe(82)
+    expect(UNDER_COUNTER).toBe(82)
+    let openings = 0
+    for (const { c, spec } of SPECS) {
+      expect(spec.heights.plinth, c.name).toBe(10)
+      // верх столешницы из 3D минус её толщина — низ столешницы
+      expect(spec.heights.counter - c.style.topCm, c.name).toBeCloseTo(82, 5)
+      for (const e of (spec.extras ?? []).filter((x) => x.kind === 'dwOpening')) {
+        openings++
+        expect([e.h, e.hMax], c.name).toEqual([82, 87])
+      }
+    }
+    expect(openings).toBeGreaterThan(0)
+  })
+})
+
+describe('08/D16: hoodOver меряется по поставленной вытяжке', () => {
+  it('на переборе: hoodOver = низ меша вытяжки над столешницей (±0,5 см)', () => {
+    let seen = 0
+    const v = new THREE.Vector3()
+    for (const { c, built } of SPECS) {
+      const hood = built.objects.hood
+      if (!hood) {
+        expect(built.hoodOver, c.name).toBeUndefined()
+        continue
+      }
+      built.root.updateMatrixWorld(true)
+      let low = Infinity
+      hood.traverse((o) => {
+        const m = o as THREE.Mesh
+        if (!m.isMesh) return
+        const pos = m.geometry.getAttribute('position')
+        for (let i = 0; i < pos.count; i++) low = Math.min(low, v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld).y)
+      })
+      const counterTop = 82 + c.style.topCm
+      expect(built.hoodOver, c.name).toBeCloseTo(low * 100 - counterTop, 0)
+      seen++
+    }
+    expect(seen).toBeGreaterThan(50)
+  })
 })

@@ -165,7 +165,8 @@ export class KitchenEngine {
   private shift = { x: 0, y: 0 }
   private resizeObserver: ResizeObserver
   private reduced: boolean
-  private mobile: boolean
+  /** телефон: палец и нет мыши/тачпада — один флаг для движка и фото экрана */
+  readonly mobile: boolean
   private view: View = 'angle'
   private disposed = false
   private down: { x: number; y: number; t: number } | null = null

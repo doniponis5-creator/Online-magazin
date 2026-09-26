@@ -1,4 +1,5 @@
-import { HOOD_OVER, type Module, type Plan, type Run } from './layout'
+import { BASE_H, hoodNorm, isTall } from './dims'
+import { DEPTH, type Module, type Plan, type Run } from './layout'
 
 /**
  * Проверка проекта по правилам кухонных дизайнеров (NKBA и практика
@@ -29,9 +30,8 @@ export const TRIANGLE = { legMin: 115, legMax: 270, sumMax: 790 }
 /** Столешница по бокам плиты — не меньше 30 см. */
 export const HOB_SIDE = 30
 
-const TALL: Module['kind'][] = ['fridge', 'tall', 'pantry']
-/** Под столешницей место до низа столешницы: цоколь 10 + корпус 72, см. */
-export const UNDER_COUNTER = 82
+/** Под столешницей место до низа столешницы (цоколь + корпус), см. */
+export const UNDER_COUNTER = BASE_H
 
 type Found = { run: Run; i: number; m: Module }
 
@@ -60,7 +60,7 @@ function counterBeside(run: Run, i: number, step: 1 | -1): number {
   let sum = 0
   for (let j = i + step; j >= 0 && j < run.modules.length; j += step) {
     const m = run.modules[j]
-    if (TALL.includes(m.kind) || m.kind === 'sink') break
+    if (isTall(m.kind) || m.kind === 'sink') break
     sum += m.w
   }
   return Math.round(sum)
@@ -94,9 +94,9 @@ function tallUnderWindow(plan: Plan): boolean {
   const from = win.at - win.w / 2
   const to = win.at + win.w / 2
   return a.modules.some((m, i) => {
-    if (!TALL.includes(m.kind)) return false
+    if (!isTall(m.kind)) return false
     if (win.wall === 'back') return m.x < to - 0.01 && m.x + m.w > from + 0.01
-    return i === 0 && m.x < 0.01 && from < 60 - 0.01
+    return i === 0 && m.x < 0.01 && from < DEPTH - 0.01
   })
 }
 
@@ -139,7 +139,7 @@ export function checkProject(plan: Plan, facts: CheckFacts = {}): Check[] {
   // деле. Пока фактической высоты нет — пункта нет и в счёт он не входит.
   if (plan.hoodHeight && facts.hoodOver !== undefined && Number.isFinite(facts.hoodOver)) {
     const { gas } = plan.hoodHeight
-    const min = gas ? HOOD_OVER.gas : HOOD_OVER.electric
+    const min = hoodNorm(gas)
     const over = Math.round(facts.hoodOver * 10) / 10
     out.push({ id: 'hoodHeight', level: over >= min ? 'ok' : 'warn', over, min, gas })
   }

@@ -1,6 +1,7 @@
 import type { Product } from '@/data/products'
 import type { Lang } from '@/lib/i18n/config'
 import { applianceFromProduct } from './catalog'
+import { tallMin } from './dims'
 import { HANDLE_METALS, HANDLES, frontColor, splashChoice, topChoice } from './finishes'
 import { frontsFromQuery, frontsToQuery } from './fronts'
 import { CEILING, COLUMN_HEIGHT, LIMITS, minA, sizedWidth, WIDTH_LIMITS, WINDOW_LIMITS, wallsOf } from './layout'
@@ -156,18 +157,13 @@ function doorsFromQuery(raw: string | null): string[] | undefined {
 /** Своя высота колонн: «ht=p200t230» — пенал 200 см, колонна с духовкой 230 см. */
 const HEIGHT_CODE: Record<(typeof COLUMN_ITEMS)[number], string> = { pantry: 'p', pantry2: 'q', tall: 't' }
 
-/**
- * Колонна с духовкой ниже 160 см не вмещает духовку, а со встраиваемой
- * микроволновкой над ней — ниже 200 (так же ограничивает экран).
- */
-const TALL_MIN = { oven: 160, withMicrowave: 200 }
 
-function heightsFromQuery(raw: string | null, tallMin: number): KitchenState['heights'] {
+function heightsFromQuery(raw: string | null, minTall: number): KitchenState['heights'] {
   if (!raw || raw.length > 20) return undefined
   const out: NonNullable<KitchenState['heights']> = {}
   for (const [, code, v] of raw.matchAll(/([pqt])(\d{3})/g)) {
     const key = COLUMN_ITEMS.find((k) => HEIGHT_CODE[k] === code)
-    if (key) out[key] = clamp(Number(v), key === 'tall' ? tallMin : COLUMN_HEIGHT.min, CEILING.max)
+    if (key) out[key] = clamp(Number(v), key === 'tall' ? minTall : COLUMN_HEIGHT.min, CEILING.max)
   }
   return Object.keys(out).length ? out : undefined
 }
@@ -226,7 +222,7 @@ export function stateFromQuery(query: URLSearchParams, known: KnownAppliances): 
   const a = Math.max(size(query.get('a'), 'a', DEFAULT_STATE.a), minA(shape))
   const { arrangement, cabinets, at } = arrangementFromQuery(query.get('o'), shape)
   const widths = widthsFromQuery(query.get('wd'))
-  const heights = heightsFromQuery(query.get('ht'), builtInOf(known, picks.microwave) ? TALL_MIN.withMicrowave : TALL_MIN.oven)
+  const heights = heightsFromQuery(query.get('ht'), tallMin(builtInOf(known, picks.microwave)))
   const doorsRight = doorsFromQuery(query.get('dr'))
   const pantries = clamp(Math.round(Number(query.get('pn')) || 0), 0, 2)
   const num = (key: string, min: number, max: number) => {

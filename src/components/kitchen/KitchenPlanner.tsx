@@ -72,7 +72,8 @@ import {
   type SlotKind,
   type WallId,
 } from '@/lib/kitchen/types'
-import { DRAWING_CSS, elevationSvg, islandOverhang, makerList, PLAN_BOX, pickScale, planSvg, techRows, windowFor, type DrawingLabels, type WindowSizes } from './drawing'
+import { tallMin, UPPER_BOTTOM, WINDOW } from '@/lib/kitchen/dims'
+import { DRAWING_CSS, elevationSvg, islandOverhang, makerList, PLAN_BOX, pickScale, planSvg, techRows, windowFor, type DrawingLabels } from './drawing'
 import { PlanSketch } from './PlanSketch'
 import { kitchenTexts, type KitchenTexts } from './texts'
 import { parseVariants, type Variant } from '@/lib/kitchen/variants'
@@ -1327,11 +1328,11 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     const ceil = ceiling - 0.4
     let top = ceil
     if (state.lowUppers) {
-      top = Math.min(142 + style.upperCm, ceil)
+      top = Math.min(UPPER_BOTTOM + style.upperCm, ceil)
       if (items.fridge && !state.fridgeOpen) top = Math.min(ceil, Math.max(top, items.fridge.h + 35))
     }
     const max = Math.floor(top)
-    const min = k === 'tall' ? (items.microwave?.builtIn ? 200 : 160) : COLUMN_HEIGHT.min
+    const min = k === 'tall' ? tallMin(Boolean(items.microwave?.builtIn)) : COLUMN_HEIGHT.min
     return { key: k as ColumnItem, value: Math.min(max, Math.round(state.heights?.[k as ColumnItem] ?? max)), min, max }
   }, [target, ceiling, state.lowUppers, state.fridgeOpen, state.heights, style.upperCm, items.fridge, items.microwave])
 
@@ -1669,7 +1670,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     // Телефон — сразу лёгкий путь: большое фото трассировкой копится там
     // долго и может не поместиться в память. Трассировка уже не пошла —
     // тоже он, без второй попытки.
-    const light = photoFallback || window.matchMedia('(pointer: coarse)').matches
+    const light = photoFallback || engine.mobile
     const started = light ? 'failed' : engine.isPhoto() ? 'ok' : await engine.startPhoto(setPhoto)
     if (started === 'ok') blob = await engine.photoBig()
     else if (started === 'failed') {
@@ -1810,24 +1811,10 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   // стены одной строкой — та же, что в WhatsApp (order.ts)
   const wallsLine = wallsText(state, lang)
   const [zoomWall, setZoomWall] = useState<string | null>(null)
-  // высоты окна задаёт 3D-сборка (`WINDOW` в build.ts); модуль и так грузится ради 3D.
-  // Не загрузился — окно на развёртке не рисуем: выдумывать высоты нельзя.
-  const [winSizes, setWinSizes] = useState<WindowSizes | null>(null)
-  useEffect(() => {
-    let off = false
-    import('./three/build')
-      .then(({ WINDOW }) => {
-        if (!off) setWinSizes(WINDOW)
-      })
-      .catch(() => setWinSizes(null))
-    return () => {
-      off = true
-    }
-  }, [])
   const drawing = useMemo(() => {
     if (!spec) return null
     const labels: DrawingLabels = { cm: t.cm, appliance: (slot: string) => t.techShort[slot as SlotKind] ?? slot, ...t.drawing }
-    const winOf = (id: string) => windowFor(plan, id, ceiling, winSizes)
+    const winOf = (id: string) => windowFor(plan, id, ceiling, WINDOW)
     const overhang = islandOverhang(spec.runs)
     // один масштаб на все развёртки листа: самый крупный, при котором влезает самая большая стена
     const scale = pickScale((n) => spec.runs.map((r) => elevationSvg(r, spec.heights, labels, winOf(r.id), { scale: n, overhang })))
@@ -1849,7 +1836,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     }, 0)
     const frontsTotal = fronts.reduce((s, f) => s + f.count, 0)
     return { walls, scale, top, planScale, fronts, cuts, hw, tops, modules, frontsTotal }
-  }, [spec, plan, ceiling, t, winSizes])
+  }, [spec, plan, ceiling, t])
 
   /** Отделка словами — для мастера: материал и цвет фасадов, ручки, столешница. */
   const nameOf = (x: { ru: string; ky: string } | undefined) => (x ? (lang === 'ky' ? x.ky : x.ru) : '')
@@ -2706,11 +2693,6 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
               </div>
             )}
 
-            {step === 'shape' && (
-              <button type="button" className="btn btn--ghost btn--sm kp-restart" onClick={startOver}>
-                {t.startOver}
-              </button>
-            )}
             {step === 'size' && (
               <div className="kp-sizes">
                 <PlanSketch plan={plan} labels={wallLabels} className="kp-sketch" />
@@ -3159,17 +3141,25 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
               </ul>
             )}
 
-            {stepIndex < STEPS.length - 1 ? (
-              <button type="button" className="btn btn--outline kp-next" onClick={() => goStep(STEPS[stepIndex + 1])}>
-                {t.next}: {t.steps[STEPS[stepIndex + 1]]}
-                <IconArrow />
-              </button>
-            ) : (
-              <button type="button" className="btn btn--outline kp-next" onClick={finishSteps}>
-                {t.done}
-                <IconArrow down />
-              </button>
-            )}
+            {/* на компьютере ряд прилипает к низу панели — «Начать заново» рядом с «Дальше», а не под ней */}
+            <div className="kp-next-row">
+              {step === 'shape' && (
+                <button type="button" className="btn btn--ghost btn--sm kp-restart" onClick={startOver}>
+                  {t.startOver}
+                </button>
+              )}
+              {stepIndex < STEPS.length - 1 ? (
+                <button type="button" className="btn btn--outline kp-next" onClick={() => goStep(STEPS[stepIndex + 1])}>
+                  {t.next}: {t.steps[STEPS[stepIndex + 1]]}
+                  <IconArrow />
+                </button>
+              ) : (
+                <button type="button" className="btn btn--outline kp-next" onClick={finishSteps}>
+                  {t.done}
+                  <IconArrow down />
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="kp-sum">
