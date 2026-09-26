@@ -197,13 +197,14 @@ PC — сайт, расширение 1С и сервер SBonus: `src/`, `publi
 - `kitchenLinkFor(product, lang)` → `/ru/kitchen?ov=<id>` или `null` (не кухонная техника) — кнопка «Примерить в кухне» из `src/app/[lang]/product/[id]/page.tsx`.
 - `src/lib/kitchen/catalog.ts` `parseSize(specs)`: порядок — только из группы «Ш×В×Г», единицы на всю тройку (мм, если «мм» или число > 300), габариты упаковки пропускает.
 - `src/components/kitchen/three/build.ts` `buildKitchen` → `Built`: `spec` (числа мебельщику, от `lite` не зависят), `hoodOver?` (см; нет вытяжки — нет поля). Каждая деталь — через `dims(obj, kind, w, h, d, at, slot?)`: рамки чертежа берутся из `userData.dims` (`x`, `y`), не из `Box3`.
-- `partsOf(len)` / `PART_MAX = 2.75` (м, в `build.ts`, не экспорт): выше — корпус делится на корпус и антресоль, задняя панель острова режется на части.
+- `src/lib/kitchen/dims.ts` — все размеры кухни в одном месте, в сантиметрах и без three.js: `PLINTH`, `BODY`, `BASE_H` (низ столешницы 82), `DW_OPENING`, `WINDOW`/`WINDOW_GAP`, `tallMin`, `isTall`, `up5`, `hoodNorm`, `CORNER_STRIP`, `partsOf`/`PART_MAX` (275). Новое число кухни — сюда; в метры переводит только `build.ts`/`parts.ts` (там своя метровая `WINDOW` для движка — не путать с `dims.WINDOW`).
+- Выше `PART_MAX` корпус делится на корпус и антресоль, задняя панель острова режется на части (`partsOf`).
 - `src/lib/kitchen/spec.ts`: `cutList`, `frontList`, `hardware`, `topList`, `modulesOf(run)` (`lower`/`upper`/`fillers`), `extraList(spec)` — «Проёмы и доборы» (мм).
 - `src/components/kitchen/drawing.ts`: `elevationSvg` (развёртки), `planSvg(plan, labels, {runs})` (план сверху), `pickScale`/`printedScale` (один масштаб на лист), `cornerZones` — одно правило угла для развёртки и `makerList` («Коротко: что где стоит»).
 - `src/components/kitchen/pdfSheet.ts` `sheetPdf(SheetData)` → `pdfFile.ts` `buildPdf`; `contacts` обязателен (`src/data/contacts.ts`); таблицы листа и экрана — `sheetTables()` в `KitchenPlanner.tsx`.
 - Разумные числа: верх уже 20 см → добор-панель (`UPPER_MIN`); подъёмный фасад ≤ 90 см (`LIFT_MAX`), выше — распашные; одностворчатая дверь ≤ 62 см (`DOOR_MAX`); деталь ≤ 2750 мм (`PART_MAX`); низ вытяжки над панелью 65 см электро/индукция, 75 газ (`HOOD_OVER`).
 
-Тесты (`npx vitest run` → 29 файлов, 371 passed на 27.09.2026; один — `npx vitest run __tests__/kitchen-layout.test.ts`):
+Тесты (`npx vitest run` → 29 файлов, 373 passed на 27.09.2026; один — `npx vitest run __tests__/kitchen-layout.test.ts`):
 - `kitchen-layout` — раскладка и проверки: угол, духовка под варочной, нехватка по стенам, узкий верх, окно над высокими, `snap`, вытяжка.
 - `kitchen-build` — `buildKitchen` в node с заглушкой холста (`globalThis.document`): перебор, пределы деталей, высота вытяжки, рамки 3D ↔ `spec` ±1 см.
 - `kitchen-order` — что входит в сумму, «Добавить всё» без повторов, текст WhatsApp RU/KY.
@@ -225,8 +226,8 @@ PC — сайт, расширение 1С и сервер SBonus: `src/`, `publi
 - `src/lib/kitchen/variants.ts` `parseVariants` фильтрует `localStorage['kp-variants']` — битая запись раньше роняла страницу; сырой `JSON.parse` туда не возвращать.
 - Качество «Лёгкий» (`lite`): в `engine.ts` единый `get lite()`, в сборку флаг едет только через `Mats.lite` (`materials.ts`) — новых `quality === 'lite'` не рассыпать; `Built.spec` (числа для мебельщика) от `lite` не зависит.
 - Термины: только «Духовка» и «Варочная панель» (KY «Сордургуч», «Бышыруучу панель») — `kitchen-texts.test.ts` падает на «Плита»/«Духовой шкаф» в любой строке `texts.ts`.
-- `KitchenPlanner.tsx` берёт из `./three/*` только `import type`; движок, фото, `buildKitchen` (запасной `spec` без 3D) и `WINDOW` (высоты окна на развёртке) — через `import()`: обычный импорт затянет three.js в основной бандл.
-- Плашка корзины сайта `.cart-bar` (`src/app/globals.css`): на компьютере `html.kp-over .cart-bar ~ .assistant` в `kitchen.css` поднимает консультанта над ней — высота 70 px вписана числом, поменял плашку — поправь и тут; `kp-over` ставит `KitchenPlanner.tsx`, пока низ конструктора у края экрана.
+- `KitchenPlanner.tsx` берёт из `./three/*` только `import type`; движок, фото и `buildKitchen` (запасной `spec` без 3D) — через `import()`: обычный импорт затянет three.js в основной бандл. Числа (окно и пр.) — из `dims.ts`, он лёгкий.
+- Плашка корзины сайта `.cart-bar` (`src/app/globals.css`): на компьютере `html.kp-over .cart-bar ~ .assistant` в `kitchen.css` поднимает консультанта над ней — высота 70 px вписана числом, поменял плашку — поправь и тут; `kp-over` ставит `KitchenPlanner.tsx`, пока низ конструктора у края экрана. Та же высота — в отступе прокрутки над «Для мебельщика»: поправлять оба места. На компьютере «Дальше» и «Начать заново» — в липком ряду `.kp-next-row` (фон `--kp-panel-bg`).
 - `smartcentr-site/` — распакованная копия архива из `deploy/site/pack.sh`; в git её не класть (есть в `.gitignore` и `.dockerignore`): `tsconfig` берёт `**/*.ts`, и старая копия ломает `tsc` и засоряет `graphify`.
 
 ### Android (25.09.2026)

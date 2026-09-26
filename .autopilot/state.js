@@ -1,7 +1,7 @@
 window.STATE =
 {
   "slug": "kitchen-3d-audit-pro",
-  "dir": "2026-09-26-kitchen-3d-audit-pro--wip",
+  "dir": "2026-09-26-kitchen-3d-audit-pro",
   "title": "3D-конструктор кухни: аудит расчётов и чертежа, удобство, PRO",
   "mode": "semi",
   "depth": "normal",
@@ -11,8 +11,8 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-26T22:48:52+06:00",
-  "updatedAt": "2026-09-27T03:44:46+06:00",
-  "finishedAt": null,
+  "updatedAt": "2026-09-27T04:12:59+06:00",
+  "finishedAt": "2026-09-27T04:12:59+06:00",
   "stages": [
     {
       "id": "preflight",
@@ -61,14 +61,16 @@ window.STATE =
     },
     {
       "id": "final",
-      "status": "active",
-      "startedAt": "2026-09-27T03:29:37+06:00"
+      "status": "done",
+      "startedAt": "2026-09-27T03:29:37+06:00",
+      "finishedAt": "2026-09-27T04:12:59+06:00",
+      "note": "слепая приёмка: 13 из 13 реализовано"
     }
   ],
   "requirements": {
     "total": 15,
-    "done": 4,
-    "inTicket": 11,
+    "done": 15,
+    "inTicket": 0,
     "inSpec": 0,
     "placeholder": 0,
     "deferred": 0,
@@ -407,22 +409,52 @@ window.STATE =
         "src/components/kitchen/drawing.ts",
         "src/components/kitchen/KitchenPlanner.tsx"
       ],
-      "status": "in-progress",
+      "status": "done",
       "retries": 0,
-      "repairs": 0,
+      "repairs": 1,
       "handoffs": 0,
-      "startedAt": "2026-09-27T03:44:46+06:00"
+      "startedAt": "2026-09-27T03:44:46+06:00",
+      "repairFindings": [
+        "липкая «Дальше» закрывает «Начать заново» (BLOCKING)",
+        "плашка корзины над «Для мебельщика» не исправлена",
+        "checks.ts — третья копия нормы вытяжки",
+        "реэкспорты HOOD_OVER/WINDOW",
+        "WINDOW в метрах в модуле сантиметров",
+        "параметр tallMin перекрывает функцию",
+        "остались UPPER_D, CARCASS_D, WALL_H, blind 60"
+      ],
+      "finishedAt": "2026-09-27T04:12:06+06:00",
+      "commit": "233f9d1",
+      "tests": {
+        "passed": 373,
+        "failed": 0
+      },
+      "files": [
+        "src/lib/kitchen/dims.ts",
+        "src/lib/kitchen/layout.ts",
+        "src/lib/kitchen/checks.ts",
+        "src/lib/kitchen/share.ts",
+        "src/components/kitchen/three/build.ts",
+        "src/components/kitchen/three/parts.ts",
+        "src/components/kitchen/three/engine.ts",
+        "src/components/kitchen/drawing.ts",
+        "src/components/kitchen/KitchenPlanner.tsx",
+        "src/components/kitchen/kitchen.css"
+      ]
     }
   ],
   "singlePass": null,
   "tests": {
-    "passed": 371,
+    "passed": 373,
     "failed": 0
   },
   "debt": {
     "placeholders": [],
     "assumptions": [],
-    "emptyEnv": []
+    "emptyEnv": [],
+    "owner": [
+      "1С: варочных панелей в наличии 0; у встраиваемой техники нет монтажных размеров"
+    ]
   },
   "additions": [],
   "coverage": {
@@ -473,7 +505,11 @@ window.STATE =
     "T07 · U20 — шкаф в 3D с клавиатуры не выбирается (у холста нет tabIndex); не сделано",
     "T07 · телефон — плашка корзины сайта частично закрывает полосу шагов под плашкой «Продолжить» (её можно закрыть ×)",
     "T07 · savePhoto берёт (pointer: coarse), движок — (pointer: coarse) && !(any-pointer: fine): планшет с трекпадом сохраняет лёгким путём; брать один флаг из движка",
-    "T07 · на телефоне кнопка сохранения ждёт фазу «build» трассировки, хотя лёгкому пути она не нужна"
+    "T07 · на телефоне кнопка сохранения ждёт фазу «build» трассировки, хотя лёгкому пути она не нужна",
+    "T08 · build.ts — метровая WINDOW под тем же именем, что сантиметровая в dims.ts; переименовать (WINDOW_M)",
+    "T08 · engine.ts:525-526, :1397 — копии окна (90/100, 2.3, − 0.25) остались вне зоны",
+    "T08 · layout.ts DEPTH = round(58 + 1.8) = 60, в 3D ряд 59,8 — расхождение 2 мм спрятано округлением",
+    "T08 · kitchen.css — высота плашки корзины (~70 px) вписана в двух местах"
   ],
   "reviewers": {
     "manifestSpec": "a30dafafe6ec2f04c",
