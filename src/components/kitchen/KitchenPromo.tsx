@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { IconChevronRight } from '@/components/Icons'
 import { useI18n } from '@/lib/i18n/I18nProvider'
-import { STYLES } from '@/lib/kitchen/styles'
 import './kitchen-promo.css'
 
 /**
@@ -15,9 +14,36 @@ import './kitchen-promo.css'
  * выбранный шкаф в синей рамке. Подписи — HTML, чтобы шрифт был сайтовый.
  * Рисунок строит скрипт (см. docs/HANDOFF.md, раздел про конструктор).
  *
- * Вместо облака из 15 названий стилей — три шага, как в самом конструкторе:
+ * Вместо облака из названий стилей — три шага, как в самом конструкторе:
  * форма, стиль, техника. Так видно, что это просто и что получится в конце.
  */
+
+/**
+ * Снимок каталога стилей для баннера: сколько стилей и пять образцов цвета у
+ * второго шага (светлый, дерево, тёмный, цветной). Записан прямо здесь, чтобы
+ * главная не тянула ради пяти цветов весь styles.ts (≈10 КБ gzip).
+ * Тест kitchen-texts.test.ts сверяет снимок с STYLES: добавили стиль или
+ * сменили цвет — тест покраснеет, и число здесь надо поправить.
+ */
+export const PROMO_STYLES = {
+  count: 21,
+  swatches: [
+    { id: 'hitech', facade: '#f3f4f5', wood: false },
+    { id: 'modern', facade: '#6b4a33', wood: true },
+    { id: 'japandi', facade: '#c9a57c', wood: true },
+    { id: 'nero', facade: '#1d1e20', wood: false },
+    { id: 'provence', facade: '#aaa4bf', wood: false },
+  ],
+}
+
+/** «21 стиль», «22 стиля», «25 стилей» */
+function stylesRu(n: number): string {
+  const a = n % 10
+  const b = n % 100
+  if (a === 1 && b !== 11) return `${n} стиль`
+  if (a >= 2 && a <= 4 && (b < 12 || b > 14)) return `${n} стиля`
+  return `${n} стилей`
+}
 
 const TEXT = {
   ru: {
@@ -25,7 +51,7 @@ const TEXT = {
     lead: 'Примерьте технику из наличия в её настоящем размере — до покупки и до заказа мебели.',
     steps: [
       ['Форма и размер', 'по вашим стенам, в сантиметрах'],
-      ['Стиль и отделка', '15 стилей, фасады и столешницы'],
+      ['Стиль и отделка', `${stylesRu(PROMO_STYLES.count)}, фасады и столешницы`],
       ['Техника из наличия', 'в своём размере, с ценой'],
     ],
     cta: 'Открыть конструктор',
@@ -37,7 +63,7 @@ const TEXT = {
     lead: 'Дүкөндөгү техниканы өз өлчөмүндө коюп көрүңүз — сатып алуудан жана эмерек заказ кылуудан мурун.',
     steps: [
       ['Формасы жана өлчөмү', 'дубалдарыңызга жараша, сантиметр менен'],
-      ['Стили жана жасалгасы', '15 стиль, фасаддар жана столешницалар'],
+      ['Стили жана жасалгасы', `${PROMO_STYLES.count} стиль, фасаддар жана столешницалар`],
       ['Дүкөндөгү техника', 'өз өлчөмүндө, баасы менен'],
     ],
     cta: 'Конструкторду ачуу',
@@ -46,20 +72,15 @@ const TEXT = {
   },
 }
 
-/** Пять стилей для образцов у второго шага: светлый, дерево, тёмный, цветной. */
-const SWATCH_STYLES = ['hitech', 'modern', 'japandi', 'nero', 'provence']
-
-function swatch(facade: string, texture?: string): string {
-  return texture === 'wood' ? `repeating-linear-gradient(100deg, rgb(0 0 0 / 0%) 0 3px, rgb(0 0 0 / 12%) 3px 4px), ${facade}` : facade
+function swatch(facade: string, wood: boolean): string {
+  return wood ? `repeating-linear-gradient(100deg, rgb(0 0 0 / 0%) 0 3px, rgb(0 0 0 / 12%) 3px 4px), ${facade}` : facade
 }
+
+const SWATCHES = PROMO_STYLES.swatches.map((s) => ({ id: s.id, background: swatch(s.facade, s.wood) }))
 
 export function KitchenPromo() {
   const { lang } = useI18n()
   const t = TEXT[lang === 'ky' ? 'ky' : 'ru']
-  const swatches = SWATCH_STYLES.flatMap((id) => {
-    const tone = STYLES.find((s) => s.id === id)?.tones[0]
-    return tone ? [{ id, background: swatch(tone.facade, tone.texture) }] : []
-  })
   return (
     <section className="section kitchen-promo" aria-labelledby="kitchen-promo-title" data-reveal>
       <Link href={`/${lang}/kitchen`} className="kitchen-promo__link">
@@ -79,7 +100,7 @@ export function KitchenPromo() {
                     {title}
                     {i === 1 && (
                       <span className="kitchen-promo__swatches" aria-hidden="true">
-                        {swatches.map((sw) => (
+                        {SWATCHES.map((sw) => (
                           <span key={sw.id} style={{ background: sw.background }} />
                         ))}
                       </span>

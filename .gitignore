@@ -29,6 +29,8 @@ playwright-report/
 scripts/1c-export/output/
 integrations/1c-online-shop/build/
 smartcentr-site.tar.gz
+# распакованный архив для сервера — не исходники, в git не нужен
+smartcentr-site/
 
 __pycache__/
 *.pyc

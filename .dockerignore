@@ -24,4 +24,6 @@ public/Бренд лого
 .zcode
 .impeccable
 deploy/site/backups
+smartcentr-site/
+smartcentr-site.tar.gz
 *.log
