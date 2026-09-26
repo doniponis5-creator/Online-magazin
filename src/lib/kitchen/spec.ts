@@ -37,7 +37,12 @@ export type DimsKind =
   | 'sink'
   | 'island'
 
-export type Dims = { kind: DimsKind; w: number; h: number; d: number; slot?: SlotKind }
+/**
+ * Размеры предмета по нажатию и для чертежа. x, y — левый нижний угол самой
+ * детали в координатах ряда, см (не габарит 3D-группы: ручки, кронштейны и
+ * посуда рамку не сдвигают — D10).
+ */
+export type Dims = { kind: DimsKind; w: number; h: number; d: number; slot?: SlotKind; x?: number; y?: number }
 
 export type SpecHinge = 'left' | 'right' | 'top' | 'fold' | 'drawer' | 'none'
 
@@ -67,8 +72,18 @@ export type SpecModule = { x: number; w: number }
 
 export type SpecRun = { id: RunId; length: number; modules: SpecModule[]; boxes: SpecBox[]; fronts: SpecFront[]; tops: SpecTop[] }
 
+/**
+ * Проёмы и доборы — то, что не шкаф: проём под встраиваемую посудомойку
+ * (без корпуса), доборная панель в верхнем ряду, планка углового шкафа,
+ * задняя панель острова. w, h — см; hMax — верх диапазона высоты проёма.
+ */
+export type ExtraKind = 'dwOpening' | 'filler' | 'strip' | 'islandBack'
+export type SpecExtra = { kind: ExtraKind; run: RunId; w: number; h: number; hMax?: number }
+
 export type SpecData = {
   runs: SpecRun[]
+  /** проёмы и доборы (нет — старый проект без них) */
+  extras?: SpecExtra[]
   carcasses: SpecCarcass[]
   /** боковины ниши холодильника: высота, глубина, штук */
   panels: { h: number; d: number; count: number }[]
@@ -120,6 +135,26 @@ export function cutList(carcasses: SpecCarcass[], panels: SpecData['panels'] = [
   for (const p of panels) add('nicheSide', mm(p.h), mm(p.d), p.count)
   const order: CutName[] = ['side', 'nicheSide', 'bottom', 'top', 'rail', 'shelf', 'back']
   return [...rows.values()].sort((p, q) => order.indexOf(p.name) - order.indexOf(q.name) || q.a - p.a || q.b - p.b)
+}
+
+/* ───────── проёмы и доборы ───────── */
+
+export type ExtraRow = { kind: ExtraKind; w: number; h: number; hMax?: number; count: number }
+
+/** «Проём под посудомойку 450 × 820–870 — 1», «Добор 60 × 720 — 2», мм. */
+export function extraList(data: Pick<SpecData, 'extras'>): ExtraRow[] {
+  const rows = new Map<string, ExtraRow>()
+  for (const e of data.extras ?? []) {
+    const w = mm(e.w)
+    const h = mm(e.h)
+    const hMax = e.hMax === undefined ? undefined : mm(e.hMax)
+    const key = `${e.kind}:${w}:${h}:${hMax ?? ''}`
+    const row = rows.get(key)
+    if (row) row.count++
+    else rows.set(key, { kind: e.kind, w, h, ...(hMax === undefined ? {} : { hMax }), count: 1 })
+  }
+  const order: ExtraKind[] = ['dwOpening', 'filler', 'strip', 'islandBack']
+  return [...rows.values()].sort((p, q) => order.indexOf(p.kind) - order.indexOf(q.kind) || q.h - p.h || q.w - p.w)
 }
 
 /* ───────── фасады ───────── */
@@ -210,11 +245,12 @@ export function topList(runs: SpecRun[]): { rows: TopRow[]; total: number } {
 
 /* ───────── модули по стенам ───────── */
 
-const MODULE_KINDS: DimsKind[] = ['base', 'drawers', 'sinkBase', 'hobBase', 'ovenBase', 'corner', 'bottle', 'filler', 'openBase', 'tall', 'pantry', 'appliance']
+// Доборы — не шкафы (D25): в «Шкафов» их нет, у них свой список `fillers`.
+const MODULE_KINDS: DimsKind[] = ['base', 'drawers', 'sinkBase', 'hobBase', 'ovenBase', 'corner', 'bottle', 'openBase', 'tall', 'pantry', 'appliance']
 const UPPER_KINDS: DimsKind[] = ['upper', 'vitrine', 'lift', 'antresol', 'overFridge', 'shelf', 'mantel']
 
-/** Нижний ряд (с колоннами и техникой) и верхний — слева направо. */
-export function modulesOf(run: SpecRun): { lower: SpecBox[]; upper: SpecBox[] } {
+/** Нижний ряд (с колоннами и техникой) и верхний — слева направо; доборы обоих рядов — отдельно. */
+export function modulesOf(run: SpecRun): { lower: SpecBox[]; upper: SpecBox[]; fillers: SpecBox[] } {
   const byX = (a: SpecBox, b: SpecBox) => a.x - b.x || a.y - b.y
   // Техника, под которую оставляют место (холодильник, посудомойка,
   // стиральная), — в нижнем ряду. Духовка и микроволновка — внутри своих
@@ -222,5 +258,6 @@ export function modulesOf(run: SpecRun): { lower: SpecBox[]; upper: SpecBox[] } 
   const floorTech = (b: SpecBox) => b.slot === 'fridge' || b.slot === 'washer' || b.slot === 'dishwasher'
   const lower = run.boxes.filter((b) => MODULE_KINDS.includes(b.kind) && (b.kind !== 'appliance' || floorTech(b)))
   const upper = run.boxes.filter((b) => UPPER_KINDS.includes(b.kind))
-  return { lower: lower.sort(byX), upper: upper.sort(byX) }
+  const fillers = run.boxes.filter((b) => b.kind === 'filler')
+  return { lower: lower.sort(byX), upper: upper.sort(byX), fillers: fillers.sort(byX) }
 }

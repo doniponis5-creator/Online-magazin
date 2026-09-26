@@ -1,6 +1,6 @@
 import type { Lang } from '@/lib/i18n/config'
 import type { ModuleKind } from '@/lib/kitchen/layout'
-import type { CutName, FrontType } from '@/lib/kitchen/spec'
+import type { CutName, ExtraKind, FrontType } from '@/lib/kitchen/spec'
 import type { DimsKind } from '@/lib/kitchen/spec'
 import type { StyleGroup } from '@/lib/kitchen/styles'
 import type { BaseFront, Shape, SlotKind, UpperFront } from '@/lib/kitchen/types'
@@ -204,6 +204,13 @@ const ru = {
     dw: 'Фасад посудомойки',
     panel: 'Глухая планка',
   } as Record<FrontType, string>,
+  extrasTitle: 'Проёмы и доборы',
+  extraNames: {
+    dwOpening: 'Проём под посудомойку, без корпуса',
+    filler: 'Добор — панель без корпуса',
+    strip: 'Планка углового шкафа',
+    islandBack: 'Задняя панель острова',
+  } as Record<ExtraKind, string>,
   cutNames: {
     side: 'Боковина',
     nicheSide: 'Боковина ниши холодильника',
@@ -556,6 +563,13 @@ const ky: Texts = {
     lift: 'Өйдө ачылуучу эшик',
     dw: 'Идиш жуугучтун фасады',
     panel: 'Туюк планка',
+  },
+  extrasTitle: 'Ачык орундар жана кошумча панелдер',
+  extraNames: {
+    dwOpening: 'Идиш жуугуч үчүн орун, корпуссуз',
+    filler: 'Кошумча планка — корпуссуз панель',
+    strip: 'Бурчтук шкафтын планкасы',
+    islandBack: 'Аралдын арткы панели',
   },
   cutNames: {
     side: 'Каптал',

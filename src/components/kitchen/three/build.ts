@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { baseKey, DRAWER_PARTS, MIN_EDIT_W, OVER_FRIDGE_FRONTS, upperKey } from '@/lib/kitchen/fronts'
-import type { Module, Plan, Run } from '@/lib/kitchen/layout'
-import type { Dims, DimsKind, SpecBox, SpecCarcass, SpecData, SpecFront, SpecRun, SpecTop } from '@/lib/kitchen/spec'
+import { HOOD_OVER, type Module, type Plan, type Run, type Upper } from '@/lib/kitchen/layout'
+import type { Dims, DimsKind, SpecBox, SpecCarcass, SpecData, SpecExtra, SpecFront, SpecRun, SpecTop } from '@/lib/kitchen/spec'
 import type { DoorKind, KitchenStyle, Tone } from '@/lib/kitchen/styles'
 import { isCabinet, type BaseFront, type ColumnItem, type FloorKind, type FrontVariant, type ItemKey, type KitchenAppliance, type SlotKind, type UpperFront } from '@/lib/kitchen/types'
 import * as A from './appliances'
@@ -45,12 +45,22 @@ export type CabInfo = { key: string; row: 'base' | 'upper'; variant: FrontVarian
 
 const r5 = (v: number) => Math.round(v * 2) / 2
 
-function dims(obj: THREE.Object3D, kind: DimsKind, w: number, h: number, d: number, slot?: SlotKind) {
-  obj.userData.dims = { kind, w: r5(w), h: r5(h), d: r5(d), slot } satisfies Dims
+const r1 = (v: number) => Math.round(v * 10) / 10
+
+/** Левый нижний угол детали: вдоль ряда (слева направо, лицом к шкафам) и от пола, см. */
+type At = { x: number; y: number }
+
+/**
+ * Размеры детали — для мебельщика и для касания в 3D. `at` — где деталь
+ * стоит в ряду: рамку чертежа ставят по нему, а не по габариту 3D-группы,
+ * у которой ручки, кронштейны и полочки выступают (D10).
+ */
+function dims(obj: THREE.Object3D, kind: DimsKind, w: number, h: number, d: number, at: At, slot?: SlotKind) {
+  obj.userData.dims = { kind, w: r5(w), h: r5(h), d: r5(d), slot, x: r1(at.x), y: r1(at.y) } satisfies Dims
 }
 
-function applianceDims(obj: THREE.Object3D, a: KitchenAppliance | undefined, slot: SlotKind, fallback: [number, number, number]) {
-  dims(obj, 'appliance', a?.w ?? fallback[0], a?.h ?? fallback[1], a?.d ?? fallback[2], slot)
+function applianceDims(obj: THREE.Object3D, a: KitchenAppliance | undefined, slot: SlotKind, fallback: [number, number, number], at: At) {
+  dims(obj, 'appliance', a?.w ?? fallback[0], a?.h ?? fallback[1], a?.d ?? fallback[2], at, slot)
 }
 
 export type BuildInput = {
@@ -99,6 +109,11 @@ export type Built = {
   wallH: number
   /** всё для мебельщика: корпуса, фасады, столешница */
   spec: SpecData
+  /**
+   * Фактическая высота низа вытяжки над варочной панелью, см (D16); нет —
+   * вытяжки в 3D нет. Экран передаёт её в `checkProject(plan, { hoodOver })`.
+   */
+  hoodOver?: number
   dispose(): void
 }
 
@@ -135,6 +150,21 @@ type Ctx = {
   gola: number
   splash: number
   tops: SpecTop[]
+  /** проёмы и доборы — не шкафы */
+  extras: SpecExtra[]
+  /** низ повешенной вытяжки над панелью, см */
+  hoodOver?: number
+}
+
+/**
+ * Высота низа вытяжки над столешницей (м): норма из раскладки — 65 см над
+ * электрической и индукционной, 75 над газовой (D16). Запоминает её для экрана.
+ */
+function hoodAt(ctx: Ctx, bottom?: number): number {
+  const over = ctx.input.plan.hoodHeight?.over ?? (ctx.input.items.hob?.hob === 'gas' ? HOOD_OVER.gas : HOOD_OVER.electric)
+  const y = bottom ?? ctx.counterY + cm(over)
+  ctx.hoodOver = r5((y - ctx.counterY) * 100)
+  return y
 }
 
 const cm = (v: number) => v / 100
@@ -301,26 +331,42 @@ function doorsIn(
   right: boolean,
   mat?: THREE.Material,
   glass = false,
+  color?: string,
 ) {
   const h = y1 - y0
   if (w < 0.2) {
-    addFront(ctx, parent, { x: x + GAP / 2, y: y0, z, w: w - GAP, h, hinge: 'none', upper, mat })
+    addFront(ctx, parent, { x: x + GAP / 2, y: y0, z, w: w - GAP, h, hinge: 'none', upper, mat, color })
     return
   }
-  if (w > 0.62) {
-    const half = w / 2
-    addFront(ctx, parent, { x: x + GAP / 2, y: y0, z, w: half - GAP, h, hinge: 'left', upper, mat, glass })
-    addFront(ctx, parent, { x: x + half + GAP / 2, y: y0, z, w: half - GAP, h, hinge: 'right', upper, mat, glass })
+  if (w > DOOR_MAX) {
+    // шире 62 см — створки (C07): две, а у совсем широкого проёма — больше
+    const n = Math.max(2, Math.ceil(w / DOOR_MAX - 1e-9))
+    const each = w / n
+    for (let k = 0; k < n; k++) addFront(ctx, parent, { x: x + each * k + GAP / 2, y: y0, z, w: each - GAP, h, hinge: k % 2 ? 'right' : 'left', upper, mat, glass, color })
     return
   }
   // Одиночные дверцы — на петлях слева, ручка справа, если покупатель не
   // выбрал «открывается вправо». Раньше петли чередовались, и у соседних
   // шкафов ручки сходились парой, как у одной двустворчатой дверцы.
-  addFront(ctx, parent, { x: x + GAP / 2, y: y0, z, w: w - GAP, h, hinge: right ? 'right' : 'left', upper, mat, glass })
+  addFront(ctx, parent, { x: x + GAP / 2, y: y0, z, w: w - GAP, h, hinge: right ? 'right' : 'left', upper, mat, glass, color })
 }
+
+/** Одностворчатая дверца не шире этого, м (C07). */
+const DOOR_MAX = 0.62
+/** Подъёмный механизм держит фасад не выше этого, м (C07). */
+const LIFT_MAX = 0.9
+/** Самая длинная деталь из листа, м (C08): выше — корпус делится на корпус и антресоль. */
+const PART_MAX = 2.75
+/** Деталь длиной len (м) длиннее листа — на сколько равных частей её резать (C08). */
+const partsOf = (len: number) => Math.max(1, Math.ceil(len / PART_MAX - 1e-9))
 
 /** Подъёмные дверцы (вверх): одна, а на широком шкафу — две рядом. */
 function liftsIn(ctx: Ctx, parent: THREE.Object3D, x: number, y0: number, y1: number, z: number, w: number, glass = false, mat?: THREE.Material, color?: string) {
+  // выше 90 см подъёмник не держит — распашные дверцы (C07)
+  if (y1 - y0 > LIFT_MAX + 1e-6) {
+    doorsIn(ctx, parent, x, y0, y1, z, w, true, false, mat, glass, color)
+    return
+  }
   const n = w > 0.92 ? 2 : 1
   const each = w / n
   for (let k = 0; k < n; k++) {
@@ -435,6 +481,11 @@ function baseModule(ctx: Ctx, run: Run, m: Module, i: number): THREE.Group {
 
   const BASE_H = (PLINTH + BODY) * 100
   const D = (CARCASS_D + FRONT_T) * 100
+  // где деталь стоит в ряду: сам модуль — с пола; техника — по своей позиции в модуле
+  const at0: At = { x: m.x, y: 0 }
+  const on = (o: THREE.Object3D): At => ({ x: m.x + o.position.x * 100, y: o.position.y * 100 })
+  // техника по центру модуля, от пола
+  const floor = (a: KitchenAppliance): At => ({ x: m.x + (m.w - a.w) / 2, y: 0 })
   const DIMS: Partial<Record<Module['kind'], DimsKind>> = {
     doors: 'base',
     drawers: 'drawers',
@@ -461,7 +512,7 @@ function baseModule(ctx: Ctx, run: Run, m: Module, i: number): THREE.Group {
     g.userData.cab = { key, row: 'base', variant: 'doors', narrow: true } satisfies CabInfo
 
   const dk = editable && m.kind !== 'hob' ? BASE_DIMS[variant] : DIMS[m.kind]
-  if (dk) dims(g, dk, m.w, BASE_H, D)
+  if (dk) dims(g, dk, m.w, BASE_H, D, at0)
 
   /** Шкаф с фасадами по выбору покупателя. */
   const fitted = () => {
@@ -521,6 +572,7 @@ function baseModule(ctx: Ctx, run: Run, m: Module, i: number): THREE.Group {
       const x1 = m.blindAt === 'end' ? w - blind : w
       // планка у соседнего ряда, чтобы дверца не упиралась в его ручки
       g.add(slab(mats.facade, m.blindAt === 'end' ? x1 : x0 - 0.03, frontY, z, m.blindAt === 'end' ? x1 + 0.03 : x0, frontTop, z + FRONT_T))
+      ctx.extras.push({ kind: 'strip', run: run.id, w: 3, h: (frontTop - frontY) * 100 })
       doorsIn(ctx, g, x0, frontY, frontTop, z, x1 - x0, false, openRight)
       break
     }
@@ -530,14 +582,14 @@ function baseModule(ctx: Ctx, run: Run, m: Module, i: number): THREE.Group {
       if (ovenUnderHob || (m.kind === 'oven' && input.items.oven !== null)) {
         box3()
         plinth()
-        if (m.kind === 'oven') dims(g, 'ovenBase', m.w, BASE_H, D)
+        if (m.kind === 'oven') dims(g, 'ovenBase', m.w, BASE_H, D, at0)
         const app = input.items.oven ?? undefined
         const ow = cm(app?.w ?? 59.5)
         const oh = cm(app?.h ?? 59.5)
         const oy = BODY_TOP - 0.025 - oh
         const oven = A.oven(app, mats, app?.image ? input.photos.get(app.image) : null)
         oven.position.set((w - ow) / 2, oy, z - 0.002)
-        applianceDims(oven, app, 'oven', [59.5, 59.5, 56])
+        applianceDims(oven, app, 'oven', [59.5, 59.5, 56], on(oven))
         if (app) {
           tag(oven, 'oven')
           ctx.objects.oven = oven
@@ -555,8 +607,9 @@ function baseModule(ctx: Ctx, run: Run, m: Module, i: number): THREE.Group {
       if (!app) break
       if (app.builtIn) {
         // Встраиваемая: за фасадом мебели — настоящая машина с корзинами.
-        carcass(ctx, g, w, PLINTH, BODY_TOP, CARCASS_D, { back: false, bottom: false })
+        // Корпуса у неё нет — мебельщик оставляет проём между шкафами (D01).
         plinth()
+        ctx.extras.push({ kind: 'dwOpening', run: run.id, w: m.w, h: 82, hMax: 87 })
         const inside = A.dishwasherInside(mats, w - 0.032, BODY_TOP - PLINTH - 0.02, CARCASS_D - 0.02)
         inside.position.set(0.016, PLINTH + 0.01, 0)
         g.add(inside)
@@ -564,13 +617,14 @@ function baseModule(ctx: Ctx, run: Run, m: Module, i: number): THREE.Group {
         door.add(slab(mats.tub, 0.02, 0.02, -0.004, w - GAP - 0.02, frontTop - frontY - 0.05, 0))
         const whole = new THREE.Group()
         whole.add(inside, door)
-        applianceDims(whole, app, 'dishwasher', [60, 82, 55])
+        // рамка машины — от пола до её высоты, под фасадом, а не по фасаду (D05)
+        applianceDims(whole, app, 'dishwasher', [60, 82, 55], floor(app))
         g.add(whole)
         tag(whole, 'dishwasher')
         ctx.objects.dishwasher = door
       } else {
         const dw = A.underCounter(app, mats, BODY_TOP - 0.004)
-        applianceDims(dw, app, 'dishwasher', [60, 82, 55])
+        applianceDims(dw, app, 'dishwasher', [60, 82, 55], floor(app))
         dw.position.set((w - cm(app.w)) / 2, 0, CARCASS_D + FRONT_T - cm(Math.min(app.d, 60)))
         tag(dw, 'dishwasher')
         ctx.objects.dishwasher = dw
@@ -583,7 +637,7 @@ function baseModule(ctx: Ctx, run: Run, m: Module, i: number): THREE.Group {
       const app = input.items.washer
       if (!app) break
       const wm = A.underCounter(app, mats, BODY_TOP - 0.004, app.image ? input.photos.get(app.image) : null)
-      applianceDims(wm, app, 'washer', [60, 85, 50])
+      applianceDims(wm, app, 'washer', [60, 85, 50], floor(app))
       wm.position.set((w - cm(app.w)) / 2, 0, CARCASS_D + FRONT_T - cm(Math.min(app.d, 60)))
       tag(wm, 'washer')
       ctx.objects.washer = wm
@@ -599,14 +653,18 @@ function baseModule(ctx: Ctx, run: Run, m: Module, i: number): THREE.Group {
       if (niche) {
         const sides = new THREE.Group()
         const nd = CARCASS_D + FRONT_T
-        sides.add(slab(mats.facade, 0, 0, 0, PANEL_T, ctx.columnTop, nd))
-        sides.add(slab(mats.facade, w - PANEL_T, 0, 0, w, ctx.columnTop, nd))
-        dims(sides, 'panel', PANEL_T * 100, ctx.columnTop * 100, nd * 100)
+        // боковина выше листа — из двух частей, стык на линии антресолей (C08)
+        const cut = ctx.columnTop > PART_MAX + 1e-6 ? (ctx.mezz?.from ?? ctx.upperTop) : null
+        for (const [y0, y1] of cut ? [[0, cut], [cut, ctx.columnTop]] : [[0, ctx.columnTop]]) {
+          sides.add(slab(mats.facade, 0, y0, 0, PANEL_T, y1, nd))
+          sides.add(slab(mats.facade, w - PANEL_T, y0, 0, w, y1, nd))
+          ctx.nichePanels.push({ h: (y1 - y0) * 100, d: nd * 100, count: 2 })
+        }
+        dims(sides, 'panel', PANEL_T * 100, ctx.columnTop * 100, nd * 100, at0)
         g.add(sides)
-        ctx.nichePanels.push({ h: ctx.columnTop * 100, d: nd * 100, count: 2 })
       }
       const fr = A.fridge(app, mats, app.image ? input.photos.get(app.image) : null)
-      applianceDims(fr, app, 'fridge', [60, 185, 65])
+      applianceDims(fr, app, 'fridge', [60, 185, 65], floor(app))
       fr.position.set((w - cm(app.w)) / 2, 0, 0.03)
       tag(fr, 'fridge')
       ctx.objects.fridge = fr
@@ -616,24 +674,26 @@ function baseModule(ctx: Ctx, run: Run, m: Module, i: number): THREE.Group {
     }
     case 'tall': {
       const top = columnTopOf(ctx, m)
-      carcass(ctx, g, w, PLINTH, top, CARCASS_D, { top: true, shelves: [PLINTH + 0.3, 0.83 - 0.01, top - 0.2] })
+      const cut = partCut(ctx, top)
+      if (cut) {
+        carcass(ctx, g, w, PLINTH, cut, CARCASS_D, { top: true, shelves: [PLINTH + 0.3, 0.83 - 0.01] })
+        carcass(ctx, g, w, cut, top, CARCASS_D, { top: true })
+      } else carcass(ctx, g, w, PLINTH, top, CARCASS_D, { top: true, shelves: [PLINTH + 0.3, 0.83 - 0.01, top - 0.2] })
       plinth()
-      dims(g, 'tall', m.w, top * 100, D)
+      dims(g, 'tall', m.w, top * 100, D, at0)
       const ovenApp = input.items.oven ?? undefined
       const mwApp = input.items.microwave ?? undefined
       const ovenY = 0.83
       const oh = cm(ovenApp?.h ?? 59.5)
       const mh = cm(mwApp?.h ?? 38.5)
       const mwY = ovenY + oh + 0.012
-      addFront(ctx, g, { x: GAP / 2, y: frontY, z, w: w - GAP, h: ovenY - GAP - frontY, hinge: openRight ? 'right' : 'left' })
+      doorsIn(ctx, g, 0, frontY, ovenY - GAP, z, w, false, openRight)
       // духовка в пенале — если её не поставили в свой шкаф
       const ovenHere = m.oven !== false && input.items.oven !== null
-      if (!ovenHere) {
-        addFront(ctx, g, { x: GAP / 2, y: ovenY, z, w: w - GAP, h: oh, hinge: openRight ? 'right' : 'left' })
-      }
+      if (!ovenHere) doorsIn(ctx, g, 0, ovenY, ovenY + oh, z, w, false, openRight)
       const oven = A.oven(ovenApp, mats, ovenApp?.image ? input.photos.get(ovenApp.image) : null)
       oven.position.set((w - cm(ovenApp?.w ?? 59.5)) / 2, ovenY, z - 0.002)
-      applianceDims(oven, ovenApp, 'oven', [59.5, 59.5, 56])
+      applianceDims(oven, ovenApp, 'oven', [59.5, 59.5, 56], on(oven))
       if (ovenHere) g.add(oven)
       if (ovenApp && ovenHere) {
         tag(oven, 'oven')
@@ -644,14 +704,16 @@ function baseModule(ctx: Ctx, run: Run, m: Module, i: number): THREE.Group {
       if (mwApp) {
         const mw = A.microwave(mwApp, mats, mwApp.image ? input.photos.get(mwApp.image) : null)
         mw.position.set((w - cm(mwApp.w)) / 2, mwY, z - 0.002)
-        applianceDims(mw, mwApp, 'microwave', [59.5, 38.5, 32])
+        applianceDims(mw, mwApp, 'microwave', [59.5, 38.5, 32], on(mw))
         g.add(mw)
         tag(mw, 'microwave')
         ctx.objects.microwave = mw
         anchor(ctx, 'microwave', g, w / 2, mwY + mh / 2, z + 0.04)
       }
       const topY = mwApp ? mwY + mh + 0.012 : ovenY + oh + 0.012
-      if (top - topY > 0.08) addFront(ctx, g, { x: GAP / 2, y: topY, z, w: w - GAP, h: top - topY - GAP, hinge: 'top' })
+      // над духовкой: подъёмная дверца, выше 90 см — распашные; у корпуса выше листа — отдельная антресоль
+      const zones = cut && cut - topY > 0.08 ? [[topY, cut], [cut + GAP, top]] : [[topY, top]]
+      for (const [y0, y1] of zones) if (y1 - y0 > 0.08) liftsIn(ctx, g, 0, y0, y1 - GAP, z, w, false, mats.facade)
       // Колонна шире духовки (покупатель сделал её шире) — по бокам духовки
       // и микроволновки глухие панели в цвет фасадов, а не пустой короб.
       const side = (w - Math.max(cm(ovenApp?.w ?? 59.5), mwApp ? cm(mwApp.w) : 0)) / 2
@@ -663,14 +725,17 @@ function baseModule(ctx: Ctx, run: Run, m: Module, i: number): THREE.Group {
     case 'pantry': {
       // Пенал для хранения: две дверцы, внутри полки с банками и коробками.
       const top = columnTopOf(ctx, m)
-      const shelves = [PLINTH + 0.36, 0.74, 1.1, 1.46, 1.82, 2.18, 2.54].filter((y) => y < top - 0.16)
-      carcass(ctx, g, w, PLINTH, top, CARCASS_D, { top: true, shelves })
+      const cut = partCut(ctx, top)
+      const shelves = [PLINTH + 0.36, 0.74, 1.1, 1.46, 1.82, 2.18, 2.54].filter((y) => y < (cut ?? top) - 0.16)
+      carcass(ctx, g, w, PLINTH, cut ?? top, CARCASS_D, { top: true, shelves })
+      if (cut) carcass(ctx, g, w, cut, top, CARCASS_D, { top: true })
       plinth()
-      dims(g, 'pantry', m.w, top * 100, D)
-      const split = Math.min(top - 0.4, 1.46)
-      const hinge = openRight ? 'right' : 'left'
-      addFront(ctx, g, { x: GAP / 2, y: frontY, z, w: w - GAP, h: split - GAP - frontY, hinge })
-      addFront(ctx, g, { x: GAP / 2, y: split, z, w: w - GAP, h: top - split - GAP, hinge })
+      dims(g, 'pantry', m.w, top * 100, D, at0)
+      const split = Math.min((cut ?? top) - 0.4, 1.46)
+      // шире 62 см — две створки (C07); корпус выше листа — сверху антресоль (C08)
+      doorsIn(ctx, g, 0, frontY, split - GAP, z, w, false, openRight)
+      doorsIn(ctx, g, 0, split, (cut ?? top) - GAP, z, w, false, openRight)
+      if (cut) liftsIn(ctx, g, 0, cut, top - GAP, z, w, false, mats.facade)
       // продукты — только на полках, где им хватает высоты (пенал бывает ниже потолка)
       pantryGoods(ctx, g, w, shelves.filter((y) => y < Math.min(2, top - 0.32)))
       break
@@ -686,6 +751,12 @@ function baseModule(ctx: Ctx, run: Run, m: Module, i: number): THREE.Group {
   }
   if (m.item) tagItem(g, m.item)
   return g
+}
+
+/** Где делить высокий корпус на корпус и антресоль: только если он длиннее листа (C08). */
+function partCut(ctx: Ctx, top: number): number | null {
+  if (top - PLINTH <= PART_MAX + 1e-6) return null
+  return ctx.mezz?.from ?? ctx.upperTop
 }
 
 /** Верх колонны: своя высота покупателя, но не выше общего верха колонн. */
@@ -751,7 +822,7 @@ function countertop(ctx: Ctx, run: Run, g: THREE.Group) {
     ctx.tops.push({ x0: x0 * 100, x1: x1 * 100, depth: (TOP_D - zBack) * 100, thick: style.topCm, sink: inside, hob: hobInside })
     // Столешница одним куском: по нажатию — её длина, толщина и глубина.
     const piece = new THREE.Group()
-    dims(piece, run.id === 'I' ? 'island' : 'top', (x1 - x0) * 100, style.topCm, (TOP_D - zBack) * 100)
+    dims(piece, run.id === 'I' ? 'island' : 'top', (x1 - x0) * 100, style.topCm, (TOP_D - zBack) * 100, { x: x0 * 100, y: y0 * 100 })
     g.add(piece)
     if (!inside) {
       piece.add(slab(mats.top, x0, y0, zBack, x1, counterY, TOP_D, true))
@@ -766,7 +837,7 @@ function countertop(ctx: Ctx, run: Run, g: THREE.Group) {
     const sinkParts = new THREE.Group()
     sinkParts.add(A.sinkBowl(mats, sx0, sx1, bz0, bz1, counterY, style.sink !== 'black'))
     sinkParts.add(A.faucet(mats.faucet, (sx0 + sx1) / 2, counterY, 0.035))
-    dims(sinkParts, 'sink', (sx1 - sx0) * 100, 19, (bz1 - bz0) * 100)
+    dims(sinkParts, 'sink', (sx1 - sx0) * 100, 19, (bz1 - bz0) * 100, { x: sx0 * 100, y: counterY * 100 - 19 })
     tagItem(sinkParts, 'sink')
     g.add(sinkParts)
   }
@@ -777,7 +848,7 @@ function countertop(ctx: Ctx, run: Run, g: THREE.Group) {
     hb.position.set(cm(hobM.x) + (cm(hobM.w) - hw) / 2, counterY, 0.05)
     tag(hb, 'hob')
     tagItem(hb, 'hob')
-    applianceDims(hb, app, 'hob', [59, 5, 52])
+    applianceDims(hb, app, 'hob', [59, 5, 52], { x: hb.position.x * 100, y: counterY * 100 })
     ctx.objects.hob = hb
     g.add(hb)
     anchor(ctx, 'hob', g, cm(hobM.x + hobM.w / 2), counterY + 0.04, 0.36)
@@ -842,7 +913,7 @@ function uppers(ctx: Ctx, run: Run, g: THREE.Group) {
   // низа; снизу у них — доска рамы, верхние шкафы под ними утоплены.
   const portal = Boolean(style.portal && ctx.mezz)
   // Второй ряд до потолка: подъёмные дверцы над каждым шкафом.
-  const mezzanine = (x: number, w: number) => {
+  const mezzanine = (x: number, w: number, blind?: Blind | null) => {
     const mz = ctx.mezz
     if (!mz || w < 0.1) return
     const cab = new THREE.Group()
@@ -851,8 +922,11 @@ function uppers(ctx: Ctx, run: Run, g: THREE.Group) {
     const from = portal ? mz.from + PORTAL_BOARD : mz.from
     const mat = portal ? mats.facade : mats.upper
     carcass(ctx, cab, w, from, mz.to, depth, { top: true, sides: mat })
-    liftsIn(ctx, cab, 0, from + GAP / 2, mz.to - GAP / 2, depth, w, false, mat)
-    dims(cab, 'antresol', w * 100, (mz.to - from) * 100, (depth + FRONT_T) * 100)
+    // у углового — подъёмник только над открытой частью, у глухой — планка (C05)
+    const [o0, o1] = blind?.open ?? [0, w]
+    liftsIn(ctx, cab, o0, from + GAP / 2, mz.to - GAP / 2, depth, o1 - o0, false, mat)
+    if (blind) cornerStrip(ctx, run, cab, blind.strip, from + GAP / 2, mz.to - GAP / 2, depth, mat)
+    dims(cab, 'antresol', w * 100, (mz.to - from) * 100, (depth + FRONT_T) * 100, { x: x * 100, y: from * 100 })
     g.add(cab)
   }
   // Витрины (классика и неоклассика): по бокам окна, а если окна на стене
@@ -896,6 +970,8 @@ function uppers(ctx: Ctx, run: Run, g: THREE.Group) {
       if (editable) obj.userData.cab = { key, row: 'upper', variant } satisfies CabInfo
     }
 
+    // верхний угловой: глухая часть со стороны угла, дверца — на открытой (C05)
+    const blind = blindOf(u, w)
     const cabinet = (bottom: number, kind: 'doors' | 'glass' | 'lift') => {
       const glass = kind === 'glass'
       const h = upperTop - bottom
@@ -911,9 +987,11 @@ function uppers(ctx: Ctx, run: Run, g: THREE.Group) {
         cab.add(lamp)
       }
       g.add(cab)
-      if (kind === 'lift') liftsIn(ctx, cab, 0, bottom + GAP / 2, upperTop - GAP / 2, zf, w)
-      else doorsIn(ctx, cab, 0, bottom + GAP / 2, upperTop - GAP / 2, zf, w, true, Boolean(input.doorsRight?.includes(key)), mats.upper, glass)
-      dims(cab, glass ? 'vitrine' : kind === 'lift' ? 'lift' : 'upper', u.w, h * 100, (UPPER_D + FRONT_T) * 100)
+      const [o0, o1] = blind?.open ?? [0, w]
+      if (kind === 'lift') liftsIn(ctx, cab, o0, bottom + GAP / 2, upperTop - GAP / 2, zf, o1 - o0)
+      else doorsIn(ctx, cab, o0, bottom + GAP / 2, upperTop - GAP / 2, zf, o1 - o0, true, Boolean(input.doorsRight?.includes(key)), mats.upper, glass)
+      if (blind) cornerStrip(ctx, run, cab, blind.strip, bottom + GAP / 2, upperTop - GAP / 2, zf, mats.upper)
+      dims(cab, glass ? 'vitrine' : kind === 'lift' ? 'lift' : 'upper', u.w, h * 100, (UPPER_D + FRONT_T) * 100, { x: u.x, y: bottom * 100 })
       mark(cab)
       addCornice(x, x + w, zf + FRONT_T)
       // Классика: нижний карнизик под шкафами прячет подсветку.
@@ -925,31 +1003,45 @@ function uppers(ctx: Ctx, run: Run, g: THREE.Group) {
       }
     }
 
+    // Открытые полки: у каждой полки своя рамка (D13). Нижняя — сама группа
+    // (по ней нажатие находит шкаф), верхняя — внутри неё.
     const openShelves = () => {
       const shelfGroup = new THREE.Group()
-      dims(shelfGroup, 'shelf', u.w - 2, 3, 26)
+      let into = shelfGroup
       for (const y of [UB + 0.14, UB + 0.52]) {
-        shelfGroup.add(slab(mats.shelf, x + 0.01, y, 0, x + w - 0.01, y + 0.03, 0.26))
-        decorShelf(ctx, shelfGroup, x + 0.01, x + w - 0.01, y + 0.03, i + y)
+        into.add(slab(mats.shelf, x + 0.01, y, 0, x + w - 0.01, y + 0.03, 0.26))
+        decorShelf(ctx, into, x + 0.01, x + w - 0.01, y + 0.03, i + y)
+        dims(into, 'shelf', u.w - 2, 3, 26, { x: u.x + 1, y: y * 100 })
+        if (into === shelfGroup) shelfGroup.add((into = new THREE.Group()))
       }
       mark(shelfGroup)
       g.add(shelfGroup)
     }
 
     switch (u.kind) {
-      // угловой верх (C05) и доборная панель (C06) рисуются в таске 04; пока угловой — как шкаф, панель — пусто
+      case 'filler': {
+        // Добор: панель в цвет фасадов без корпуса и полок (C06/D02) — в списке доборов, не шкаф.
+        const top = ctx.mezz?.to ?? upperTop
+        const panel = new THREE.Group()
+        panel.add(slab(mats.upper, x + GAP / 2, UB, zf, x + Math.max(w - GAP / 2, GAP / 2 + 0.002), top - GAP / 2, zf + FRONT_T))
+        dims(panel, 'filler', u.w, (top - UB) * 100, FRONT_T * 100, { x: u.x, y: UB * 100 })
+        g.add(panel)
+        ctx.extras.push({ kind: 'filler', run: run.id, w: u.w, h: (top - UB) * 100 })
+        addCornice(x, x + w, zf + FRONT_T)
+        break
+      }
       case 'corner':
       case 'doors':
       case 'shelf': {
         if (variant === 'none') {
           const gh = ghost(ctx, g, x, UB, ctx.mezz?.to ?? upperTop, w, UPPER_D)
-          dims(gh, 'upper', u.w, (upperTop - UB) * 100, (UPPER_D + FRONT_T) * 100)
+          dims(gh, 'upper', u.w, (upperTop - UB) * 100, (UPPER_D + FRONT_T) * 100, { x: u.x, y: UB * 100 })
           mark(gh)
           break
         }
         if (variant === 'open') openShelves()
         else cabinet(UB, variant)
-        mezzanine(x, w)
+        mezzanine(x, w, blind)
         break
       }
       case 'hood': {
@@ -968,13 +1060,13 @@ function uppers(ctx: Ctx, run: Run, g: THREE.Group) {
         const aw = cm(app.w)
         const hx = x + (w - aw) / 2
         if (app.hood === 'chimney' || app.hood === 'inclined') {
-          const bottom = ctx.counterY + 0.68
+          const bottom = hoodAt(ctx)
           // в портале труба доходит до антресолей, над ней — антресоль
           const pipeTop = portal && ctx.mezz ? ctx.mezz.from : ctx.wallH - 0.07
           if (portal) mezzanine(x, w)
           const hd = A.chimneyHood(app, mats, pipeTop - bottom)
           hd.position.set(hx, bottom, 0)
-          applianceDims(hd, app, 'hood', [60, 50, 50])
+          applianceDims(hd, app, 'hood', [60, 50, 50], { x: hx * 100, y: bottom * 100 })
           tag(hd, 'hood')
           ctx.objects.hood = hd
           g.add(hd)
@@ -982,16 +1074,18 @@ function uppers(ctx: Ctx, run: Run, g: THREE.Group) {
           break
         }
         // Встраиваемая вытяжка прячется в шкаф: снизу видна только планка.
+        // Шкаф над панелью выше соседних: низ вытяжки — на норме над панелью (D16).
         const lift = app.hood === 'telescopic' ? 0.045 : 0
-        cabinet(UB + lift, 'doors')
+        const hb = hoodAt(ctx, Math.max(UB - 0.005, hoodAt(ctx)))
+        cabinet(hb + 0.005 + lift, 'doors')
         mezzanine(x, w)
         const strip = new THREE.Group()
-        strip.add(slab(mats.appliance(app.finish), hx, UB - 0.005, 0.02, hx + aw, UB + lift, app.hood === 'telescopic' ? UPPER_D + 0.05 : UPPER_D - 0.01, true))
+        strip.add(slab(mats.appliance(app.finish), hx, hb, 0.02, hx + aw, hb + 0.005 + lift, app.hood === 'telescopic' ? UPPER_D + 0.05 : UPPER_D - 0.01, true))
         tag(strip, 'hood')
-        applianceDims(strip, app, 'hood', [60, 30, 30])
+        applianceDims(strip, app, 'hood', [60, 30, 30], { x: hx * 100, y: hb * 100 })
         ctx.objects.hood = strip
         g.add(strip)
-        anchor(ctx, 'hood', g, x + w / 2, UB + 0.06, UPPER_D + 0.06)
+        anchor(ctx, 'hood', g, x + w / 2, hb + 0.06, UPPER_D + 0.06)
         break
       }
       case 'fridge': {
@@ -1013,7 +1107,7 @@ function uppers(ctx: Ctx, run: Run, g: THREE.Group) {
         const cab = new THREE.Group()
         cab.position.x = x + PANEL_T
         carcass(ctx, cab, cw, bottom, top, CARCASS_D, { top: true, sides: mats.upper, shelves })
-        dims(cab, 'overFridge', cw * 100, h * 100, (CARCASS_D + FRONT_T) * 100)
+        dims(cab, 'overFridge', cw * 100, h * 100, (CARCASS_D + FRONT_T) * 100, { x: (x + PANEL_T) * 100, y: bottom * 100 })
         cab.userData.cab = { key, row: 'upper', variant, fridge: true } satisfies CabInfo
         g.add(cab)
         if (variant === 'glass' && shelves.length && top - shelves[0] > 0.16) dishes(ctx, cab, 0.02, cw - 0.02, shelves[0] + 0.008, CARCASS_D)
@@ -1039,6 +1133,23 @@ function uppers(ctx: Ctx, run: Run, g: THREE.Group) {
   if (portal) portalFrame(ctx, run, g)
 }
 
+/** Планка у глухой части углового шкафа, м. */
+const STRIP = 0.03
+
+/** Глухая часть верхнего углового: где открытая часть (под дверцу) и где планка, м от начала шкафа. */
+type Blind = { open: [number, number]; strip: [number, number] }
+function blindOf(u: Upper, w: number): Blind | null {
+  if (u.kind !== 'corner' || !u.blind) return null
+  const b = cm(u.blind)
+  return u.blindAt === 'end' ? { open: [0, w - b - STRIP], strip: [w - b - STRIP, w - b] } : { open: [b + STRIP, w], strip: [b, b + STRIP] }
+}
+
+/** Планка углового шкафа: деталь в цвет фасадов, у мебельщика — в «Проёмах и доборах» (D17). */
+function cornerStrip(ctx: Ctx, run: Run, parent: THREE.Object3D, s: [number, number], y0: number, y1: number, z: number, mat: THREE.Material) {
+  parent.add(slab(mat, s[0], y0, z, s[1], y1, z + FRONT_T))
+  ctx.extras.push({ kind: 'strip', run: run.id, w: (s[1] - s[0]) * 100, h: (y1 - y0) * 100 })
+}
+
 /** Толщина доски рамы портала. */
 const PORTAL_BOARD = 0.032
 
@@ -1062,7 +1173,9 @@ function portalFrame(ctx: Ctx, run: Run, g: THREE.Group) {
     start = -1
     if (x1 - x0 < 0.3) return
     g.add(slab(mat, x0, mz.from, 0, x1, mz.from + PORTAL_BOARD, depth))
-    ctx.nichePanels.push({ h: (x1 - x0) * 100, d: depth * 100, count: 1 })
+    // доска длиннее листа — из нескольких равных частей (C08)
+    const n = partsOf(x1 - x0)
+    ctx.nichePanels.push({ h: ((x1 - x0) / n) * 100, d: depth * 100, count: n })
     const sideH = mz.from - ctx.counterY
     let sides = 0
     if (high(run.modules[run.modules.indexOf(first) - 1])) {
@@ -1090,7 +1203,9 @@ function portalFrame(ctx: Ctx, run: Run, g: THREE.Group) {
 function mantel(ctx: Ctx, g: THREE.Group, x: number, w: number, app: KitchenAppliance | undefined) {
   const { mats, upperTop } = ctx
   const top = ctx.mezz ? ctx.mezz.from : upperTop
-  const bottom = ctx.counterY + 0.64
+  // снизу колпака — планка вытяжки (на 4 см ниже полочки): её низ на норме над панелью (D16)
+  const bottom = hoodAt(ctx) + 0.04
+  if (!app) ctx.hoodOver = undefined
   const hoodH = 0.26
   const dLow = UPPER_D + 0.2
   const dHigh = UPPER_D + 0.03
@@ -1132,7 +1247,8 @@ function mantel(ctx: Ctx, g: THREE.Group, x: number, w: number, app: KitchenAppl
     c.position.set(x - 0.02, top, dHigh - 0.012)
     box.add(c)
   }
-  dims(box, 'mantel', w * 100, (top - bottom + 0.035) * 100, (dLow + 0.02) * 100)
+  // низ — полочка под колпаком, а не кронштейны под ней (D10)
+  dims(box, 'mantel', w * 100, (top - bottom + 0.035) * 100, (dLow + 0.02) * 100, { x: x * 100, y: (bottom - 0.035) * 100 })
   tagItem(box, 'hob')
   g.add(box)
   // снизу — планка вытяжки, спрятанной в коробе
@@ -1141,7 +1257,8 @@ function mantel(ctx: Ctx, g: THREE.Group, x: number, w: number, app: KitchenAppl
     const aw = Math.min(cm(app.w), w - 0.1)
     strip.add(slab(mats.appliance(app.finish), x + (w - aw) / 2, bottom - 0.04, 0.06, x + (w + aw) / 2, bottom - 0.035, dLow - 0.05))
     tag(strip, 'hood')
-    applianceDims(strip, app, 'hood', [60, 30, 30])
+    // вытяжка спрятана в коробе — рамка по центру короба, а не с края планки
+    applianceDims(strip, app, 'hood', [60, 30, 30], { x: (x + w / 2) * 100 - app.w / 2, y: (bottom - 0.04) * 100 })
     ctx.objects.hood = strip
     g.add(strip)
     anchor(ctx, 'hood', g, x + w / 2, bottom - 0.02, dLow)
@@ -1327,11 +1444,11 @@ function islandExtras(ctx: Ctx, run: Run, g: THREE.Group) {
   if (hobM && input.items.hood && input.items.hob !== null) {
     const app = input.items.hood
     const aw = cm(app.w)
-    const bottom = counterY + 0.7
+    const bottom = hoodAt(ctx)
     const hd = A.chimneyHood(app, mats, ctx.wallH - bottom - 0.07)
     hoodX = cm(hobM.x + hobM.w / 2)
     hd.position.set(hoodX - aw / 2, bottom, 0.05)
-    applianceDims(hd, app, 'hood', [60, 50, 50])
+    applianceDims(hd, app, 'hood', [60, 50, 50], { x: (hoodX - aw / 2) * 100, y: bottom * 100 })
     tag(hd, 'hood')
     ctx.objects.hood = hd
     const over = new THREE.Group()
@@ -1340,8 +1457,11 @@ function islandExtras(ctx: Ctx, run: Run, g: THREE.Group) {
     g.add(over)
     anchor(ctx, 'hood', g, hoodX, bottom + 0.2, 0.55)
   }
-  // задняя панель со стороны стульев
+  // задняя панель со стороны стульев — деталь для мебельщика (D17);
+  // длиннее листа — из нескольких равных частей, как доска портала (C08)
   g.add(slab(mats.facade, 0, 0, -0.02, L, counterY - cm(style.topCm), 0))
+  const backs = partsOf(L)
+  for (let k = 0; k < backs; k++) ctx.extras.push({ kind: 'islandBack', run: run.id, w: run.length / backs, h: (counterY - cm(style.topCm)) * 100 })
   const n = Math.max(2, Math.floor(L / 0.55))
   const seat = mats.plain(style.id === 'loft' ? '#6b4a33' : style.group === 'hitech' ? '#1d1e21' : '#d8cfc2', 0.6)
   const legs = mats.metal(style.metal === 'wood' ? 'black' : style.metal)
@@ -1619,6 +1739,7 @@ function assemble(input: BuildInput): Built {
     gola: 0,
     splash: 0,
     tops: [],
+    extras: [],
   }
   const root = new THREE.Group()
   room(ctx, root)
@@ -1666,6 +1787,7 @@ function assemble(input: BuildInput): Built {
 
   const spec: SpecData = {
     runs: specRuns,
+    extras: ctx.extras,
     carcasses: ctx.carcasses,
     panels: ctx.nichePanels,
     plinth: ctx.plinth,
@@ -1692,6 +1814,7 @@ function assemble(input: BuildInput): Built {
     bounds,
     wallH: ctx.wallH,
     spec,
+    ...(ctx.hoodOver === undefined ? {} : { hoodOver: ctx.hoodOver }),
     dispose() {
       // Геометрию освобождаем, а материалы — нет: у освобождённого материала
       // видеокарта выбрасывает и его шейдер, и следующая кухня собирала бы
@@ -1715,12 +1838,12 @@ function collectRun(ctx: Ctx, run: Run, g: THREE.Group): SpecRun {
   const boxes: SpecBox[] = []
   const fronts: SpecFront[] = []
   const v = new THREE.Vector3()
-  const r1 = (n: number) => Math.round(n * 10) / 10
   g.traverse((o) => {
     const d = o.userData.dims as Dims | undefined
     if (d && o !== g && !o.userData.ghost) {
-      const b = new THREE.Box3().setFromObject(o).applyMatrix4(inv)
-      boxes.push({ ...d, x: r1(b.min.x * 100), y: r1(Math.max(0, b.min.y) * 100) })
+      // координаты — у самой детали (D10); габарит 3D-группы — только если их нет
+      const b = d.x === undefined || d.y === undefined ? new THREE.Box3().setFromObject(o).applyMatrix4(inv) : null
+      boxes.push({ ...d, x: d.x ?? r1(b!.min.x * 100), y: d.y ?? r1(Math.max(0, b!.min.y) * 100) })
     }
     const f = o.userData.front as Omit<SpecFront, 'x' | 'y'> | undefined
     if (f) {
