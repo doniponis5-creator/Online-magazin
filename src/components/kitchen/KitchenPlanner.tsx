@@ -1654,6 +1654,14 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
         return t.checks.sinkWindow
       case 'fits':
         return c.level === 'ok' ? t.checks.fitsOk : t.checks.fitsWarn(c.count)
+      case 'tallUnderWindow':
+        return t.checks.tallUnderWindow
+      case 'applianceWider':
+        return t.checks.applianceWider(c.slot, c.w, c.room)
+      case 'underCounterHeight':
+        return t.checks.underCounter(c.slot, c.h, c.max)
+      case 'hoodHeight':
+        return c.level === 'ok' ? t.checks.hoodHeightOk(c.over, c.gas) : t.checks.hoodHeightWarn(c.over, c.min, c.gas)
     }
   }
 

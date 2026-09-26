@@ -1,4 +1,4 @@
-import type { Module, Plan, Run } from './layout'
+import { HOOD_OVER, type Module, type Plan, type Run } from './layout'
 
 /**
  * Проверка проекта по правилам кухонных дизайнеров (NKBA и практика
@@ -16,6 +16,10 @@ export type Check =
   | { id: 'sinkDw'; level: CheckLevel; gap: number }
   | { id: 'sinkWindow'; level: CheckLevel }
   | { id: 'fits'; level: CheckLevel; count: number }
+  | { id: 'tallUnderWindow'; level: CheckLevel }
+  | { id: 'applianceWider'; level: CheckLevel; slot: 'oven' | 'hood'; w: number; room: number }
+  | { id: 'underCounterHeight'; level: CheckLevel; slot: 'washer' | 'dishwasher'; h: number; max: number }
+  | { id: 'hoodHeight'; level: CheckLevel; over: number; min: number; gas: boolean }
 
 /**
  * Правило треугольника: каждая сторона 120–270 см, сумма не больше 790 см.
@@ -26,6 +30,8 @@ export const TRIANGLE = { legMin: 115, legMax: 270, sumMax: 790 }
 export const HOB_SIDE = 30
 
 const TALL: Module['kind'][] = ['fridge', 'tall', 'pantry']
+/** Под столешницей место до низа столешницы: цоколь 10 + корпус 72, см. */
+export const UNDER_COUNTER = 82
 
 type Found = { run: Run; i: number; m: Module }
 
@@ -76,7 +82,28 @@ function underWindow(plan: Plan, f: Found): boolean {
   return f.m.x < win.at + win.w / 2 && f.m.x + f.m.w > win.at - win.w / 2
 }
 
-export function checkProject(plan: Plan): Check[] {
+/**
+ * Высокий модуль под окном: у задней стены — по месту на стене; у левой —
+ * крайний шкаф ряда A закрывает окно, если оно начинается ближе глубины ряда.
+ */
+function tallUnderWindow(plan: Plan): boolean {
+  const win = plan.window
+  if (!win) return false
+  const a = plan.runs.find((r) => r.id === 'A')
+  if (!a) return false
+  const from = win.at - win.w / 2
+  const to = win.at + win.w / 2
+  return a.modules.some((m, i) => {
+    if (!TALL.includes(m.kind)) return false
+    if (win.wall === 'back') return m.x < to - 0.01 && m.x + m.w > from + 0.01
+    return i === 0 && m.x < 0.01 && from < 60 - 0.01
+  })
+}
+
+/** Что известно только после 3D-сборки: фактический низ вытяжки над панелью, см. */
+export type CheckFacts = { hoodOver?: number }
+
+export function checkProject(plan: Plan, facts: CheckFacts = {}): Check[] {
   const out: Check[] = []
   const fridge = find(plan, 'fridge')
   const sink = find(plan, 'sink')
@@ -104,6 +131,18 @@ export function checkProject(plan: Plan): Check[] {
     out.push({ id: 'sinkDw', level: gap <= 60 ? 'ok' : 'warn', gap })
   }
   if (sink && plan.window && underWindow(plan, sink)) out.push({ id: 'sinkWindow', level: 'ok' })
+  if (tallUnderWindow(plan)) out.push({ id: 'tallUnderWindow', level: 'warn' })
+  for (const t of plan.tooWide ?? []) out.push({ id: 'applianceWider', level: 'warn', slot: t.slot, w: t.w, room: Math.round(t.room * 10) / 10 })
+  for (const u of plan.underCounter ?? [])
+    if (u.h > UNDER_COUNTER + 0.01) out.push({ id: 'underCounterHeight', level: 'warn', slot: u.slot, h: u.h, max: UNDER_COUNTER })
+  // Высота вытяжки: норма из раскладки против того, как вытяжка висит на самом
+  // деле. Пока фактической высоты нет — пункта нет и в счёт он не входит.
+  if (plan.hoodHeight && facts.hoodOver !== undefined && Number.isFinite(facts.hoodOver)) {
+    const { gas } = plan.hoodHeight
+    const min = gas ? HOOD_OVER.gas : HOOD_OVER.electric
+    const over = Math.round(facts.hoodOver * 10) / 10
+    out.push({ id: 'hoodHeight', level: over >= min ? 'ok' : 'warn', over, min, gas })
+  }
   out.push({ id: 'fits', level: plan.dropped.length === 0 ? 'ok' : 'warn', count: plan.dropped.length })
   return out
 }

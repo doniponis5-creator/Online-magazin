@@ -937,6 +937,8 @@ function uppers(ctx: Ctx, run: Run, g: THREE.Group) {
     }
 
     switch (u.kind) {
+      // угловой верх (C05) и доборная панель (C06) рисуются в таске 04; пока угловой — как шкаф, панель — пусто
+      case 'corner':
       case 'doors':
       case 'shelf': {
         if (variant === 'none') {

@@ -83,8 +83,28 @@ export type Module = {
   front?: BaseFront
 }
 
-export type UpperKind = 'doors' | 'shelf' | 'hood' | 'fridge' | 'none'
-export type Upper = { kind: UpperKind; x: number; w: number }
+/**
+ * Верхний ряд. `corner` — шкаф над угловым: со стороны угла глухая часть
+ * (её закрывают верхние шкафы соседней стены), дверца — только на открытой
+ * части. `filler` — доборная панель без корпуса там, где шкаф был бы уже
+ * `UPPER_MIN`.
+ */
+export type UpperKind = 'doors' | 'shelf' | 'hood' | 'fridge' | 'none' | 'corner' | 'filler'
+export type Upper = {
+  kind: UpperKind
+  x: number
+  w: number
+  /** угловой верхний: ширина глухой части и с какой стороны угол */
+  blind?: number
+  blindAt?: 'start' | 'end'
+}
+/** Верхний шкаф уже этого (см) не делают — ставят доборную панель. */
+export const UPPER_MIN = 20
+/** Низ вытяжки над варочной панелью, см: над газовой выше. */
+export const HOOD_OVER = { gas: 75, electric: 65 }
+
+/** Не поместилось: что, сколько см не хватило и на какой стене. */
+export type Dropped = { item: ItemKey; slot?: SlotKind; need: number; wall: RunId }
 
 export type RunId = 'A' | 'B' | 'C' | 'I'
 
@@ -110,9 +130,20 @@ export type Plan = {
   window: { wall: 'back' | 'left'; at: number; w: number } | null
   /** где стоит каждая техника: ряд и модуль */
   placed: Partial<Record<SlotKind, { run: RunId; index: number }>>
-  /** не поместилось; need — сколько см не хватило (slot — если это товар) */
-  dropped: { item: ItemKey; slot?: SlotKind; need: number; wall?: RunId }[]
+  /**
+   * не поместилось; need — сколько см не хватило на стене wall (slot — если
+   * это товар). Вытяжка над панелью под окном — `{ item: 'hob', slot: 'hood' }`.
+   */
+  dropped: Dropped[]
   island?: { x: number; z: number; w: number; d: number }
+  /** духовку хотели в пенал или в свой шкаф, а она встала под варочную панель */
+  ovenMovedUnderHob?: boolean
+  /** техника шире своего места: w — ширина техники, room — ширина места, см */
+  tooWide?: { slot: 'oven' | 'hood'; w: number; room: number; wall: RunId }[]
+  /** техника под столешницей со своей высотой: стиральная и отдельностоящая посудомойка */
+  underCounter?: { slot: 'washer' | 'dishwasher'; h: number; wall: RunId }[]
+  /** низ вытяжки над варочной панелью, см (решает раскладка, рисует 3D) */
+  hoodHeight?: { over: number; gas: boolean }
 }
 
 export type PlanInput = {
@@ -148,6 +179,16 @@ export type PlanInput = {
   at?: Partial<Record<ItemKey, number>>
   /** своя ширина мойки, шкафа под плитой, пеналов */
   widths?: Partial<Record<SizedItem, number>>
+  /** габариты выбранной духовки, см: шкаф под ней не уже её */
+  oven?: { w: number; h: number; d: number } | null
+  /** ширина выбранной вытяжки, см: её место не уже её */
+  hood?: { w: number } | null
+  /**
+   * Какие предметы со своим местом (`at`) поставлены рукой только что: они
+   * встают вплотную к соседу ближе `SNAP`. Нет — так ведут себя все;
+   * `[]` — места заморожены и никто не прилипает.
+   */
+  snap?: ItemKey[]
 }
 
 type Item =
@@ -208,7 +249,7 @@ const sizeOf = (i: Item) => (isFill(i) ? i.min : i.w)
  * куске остаток столешницы делится между шкафами, как раньше: соседние шкафы
  * становятся шире или уже.
  */
-export function resolveRun(length: number, start: number, items: Item[]): Module[] | null {
+export function resolveRun(length: number, start: number, items: Item[], canSnap: (key?: ItemKey) => boolean = () => true): Module[] | null {
   const fixed = items.reduce((s, i) => s + sizeOf(i), 0)
   if (fixed > length - start + 0.01) return null
   const out: Module[] = []
@@ -216,26 +257,39 @@ export function resolveRun(length: number, start: number, items: Item[]): Module
   let seg: Item[] = []
   /** сумма ширин куска до предмета — ближе к началу он встать не может */
   let before = 0
+  /** то же без запасов столешницы: где кончается физический сосед */
+  let beforeSolid = 0
   /** сумма ширин от текущего элемента до конца ряда */
   let after = fixed
+  let afterSolid = items.reduce((s, i) => s + (isFill(i) ? 0 : i.w), 0)
   for (const item of items) {
     if (!isFill(item) && item.at !== undefined) {
       const lo = from + before
       const hi = length - after
       let x = Math.min(hi, Math.max(lo, item.at))
-      if (x - lo < SNAP) x = lo
-      else if (hi - x < SNAP) x = hi
+      // Прилипает только поставленное рукой и только к соседу или краю, а не
+      // к расчётному запасу у плиты: иначе замороженное место сдвигается.
+      if (canSnap(item.item)) {
+        if (x - (from + beforeSolid) < SNAP) x = lo
+        else if (length - afterSolid - x < SNAP) x = hi
+      }
       out.push(...fillSegment(from, x, seg))
       out.push(moduleOf(item, x))
       from = x + item.w
       seg = []
       before = 0
+      beforeSolid = 0
       after -= item.w
+      afterSolid -= item.w
       continue
     }
     seg.push(item)
     before += sizeOf(item)
     after -= sizeOf(item)
+    if (!isFill(item)) {
+      beforeSolid += item.w
+      afterSolid -= item.w
+    }
   }
   out.push(...fillSegment(from, length, seg))
   return out
@@ -296,28 +350,81 @@ type Sequence = { items: Item[] }
  * Порядок уступок: пеналы для хранения, стиральная, посудомойка, пенал с
  * духовкой, холодильник.
  */
-function place(length: number, start: number, seq: Sequence, dropped: Plan['dropped']): { modules: Module[]; items: Item[] } {
+/**
+ * Убрали предмет — два куска столешницы по его бокам становятся одним.
+ * Иначе остаток делится на лишние узкие шкафы, а при заморозке мест (C16)
+ * округление делит его уже по-другому.
+ */
+function mergeFills(items: Item[]): Item[] {
+  const out: Item[] = []
+  for (const i of items) {
+    const last = out[out.length - 1]
+    if (last && isFill(last) && isFill(i)) {
+      out[out.length - 1] = {
+        fill: last.fill + i.fill,
+        min: Math.max(last.min, i.min),
+        prefer: last.min >= i.min ? last.prefer : i.prefer,
+        role: last.role === 'side' || i.role === 'side' ? 'side' : 'work',
+      }
+      continue
+    }
+    out.push(i)
+  }
+  return out
+}
+
+type Placing = {
+  wall: RunId
+  /** до какой ширины можно сузить мойку и шкаф плиты, см */
+  narrowest: { sink: number; hob: number }
+  canSnap: (key?: ItemKey) => boolean
+}
+
+function place(length: number, start: number, seq: Sequence, dropped: Dropped[], how: Placing): { modules: Module[]; items: Item[] } {
   let items = seq.items
   const order: FixedItem[] = ['pantry2', 'pantry', 'washer', 'dishwasher', 'oven', 'tall', 'fridge']
+  const room = length - start
+  /** measured — по какому списку считать нехватку (для мойки и плиты — по суженному) */
+  const drop = (victim: ItemKey, measured: Item[] = items) => {
+    const fixed = measured.reduce((s, i) => s + sizeOf(i), 0)
+    const victimItem = items.find((i) => !isFill(i) && i.item === victim) as Extract<Item, { kind: ModuleKind }>
+    dropped.push({ item: victim, slot: victimItem.slot, need: Math.max(1, Math.ceil(fixed - room)), wall: how.wall })
+    items = mergeFills(items.filter((i) => i !== victimItem))
+  }
   for (;;) {
-    const modules = resolveRun(length, start, items)
+    const modules = resolveRun(length, start, items, how.canSnap)
     if (modules) return { modules, items }
-    const fixed = items.reduce((s, i) => s + (isFill(i) ? i.min : i.w), 0)
     // первыми уступают свои шкафы покупателя (с конца), потом техника по списку
     const cabs = items.filter((i) => !isFill(i) && i.item && isCabinet(i.item))
     const lastCab = cabs[cabs.length - 1] as Extract<Item, { kind: ModuleKind }> | undefined
     const victim = lastCab?.item ?? order.find((key) => items.some((i) => !isFill(i) && i.item === key))
-    if (!victim) {
-      // Плита и мойка остаются всегда: сначала жертвуем запасом столешницы.
-      const tight = items.map((i) => (isFill(i) ? { ...i, min: 0 } : i))
-      const squeezed = resolveRun(length, start, tight)
-      if (squeezed) return { modules: squeezed, items: tight }
-      const onlyFill: Item[] = [{ fill: 1, min: 0, prefer: 'doors', role: 'side' }]
-      return { modules: resolveRun(length, start, onlyFill) ?? [], items: onlyFill }
+    if (victim) {
+      drop(victim)
+      continue
     }
-    const victimItem = items.find((i) => !isFill(i) && i.item === victim) as Extract<Item, { kind: ModuleKind }>
-    dropped.push({ item: victim, slot: victimItem.slot, need: Math.max(1, Math.ceil(fixed - (length - start))) })
-    items = items.filter((i) => i !== victimItem)
+    // Мойка и плита уходят последними. Только для этой попытки: запас
+    // столешницы в ноль, мойку и шкаф плиты сужаем до минимума (середина на месте).
+    const tight = items.map((i) => (isFill(i) ? { ...i, min: 0 } : i))
+    let over = tight.reduce((s, i) => s + sizeOf(i), 0) - room
+    const squeezed = tight.map((i) => {
+      if (isFill(i) || over <= 0.01 || (i.kind !== 'sink' && i.kind !== 'hob')) return i
+      const cut = Math.min(Math.ceil(over), i.w - how.narrowest[i.kind])
+      if (cut <= 0) return i
+      over -= cut
+      return { ...i, w: i.w - cut, at: i.at === undefined ? undefined : i.at + cut / 2 }
+    })
+    const fitted = resolveRun(length, start, squeezed, how.canSnap)
+    if (fitted) return { modules: fitted, items: squeezed }
+    // Не помогло — честно пишем в «не поместилось»: сначала плиту, потом мойку.
+    // Следующая попытка — снова со своими ширинами и запасами.
+    const essential = (['hob', 'sink'] as const).find((key) => items.some((i) => !isFill(i) && i.item === key))
+    if (essential) {
+      drop(essential, squeezed)
+      continue
+    }
+    // Не влезают даже угловые шкафы (стена короче minA).
+    const onlyFill: Item[] = [{ fill: 1, min: 0, prefer: 'doors', role: 'side' }]
+    return { modules: resolveRun(length, start, onlyFill) ?? [], items: onlyFill }
   }
 }
 
@@ -345,18 +452,76 @@ function uppersFor(modules: Module[], opts: UpperOpts, windowSpan?: { from: numb
     }
     const left = windowSpan.from - m.x
     const right = m.x + m.w - windowSpan.to
-    const fits = (w: number) => w >= 20 && (u.kind === 'doors' || u.kind === 'shelf')
-    if (fits(left)) out.push({ ...u, w: left })
+    // Кусок у окна: шкаф остаётся шкафом (угловой — только со стороны угла),
+    // над плитой вытяжку не повесить — там обычный шкаф; над высоким — пусто.
+    const piece = (x: number, w: number, cornerSide: boolean): Upper => {
+      if (u.kind === 'doors' || u.kind === 'shelf') return { kind: u.kind, x, w }
+      if (u.kind === 'corner') return cornerSide ? { ...u, x, w } : { kind: 'doors', x, w }
+      // над плитой навесного шкафа не бывает: за окном — пусто
+      if (u.kind === 'hood') return { kind: 'none', x, w }
+      return { kind: 'none', x, w }
+    }
+    if (left > 0.01) out.push(piece(m.x, left, u.blindAt === 'start'))
     out.push({ kind: 'none', x: Math.max(m.x, windowSpan.from), w: Math.min(m.x + m.w, windowSpan.to) - Math.max(m.x, windowSpan.from) })
-    if (fits(right)) out.push({ ...u, x: windowSpan.to, w: right })
+    if (right > 0.01) out.push(piece(windowSpan.to, right, u.blindAt === 'end'))
   }
   return out
+}
+
+/** Шкафы, которые можно сузить ради вытяжки. */
+const SHRINKABLE: UpperKind[] = ['doors', 'shelf', 'filler']
+
+/**
+ * Место вытяжки не уже самой вытяжки: раздвигаем его поровну в обе стороны
+ * от середины плиты, соседние шкафы сужаются. Упёрлись в окно, высокий шкаф,
+ * угол или край стены — насколько вышло. Возвращает ширину места.
+ */
+function widenHood(ups: Upper[], hob: Module, want: number): number {
+  const h = ups.findIndex((u) => u.kind === 'hood')
+  if (h < 0) return 0
+  const hood = ups[h]
+  const need = (want - hood.w) / 2
+  if (need <= 0.001) return hood.w
+  const room = (step: 1 | -1) => {
+    let sum = 0
+    for (let j = h + step; j >= 0 && j < ups.length && SHRINKABLE.includes(ups[j].kind); j += step) sum += ups[j].w
+    return sum
+  }
+  const ext = Math.min(need, room(-1), room(1))
+  if (ext <= 0.001) return hood.w
+  for (const step of [-1, 1] as const) {
+    let left = ext
+    for (let j = h + step; left > 0.001 && j >= 0 && j < ups.length; j += step) {
+      const take = Math.min(left, ups[j].w)
+      ups[j].w -= take
+      if (step === 1) ups[j].x += take
+      left -= take
+    }
+  }
+  hood.x = hob.x + hob.w / 2 - (hood.w + 2 * ext) / 2
+  hood.w += 2 * ext
+  for (let j = ups.length - 1; j >= 0; j--) if (ups[j].w <= 0.001) ups.splice(j, 1)
+  return hood.w
+}
+
+/** Верх уже `UPPER_MIN` — доборная панель без корпуса; у углового — если на дверцу не осталось места. */
+function narrowToFiller(ups: Upper[]) {
+  for (const u of ups) {
+    const open = u.kind === 'corner' ? u.w - (u.blind ?? 0) : u.w
+    if ((u.kind === 'doors' || u.kind === 'shelf' || u.kind === 'corner') && open < UPPER_MIN - 0.001) {
+      u.kind = 'filler'
+      delete u.blind
+      delete u.blindAt
+    }
+  }
 }
 
 type UpperOpts = { shelves: boolean; fridgeOpen: boolean }
 
 function upperFor(m: Module, opts: UpperOpts): Upper {
   if (m.kind === 'hob') return { kind: 'hood', x: m.x, w: m.w }
+  // Над угловым: со стороны угла глухо — там верх соседней стены (C05).
+  if (m.kind === 'corner') return { kind: 'corner', x: m.x, w: m.w, blind: UPPER_DEPTH, blindAt: m.blindAt }
   if (m.kind === 'tall' || m.kind === 'pantry') return { kind: 'none', x: m.x, w: m.w }
   if (m.kind === 'fridge') return { kind: opts.fridgeOpen ? 'none' : 'fridge', x: m.x, w: m.w }
   if (opts.shelves && m.role === 'work') return { kind: 'shelf', x: m.x, w: m.w }
@@ -488,23 +653,32 @@ function wallItems(
 
 export function planKitchen(input: PlanInput, options: { shelves: boolean }): Plan {
   const { shape } = input
-  const dropped: Plan['dropped'] = []
+  const dropped: Dropped[] = []
   const apart = Boolean(input.ovenApart) && !input.noOven
   const hasTall = Boolean(input.microwave?.builtIn) || (Boolean(input.tallOven) && !apart)
   const pantries = Math.max(0, Math.min(2, Math.round(input.pantries ?? 0)))
   // В нише у холодильника боковины: место шире на их толщину.
   const fridgeW = slotWidth(input.fridge, 0, input.fridgeOpen ? 0 : NICHE_EXTRA)
   const upperOpts: UpperOpts = { shelves: options.shelves, fridgeOpen: Boolean(input.fridgeOpen) }
-  const hobW = Math.max(hobMinWidth(input.hob), sizedWidth('hob', input.widths?.hob))
+  // Шкаф под духовкой (и колонна с ней) не уже самой духовки, кратно 5 см.
+  const ovenW = input.oven ? Math.max(HOB_W, Math.ceil(input.oven.w / 5) * 5) : HOB_W
+  const ovenUnderHob = !hasTall && !apart
+  const hobFloor = Math.max(hobMinWidth(input.hob), ovenUnderHob ? ovenW : 0)
+  const hobW = Math.max(hobFloor, sizedWidth('hob', input.widths?.hob))
   const dwW = input.dishwasher ? (input.dishwasher.w <= 46 ? 45 : 60) : 0
   const sinkW = sizedWidth('sink', input.widths?.sink ?? SINK_W)
+  const snapSet = input.snap ? new Set<ItemKey>(input.snap) : null
+  const canSnap = (key?: ItemKey) => !snapSet || (key !== undefined && snapSet.has(key))
+  const how = (wall: RunId): Placing => ({ wall, canSnap, narrowest: { sink: Math.min(sinkW, WIDTH_LIMITS.sink.min), hob: Math.min(hobW, hobFloor) } })
 
   const kindOf = (k: ItemKey): Extract<Item, { kind: ModuleKind }> | null => {
     switch (k) {
       case 'fridge':
         return input.fridge ? { kind: 'fridge', w: fridgeW, slot: 'fridge', item: k } : null
-      case 'tall':
-        return hasTall ? { kind: 'tall', w: sizedWidth('tall', input.widths?.tall ?? TALL_W), slot: input.microwave?.builtIn ? 'microwave' : 'oven', item: k } : null
+      case 'tall': {
+        const w = Math.max(sizedWidth('tall', input.widths?.tall ?? TALL_W), apart ? 0 : ovenW)
+        return hasTall ? { kind: 'tall', w, slot: input.microwave?.builtIn ? 'microwave' : 'oven', item: k } : null
+      }
       case 'sink':
         return { kind: 'sink', w: sinkW, item: k }
       case 'dishwasher':
@@ -518,7 +692,7 @@ export function planKitchen(input: PlanInput, options: { shelves: boolean }): Pl
       case 'pantry2':
         return pantries >= 2 ? { kind: 'pantry', w: sizedWidth('pantry2', input.widths?.pantry2 ?? PANTRY_W), item: k } : null
       case 'oven':
-        return apart ? { kind: 'oven', w: 60, slot: 'oven', item: k } : null
+        return apart ? { kind: 'oven', w: ovenW, slot: 'oven', item: k } : null
     }
     const cab = input.cabinets?.[k]
     if (!cab) return null
@@ -540,9 +714,7 @@ export function planKitchen(input: PlanInput, options: { shelves: boolean }): Pl
   let island: Plan['island']
 
   const pushRun = (run: Omit<Run, 'modules' | 'uppers'>, start: number, items: Item[], reversed = false) => {
-    const before = dropped.length
-    const { modules, items: kept } = place(run.length, start, { items }, dropped)
-    for (let i = before; i < dropped.length; i++) dropped[i].wall = run.id
+    const { modules, items: kept } = place(run.length, start, { items }, dropped, how(run.id))
     const laid = reversed ? modules.map((m) => ({ ...m, x: run.length - m.x - m.w, blindAt: flip(m.blindAt) })).reverse() : modules
     const uppers = uppersFor(laid, upperOpts)
     if (start === DEPTH) reachCorner(uppers, reversed ? run.length - DEPTH : DEPTH, reversed)
@@ -551,14 +723,17 @@ export function planKitchen(input: PlanInput, options: { shelves: boolean }): Pl
     Object.assign(placed, indexOfSlot(full, kept, laid))
     return full
   }
-  /** Окно над мойкой, если мойка у задней стены; иначе — посередине стены. */
+  /**
+   * Окно над мойкой, если мойка у задней стены; иначе — посередине стены.
+   * Над холодильником, пеналом и колонной окна не бывает: оно сдвигается или
+   * сужается (не уже 60 см). Не вышло — остаётся, и проверка это покажет.
+   */
   const backWindow = (a: Run, width: number, fallback: number): Plan['window'] => {
     if (input.noWindow) return null
-    const w = clampWindow(input.windowW ?? width, a.length)
+    const want = clampWindow(input.windowW ?? width, a.length)
     const sinkModule = a.modules.find((m) => m.kind === 'sink')
     const mid = sinkModule ? sinkModule.x + sinkModule.w / 2 : fallback
-    // окно не залезает в угол: от края стены не меньше 10 см
-    const at = Math.min(a.length - w / 2 - 10, Math.max(w / 2 + 10, mid))
+    const { at, w } = windowSpot(a.length, want, mid, a.modules.filter((m) => TALL_MODULES.includes(m.kind)))
     a.uppers = uppersFor(a.modules, upperOpts, { from: at - w / 2, to: at + w / 2 })
     return { wall: 'back', at, w }
   }
@@ -567,18 +742,19 @@ export function planKitchen(input: PlanInput, options: { shelves: boolean }): Pl
     const a = input.a
     pushRun({ id: 'A', ox: 0, oz: 0, rot: 0, length: a, wall: true }, 0, wallItems(order.A, make, { start: false, end: false }))
     room = { w: a, d: shape === 'island' ? 400 : 270 }
-    const w = clampWindow(input.windowW ?? 110, room.d)
-    window = input.noWindow ? null : { wall: 'left', at: Math.min(room.d - w / 2 - 10, shape === 'island' ? 200 : 180), w }
+    // Левое окно — за глубиной ряда: иначе его закроет боковина крайнего шкафа.
+    const w = Math.min(clampWindow(input.windowW ?? 110, room.d), room.d - 10 - DEPTH)
+    const at = Math.max(DEPTH + w / 2, Math.min(room.d - w / 2 - 10, shape === 'island' ? 200 : 180))
+    window = input.noWindow ? null : { wall: 'left', at, w }
     if (shape === 'island') {
-      const w = Math.round(input.island)
+      // Остров не длиннее стены A.
+      const w = Math.round(Math.min(input.island, a))
       const x = Math.round(Math.max(0, (a - w) / 2))
       // Проход между кухней и островом — 110 см, как в хороших проектах.
       island = { x, z: DEPTH + 110 + DEPTH, w, d: 90 }
       // Шкафы острова смотрят на кухню, с другой стороны — барная стойка.
       // На остров можно поставить мойку, плиту, посудомойку и свои шкафы.
-      const before = dropped.length
-      const { modules, items: kept } = place(w, 0, { items: wallItems(order.I, make, { start: false, end: false }, 'drawers') }, dropped)
-      for (let i = before; i < dropped.length; i++) dropped[i].wall = 'I'
+      const { modules, items: kept } = place(w, 0, { items: wallItems(order.I, make, { start: false, end: false }, 'drawers') }, dropped, how('I'))
       const run: Run = { id: 'I', ox: x + w, oz: island.z, rot: Math.PI, length: w, modules, uppers: [], wall: false }
       runs.push(run)
       Object.assign(placed, indexOfSlot(run, kept, modules))
@@ -606,8 +782,91 @@ export function planKitchen(input: PlanInput, options: { shelves: boolean }): Pl
       if (m.kind === 'hob') m.oven = !inTall && !ovenPlaced
       if (m.kind === 'tall') m.oven = inTall
     }
+  // Пенал или свой шкаф духовки не встал, а шкаф плиты есть — духовка под
+  // плитой: она в проекте, а не «не поместилась» (C03).
+  // То же, если свой шкаф не встал, а духовка ушла в колонну.
+  const hobHasOven = runs.some((r) => r.modules.some((m) => m.kind === 'hob' && m.oven))
+  const ovenHome = runs.some((r) => r.modules.some((m) => m.oven && (m.kind === 'hob' || m.kind === 'tall')))
+  const ovenMovedUnderHob = !input.noOven && !ovenUnderHob && hobHasOven
+  if (!input.noOven && ovenHome) for (let i = dropped.length - 1; i >= 0; i--) if (dropped[i].slot === 'oven') dropped.splice(i, 1)
 
-  return { shape, runs, room, window, placed, dropped, island }
+  const tooWide: NonNullable<Plan['tooWide']> = []
+  const underCounter: NonNullable<Plan['underCounter']> = []
+  let hoodHeight: Plan['hoodHeight']
+  for (const r of runs) {
+    for (const m of r.modules) {
+      const holdsOven = m.kind === 'oven' || (m.oven && (m.kind === 'hob' || m.kind === 'tall'))
+      if (input.oven && !input.noOven && holdsOven && m.w < input.oven.w - 0.01) tooWide.push({ slot: 'oven', w: input.oven.w, room: m.w, wall: r.id })
+      if (m.kind === 'washer' && input.washer) underCounter.push({ slot: 'washer', h: input.washer.h, wall: r.id })
+      if (m.kind === 'dishwasher' && input.dishwasher && !input.dishwasher.builtIn) underCounter.push({ slot: 'dishwasher', h: input.dishwasher.h, wall: r.id })
+    }
+    const hobM = r.modules.find((m) => m.kind === 'hob')
+    if (r.wall && hobM && input.hood) {
+      if (r.uppers.some((u) => u.kind === 'hood')) {
+        const w = widenHood(r.uppers, hobM, Math.ceil(input.hood.w / 5) * 5)
+        if (w < input.hood.w - 0.01) tooWide.push({ slot: 'hood', w: input.hood.w, room: w, wall: r.id })
+      } else {
+        // Плита под окном: вытяжку не повесить (C18).
+        const win = window && window.wall === 'back' && r.id === 'A' ? window : null
+        const overlap = win ? Math.min(hobM.x + hobM.w, win.at + win.w / 2) - Math.max(hobM.x, win.at - win.w / 2) : 1
+        dropped.push({ item: 'hob', slot: 'hood', need: Math.max(1, Math.ceil(overlap)), wall: r.id })
+      }
+    }
+    narrowToFiller(r.uppers)
+  }
+  const hoodHangs = Boolean(input.hood) && runs.some((r) => r.modules.some((m) => m.kind === 'hob')) && !dropped.some((d) => d.slot === 'hood')
+  if (hoodHangs) {
+    const gas = input.hob?.hob === 'gas'
+    hoodHeight = { over: gas ? HOOD_OVER.gas : HOOD_OVER.electric, gas }
+  }
+
+  const plan: Plan = { shape, runs, room, window, placed, dropped, island }
+  if (ovenMovedUnderHob) plan.ovenMovedUnderHob = true
+  if (tooWide.length) plan.tooWide = tooWide
+  if (underCounter.length) plan.underCounter = underCounter
+  if (hoodHeight) plan.hoodHeight = hoodHeight
+  return plan
+}
+
+/** Нехватка по каждой стене: сколько см добавить именно этой стене. Вытяжку под окном удлинением не поправить — её тут нет. */
+export function needByWall(plan: Pick<Plan, 'dropped'>): Partial<Record<RunId, number>> {
+  const out: Partial<Record<RunId, number>> = {}
+  for (const d of plan.dropped) if (d.slot !== 'hood') out[d.wall] = Math.max(out[d.wall] ?? 0, d.need)
+  return out
+}
+
+const TALL_MODULES: ModuleKind[] = ['fridge', 'tall', 'pantry']
+
+/**
+ * Где встать окну шириной `want` у задней стены длиной `length`: не ближе 10 см
+ * к углу и не над высокими модулями `blocks`. Сначала — полной ширины ближе
+ * всего к `mid`; не влезает — у́же, в самом широком свободном месте (не уже
+ * 60 см); и так нельзя — как раньше, у `mid`.
+ */
+function windowSpot(length: number, want: number, mid: number, blocks: Module[]): { at: number; w: number } {
+  const lo = 10
+  const hi = length - 10
+  const free: [number, number][] = []
+  let from = lo
+  for (const b of [...blocks].sort((p, q) => p.x - q.x)) {
+    if (b.x > from) free.push([from, Math.min(b.x, hi)])
+    from = Math.max(from, b.x + b.w)
+  }
+  if (from < hi) free.push([from, hi])
+  const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v))
+  let best: { at: number; w: number; d: number } | null = null
+  for (const [s, e] of free) {
+    if (e - s < want - 0.01) continue
+    const at = clamp(mid, s + want / 2, e - want / 2)
+    if (!best || Math.abs(at - mid) < best.d) best = { at, w: want, d: Math.abs(at - mid) }
+  }
+  if (best) return { at: best.at, w: best.w }
+  const widest = free.reduce<[number, number] | null>((b, f) => (!b || f[1] - f[0] > b[1] - b[0] ? f : b), null)
+  if (widest && widest[1] - widest[0] >= WINDOW_LIMITS.min) {
+    const w = Math.floor(widest[1] - widest[0])
+    return { at: clamp(mid, widest[0] + w / 2, widest[1] - w / 2), w }
+  }
+  return { at: clamp(mid, lo + want / 2, hi - want / 2), w: want }
 }
 
 /* ───────────── перестановка ───────────── */
@@ -799,8 +1058,11 @@ export const LIMITS: Record<'a' | 'b' | 'c' | 'island', { min: number; max: numb
 }
 
 /** Минимальная длина задней стены для формы (угловые шкафы должны влезть). */
-export function minA(shape: Shape): number {
-  if (shape === 'u') return 2 * CORNER_W + SINK_W + 20
-  if (shape === 'corner') return CORNER_W + SINK_W + 40
-  return LIMITS.a.min
+export function minA(shape: Shape, widths?: Partial<Record<SizedItem, number>>): number {
+  const sink = widths?.sink === undefined ? SINK_W : sizedWidth('sink', widths.sink)
+  const hob = widths?.hob === undefined ? HOB_W : sizedWidth('hob', widths.hob)
+  if (shape === 'u') return 2 * CORNER_W + sink + 20
+  if (shape === 'corner') return CORNER_W + sink + 40
+  // прямая и остров: мойка и плита на одной стене
+  return Math.max(LIMITS.a.min, Math.ceil((sink + hob) / 5) * 5)
 }
