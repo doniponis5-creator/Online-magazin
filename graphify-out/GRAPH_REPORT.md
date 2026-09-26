@@ -1,17 +1,17 @@
 # Graph Report - client-review-interface-a0390a  (2026-09-26)
 
 ## Corpus Check
-- 567 files · ~5,373,787 words
+- 567 files · ~5,374,012 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 75 file(s) not represented in the graph (top: .css 23, .xml 13, (none) 11)
 
 ## Summary
-- 4741 nodes · 11475 edges · 355 communities (194 shown, 161 thin omitted)
+- 4742 nodes · 11482 edges · 354 communities (193 shown, 161 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 118 edges (avg confidence: 0.86)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `0c09848c`
+- Built from commit: `2a0cb4fe`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -92,7 +92,7 @@
 - BRIEF.md
 - SCROLL-PLAN.md
 - DIRECTION.md
-- src/components/HomeMerchandising.tsx
+- useI18n
 - ref_d
 - SKILL.md
 - setup-demo-login.sh
@@ -138,7 +138,7 @@
 - usernotifications
 - webkit
 - src/lib/native/catalog.ts
-- src/lib/orders/gateway.ts
+- formatSom
 - ExampleInstrumentedTest.java
 - deploy_cabinet_walogin.sh
 - sync.py
@@ -159,7 +159,7 @@
 - cdvpluginresult
 - corefoundation
 - smartcentr-site/src/lib/kitchen/layout.ts
-- useI18n
+- src/lib/i18n/I18nProvider.tsx
 - src/lib/assistant/log.ts
 - process.cjs
 - build-appstore.sh
@@ -173,18 +173,18 @@
 - smartcentr-site/src/app/(entry)/layout.tsx
 - smartcentr-site/src/components/kitchen/three/governor.ts
 - manage.py
-- src/lib/assistant/reply.ts
+- ref_server_only
 - gradlew
 - android-keystore.sh
 - deploy_cabinet_client.sh
-- src/components/AssistantChat.tsx
+- src/app/[lang]/layout.tsx
 - src/lib/assistant/knowledge.ts
 - dependencies
 - ref_three_addons_geometries_roundedboxgeometry_js
 - smartcentr-site/src/components/kitchen/three/photo.ts
 - 02 — Телефон: виды под 3D, «Ещё» словом, полный экран с панелью
 - 04 — Тест губернатора: рывок заведомо больше капа
-- adapter.ts
+- src/components/ProductArt.tsx
 - Изначальная задача
 - pathlib
 - manifest.md
@@ -199,7 +199,7 @@
 - html
 - io
 - smartcentr-site/src/lib/telegram/bot.ts
-- smartcentr-site/src/lib/kitchen/types.ts
+- smartcentr-site/src/lib/kitchen/catalog.ts
 - requests
 - urllib3
 - smartcentr-site/src/lib/assistant/limits.ts
@@ -210,7 +210,7 @@
 - smartcentr-site/src/components/kitchen/three/appliances.ts
 - Интерфейсы прогона
 - smartcentr-site/src/lib/cart/CartProvider.tsx
-- src/app/[lang]/checkout/page.tsx
+- src/lib/cart/CartProvider.tsx
 - smartcentr-site/src/components/kitchen/pdfSheet.ts
 - smartcentr_site_src_data_products_products
 - smartcentr-site/src/lib/kitchen/spec.ts
@@ -219,16 +219,16 @@
 - 01 — Оболочка, «Нет связи», каталог без интернета и вход — проверить на эмуляторе и починить
 - 06 — Шкаф над холодильником: стекло или свой цвет
 - smartcentr-site/src/components/AssistantChat.tsx
-- src/lib/orders/order.ts
+- src/lib/orders/gateway.ts
 - reviews/store.ts
 - smartcentr-site/src/lib/assistant/respond.ts
 - smartcentr-site/src/lib/assistant/log.ts
-- src/app/[lang]/layout.tsx
+- src/lib/assistant/live.ts
 - smartcentr-site/src/components/CatalogView.tsx
 - AppLockPlugin.java
 - .invalidate
 - package.json
-- src/components/ProductArt.tsx
+- smartcentr-site/src/components/kitchen/three/engine.ts
 - android.content.Context
 - 02 — Бонусная карта, отпечаток и итоговая сборка для Google Play
 - compilerOptions
@@ -269,11 +269,11 @@
 - 2026-09-25-android-app/manifest.md
 - capacitor.config.ts
 - audit-mobile.md
-- errorResponse
+- src/components/ProductReels.tsx
 - Что сделано на MacBook 21.09.2026 — читать PC первым делом
-- normalizePhone
+- errorResponse
 - Спецификация: Android-приложение S Маркет — довести до «без ошибок» и отдать в Google Play
-- smartcentr-site/src/lib/assistant/live.ts
+- src/app/panel/questions/route.ts
 - ref_next_headers
 - ref_next_image
 - ref_next_link
@@ -341,23 +341,22 @@
 - smartcentr_site_src_data_storefront_storefront
 - shop_models.py
 - currentSession
-- ref_node_path
+- scripts/sync-catalog.mjs
 - make-app-icons.mjs
-- src/lib/assistant/gemini.ts
-- make-ios-icon.mjs
-- smartcentr-site/src/app/panel/questions/route.ts
+- src/lib/assistant/reply.ts
+- ref_node_path
+- src/app/robots.ts
 - src/components/FilterSelect.tsx
-- smartcentr-site/src/app/api/channel/whatsapp/route.ts
 - telegram-bot.mjs
 
 ## God Nodes (most connected - your core abstractions)
 1. `KitchenEngine` - 91 edges
 2. `KitchenEngine` - 91 edges
-3. `useI18n()` - 87 edges
+3. `useI18n()` - 88 edges
 4. `useI18n()` - 80 edges
 5. `KitchenPlanner()` - 73 edges
 6. `KitchenPlanner()` - 72 edges
-7. `formatSom()` - 45 edges
+7. `formatSom()` - 47 edges
 8. `formatSom()` - 45 edges
 9. `mesh()` - 36 edges
 10. `mesh()` - 36 edges
@@ -377,7 +376,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (355 total, 161 thin omitted)
+## Communities (354 total, 161 thin omitted)
 
 ### Community 0 - "src/lib/kitchen/catalog.ts"
 Cohesion: 0.12
@@ -392,8 +391,8 @@ Cohesion: 0.14
 Nodes (38): build_adopted(), build_common_module(), build_configuration(), build_module(), build_processor(), build_register(), build_registers(), build_role() (+30 more)
 
 ### Community 3 - "src/lib/i18n/config.ts"
-Cohesion: 0.09
-Nodes (26): generateMetadata(), generateMetadata(), generateMetadata(), generateMetadata(), generateMetadata(), metadata, PrivacyPage(), generateMetadata() (+18 more)
+Cohesion: 0.08
+Nodes (32): dynamic, ipOf(), POST(), readImage(), seen, tooOften(), generateMetadata(), generateMetadata() (+24 more)
 
 ### Community 4 - "OfflineCatalogView"
 Cohesion: 0.15
@@ -408,32 +407,32 @@ Cohesion: 0.22
 Nodes (9): devDependencies, @playwright/test, sharp, @types/node, @types/react, @types/react-dom, @types/three, typescript (+1 more)
 
 ### Community 7 - "src/components/AccountView.tsx"
-Cohesion: 0.09
-Nodes (37): src_components_account, AccountView(), formatDate(), useCustomer(), BonusReminder(), CustomerLogin(), Step, src_components_home_merchandising (+29 more)
+Cohesion: 0.11
+Nodes (32): src_components_account, AccountView(), formatDate(), useCustomer(), CustomerLogin(), Step, src_components_home_merchandising, CustomerProfile (+24 more)
 
 ### Community 8 - "src/lib/kitchen/layout.ts"
-Cohesion: 0.06
-Nodes (55): Dropped(), FILL, PlanSketch(), Props, ALL_WALLS, allowedOn(), canChangeWall(), clampWindow() (+47 more)
+Cohesion: 0.07
+Nodes (46): Dropped(), FILL, PlanSketch(), Props, ALL_WALLS, clampWindow(), companions(), CORNER_W (+38 more)
 
 ### Community 9 - "src/lib/kitchen/spec.ts"
-Cohesion: 0.09
-Nodes (32): appliance(), CARCASS, DrawingLabels, elevationSvg(), esc(), fmt(), front(), n() (+24 more)
+Cohesion: 0.07
+Nodes (39): appliance(), CARCASS, DrawingLabels, elevationSvg(), esc(), fmt(), front(), n() (+31 more)
 
 ### Community 10 - "shop_customers.py"
 Cohesion: 0.11
 Nodes (45): app_models, BonusAccount, Decimal, Интернет-магазин Smart Centr: заказы с сайта (O!Деньги → 1С)., _account(), branch_id(), _code_hash(), _customer() (+37 more)
 
 ### Community 11 - "src/app/api/customer/route-helpers.ts"
-Cohesion: 0.18
-Nodes (18): GET(), POST(), POST(), startSession(), CustomerSession, decodeNativeKey(), decodeSession(), encodeNativeKey() (+10 more)
+Cohesion: 0.21
+Nodes (15): GET(), POST(), CustomerSession, decodeNativeKey(), decodeSession(), encodeNativeKey(), encodeSession(), NATIVE_KEY_DAYS (+7 more)
 
 ### Community 12 - "Текшириладиган рўйхат"
 Cohesion: 0.12
 Nodes (16): 1. Илова очилиши, 2. Кириш, 3. Бонус картаси, 4. ⚠ Кассадаги сканер — энг муҳим текширув, 5. Face ID, 6. Push хабарлар, 7. Иловани ёпиб, қайта очиш, 8. Каталог интернетсиз (+8 more)
 
 ### Community 13 - "src/components/Icons.tsx"
-Cohesion: 0.07
-Nodes (54): Cached, Brand(), BrandMark(), CustomerReviews(), Viewer, frameUrl(), Hero3D(), src_components_home_story (+46 more)
+Cohesion: 0.12
+Nodes (32): frameUrl(), Hero3D(), base(), IconArrowDown(), IconCamera(), IconCard(), IconCart(), IconCheck() (+24 more)
 
 ### Community 14 - "src/components/CatalogView.tsx"
 Cohesion: 0.13
@@ -453,7 +452,7 @@ Nodes (18): CoreImage.CIFilterBuiltins, Double, Image, BonusCardData, BonusCardS
 
 ### Community 18 - "src/components/kitchen/KitchenPlanner.tsx"
 Cohesion: 0.04
-Nodes (68): src_components_kitchen_kitchen, chromeIntent(), colorSwatch(), CORE, Fail3d, FLEX, fmt(), hasWebGL2() (+60 more)
+Nodes (78): src_components_kitchen_kitchen, chromeIntent(), colorSwatch(), CORE, Fail3d, FLEX, fmt(), hasWebGL2() (+70 more)
 
 ### Community 19 - "shop_admin.py"
 Cohesion: 0.06
@@ -464,8 +463,8 @@ Cohesion: 0.12
 Nodes (25): DRAWING_CSS, A4, buildPdf(), decodeURISafe(), enc, num(), PdfLink, PdfPage (+17 more)
 
 ### Community 21 - "src/lib/telegram/order.ts"
-Cohesion: 0.15
-Nodes (24): ref_vitest, AFFIRM, ASK_ADDRESS, ASK_NAME, ASK_PHONE, ASK_PICK, ASK_WHERE, BAD_PHONE (+16 more)
+Cohesion: 0.11
+Nodes (27): ref_vitest, products, SITE_URL, AFFIRM, ASK_ADDRESS, ASK_NAME, ASK_PHONE, ASK_PICK (+19 more)
 
 ### Community 22 - "compilerOptions"
 Cohesion: 0.11
@@ -480,8 +479,8 @@ Cohesion: 0.19
 Nodes (21): csv, main(), Почему товара нет на сайте — только чтение, база 1С не меняется. На сайт уходит…, reason(), main(), Проверка остатков по рассрочке перед выкатом — ничего не меняет и никуда не…, som(), connect() (+13 more)
 
 ### Community 25 - "src/lib/telegram/bot.ts"
-Cohesion: 0.09
-Nodes (40): dynamic, POST(), ASK_PHONE, BAD_PHONE, CALL_INTENT, cancelLead(), Draft, drafts (+32 more)
+Cohesion: 0.12
+Nodes (33): dynamic, POST(), cancelLead(), leadContext(), leadStep(), pick(), sendLead(), startLead() (+25 more)
 
 ### Community 26 - "smartcentr-site/src/app/api/feed/google/route.ts"
 Cohesion: 0.24
@@ -492,8 +491,8 @@ Cohesion: 0.27
 Nodes (14): Archived Pexels Category Photo Set, Asset Sources Contract (no active product photos), photo-sources.ts Canonical Machine List, LG F4X5ES5SB 3D Scroll Scene Brief, TASK 03A Brief — close design review, MotionProvider Empty-Deps and Reveal Cascade Defect, Photo Source Reconciliation Audit, ProductImage Always Uses altRu Defect (+6 more)
 
 ### Community 28 - "smartcentr-site/src/components/kitchen/three/build.ts"
-Cohesion: 0.12
-Nodes (45): addFront(), anchor(), Anim, applianceDims(), assemble(), backsplash(), BASE_DIMS, baseModule() (+37 more)
+Cohesion: 0.10
+Nodes (51): addFront(), anchor(), Anim, applianceDims(), assemble(), backsplash(), BASE_DIMS, baseModule() (+43 more)
 
 ### Community 29 - "TASK 04 Report — Blender Model of LG F4X5ES5SB"
 Cohesion: 0.27
@@ -505,7 +504,7 @@ Nodes (13): Mobile Path Decision (Capacitor shell vs full native), Security, Pri
 
 ### Community 31 - "src/lib/assistant/respond.ts"
 Cohesion: 0.15
-Nodes (22): dynamic, ipOf(), POST(), readImage(), seen, tooOften(), dynamic, POST() (+14 more)
+Nodes (19): ref_node_crypto, dynamic, POST(), dynamic, POST(), CALL_INTENT, hasLead(), logQuestion() (+11 more)
 
 ### Community 32 - "BonusCardPlugin"
 Cohesion: 0.27
@@ -560,8 +559,8 @@ Cohesion: 0.36
 Nodes (8): BAD_WORDS, FORCE, GOOD_WORDS, main(), score(), searchTopic(), sleep(), TOPICS
 
 ### Community 45 - "smartcentr-site/src/components/kitchen/KitchenPlanner.tsx"
-Cohesion: 0.03
-Nodes (79): ref_three, smartcentr_site_src_components_kitchen_kitchen, chromeIntent(), colorSwatch(), CORE, Fail3d, FLEX, hasWebGL2() (+71 more)
+Cohesion: 0.04
+Nodes (70): smartcentr_site_src_components_kitchen_kitchen, chromeIntent(), colorSwatch(), CORE, Fail3d, FLEX, fmt(), hasWebGL2() (+62 more)
 
 ### Community 46 - "Smart Centr Project Working Rules"
 Cohesion: 0.25
@@ -616,8 +615,8 @@ Cohesion: 0.83
 Nodes (3): fail(), update_site.sh script, step()
 
 ### Community 74 - "smartcentr-site/src/lib/kitchen/share.ts"
-Cohesion: 0.06
-Nodes (49): fmt(), SizeField(), SlotRow(), frontColor, splashChoice, topChoice, allowed(), BASE_FRONTS (+41 more)
+Cohesion: 0.04
+Nodes (67): KitchenTexts, ky, ru, Texts, allowed(), BASE_FRONTS, baseKey(), BY_CODE (+59 more)
 
 ### Community 75 - "Смарт Центр — бош саҳифа янгиланиши"
 Cohesion: 0.29
@@ -635,16 +634,16 @@ Nodes (6): v7 — исправления модели и визуальная п
 Cohesion: 0.40
 Nodes (4): Натижа, Смарт Центр — аудит тузатишлари, Текширувлар, Чегаралар
 
-### Community 83 - "src/components/HomeMerchandising.tsx"
-Cohesion: 0.14
-Nodes (18): BrandLogo(), hasBrandImage(), LOGOS, LogoSpec, brandsForStrip(), BrandStrip(), CampaignBanner(), discountPct() (+10 more)
+### Community 83 - "useI18n"
+Cohesion: 0.08
+Nodes (43): CategoryTiles(), HomePage(), InfoStrip(), NightBanner(), ProductSection(), BrandLogo(), hasBrandImage(), LOGOS (+35 more)
 
 ### Community 85 - "SKILL.md"
 Cohesion: 0.25
 Nodes (7): Выключение, Где caveman выключается сам, Правила сжатия, Уровни, Что остаётся обычным текстом, Язык — главное правило, Ясность важнее краткости
 
 ### Community 87 - "PhotoTracer"
-Cohesion: 0.10
+Cohesion: 0.12
 Nodes (7): ref_three_gpu_pathtracer, DAY, Look, NIGHT, PhotoLights, PhotoTracer, PrepareOpts
 
 ### Community 88 - "useI18n"
@@ -684,40 +683,40 @@ Cohesion: 0.20
 Nodes (9): Вне рамок, Границы и швы, Задача, Открытые места, Покрытие манифеста, Пользовательские истории, Решение, Решения по реализации (+1 more)
 
 ### Community 99 - "src/lib/kitchen/share.ts"
-Cohesion: 0.05
-Nodes (58): KitchenTexts, ky, ru, Texts, FinishLook, Mats, RoomLook, CEILING (+50 more)
+Cohesion: 0.06
+Nodes (51): FinishLook, Mats, RoomLook, CEILING, COLUMN_HEIGHT, sizedWidth(), WINDOW_LIMITS, arrangementToQuery() (+43 more)
 
 ### Community 100 - "src/lib/assistant/local.ts"
 Cohesion: 0.08
-Nodes (42): fromJson(), withoutIds(), storeFacts(), allOutSay, Answer, Audience, AUDIENCE_MARKER, bonusText() (+34 more)
+Nodes (43): fromJson(), withoutIds(), CustomerBrief, storeFacts(), allOutSay, Answer, Audience, AUDIENCE_MARKER (+35 more)
 
 ### Community 102 - ".setKitchen"
-Cohesion: 0.20
-Nodes (3): BuildInput, easeOut(), SlotKind
+Cohesion: 0.17
+Nodes (5): BuildInput, buildKitchen(), CabInfo, easeOut(), SlotKind
 
 ### Community 103 - "shop_catalog.py"
 Cohesion: 0.10
 Nodes (37): app_core_database, datetime, fastapi, _as_jpeg(), chat_extra_items(), photos_index(), public_photo(), AsyncSession (+29 more)
 
 ### Community 104 - "src/components/kitchen/three/engine.ts"
-Cohesion: 0.08
-Nodes (21): Built, CabInfo, CEILING_LAYER, WALL_H, WINDOW, DAY, DragPreview, DragTarget (+13 more)
+Cohesion: 0.10
+Nodes (19): ref_three, Built, CEILING_LAYER, WALL_H, WINDOW, DAY, DragPreview, DragTarget (+11 more)
 
 ### Community 105 - "products.ts"
-Cohesion: 0.05
-Nodes (46): dynamic, GET(), dynamic, GET(), HomePage(), ALLOW, ASSISTANTS, PRIVATE (+38 more)
+Cohesion: 0.08
+Nodes (20): DevGalleryFixturePage(), Gallery(), PinchZoom(), ProductDetail(), ProductPhoto, catalogSource, colorHexOf(), ColorOption (+12 more)
 
 ### Community 106 - "src/lib/customer/gateway.ts"
-Cohesion: 0.10
-Nodes (24): POST(), POST(), BonusHistoryItem, call(), CodeChannel, CustomerApiError, DEMO_BALANCE, DEMO_CODE (+16 more)
+Cohesion: 0.09
+Nodes (27): POST(), dynamic, GET(), POST(), BonusHistoryItem, CodeChannel, DEMO_BALANCE, DEMO_CODE (+19 more)
 
 ### Community 129 - "src/lib/native/catalog.ts"
 Cohesion: 0.31
 Nodes (9): OfflineCatalogSync(), CapacitorGlobal, CatalogPlugin, markTried(), offlineCatalogState(), plugin(), showOfflineCatalog(), syncOfflineCatalog() (+1 more)
 
-### Community 130 - "src/lib/orders/gateway.ts"
-Cohesion: 0.18
-Nodes (15): POST(), GET(), getInstallment(), mockSpend(), API_URL, callServer(), CreateResult, getOrder() (+7 more)
+### Community 130 - "formatSom"
+Cohesion: 0.12
+Nodes (23): CartPage(), CheckoutPage(), FieldErrors, OrderView(), BonusReminder(), Cached, CartReminder(), IconArrowUpRight() (+15 more)
 
 ### Community 131 - "ExampleInstrumentedTest.java"
 Cohesion: 0.24
@@ -753,15 +752,15 @@ Nodes (30): brick(), cache, canvas(), clear(), concrete(), Entry, finish(), floo
 
 ### Community 150 - "smartcentr-site/src/lib/kitchen/layout.ts"
 Cohesion: 0.06
-Nodes (56): Dropped(), FILL, PlanSketch(), Props, ALL_WALLS, allowedOn(), canChangeWall(), clampWindow() (+48 more)
+Nodes (57): Dropped(), FILL, PlanSketch(), Props, ALL_WALLS, allowedOn(), canChangeWall(), clampWindow() (+49 more)
 
-### Community 151 - "useI18n"
-Cohesion: 0.09
-Nodes (39): FavoritesPage(), OrderView(), CategoryTiles(), InfoStrip(), NightBanner(), ProductSection(), generateMetadata(), ProductPage() (+31 more)
+### Community 151 - "src/lib/i18n/I18nProvider.tsx"
+Cohesion: 0.12
+Nodes (25): FavoritesPage(), generateMetadata(), ProductPage(), AddToCartButton(), FavoriteButton(), ProductCard(), askText(), ProductPurchase() (+17 more)
 
 ### Community 152 - "src/lib/assistant/log.ts"
-Cohesion: 0.13
-Nodes (23): dynamic, POST(), dynamic, esc(), GET(), page(), rowsTable(), when() (+15 more)
+Cohesion: 0.17
+Nodes (16): dynamic, POST(), bishkekDay(), CHANNEL, clip(), dailyDigest(), dedupe(), frequent() (+8 more)
 
 ### Community 153 - "process.cjs"
 Cohesion: 0.12
@@ -777,7 +776,7 @@ Nodes (43): FavoritesPage(), BottomNav(), FavoriteButton(), Header(), HeaderInne
 
 ### Community 157 - "kitchen.test.ts"
 Cohesion: 0.09
-Nodes (30): cache, decode(), loadPhoto(), Photo, photoUrl(), SIDE_SHARE, sideShare(), trim() (+22 more)
+Nodes (32): cache, decode(), loadPhoto(), Photo, photoUrl(), SIDE_SHARE, sideShare(), trim() (+24 more)
 
 ### Community 159 - "MainActivity.java"
 Cohesion: 0.08
@@ -799,9 +798,9 @@ Nodes (11): GOVERNOR_CAP_MS, GOVERNOR_FAST_FRAMES, GOVERNOR_FAST_MS, GOVERNOR_MI
 Cohesion: 0.21
 Nodes (16): ask_credentials(), _configure(), configure_extension(), copy_base(), designer(), _detect(), detect_variant(), install() (+8 more)
 
-### Community 165 - "src/lib/assistant/reply.ts"
-Cohesion: 0.08
-Nodes (39): ref_node_crypto, ref_server_only, dynamic, POST(), allowed, cache, Entry, GET() (+31 more)
+### Community 165 - "ref_server_only"
+Cohesion: 0.10
+Nodes (21): ref_server_only, allowed, cache, Entry, GET(), reply(), TYPES, ASK_PHONE (+13 more)
 
 ### Community 166 - "gradlew"
 Cohesion: 0.83
@@ -811,9 +810,9 @@ Nodes (3): gradlew script, die(), warn()
 Cohesion: 0.83
 Nodes (3): fail(), restore(), deploy_cabinet_client.sh script
 
-### Community 175 - "src/components/AssistantChat.tsx"
-Cohesion: 0.10
-Nodes (35): AboutPage(), metadata, src_components_assistant_chat, AssistantChat(), onKeyDown(), onPickFile(), send(), handoffText() (+27 more)
+### Community 175 - "src/app/[lang]/layout.tsx"
+Cohesion: 0.07
+Nodes (47): AboutPage(), metadata, LangLayout(), viewport, src_components_assistant_chat, AssistantChat(), onKeyDown(), onPickFile() (+39 more)
 
 ### Community 176 - "src/lib/assistant/knowledge.ts"
 Cohesion: 0.17
@@ -835,9 +834,9 @@ Nodes (5): 02 — Телефон: виды под 3D, «Ещё» словом, �
 Cohesion: 0.40
 Nodes (4): 04 — Тест губернатора: рывок заведомо больше капа, Из брифа, дословно, Критерии приёмки, Что должно заработать
 
-### Community 182 - "adapter.ts"
-Cohesion: 0.09
-Nodes (26): dynamic, SnapshotItem, ART_BY_CATEGORY, BRAND_ALIASES, cleanName(), detectBrand(), KNOWN_BRANDS, OneCCatalog (+18 more)
+### Community 182 - "src/components/ProductArt.tsx"
+Cohesion: 0.05
+Nodes (25): dynamic, SnapshotItem, ART_BY_CATEGORY, BRAND_ALIASES, cleanName(), detectBrand(), KNOWN_BRANDS, OneCCatalog (+17 more)
 
 ### Community 184 - "pathlib"
 Cohesion: 0.12
@@ -852,8 +851,8 @@ Cohesion: 0.22
 Nodes (9): devDependencies, @playwright/test, sharp, @types/node, @types/react, @types/react-dom, @types/three, typescript (+1 more)
 
 ### Community 188 - "smartcentr-site/src/app/api/assistant/route.ts"
-Cohesion: 0.17
-Nodes (18): dynamic, ipOf(), POST(), readImage(), seen, tooOften(), dynamic, POST() (+10 more)
+Cohesion: 0.14
+Nodes (21): dynamic, ipOf(), POST(), readImage(), seen, tooOften(), dynamic, POST() (+13 more)
 
 ### Community 190 - "com.getcapacitor.PluginCall"
 Cohesion: 0.14
@@ -864,16 +863,16 @@ Cohesion: 0.25
 Nodes (8): scripts, build, dev, exam, start, test, test:e2e, typecheck
 
 ### Community 197 - "smartcentr-site/src/lib/telegram/bot.ts"
-Cohesion: 0.15
-Nodes (22): dynamic, POST(), tooOften(), backToChat(), call(), handleUpdate(), hello(), isPhoto() (+14 more)
+Cohesion: 0.12
+Nodes (30): ref_data_1c_adapter, dynamic, POST(), tooOften(), Cache, catalogNow(), chatExtraNow(), ExtraCache (+22 more)
 
-### Community 198 - "smartcentr-site/src/lib/kitchen/types.ts"
-Cohesion: 0.05
-Nodes (55): KitchenTexts, ky, ru, Texts, FinishLook, Mats, RoomLook, applianceFromProduct() (+47 more)
+### Community 198 - "smartcentr-site/src/lib/kitchen/catalog.ts"
+Cohesion: 0.14
+Nodes (19): applianceFromProduct(), defaultPick(), find(), FINISH_WORDS, finishOf(), fridgeKind(), hobKind(), hoodKind() (+11 more)
 
 ### Community 201 - "smartcentr-site/src/lib/assistant/limits.ts"
-Cohesion: 0.14
-Nodes (14): allowed, cache, Entry, GET(), reply(), TYPES, dailyLimit(), day (+6 more)
+Cohesion: 0.15
+Nodes (13): allowed, cache, Entry, GET(), reply(), TYPES, dailyLimit(), day (+5 more)
 
 ### Community 203 - "smartcentr-site/src/components/AccountView.tsx"
 Cohesion: 0.11
@@ -881,15 +880,15 @@ Nodes (32): smartcentr_site_src_components_account, AccountView(), formatDate(),
 
 ### Community 204 - "smartcentr-site/src/lib/assistant/local.ts"
 Cohesion: 0.09
-Nodes (37): CustomerBrief, storeFacts(), allOutSay, Answer, AUDIENCE_MARKER, bonusText(), dayText(), foundSay (+29 more)
+Nodes (38): CustomerBrief, storeFacts(), allOutSay, Answer, Audience, AUDIENCE_MARKER, bonusText(), dayText() (+30 more)
 
 ### Community 205 - "smartcentr-site/src/lib/telegram/order.ts"
 Cohesion: 0.12
 Nodes (22): AFFIRM, ASK_ADDRESS, ASK_NAME, ASK_PHONE, ASK_PICK, ASK_WHERE, BAD_PHONE, BUY_INTENT (+14 more)
 
 ### Community 206 - "smartcentr-site/src/components/kitchen/three/appliances.ts"
-Cohesion: 0.14
-Nodes (44): chimneyHood(), cm(), dishwasherInside(), faucet(), fridge(), FridgeDoor, fridgeDoors(), groceries() (+36 more)
+Cohesion: 0.15
+Nodes (42): chimneyHood(), cm(), dishwasherInside(), faucet(), fridge(), FridgeDoor, fridgeDoors(), groceries() (+34 more)
 
 ### Community 207 - "Интерфейсы прогона"
 Cohesion: 0.20
@@ -899,9 +898,9 @@ Nodes (9): 01 — безопасность, Границы, решённые в 
 Cohesion: 0.28
 Nodes (14): CartContext, CartContextValue, CartProvider(), RestoreNotice, addItem(), CartLine, cartTotals(), clampQty() (+6 more)
 
-### Community 209 - "src/app/[lang]/checkout/page.tsx"
-Cohesion: 0.16
-Nodes (25): CartPage(), CheckoutPage(), FieldErrors, PaymentMethod, paymentMethods, CartContext, CartContextValue, CartProvider() (+17 more)
+### Community 209 - "src/lib/cart/CartProvider.tsx"
+Cohesion: 0.24
+Nodes (17): CartContext, CartContextValue, CartProvider(), RestoreNotice, addItem(), CartLine, cartTotals(), clampQty() (+9 more)
 
 ### Community 210 - "smartcentr-site/src/components/kitchen/pdfSheet.ts"
 Cohesion: 0.13
@@ -909,11 +908,11 @@ Nodes (25): DRAWING_CSS, A4, buildPdf(), decodeURISafe(), enc, num(), PdfLink, P
 
 ### Community 212 - "smartcentr-site/src/lib/kitchen/spec.ts"
 Cohesion: 0.09
-Nodes (32): appliance(), CARCASS, DrawingLabels, elevationSvg(), esc(), fmt(), front(), n() (+24 more)
+Nodes (33): appliance(), CARCASS, DrawingLabels, elevationSvg(), esc(), fmt(), front(), n() (+25 more)
 
 ### Community 213 - "src/lib/kitchen/fronts.ts"
-Cohesion: 0.16
-Nodes (15): upperOver(), allowed(), BASE_FRONTS, BY_CODE, CODE, DRAWER_PARTS, frontsFromQuery(), frontsToQuery() (+7 more)
+Cohesion: 0.17
+Nodes (14): allowed(), BASE_FRONTS, BY_CODE, CODE, DRAWER_PARTS, frontsFromQuery(), frontsToQuery(), isUpperKey() (+6 more)
 
 ### Community 215 - "01 — Оболочка, «Нет связи», каталог без интернета и вход — проверить на эмуляторе и починить"
 Cohesion: 0.33
@@ -927,25 +926,25 @@ Nodes (4): 06 — Шкаф над холодильником: стекло ил�
 Cohesion: 0.11
 Nodes (23): ref_data_contacts, ref_data_payment_methods, smartcentr_site_src_components_assistant_chat, AssistantChat(), onKeyDown(), onPickFile(), send(), handoffText() (+15 more)
 
-### Community 218 - "src/lib/orders/order.ts"
-Cohesion: 0.18
-Nodes (15): POST(), demoProducts, getProfile(), isDemoPhone(), createOrder(), applyBonus(), DeliveryMethod, deliveryPriceFor() (+7 more)
+### Community 218 - "src/lib/orders/gateway.ts"
+Cohesion: 0.10
+Nodes (26): GET(), POST(), demoProducts, isDemoPhone(), API_URL, callServer(), createOrder(), CreateResult (+18 more)
 
 ### Community 219 - "reviews/store.ts"
-Cohesion: 0.12
-Nodes (29): dynamic, GET(), dynamic, GET(), allowed(), card(), dynamic, esc() (+21 more)
+Cohesion: 0.14
+Nodes (27): dynamic, GET(), allowed(), card(), dynamic, esc(), GET(), page() (+19 more)
 
 ### Community 220 - "smartcentr-site/src/lib/assistant/respond.ts"
-Cohesion: 0.13
+Cohesion: 0.12
 Nodes (28): ASK_PHONE, BAD_PHONE, CALL_INTENT, cancelLead(), Draft, drafts, FAILED, hasLead() (+20 more)
 
 ### Community 222 - "smartcentr-site/src/lib/assistant/log.ts"
-Cohesion: 0.18
-Nodes (17): dynamic, POST(), bishkekDay(), CHANNEL, clip(), dailyDigest(), dedupe(), frequent() (+9 more)
+Cohesion: 0.14
+Nodes (24): dynamic, POST(), dynamic, esc(), GET(), page(), rowsTable(), when() (+16 more)
 
-### Community 223 - "src/app/[lang]/layout.tsx"
-Cohesion: 0.15
-Nodes (14): LangLayout(), viewport, Header(), HtmlLang(), MotionProvider(), FavoritesContext, FavoritesContextValue, FavoritesProvider() (+6 more)
+### Community 223 - "src/lib/assistant/live.ts"
+Cohesion: 0.14
+Nodes (19): dynamic, GET(), dynamic, GET(), productsFromOneC(), Cache, catalogNow(), chatExtraNow() (+11 more)
 
 ### Community 224 - "smartcentr-site/src/components/CatalogView.tsx"
 Cohesion: 0.12
@@ -959,9 +958,9 @@ Nodes (23): android.content.SharedPreferences, base64, biometricmanager, biometr
 Cohesion: 0.08
 Nodes (23): description, @capacitor/android, @capacitor/cli, @capacitor/core, @capacitor/ios, @capacitor/push-notifications, next, @playwright/test (+15 more)
 
-### Community 228 - "src/components/ProductArt.tsx"
+### Community 228 - "smartcentr-site/src/components/kitchen/three/engine.ts"
 Cohesion: 0.09
-Nodes (5): DevGalleryFixturePage(), Gallery(), PinchZoom(), ProductArt(), ProductPhoto
+Nodes (20): CEILING_LAYER, WALL_H, WINDOW, DAY, DragPreview, DragTarget, EngineEvents, NIGHT (+12 more)
 
 ### Community 229 - "android.content.Context"
 Cohesion: 0.24
@@ -988,8 +987,8 @@ Cohesion: 0.19
 Nodes (15): Check, CheckLevel, checkProject(), counterBeside(), dist(), find(), Found, front() (+7 more)
 
 ### Community 237 - "smartcentr-site/src/lib/orders/gateway.ts"
-Cohesion: 0.18
-Nodes (15): POST(), GET(), mockSpend(), API_URL, callServer(), CreateResult, getOrder(), globalStore (+7 more)
+Cohesion: 0.17
+Nodes (16): POST(), GET(), getInstallment(), mockSpend(), API_URL, callServer(), CreateResult, getOrder() (+8 more)
 
 ### Community 238 - "PhotoTracer"
 Cohesion: 0.12
@@ -1004,8 +1003,8 @@ Cohesion: 0.17
 Nodes (12): dependencies, @capacitor/android, @capacitor/cli, @capacitor/core, @capacitor/ios, @capacitor/push-notifications, next, react (+4 more)
 
 ### Community 241 - "smartcentr-site/src/app/api/customer/route-helpers.ts"
-Cohesion: 0.23
-Nodes (14): GET(), POST(), CustomerSession, decodeNativeKey(), decodeSession(), encodeNativeKey(), encodeSession(), NATIVE_KEY_DAYS (+6 more)
+Cohesion: 0.20
+Nodes (17): GET(), POST(), POST(), startSession(), register(), CustomerSession, decodeNativeKey(), decodeSession() (+9 more)
 
 ### Community 242 - "smartcentr-site/src/lib/native/catalog.ts"
 Cohesion: 0.31
@@ -1036,7 +1035,7 @@ Cohesion: 0.14
 Nodes (24): ref_node_os, dynamic, GET(), POST(), BOUGHT, checkReview(), cleanText(), displayName() (+16 more)
 
 ### Community 249 - "src/components/kitchen/three/governor.ts"
-Cohesion: 0.16
+Cohesion: 0.15
 Nodes (12): GOVERNOR_CAP_MS, GOVERNOR_FAST_FRAMES, GOVERNOR_FAST_MS, GOVERNOR_MIN_RATIO, GOVERNOR_SAMPLES, GOVERNOR_SLOW_MS, GOVERNOR_STEP, GovernorState (+4 more)
 
 ### Community 250 - "smartcentr-site/deploy/site/install_site.sh"
@@ -1052,28 +1051,28 @@ Cohesion: 0.33
 Nodes (5): 03 — Инструкция для Google Play: точность (из разбора замечаний), Из брифа, дословно, Критерии приёмки, Разделы спецификации, Что должно заработать
 
 ### Community 257 - "smartcentr-site/src/lib/customer/gateway.ts"
-Cohesion: 0.12
-Nodes (17): POST(), BonusHistoryItem, CodeChannel, CustomerOrderItem, DEMO_BALANCE, DEMO_CODE, DEMO_NAME, DEMO_PHONE (+9 more)
+Cohesion: 0.10
+Nodes (25): POST(), POST(), BonusHistoryItem, call(), CodeChannel, CustomerApiError, CustomerOrderItem, DEMO_BALANCE (+17 more)
 
 ### Community 259 - "smartcentr-site/src/lib/orders/order.ts"
-Cohesion: 0.20
-Nodes (13): POST(), dynamic, GET(), getSiteSettings(), createOrder(), applyBonus(), DeliveryMethod, deliveryPriceFor() (+5 more)
+Cohesion: 0.25
+Nodes (12): POST(), getProfile(), isDemoPhone(), createOrder(), applyBonus(), DeliveryMethod, deliveryPriceFor(), OrderError (+4 more)
 
 ### Community 260 - "smartcentr-site/src/lib/assistant/reply.ts"
-Cohesion: 0.15
-Nodes (17): cheaperThan(), NOT_UNIT, PATTERNS, THOUSAND, ProductHit, lookupIn(), Audience, parseAnswer() (+9 more)
+Cohesion: 0.18
+Nodes (18): dynamic, POST(), cheaperThan(), followUp, ChatTurn, lookupIn(), parseAnswer(), ownerNotes() (+10 more)
 
 ### Community 262 - "errorResponse"
-Cohesion: 0.33
-Nodes (10): clientIp(), errorResponse(), POST(), POST(), POST(), demoProfile(), sendCode(), verifyCode() (+2 more)
+Cohesion: 0.20
+Nodes (17): POST(), clientIp(), errorResponse(), startSession(), POST(), POST(), POST(), POST() (+9 more)
 
 ### Community 263 - "CatalogStore"
 Cohesion: 0.22
 Nodes (7): CatalogStore, .file, .folder, .updatedAt, Bool, Data, URL
 
 ### Community 264 - "AccountReviews.tsx"
-Cohesion: 0.15
-Nodes (19): AccountReviews(), ErrorKey, Photo, ReviewForm(), addPhotos(), photoUrl(), PhotoViewer(), ReviewCard() (+11 more)
+Cohesion: 0.14
+Nodes (23): AccountReviews(), ErrorKey, Photo, ReviewForm(), addPhotos(), ReviewLoginHint(), CustomerReviews(), photoUrl() (+15 more)
 
 ### Community 265 - "03 — Движок: подстройка под мощность устройства"
 Cohesion: 0.33
@@ -1087,73 +1086,69 @@ Nodes (5): 05 — Лёгкая 3D-модель для слабых телефо�
 Cohesion: 0.40
 Nodes (4): Аудит безопасности 3D-конструктора (2026-09-24, читал агент, ничего не менял), Находки, Что реально защищает от копирования (честно), Что уже хорошо
 
-### Community 271 - "errorResponse"
-Cohesion: 0.25
-Nodes (13): POST(), errorResponse(), startSession(), POST(), POST(), call(), CustomerApiError, demoProfile() (+5 more)
+### Community 271 - "src/components/ProductReels.tsx"
+Cohesion: 0.20
+Nodes (10): src_components_product_reels, ProductReels(), readSaved(), ReelsSlide(), saveOrder(), shuffle(), ShareButton(), REELS_FROM_SITE_KEY (+2 more)
 
 ### Community 272 - "Что сделано на MacBook 21.09.2026 — читать PC первым делом"
 Cohesion: 0.20
 Nodes (9): Бонус виден покупателю, Вход через WhatsApp «наоборот» (главное за вечер), Для PC (1С): 1 000 сом — тратить целиком, Для PC: кабинет SBonus тоже шлёт код через Green API, Кому адресовано (WhatsApp) — 22.09, Проверить после выкатки (PC), Что сделано на MacBook 21.09.2026 — читать PC первым делом, _own_wa_number() (+1 more)
 
-### Community 273 - "normalizePhone"
-Cohesion: 0.43
-Nodes (6): clientIp(), POST(), POST(), sendCode(), waLoginStart, normalizePhone()
+### Community 273 - "errorResponse"
+Cohesion: 0.42
+Nodes (8): clientIp(), errorResponse(), POST(), POST(), POST(), sendCode(), waLoginStart, normalizePhone()
 
 ### Community 274 - "Спецификация: Android-приложение S Маркет — довести до «без ошибок» и отдать в Google Play"
 Cohesion: 0.22
 Nodes (8): Вне рамок, Задача, Открытые места, Покрытие манифеста, Пользовательские истории, Решение, Решения по реализации, Спецификация: Android-приложение S Маркет — довести до «без ошибок» и отдать в Google Play
 
-### Community 275 - "smartcentr-site/src/lib/assistant/live.ts"
-Cohesion: 0.21
-Nodes (13): ref_data_1c_adapter, dynamic, POST(), followUp, ChatTurn, Cache, catalogNow(), chatExtraNow() (+5 more)
+### Community 275 - "src/app/panel/questions/route.ts"
+Cohesion: 0.46
+Nodes (7): dynamic, esc(), GET(), page(), rowsTable(), when(), summarize()
 
 ### Community 306 - "smartcentr-site/src/lib/assistant/knowledge.ts"
-Cohesion: 0.25
-Nodes (14): budgetFrom(), catalogForQuestion(), expand(), InstallmentBrief, isInStock(), normalize(), productLine(), productName() (+6 more)
+Cohesion: 0.17
+Nodes (18): budgetFrom(), NOT_UNIT, PATTERNS, THOUSAND, catalogForQuestion(), expand(), InstallmentBrief, isInStock() (+10 more)
 
 ### Community 334 - "smartcentr-site/scripts/sync-catalog.mjs"
-Cohesion: 0.25
-Nodes (7): ref_node_url, apiUrl, CATALOG, fileEnv, log(), main(), ROOT
+Cohesion: 0.29
+Nodes (6): apiUrl, CATALOG, fileEnv, log(), main(), ROOT
 
 ### Community 338 - "currentSession"
-Cohesion: 0.32
-Nodes (9): POST(), DELETE(), GET(), currentSession(), endSession(), POST(), deleteAccount(), getProfile() (+1 more)
+Cohesion: 0.24
+Nodes (11): POST(), DELETE(), GET(), currentSession(), endSession(), POST(), dynamic, GET() (+3 more)
 
 ### Community 343 - "shop_models.py"
 Cohesion: 0.40
 Nodes (4): Интернет-магазин Smart Centr — заказы с сайта (SQLAlchemy). Один заказ сайта =…, sqlalchemy_dialects_postgresql, sqlalchemy_orm, uuid
 
 ### Community 345 - "currentSession"
-Cohesion: 0.24
-Nodes (11): POST(), DELETE(), GET(), currentSession(), endSession(), POST(), dynamic, GET() (+3 more)
+Cohesion: 0.23
+Nodes (12): POST(), DELETE(), GET(), currentSession(), endSession(), POST(), dynamic, GET() (+4 more)
 
-### Community 346 - "ref_node_path"
-Cohesion: 0.15
-Nodes (9): ref_node_path, { chromium }, path, apiUrl, CATALOG, fileEnv, log(), main() (+1 more)
+### Community 346 - "scripts/sync-catalog.mjs"
+Cohesion: 0.25
+Nodes (7): ref_node_url, apiUrl, CATALOG, fileEnv, log(), main(), ROOT
 
 ### Community 347 - "make-app-icons.mjs"
-Cohesion: 0.16
-Nodes (12): ref_sharp, files, variants, androidDir, circle(), DENSITIES, glyph(), iconSet (+4 more)
+Cohesion: 0.24
+Nodes (9): androidDir, circle(), DENSITIES, glyph(), iconSet, root, splashSet, square() (+1 more)
 
-### Community 348 - "src/lib/assistant/gemini.ts"
-Cohesion: 0.27
-Nodes (10): dynamic, POST(), askGemini(), ChatTurn, geminiConfigured(), GeminiError, MEDIA_TASK, MediaKind (+2 more)
+### Community 348 - "src/lib/assistant/reply.ts"
+Cohesion: 0.14
+Nodes (24): dynamic, POST(), followUp, askGemini(), ChatTurn, geminiConfigured(), GeminiError, MEDIA_TASK (+16 more)
 
-### Community 349 - "make-ios-icon.mjs"
-Cohesion: 0.20
-Nodes (9): glyph(), ICON_YELLOW, iconSet, iconSource, INK, mark, root, splash() (+1 more)
+### Community 349 - "ref_node_path"
+Cohesion: 0.10
+Nodes (15): ref_node_path, ref_sharp, files, variants, { chromium }, path, glyph(), ICON_YELLOW (+7 more)
 
-### Community 351 - "smartcentr-site/src/app/panel/questions/route.ts"
-Cohesion: 0.46
-Nodes (7): dynamic, esc(), GET(), page(), rowsTable(), when(), summarize()
+### Community 351 - "src/app/robots.ts"
+Cohesion: 0.33
+Nodes (4): ALLOW, ASSISTANTS, PRIVATE, TRAINERS
 
 ### Community 352 - "src/components/FilterSelect.tsx"
 Cohesion: 0.38
 Nodes (6): src_components_filter_select, FilterSelect(), choose(), keyboard(), show(), Option
-
-### Community 353 - "smartcentr-site/src/app/api/channel/whatsapp/route.ts"
-Cohesion: 0.53
-Nodes (5): dynamic, POST(), customerBrief(), getInstallment(), isDemoPhone()
 
 ## Knowledge Gaps
 - **957 isolated node(s):** `customer`, `phone`, `laptop`, `catalog`, `order` (+952 more)
@@ -1164,10 +1159,10 @@ Nodes (5): dynamic, POST(), customerBrief(), getInstallment(), isDemoPhone()
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `KitchenEngine` connect `KitchenEngine` to `src/lib/kitchen/share.ts`, `.invalidate`, `.setKitchen`, `src/components/kitchen/three/engine.ts`, `src/lib/kitchen/spec.ts`, `src/components/kitchen/KitchenPlanner.tsx`, `PhotoTracer`, `src/components/kitchen/three/governor.ts`, `.onUp`?**
-  _High betweenness centrality (0.036) - this node is a cross-community bridge._
-- **Why does `KitchenEngine` connect `KitchenEngine` to `.invalidate`, `smartcentr-site/src/components/kitchen/three/governor.ts`, `smartcentr-site/src/lib/kitchen/types.ts`, `.setKitchen`, `.constructor`, `smartcentr-site/src/components/kitchen/KitchenPlanner.tsx`, `PhotoTracer`, `smartcentr-site/src/lib/kitchen/spec.ts`, `.redraw`?**
+  _High betweenness centrality (0.031) - this node is a cross-community bridge._
+- **Why does `KitchenEngine` connect `KitchenEngine` to `.invalidate`, `smartcentr-site/src/components/kitchen/three/governor.ts`, `smartcentr-site/src/components/kitchen/three/engine.ts`, `.setKitchen`, `smartcentr-site/src/lib/kitchen/share.ts`, `.constructor`, `smartcentr-site/src/components/kitchen/KitchenPlanner.tsx`, `PhotoTracer`, `smartcentr-site/src/lib/kitchen/spec.ts`, `.redraw`?**
   _High betweenness centrality (0.019) - this node is a cross-community bridge._
-- **Why does `formatSom()` connect `formatSom` to `smartcentr-site/src/components/CatalogView.tsx`, `smartcentr-site/src/lib/kitchen/share.ts`, `smartcentr-site/src/components/AccountView.tsx`, `smartcentr-site/src/lib/assistant/local.ts`, `smartcentr-site/src/components/kitchen/KitchenPlanner.tsx`, `smartcentr-site/src/lib/telegram/order.ts`, `smartcentr-site/src/lib/assistant/knowledge.ts`, `smartcentr-site/src/lib/assistant/live.ts`, `useI18n`, `smartcentr-site/src/components/AssistantChat.tsx`, `ref_react`?**
+- **Why does `formatSom()` connect `formatSom` to `smartcentr-site/src/components/CatalogView.tsx`, `smartcentr-site/src/lib/assistant/reply.ts`, `smartcentr-site/src/lib/telegram/bot.ts`, `smartcentr-site/src/components/AccountView.tsx`, `smartcentr-site/src/lib/assistant/local.ts`, `smartcentr-site/src/components/kitchen/KitchenPlanner.tsx`, `smartcentr-site/src/lib/telegram/order.ts`, `smartcentr-site/src/lib/assistant/knowledge.ts`, `useI18n`, `smartcentr-site/src/components/AssistantChat.tsx`, `ref_react`?**
   _High betweenness centrality (0.016) - this node is a cross-community bridge._
 - **What connects `customer`, `phone`, `laptop` to the rest of the system?**
   _957 weakly-connected nodes found - possible documentation gaps or missing edges._

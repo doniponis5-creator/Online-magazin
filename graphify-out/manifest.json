@@ -612,9 +612,9 @@
     "semantic_hash": ""
   },
   "src/components/AccountView.tsx": {
-    "mtime": 1790411299.0936196,
-    "seen": 1790411638.1620386,
-    "ast_hash": "f799df9a37ef93564e78d3c2cb0af54a",
+    "mtime": 1790417403.394373,
+    "seen": 1790417517.0436068,
+    "ast_hash": "ea7626e39c85293235eab09b5bfce3d2",
     "semantic_hash": ""
   },
   "src/components/AddToCartButton.tsx": {
@@ -1062,9 +1062,9 @@
     "semantic_hash": ""
   },
   "docs/HANDOFF.md": {
-    "mtime": 1790411621.6114326,
-    "seen": 1790411638.162155,
-    "ast_hash": "9d0afd349a86b308a2685317f68096d9",
+    "mtime": 1790417490.4633253,
+    "seen": 1790417517.0597684,
+    "ast_hash": "a5ba84b7ce0c1581a74501b318012fa7",
     "semantic_hash": ""
   },
   "docs/IOS_APP_UZ.md": {
@@ -7362,9 +7362,9 @@
     "semantic_hash": ""
   },
   "src/components/AccountReviews.tsx": {
-    "mtime": 1790414915.933503,
-    "seen": 1790415220.0355833,
-    "ast_hash": "1c7685842d3c6fb2ffdf7bf7e1d3bf31",
+    "mtime": 1790417381.928273,
+    "seen": 1790417517.0436049,
+    "ast_hash": "ebc502222c554dc6166ae94d06285a0d",
     "semantic_hash": ""
   },
   "src/components/CustomerReviews.tsx": {
@@ -7392,9 +7392,9 @@
     "semantic_hash": ""
   },
   "src/lib/reviews/texts.ts": {
-    "mtime": 1790411890.6500149,
-    "seen": 1790412168.2978473,
-    "ast_hash": "d4b2d1ce0ae831627936b6247c09880d",
+    "mtime": 1790417393.1088567,
+    "seen": 1790417517.054527,
+    "ast_hash": "cf97c9175c9bbb17e8a824aca2436aad",
     "semantic_hash": ""
   }
 }

@@ -130,21 +130,43 @@
   .review-viewer__nav.is-next { right: 18px; }
 }
 
-/* ── Кабинет: отзывы о покупках ─────────────────────────────────────────── */
-.account-reviews { scroll-margin-top: calc(var(--header-h) + 16px); }
-.account-reviews__lead { margin: 0 0 14px; color: var(--color-ink-soft); line-height: 1.55; }
-/* Двойной класс: общее правило кабинета красит все абзацы в серый. */
-.account-reviews .account-reviews__thanks { color: var(--color-ink); }
-.review-form .field__error { margin: 0; color: var(--color-danger); }
-.account-reviews__thanks { display: flex; align-items: flex-start; gap: 8px; margin: 0 0 14px; padding: 12px 14px; border-radius: 12px; background: var(--color-lime-soft); font-weight: 650; }
+/* ── Кабинет: «Оцените покупку» ──────────────────────────────────────────
+   Первая плашка кабинета во всю ширину. Ледяная панель — как спокойные
+   информационные зоны сайта; строки заказов внутри белые. На широком
+   экране слева призыв, справа заказы. */
+.account-reviews { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 16px 40px; align-items: start; padding: 28px 32px; border-radius: 16px; background: var(--color-primary-soft); scroll-margin-top: calc(var(--header-h) + 16px); }
+.account-reviews__head { grid-column: 1; grid-row: 1 / span 2; display: grid; gap: 10px; }
+.account-reviews__stars { display: inline-flex; gap: 2px; color: var(--color-ink); }
+.account-reviews__head h2 { margin: 0; font-size: clamp(24px, 2.5vw, 30px); font-weight: 800; line-height: 1.2; letter-spacing: -0.025em; }
+.account-reviews__lead { margin: 0; color: var(--color-ink-soft); font-size: 15px; line-height: 1.55; max-width: 44ch; }
+.account-reviews__thanks, .account-reviews__list { grid-column: 2; }
+.account-reviews__thanks { display: flex; align-items: flex-start; gap: 8px; margin: 0; padding: 12px 14px; border-radius: 12px; background: #fff; color: var(--color-ink); font-weight: 650; }
 .account-reviews__thanks svg { flex: none; margin-top: 2px; color: var(--color-success); }
+.review-form .field__error { margin: 0; color: var(--color-danger); }
 .account-reviews__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.account-reviews__list > li { border: 1px solid var(--color-border); border-radius: 12px; }
-.account-reviews__row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; min-height: 60px; }
+.account-reviews__list > li { background: #fff; border: 1px solid transparent; border-radius: 12px; }
+.account-reviews__row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 12px 12px 16px; min-height: 66px; }
 .account-reviews__row > span:first-child { display: grid; gap: 2px; min-width: 0; }
-.account-reviews__row small { color: var(--color-muted); font-size: 13px; }
+.account-reviews__row strong { overflow-wrap: anywhere; }
+.account-reviews__row small { color: var(--color-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
 .account-reviews__row .btn { margin-top: 0; flex: none; }
-.account-reviews__done { display: inline-flex; align-items: center; gap: 6px; color: var(--color-success); font-size: 14px; font-weight: 650; white-space: nowrap; }
+.account-reviews__done { display: inline-flex; align-items: center; gap: 6px; padding-right: 4px; color: var(--color-success); font-size: 14px; font-weight: 650; white-space: nowrap; }
+
+/* Не вошёл, а пришёл за отзывом: подсказка над формой входа.
+   Двойной класс: общее правило кабинета красит все абзацы в серый. */
+.account-access .account-reviews__hint { display: flex; align-items: flex-start; gap: 10px; margin: 0 0 20px; padding: 14px 16px; border-radius: 12px; background: var(--color-primary-soft); color: var(--color-ink); font-weight: 650; line-height: 1.5; }
+.account-reviews__hint svg { flex: none; margin-top: 2px; }
+
+@media (max-width: 1100px) {
+  .account-reviews { grid-template-columns: minmax(0, 1fr); padding: 22px; }
+  .account-reviews__head, .account-reviews__thanks, .account-reviews__list { grid-column: 1; grid-row: auto; }
+}
+@media (max-width: 480px) {
+  .account-reviews { padding: 18px 14px; }
+  .account-reviews__head { padding-inline: 4px; }
+  .account-reviews__row { flex-wrap: wrap; }
+  .account-reviews__row .btn { width: 100%; }
+}
 
 .review-form { display: grid; gap: 18px; padding: 16px 14px; border-top: 1px solid var(--color-border); }
 .review-form__rating { border: 0; margin: 0; padding: 0; min-width: 0; }

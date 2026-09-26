@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import type { CustomerOrderItem } from '@/lib/customer/gateway'
+import { formatSom } from '@/lib/format'
 import { MAX_PHOTOS, MAX_TEXT, MIN_TEXT, isBought } from '@/lib/reviews/rules'
 import { shrinkPhoto } from '@/lib/reviews/shrink'
 import { fill, reviewDate, reviewTexts } from '@/lib/reviews/texts'
@@ -10,21 +11,28 @@ import { IconCamera, IconCheck, IconClose, IconStar } from './Icons'
 import './reviews.css'
 
 /**
- * «Отзывы о покупках» в личном кабинете.
+ * «Оцените покупку» — самый верх личного кабинета.
  *
- * Под каждым оплаченным заказом — кнопка «Оставить отзыв». Неоплаченные
- * заказы сюда не попадают: отзыв пишет тот, кто купил. Проверяет это и
- * сервер сайта — кнопку можно подделать, заказ в SBonus нельзя.
+ * Внизу кабинета форму никто не находил, поэтому она стоит первой. Видна,
+ * только пока есть что оценить: оплаченный заказ без отзыва. Всё оценено —
+ * плашки нет, место под бонусы и заказы не занимает.
+ *
+ * Неоплаченные заказы сюда не попадают: отзыв пишет тот, кто купил.
+ * Проверяет это и сервер сайта — кнопку можно подделать, заказ в SBonus нельзя.
  */
 export function AccountReviews({ orders }: { orders: CustomerOrderItem[] }) {
   const { lang } = useI18n()
   const t = reviewTexts(lang)
   const bought = orders.filter((o) => isBought(o.status))
   const ids = bought.map((o) => o.orderId).join(',')
-  const [reviewed, setReviewed] = useState<string[]>([])
+  // Отзывы, оставленные раньше; null — ещё не знаем (плашку не показываем,
+  // иначе она мигнёт и исчезнет у того, кто всё уже оценил).
+  const [earlier, setEarlier] = useState<string[] | null>(null)
+  // Оценённые сейчас: остаются в списке с галочкой до следующего захода.
+  const [justDone, setJustDone] = useState<string[]>([])
   const [open, setOpen] = useState<string | null>(null)
   const [thanks, setThanks] = useState(false)
-  const box = useRef<HTMLDivElement>(null)
+  const box = useRef<HTMLElement>(null)
 
   useEffect(() => {
     if (!ids) return
@@ -32,77 +40,110 @@ export function AccountReviews({ orders }: { orders: CustomerOrderItem[] }) {
     fetch(`/api/reviews/mine?ids=${encodeURIComponent(ids)}`, { cache: 'no-store' })
       .then((response) => (response.ok ? response.json() : null))
       .then((data: { ok?: boolean; reviewed?: string[] } | null) => {
-        if (alive && data?.ok && Array.isArray(data.reviewed)) setReviewed(data.reviewed)
+        // Не ответил — показываем все заказы: второй отзыв сервер всё равно не примет.
+        if (alive) setEarlier(data?.ok && Array.isArray(data.reviewed) ? data.reviewed : [])
       })
-      .catch(() => undefined)
+      .catch(() => alive && setEarlier([]))
     return () => {
       alive = false
     }
   }, [ids])
 
-  // Пришли по ссылке «Оставить отзыв» с главной — показываем блок сразу.
+  const rows = earlier === null ? [] : bought.filter((o) => !earlier.includes(o.orderId))
+
+  // Пришли по ссылке «Оставить отзыв» с главной — показываем плашку сразу.
+  const shown = rows.length > 0
   useEffect(() => {
-    if (window.location.hash === '#reviews') box.current?.scrollIntoView({ block: 'start' })
-  }, [])
+    if (shown && window.location.hash === '#reviews') box.current?.scrollIntoView({ block: 'start' })
+  }, [shown])
+
+  if (!shown) return null
 
   return (
-    <div className="account-reviews" id="reviews" ref={box}>
-      <h2 className="account-access__second">{t.formTitle}</h2>
-      <p className="account-reviews__lead">{bought.length ? t.formLead : t.formNone}</p>
+    <section className="account-reviews" id="reviews" ref={box} aria-labelledby="account-reviews-title">
+      <div className="account-reviews__head">
+        <span className="account-reviews__stars" aria-hidden="true">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <IconStar key={n} size={18} filled />
+          ))}
+        </span>
+        <h2 id="account-reviews-title">{t.formTitle}</h2>
+        <p className="account-reviews__lead">{t.formLead}</p>
+      </div>
       {thanks && (
         <p className="account-reviews__thanks" role="status">
           <IconCheck size={18} />
           {t.thanks}
         </p>
       )}
-      {bought.length > 0 && (
-        <ul className="account-reviews__list">
-          {bought.map((order) => {
-            const done = reviewed.includes(order.orderId)
-            return (
-              <li key={order.orderId}>
-                <div className="account-reviews__row">
-                  <span>
-                    <strong>{fill(t.order, { id: order.orderId })}</strong>
-                    {order.createdAt && <small>{reviewDate(order.createdAt, lang)}</small>}
+      <ul className="account-reviews__list">
+        {rows.map((order) => {
+          const done = justDone.includes(order.orderId)
+          return (
+            <li key={order.orderId}>
+              <div className="account-reviews__row">
+                <span>
+                  <strong>{fill(t.order, { id: order.orderId })}</strong>
+                  <small>
+                    {order.createdAt && `${reviewDate(order.createdAt, lang)} · `}
+                    {formatSom(order.total)}
+                  </small>
+                </span>
+                {done ? (
+                  <span className="account-reviews__done">
+                    <IconCheck size={16} />
+                    {t.done}
                   </span>
-                  {done ? (
-                    <span className="account-reviews__done">
-                      <IconCheck size={16} />
-                      {t.done}
-                    </span>
-                  ) : (
-                    open !== order.orderId && (
-                      <button
-                        type="button"
-                        className="btn btn--outline btn--sm"
-                        onClick={() => {
-                          setThanks(false)
-                          setOpen(order.orderId)
-                        }}
-                      >
-                        {t.write}
-                      </button>
-                    )
-                  )}
-                </div>
-                {open === order.orderId && !done && (
-                  <ReviewForm
-                    orderId={order.orderId}
-                    onCancel={() => setOpen(null)}
-                    onDone={(already) => {
-                      setReviewed((list) => [...list, order.orderId])
-                      setOpen(null)
-                      setThanks(!already)
-                    }}
-                  />
+                ) : (
+                  open !== order.orderId && (
+                    <button
+                      type="button"
+                      className="btn btn--primary btn--sm"
+                      onClick={() => {
+                        setThanks(false)
+                        setOpen(order.orderId)
+                      }}
+                    >
+                      {t.write}
+                    </button>
+                  )
                 )}
-              </li>
-            )
-          })}
-        </ul>
-      )}
-    </div>
+              </div>
+              {open === order.orderId && !done && (
+                <ReviewForm
+                  orderId={order.orderId}
+                  onCancel={() => setOpen(null)}
+                  onDone={(already) => {
+                    setJustDone((list) => [...list, order.orderId])
+                    setOpen(null)
+                    setThanks(!already)
+                  }}
+                />
+              )}
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
+}
+
+/**
+ * Пришёл по ссылке «Оставить отзыв», а вход не выполнен — объясняем, зачем
+ * входить и каким номером. Без этого человек видел только форму входа и не
+ * понимал, где же отзыв.
+ */
+export function ReviewLoginHint() {
+  const { lang } = useI18n()
+  const t = reviewTexts(lang)
+  const [fromReviews, setFromReviews] = useState(false)
+  useEffect(() => setFromReviews(window.location.hash === '#reviews'), [])
+  if (!fromReviews) return null
+  return (
+    <p className="account-reviews__hint" role="note">
+      <IconStar size={18} filled />
+      {t.loginHint}
+    </p>
   )
 }
 

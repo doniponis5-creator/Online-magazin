@@ -141,7 +141,7 @@ Telegram. Языковая модель — Google Gemini; ключа нет и�
 | Что | Где |
 |---|---|
 | Полка «Отзывы покупателей» на главной, 20 последних | `src/components/CustomerReviews.tsx` |
-| Кнопка «Оставить отзыв» у оплаченных заказов в кабинете | `src/components/AccountReviews.tsx` |
+| Плашка «Оцените покупку» — первая в кабинете, пока есть оплаченный заказ без отзыва | `src/components/AccountReviews.tsx` |
 | Приём и выдача отзывов, фото | `src/app/api/reviews/` |
 | Правила (20 штук, 5 фото, проверка байтов фото) | `src/lib/reviews/rules.ts` |
 | Хранилище | `src/lib/reviews/store.ts` |

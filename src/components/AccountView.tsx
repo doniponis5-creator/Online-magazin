@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
-import { AccountReviews } from '@/components/AccountReviews'
+import { AccountReviews, ReviewLoginHint } from '@/components/AccountReviews'
 import { Brand } from '@/components/Brand'
 import { CustomerLogin } from '@/components/CustomerLogin'
 import { IconCart, IconGift, IconHeart } from '@/components/Icons'
@@ -206,6 +206,7 @@ export function AccountView() {
           <p className="account-welcome__note">{a.welcomeNote}</p>
         </section>
         <section className="account-access">
+          <ReviewLoginHint />
           <h2>{a.loginTitle}</h2>
           {faceId !== 'none' && (
             <div className="account-faceid">
@@ -239,6 +240,9 @@ export function AccountView() {
 
   return (
     <div className="account-layout">
+      {/* Первым делом — «Оцените покупку»: внизу кабинета её не находили. */}
+      <AccountReviews orders={customer.orders ?? []} />
+
       <section className="account-loyalty">
         <Brand bonus />
         <h2>{customer.name}</h2>
@@ -333,8 +337,6 @@ export function AccountView() {
         ) : (
           <p>{a.ordersEmpty}</p>
         )}
-
-        <AccountReviews orders={customer.orders ?? []} />
 
         <h2 className="account-access__second">{a.history}</h2>
         {customer.history?.length ? (
