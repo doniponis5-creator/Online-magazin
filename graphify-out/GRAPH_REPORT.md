@@ -1,17 +1,17 @@
 # Graph Report - Online-magazin  (2026-09-26)
 
 ## Corpus Check
-- 567 files · ~5,379,710 words
+- 567 files · ~5,379,989 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 74 file(s) not represented in the graph (top: .css 23, .xml 13, (none) 10)
 
 ## Summary
-- 4742 nodes · 11650 edges · 284 communities (181 shown, 103 thin omitted)
+- 4741 nodes · 11648 edges · 287 communities (184 shown, 103 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 118 edges (avg confidence: 0.86)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `4134df0f`
+- Built from commit: `a067c8c9`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -181,7 +181,7 @@
 - src/components/AssistantChat.tsx
 - src/lib/assistant/budget.ts
 - dependencies
-- src/components/kitchen/three/appliances.ts
+- smartcentr-site/src/lib/kitchen/share.ts
 - smartcentr-site/src/components/kitchen/three/photo.ts
 - 02 — Телефон: виды под 3D, «Ещё» словом, полный экран с панелью
 - 04 — Тест губернатора: рывок заведомо больше капа
@@ -223,13 +223,14 @@
 - src/lib/orders/order.ts
 - reviews/store.ts
 - ref_data_privacy
+- smartcentr-site/src/components/kitchen/three/appliances.ts
 - smartcentr-site/src/lib/assistant/log.ts
 - src/lib/assistant/live.ts
 - smartcentr-site/src/components/CatalogView.tsx
 - AppLockPlugin.java
 - ref_data_products
 - package.json
-- smartcentr-site/src/components/kitchen/three/engine.ts
+- smartcentr-site/src/components/kitchen/three/governor.ts
 - android.content.Context
 - 02 — Бонусная карта, отпечаток и итоговая сборка для Google Play
 - compilerOptions
@@ -239,7 +240,7 @@
 - smartcentr-site/src/lib/kitchen/checks.ts
 - ref_node_assert
 - paymentMode
-- PhotoTracer
+- .setKitchen
 - BonusCardPlugin.java
 - dependencies
 - smartcentr-site/src/app/api/customer/route-helpers.ts
@@ -260,6 +261,7 @@
 - smartcentr-site/src/lib/customer/gateway.ts
 - Изначальная задача
 - smartcentr-site/src/lib/orders/gateway.ts
+- smartcentr-site/src/lib/kitchen/styles.ts
 - src/lib/customer/gateway.ts
 - CatalogStore
 - AccountReviews.tsx
@@ -269,8 +271,9 @@
 - 2026-09-25-android-app/manifest.md
 - capacitor.config.ts
 - audit-mobile.md
+- src/lib/kitchen/fronts.ts
 - errorResponse
-- smartcentr-site/src/components/kitchen/three/photoreal.ts
+- PhotoTracer
 - smartcentr-site/src/lib/assistant/reply.ts
 - smartcentr-site/src/components/ProductCard.tsx
 - currentSession
@@ -308,11 +311,11 @@
 ## Import Cycles
 - None detected.
 
-## Communities (284 total, 103 thin omitted)
+## Communities (287 total, 103 thin omitted)
 
 ### Community 0 - "kitchen.test.ts"
 Cohesion: 0.08
-Nodes (33): cache, decode(), loadPhoto(), Photo, photoUrl(), SIDE_SHARE, sideShare(), trim() (+25 more)
+Nodes (34): cache, decode(), loadPhoto(), Photo, photoUrl(), SIDE_SHARE, sideShare(), trim() (+26 more)
 
 ### Community 1 - "build_model.py"
 Cohesion: 0.10
@@ -344,11 +347,11 @@ Nodes (47): ref_next_link, CheckoutPage(), FieldErrors, OrderView(), src_compone
 
 ### Community 8 - "src/lib/kitchen/layout.ts"
 Cohesion: 0.06
-Nodes (54): Dropped(), FILL, PlanSketch(), Props, ALL_WALLS, allowedOn(), canChangeWall(), clampWindow() (+46 more)
+Nodes (53): Dropped(), FILL, PlanSketch(), Props, ALL_WALLS, CEILING, clampWindow(), COLUMN_HEIGHT (+45 more)
 
 ### Community 9 - "src/lib/kitchen/spec.ts"
-Cohesion: 0.09
-Nodes (33): appliance(), CARCASS, DRAWING_CSS, DrawingLabels, elevationSvg(), esc(), fmt(), front() (+25 more)
+Cohesion: 0.07
+Nodes (41): appliance(), CARCASS, DRAWING_CSS, DrawingLabels, elevationSvg(), esc(), fmt(), front() (+33 more)
 
 ### Community 10 - "shop_customers.py"
 Cohesion: 0.12
@@ -384,7 +387,7 @@ Nodes (18): CoreImage.CIFilterBuiltins, Double, Image, BonusCardData, BonusCardS
 
 ### Community 18 - "src/components/kitchen/KitchenPlanner.tsx"
 Cohesion: 0.04
-Nodes (69): src_components_kitchen_kitchen, chromeIntent(), colorSwatch(), CORE, Fail3d, FLEX, fmt(), hasWebGL2() (+61 more)
+Nodes (65): src_components_kitchen_kitchen, chromeIntent(), colorSwatch(), CORE, Fail3d, FLEX, fmt(), hasWebGL2() (+57 more)
 
 ### Community 19 - "shop_admin.py"
 Cohesion: 0.07
@@ -423,8 +426,8 @@ Cohesion: 0.27
 Nodes (14): Archived Pexels Category Photo Set, Asset Sources Contract (no active product photos), photo-sources.ts Canonical Machine List, LG F4X5ES5SB 3D Scroll Scene Brief, TASK 03A Brief — close design review, MotionProvider Empty-Deps and Reveal Cascade Defect, Photo Source Reconciliation Audit, ProductImage Always Uses altRu Defect (+6 more)
 
 ### Community 28 - "smartcentr-site/src/components/kitchen/three/build.ts"
-Cohesion: 0.08
-Nodes (89): ref_three, chimneyHood(), cm(), dishwasherInside(), faucet(), fridge(), FridgeDoor, fridgeDoors() (+81 more)
+Cohesion: 0.11
+Nodes (48): addFront(), anchor(), Anim, applianceDims(), assemble(), backsplash(), BASE_DIMS, baseModule() (+40 more)
 
 ### Community 29 - "TASK 04 Report — Blender Model of LG F4X5ES5SB"
 Cohesion: 0.27
@@ -467,8 +470,8 @@ Cohesion: 0.28
 Nodes (9): SBonus Bonus Flow on the Site, Apple Guideline 4.2 — Repackaged Website Rejection, Path B — Capacitor Shell Plus Real Native Capabilities, TODO_NEXT.md — What To Do Next, SBonus BonusService earn/spend Semantics, Mixed+ iOS 26 Liquid Glass Plan, Owner Decisions (login, welcome bonus, site bonus cap), SBonus Tier Threshold Anomaly (Gold < Silver, two Platinum) (+1 more)
 
 ### Community 39 - "src/components/kitchen/three/build.ts"
-Cohesion: 0.11
-Nodes (49): addFront(), anchor(), Anim, applianceDims(), assemble(), backsplash(), BASE_DIMS, baseModule() (+41 more)
+Cohesion: 0.07
+Nodes (93): ref_three_addons_geometries_roundedboxgeometry_js, ref_three_addons_utils_buffergeometryutils_js, chimneyHood(), cm(), dishwasherInside(), faucet(), fridge(), FridgeDoor (+85 more)
 
 ### Community 40 - "shop_router.py"
 Cohesion: 0.07
@@ -491,8 +494,8 @@ Cohesion: 0.36
 Nodes (8): BAD_WORDS, FORCE, GOOD_WORDS, main(), score(), searchTopic(), sleep(), TOPICS
 
 ### Community 45 - "smartcentr-site/src/components/kitchen/KitchenPlanner.tsx"
-Cohesion: 0.03
-Nodes (132): smartcentr_site_src_components_kitchen_kitchen, chromeIntent(), colorSwatch(), CORE, Fail3d, FLEX, fmt(), hasWebGL2() (+124 more)
+Cohesion: 0.04
+Nodes (67): smartcentr_site_src_components_kitchen_kitchen, chromeIntent(), colorSwatch(), CORE, Fail3d, FLEX, fmt(), hasWebGL2() (+59 more)
 
 ### Community 46 - "Smart Centr Project Working Rules"
 Cohesion: 0.25
@@ -615,20 +618,24 @@ Cohesion: 0.20
 Nodes (9): Вне рамок, Границы и швы, Задача, Открытые места, Покрытие манифеста, Пользовательские истории, Решение, Решения по реализации (+1 more)
 
 ### Community 99 - "src/lib/kitchen/share.ts"
-Cohesion: 0.04
-Nodes (71): KitchenTexts, ky, ru, Texts, FinishLook, Mats, RoomLook, allowed() (+63 more)
+Cohesion: 0.06
+Nodes (55): SizeField(), FinishLook, Mats, RoomLook, frontColor, splashChoice, topChoice, minA() (+47 more)
 
 ### Community 100 - "src/lib/assistant/local.ts"
 Cohesion: 0.07
 Nodes (55): catalogForQuestion(), CustomerBrief, expand(), InstallmentBrief, isInStock(), normalize(), ProductHit, productLine() (+47 more)
+
+### Community 102 - ".setKitchen"
+Cohesion: 0.18
+Nodes (4): BuildInput, CabInfo, Dims, SlotKind
 
 ### Community 103 - "shop_catalog.py"
 Cohesion: 0.14
 Nodes (30): app_core_database, fastapi, _as_jpeg(), chat_extra_items(), photos_index(), public_photo(), AsyncSession, Request (+22 more)
 
 ### Community 104 - "src/components/kitchen/three/engine.ts"
-Cohesion: 0.07
-Nodes (26): ref_three_addons_controls_orbitcontrols_js, ref_three_addons_postprocessing_gtaopass_js, ref_three_addons_postprocessing_outputpass_js, CabInfo, CEILING_LAYER, WALL_H, WINDOW, DAY (+18 more)
+Cohesion: 0.05
+Nodes (46): ref_three, ref_three_addons_controls_orbitcontrols_js, ref_three_addons_environments_roomenvironment_js, ref_three_addons_lights_rectarealightuniformslib_js, ref_three_addons_postprocessing_effectcomposer_js, ref_three_addons_postprocessing_gtaopass_js, ref_three_addons_postprocessing_outputpass_js, ref_three_addons_postprocessing_renderpass_js (+38 more)
 
 ### Community 105 - "products.ts"
 Cohesion: 0.05
@@ -679,8 +686,8 @@ Cohesion: 0.24
 Nodes (29): brick(), cache, canvas(), clear(), concrete(), Entry, finish(), floorTile() (+21 more)
 
 ### Community 150 - "smartcentr-site/src/lib/kitchen/layout.ts"
-Cohesion: 0.05
-Nodes (61): Dropped(), FILL, PlanSketch(), Props, ALL_WALLS, allowedOn(), canChangeWall(), CEILING (+53 more)
+Cohesion: 0.06
+Nodes (56): Dropped(), FILL, PlanSketch(), Props, ALL_WALLS, allowedOn(), canChangeWall(), clampWindow() (+48 more)
 
 ### Community 151 - "src/lib/i18n/I18nProvider.tsx"
 Cohesion: 0.11
@@ -746,9 +753,9 @@ Nodes (5): budgetFrom(), cheaperThan(), NOT_UNIT, PATTERNS, THOUSAND
 Cohesion: 0.17
 Nodes (12): dependencies, @capacitor/android, @capacitor/cli, @capacitor/core, @capacitor/ios, @capacitor/push-notifications, next, react (+4 more)
 
-### Community 178 - "src/components/kitchen/three/appliances.ts"
-Cohesion: 0.13
-Nodes (45): ref_three_addons_geometries_roundedboxgeometry_js, ref_three_addons_utils_buffergeometryutils_js, chimneyHood(), cm(), dishwasherInside(), faucet(), fridge(), FridgeDoor (+37 more)
+### Community 178 - "smartcentr-site/src/lib/kitchen/share.ts"
+Cohesion: 0.06
+Nodes (49): allowed(), BASE_FRONTS, BY_CODE, CODE, DRAWER_PARTS, frontsFromQuery(), frontsToQuery(), isUpperKey() (+41 more)
 
 ### Community 179 - "smartcentr-site/src/components/kitchen/three/photo.ts"
 Cohesion: 0.33
@@ -823,12 +830,8 @@ Cohesion: 0.14
 Nodes (24): A4, buildPdf(), decodeURISafe(), enc, num(), PdfLink, PdfPage, pdfText() (+16 more)
 
 ### Community 212 - "smartcentr-site/src/lib/kitchen/spec.ts"
-Cohesion: 0.07
-Nodes (41): appliance(), CARCASS, DRAWING_CSS, DrawingLabels, elevationSvg(), esc(), fmt(), front() (+33 more)
-
-### Community 214 - "KitchenEngine"
 Cohesion: 0.06
-Nodes (6): BuildInput, Built, easeInOut(), KitchenEngine, Dims, SlotKind
+Nodes (42): appliance(), CARCASS, DRAWING_CSS, DrawingLabels, elevationSvg(), esc(), fmt(), front() (+34 more)
 
 ### Community 215 - "01 — Оболочка, «Нет связи», каталог без интернета и вход — проверить на эмуляторе и починить"
 Cohesion: 0.33
@@ -850,6 +853,10 @@ Nodes (14): POST(), getProfile(), isDemoPhone(), createOrder(), applyBonus(), De
 Cohesion: 0.09
 Nodes (48): ref_node_os, dynamic, GET(), dynamic, GET(), POST(), allowed(), card() (+40 more)
 
+### Community 221 - "smartcentr-site/src/components/kitchen/three/appliances.ts"
+Cohesion: 0.14
+Nodes (43): chimneyHood(), cm(), dishwasherInside(), faucet(), fridge(), FridgeDoor, fridgeDoors(), groceries() (+35 more)
+
 ### Community 222 - "smartcentr-site/src/lib/assistant/log.ts"
 Cohesion: 0.24
 Nodes (12): dynamic, esc(), GET(), page(), rowsTable(), when(), fileFor(), hideDigits() (+4 more)
@@ -870,9 +877,9 @@ Nodes (21): android.content.SharedPreferences, base64, biometricmanager, biometr
 Cohesion: 0.08
 Nodes (23): description, @capacitor/android, @capacitor/cli, @capacitor/core, @capacitor/ios, @capacitor/push-notifications, next, @playwright/test (+15 more)
 
-### Community 228 - "smartcentr-site/src/components/kitchen/three/engine.ts"
-Cohesion: 0.05
-Nodes (38): ref_three_addons_environments_roomenvironment_js, ref_three_addons_lights_rectarealightuniformslib_js, ref_three_addons_postprocessing_effectcomposer_js, ref_three_addons_postprocessing_renderpass_js, ref_three_addons_postprocessing_shaderpass_js, ref_three_addons_postprocessing_unrealbloompass_js, CabInfo, CEILING_LAYER (+30 more)
+### Community 228 - "smartcentr-site/src/components/kitchen/three/governor.ts"
+Cohesion: 0.13
+Nodes (11): GOVERNOR_CAP_MS, GOVERNOR_FAST_FRAMES, GOVERNOR_FAST_MS, GOVERNOR_MIN_RATIO, GOVERNOR_SAMPLES, GOVERNOR_SLOW_MS, GOVERNOR_STEP, GovernorState (+3 more)
 
 ### Community 229 - "android.content.Context"
 Cohesion: 0.22
@@ -886,10 +893,6 @@ Nodes (5): 02 — Бонусная карта, отпечаток и итого�
 Cohesion: 0.11
 Nodes (18): compilerOptions, allowJs, esModuleInterop, incremental, isolatedModules, jsx, lib, module (+10 more)
 
-### Community 233 - "KitchenEngine"
-Cohesion: 0.12
-Nodes (3): BuildInput, Built, KitchenEngine
-
 ### Community 234 - "Form"
 Cohesion: 0.21
 Nodes (3): Form, addition(), Вкладки. Каждая вкладка — page().
@@ -901,6 +904,10 @@ Nodes (15): Check, CheckLevel, checkProject(), counterBeside(), dist(), find(), 
 ### Community 237 - "paymentMode"
 Cohesion: 0.29
 Nodes (9): ref_next_server, POST(), GET(), getInstallment(), mockSpend(), getOrder(), mockPay(), paymentMode() (+1 more)
+
+### Community 238 - ".setKitchen"
+Cohesion: 0.13
+Nodes (7): BuildInput, buildKitchen(), Built, CabInfo, easeOut(), Dims, SlotKind
 
 ### Community 239 - "BonusCardPlugin.java"
 Cohesion: 0.18
@@ -943,7 +950,7 @@ Cohesion: 0.33
 Nodes (6): MAX_PHOTO_BYTES, MAX_THUMB_BYTES, encode(), fit(), FULL, THUMB
 
 ### Community 249 - "src/components/kitchen/three/governor.ts"
-Cohesion: 0.17
+Cohesion: 0.21
 Nodes (11): GOVERNOR_CAP_MS, GOVERNOR_FAST_FRAMES, GOVERNOR_FAST_MS, GOVERNOR_MIN_RATIO, GOVERNOR_SAMPLES, GOVERNOR_SLOW_MS, GOVERNOR_STEP, GovernorState (+3 more)
 
 ### Community 250 - "smartcentr-site/deploy/site/install_site.sh"
@@ -965,6 +972,10 @@ Nodes (24): POST(), POST(), BonusHistoryItem, call(), CodeChannel, CustomerApiEr
 ### Community 259 - "smartcentr-site/src/lib/orders/gateway.ts"
 Cohesion: 0.15
 Nodes (19): POST(), getProfile(), isDemoPhone(), API_URL, callServer(), createOrder(), CreateResult, globalStore (+11 more)
+
+### Community 260 - "smartcentr-site/src/lib/kitchen/styles.ts"
+Cohesion: 0.13
+Nodes (18): FinishLook, Mats, RoomLook, FLOORS, FrontTexture, getStyle(), getTone(), KitchenStyle (+10 more)
 
 ### Community 262 - "src/lib/customer/gateway.ts"
 Cohesion: 0.09
@@ -990,13 +1001,17 @@ Nodes (5): 05 — Лёгкая 3D-модель для слабых телефо�
 Cohesion: 0.40
 Nodes (4): Аудит безопасности 3D-конструктора (2026-09-24, читал агент, ничего не менял), Находки, Что реально защищает от копирования (честно), Что уже хорошо
 
+### Community 271 - "src/lib/kitchen/fronts.ts"
+Cohesion: 0.16
+Nodes (15): upperOver(), allowed(), BASE_FRONTS, BY_CODE, CODE, DRAWER_PARTS, frontsFromQuery(), frontsToQuery() (+7 more)
+
 ### Community 273 - "errorResponse"
 Cohesion: 0.33
 Nodes (9): clientIp(), errorResponse(), POST(), POST(), POST(), demoProfile(), sendCode(), verifyCode() (+1 more)
 
-### Community 289 - "smartcentr-site/src/components/kitchen/three/photoreal.ts"
-Cohesion: 0.13
-Nodes (12): ref_three_addons_postprocessing_pass_js, ref_three_gpu_pathtracer, DAY, Look, NIGHT, PhotoLights, PrepareOpts, DAY (+4 more)
+### Community 289 - "PhotoTracer"
+Cohesion: 0.08
+Nodes (13): ref_three_addons_postprocessing_pass_js, ref_three_gpu_pathtracer, DAY, Look, NIGHT, PhotoLights, PhotoTracer, PrepareOpts (+5 more)
 
 ### Community 306 - "smartcentr-site/src/lib/assistant/reply.ts"
 Cohesion: 0.08
@@ -1035,23 +1050,23 @@ Cohesion: 0.20
 Nodes (9): glyph(), ICON_YELLOW, iconSet, iconSource, INK, mark, root, splash() (+1 more)
 
 ## Knowledge Gaps
-- **957 isolated node(s):** `customer`, `phone`, `laptop`, `catalog`, `order` (+952 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1560 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **957 isolated node(s):** `Prefill`, `Draft`, `drafts`, `Say`, `ASK_NAME` (+952 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1559 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **103 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `KitchenEngine` connect `KitchenEngine` to `smartcentr-site/src/components/kitchen/three/photoreal.ts`, `.invalidate`, `.setKitchen`, `src/components/kitchen/three/engine.ts`, `src/lib/kitchen/spec.ts`, `src/components/kitchen/KitchenPlanner.tsx`, `PhotoTracer`, `src/components/kitchen/three/governor.ts`, `.constructor`?**
-  _High betweenness centrality (0.032) - this node is a cross-community bridge._
-- **Why does `KitchenEngine` connect `KitchenEngine` to `smartcentr-site/src/components/kitchen/three/photoreal.ts`, `smartcentr-site/src/components/kitchen/three/engine.ts`, `smartcentr-site/src/components/kitchen/KitchenPlanner.tsx`, `PhotoTracer`, `smartcentr-site/src/lib/kitchen/spec.ts`?**
-  _High betweenness centrality (0.019) - this node is a cross-community bridge._
 - **Why does `formatSom()` connect `formatSom` to `smartcentr-site/src/components/CatalogView.tsx`, `smartcentr-site/src/lib/telegram/bot.ts`, `smartcentr-site/src/components/ProductPurchase.tsx`, `smartcentr-site/src/components/ProductCard.tsx`, `smartcentr-site/src/components/kitchen/KitchenPlanner.tsx`, `smartcentr-site/src/lib/assistant/local.ts`, `ref_node_crypto`, `smartcentr-site/src/lib/assistant/reply.ts`, `useI18n`, `smartcentr-site/src/app/[lang]/layout.tsx`, `smartcentr-site/src/components/Icons.tsx`, `smartcentr-site/src/components/ProductReels.tsx`?**
-  _High betweenness centrality (0.018) - this node is a cross-community bridge._
-- **What connects `customer`, `phone`, `laptop` to the rest of the system?**
+  _High betweenness centrality (0.022) - this node is a cross-community bridge._
+- **Why does `KitchenEngine` connect `KitchenEngine` to `PhotoTracer`, `.invalidate`, `.setKitchen`, `src/components/kitchen/three/engine.ts`, `src/lib/kitchen/spec.ts`, `src/lib/kitchen/layout.ts`, `.frame`, `src/components/kitchen/KitchenPlanner.tsx`, `PhotoTracer`, `src/components/kitchen/three/governor.ts`, `.constructor`?**
+  _High betweenness centrality (0.020) - this node is a cross-community bridge._
+- **Why does `formatSom()` connect `formatSom` to `src/lib/assistant/local.ts`, `AccountReviews.tsx`, `src/components/CatalogView.tsx`, `src/components/AssistantChat.tsx`, `src/components/ProductPurchase.tsx`, `src/components/kitchen/KitchenPlanner.tsx`, `useI18n`, `src/lib/telegram/order.ts`, `src/lib/i18n/I18nProvider.tsx`, `src/lib/assistant/live.ts`?**
+  _High betweenness centrality (0.017) - this node is a cross-community bridge._
+- **What connects `Prefill`, `Draft`, `drafts` to the rest of the system?**
   _957 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `kitchen.test.ts` be split into smaller, more focused modules?**
-  _Cohesion score 0.08392603129445235 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.08097165991902834 - nodes in this community are weakly interconnected._
 - **Should `build_model.py` be split into smaller, more focused modules?**
   _Cohesion score 0.09846153846153846 - nodes in this community are weakly interconnected._
 - **Should `build_extension.py` be split into smaller, more focused modules?**
