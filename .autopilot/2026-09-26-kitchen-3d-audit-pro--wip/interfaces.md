@@ -93,3 +93,11 @@
 - Ключи `texts.ts` (RU/KY): `drawing{corner,view,islandView,hoodOver,section}, scaleLabel(n), planTitle, drawingOpen, plan{window,passage,island,depths}, approxSize, approxList(names), pdfContacts(phone), sheetDate(day,month,year)`; удалены `shareText`, `pdfLinkCopied`; `topRow` для 'I' — «Остров»/«Аралча». `sendPdf('share')` удалён. Строка стен — только `wallsText`.
 - На телефоне нажатие по развёртке открывает её на весь экран с прокруткой.
 - После дозапроса 06-1: экспорты `drawing.ts` — `cornerZones(length, modules)`/`CornerZone` (одно правило угла для развёртки и списка), `printedScale(svgs, scale, box)`, `windowFor(plan, runId, ceiling, sizes)`/`WindowSizes`, `islandOverhang(runs)`, `approxNames`, `techRows(list, t)`, `makerList(plan, items, t, inProject)`/`MakerItems`, `PlanOpts = {scale?, runs: SpecRun[]}` (runs обязателен), `PlanDepths`. `ElevationOpts.overhang?`; `DrawingLabels.windowNote(sill, top)`; `PlanLabels.depths` — функция. `SheetData.wallsScale?`, `scaleLabel(n)`, `plan.scale?`; при ужатии «М 1:N» не печатается. Проход = между фасадами (110). Окно — из `WINDOW` (`build.ts`, динамический импорт), «типовые, уточнить на месте».
+
+## Из таска 07 — доводка
+
+- Ключи `texts.ts` (RU/KY): + `toolsLabel`, `panelLabel`, `stepsLabel`, `photoInApp`; − `saveImage`; `photoSave` → «Сохранить фото» / «Сүрөттү сактоо»; `saving` → «Готовим фото…». Одна кнопка фото — в режиме «Фото».
+- Помощники в tsx: `groupKeys`, `roving`, `groupItems` — стрелки/Home/End в группах `role=radio`/`role=tab`, один Tab на группу.
+- `engine.focus()` ставит камеру в комнату лицом к фасаду выбранной техники.
+- Пока видна плашка корзины сайта, «Спросить» на компьютере поднимается над ней (высота плашки ~70px вписана в CSS).
+- `graphify update .` выполнен.

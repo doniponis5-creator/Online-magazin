@@ -182,7 +182,37 @@ PC — сайт, расширение 1С и сервер SBonus: `src/`, `publi
 Если работа прервалась — скажи «продолжи автопилот»: состояние поднимется из
 `.autopilot/state.js`, переспрашивать ничего не нужно.
 
-### Подводные камни кухни (24.09.2026)
+### Кухня: устройство (27.09.2026)
+
+- Вход: `src/app/[lang]/kitchen/page.tsx` → `<KitchenPlanner appliances={kitchenAppliances(products)} />`; экран — `src/components/kitchen/KitchenPlanner.tsx`; всё, что видит покупатель, — `src/components/kitchen/texts.ts` (`kitchenTexts(lang)`, RU и KY обязательны). Размеры — см, в 3D — м.
+- Поток: `KitchenState` → `chosenItems` + `planInputOf(state, chosen, snap)` (`order.ts`) → `planKitchen(input, {shelves})` → `Plan` → `buildKitchen` → `Built.spec` → таблицы, развёртки, PDF; замечания — `checkProject(plan, {hoodOver})`.
+- `src/lib/kitchen/layout.ts` `planKitchen` — источник правды о местах: 3D, чертёж, список и сумма читают `Plan`, свою раскладку рядом не считать.
+- `Plan.dropped[]` = `{item, slot?, need, wall}`; `needByWall(plan)` — нехватка по стене; `{item:'hob', slot:'hood'}` — вытяжку под окном не повесить, в `needByWall` её нет («удлините стену» не советовать).
+- Верх: `UpperKind` `corner` (`blind` 35 — глухая часть со стороны угла) и `filler` (панель без корпуса, где шкаф вышел бы уже `UPPER_MIN`); `HOOD_OVER` — одна норма для раскладки, 3D (`plan.hoodHeight.over`) и проверки.
+- `PlanInput.snap`: без поля прилипают все; `[]` — места заморожены (основной план экрана); `[key]` — перетаскивание и ←/→.
+- `src/lib/kitchen/checks.ts` `checkProject(plan, facts)`: `facts.hoodOver` — факт из 3D (`engine.hoodOver()` / `Built.hoodOver`); без него проверки `hoodHeight` нет.
+- `src/lib/kitchen/order.ts` — сумма (`projectTotal`), «Добавить всё» (`cartAdditions`), WhatsApp (`whatsappText`), «что стоит в 3D» (`projectItems`, в сумме только `inTotal`) — только отсюда, в tsx не пересчитывать.
+- `src/lib/kitchen/share.ts`: `stateFromQuery(q, known)` / `queryFromState`; `known` — Map id → техника (с Set теряется правило «колонна ≥ 200 при встраиваемой микроволновке»).
+- Автосохранение: `saveLast`/`loadLast`/`clearLast` ↔ `localStorage['kp-last'] = {q, t}`; экран пишет через 400 мс и на `pagehide`, но не пока видна плашка «Продолжить».
+- `kitchenLinkFor(product, lang)` → `/ru/kitchen?ov=<id>` или `null` (не кухонная техника) — кнопка «Примерить в кухне» из `src/app/[lang]/product/[id]/page.tsx`.
+- `src/lib/kitchen/catalog.ts` `parseSize(specs)`: порядок — только из группы «Ш×В×Г», единицы на всю тройку (мм, если «мм» или число > 300), габариты упаковки пропускает.
+- `src/components/kitchen/three/build.ts` `buildKitchen` → `Built`: `spec` (числа мебельщику, от `lite` не зависят), `hoodOver?` (см; нет вытяжки — нет поля). Каждая деталь — через `dims(obj, kind, w, h, d, at, slot?)`: рамки чертежа берутся из `userData.dims` (`x`, `y`), не из `Box3`.
+- `partsOf(len)` / `PART_MAX = 2.75` (м, в `build.ts`, не экспорт): выше — корпус делится на корпус и антресоль, задняя панель острова режется на части.
+- `src/lib/kitchen/spec.ts`: `cutList`, `frontList`, `hardware`, `topList`, `modulesOf(run)` (`lower`/`upper`/`fillers`), `extraList(spec)` — «Проёмы и доборы» (мм).
+- `src/components/kitchen/drawing.ts`: `elevationSvg` (развёртки), `planSvg(plan, labels, {runs})` (план сверху), `pickScale`/`printedScale` (один масштаб на лист), `cornerZones` — одно правило угла для развёртки и `makerList` («Коротко: что где стоит»).
+- `src/components/kitchen/pdfSheet.ts` `sheetPdf(SheetData)` → `pdfFile.ts` `buildPdf`; `contacts` обязателен (`src/data/contacts.ts`); таблицы листа и экрана — `sheetTables()` в `KitchenPlanner.tsx`.
+- Разумные числа: верх уже 20 см → добор-панель (`UPPER_MIN`); подъёмный фасад ≤ 90 см (`LIFT_MAX`), выше — распашные; одностворчатая дверь ≤ 62 см (`DOOR_MAX`); деталь ≤ 2750 мм (`PART_MAX`); низ вытяжки над панелью 65 см электро/индукция, 75 газ (`HOOD_OVER`).
+
+Тесты (`npx vitest run` → 29 файлов, 371 passed на 27.09.2026; один — `npx vitest run __tests__/kitchen-layout.test.ts`):
+- `kitchen-layout` — раскладка и проверки: угол, духовка под варочной, нехватка по стенам, узкий верх, окно над высокими, `snap`, вытяжка.
+- `kitchen-build` — `buildKitchen` в node с заглушкой холста (`globalThis.document`): перебор, пределы деталей, высота вытяжки, рамки 3D ↔ `spec` ±1 см.
+- `kitchen-order` — что входит в сумму, «Добавить всё» без повторов, текст WhatsApp RU/KY.
+- `kitchen-drawing` — 400 случайных кухонь: цепочки размеров сходятся с длиной стены, без NaN; отметки, масштаб, план, угол в списке = на развёртке.
+- `kitchen-share` — адрес туда-обратно, чужие и старые ссылки, `parseSize`, `kp-last`, `kitchenLinkFor`.
+- `kitchen-texts` — `PROMO_STYLES.count` = `STYLES.length`, термины, тексты после аудита.
+- `kitchen.test.ts` — старый общий набор; ещё `kitchen-governor`, `kitchen-variants`, `kitchen-pdf`, `kitchen-shader`.
+
+### Подводные камни кухни (24.09.2026, дополнено 27.09.2026)
 
 - `src/app/api/kitchen/photo/route.ts`: белый список фото собран из `products[].image` при сборке сайта (`src/data/1c/catalog.json` — статический импорт) — новое фото из 1С прокси отдаст только после `deploy/site/update_site.sh`; чужой `src` → 400 без запроса наружу.
 - Тот же список живёт в `store('kitchen-photo-allow')` (`src/lib/store.ts`) — в `npm run dev` переживает перезагрузку файла: правишь список — перезапусти dev.
@@ -194,7 +224,9 @@ PC — сайт, расширение 1С и сервер SBonus: `src/`, `publi
 - Полный экран с листом настроек: `fullPanel` → класс `is-panel` ставится только вместе с `kp--full` и стилизован только внутри телефонного `@media`; на компьютере полный экран прежний.
 - `src/lib/kitchen/variants.ts` `parseVariants` фильтрует `localStorage['kp-variants']` — битая запись раньше роняла страницу; сырой `JSON.parse` туда не возвращать.
 - Качество «Лёгкий» (`lite`): в `engine.ts` единый `get lite()`, в сборку флаг едет только через `Mats.lite` (`materials.ts`) — новых `quality === 'lite'` не рассыпать; `Built.spec` (числа для мебельщика) от `lite` не зависит.
-- Тесты: `npx vitest run` (23 файла, 247 passed на 24.09.2026); один — `npx vitest run __tests__/kitchen.test.ts`; также `kitchen-governor.test.ts`, `kitchen-variants.test.ts`.
+- Термины: только «Духовка» и «Варочная панель» (KY «Сордургуч», «Бышыруучу панель») — `kitchen-texts.test.ts` падает на «Плита»/«Духовой шкаф» в любой строке `texts.ts`.
+- `KitchenPlanner.tsx` берёт из `./three/*` только `import type`; движок, фото, `buildKitchen` (запасной `spec` без 3D) и `WINDOW` (высоты окна на развёртке) — через `import()`: обычный импорт затянет three.js в основной бандл.
+- Плашка корзины сайта `.cart-bar` (`src/app/globals.css`): на компьютере `html.kp-over .cart-bar ~ .assistant` в `kitchen.css` поднимает консультанта над ней — высота 70 px вписана числом, поменял плашку — поправь и тут; `kp-over` ставит `KitchenPlanner.tsx`, пока низ конструктора у края экрана.
 - `smartcentr-site/` — распакованная копия архива из `deploy/site/pack.sh`; в git её не класть (есть в `.gitignore` и `.dockerignore`): `tsconfig` берёт `**/*.ts`, и старая копия ломает `tsc` и засоряет `graphify`.
 
 ### Android (25.09.2026)

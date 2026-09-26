@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-26T22:48:52+06:00",
-  "updatedAt": "2026-09-27T02:09:21+06:00",
+  "updatedAt": "2026-09-27T03:44:46+06:00",
   "finishedAt": null,
   "stages": [
     {
@@ -47,19 +47,22 @@ window.STATE =
     },
     {
       "id": "build",
-      "status": "active",
+      "status": "done",
       "startedAt": "2026-09-26T23:37:00+06:00",
-      "note": "6 из 7 тасков готовы"
+      "note": "7 из 7 тасков готовы",
+      "finishedAt": "2026-09-27T03:29:37+06:00"
     },
     {
       "id": "review",
-      "status": "active",
+      "status": "done",
       "startedAt": "2026-09-26T23:45:48+06:00",
-      "note": "проверено 6 из 7"
+      "note": "проверено 7 из 7",
+      "finishedAt": "2026-09-27T03:29:37+06:00"
     },
     {
       "id": "final",
-      "status": "pending"
+      "status": "active",
+      "startedAt": "2026-09-27T03:29:37+06:00"
     }
   ],
   "requirements": {
@@ -355,16 +358,65 @@ window.STATE =
         "src/components/kitchen/texts.ts",
         "graphify-out/"
       ],
+      "status": "done",
+      "retries": 0,
+      "repairs": 2,
+      "handoffs": 0,
+      "startedAt": "2026-09-27T02:09:21+06:00",
+      "repairFindings": [
+        "после слияния кнопок фото нельзя сохранить картинку при неудаче трассировки (BLOCKING)",
+        "камера у острова смотрит на заднюю сторону",
+        "minDistance не восстанавливается",
+        "@media .kp-resume__row не той строкой, что STACKED",
+        "roving переписывает tabIndex в DOM на каждой отрисовке",
+        "на телефоне «Сохранить фото» через тяжёлый photoBig вместо лёгкого snapshot4k"
+      ],
+      "finishedAt": "2026-09-27T03:29:37+06:00",
+      "commit": "a9005b0",
+      "tests": {
+        "passed": 371,
+        "failed": 0
+      },
+      "files": [
+        "src/components/kitchen/KitchenPlanner.tsx",
+        "src/components/kitchen/kitchen.css",
+        "src/components/kitchen/texts.ts",
+        "src/components/kitchen/three/engine.ts",
+        "__tests__/kitchen-texts.test.ts",
+        "graphify-out/"
+      ]
+    },
+    {
+      "id": "08",
+      "title": "Размеры кухни из одного места (разбор замечаний)",
+      "requirements": [
+        "R12i",
+        "R13i",
+        "R02"
+      ],
+      "blockedBy": [
+        "07"
+      ],
+      "wave": 7,
+      "zone": [
+        "src/lib/kitchen/layout.ts",
+        "src/lib/kitchen/checks.ts",
+        "src/lib/kitchen/share.ts",
+        "src/components/kitchen/three/build.ts",
+        "src/components/kitchen/three/parts.ts",
+        "src/components/kitchen/drawing.ts",
+        "src/components/kitchen/KitchenPlanner.tsx"
+      ],
       "status": "in-progress",
       "retries": 0,
       "repairs": 0,
       "handoffs": 0,
-      "startedAt": "2026-09-27T02:09:21+06:00"
+      "startedAt": "2026-09-27T03:44:46+06:00"
     }
   ],
   "singlePass": null,
   "tests": {
-    "passed": 370,
+    "passed": 371,
     "failed": 0
   },
   "debt": {
@@ -416,11 +468,30 @@ window.STATE =
     "T05 · правки при видимой плашке «Продолжить» не возвращаются отменой после «Начать заново»",
     "T06 · __tests__/kitchen-drawing.test.ts — 400 сборок при загрузке модуля (6,5 с)",
     "T06 · pdfSheet.ts fillText — хвостик «ң» подобран под Manrope; при смене шрифта перепроверить глазами",
-    "T06 · drawing.ts — зазор «потолок − 25» до верха окна вписан числом (копия H − 0.25 из build.ts); WINDOW и зазор лучше держать в лёгком общем модуле (layout.ts) без динамического импорта build"
+    "T06 · drawing.ts — зазор «потолок − 25» до верха окна вписан числом (копия H − 0.25 из build.ts); WINDOW и зазор лучше держать в лёгком общем модуле (layout.ts) без динамического импорта build",
+    "T07 · kitchen.css — высота плашки корзины сайта (70 px) и отступ 24 px вписаны числом в правило html.kp-over .cart-bar ~ .assistant; нужна CSS-переменная от CartReminder.tsx",
+    "T07 · U20 — шкаф в 3D с клавиатуры не выбирается (у холста нет tabIndex); не сделано",
+    "T07 · телефон — плашка корзины сайта частично закрывает полосу шагов под плашкой «Продолжить» (её можно закрыть ×)",
+    "T07 · savePhoto берёт (pointer: coarse), движок — (pointer: coarse) && !(any-pointer: fine): планшет с трекпадом сохраняет лёгким путём; брать один флаг из движка",
+    "T07 · на телефоне кнопка сохранения ждёт фазу «build» трассировки, хотя лёгкому пути она не нужна"
   ],
   "reviewers": {
     "manifestSpec": "a30dafafe6ec2f04c",
     "craft": "a5bbe33e95a136d1b"
   },
-  "blind": null
+  "blind": {
+    "at": "2026-09-27T03:44:46+06:00",
+    "verdict": "все 13 пунктов брифа и дополнений — реализовано; сценарий заказчика пройден без обрывов",
+    "drift": [],
+    "notes": [
+      "после старта ветки в origin/feature/ios-app пришли 4 коммита про бота (b2d8698, e52baa7, 6b62e84, a067c8c) — в ветку не влиты, кухню не трогают",
+      "1440×900: «Дальше: Размер» наполовину под блоком суммы; плашка корзины закрывает часть размеров «Для мебельщика» → таск 08",
+      "в каталоге 1С 0 холодильников, 0 варочных, 0 посудомоек — на экране их не проверить"
+    ],
+    "commands": [
+      "npx vitest run → 371 passed",
+      "npx tsc --noEmit → 0",
+      "npm run build → exit 0"
+    ]
+  }
 }
