@@ -1,4 +1,4 @@
-import { DRAWING_CSS } from './drawing'
+import { DRAWING_CSS, paperSize, printedScale } from './drawing'
 import { A4, buildPdf, type PdfLink, type PdfPage } from './pdfFile'
 
 /**
@@ -30,8 +30,16 @@ export type SheetData = {
   facts: { label: string; value: string }[]
   wallsTitle: string
   walls: { title: string; svg: string }[]
+  /** общий масштаб развёрток 1:N (pickScale); подпись «М 1:N» — только если лист не ужал рисунки */
+  wallsScale?: number
+  /** подпись масштаба: n → «М 1:n» */
+  scaleLabel: (n: number) => string
   list?: { title: string; text: string }
+  /** план сверху: заголовок, SVG из planSvg и его масштаб 1:N */
+  plan?: { title: string; svg: string; scale?: number }
   tables: SheetTable[]
+  /** кому звонить по проекту: строка с телефоном магазина и ссылка WhatsApp */
+  contacts: { text: string; url: string }
   note: string
   page: (n: number, total: number) => string
 }
@@ -39,6 +47,8 @@ export type SheetData = {
 /** Лист A4 при 150 точках на дюйм: мелкие цифры чертежа читаются и на телефоне, и на бумаге. */
 const PX = 1240
 const PY = Math.round((PX * A4.h) / A4.w)
+/** точек на миллиметр бумаги */
+const PX_MM = PX / 210
 /** поля ≈ 12 мм */
 const M = 70
 const CW = PX - 2 * M
@@ -61,7 +71,8 @@ export async function sheetPdf(d: SheetData): Promise<Blob> {
   if (d.image) await s.picture(d.image, d.url)
   // короткий список — сразу под картинкой: мастер видит всю кухню на первом листе
   if (d.list) s.list(d.list.title, d.list.text)
-  s.walls(d.wallsTitle, d.walls)
+  if (d.plan) s.plan(d.plan.title, d.plan.svg, d.plan.scale, d.scaleLabel)
+  s.walls(d.wallsTitle, d.walls, d.wallsScale, d.scaleLabel)
   for (const tb of d.tables) s.table(tb)
   s.note(d.note)
   s.footers(d)
@@ -116,7 +127,7 @@ class Sheet {
     ctx.fillStyle = color
     ctx.textAlign = align
     ctx.textBaseline = 'alphabetic'
-    ctx.fillText(s, x, y)
+    fillText(ctx, s, x, y)
   }
 
   link(x: number, y: number, w: number, h: number, url: string) {
@@ -149,12 +160,13 @@ class Sheet {
     }
     // ссылка на эту же кухню в 3D — нажимается прямо в PDF
     this.font(21, 700)
-    const label = `${d.urlLabel} ↗`
-    const w = ctx.measureText(label).width
-    this.write(label, M, this.y + 6, BLUE)
+    // стрелку «↗» рисуем линиями: в Manrope её нет, чужой шрифт выглядит заплаткой
+    const w = ctx.measureText(d.urlLabel).width
+    this.write(d.urlLabel, M, this.y + 6, BLUE)
     ctx.fillStyle = BLUE
     ctx.fillRect(M, this.y + 11, w, 2)
-    this.link(M - 6, this.y - 20, w + 12, 40, d.url)
+    arrow(ctx, M + w + 8, this.y + 4, 13)
+    this.link(M - 6, this.y - 20, w + 34, 40, d.url)
     this.y += 34
     ctx.fillStyle = INK
     ctx.fillRect(M, this.y, CW, 3)
@@ -229,16 +241,26 @@ class Sheet {
     this.y += 12
   }
 
-  walls(title: string, walls: { title: string; svg: string }[]) {
+  walls(title: string, walls: { title: string; svg: string }[], scale: number | undefined, label: (n: number) => string) {
     const pad = 16
     const cap = 40
+    // две стены на лист: иначе каждая шла на свой лист и полстраницы пустовало
+    const maxH = 660
+    // общий масштаб листа: все стены 1:N, шкаф одного размера на всех. Не влезает
+    // хоть одна — ужимаем все одинаково, а «М 1:N» не пишем: он был бы неправдой.
+    const room = { w: (CW - 2 * pad) / PX_MM, h: maxH / PX_MM }
+    const honest = scale ? printedScale(walls.map((w) => w.svg), scale, room) : null
+    const k = scale ? Math.min(1, ...walls.map((w) => Math.min(room.w / paperSize(w.svg, scale).w, room.h / paperSize(w.svg, scale).h))) : 1
     const sized = walls.map((w) => {
       const vb = viewBox(w.svg)
       const aspect = vb[3] / vb[2]
+      if (scale) {
+        const dw = paperSize(w.svg, scale).w * PX_MM * k
+        const dh = dw * aspect
+        return { ...w, dw, dh, h: cap + dh + 2 * pad }
+      }
       let dw = CW - 2 * pad
       let dh = dw * aspect
-      // две стены на лист: иначе каждая шла на свой лист и полстраницы пустовало
-      const maxH = 660
       if (dh > maxH) {
         dh = maxH
         dw = dh / aspect
@@ -246,7 +268,7 @@ class Sheet {
       return { ...w, dw, dh, h: cap + dh + 2 * pad }
     })
     if (!sized.length) return
-    this.heading(title, sized[0].h)
+    this.heading(honest ? `${title} · ${label(honest)}` : title, sized[0].h)
     for (const w of sized) {
       // после room() холст мог смениться на новый лист — берём текущий
       this.room(w.h)
@@ -261,6 +283,24 @@ class Sheet {
       this.y += w.h + 14
     }
     this.y += 16
+  }
+
+  /** План сверху на своём листе, в масштабе из SVG. */
+  plan(title: string, svg: string, scale: number | undefined, label: (n: number) => string) {
+    const vb = viewBox(svg)
+    let dw = scale ? paperSize(svg, scale).w * PX_MM : CW
+    let dh = (dw * vb[3]) / vb[2]
+    const maxH = BOTTOM - M - 60
+    // ужали, чтобы влез, — масштаб уже не 1:N, и подписи нет
+    const honest = scale ? printedScale([svg], scale, { w: CW / PX_MM, h: maxH / PX_MM }) : null
+    if (dw > CW || dh > maxH) {
+      const k = Math.min(CW / dw, maxH / dh)
+      dw *= k
+      dh *= k
+    }
+    this.heading(honest ? `${title} · ${label(honest)}` : title, dh + 20)
+    drawSvg(this.ctx, svg, M + (CW - dw) / 2, this.y, dw, dh)
+    this.y += dh + 30
   }
 
   list(title: string, text: string) {
@@ -378,6 +418,11 @@ class Sheet {
       this.font(16)
       this.write(`Smart Centr · smarket.kg · ${d.date}`, M, PY - M + 14, MUTED)
       this.write(d.page(i + 1, total), PX - M, PY - M + 14, MUTED, 'right')
+      // телефон и WhatsApp магазина — нажимается прямо в PDF
+      this.font(16, 700)
+      const w = this.ctx.measureText(d.contacts.text).width
+      this.write(d.contacts.text, M, PY - M + 38, INK)
+      this.link(M - 4, PY - M + 20, w + 8, 26, d.contacts.url)
     })
   }
 }
@@ -481,7 +526,8 @@ function drawElement(ctx: CanvasRenderingContext2D, el: Element, fs: number) {
     }
     case 'text': {
       const weight = Math.round((parseFloat(st['font-weight'] ?? '400') || 400) / 100) * 100
-      ctx.font = `${weight} ${size(st['font-size'], fs)}px ${FONT}`
+      const own = /font-size:\s*([\d.]+)px/.exec(el.getAttribute('style') ?? '')
+      ctx.font = `${weight} ${own ? parseFloat(own[1]) : size(st['font-size'], fs)}px ${FONT}`
       const anchor = el.getAttribute('text-anchor')
       ctx.textAlign = anchor === 'middle' ? 'center' : anchor === 'end' ? 'right' : 'left'
       ctx.textBaseline = el.getAttribute('dominant-baseline') === 'central' ? 'middle' : 'alphabetic'
@@ -495,7 +541,7 @@ function drawElement(ctx: CanvasRenderingContext2D, el: Element, fs: number) {
         ctx.rotate((+rot[1] * Math.PI) / 180)
         ctx.translate(-rot[2], -rot[3])
       }
-      ctx.fillText(el.textContent ?? '', x, y)
+      fillText(ctx, el.textContent ?? '', x, y)
       ctx.restore()
       return
     }
@@ -503,6 +549,59 @@ function drawElement(ctx: CanvasRenderingContext2D, el: Element, fs: number) {
 }
 
 /* ───────── мелочи ───────── */
+
+/**
+ * Текст на холсте. В Manrope нет «ң» и «Ң»: браузер взял бы их из другого
+ * шрифта, и буква выглядела бы чужой. Рисуем «н»/«Н» того же шрифта и
+ * дорисовываем хвостик справа внизу — как у настоящей «ң».
+ */
+function fillText(ctx: CanvasRenderingContext2D, s: string, x: number, y: number) {
+  if (!/[ңҢ]/.test(s)) {
+    ctx.fillText(s, x, y)
+    return
+  }
+  const plain = s.replace(/ң/g, 'н').replace(/Ң/g, 'Н')
+  const total = ctx.measureText(plain).width
+  const align = ctx.textAlign
+  let at = align === 'center' ? x - total / 2 : align === 'right' || align === 'end' ? x - total : x
+  ctx.textAlign = 'left'
+  for (const part of s.split(/([ңҢ])/)) {
+    if (!part) continue
+    if (part === 'ң' || part === 'Ң') {
+      const base = part === 'ң' ? 'н' : 'Н'
+      const m = ctx.measureText(base)
+      ctx.fillText(base, at, y)
+      // хвостик: от низа правой ножки вниз, толщиной со штрих буквы
+      const size = parseFloat(/(\d+(?:\.\d+)?)px/.exec(ctx.font)?.[1] ?? '16')
+      const stem = Math.max(1, size * 0.11)
+      const right = at + m.actualBoundingBoxRight
+      const bottom = y + m.actualBoundingBoxDescent
+      ctx.fillRect(right - stem * 0.9, bottom - stem * 0.2, stem * 0.9 + size * 0.06, size * 0.22)
+      at += m.width
+      continue
+    }
+    ctx.fillText(part, at, y)
+    at += ctx.measureText(part).width
+  }
+  ctx.textAlign = align
+}
+
+/** Стрелка «открыть» (↗) линиями, в цвет текста. */
+function arrow(ctx: CanvasRenderingContext2D, x: number, y: number, size: number) {
+  ctx.save()
+  ctx.strokeStyle = ctx.fillStyle
+  ctx.lineWidth = Math.max(1.5, size * 0.16)
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+  ctx.beginPath()
+  ctx.moveTo(x, y)
+  ctx.lineTo(x + size, y - size)
+  ctx.moveTo(x + size * 0.35, y - size)
+  ctx.lineTo(x + size, y - size)
+  ctx.lineTo(x + size, y - size * 0.35)
+  ctx.stroke()
+  ctx.restore()
+}
 
 /** Скруглённая рамка: свой путь — ctx.roundRect есть не во всех телефонах. */
 function box(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {

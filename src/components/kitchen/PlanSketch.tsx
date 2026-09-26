@@ -31,7 +31,9 @@ type Props = {
 
 export function PlanSketch({ plan, labels, showWidths = false, className }: Props) {
   const W = plan.room.w
-  const D = Math.max(...plan.runs.map((r) => (r.id === 'A' ? 60 : r.id === 'I' ? (plan.island?.z ?? 0) + 40 : r.length)), 120)
+  // окно на боковой стене (у прямой кухни) должно лечь на стену, а не за её конец
+  const winEnd = plan.window?.wall === 'left' ? plan.window.at + plan.window.w / 2 + 20 : 0
+  const D = Math.max(...plan.runs.map((r) => (r.id === 'A' ? 60 : r.id === 'I' ? (plan.island?.z ?? 0) + 40 : r.length)), 120, winEnd)
   const pad = 34
   const T = 12
 

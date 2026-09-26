@@ -51,9 +51,9 @@ import {
   type RunId,
   type Run,
 } from '@/lib/kitchen/layout'
-import { cartAdditions, chosenItems, CORE_SLOTS, planInputOf, projectItems, projectTotal, whatsappText, type ItemStatus } from '@/lib/kitchen/order'
+import { cartAdditions, chosenItems, CORE_SLOTS, planInputOf, projectItems, projectTotal, wallsText, whatsappText, type ItemStatus } from '@/lib/kitchen/order'
 import { DEFAULT_STATE, loadLast, queryFromState, saveLast, stateFromQuery } from '@/lib/kitchen/share'
-import { cutList, frontList, hardware, modulesOf, topList, type SpecData } from '@/lib/kitchen/spec'
+import { cutList, extraList, frontList, hardware, modulesOf, topList, type SpecData } from '@/lib/kitchen/spec'
 import { FLOORS, getStyle, getTone, STYLE_GROUPS, STYLES, WALL_COLORS, type KitchenStyle } from '@/lib/kitchen/styles'
 import type { HandleKind } from '@/lib/kitchen/styles'
 import {
@@ -72,7 +72,7 @@ import {
   type SlotKind,
   type WallId,
 } from '@/lib/kitchen/types'
-import { DRAWING_CSS, elevationSvg } from './drawing'
+import { DRAWING_CSS, elevationSvg, islandOverhang, makerList, PLAN_BOX, pickScale, planSvg, techRows, windowFor, type DrawingLabels, type WindowSizes } from './drawing'
 import { PlanSketch } from './PlanSketch'
 import { kitchenTexts, type KitchenTexts } from './texts'
 import { parseVariants, type Variant } from '@/lib/kitchen/variants'
@@ -1726,7 +1726,8 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     }
   }
 
-  const makerText = useMemo(() => makerList(plan, items, t), [plan, items, t])
+  // техника без размеров в каталоге: мастеру — «размер примерный, уточнить по паспорту»
+  const makerText = useMemo(() => makerList(plan, items, t, inProject), [plan, items, t, inProject])
   const copyList = async () => {
     try {
       await navigator.clipboard.writeText(`${t.makerTitle}\n\n${makerText}\n\n${shareUrl}`)
@@ -1738,21 +1739,38 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
 
   /* ───────── для мебельщика ───────── */
 
-  const wallsLine = plan.runs.map((r) => `${r.id} ${Math.round(r.length)} ${t.cm}`).join(', ')
+  // стены одной строкой — та же, что в WhatsApp (order.ts)
+  const wallsLine = wallsText(state, lang)
+  const [zoomWall, setZoomWall] = useState<string | null>(null)
+  // высоты окна задаёт 3D-сборка (`WINDOW` в build.ts); модуль и так грузится ради 3D.
+  // Не загрузился — окно на развёртке не рисуем: выдумывать высоты нельзя.
+  const [winSizes, setWinSizes] = useState<WindowSizes | null>(null)
+  useEffect(() => {
+    let off = false
+    import('./three/build')
+      .then(({ WINDOW }) => {
+        if (!off) setWinSizes(WINDOW)
+      })
+      .catch(() => setWinSizes(null))
+    return () => {
+      off = true
+    }
+  }, [])
   const drawing = useMemo(() => {
     if (!spec) return null
-    const labels = { cm: t.cm, appliance: (slot: string) => t.techShort[slot as SlotKind] ?? slot }
-    const win = plan.window
+    const labels: DrawingLabels = { cm: t.cm, appliance: (slot: string) => t.techShort[slot as SlotKind] ?? slot, ...t.drawing }
+    const winOf = (id: string) => windowFor(plan, id, ceiling, winSizes)
+    const overhang = islandOverhang(spec.runs)
+    // один масштаб на все развёртки листа: самый крупный, при котором влезает самая большая стена
+    const scale = pickScale((n) => spec.runs.map((r) => elevationSvg(r, spec.heights, labels, winOf(r.id), { scale: n, overhang })))
     const walls = spec.runs.map((r) => ({
       id: r.id,
       title: t.wall(r.id, Math.round(r.length)),
-      svg: elevationSvg(
-        r,
-        spec.heights,
-        labels,
-        win && r.id === 'A' && win.wall === 'back' ? { at: win.at, w: win.w, sill: 100, top: Math.min(230, ceiling - 25) } : null,
-      ),
+      svg: elevationSvg(r, spec.heights, labels, winOf(r.id), { scale, overhang }),
     }))
+    const planLabels = { cm: t.cm, ...t.plan }
+    const planScale = pickScale((n) => [planSvg(plan, planLabels, { scale: n, runs: spec.runs })], PLAN_BOX)
+    const top = planSvg(plan, planLabels, { scale: planScale, runs: spec.runs })
     const fronts = frontList(spec.runs)
     const cuts = cutList(spec.carcasses, spec.panels)
     const hw = hardware(spec)
@@ -1762,8 +1780,8 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       return s + m.lower.filter((b) => b.kind !== 'appliance').length + m.upper.filter((b) => b.kind !== 'panel').length
     }, 0)
     const frontsTotal = fronts.reduce((s, f) => s + f.count, 0)
-    return { walls, fronts, cuts, hw, tops, modules, frontsTotal }
-  }, [spec, plan.window, ceiling, t])
+    return { walls, scale, top, planScale, fronts, cuts, hw, tops, modules, frontsTotal }
+  }, [spec, plan, ceiling, t, winSizes])
 
   /** Отделка словами — для мастера: материал и цвет фасадов, ручки, столешница. */
   const nameOf = (x: { ru: string; ky: string } | undefined) => (x ? (lang === 'ky' ? x.ky : x.ru) : '')
@@ -1832,6 +1850,11 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
         rows: drawing.tops.rows.map((r) => [t.topRow(r.run, r.sink, r.hob), `${r.length} × ${r.depth} × ${r.thick}`, 1]),
         note: t.topTotal(fmt(drawing.tops.total)),
       },
+      {
+        title: t.extrasTitle,
+        head: [t.colPart, t.colSize, t.colQty],
+        rows: extraList(spec).map((r) => [t.extraNames[r.kind], r.hMax ? `${r.w} × ${r.h}–${r.hMax}` : size(r.w, r.h), r.count]),
+      },
       { title: t.hardwareTitle, head: [t.colWhat, t.colQtyUnit], rows: hwRows },
     ]
   }
@@ -1857,11 +1880,13 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     const engine = engineRef.current
     const job = (async () => {
       const { sheetPdf } = await import('./pdfSheet')
-      const now = new Date()
+      // дата и имя файла — по времени Бишкека (UTC+6), с часами и минутами
+      const bishkek = new Date(Date.now() + 6 * 3600 * 1000)
+      const stamp = bishkek.toISOString().slice(0, 16).replace('T', '-').replace(':', '')
       const blob = await sheetPdf({
         title: t.sheetTitle,
         subtitle: t.sheetOf(t.shapes[state.shape][0], lang === 'ky' ? style.ky : style.ru, lang === 'ky' ? tone.ky : tone.ru),
-        date: now.toLocaleDateString(lang === 'ky' ? 'ky-KG' : 'ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }),
+        date: t.sheetDate(bishkek.getUTCDate(), bishkek.getUTCMonth(), bishkek.getUTCFullYear()),
         url: shareUrl,
         urlLabel: t.pdfOpen3d,
         // картинка — всегда общий вид кухни, даже если сейчас подлетели к духовке
@@ -1876,12 +1901,16 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
         ],
         wallsTitle: t.wallsTitle,
         walls: drawing.walls.map((w) => ({ title: w.title, svg: w.svg })),
+        wallsScale: drawing.scale,
+        scaleLabel: t.scaleLabel,
         list: { title: t.makerTitle, text: makerText },
+        plan: { title: t.planTitle, svg: drawing.top, scale: drawing.planScale },
+        contacts: { text: t.pdfContacts(phones[0].display), url: whatsappHref(phones[0]) },
         tables: [
           {
             title: t.techTitle,
             head: [t.colWhat, t.colModel, t.colDims],
-            rows: inProject.map((a) => [t.slots[a.slot], a.name, `${fmt(a.w)} × ${fmt(a.h)} × ${fmt(a.d)}`]),
+            rows: techRows(inProject, t),
             grow: 1,
           },
           ...sheetTables(),
@@ -1889,7 +1918,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
         note: t.specNote,
         page: t.pdfPage,
       })
-      const file = new File([blob], `smarket-kitchen-${now.toISOString().slice(0, 10)}.pdf`, { type: 'application/pdf' })
+      const file = new File([blob], `smarket-kitchen-${stamp}.pdf`, { type: 'application/pdf' })
       pdfDone.current = { key, file }
       return file
     })()
@@ -1965,27 +1994,18 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       setToast(t.pdfSaved)
     })
 
-  /** Мастеру — PDF и текст со ссылкой; «Поделиться» — тот же PDF кому угодно. */
-  const sendPdf = (kind: 'master' | 'share') => {
-    if (!drawing) return kind === 'share' ? share() : undefined
+  /** Мастеру — PDF и текст со ссылкой. */
+  const sendPdf = () => {
+    if (!drawing) return
     return withPdf(async (file) => {
-      const text = kind === 'master' ? t.sendText(shareUrl, wallsLine) : t.shareText(shareUrl)
+      const text = t.sendText(shareUrl, wallsLine)
       const res = await shareFile(file, text, t.sheetTitle)
       if (res === 'ok') return
       if (res === 'late') return offerSend(file, text)
       // Отправлять файлы этот браузер не умеет (компьютер, старый телефон):
       // PDF — в «Загрузки», а текст со ссылкой — в WhatsApp или в буфер.
       download(file, file.name)
-      if (kind === 'master') {
-        setNote({ text: t.pdfAttach, act: { label: 'WhatsApp', href: `https://wa.me/?text=${encodeURIComponent(text)}` } })
-        return
-      }
-      try {
-        await navigator.clipboard.writeText(text)
-        setToast(t.pdfLinkCopied)
-      } catch {
-        setToast(t.pdfSaved)
-      }
+      setNote({ text: t.pdfAttach, act: { label: 'WhatsApp', href: `https://wa.me/?text=${encodeURIComponent(text)}` } })
     })
   }
 
@@ -3140,7 +3160,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
               <IconFile />
               {pdfBusy ? t.specPreparing : t.specPdf}
             </button>
-            <button type="button" className="btn btn--outline" onClick={() => sendPdf('master')} disabled={!drawing || pdfBusy}>
+            <button type="button" className="btn btn--outline" onClick={() => void sendPdf()} disabled={!drawing || pdfBusy}>
               {t.specSend}
             </button>
           </div>
@@ -3178,10 +3198,30 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
               {drawing.walls.map((w) => (
                 <figure key={w.id} className="kp-wall">
                   <figcaption>{w.title}</figcaption>
-                  <div className="kp-wall__svg" dangerouslySetInnerHTML={{ __html: w.svg }} />
+                  {/* на телефоне цифры мелкие — нажатие открывает чертёж на весь экран */}
+                  <button type="button" className="kp-wall__open" onClick={() => setZoomWall(w.id)} aria-label={`${t.drawingOpen}: ${w.title}`}>
+                    <span className="kp-wall__svg" dangerouslySetInnerHTML={{ __html: w.svg }} />
+                  </button>
                 </figure>
               ))}
             </div>
+            {(() => {
+              const w = drawing.walls.find((x) => x.id === zoomWall)
+              if (!w) return null
+              return (
+                <div className="kp-zoom" role="dialog" aria-modal="true" aria-label={w.title} onKeyDown={(e) => e.key === 'Escape' && setZoomWall(null)}>
+                  <div className="kp-zoom__bar">
+                    <span>{w.title}</span>
+                    <button type="button" className="btn btn--outline btn--sm" onClick={() => setZoomWall(null)} autoFocus>
+                      {t.close}
+                    </button>
+                  </div>
+                  <div className="kp-zoom__body">
+                    <div className="kp-zoom__svg" dangerouslySetInnerHTML={{ __html: w.svg }} />
+                  </div>
+                </div>
+              )
+            })()}
             <details className="kp-more">
               <summary>{t.specMore}</summary>
               <div className="kp-tables">
@@ -3578,30 +3618,6 @@ function SlotRow(props: {
 }
 
 const fmt = (v: number) => (Number.isInteger(v) ? String(v) : (Math.round(v * 10) / 10).toFixed(1).replace('.', ','))
-
-/** Текст для мебельщика: по стенам, слева направо, низ и верх. */
-function makerList(plan: Plan, items: Items, t: KitchenTexts): string {
-  const lines: string[] = []
-  for (const run of plan.runs) {
-    // ряд B в плане идёт от зрителя к углу — мастеру удобнее от угла
-    const order = run.id === 'B' ? [...run.modules].reverse() : run.modules
-    const lower = order.map((m) => {
-      let name = t.modules[m.kind]
-      if (m.kind === 'hob' && m.oven && items.oven !== null) name = t.ovenUnder
-      if (m.kind === 'fridge' && items.fridge) name = `${name} (${items.fridge.brand || items.fridge.name})`
-      return `${name} ${Math.round(m.w)}`
-    })
-    lines.push(t.wall(run.id, Math.round(run.length)))
-    lines.push(`  ${t.lower}: ${lower.join(' · ')}`)
-    if (run.uppers.length) {
-      const uppersOrder = run.id === 'B' ? [...run.uppers].reverse() : run.uppers
-      const upper = uppersOrder.filter((u) => u.kind !== 'none').map((u) => `${t.uppers[u.kind]} ${Math.round(u.w)}`)
-      if (upper.length) lines.push(`  ${t.upper}: ${upper.join(' · ')}`)
-    }
-    lines.push('')
-  }
-  return lines.join('\n').trim()
-}
 
 /** Образец цвета из каталога: шпон и дерево — с полосками, бетон — с пятнами. */
 function colorSwatch(color: string, texture?: 'wood' | 'concrete'): string {

@@ -2369,6 +2369,52 @@ html.kp-lock body {
   font: 800 14px/1.3 var(--font);
 }
 
+/* чертёж — кнопка: нажатие открывает его на весь экран */
+.kp-wall__open {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+
+.kp-wall__svg {
+  display: block;
+}
+
+.kp-zoom {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+.kp-zoom__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--kp-line);
+  font: 800 15px/1.3 var(--font);
+}
+
+/* крупно: чертёж шире экрана, листается пальцем и увеличивается щипком */
+.kp-zoom__body {
+  flex: 1;
+  overflow: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-x pan-y pinch-zoom;
+}
+
+.kp-zoom__svg {
+  width: max(100%, 1100px);
+  padding: 16px;
+}
+
 .kp-more {
   margin-top: 14px;
   border: 1px solid var(--kp-line);

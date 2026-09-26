@@ -133,6 +133,8 @@ const ru = {
   } as Record<ModuleKind, string>,
   ovenUnder: 'варочная + духовка',
   uppers: { doors: 'шкаф', shelf: 'полки', hood: 'вытяжка', fridge: 'антресоль', none: 'окно', corner: 'угловой шкаф', filler: 'планка' },
+  /** пустое место в верхнем ряду не под окном (например, над плитой у окна) */
+  upperEmpty: 'пусто',
   copy: 'Скопировать список',
   copied: 'Скопировано',
   saveImage: 'Сохранить фото 4K',
@@ -184,6 +186,36 @@ const ru = {
   specMore: 'Вся спецификация: фасады, корпуса, фурнитура',
   specNote: 'Размеры посчитаны по проекту. Перед раскроем мастер всегда перемеряет стены на месте.',
   wallsTitle: 'Развёртка стен',
+  /** подписи на развёртке */
+  drawing: {
+    corner: 'угол',
+    view: 'Вид лицом к стене',
+    islandView: 'Вид со стороны кухни',
+    hoodOver: 'до вытяжки',
+    section: 'Разрез',
+    windowNote: (sill: string, top: string) => `Окно: подоконник ${sill}, верх ${top} — типовые, уточнить на месте`,
+  },
+  /** масштаб чертежа на листе */
+  scaleLabel: (n: number) => `М 1:${n}`,
+  planTitle: 'План сверху',
+  /** развёртка на весь экран (телефон) */
+  drawingOpen: 'Открыть чертёж крупно',
+  /** подписи на плане сверху */
+  plan: {
+    window: 'окно',
+    passage: 'проход между фасадами',
+    island: 'Остров',
+    depths: (d: { low: number; top: number; up: number; island?: { depth: number; overhang: number } }) =>
+      `Глубина, см: шкафы ${d.low}, столешница ${d.top}, верхние шкафы ${d.up}${d.island ? `, остров ${d.island.depth} (свес ${d.island.overhang})` : ''}`,
+  },
+  /** техника без размеров в каталоге */
+  approxSize: 'размер примерный — уточнить по паспорту',
+  approxList: (names: string) => `Размер примерный — уточнить по паспорту: ${names}`,
+  /** подвал PDF: кому звонить по проекту */
+  pdfContacts: (phone: string) => `Вопросы по проекту: ${phone} · WhatsApp и звонок`,
+  /** дата на листе: день, месяц словом, год */
+  sheetDate: (day: number, month: number, year: number) =>
+    `${day} ${['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'][month]} ${year}`,
   frontsTitle: 'Фасады (МДФ 18 мм)',
   cutTitle: 'Детали корпусов (ЛДСП 16 мм, задняя стенка — ХДФ 3 мм)',
   hardwareTitle: 'Фурнитура и погонаж',
@@ -233,7 +265,7 @@ const ru = {
   pcs: 'шт',
   meters: 'м',
   m2: 'м²',
-  topRow: (run: string, sink: boolean, hob: boolean) => `Стена ${run}${sink ? ' · вырез под мойку' : ''}${hob ? ' · вырез под варочную' : ''}`,
+  topRow: (run: string, sink: boolean, hob: boolean) => `${run === 'I' ? 'Остров' : `Стена ${run}`}${sink ? ' · вырез под мойку' : ''}${hob ? ' · вырез под варочную' : ''}`,
   topTotal: (m: string) => `Всего столешницы: ${m} м`,
   styleNew: 'Новинка',
   factWalls: 'Стены',
@@ -244,7 +276,6 @@ const ru = {
   sheetTitle: 'Проект кухни для мастера',
   sheetOf: (shape: string, style: string, tone: string) => `${shape} · ${style} · ${tone}`,
   sendText: (url: string, walls: string) => `Здравствуйте! Проект кухни: ${walls}. Чертёж и размеры — в PDF, кухня в 3D — по ссылке: ${url}`,
-  shareText: (url: string) => `Моя кухня в 3D-конструкторе Smart Centr: ${url}`,
   /* PDF */
   pdfOpen3d: 'Открыть эту кухню в 3D',
   pdfPage: (n: number, total: number) => `Страница ${n} из ${total}`,
@@ -254,7 +285,6 @@ const ru = {
   pdfReady: 'PDF готов',
   pdfSendNow: 'Отправить',
   pdfAttach: 'PDF сохранён в «Загрузки» — прикрепите его в чат.',
-  pdfLinkCopied: 'PDF сохранён в «Загрузки», ссылка скопирована.',
   techTitle: 'Техника в проекте',
   colModel: 'Модель',
   colDims: 'Ш × В × Г, см',
@@ -520,6 +550,7 @@ const ky: Texts = {
   },
   ovenUnder: 'бышыруучу панель + духовка',
   uppers: { doors: 'шкаф', shelf: 'текчелер', hood: 'сордургуч', fridge: 'антресоль', none: 'терезе', corner: 'бурчтук шкаф', filler: 'планка' },
+  upperEmpty: 'бош',
   copy: 'Тизмени көчүрүү',
   copied: 'Көчүрүлдү',
   saveImage: '4K сүрөттү сактоо',
@@ -566,6 +597,30 @@ const ky: Texts = {
   specMore: 'Толук спецификация: фасаддар, корпустар, фурнитура',
   specNote: 'Өлчөмдөр долбоор боюнча эсептелди. Кесүүдөн мурун уста дубалдарды ордунда кайра өлчөйт.',
   wallsTitle: 'Дубалдардын чиймеси',
+  drawing: {
+    corner: 'бурч',
+    view: 'Дубалды караган көрүнүш',
+    islandView: 'Ашкана тараптан көрүнүш',
+    hoodOver: 'сордургучка чейин',
+    section: 'Кесилиши',
+    windowNote: (sill, top) => `Терезе: төмөнкү чети ${sill}, үстүңкү чети ${top} — болжолдуу, ордунда тактаңыз`,
+  },
+  scaleLabel: (n) => `М 1:${n}`,
+  planTitle: 'Үстүнөн көрүнүшү',
+  drawingOpen: 'Чиймени чоң ачуу',
+  plan: {
+    window: 'терезе',
+    passage: 'фасаддардын ортосундагы өтмөк',
+    island: 'Аралча',
+    depths: (d) =>
+      `Тереңдиги, см: шкафтар ${d.low}, столешница ${d.top}, үстүңкү шкафтар ${d.up}${d.island ? `, аралча ${d.island.depth} (ашып турган бөлүгү ${d.island.overhang})` : ''}`,
+  },
+  approxSize: 'өлчөмү болжолдуу — паспорт боюнча тактаңыз',
+  approxList: (names) => `Өлчөмү болжолдуу — паспорт боюнча тактаңыз: ${names}`,
+  pdfContacts: (phone) => `Долбоор боюнча суроолор: ${phone} · WhatsApp жана чалуу`,
+  // браузерлерде кыргыз тилинин датасы жок — айлардын аттары өзүбүздө
+  sheetDate: (day, month, year) =>
+    `${year}-жылдын ${day}-${['январы', 'февралы', 'марты', 'апрели', 'майы', 'июну', 'июлу', 'августу', 'сентябры', 'октябры', 'ноябры', 'декабры'][month]}`,
   frontsTitle: 'Фасаддар (МДФ 18 мм)',
   cutTitle: 'Корпустун бөлүктөрү (ЛДСП 16 мм, арткы дубал — ХДФ 3 мм)',
   hardwareTitle: 'Фурнитура',
@@ -615,7 +670,7 @@ const ky: Texts = {
   pcs: 'даана',
   meters: 'м',
   m2: 'м²',
-  topRow: (run, sink, hob) => `${run} дубалы${sink ? ' · жуугучка оюк' : ''}${hob ? ' · панелге оюк' : ''}`,
+  topRow: (run, sink, hob) => `${run === 'I' ? 'Аралча' : `${run} дубалы`}${sink ? ' · жуугучка оюк' : ''}${hob ? ' · панелге оюк' : ''}`,
   topTotal: (m) => `Бардык столешница: ${m} м`,
   styleNew: 'Жаңы',
   factWalls: 'Дубалдар',
@@ -626,7 +681,6 @@ const ky: Texts = {
   sheetTitle: 'Уста үчүн ашкананын долбоору',
   sheetOf: (shape, style, tone) => `${shape} · ${style} · ${tone}`,
   sendText: (url, walls) => `Саламатсызбы! Ашкананын долбоору: ${walls}. Чийме жана өлчөмдөр — PDF'те, 3D — шилтемеде: ${url}`,
-  shareText: (url) => `Smart Centr 3D-конструкторундагы ашканам: ${url}`,
   pdfOpen3d: "Бул ашкананы 3D'де ачуу",
   pdfPage: (n, total) => `${n}-бет, баары ${total}`,
   pdfSaved: 'PDF «Жүктөөлөргө» сакталды',
@@ -635,7 +689,6 @@ const ky: Texts = {
   pdfReady: 'PDF даяр',
   pdfSendNow: 'Жөнөтүү',
   pdfAttach: 'PDF «Жүктөөлөргө» сакталды — аны чатка тиркеңиз.',
-  pdfLinkCopied: 'PDF «Жүктөөлөргө» сакталды, шилтеме көчүрүлдү.',
   techTitle: 'Долбоордогу техника',
   colModel: 'Модель',
   colDims: 'Туурасы × бийиктиги × тереңдиги, см',
