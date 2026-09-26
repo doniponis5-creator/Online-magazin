@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-26T22:48:52+06:00",
-  "updatedAt": "2026-09-27T00:15:31+06:00",
+  "updatedAt": "2026-09-27T00:42:53+06:00",
   "finishedAt": null,
   "stages": [
     {
@@ -49,13 +49,13 @@ window.STATE =
       "id": "build",
       "status": "active",
       "startedAt": "2026-09-26T23:37:00+06:00",
-      "note": "3 из 7 тасков готовы"
+      "note": "4 из 7 тасков готовы"
     },
     {
       "id": "review",
       "status": "active",
       "startedAt": "2026-09-26T23:45:48+06:00",
-      "note": "проверено 3 из 7"
+      "note": "проверено 4 из 7"
     },
     {
       "id": "final",
@@ -212,11 +212,26 @@ window.STATE =
         "src/lib/kitchen/spec.ts",
         "src/components/kitchen/texts.ts"
       ],
-      "status": "in-progress",
+      "status": "done",
       "retries": 0,
-      "repairs": 0,
-      "handoffs": 0,
-      "startedAt": "2026-09-27T00:15:31+06:00"
+      "repairs": 1,
+      "handoffs": 1,
+      "startedAt": "2026-09-27T00:15:31+06:00",
+      "repairFindings": [
+        "задняя панель острова 2800 мм длиннее листа — делить (BLOCKING ревью)"
+      ],
+      "finishedAt": "2026-09-27T00:42:53+06:00",
+      "commit": "74ea6a7",
+      "tests": {
+        "passed": 346,
+        "failed": 0
+      },
+      "files": [
+        "src/components/kitchen/three/build.ts",
+        "src/lib/kitchen/spec.ts",
+        "src/components/kitchen/texts.ts",
+        "__tests__/kitchen-build.test.ts"
+      ]
     },
     {
       "id": "05",
@@ -239,10 +254,11 @@ window.STATE =
         "src/components/kitchen/kitchen.css",
         "src/components/kitchen/texts.ts"
       ],
-      "status": "pending",
+      "status": "in-progress",
       "retries": 0,
       "repairs": 0,
-      "handoffs": 0
+      "handoffs": 0,
+      "startedAt": "2026-09-27T00:42:53+06:00"
     },
     {
       "id": "06",
@@ -297,7 +313,7 @@ window.STATE =
   ],
   "singlePass": null,
   "tests": {
-    "passed": 328,
+    "passed": 346,
     "failed": 0
   },
   "debt": {
@@ -329,7 +345,19 @@ window.STATE =
     "T03 · layout.ts:216/:660/:802 — «округлить вверх до 5 см» трижды",
     "T03 · __tests__/kitchen-layout.test.ts:52-89 — генератор не создаёт свои шкафы, at, snap",
     "T03 · __tests__/kitchen-layout.test.ts:60 — sort(() => r()-0.5) зависит от движка сортировки",
-    "T03 · checks.ts:142 — вытяжка под окном входит в fits и советует «удлините стену»; таск 05 должен показать t.hoodNoPlace"
+    "T03 · checks.ts:142 — вытяжка под окном входит в fits и советует «удлините стену»; таск 05 должен показать t.hoodNoPlace",
+    "T04 · build.ts:163/:1077/:1206 — hoodOver пишется внутри hoodAt, вызывается вложенно, в mantel стирается; тест D16 сверяет число с самим собой, низ меша вытяжки никто не меряет",
+    "T04 · build.ts:163 — запасной выбор нормы по газу повторяет layout.ts:816",
+    "T04 · build.ts:610 — проём ПММ 82/87 числами, а не из BASE_H (и UNDER_COUNTER=82 в checks.ts)",
+    "T04 · build.ts:568-573/:1135/:655/:755 — планка углового 0.03 и STRIP; точка деления длинной детали считается в двух местах",
+    "T04 · build.ts:1008 — цикл открытых полок верен только для двух полок; тест D13 сверяет с копией чисел",
+    "T04 · __tests__/kitchen-build.test.ts:352-354 — паритет сопоставляет по порядку обхода",
+    "T04 · __tests__/kitchen-build.test.ts:120,126 — корпус ПММ ищется по старой форме",
+    "T04 · build.ts:1842 — запасной путь Box3 стал мёртвым",
+    "T04 · __tests__/kitchen-build.test.ts:101-105 — 192 сборки на уровне модуля, падение без имени кухни",
+    "T04 · parts.ts — стержневая ручка 32 см на фасадах уже 32 см (бутылочница 16, антресоль 20) в 3D",
+    "T04 · build.ts hoodAt — без plan.hoodHeight 3D сама выбирает газ/электро; после таска 05 высота должна браться только из плана",
+    "T04 · spec.ts modulesOf().fillers — доборы в двух списках; таск 06 строит таблицу только из extraList, fillers — лишь для чертежа"
   ],
   "reviewers": {
     "manifestSpec": "a30dafafe6ec2f04c",
