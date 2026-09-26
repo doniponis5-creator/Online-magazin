@@ -8,7 +8,7 @@
 | R02 | «3d konstruktorni audit qil hatolari yoqmi hisob kitobta» | in-ticket | аудит `audit-calc.md` C01–C18; исправления | spec ист. 3–20 → T02, T03, T04, T05 |
 | R03 | «hatolari yoqmi … chertejda» | in-ticket | аудит `audit-drawing.md` D01–D28; исправления D01–D28 | spec ист. 21–32, 31a → T04, T06 |
 | R04 | «kamchiliklari» | in-ticket | аудит `audit-ux.md` U01–U23 | spec ист. 33–45 → T01, T05 |
-| R05 | «keremas narsalari» | in-ticket | аудит `audit-ux.md` X01–X10; X06–X10 — предложения в отчёт | spec ист. 46–47 → T01 |
+| R05 | «keremas narsalari» | done | аудит `audit-ux.md` X01–X10; X06–X10 — предложения в отчёт | spec ист. 46–47 → T01 (4f78c71) |
 | R06 | «klientga udobstvasi» | in-ticket | аудит `audit-ux.md` U01–U20 | spec ист. 33–44 → T02, T05, T07 |
 | R07 | «odamlarga foydasi ?» | done | `audit-pro.md` §1, `audit-summary-uz.md` | `audit-summary-uz.md` → финальный отчёт |
 | R08 | «yanayam PRO qilish uchun nima qilish kerak ?» | done | `audit-pro.md` §3; быстрые шаги — G01, остальное — план в отчёте | `audit-summary-uz.md`, `audit-pro.md` §3 → финальный отчёт |

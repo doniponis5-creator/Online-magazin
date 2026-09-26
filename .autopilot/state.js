@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-26T22:48:52+06:00",
-  "updatedAt": "2026-09-26T23:46:05+06:00",
+  "updatedAt": "2026-09-27T00:15:31+06:00",
   "finishedAt": null,
   "stages": [
     {
@@ -48,12 +48,14 @@ window.STATE =
     {
       "id": "build",
       "status": "active",
-      "startedAt": "2026-09-26T23:37:00+06:00"
+      "startedAt": "2026-09-26T23:37:00+06:00",
+      "note": "3 из 7 тасков готовы"
     },
     {
       "id": "review",
       "status": "active",
-      "startedAt": "2026-09-26T23:45:48+06:00"
+      "startedAt": "2026-09-26T23:45:48+06:00",
+      "note": "проверено 3 из 7"
     },
     {
       "id": "final",
@@ -89,11 +91,27 @@ window.STATE =
         ".gitignore",
         ".dockerignore"
       ],
-      "status": "review",
+      "status": "done",
       "retries": 0,
       "repairs": 0,
       "handoffs": 0,
-      "startedAt": "2026-09-26T23:37:07+06:00"
+      "startedAt": "2026-09-26T23:37:07+06:00",
+      "finishedAt": "2026-09-26T23:51:21+06:00",
+      "commit": "4f78c71",
+      "tests": {
+        "passed": 292,
+        "failed": 0
+      },
+      "files": [
+        "smartcentr-site/ (удалена)",
+        ".gitignore",
+        ".dockerignore",
+        "src/components/kitchen/texts.ts",
+        "src/components/kitchen/KitchenPromo.tsx",
+        "src/app/[lang]/kitchen/page.tsx",
+        "src/lib/kitchen/finishes.ts",
+        "__tests__/kitchen-texts.test.ts"
+      ]
     },
     {
       "id": "02",
@@ -112,11 +130,25 @@ window.STATE =
         "src/components/ProductDetail.tsx",
         "src/lib/i18n/dictionaries.ts"
       ],
-      "status": "review",
+      "status": "done",
       "retries": 0,
       "repairs": 0,
       "handoffs": 0,
-      "startedAt": "2026-09-26T23:37:07+06:00"
+      "startedAt": "2026-09-26T23:37:07+06:00",
+      "finishedAt": "2026-09-26T23:51:21+06:00",
+      "commit": "7a5dd84",
+      "tests": {
+        "passed": 292,
+        "failed": 0
+      },
+      "files": [
+        "src/lib/kitchen/share.ts",
+        "src/lib/kitchen/catalog.ts",
+        "src/app/[lang]/product/[id]/page.tsx",
+        "src/components/ProductDetail.tsx",
+        "src/lib/i18n/dictionaries.ts",
+        "__tests__/kitchen-share.test.ts"
+      ]
     },
     {
       "id": "03",
@@ -136,10 +168,30 @@ window.STATE =
         "src/lib/kitchen/types.ts",
         "src/components/kitchen/texts.ts"
       ],
-      "status": "pending",
+      "status": "done",
       "retries": 0,
-      "repairs": 0,
-      "handoffs": 0
+      "repairs": 1,
+      "handoffs": 0,
+      "startedAt": "2026-09-26T23:51:21+06:00",
+      "repairFindings": [
+        "над плитой у окна шкаф doors — только hood/none (BLOCKING ревью)",
+        "мойка остаётся суженной после вытеснения плиты (решение оркестратора: неверная ширина покупателю)",
+        "проверка высоты вытяжки — тавтология констант (решение оркестратора: ложное «безопасно»)"
+      ],
+      "finishedAt": "2026-09-27T00:15:31+06:00",
+      "commit": "cd0a9ae",
+      "tests": {
+        "passed": 328,
+        "failed": 0
+      },
+      "files": [
+        "src/lib/kitchen/layout.ts",
+        "src/lib/kitchen/checks.ts",
+        "src/components/kitchen/texts.ts",
+        "__tests__/kitchen-layout.test.ts",
+        "src/components/kitchen/KitchenPlanner.tsx (+8 checkText)",
+        "src/components/kitchen/three/build.ts (временные case)"
+      ]
     },
     {
       "id": "04",
@@ -160,10 +212,11 @@ window.STATE =
         "src/lib/kitchen/spec.ts",
         "src/components/kitchen/texts.ts"
       ],
-      "status": "pending",
+      "status": "in-progress",
       "retries": 0,
       "repairs": 0,
-      "handoffs": 0
+      "handoffs": 0,
+      "startedAt": "2026-09-27T00:15:31+06:00"
     },
     {
       "id": "05",
@@ -243,7 +296,10 @@ window.STATE =
     }
   ],
   "singlePass": null,
-  "tests": null,
+  "tests": {
+    "passed": 328,
+    "failed": 0
+  },
   "debt": {
     "placeholders": [],
     "assumptions": [],
@@ -266,7 +322,14 @@ window.STATE =
     "T02 · share.ts:57/:64 — правила токенов записаны дважды (TOKEN и регулярка)",
     "T02 · __tests__/kitchen-share.test.ts:26-36 — нет теста разбора буквального старого адреса",
     "T02 · ProductDetail.tsx:47-51 — лишний div только у кухонной техники; кнопка берёт чужой класс purchase__ask",
-    "T02 · share.ts:318 — fx (фасады) не проходит перенумерацию cabinetOrder; проверить, ключи ли там k*"
+    "T02 · share.ts:318 — fx (фасады) не проходит перенумерацию cabinetOrder; проверить, ключи ли там k*",
+    "T03 · __tests__/kitchen-layout.test.ts:297-354 — переборы C09/C10 принимают «предупреждение» вместо исправления; исправление доказывают только одиночные случаи",
+    "T03 · layout.ts:834 и checks.ts:32 — список высоких модулей заведён дважды; checks.ts:101 число 60 вместо DEPTH",
+    "T03 · checks.ts:34 — UNDER_COUNTER = 82 собран вручную, не из высот цоколя/корпуса сборки",
+    "T03 · layout.ts:216/:660/:802 — «округлить вверх до 5 см» трижды",
+    "T03 · __tests__/kitchen-layout.test.ts:52-89 — генератор не создаёт свои шкафы, at, snap",
+    "T03 · __tests__/kitchen-layout.test.ts:60 — sort(() => r()-0.5) зависит от движка сортировки",
+    "T03 · checks.ts:142 — вытяжка под окном входит в fits и советует «удлините стену»; таск 05 должен показать t.hoodNoPlace"
   ],
   "reviewers": {
     "manifestSpec": "a30dafafe6ec2f04c",

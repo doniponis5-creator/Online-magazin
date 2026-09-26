@@ -195,6 +195,7 @@ PC — сайт, расширение 1С и сервер SBonus: `src/`, `publi
 - `src/lib/kitchen/variants.ts` `parseVariants` фильтрует `localStorage['kp-variants']` — битая запись раньше роняла страницу; сырой `JSON.parse` туда не возвращать.
 - Качество «Лёгкий» (`lite`): в `engine.ts` единый `get lite()`, в сборку флаг едет только через `Mats.lite` (`materials.ts`) — новых `quality === 'lite'` не рассыпать; `Built.spec` (числа для мебельщика) от `lite` не зависит.
 - Тесты: `npx vitest run` (23 файла, 247 passed на 24.09.2026); один — `npx vitest run __tests__/kitchen.test.ts`; также `kitchen-governor.test.ts`, `kitchen-variants.test.ts`.
+- `smartcentr-site/` — распакованная копия архива из `deploy/site/pack.sh`; в git её не класть (есть в `.gitignore` и `.dockerignore`): `tsconfig` берёт `**/*.ts`, и старая копия ломает `tsc` и засоряет `graphify`.
 
 ### Android (25.09.2026)
 

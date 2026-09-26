@@ -54,3 +54,14 @@
 - Формат адреса: целые места — `_095`, половинки — `-1325` (мм, 4 цифры); свои шкафы в `dr=` перенумерованы k1, k2… в порядке адреса; старые ссылки открываются как раньше.
 - `parseSize`: порядок из группы букв, единицы на тройку, «упаков» пропускается; на живом каталоге размеры не изменились.
 - Кнопка RU «Примерить в кухне» / KY «Ашканада көрүү» — в `ProductDetail.tsx`, стиль кнопки «Поделиться», под ней; текст в `src/lib/i18n/dictionaries.ts`.
+
+## Из таска 03 — раскладка и проверки
+
+- `PlanInput`: `oven?: {w,h,d} | null`, `hood?: {w} | null`, `snap?: ItemKey[]` — без поля прилипают все (как раньше), `[]` — места заморожены; **экран передаёт `snap: [перетаскиваемый]` или `[]`** (таск 05, C16).
+- `Plan`: `dropped: Dropped[]` = `{item, slot?, need, wall: RunId}` (wall обязательна); `ovenMovedUnderHob?: boolean`; `tooWide?: {slot:'oven'|'hood', w, room, wall}[]`; `underCounter?: {slot:'washer'|'dishwasher', h, wall}[]`; `hoodHeight?: {over, gas}`.
+- `needByWall(plan): Partial<Record<RunId, number>>` — нехватка по стенам (без записей со slot `hood`). Вытяжка, которую не повесить: `{item:'hob', slot:'hood', wall}` в `dropped`. `minA(shape, widths?)`.
+- `UpperKind` += `'corner'` (`Upper.blind = 35`, `Upper.blindAt`) и `'filler'` (панель без корпуса). Константы `UPPER_MIN = 20`, `HOOD_OVER = {gas: 75, electric: 65}`. `resolveRun(..., canSnap?)`.
+- Сейчас в `build.ts` (правка 03, временная): `corner` рисуется как обычный шкаф, `filler` не рисуется (пустое место до 19 см) — **доделывает таск 04**. `plan.hoodHeight.over` — норма для 3D.
+- `checkProject(plan, facts?: CheckFacts)`, `CheckFacts = {hoodOver?: number}` — **таск 04/05 передаёт фактическую высоту низа вытяжки над панелью из 3D**; без неё проверки `hoodHeight` нет. Норма одна — `HOOD_OVER` из `layout.ts` (`HOOD_MIN` удалена). Над модулем `hob` в верхнем ряду только `hood`/`none`. Проверки: `tallUnderWindow{level}`, `applianceWider{slot,w,room}`, `underCounterHeight{slot,h,max}`, `hoodHeight{over,min,gas}`; `UNDER_COUNTER = 82`. Тексты: `t.checks.tallUnderWindow/applianceWider/underCounter/hoodHeightOk/hoodHeightWarn`, `t.ovenUnderHob`, `t.hoodNoPlace`, `t.uppers.corner/filler`. В `KitchenPlanner.tsx` `checkText` уже знает 4 новых проверки.
+- Поведение: вытесненный предмет сливает куски столешницы по бокам в один; если пенал/шкаф духовки не встал, а духовка ушла под плиту или в колонну — записи «пенал не поместился» нет; окно у задней стены может сузиться (не уже 60), чтобы не висеть над высоким шкафом.
+- Для таска 05: запись о вытяжке под окном (`{item:'hob', slot:'hood'}`) сейчас входит в счёт проверки `fits` — экран должен показывать для неё `t.hoodNoPlace` и не советовать «удлините стену».
