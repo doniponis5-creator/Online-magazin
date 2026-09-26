@@ -2,11 +2,10 @@
 
 import Link from 'next/link'
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { phones, whatsappHref } from '@/data/contacts'
+import { phones, telHref, whatsappHref } from '@/data/contacts'
 import { useCart } from '@/lib/cart/CartProvider'
 import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
-import { defaultPick } from '@/lib/kitchen/catalog'
 import { checkProject, type Check } from '@/lib/kitchen/checks'
 import {
   FRONT_COLORS,
@@ -36,6 +35,7 @@ import {
   LIMITS,
   minA,
   moduleCenter,
+  needByWall,
   moveItem,
   nextWall,
   pinCabinet,
@@ -48,10 +48,11 @@ import {
   type ItemPlace,
   type Module,
   type Plan,
-  type PlanInput,
+  type RunId,
   type Run,
 } from '@/lib/kitchen/layout'
-import { DEFAULT_STATE, queryFromState, stateFromQuery } from '@/lib/kitchen/share'
+import { cartAdditions, chosenItems, CORE_SLOTS, planInputOf, projectItems, projectTotal, whatsappText, type ItemStatus } from '@/lib/kitchen/order'
+import { DEFAULT_STATE, loadLast, queryFromState, saveLast, stateFromQuery } from '@/lib/kitchen/share'
 import { cutList, frontList, hardware, modulesOf, topList, type SpecData } from '@/lib/kitchen/spec'
 import { FLOORS, getStyle, getTone, STYLE_GROUPS, STYLES, WALL_COLORS, type KitchenStyle } from '@/lib/kitchen/styles'
 import type { HandleKind } from '@/lib/kitchen/styles'
@@ -81,11 +82,10 @@ import type { Photo } from './three/photo'
 import './kitchen.css'
 
 type Step = 'shape' | 'size' | 'style' | 'finish' | 'tech'
-const STEPS: Step[] = ['shape', 'size', 'style', 'finish', 'tech']
+const STEPS: Step[] = ['shape', 'size', 'tech', 'style', 'finish']
 const SHAPES: Shape[] = ['straight', 'corner', 'u', 'island']
-/** Без этих трёх кухня не кухня: если в каталоге пусто — ставим типовую модель. */
-const CORE: SlotKind[] = ['oven', 'hob', 'hood']
-const OPTIONAL: SlotKind[] = ['fridge', 'dishwasher', 'microwave', 'washer']
+/** Слоты, которые можно выключить («Не нужно»); без остальных кухня не кухня. */
+const OPTIONAL: SlotKind[] = SLOTS.filter((s) => !CORE_SLOTS.includes(s))
 
 type Items = Partial<Record<SlotKind, KitchenAppliance | null>>
 
@@ -111,32 +111,6 @@ const NUDGE = 5
 const FLEX: Module['kind'][] = ['doors', 'drawers', 'bottle', 'filler']
 
 /** Всё, что нужно раскладке, из выбора покупателя. */
-function planInput(s: KitchenState, chosen: Items): PlanInput {
-  return {
-    shape: s.shape,
-    a: s.a,
-    b: s.b,
-    c: s.c,
-    island: s.island,
-    fridge: chosen.fridge,
-    dishwasher: chosen.dishwasher,
-    washer: chosen.washer,
-    microwave: chosen.microwave,
-    hob: chosen.hob,
-    arrangement: s.arrangement,
-    tallOven: s.tallOven,
-    pantries: s.pantries,
-    noWindow: s.noWindow,
-    windowW: s.windowW,
-    fridgeOpen: s.fridgeOpen,
-    ovenApart: s.ovenApart,
-    noOven: chosen.oven === null,
-    cabinets: s.cabinets,
-    at: s.at,
-    widths: s.widths,
-  }
-}
-
 /** Верхний шкаф над предметом — чтобы после смены ширины карточка осталась на нём. */
 function upperOver(plan: Plan, key: ItemKey): string | null {
   for (const run of plan.runs) {
@@ -262,6 +236,8 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   const [engineState, setEngineState] = useState<'loading' | 'ready' | 'error' | 'lost'>('loading')
   const [built, setBuilt] = useState(false)
   const [spec, setSpec] = useState<SpecData | null>(null)
+  /** фактическая высота низа вытяжки над панелью в 3D — для проверки проекта */
+  const [hoodOver, setHoodOver] = useState<number | undefined>(undefined)
   const [photosVersion, setPhotosVersion] = useState(0)
   const [thumbs, setThumbs] = useState<Partial<Record<string, string>>>({})
   const [cartResult, setCartResult] = useState<{ ok: number; failed: number } | null>(null)
@@ -323,24 +299,12 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   const tone = getTone(style, state.tone)
   const ceiling = state.ceiling ?? CEILING.base
 
-  const chosen: Items = useMemo(() => {
-    const out: Items = {}
-    for (const slot of SLOTS) {
-      const pick = state.picks[slot]
-      if (pick === null) out[slot] = null
-      else if (pick && byId.get(pick)?.slot === slot) out[slot] = byId.get(pick)
-      else {
-        const id = defaultPick(slot, bySlot[slot])
-        out[slot] = id ? byId.get(id) : CORE.includes(slot) ? undefined : null
-      }
-    }
-    return out
-  }, [state.picks, byId, bySlot])
+  const chosen: Items = useMemo(() => chosenItems(state.picks, appliances), [state.picks, appliances])
 
   // preview — для карточки стиля: с тем, с чем стиль задуман (колонны, духовка наверху)
   const planFor = useCallback(
     (s: KitchenStyle, preview = false): Plan =>
-      planKitchen({ ...planInput(state, chosen), ...(preview ? s.layout : undefined) }, { shelves: s.shelves }),
+      planKitchen({ ...planInputOf(state, chosen, []), ...(preview ? s.layout : undefined) }, { shelves: s.shelves }),
     // только то, от чего зависит раскладка: смена отделки план не пересчитывает
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
@@ -363,38 +327,77 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     ],
   )
   const plan = useMemo(() => planFor(style), [planFor, style])
-  const dropped = useMemo(() => new Set(plan.dropped.map((d) => d.slot).filter((s): s is SlotKind => Boolean(s))), [plan])
   const order = useMemo(() => resolveArrangement(state.shape, state.arrangement, state.cabinets), [state.shape, state.arrangement, state.cabinets])
   const positions = useMemo(() => itemPositions(plan), [plan])
 
-  /** Что реально стоит в кухне: без того, что не поместилось. */
+  /** Состав проекта и деньги — только из order.ts: сумма, корзина, WhatsApp. */
+  const project = useMemo(() => projectItems(state, plan, appliances), [state, plan, appliances])
+  /**
+   * Что стоит в 3D — по тому же составу: модель (и духовка под панелью),
+   * undefined — типовая модель, null — в кухне нет (не нужно, нет в наличии,
+   * не поместилось, отдельностоящая микроволновка на столешнице).
+   */
   const items: Items = useMemo(() => {
-    const out: Items = { ...chosen }
-    for (const slot of dropped) out[slot] = null
-    // Встраиваемая микроволновка живёт в пенале; отдельностоящую в 3D не ставим.
-    if (out.microwave && !out.microwave.builtIn) out.microwave = null
+    const out: Items = {}
+    for (const slot of SLOTS) out[slot] = null
+    for (const i of project) {
+      if (i.status === 'placed' || i.status === 'underHob') out[i.slot] = i.appliance
+      else if (i.status === 'typical') out[i.slot] = undefined
+    }
     return out
-  }, [chosen, dropped])
-
-  const inProject = useMemo(() => SLOTS.map((s) => items[s]).filter((a): a is KitchenAppliance => Boolean(a)), [items])
-  const total = inProject.reduce((sum, a) => sum + a.price, 0)
+  }, [project])
+  const totals = projectTotal(project)
+  const inProject = useMemo(() => project.flatMap((i) => (i.inTotal && i.appliance ? [i.appliance] : [])), [project])
+  const missing = cartAdditions(project, cart.lines)
 
   /* ───────── адрес страницы ───────── */
 
+  /** Сохранённая кухня ждёт ответа «Продолжить / Начать заново»; пока ждёт — не перезаписываем её. */
+  const [resume, setResume] = useState<KitchenState | null>(null)
   useEffect(() => {
     setOrigin(window.location.origin)
     const q = new URLSearchParams(window.location.search)
-    if (q.has('f')) setState(stateFromQuery(q, new Set(byId.keys())))
+    const last = loadLast(byId)
+    if (q.has('f')) setState(stateFromQuery(q, byId))
+    else {
+      // адрес с одной моделью (кнопка «Примерить в кухне» на карточке товара) —
+      // ставим её в сохранённую кухню, а нет сохранённой — в кухню по умолчанию
+      // без URLSearchParams.size: в Safari до 17 его нет, и модель терялась
+      const picks = q.toString() !== '' ? stateFromQuery(q, byId).picks : {}
+      const base = last ?? DEFAULT_STATE
+      if (Object.keys(picks).length > 0) setState({ ...base, picks: { ...base.picks, ...picks } })
+      else if (last) setResume(last)
+    }
     setHydrated(true)
   }, [byId])
 
+  // Адрес и автосохранение — с задержкой: ползунок размера не пишет на каждом шаге.
+  // Пока видна плашка «Продолжить / Начать заново», прошлая кухня не перезаписывается.
+  const pendingSave = useRef<KitchenState | null>(null)
   useEffect(() => {
     if (!hydrated) return
+    pendingSave.current = resume ? null : state
     const timer = setTimeout(() => {
       window.history.replaceState(window.history.state, '', `${window.location.pathname}?${queryFromState(state)}`)
-    }, 300)
+      pendingSave.current = null
+      if (!resume) saveLast(state)
+    }, 400)
     return () => clearTimeout(timer)
-  }, [state, hydrated])
+  }, [state, hydrated, resume])
+  // Ушли со страницы раньше таймера — последняя правка всё равно сохраняется.
+  // Адрес здесь не трогаем: при переходе внутри сайта он уже чужой.
+  useEffect(() => {
+    const flush = () => {
+      const s = pendingSave.current
+      pendingSave.current = null
+      if (s) saveLast(s)
+    }
+    window.addEventListener('pagehide', flush)
+    return () => {
+      window.removeEventListener('pagehide', flush)
+      flush()
+    }
+  }, [])
 
   const query = queryFromState(state)
   const shareUrl = `${origin}/${lang}/kitchen?${query}`
@@ -522,7 +525,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     if ('item' in what) {
       // предмет встаёт ровно туда, куда его отпустили; соседние шкафы подстраиваются
       const key = what.item
-      if (apply({ arrangement: moveItem(order, key, wall, pos, positions), at: { ...frozen([key, ...companions(plan, key)]), [key]: pos } })) setMoving({ key })
+      if (apply({ arrangement: moveItem(order, key, wall, pos, positions), at: { ...frozen([key, ...companions(plan, key)]), [key]: pos } }, [key])) setMoving({ key })
       return
     }
     // обычный шкаф становится своим и встаёт туда, куда его отпустили
@@ -554,7 +557,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       key = pinned.id
       next = { ...state, arrangement: pinned.order, cabinets: pinned.cabinets as KitchenState['cabinets'], at: { ...frozen([]), [key]: pos } }
     }
-    const p = trial(next)
+    const p = trial(next, [key])
     const place = itemPositions(p)[key]
     if (!place || place.wall !== wall) {
       show([])
@@ -705,6 +708,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
           if (cancelled) return
           const kitchen = buildKitchen(buildInput)
           setSpec(kitchen.spec)
+          setHoodOver(kitchen.hoodOver)
           kitchen.dispose()
         })
         .catch(() => {
@@ -737,6 +741,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     prev.current = { style: state.style, tone: state.tone, shape: state.shape, ids }
     setBuilt(true)
     setSpec(engine.spec())
+    setHoodOver(engine.hoodOver())
     // Шкафу поменяли фасады или ширину — карточка остаётся на нём же, с
     // новыми размерами. Верхний шкаф ищем заново: его начало могло сдвинуться.
     let cab = editingRef.current
@@ -914,11 +919,12 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   const stateRef = useRef(state)
   stateRef.current = state
   const hist = useRef<{ past: KitchenState[]; future: KitchenState[]; at: number }>({ past: [], future: [], at: 0 })
-  const track = () => {
+  // from — что вернёт «Отменить», если это не текущая кухня (сохранённая с плашки)
+  const track = (from?: KitchenState) => {
     const h = hist.current
     const now = Date.now()
-    if (now - h.at > 600) {
-      h.past.push(stateRef.current)
+    if (from || now - h.at > 600) {
+      h.past.push(from ?? stateRef.current)
       if (h.past.length > 60) h.past.shift()
     }
     h.at = now
@@ -956,10 +962,34 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
    * остаётся): иначе всё стояло бы в прежних сантиметрах от угла, а весь
    * прирост стены уходил бы в один крайний шкаф.
    */
-  const resize = (patch: Partial<KitchenState>) => update({ ...patch, at: undefined })
+  const resize = (patch: Partial<KitchenState>) => {
+    // стена A стала короче острова — остров поджимается к ней (C14)
+    const island = patch.a !== undefined && state.island > patch.a ? { island: patch.a } : {}
+    update({ ...patch, ...island, at: undefined })
+  }
+
+  /** Продолжить сохранённую кухню (плашка при входе без адреса). */
+  const resumeLast = () => {
+    if (!resume) return
+    track()
+    setResume(null)
+    setState(resume)
+  }
+  /**
+   * Начать заново: кухня по умолчанию, отмена возвращает прежнюю. С плашки
+   * «Продолжить» прежняя — сохранённая кухня, а не то, что на экране (история 34).
+   */
+  const startOver = () => {
+    track(resume ?? undefined)
+    setResume(null)
+    setCartResult(null)
+    setState(DEFAULT_STATE)
+    setNote({ text: t.startedOver, act: { label: t.undo, run: undo } })
+  }
 
   /** Раскладка для пробы: что будет, если принять изменение. */
-  const trial = (s: KitchenState) => planKitchen(planInput(s, chosen), { shelves: style.shelves })
+  // snap — какие места прилипают к соседям: только то, что двигают сейчас (C16)
+  const trial = (s: KitchenState, snap: ItemKey[] = []) => planKitchen(planInputOf(s, chosen, snap), { shelves: style.shelves })
 
   /**
    * Все предметы остаются там, где стоят сейчас, кроме перечисленных: двигают
@@ -977,9 +1007,9 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
    * записываем туда, где предметы встали на самом деле: соседи и края стены
    * могли не пустить дальше.
    */
-  const apply = (patch: Partial<KitchenState>): boolean => {
+  const apply = (patch: Partial<KitchenState>, snap: ItemKey[] = []): boolean => {
     const next = { ...state, ...patch }
-    const p = trial(next)
+    const p = trial(next, snap)
     if (p.dropped.length > plan.dropped.length) {
       setToast(t.noRoom)
       return false
@@ -992,6 +1022,30 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     }
     update(patch)
     return true
+  }
+  /**
+   * Стиль ставится целиком — с его отделкой (своя отделка сбрасывается, тост
+   * с отменой). Мебель прошлого стиля («Колонны», «Портал»), которую
+   * покупатель не трогал, снимается (U07).
+   */
+  const pickStyle = (s: KitchenStyle) => {
+    if (s.id === state.style) return
+    const finish: Partial<KitchenState> = {
+      facade: undefined,
+      upperFacade: undefined,
+      top: undefined,
+      splash: undefined,
+      handle: undefined,
+      handleMetal: undefined,
+      handleless: undefined,
+    }
+    const own = (Object.keys(finish) as (keyof KitchenState)[]).some((k) => state[k] !== undefined)
+    const left: Partial<KitchenState> = {}
+    for (const [k, v] of Object.entries(style.layout ?? {}) as [keyof KitchenState, unknown][]) {
+      if (state[k] === v) Object.assign(left, { [k]: undefined })
+    }
+    update({ ...finish, ...left, style: s.id, tone: 0, ...(s.layout ?? {}) })
+    if (own) setNote({ text: t.styleFinish, act: { label: t.undo, run: undo } })
   }
   const setFront = (key: string, v: FrontVariant) => {
     track()
@@ -1076,9 +1130,9 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     // У левой стены и у острова ряд идёт справа налево — поэтому наоборот.
     const sign = (p.wall === 'B' || p.wall === 'I' ? -dir : dir) as 1 | -1
     const at = { ...frozen([key, ...companions(plan, key)]), [key]: p.center + sign * NUDGE }
-    const moved = itemPositions(trial({ ...state, arrangement: order, at }))[key]
+    const moved = itemPositions(trial({ ...state, arrangement: order, at }, [key]))[key]
     if (moved && moved.wall === p.wall && Math.abs(moved.center - p.center) >= 1) {
-      apply({ arrangement: order, at })
+      apply({ arrangement: order, at }, [key])
       return
     }
     // Упёрся: встаёт вплотную по ту сторону соседа.
@@ -1087,7 +1141,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     while (j >= 0 && j < list.length && !present.has(list[j])) j += sign
     const n = list[j] ? positions[list[j]] : undefined
     if (!n) return
-    apply({ arrangement: stepItem(order, key, sign, present), at: { ...frozen([key]), [key]: n.center + sign * (n.w / 2 + p.w / 2) } })
+    apply({ arrangement: stepItem(order, key, sign, present), at: { ...frozen([key]), [key]: n.center + sign * (n.w / 2 + p.w / 2) } }, [key])
   }
   // кнопку держат — сдвигается дальше, как клавиша на клавиатуре
   const nudgeRef = useRef(nudge)
@@ -1495,15 +1549,17 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     if (opening) requestAnimationFrame(() => reveal(document.getElementById(`kp-slot-${slot}`), 'steps'))
   }
 
+  // Кладём только то, чего в корзине ещё нет: второе нажатие не удваивает технику (U04).
   const addAll = () => {
     let ok = 0
     let failed = 0
-    for (const a of inProject) {
+    for (const a of missing) {
       if (cart.add(a.id, 'std', 1)) ok++
       else failed++
     }
     setCartResult({ ok, failed })
   }
+  const waText = whatsappText(project, state, shareUrl, lang)
 
   const download = (blob: Blob, name: string) => {
     const url = URL.createObjectURL(blob)
@@ -1595,7 +1651,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       await navigator.clipboard.writeText(shareUrl)
       setToast(t.linkCopied)
     } catch {
-      setToast(shareUrl)
+      setToast(t.copyFailed)
     }
   }
 
@@ -1630,13 +1686,13 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   const openVariant = (v: Variant) => {
     track()
     setCartResult(null)
-    setState(stateFromQuery(new URLSearchParams(v.q), new Set(byId.keys())))
+    setState(stateFromQuery(new URLSearchParams(v.q), byId))
     rootRef.current?.querySelector('.kp-work')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   /* ───────── проверка проекта ───────── */
 
-  const checks = useMemo(() => checkProject(plan), [plan])
+  const checks = useMemo(() => checkProject(plan, { hoodOver }), [plan, hoodOver])
   const checksOk = checks.filter((c) => c.level === 'ok').length
   const checkText = (c: Check): string => {
     switch (c.id) {
@@ -1652,8 +1708,13 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
         return c.level === 'ok' ? t.checks.sinkDwOk : t.checks.sinkDwWarn
       case 'sinkWindow':
         return t.checks.sinkWindow
-      case 'fits':
-        return c.level === 'ok' ? t.checks.fitsOk : t.checks.fitsWarn(c.count)
+      case 'fits': {
+        if (c.level === 'ok') return t.checks.fitsOk
+        // вытяжку над панелью у окна стена длиннее не спасёт — говорим про панель
+        const hoods = plan.dropped.filter((d) => d.slot === 'hood').length
+        const rest = c.count - hoods
+        return [hoods > 0 ? t.hoodNoPlace : '', rest > 0 ? t.checks.fitsWarn(rest) : ''].filter(Boolean).join(' ')
+      }
       case 'tallUnderWindow':
         return t.checks.tallUnderWindow
       case 'applianceWider':
@@ -1671,7 +1732,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       await navigator.clipboard.writeText(`${t.makerTitle}\n\n${makerText}\n\n${shareUrl}`)
       setToast(t.copied)
     } catch {
-      setToast(null)
+      setToast(t.listCopyFailed)
     }
   }
 
@@ -2466,6 +2527,11 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
             </div>
           )}
 
+          {engineState === 'ready' && built && !hint && !photo && (
+            <button type="button" className="kp-help" aria-label={t.helpShow} title={t.helpShow} onClick={() => setHint(true)}>
+              ?
+            </button>
+          )}
           {engineState === 'ready' && built && hint && !moving && !measure && !photo && (
             <p className="kp-hint">
               <span className="kp-hint__long">
@@ -2478,6 +2544,20 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
         </div>
 
         <aside className="kp-panel" aria-label={t.title} ref={panelRef}>
+          {resume && (
+            <div className="kp-resume" role="status">
+              <p>{t.resumeLead}</p>
+              <div className="kp-resume__row">
+                <button type="button" className="btn btn--primary btn--sm" onClick={resumeLast}>
+                  {t.resume}
+                </button>
+                <button type="button" className="btn btn--ghost btn--sm" onClick={startOver}>
+                  {t.startOver}
+                </button>
+              </div>
+            </div>
+          )}
+          <Dropped plan={plan} state={state} t={t} onFix={resize} />
           <nav className="kp-steps" aria-label={t.title} ref={stepsRef}>
             {STEPS.map((s, i) => (
               <button
@@ -2525,6 +2605,11 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
               </div>
             )}
 
+            {step === 'shape' && (
+              <button type="button" className="btn btn--ghost btn--sm kp-restart" onClick={startOver}>
+                {t.startOver}
+              </button>
+            )}
             {step === 'size' && (
               <div className="kp-sizes">
                 <PlanSketch plan={plan} labels={wallLabels} className="kp-sketch" />
@@ -2546,7 +2631,6 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                     onChange={(island) => resize({ island })}
                   />
                 )}
-                <Dropped plan={plan} state={state} t={t} onFix={update} />
 
                 <h2 className="kp-sub">{t.roomTitle}</h2>
                 <SizeField
@@ -2594,7 +2678,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                             role="radio"
                             aria-checked={state.style === s.id}
                             className="kp-style"
-                            onClick={() => update({ style: s.id, tone: 0, ...(s.layout ?? {}) })}
+                            onClick={() => pickStyle(s)}
                           >
                             <span className="kp-style__img" style={{ background: styleSwatch(s) }}>
                               {thumbs[s.id] && <img src={thumbs[s.id]} alt="" />}
@@ -2886,16 +2970,16 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
               </div>
             )}
 
-            {step === 'tech' && (
+            {step === 'size' && (
               <div className="kp-extra">
-                <h2 className="kp-sub kp-sub--first">{t.furnitureTitle}</h2>
+                <h2 className="kp-sub">{t.furnitureTitle}</h2>
                 {items.oven !== null && (
                   <div className="kp-oven">
                     <span className="kp-switch__text">
                       {t.ovenTitle}
                       <small>{mwBuiltIn && ovenPlace === 'tall' ? t.tallOvenLocked : t.ovenNote[ovenPlace]}</small>
                     </span>
-                    <div className="kp-seg kp-seg--wide" role="radiogroup" aria-label={t.ovenTitle}>
+                    <div className="kp-seg kp-seg--wide kp-seg--wrap" role="radiogroup" aria-label={t.ovenTitle}>
                       {(['hob', 'tall', 'apart'] as const).map((k) => (
                         <button
                           key={k}
@@ -2946,7 +3030,6 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                     onChange={(on) => update({ fridgeOpen: on ? undefined : true })}
                   />
                 )}
-                <h2 className="kp-sub">{t.steps.tech}</h2>
               </div>
             )}
 
@@ -2958,8 +3041,10 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                     slot={slot}
                     list={bySlot[slot]}
                     current={chosen[slot]}
-                    pickedNone={state.picks[slot] === null || (chosen[slot] === null && !CORE.includes(slot))}
-                    dropped={dropped.has(slot)}
+                    pickedNone={chosen[slot] === null && project.find((i) => i.slot === slot)?.status !== 'noStock'}
+                    status={project.find((i) => i.slot === slot)?.status}
+                    lang={lang}
+                    supplyHref={whatsappHref(phones[0], t.askSupplyText(t.slots[slot], shareUrl))}
                     open={open === slot}
                     style={style}
                     t={t}
@@ -2970,7 +3055,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
               </ul>
             )}
 
-            {step !== 'tech' ? (
+            {stepIndex < STEPS.length - 1 ? (
               <button type="button" className="btn btn--outline kp-next" onClick={() => goStep(STEPS[stepIndex + 1])}>
                 {t.next}: {t.steps[STEPS[stepIndex + 1]]}
                 <IconArrow />
@@ -2987,27 +3072,35 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
             <div className="kp-sum__row">
               <span className="kp-sum__label">
                 <span className="kp-sum__long">
-                  {t.total} · {t.pieces(inProject.length)}
+                  {t.total} · {t.pieces(totals.count)}
                 </span>
-                <span className="kp-sum__short">{t.totalShort(inProject.length)}</span>
+                <span className="kp-sum__short">{t.totalShort(totals.count)}</span>
               </span>
-              <span className="kp-sum__price">{formatSom(total)}</span>
+              <span className="kp-sum__price">{formatSom(totals.sum)}</span>
             </div>
-            {cartResult ? (
+            {cartResult || (totals.count > 0 && missing.length === 0) ? (
               <p className="kp-sum__done" role="status">
-                {cartResult.ok > 0 ? t.added(cartResult.ok) : t.addFailed}{' '}
-                {cartResult.ok > 0 && (
+                {cartResult && cartResult.ok > 0 ? t.added(cartResult.ok) : cartResult && cartResult.failed > 0 ? t.addFailed : t.allInCart}{' '}
+                {(!cartResult || cartResult.ok > 0 || cartResult.failed === 0) && (
                   <Link href={`/${lang}/cart`} className="kp-sum__link">
                     {t.toCart}
                   </Link>
                 )}
               </p>
             ) : (
-              <button type="button" className="btn btn--primary kp-sum__cta" disabled={inProject.length === 0} onClick={addAll}>
+              <button type="button" className="btn btn--primary kp-sum__cta" disabled={totals.count === 0} onClick={addAll}>
                 <span className="kp-sum__long">{t.addAll}</span>
                 <span className="kp-sum__short">{t.addAllShort}</span>
               </button>
             )}
+            <div className="kp-sum__ask">
+              <a className="btn btn--outline btn--sm kp-sum__wa" href={whatsappHref(phones[0], waText)} target="_blank" rel="noopener noreferrer">
+                {t.askWa}
+              </a>
+              <a className="btn btn--ghost btn--sm kp-sum__tel" href={telHref(phones[0])}>
+                {t.call}
+              </a>
+            </div>
             <p className="kp-sum__honest">{t.honest}</p>
           </div>
         </aside>
@@ -3142,10 +3235,10 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                 {saving ? (photo?.big ? t.photoBig(Math.round(photo.progress * 100)) : t.saving) : t.saveImage}
               </button>
             )}
-            <button type="button" className="btn btn--outline btn--sm" onClick={() => sendPdf('share')} disabled={pdfBusy} aria-busy={pdfBusy}>
+            <button type="button" className="btn btn--outline btn--sm" onClick={() => void share()}>
               {t.share}
             </button>
-            <a className="btn btn--ghost btn--sm" href={whatsappHref(phones[0], t.askText(shareUrl))} target="_blank" rel="noopener noreferrer">
+            <a className="btn btn--ghost btn--sm" href={whatsappHref(phones[0], waText)} target="_blank" rel="noopener noreferrer">
               {t.ask}
             </a>
           </div>
@@ -3278,11 +3371,15 @@ function SizeField({
 }) {
   const clamp = (v: number) => Math.min(max, Math.max(min, Math.round(v / 5) * 5))
   const [draft, setDraft] = useState(String(value))
+  /** число вышло за пределы — говорим, до чего поправили; округление до 5 не повод */
+  const [fixed, setFixed] = useState<number | null>(null)
   useEffect(() => setDraft(String(value)), [value])
   // Своё число — в пределах и кратно 5. Если после поправки оно совпало с
   // прежним, поле всё равно показывает поправленное, а не то, что набрали.
   const commit = () => {
-    const next = clamp(Number(draft) || value)
+    const typed = Number(draft)
+    const next = clamp(typed || value)
+    setFixed(typed && (typed < min || typed > max) ? next : null)
     setDraft(String(next))
     if (next !== value) onChange(next)
   }
@@ -3294,6 +3391,7 @@ function SizeField({
       <label className="kp-size__label" htmlFor={id}>
         {label}
         {note && <small>{note}</small>}
+        <small className="kp-size__limits">{t.range(min, max)}</small>
       </label>
       <div className="kp-size__row">
         <button type="button" className="kp-size__step" aria-label={`${t.less} ${label}`} onClick={() => onChange(clamp(value - 5))} disabled={value <= min}>
@@ -3333,66 +3431,101 @@ function SizeField({
         aria-label={label}
         onChange={(e) => onChange(Number(e.target.value))}
       />
-    </div>
-  )
-}
-
-function Dropped({ plan, state, t, onFix }: { plan: Plan; state: KitchenState; t: KitchenTexts; onFix: (p: Partial<KitchenState>) => void }) {
-  if (plan.dropped.length === 0) return null
-  const names = plan.dropped
-    .map((d) =>
-      d.slot ? t.slots[d.slot] : isCabinet(d.item) ? t.cabName(Math.round(state.cabinets?.[d.item]?.w ?? 60)) : d.item === 'tall' ? t.tallName : t.pantryName,
-    )
-    .filter((n, i, all) => all.indexOf(n) === i)
-    .join(', ')
-  const need = Math.ceil(Math.max(...plan.dropped.map((d) => d.need)) / 5) * 5
-  // удлиняем ту стену, где не поместилось
-  const wall = plan.dropped[0].wall
-  const key = wall === 'B' ? 'b' : wall === 'C' ? 'c' : wall === 'I' ? 'island' : 'a'
-  const next = state[key] + need
-  const fits = next <= LIMITS[key].max
-  return (
-    <div className="kp-warn" role="status">
-      <p>{t.dropped(names, need)}</p>
-      {fits && (
-        <button type="button" className="btn btn--outline btn--sm" onClick={() => onFix({ [key]: next })}>
-          {t.droppedFix(next)}
-        </button>
+      {fixed !== null && (
+        <p className="kp-size__fixed" role="status">
+          {t.clamped(fixed)}
+        </p>
       )}
     </div>
   )
 }
 
+/**
+ * Что не поместилось — на любом шаге. Нехватка считается по каждой стене
+ * отдельно, и кнопка называет стену, которую удлиняет (C04). Вытяжка над
+ * панелью у окна — не «удлините стену», а «перенесите панель».
+ */
+function Dropped({ plan, state, t, onFix }: { plan: Plan; state: KitchenState; t: KitchenTexts; onFix: (p: Partial<KitchenState>) => void }) {
+  if (plan.dropped.length === 0 && !plan.ovenMovedUnderHob) return null
+  const need = needByWall(plan)
+  const hood = plan.dropped.some((d) => d.slot === 'hood')
+  const nameOf = (d: Plan['dropped'][number]) =>
+    d.slot ? t.slots[d.slot] : isCabinet(d.item) ? t.cabName(Math.round(state.cabinets?.[d.item]?.w ?? 60)) : d.item === 'tall' ? t.tallName : t.pantryName
+  return (
+    <div className="kp-warn" role="status">
+      {plan.ovenMovedUnderHob && <p>{t.ovenUnderHob}</p>}
+      {hood && <p>{t.hoodNoPlace}</p>}
+      {(Object.keys(need) as RunId[]).map((wall) => {
+        const names = plan.dropped
+          .filter((d) => d.wall === wall && d.slot !== 'hood')
+          .map(nameOf)
+          .filter((n, i, all) => all.indexOf(n) === i)
+          .join(', ')
+        const n = Math.ceil((need[wall] ?? 0) / 5) * 5
+        const key = wall === 'B' ? 'b' : wall === 'C' ? 'c' : wall === 'I' ? 'island' : 'a'
+        const next = state[key] + n
+        // остров не длиннее стены A (C14)
+        const fits = next <= LIMITS[key].max && (key !== 'island' || next <= state.a)
+        return (
+          <div key={wall} className="kp-warn__row">
+            <p>{t.dropped(names, n)}</p>
+            {fits && (
+              <button type="button" className="btn btn--outline btn--sm" onClick={() => onFix({ [key]: next })}>
+                {t.droppedFix(wall, next)}
+              </button>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 function SlotRow(props: {
+  status?: ItemStatus
+  lang: string
+  supplyHref: string
   slot: SlotKind
   list: KitchenAppliance[]
   current: KitchenAppliance | null | undefined
   pickedNone: boolean
-  dropped: boolean
   open: boolean
   style: KitchenStyle
   t: KitchenTexts
   onToggle: () => void
   onPick: (id: string | null) => void
 }) {
-  const { slot, list, current, pickedNone, dropped, open, style, t } = props
+  const { slot, list, current, pickedNone, status, open, style, t } = props
   const size = (a: KitchenAppliance) =>
     (a.slot === 'fridge' || a.slot === 'washer' ? `${fmt(a.w)}×${fmt(a.h)} ${t.cm}` : `${t.width} ${fmt(a.w)} ${t.cm}`) +
     (a.sizeKnown ? '' : ` · ${t.typicalSize}`)
-  const none = pickedNone || current === null
+  const none = pickedNone
   const optional = OPTIONAL.includes(slot)
   const listId = `kp-opts-${slot}`
   return (
-    <li className={`kp-slot${open ? ' is-open' : ''}${dropped ? ' is-dropped' : ''}`} id={`kp-slot-${slot}`}>
+    <li className={`kp-slot${open ? ' is-open' : ''}${status === 'dropped' ? ' is-dropped' : ''}`} id={`kp-slot-${slot}`}>
       <button type="button" className="kp-slot__head" aria-expanded={open} aria-controls={listId} onClick={props.onToggle}>
         <span className="kp-slot__thumb">{current?.image && !none ? <img src={current.image} alt="" loading="lazy" /> : <SlotIcon slot={slot} />}</span>
         <span className="kp-slot__text">
           <span className="kp-slot__kind">{t.slots[slot]}</span>
-          <span className="kp-slot__name">{none ? t.none : current ? current.name : t.soon}</span>
-          {dropped && <span className="kp-slot__warn">{t.notFit}</span>}
+          <span className="kp-slot__name">{none ? t.none : current ? current.name : t.noStock}</span>
+          {status === 'dropped' && <span className="kp-slot__warn">{t.notFit}</span>}
+          {status === 'counter' && <span className="kp-slot__note">{t.counterNote}</span>}
+          {status === 'underHob' && <span className="kp-slot__note">{t.ovenPlace.hob}</span>}
+          {status === 'typical' && <span className="kp-slot__note">{t.typicalNote}</span>}
         </span>
         <span className="kp-slot__price">{current && !none ? formatSom(current.price) : ''}</span>
       </button>
+      {current && !none && (
+        <a className="kp-slot__more" href={`/${props.lang}/product/${current.id}`} target="_blank" rel="noopener noreferrer">
+          {t.details}
+        </a>
+      )}
+      {!current && !none && (
+        <a className="kp-slot__more kp-slot__supply" href={props.supplyHref} target="_blank" rel="noopener noreferrer">
+          {t.askSupply}
+        </a>
+      )}
       {open && (
         <div className="kp-opts" id={listId} role="radiogroup" aria-label={t.slots[slot]}>
           {optional && (
@@ -3406,13 +3539,25 @@ function SlotRow(props: {
               </span>
             </label>
           )}
-          {list.length === 0 && <p className="kp-note">{t.soon}</p>}
+          {list.length === 0 && (
+            <p className="kp-note">
+              {t.noStock}.{' '}
+              {none && (
+                <a className="kp-slot__supply" href={props.supplyHref} target="_blank" rel="noopener noreferrer">
+                  {t.askSupply}
+                </a>
+              )}
+            </p>
+          )}
           {list.map((a) => (
             <label key={a.id} className="kp-opt">
               <input type="radio" name={listId} checked={!none && current?.id === a.id} onChange={() => props.onPick(a.id)} />
               <span className="kp-opt__thumb">{a.image ? <img src={a.image} alt="" loading="lazy" /> : <SlotIcon slot={slot} />}</span>
               <span className="kp-opt__text">
                 <span className="kp-opt__name">{a.name}</span>
+                <a className="kp-opt__more" href={`/${props.lang}/product/${a.id}`} target="_blank" rel="noopener noreferrer">
+                  {t.details}
+                </a>
                 <span className="kp-opt__meta">
                   {size(a)}
                   {slot === 'dishwasher' && a.builtIn && ` · ${t.hidden}`}

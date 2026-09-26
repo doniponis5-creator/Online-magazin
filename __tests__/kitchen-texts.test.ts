@@ -80,8 +80,9 @@ describe('тексты конструктора — правки аудита T0
   it('T05, T06: размер «примерный», пустой слот не обещает типовую модель', () => {
     expect(ru.typicalSize).toMatch(/примерн/)
     expect(ky.typicalSize).toMatch(/болжолдуу/)
-    expect(ru.soon).toBe('Сейчас нет в наличии — спросите о поставке')
-    expect(ky.soon).not.toMatch(/типтүү/)
+    // пустой слот: «Сейчас нет в наличии» + «Спросить о поставке» (история 42)
+    expect([ru.noStock, ru.askSupply]).toEqual(['Сейчас нет в наличии', 'Спросить о поставке'])
+    expect(`${ky.noStock} ${ky.askSupply}`).not.toMatch(/типтүү/)
   })
 
   it('T08: при замечаниях счёт не звучит как похвала', () => {

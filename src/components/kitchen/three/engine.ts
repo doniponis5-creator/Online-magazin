@@ -747,6 +747,11 @@ export class KitchenEngine {
     return this.built?.spec ?? null
   }
 
+  /** Высота низа вытяжки над варочной панелью в 3D, см; вытяжки нет — undefined. */
+  hoodOver(): number | undefined {
+    return this.built?.hoodOver
+  }
+
   private dimsOwner(o: THREE.Object3D | null): THREE.Object3D | null {
     for (let cur = o; cur && cur !== this.built?.root; cur = cur.parent) if (cur.userData.dims) return cur
     return null
@@ -857,9 +862,10 @@ export class KitchenEngine {
     // планку уже 15 см не таскаем: своим шкафом она стала бы шире — только выбрать
     else if (pick.cab?.row === 'base' && pick.dims && pick.dims.w >= 15) what = { cab: pick.cab, w: pick.dims.w }
     if (!what) return
-    // Мышью тянут сразу. Пальцем — сразу только выбранное: иначе одним
-    // пальцем нельзя было бы повернуть кухню, ведь почти везде шкафы.
-    if (e.pointerType === 'mouse' || this.grab === this.keyOf(what)) {
+    // Сразу тянут только выбранное — и мышью, и пальцем: почти везде под
+    // указателем шкаф, и иначе кухню нельзя было бы повернуть — она ломалась
+    // бы при первом движении. Невыбранное мышью — поворот кухни.
+    if (this.grab === this.keyOf(what)) {
       this.controls.enabled = false
       this.press = { what, x: e.clientX, y: e.clientY, id: e.pointerId }
       // отпустят за краем 3D — «отпускание» всё равно придёт сюда, и вращение вернётся
@@ -870,6 +876,7 @@ export class KitchenEngine {
       }
       return
     }
+    if (e.pointerType === 'mouse') return
     const target = what
     const timer = window.setTimeout(() => this.startDrag(target, e), HOLD_MS)
     this.hold = { timer }
@@ -921,8 +928,9 @@ export class KitchenEngine {
     this.hoverFrame = requestAnimationFrame(() => {
       const hit = this.hit(e)
       const pk = this.pickOf(hit)
-      // шкаф и технику можно тащить — «перенести»; дверцу — открыть; мимо — вращать
-      const movable = pk.item || pk.cab?.row === 'base'
+      // выбранный шкаф и технику можно тащить — «перенести»; остальное — выбрать или открыть; мимо — вращать
+      const key = pk.item ?? (pk.cab?.row === 'base' ? pk.cab.key : null)
+      const movable = key !== null && key === this.grab
       this.renderer.domElement.style.cursor = movable ? 'move' : pk.slot || pk.cab || this.openableOf(hit?.object ?? null) ? 'pointer' : 'grab'
     })
   }
