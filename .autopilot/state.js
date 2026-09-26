@@ -11,7 +11,7 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-26T22:48:52+06:00",
-  "updatedAt": "2026-09-27T01:28:52+06:00",
+  "updatedAt": "2026-09-27T02:09:21+06:00",
   "finishedAt": null,
   "stages": [
     {
@@ -49,13 +49,13 @@ window.STATE =
       "id": "build",
       "status": "active",
       "startedAt": "2026-09-26T23:37:00+06:00",
-      "note": "5 из 7 тасков готовы"
+      "note": "6 из 7 тасков готовы"
     },
     {
       "id": "review",
       "status": "active",
       "startedAt": "2026-09-26T23:45:48+06:00",
-      "note": "проверено 5 из 7"
+      "note": "проверено 6 из 7"
     },
     {
       "id": "final",
@@ -306,11 +306,36 @@ window.STATE =
         "src/components/kitchen/kitchen.css",
         "src/components/kitchen/texts.ts"
       ],
-      "status": "in-progress",
+      "status": "done",
       "retries": 0,
-      "repairs": 0,
+      "repairs": 2,
       "handoffs": 0,
-      "startedAt": "2026-09-27T01:28:52+06:00"
+      "startedAt": "2026-09-27T01:28:52+06:00",
+      "repairFindings": [
+        "проход 108 вместо 110 — между разными гранями; литералы глубин",
+        "подоконник/верх окна печатаются как размеры, покупатель не вводил",
+        "«М 1:N» печатается при ужатом рисунке",
+        "верх в «что где стоит» без углового захода (205 ≠ 240)",
+        "U11 без теста",
+        "тесты угла и ширины подписи — по построению",
+        "PDF в отчёте не из финального кода",
+        "makerList: окно разбито на три записи; пустое место не над окном названо «окно»"
+      ],
+      "finishedAt": "2026-09-27T02:09:21+06:00",
+      "commit": "27d19e7",
+      "tests": {
+        "passed": 370,
+        "failed": 0
+      },
+      "files": [
+        "src/components/kitchen/drawing.ts",
+        "src/components/kitchen/pdfSheet.ts",
+        "src/components/kitchen/PlanSketch.tsx",
+        "src/components/kitchen/KitchenPlanner.tsx",
+        "src/components/kitchen/kitchen.css",
+        "src/components/kitchen/texts.ts",
+        "__tests__/kitchen-drawing.test.ts"
+      ]
     },
     {
       "id": "07",
@@ -330,15 +355,16 @@ window.STATE =
         "src/components/kitchen/texts.ts",
         "graphify-out/"
       ],
-      "status": "pending",
+      "status": "in-progress",
       "retries": 0,
       "repairs": 0,
-      "handoffs": 0
+      "handoffs": 0,
+      "startedAt": "2026-09-27T02:09:21+06:00"
     }
   ],
   "singlePass": null,
   "tests": {
-    "passed": 355,
+    "passed": 370,
     "failed": 0
   },
   "debt": {
@@ -387,7 +413,10 @@ window.STATE =
     "T05 · order.ts:10 — lib импортирует kitchenTexts из components",
     "T05 · kitchen-order.test.ts — KY-текст WhatsApp проверен частично, пометка «под варочной панелью» не проверена",
     "T05 · order.ts wanted() — угадывает «слот по умолчанию» через подставную технику в defaultPick; нужна явная функция в catalog.ts",
-    "T05 · правки при видимой плашке «Продолжить» не возвращаются отменой после «Начать заново»"
+    "T05 · правки при видимой плашке «Продолжить» не возвращаются отменой после «Начать заново»",
+    "T06 · __tests__/kitchen-drawing.test.ts — 400 сборок при загрузке модуля (6,5 с)",
+    "T06 · pdfSheet.ts fillText — хвостик «ң» подобран под Manrope; при смене шрифта перепроверить глазами",
+    "T06 · drawing.ts — зазор «потолок − 25» до верха окна вписан числом (копия H − 0.25 из build.ts); WINDOW и зазор лучше держать в лёгком общем модуле (layout.ts) без динамического импорта build"
   ],
   "reviewers": {
     "manifestSpec": "a30dafafe6ec2f04c",
