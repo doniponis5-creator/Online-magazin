@@ -148,6 +148,10 @@ export class KitchenEngine {
   private composer: EffectComposer | null = null
   private built: Built | null = null
   private input: BuildInput | null = null
+  /** предел приближения до подлёта к технике (focus) — вернуть при снятии выбора; вид ставит свой */
+  private focusMin: number | null = null
+  /** пределы поворота до подлёта: у острова фасад смотрит к стене, это «сзади» для обычного обзора */
+  private focusAz: [number, number] | null = null
   private tweens: Tween[] = []
   private raf = 0
   private evening = false
@@ -591,6 +595,9 @@ export class KitchenEngine {
     }
     this.controls.minDistance = dist * 0.35
     this.controls.maxDistance = dist * 1.6
+    this.focusMin = null
+    if (this.focusAz) [this.controls.minAzimuthAngle, this.controls.maxAzimuthAngle] = this.focusAz
+    this.focusAz = null
     if (mode === 'instant' || this.reduced) {
       this.camera.position.copy(pos)
       this.controls.target.copy(target)
@@ -601,7 +608,7 @@ export class KitchenEngine {
     this.glideTo(pos, target)
   }
 
-  private glideTo(pos: THREE.Vector3, target: THREE.Vector3) {
+  private glideTo(pos: THREE.Vector3, target: THREE.Vector3, done?: () => void) {
     const fromPos = this.camera.position.clone()
     const fromTarget = this.controls.target.clone()
     const tween: Tween & { camera: boolean } = {
@@ -613,6 +620,7 @@ export class KitchenEngine {
         this.camera.position.lerpVectors(fromPos, pos, k)
         this.controls.target.lerpVectors(fromTarget, target, k)
       },
+      done,
     }
     this.tweens = this.tweens.filter((t) => !(t as Tween & { camera?: boolean }).camera)
     this.tweens.push(tween)
@@ -635,21 +643,100 @@ export class KitchenEngine {
     this.frame('glide')
   }
 
-  /** Подлететь к технике, чтобы её было хорошо видно. */
+  /**
+   * Подлететь к технике, чтобы её было хорошо видно. Камера встаёт в комнате
+   * напротив фасада ряда, где стоит техника: направление — лицо ряда из плана
+   * (поворот `rot`), чуть в сторону открытого края комнаты. Так у острова камера
+   * встаёт со стороны кухни, а не стульев, у боковой стены — со стороны комнаты.
+   */
   focus(slot: SlotKind) {
     const p = this.built?.anchors[slot]
-    if (!p || this.reduced) return
-    const dir = this.camera.position.clone().sub(this.controls.target).normalize()
+    if (!p || this.reduced || !this.input) return
     const target = p.clone()
-    const pos = target.clone().add(dir.multiplyScalar(3.3))
-    pos.y = Math.max(pos.y, 1.3)
+    if (this.view === 'top') {
+      const dir = this.camera.position.clone().sub(this.controls.target).normalize()
+      const pos = target.clone().add(dir.multiplyScalar(3.3))
+      pos.y = Math.max(pos.y, 1.3)
+      return this.glideTo(pos, target)
+    }
+    const W = this.input.plan.room.w / 100
+    const D = this.input.plan.room.d / 100
+    const rot = this.runOf(slot, p)?.rot ?? 0
+    // build.ts: ряд повёрнут на rot, фасады смотрят в его локальную +z, ряд идёт по +x
+    const face = new THREE.Vector3(Math.sin(rot), 0, Math.cos(rot))
+    const along = new THREE.Vector3(Math.cos(rot), 0, -Math.sin(rot))
+    const toViewer = new THREE.Vector3(W / 2 - p.x, 0, D - p.z)
+    const dir = face.addScaledVector(along, 0.3 * Math.sign(along.dot(toViewer))).normalize()
+    // не дальше 2,2 м и не за стенами: 40 см до стен, 30 см за открытым краем
+    let dist = 2.2
+    if (dir.x > 0) dist = Math.min(dist, (W - 0.4 - p.x) / dir.x)
+    if (dir.x < 0) dist = Math.min(dist, (p.x - 0.4) / -dir.x)
+    if (dir.z > 0) dist = Math.min(dist, (D + 0.3 - p.z) / dir.z)
+    if (dir.z < 0) dist = Math.min(dist, (p.z - 0.4) / -dir.z)
+    dist = Math.max(dist, 1.2)
+    const pos = target.clone().addScaledVector(dir, dist)
+    pos.y = Math.max(target.y + 0.7, 1.3)
+    // прежний предел приближения запоминаем один раз — повторный подлёт его не уменьшает
+    this.focusMin ??= this.controls.minDistance
+    this.controls.minDistance = Math.min(this.focusMin, pos.distanceTo(target) * 0.8)
+    // пока смотрим на технику, поворот — в тех же пределах, но вокруг направления на фасад
+    this.focusAz ??= [this.controls.minAzimuthAngle, this.controls.maxAzimuthAngle]
+    const half = (this.focusAz[1] - this.focusAz[0]) / 2
+    const az = Math.atan2(dir.x, dir.z)
+    this.controls.minAzimuthAngle = az - half
+    this.controls.maxAzimuthAngle = az + half
     this.glideTo(pos, target)
   }
 
-  /* ───────── выбор ───────── */
+  /** Ряд, где стоит техника: из плана; вытяжка — над варочной; иначе ближайший ряд к точке. */
+  private runOf(slot: SlotKind, p: THREE.Vector3): BuildInput['plan']['runs'][number] | undefined {
+    const plan = this.input!.plan
+    const id = (plan.placed[slot] ?? (slot === 'hood' ? plan.placed.hob : undefined))?.run
+    const byId = id ? plan.runs.find((r) => r.id === id) : undefined
+    if (byId) return byId
+    let best: BuildInput['plan']['runs'][number] | undefined
+    let bestD = Infinity
+    for (const r of plan.runs) {
+      const ax = r.ox / 100
+      const az = r.oz / 100
+      const ux = Math.cos(r.rot)
+      const uz = -Math.sin(r.rot)
+      const t = Math.max(0, Math.min(r.length / 100, (p.x - ax) * ux + (p.z - az) * uz))
+      const d = Math.hypot(p.x - ax - ux * t, p.z - az - uz * t)
+      if (d < bestD) {
+        bestD = d
+        best = r
+      }
+    }
+    return best
+  }
+
+  /**
+   * Выбор снят — предел приближения и пределы поворота возвращаются к тем, что
+   * были до подлёта. Камера ближе предела — плавно отъезжает по тому же лучу;
+   * смотрела с другой стороны (фасад острова) — плавно возвращается к виду.
+   */
+  private releaseFocus() {
+    const min = this.focusMin
+    const az = this.focusAz
+    if (min === null && !az) return
+    const target = this.controls.target.clone()
+    const s = new THREE.Spherical().setFromVector3(this.camera.position.clone().sub(target))
+    if (az && !this.reduced && (s.theta < az[0] || s.theta > az[1])) return this.frame('glide')
+    const restore = () => {
+      if (min !== null) this.controls.minDistance = min
+      if (az) [this.controls.minAzimuthAngle, this.controls.maxAzimuthAngle] = az
+      this.focusMin = null
+      this.focusAz = null
+    }
+    if (this.reduced || min === null || s.radius >= min) return restore()
+    s.radius = min
+    this.glideTo(new THREE.Vector3().setFromSpherical(s).add(target), target, restore)
+  }
 
   setSelected(slot: SlotKind | null) {
     this.selected = slot
+    if (!slot) this.releaseFocus()
     if (this.outline) {
       this.scene.remove(this.outline)
       this.outline.geometry.dispose()

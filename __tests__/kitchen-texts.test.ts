@@ -108,8 +108,17 @@ describe('тексты конструктора — правки аудита T0
     expect(SPLASH_GROUPS.find((g) => g.id === 'tile')?.noteKy).toBe('Кабанчик плитка, зеллиж, кыш')
   })
 
-  it('T18: одно действие — одно название', () => {
-    expect(ru.photoSave).toBe(ru.saveImage)
-    expect(ky.photoSave).toBe(ky.saveImage)
+  it('T18, U17: одно действие «Сохранить фото» — одно название, второй кнопки нет', () => {
+    expect(ru.photoSave).toBe('Сохранить фото')
+    expect(ky.photoSave).toBe('Сүрөттү сактоо')
+    expect('saveImage' in ru).toBe(false)
+    expect('saveImage' in ky).toBe(false)
+  })
+
+  it('R13i: фото не пошло — подсказка называет ту кнопку «Сохранить фото», что есть на экране', () => {
+    expect(ru.photoFailed).toContain('«Сохранить фото»')
+    expect(ky.photoFailed).toContain('«Сүрөттү сактоо»')
+    expect(ru.photoFailed).not.toMatch(/ниже/)
+    expect(ky.photoFailed).not.toMatch(/Төмөндө/)
   })
 })

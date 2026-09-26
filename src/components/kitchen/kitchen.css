@@ -3604,3 +3604,72 @@ html.kp-lock body {
   white-space: normal;
   line-height: 1.2;
 }
+
+/* ───────── таск 07: доводка ───────── */
+
+/* Кнопки сегментов и шагов стоят в плотном ряду: рамка фокуса — внутри
+   кнопки, иначе её режет край ряда и она наезжает на соседнюю. */
+.kp-seg__btn:focus-visible,
+.kp-steps__btn:focus-visible {
+  outline-offset: -3px;
+}
+
+/* Цвет ручек: кружок остаётся кружком и в фокусе, а попасть пальцем
+   можно в квадрат 44 px; выбранный цвет подписан словом рядом с заголовком. */
+.kp-metal {
+  position: relative;
+}
+
+.kp-metal::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+}
+
+.kp-metal:focus-visible {
+  border-radius: 50%;
+  outline-offset: 3px;
+}
+
+.kp-metals__label b {
+  font-weight: 700;
+  color: var(--kp-ink);
+}
+
+/* Кнопка фото «Готовим фото…» — видно, что идёт работа. */
+.kp-photo__save[aria-busy='true'] {
+  cursor: progress;
+}
+
+/* На телефоне обе кнопки плашки «Продолжить» — в одну строку: так
+   «Начать заново» не уходит вниз под полоску корзины сайта. Тот же запрос,
+   что STACKED в KitchenPlanner.tsx. */
+@media (max-width: 900px) and (min-height: 521px) {
+  .kp-resume__row {
+    flex-wrap: nowrap;
+    align-items: stretch;
+  }
+
+  .kp-resume__row .btn {
+    height: auto;
+    min-height: 44px;
+    padding-block: 6px;
+    white-space: normal;
+    line-height: 1.25;
+    text-align: center;
+  }
+
+  .kp-resume__row .btn--primary {
+    flex: 1 1 auto;
+  }
+}
+
+/* На компьютере полоска корзины сайта стоит по центру внизу (24 px от края,
+   высота около 70 px). Пока она видна, кнопка консультанта в углу сцены
+   встаёт над ней, а не поверх «Оформить». Саму полоску не трогаем. */
+@media (min-width: 901px) {
+  html.kp-over .cart-bar ~ .assistant {
+    bottom: calc(24px + 70px + 12px);
+  }
+}

@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyEvent } from 'react'
 import { phones, telHref, whatsappHref } from '@/data/contacts'
 import { useCart } from '@/lib/cart/CartProvider'
 import { formatSom } from '@/lib/format'
@@ -196,6 +196,43 @@ async function shareFile(file: File, text: string, title: string): Promise<'ok' 
  */
 const STACKED = '(max-width: 900px) and (min-height: 521px)'
 const isStacked = () => window.matchMedia(STACKED).matches
+
+/**
+ * Группы выбора (role=radio и role=tab) ходят стрелками, как обычные
+ * радиокнопки: ←/→/↑/↓ — соседний вариант, Home/End — крайние. Выбор сразу
+ * применяется, фокус переезжает на выбранное. Tab заходит в группу один раз.
+ */
+const GROUP_OF: Record<string, string> = { radio: 'radiogroup', tab: 'tablist' }
+const CHECKED_OF: Record<string, string> = { radio: 'aria-checked', tab: 'aria-selected' }
+function groupItems(group: Element, role: string): HTMLElement[] {
+  return Array.from(group.querySelectorAll<HTMLElement>(`[role="${role}"]`)).filter(
+    (el) => el.closest(`[role="${GROUP_OF[role]}"]`) === group && !(el as HTMLButtonElement).disabled,
+  )
+}
+function groupKeys(e: ReactKeyEvent<HTMLElement>) {
+  const el = e.target as HTMLElement
+  const role = el.getAttribute('role') ?? ''
+  if (!GROUP_OF[role] || e.altKey || e.ctrlKey || e.metaKey) return
+  const step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0
+  if (!step && e.key !== 'Home' && e.key !== 'End') return
+  const group = el.closest(`[role="${GROUP_OF[role]}"]`)
+  const items = group ? groupItems(group, role) : []
+  const i = items.indexOf(el)
+  if (i < 0 || items.length < 2) return
+  // стрелка в группе — выбор варианта, а не сдвиг шкафа (обработчик окна)
+  e.preventDefault()
+  e.stopPropagation()
+  const next = e.key === 'Home' ? items[0] : e.key === 'End' ? items[items.length - 1] : items[(i + step + items.length) % items.length]
+  next.focus()
+  if (next.getAttribute(CHECKED_OF[role]) !== 'true') next.click()
+}
+/** Остановка Tab в группе — выбранный вариант (или первый), остальные — стрелками. */
+function roving(group: Element) {
+  const role = group.getAttribute('role') === 'tablist' ? 'tab' : 'radio'
+  const items = groupItems(group, role)
+  const on = items.find((el) => el.getAttribute(CHECKED_OF[role]) === 'true') ?? items[0]
+  for (const el of items) el.tabIndex = el === on ? 0 : -1
+}
 /** Невысокий экран — телефон боком: конструктор встаёт ровно в экран. Тот же запрос — в kitchen.css. */
 const isShort = () => window.matchMedia('(max-height: 520px)').matches
 const smooth = (): ScrollBehavior => (window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth')
@@ -254,6 +291,8 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   const [menu, setMenu] = useState(false)
   /** фото трассировкой лучей: null — обычное 3D */
   const [photo, setPhoto] = useState<PhotoState | null>(null)
+  /** трассировка на этом устройстве не пошла: панель фото остаётся, «Сохранить фото» даёт обычную картинку 4K */
+  const [photoFallback, setPhotoFallback] = useState(false)
   /** номер запуска 3D: после сброса видеокарты 3D создаётся заново */
   const [engineKey, setEngineKey] = useState(0)
   /** сколько раз 3D пришлось запускать заново, пока страница была на экране */
@@ -261,6 +300,30 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   const [fail3d, setFail3d] = useState<Fail3d | null>(null)
 
   const rootRef = useRef<HTMLDivElement>(null)
+  // в каждой группе выбора одна остановка Tab (см. groupKeys). Пересчёт — только
+  // когда группа появилась, в ней сменились варианты или выбранный: перетаскивание,
+  // ползунок и прогресс фото эти атрибуты не трогают и DOM не обходят.
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+    const GROUPS = '[role="radiogroup"], [role="tablist"]'
+    root.querySelectorAll(GROUPS).forEach(roving)
+    const mo = new MutationObserver((list) => {
+      const touched = new Set<Element>()
+      for (const m of list) {
+        const g = (m.target as Element).closest?.(GROUPS)
+        if (g) touched.add(g)
+        for (const n of m.addedNodes) {
+          if (!(n instanceof Element)) continue
+          if (n.matches(GROUPS)) touched.add(n)
+          n.querySelectorAll(GROUPS).forEach((x) => touched.add(x))
+        }
+      }
+      touched.forEach(roving)
+    })
+    mo.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['aria-checked', 'aria-selected', 'disabled'] })
+    return () => mo.disconnect()
+  }, [])
   // stageRef — весь прилипший блок (3D + полоса видов на телефоне);
   // hostRef — только та его часть, где рисует движок: он меряет свой размер
   // по этому элементу, и полоса под холстом не должна попадать в кадр.
@@ -655,6 +718,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   const wallColor = WALL_COLORS[state.wallColor ?? 0]?.color ?? null
   // Ручки: «без ручек» — профиль Gola; иначе выбранные или те, что у стиля.
   const handleless = state.handleless ?? style.handle === 'gola'
+  const metal = HANDLE_METALS.find((m) => m.id === (state.handleMetal ?? style.metal))
   const handle: HandleKind = handleless ? 'gola' : (state.handle ?? (style.handle === 'gola' ? 'rail' : style.handle))
   const topSel = topChoice(state.top)
   const splashSel = splashChoice(state.splash)
@@ -1581,15 +1645,20 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       engine.stopPhoto()
       return
     }
+    if (photoFallback) {
+      setPhotoFallback(false)
+      return
+    }
     closeSelection()
     setMenu(false)
     setHint(false)
     const res = await engine.startPhoto(setPhoto)
-    if (res === 'failed') setToast(t.photoFailed)
+    // панель остаётся: «Сохранить фото» в ней сохранит обычную картинку 4K
+    if (res === 'failed') setPhotoFallback(true)
   }
 
   /**
-   * Большое фото 4K файлом. Трассировка на этом устройстве не работает —
+   * Большое фото 4K файлом. На телефоне и там, где трассировка не работает, —
    * обычная картинка 4K. Фото отменили крестиком — ничего не скачиваем.
    */
   const savePhoto = async () => {
@@ -1597,27 +1666,26 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     if (!engine || saving) return
     setSaving(true)
     let blob: Blob | null = null
-    const started = engine.isPhoto() ? 'ok' : await engine.startPhoto(setPhoto)
+    // Телефон — сразу лёгкий путь: большое фото трассировкой копится там
+    // долго и может не поместиться в память. Трассировка уже не пошла —
+    // тоже он, без второй попытки.
+    const light = photoFallback || window.matchMedia('(pointer: coarse)').matches
+    const started = light ? 'failed' : engine.isPhoto() ? 'ok' : await engine.startPhoto(setPhoto)
     if (started === 'ok') blob = await engine.photoBig()
-    else if (started === 'failed') blob = await engine.snapshot4k()
+    else if (started === 'failed') {
+      // не пошла только что — панель остаётся с обычной картинкой
+      if (!light) setPhotoFallback(true)
+      // даём кнопке показать «Готовим фото…», потом рисуем
+      await new Promise((r) => setTimeout(r, 30))
+      blob = await engine.snapshot4k()
+    }
     setSaving(false)
-    if (blob) download(blob, 'smarket-kitchen-photo-4k.jpg')
+    if (!blob) return
+    download(blob, started === 'ok' ? 'smarket-kitchen-photo-4k.jpg' : 'smarket-kitchen-4k.jpg')
+    // во встроенном браузере Instagram или Telegram файл часто молча не сохраняется
+    if (inAppBrowser()) setToast(t.photoInApp)
   }
 
-  const saveImage = async () => {
-    const engine = engineRef.current
-    if (!engine || saving) return
-    // На компьютере картинка — сразу фото трассировкой лучей. На телефоне —
-    // только если фото уже включено: большой кадр там копится долго и может
-    // не поместиться в память.
-    if (engine.isPhoto() || !window.matchMedia('(pointer: coarse)').matches) return savePhoto()
-    setSaving(true)
-    // даём кнопке показать «Готовим 4K…», потом рисуем
-    await new Promise((r) => setTimeout(r, 30))
-    const blob = await engine.snapshot4k()
-    setSaving(false)
-    if (blob) download(blob, 'smarket-kitchen-4k.jpg')
-  }
 
   const closeMeasure = () => {
     setMeasure(null)
@@ -2036,7 +2104,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     : toneSwatch(tone.upper ?? tone.facade, undefined, tone.upper ? tone.upperTexture : tone.texture)
 
   return (
-    <div className={`kp${full ? ' kp--full' : ''}${full && fullPanel ? ' is-panel' : ''}`} ref={rootRef}>
+    <div className={`kp${full ? ' kp--full' : ''}${full && fullPanel ? ' is-panel' : ''}`} ref={rootRef} onKeyDown={groupKeys}>
       <header className="kp-head">
         <h1 className="kp-head__title">{t.title}</h1>
         <p className="kp-head__lead">{t.lead}</p>
@@ -2186,7 +2254,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
             с подписями: значки без слов покупателю непонятны.
           */}
           {engineState === 'ready' && (
-            <div className="kp-tools" role="toolbar" aria-label={t.viewLabel} ref={toolsRef}>
+            <div className="kp-tools" role="toolbar" aria-label={t.toolsLabel} ref={toolsRef}>
               <div className="kp-seg kp-views" role="radiogroup" aria-label={t.viewLabel}>
                 {(['angle', 'eye', 'front', 'top'] as View[]).map((v) => (
                   <button key={v} type="button" role="radio" aria-checked={view === v} className="kp-seg__btn" onClick={() => changeView(v)}>
@@ -2217,8 +2285,8 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
               <button
                 type="button"
                 className="kp-toggle kp-tools__photo"
-                aria-pressed={Boolean(photo)}
-                title={photo ? t.photoExit : t.photoTitle}
+                aria-pressed={Boolean(photo || photoFallback)}
+                title={photo || photoFallback ? t.photoExit : t.photoTitle}
                 onClick={togglePhoto}
               >
                 <IconCamera />
@@ -2518,7 +2586,20 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
             </div>
           )}
 
-          {/* фото: сколько готово, скачать 4K, выйти */}
+          {/* фото: сколько готово, скачать 4K, выйти; трассировка не пошла — обычная картинка 4K */}
+          {!photo && photoFallback && (
+            <div className="kp-photo" role="status" aria-live="polite">
+              <span className="kp-photo__info">
+                <span className="kp-photo__text">{t.photoFailed}</span>
+              </span>
+              <button type="button" className="kp-photo__save" disabled={saving} aria-busy={saving} onClick={savePhoto}>
+                {saving ? t.saving : t.photoSave}
+              </button>
+              <button type="button" className="kp-photo__close" aria-label={t.photoExit} title={t.photoExit} onClick={() => setPhotoFallback(false)}>
+                <IconClose />
+              </button>
+            </div>
+          )}
           {photo && (
             <div className="kp-photo" role="status" aria-live="polite">
               <span className="kp-photo__info">
@@ -2538,8 +2619,8 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                   </span>
                 )}
               </span>
-              <button type="button" className="kp-photo__save" disabled={photo.phase === 'build' || photo.big || saving} onClick={savePhoto}>
-                {t.photoSave}
+              <button type="button" className="kp-photo__save" disabled={photo.phase === 'build' || photo.big || saving} aria-busy={saving} onClick={savePhoto}>
+                {saving ? t.saving : t.photoSave}
               </button>
               <button type="button" className="kp-photo__close" aria-label={t.photoExit} title={t.photoExit} onClick={() => engineRef.current?.stopPhoto()}>
                 <IconClose />
@@ -2563,7 +2644,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
           )}
         </div>
 
-        <aside className="kp-panel" aria-label={t.title} ref={panelRef}>
+        <aside className="kp-panel" aria-label={t.panelLabel} ref={panelRef}>
           {resume && (
             <div className="kp-resume" role="status">
               <p>{t.resumeLead}</p>
@@ -2578,7 +2659,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
             </div>
           )}
           <Dropped plan={plan} state={state} t={t} onFix={resize} />
-          <nav className="kp-steps" aria-label={t.title} ref={stepsRef}>
+          <nav className="kp-steps" aria-label={t.stepsLabel} ref={stepsRef}>
             {STEPS.map((s, i) => (
               <button
                 key={s}
@@ -2821,7 +2902,10 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                           ))}
                         </div>
                         <div className="kp-metals" role="radiogroup" aria-label={t.handleMetal}>
-                          <span className="kp-metals__label">{t.handleMetal}</span>
+                          <span className="kp-metals__label">
+                            {t.handleMetal}
+                            {metal && <b>: {lang === 'ky' ? metal.ky : metal.ru}</b>}
+                          </span>
                           {HANDLE_METALS.map((m) => (
                             <button
                               key={m.id}
@@ -3270,11 +3354,6 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
             <button type="button" className="btn btn--outline btn--sm" onClick={copyList}>
               {t.copy}
             </button>
-            {engineState === 'ready' && (
-              <button type="button" className="btn btn--outline btn--sm" onClick={saveImage} disabled={saving} aria-busy={saving}>
-                {saving ? (photo?.big ? t.photoBig(Math.round(photo.progress * 100)) : t.saving) : t.saveImage}
-              </button>
-            )}
             <button type="button" className="btn btn--outline btn--sm" onClick={() => void share()}>
               {t.share}
             </button>
