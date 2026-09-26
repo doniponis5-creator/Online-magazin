@@ -44,33 +44,52 @@ function find(specs: Spec[], label: RegExp): string | undefined {
   return specs.find((s) => label.test(s.label.trim().toLowerCase()))?.value
 }
 
-/** «59,5 см» → 59.5; «595 мм» → 59.5; «45–84» → 45 */
-function number(part: string, mm: boolean): number | null {
+/** Первое число как есть: «59,5 см» → 59.5; «45–84» → 45 */
+function rawNumber(part: string): number | null {
   const m = part.replace(',', '.').match(/\d+(\.\d+)?/)
   if (!m) return null
   const v = Number(m[0])
-  if (!Number.isFinite(v) || v <= 0) return null
+  return Number.isFinite(v) && v > 0 ? v : null
+}
+
+/** Отдельная строка «Ширина»: «59,5 см» → 59.5; «595 мм» → 59.5 */
+function number(part: string, mm: boolean): number | null {
+  const v = rawNumber(part)
+  if (v === null) return null
   return mm || v > 400 ? v / 10 : v
 }
 
 export type Size = { w?: number; h?: number; d?: number }
 
-/** Размеры из характеристик. Порядок букв Ш/В/Г берётся из названия строки. */
+/** Буква в названии строки → размер. «Д» (длина) у техники — это глубина. */
+const LETTER_DIM: Record<string, keyof Size> = { ш: 'w', в: 'h', г: 'd', д: 'd' }
+/** Порядок — только из группы вида «Ш×В×Г», «(ВхШхГ)», «Д*Ш*В», а не из всех букв названия. */
+const ORDER_GROUP = /([швгд])\s*[×xх*]\s*([швгд])\s*[×xх*]\s*([швгд])/i
+const DEFAULT_ORDER: (keyof Size)[] = ['w', 'h', 'd']
+
+function orderOf(label: string): (keyof Size)[] {
+  const m = ORDER_GROUP.exec(label)
+  if (!m) return DEFAULT_ORDER
+  const dims = m.slice(1, 4).map((l) => LETTER_DIM[l.toLowerCase()])
+  return new Set(dims).size === 3 ? dims : DEFAULT_ORDER
+}
+
+/**
+ * Размеры из характеристик. Единицы — на всю тройку сразу: «мм» в названии или
+ * значении, или хоть одно число больше 300 (так в сантиметрах не бывает) —
+ * значит, все три в миллиметрах. Габариты упаковки — не размеры товара.
+ */
 export function parseSize(specs: Spec[]): Size {
   const size: Size = {}
   for (const s of specs) {
     const label = s.label.toLowerCase()
-    if (!/размер|габарит/.test(label)) continue
-    const mm = /мм/.test(s.value)
-    const parts = s.value.split(/[×xх*]/i).map((p) => number(p, mm))
-    if (parts.length !== 3 || parts.some((p) => p === null)) continue
-    const letters = (s.label.match(/[швг]/gi) ?? []).map((l) => l.toLowerCase())
-    const order = letters.length === 3 ? letters : ['ш', 'в', 'г']
-    order.forEach((letter, i) => {
-      const v = parts[i]!
-      if (letter === 'ш') size.w = v
-      if (letter === 'в') size.h = v
-      if (letter === 'г') size.d = v
+    if (!/размер|габарит/.test(label) || /упаков/.test(label)) continue
+    const raw = s.value.split(/[×xх*]/i).map(rawNumber)
+    if (raw.length !== 3 || raw.some((p) => p === null)) continue
+    const mm = /мм/.test(label) || /мм/.test(s.value) || raw.some((v) => v! > 300)
+    const order = orderOf(s.label)
+    order.forEach((dim, i) => {
+      size[dim] = mm ? raw[i]! / 10 : raw[i]!
     })
     break
   }

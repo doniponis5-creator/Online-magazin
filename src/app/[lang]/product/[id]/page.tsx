@@ -7,6 +7,7 @@ import { ProductDetail } from '@/components/ProductDetail'
 import { ProductCard } from '@/components/ProductCard'
 import { Lang } from '@/lib/i18n/config'
 import { getDictionary } from '@/lib/i18n/dictionaries'
+import { kitchenLinkFor } from '@/lib/kitchen/share'
 import { SITE_NAME, SITE_URL, canonical } from '@/lib/seo'
 
 export function generateStaticParams() {
@@ -80,7 +81,7 @@ export default async function ProductPage({
         </Link>
       </nav>
 
-      <ProductDetail product={product} />
+      <ProductDetail product={product} kitchenHref={kitchenLinkFor(product, lang)} />
 
       <div className="details">
           {(lang === 'ky' ? product.descKy : product.descRu) && (

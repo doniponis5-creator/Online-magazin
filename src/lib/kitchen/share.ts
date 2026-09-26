@@ -1,3 +1,6 @@
+import type { Product } from '@/data/products'
+import type { Lang } from '@/lib/i18n/config'
+import { applianceFromProduct } from './catalog'
 import { HANDLE_METALS, HANDLES, frontColor, splashChoice, topChoice } from './finishes'
 import { frontsFromQuery, frontsToQuery } from './fronts'
 import { CEILING, COLUMN_HEIGHT, LIMITS, minA, sizedWidth, WIDTH_LIMITS, WINDOW_LIMITS, wallsOf } from './layout'
@@ -46,15 +49,19 @@ const ITEM_CODE: Record<FixedItem, string> = { fridge: 'f', tall: 't', sink: 's'
 const CODE_ITEM = Object.fromEntries(Object.entries(ITEM_CODE).map(([k, v]) => [v, k])) as Record<string, FixedItem>
 const FRONT_CODE: Record<BaseFront, string> = { doors: 'o', drawers2: 't', drawers3: 'h', drawers4: 'f', mix: 'm', open: 'n' }
 const CODE_FRONT = Object.fromEntries(Object.entries(FRONT_CODE).map(([k, v]) => [v, k])) as Record<string, BaseFront>
-/** Предмет может стоять на своём месте: «s_095» — мойка, середина в 95 см от угла (всегда три цифры). */
-const TOKEN = /(\d{2,3}[othfmn]|[ftsdwhpqv])(?:_(\d{3}))?/g
+/**
+ * Предмет может стоять на своём месте: «s_095» — мойка, середина в 95 см от угла
+ * (всегда три цифры). Место с половиной сантиметра — в миллиметрах через минус:
+ * «s-1325» — середина в 132,5 см. Места двигаются с шагом 0,5 см.
+ */
+const TOKEN = /(\d{2,3}[othfmn]|[ftsdwhpqv])(?:_(\d{3})|-(\d{4}))?/g
 /** Своя ширина: «wd=s80h90» — мойка 80 см, шкаф под плитой 90 см. */
 const WIDTH_CODE: Record<SizedItem, string> = { sink: 's', hob: 'h', pantry: 'p', pantry2: 'q', tall: 't' }
 
 type Placed = { arrangement?: Arrangement; cabinets?: Record<CabinetId, Cabinet>; at?: Partial<Record<ItemKey, number>> }
 
 function arrangementFromQuery(raw: string | null, shape: Shape): Placed {
-  if (!raw || raw.length > 400 || !/^(?:\d{2,3}[othfmn]|[ftsdwhpqv]|_\d{3}|\.)+$/.test(raw)) return {}
+  if (!raw || raw.length > 400 || !/^(?:\d{2,3}[othfmn]|[ftsdwhpqv]|_\d{3}|-\d{4}|\.)+$/.test(raw)) return {}
   const arrangement: Arrangement = {}
   const cabinets: Record<CabinetId, Cabinet> = {}
   const at: Partial<Record<ItemKey, number>> = {}
@@ -64,7 +71,7 @@ function arrangementFromQuery(raw: string | null, shape: Shape): Placed {
     const wall = walls[i]
     if (!wall) return
     const list: ItemKey[] = []
-    for (const [, token, pos] of part.matchAll(TOKEN)) {
+    for (const [, token, cm, mm] of part.matchAll(TOKEN)) {
       let key: ItemKey
       if (token.length === 1) key = CODE_ITEM[token]
       else {
@@ -72,15 +79,48 @@ function arrangementFromQuery(raw: string | null, shape: Shape): Placed {
         cabinets[key] = { w: clamp(Number(token.slice(0, -1)), WIDTH_LIMITS.cabinet.min, WIDTH_LIMITS.cabinet.max), front: CODE_FRONT[token.slice(-1)] }
       }
       list.push(key)
-      if (pos !== undefined) at[key] = clamp(Number(pos), 0, 700)
+      if (cm !== undefined) at[key] = clamp(Number(cm), 0, 700)
+      else if (mm !== undefined) at[key] = clamp(Math.round(Number(mm) / 5) / 2, 0, 700)
     }
     arrangement[wall] = list
   })
   return { arrangement, ...(n ? { cabinets } : {}), ...(Object.keys(at).length ? { at } : {}) }
 }
 
+/**
+ * При разборе адреса свои шкафы получают номера k1, k2… по порядку в адресе.
+ * Значит, и при записи ключи шкафов надо перенумеровать так же — иначе
+ * «дверца вправо» уедет на другой шкаф. Старый ключ → новый.
+ */
+function cabinetOrder(arr: Arrangement, shape: Shape, cabinets: KitchenState['cabinets']): Map<string, string> {
+  const order = new Map<string, string>()
+  for (const w of wallsOf(shape)) {
+    for (const k of arr[w] ?? []) {
+      if (isCabinet(k) && cabinets?.[k] && !order.has(k)) order.set(k, `k${order.size + 1}`)
+    }
+  }
+  return order
+}
+
+function doorsToQuery(state: KitchenState): string[] {
+  const order = state.arrangement ? cabinetOrder(state.arrangement, state.shape, state.cabinets) : null
+  return (state.doorsRight ?? [])
+    .filter((k) => DOOR_KEY.test(k))
+    .flatMap((k) => {
+      // без раскладки в адресе нет и своих шкафов — перенумеровывать нечего
+      if (!order || !/^k\d/.test(k)) return [k]
+      const renamed = order.get(k)
+      // шкафа нет в адресе — его ключ достался бы чужому шкафу
+      return renamed ? [renamed] : []
+    })
+}
+
 function arrangementToQuery(arr: Arrangement, shape: Shape, cabinets: KitchenState['cabinets'], at: KitchenState['at']): string {
-  const pos = (k: ItemKey) => (at?.[k] !== undefined ? `_${String(Math.max(0, Math.min(700, Math.round(at[k]!)))).padStart(3, '0')}` : '')
+  const pos = (k: ItemKey) => {
+    if (at?.[k] === undefined) return ''
+    const v = clamp(Math.round(at[k]! * 2) / 2, 0, 700)
+    return Number.isInteger(v) ? `_${String(v).padStart(3, '0')}` : `-${String(v * 10).padStart(4, '0')}`
+  }
   return wallsOf(shape)
     .map((w) =>
       (arr[w] ?? [])
@@ -116,12 +156,18 @@ function doorsFromQuery(raw: string | null): string[] | undefined {
 /** Своя высота колонн: «ht=p200t230» — пенал 200 см, колонна с духовкой 230 см. */
 const HEIGHT_CODE: Record<(typeof COLUMN_ITEMS)[number], string> = { pantry: 'p', pantry2: 'q', tall: 't' }
 
-function heightsFromQuery(raw: string | null): KitchenState['heights'] {
+/**
+ * Колонна с духовкой ниже 160 см не вмещает духовку, а со встраиваемой
+ * микроволновкой над ней — ниже 200 (так же ограничивает экран).
+ */
+const TALL_MIN = { oven: 160, withMicrowave: 200 }
+
+function heightsFromQuery(raw: string | null, tallMin: number): KitchenState['heights'] {
   if (!raw || raw.length > 20) return undefined
   const out: NonNullable<KitchenState['heights']> = {}
   for (const [, code, v] of raw.matchAll(/([pqt])(\d{3})/g)) {
     const key = COLUMN_ITEMS.find((k) => HEIGHT_CODE[k] === code)
-    if (key) out[key] = clamp(Number(v), COLUMN_HEIGHT.min, CEILING.max)
+    if (key) out[key] = clamp(Number(v), key === 'tall' ? tallMin : COLUMN_HEIGHT.min, CEILING.max)
   }
   return Object.keys(out).length ? out : undefined
 }
@@ -157,7 +203,16 @@ function size(raw: string | null, key: keyof typeof LIMITS, fallback: number): n
   return clamp(v, LIMITS[key].min, LIMITS[key].max)
 }
 
-export function stateFromQuery(query: URLSearchParams, known: Set<string>): KitchenState {
+/**
+ * Какая техника есть в каталоге. Достаточно набора id; если передать карту
+ * id → техника, разбор ещё узнает, встраиваемая ли выбранная микроволновка.
+ */
+export type KnownAppliances = ReadonlySet<string> | ReadonlyMap<string, { builtIn?: boolean }>
+
+const builtInOf = (known: KnownAppliances, id: string | null | undefined): boolean =>
+  Boolean(id && !(known instanceof Set) && (known as ReadonlyMap<string, { builtIn?: boolean }>).get(id)?.builtIn)
+
+export function stateFromQuery(query: URLSearchParams, known: KnownAppliances): KitchenState {
   const shape = SHAPES.find((s) => s === query.get('f')) ?? DEFAULT_STATE.shape
   const style = (STYLES.find((s) => s.id === query.get('s'))?.id ?? DEFAULT_STATE.style) as StyleId
   const toneRaw = Number(query.get('t'))
@@ -171,7 +226,7 @@ export function stateFromQuery(query: URLSearchParams, known: Set<string>): Kitc
   const a = Math.max(size(query.get('a'), 'a', DEFAULT_STATE.a), minA(shape))
   const { arrangement, cabinets, at } = arrangementFromQuery(query.get('o'), shape)
   const widths = widthsFromQuery(query.get('wd'))
-  const heights = heightsFromQuery(query.get('ht'))
+  const heights = heightsFromQuery(query.get('ht'), builtInOf(known, picks.microwave) ? TALL_MIN.withMicrowave : TALL_MIN.oven)
   const doorsRight = doorsFromQuery(query.get('dr'))
   const pantries = clamp(Math.round(Number(query.get('pn')) || 0), 0, 2)
   const num = (key: string, min: number, max: number) => {
@@ -197,7 +252,8 @@ export function stateFromQuery(query: URLSearchParams, known: Set<string>): Kitc
     a,
     b: size(query.get('b'), 'b', DEFAULT_STATE.b),
     c: size(query.get('c'), 'c', DEFAULT_STATE.c),
-    island: size(query.get('i'), 'island', DEFAULT_STATE.island),
+    // остров не длиннее стены A: иначе он вылезает за комнату
+    island: Math.min(size(query.get('i'), 'island', DEFAULT_STATE.island), a),
     style,
     tone,
     picks,
@@ -248,7 +304,7 @@ export function queryFromState(state: KitchenState): string {
   if (wd) q.set('wd', wd)
   const ht = heightsToQuery(state.heights)
   if (ht) q.set('ht', ht)
-  const dr = (state.doorsRight ?? []).filter((k) => DOOR_KEY.test(k))
+  const dr = doorsToQuery(state)
   if (dr.length) q.set('dr', dr.join('.'))
   if (state.tallOven) q.set('po', '1')
   if (state.pantries) q.set('pn', String(state.pantries))
@@ -271,4 +327,69 @@ export function queryFromState(state: KitchenState): string {
   if (state.handleMetal) q.set('hm', state.handleMetal)
   if (state.handleless !== undefined) q.set('hl', state.handleless ? '1' : '0')
   return q.toString()
+}
+
+/* ───────── последняя кухня в браузере ───────── */
+
+/**
+ * Последняя собранная кухня живёт в localStorage['kp-last'] — адрес проекта и
+ * время: {"q":"f=corner&a=300…","t":1790000000000}. Разбирается тем же
+ * stateFromQuery, поэтому мусор в записи не страшен. Хранилище может быть
+ * закрыто (приватный режим, запрет сайта) или переполнено — тогда просто
+ * ничего не сохраняется. Когда писать (с задержкой) — решает экран.
+ */
+const LAST_KEY = 'kp-last'
+
+function storage(): Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | null {
+  try {
+    return typeof localStorage === 'undefined' || !localStorage ? null : localStorage
+  } catch {
+    return null
+  }
+}
+
+export function saveLast(state: KitchenState): void {
+  try {
+    storage()?.setItem(LAST_KEY, JSON.stringify({ q: queryFromState(state), t: Date.now() }))
+  } catch {
+    // нет места или запрещено — кухня останется только в адресе
+  }
+}
+
+export function loadLast(known: KnownAppliances): KitchenState | null {
+  try {
+    const raw = storage()?.getItem(LAST_KEY)
+    if (!raw) return null
+    const record: unknown = JSON.parse(raw)
+    if (!record || typeof record !== 'object') return null
+    const q = (record as { q?: unknown }).q
+    if (typeof q !== 'string' || q.length > 4000) return null
+    const query = new URLSearchParams(q)
+    // запись без формы кухни — не наша
+    if (!SHAPES.some((s) => s === query.get('f'))) return null
+    return stateFromQuery(query, known)
+  } catch {
+    return null
+  }
+}
+
+export function clearLast(): void {
+  try {
+    storage()?.removeItem(LAST_KEY)
+  } catch {
+    // запрещено — нечего и стирать
+  }
+}
+
+/* ───────── с карточки товара ───────── */
+
+/**
+ * «Примерить в кухне»: ссылка на конструктор с этой моделью в её слоте —
+ * «/ru/kitchen?ov=<id>». Только для техники, которую конструктор принимает
+ * (тот же applianceFromProduct, из которого строится его каталог), иначе null.
+ */
+export function kitchenLinkFor(product: Product, lang: Lang): string | null {
+  const appliance = applianceFromProduct(product)
+  if (!appliance) return null
+  return `/${lang}/kitchen?${new URLSearchParams({ [SLOT_KEYS[appliance.slot]]: product.id })}`
 }
