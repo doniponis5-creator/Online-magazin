@@ -255,3 +255,16 @@ describe('«Хорошо спасибо» после прощания — не �
     expect(detectLang('Levo под заказ 5 же 5.2 кг алып келип бере аласынарбы?', 'ru')).toBe('ky')
   })
 })
+
+describe('«хочу посмотреть на сайте» вместо города — заказ снимается (случай Хусанбоя)', () => {
+  it('на шаге «куда» и «адрес» не-адрес закрывает анкету', async () => {
+    await start('web:test-city', [product.id], 'ru', 'Заказ из чата на сайте', { name: 'Хусанбой', phone: '+996555000009' })
+    expect(await step('web:test-city', 'Отправьте то что на сайте', 'ru', 'ru')).toBeNull()
+    // Анкета снята: следующее сообщение не станет адресом.
+    expect(await step('web:test-city', 'Не так понял, хочу посмотреть то что в наличии на сайте', 'ru', 'ru')).toBeNull()
+    // Настоящий адрес по-прежнему проходит.
+    await start('web:test-city2', [product.id], 'ru', 'Заказ из чата на сайте', { name: 'Азамат', phone: '+996555000010' })
+    expect(await step('web:test-city2', 'Ош', 'ru', 'ru')).toMatch(/Адрес/)
+    expect(await step('web:test-city2', 'улица Ленина 12', 'ru', 'ru')).toContain('Оплатить:')
+  })
+})
