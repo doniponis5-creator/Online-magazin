@@ -268,3 +268,52 @@ describe('«хочу посмотреть на сайте» вместо гор�
     expect(await step('web:test-city2', 'улица Ленина 12', 'ru', 'ru')).toContain('Оплатить:')
   })
 })
+
+describe('уроки из журнала WhatsApp 22–26.09', () => {
+  it('«барып алам» / «озум барам» — визит, не заказ', async () => {
+    const { respond } = await import('@/lib/assistant/respond')
+    const wa = { key: 'wa:visit-1', orderSource: 'Заказ из WhatsApp', leadChannel: 'whatsapp' as const, known: { phone: '+996555000020' } }
+    const turns = [{ role: 'assistant' as const, text: 'Бар, 21 400 сом.' }, { role: 'user' as const, text: 'мен барып коруп алам' }]
+    const r = await respond(wa, turns, 'ru', null, undefined, [product.id])
+    expect(r.source).not.toBe('flow')
+  })
+  it('в списке выбирают моделью или ценой, не только номером', async () => {
+    const two = products.filter((p) => p.price > 0 && p.variants.some((v) => v.stock > 0)).slice(0, 2)
+    await start('wa:pick-2', two.map((p) => p.id), 'ky', 'Заказ из WhatsApp')
+    expect(await step('wa:pick-2', `${two[1].price} сомдугун алам`, 'ky', 'ky')).toMatch(/Атыңыз ким/)
+    await start('wa:pick-3', two.map((p) => p.id), 'ru', 'Заказ из WhatsApp')
+    const token = (two[0].nameRu.match(/[A-Za-z0-9][A-Za-z0-9()\/-]{3,}/g) ?? []).find((t) => !/^\d+$/.test(t) && !two[1].nameRu.toLowerCase().includes(t.toLowerCase()))!
+    expect(await step('wa:pick-3', token, 'ru', 'ru')).toMatch(/Как вас зовут/)
+  })
+  it('количество: «беру 2», «иккита», «8 кг» — не количество', async () => {
+    const { wantedQty } = await import('@/lib/assistant/respond')
+    expect(wantedQty('беру 2')).toBe(2)
+    expect(wantedQty('2 ни заказ берет элек да')).toBe(2)
+    expect(wantedQty('иккита заказ киламиз')).toBe(2)
+    expect(wantedQty('8 кг алам')).toBe(1)
+    expect(wantedQty('беру')).toBe(1)
+    const first = await start('wa:qty-1', [product.id], 'ru', 'Заказ из WhatsApp', { name: 'Азамат', phone: '+996555000021' }, 2)
+    expect(first).toContain('× 2')
+  })
+  it('имя «.», «А», «Клиент розничная» — не имя', async () => {
+    const { cleanName } = await import('@/lib/assistant/talk')
+    expect(cleanName('.')).toBeUndefined()
+    expect(cleanName('А')).toBeUndefined()
+    expect(cleanName('Клиент розничная')).toBeUndefined()
+    expect(cleanName('Айка')).toBe('Айка')
+    const r = await followUp([{ role: 'user', text: 'канча' }, { role: 'assistant', text: 'x' }], [product.id], 'ru', '.')
+    expect((r as { text: string }).text).not.toMatch(/^\./)
+  })
+  it('«{{SWE001}}», e-mail, один знак — молчим', async () => {
+    const { respond } = await import('@/lib/assistant/respond')
+    const wa = { key: 'wa:junk-1', orderSource: 'Заказ из WhatsApp', leadChannel: 'whatsapp' as const, known: { phone: '+996555000022' } }
+    for (const junk of ['{{SWE001}}', 'kirulbek@gmail.com', '?', '😍']) {
+      expect((await respond(wa, [{ role: 'user', text: junk }], 'ru', null)).silent, junk).toBe(true)
+    }
+  })
+  it('узбекское приветствие и кыргызское «кандесан» — язык узнаётся', () => {
+    expect(detectLang('Ассалому алекум уко йахшимисиз чарчаме ишлайапсими', 'ru')).toBe('uz')
+    expect(detectLang('Ассалом алекум досм кандесан', 'ru')).toBe('ky')
+    expect(detectLang('Даставка кылып саласынарбы Кара кулжага, ушул 8кг алат элем', 'ru')).toBe('ky')
+  })
+})

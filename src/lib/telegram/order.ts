@@ -40,6 +40,8 @@ type Draft = {
   name?: string
   phone?: string
   city?: string
+  /** сколько штук; 1, если не сказали */
+  qty: number
 }
 
 const drafts = store('drafts', () => new Map<ChatKey, Draft>())
@@ -135,6 +137,7 @@ export async function start(
   lang: TalkLang,
   source = 'Заказ из Telegram-бота',
   prefill: Prefill = {},
+  qty = 1,
 ): Promise<string> {
   const find = lookupIn(await catalogNow())
   const found = productIds.map(find).filter((p): p is Product => Boolean(p))
@@ -150,12 +153,13 @@ export async function start(
   }
 
   if (found.length === 1) {
-    const draft: Draft = { step: 'name', source, options: [], productId: found[0].id, ...known }
+    const draft: Draft = { step: 'name', source, options: [], productId: found[0].id, qty, ...known }
     drafts.set(chatId, draft)
-    return `${found[0].nameRu} — ${formatSom(found[0].price)}\n\n${nextQuestion(draft, lang)}`
+    const count = qty > 1 ? ` × ${qty}` : ''
+    return `${found[0].nameRu} — ${formatSom(found[0].price)}${count}\n\n${nextQuestion(draft, lang)}`
   }
 
-  drafts.set(chatId, { step: 'pick', source, options: found.map((p) => p.id), ...known })
+  drafts.set(chatId, { step: 'pick', source, options: found.map((p) => p.id), qty, ...known })
   const list = found.map((p, i) => `${i + 1}. ${p.nameRu} — ${formatSom(p.price)}`).join('\n')
   return `${list}\n\n${pick(ASK_PICK, lang)}`
 }
@@ -180,6 +184,24 @@ function nextQuestion(draft: Draft, lang: TalkLang): string {
   }
   draft.step = 'where'
   return pick(ASK_WHERE, lang)
+}
+
+/**
+ * Покупатель назвал не номер, а модель или цену: «AV-80MXLB(BG)», «21400 сомдугун».
+ * Подходит ровно один товар — его и берём.
+ */
+async function pickByWords(options: string[], text: string): Promise<string | undefined> {
+  const find = lookupIn(await catalogNow())
+  const low = text.toLowerCase()
+  const digits = low.replace(/\D/g, '')
+  const hits = options.filter((id) => {
+    const p = find(id)
+    if (!p) return false
+    if (digits.length >= 4 && String(p.price) === digits) return true
+    const tokens = p.nameRu.toLowerCase().match(/[a-z0-9][a-z0-9()\/-]{3,}/g) ?? []
+    return tokens.some((t) => low.includes(t) && !/^\d+$/.test(t))
+  })
+  return hits.length === 1 ? hits[0] : undefined
 }
 
 /**
@@ -234,7 +256,8 @@ export async function step(chatId: ChatKey, text: string, lang: TalkLang, siteLa
 
   if (draft.step === 'pick') {
     const index = Number.parseInt(value, 10) - 1
-    const id = /^\d{1,2}\b/.test(value) ? draft.options[index] : undefined
+    // Номер в списке — или модель / цена словами: «AV-80MXLB», «21400 сомдугун алам».
+    const id = /^\d{1,2}\b/.test(value) ? draft.options[index] : await pickByWords(draft.options, value)
     if (!id) {
       // Написал не номер — значит, выбирать пока не готов. Выходим из заказа.
       drafts.delete(chatId)
@@ -300,7 +323,7 @@ async function finish(
       customer: { name: draft.name ?? '', phone: draft.phone ?? '' },
       delivery: { method, city: draft.city ?? '', address },
       comment: draft.source,
-      lines: [{ productId: product.id, variantId: variant?.id ?? '', qty: 1 }],
+      lines: [{ productId: product.id, variantId: variant?.id ?? '', qty: draft.qty > 0 ? draft.qty : 1 }],
       lang: siteLang,
     },
     find,

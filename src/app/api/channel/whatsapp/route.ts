@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 import { defaultLang } from '@/lib/i18n/config'
 import { customerBrief, readTurns, respond } from '@/lib/assistant/respond'
 import { logQuestion } from '@/lib/assistant/log'
+import { cleanName } from '@/lib/assistant/talk'
 import { isDemoPhone } from '@/lib/customer/gateway'
 
 /**
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
   // Номер вне Кыргызстана и России — не покупатель магазина; отвечаем без личных данных.
   // Демо-номер для проверки Apple — не покупатель: его «профиль» в WhatsApp не показываем.
   const phone = typeof raw.phone === 'string' && PHONE.test(raw.phone) && !isDemoPhone(raw.phone) ? raw.phone : undefined
-  const name = typeof raw.name === 'string' ? raw.name.trim().slice(0, 60) : undefined
+  const name = typeof raw.name === 'string' ? cleanName(raw.name) : undefined
   const customer = await customerBrief(phone)
 
   const reply = await respond(
