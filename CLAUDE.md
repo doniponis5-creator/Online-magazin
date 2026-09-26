@@ -113,6 +113,11 @@
 `src/lib/assistant/` и `src/lib/telegram/`, подробности — `docs/HANDOFF.md` §2.1.
 Владелец смотрит, о чём спрашивают, на `/panel/questions?key=…`.
 
+**Отзывы покупателей.** Пишет только купивший на сайте (оплаченный заказ),
+один отзыв на заказ, до 5 фото. На главной — 20 последних. Хранятся на сайте
+(`/app/data/reviews/`), не в SBonus. Владелец скрывает плохие на
+`/panel/reviews?key=…`. Подробности — `docs/HANDOFF.md` §2.1a.
+
 ## graphify
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.

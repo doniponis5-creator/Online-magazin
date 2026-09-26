@@ -10,6 +10,7 @@ import { Brand } from '@/components/Brand'
 import { ProductArt } from '@/components/ProductArt'
 import { ProductCard } from '@/components/ProductCard'
 import { BonusPromo } from '@/components/BonusPromo'
+import { CustomerReviews } from '@/components/CustomerReviews'
 import { KitchenPromo } from '@/components/kitchen/KitchenPromo'
 import {
   IconCard,
@@ -133,6 +134,7 @@ export default function HomePage() {
       <BonusPromo />
       <NightBanner />
       <ProductSection titleKey="newList" ctaKey="newCta" products={getNew()} />
+      <CustomerReviews />
       <SocialAndAccount />
       <InfoStrip />
     </div>

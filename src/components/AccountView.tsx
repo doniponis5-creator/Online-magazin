@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
+import { AccountReviews } from '@/components/AccountReviews'
 import { Brand } from '@/components/Brand'
 import { CustomerLogin } from '@/components/CustomerLogin'
 import { IconCart, IconGift, IconHeart } from '@/components/Icons'
@@ -332,6 +333,8 @@ export function AccountView() {
         ) : (
           <p>{a.ordersEmpty}</p>
         )}
+
+        <AccountReviews orders={customer.orders ?? []} />
 
         <h2 className="account-access__second">{a.history}</h2>
         {customer.history?.length ? (

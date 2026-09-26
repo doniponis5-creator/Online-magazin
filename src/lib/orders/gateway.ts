@@ -131,6 +131,22 @@ export async function getOrder(orderId: string, token: string): Promise<PublicOr
   }
 }
 
+/** Только тестовый режим: заказы телефона, новые сверху — для «Моих заказов» в кабинете. */
+export function mockOrdersOf(phone: string) {
+  return [...mockOrders.entries()]
+    .filter(([, entry]) => entry.order.customer.phone === phone)
+    .map(([orderId, entry]) => ({
+      orderId,
+      token: entry.token,
+      status: entry.status as string,
+      total: entry.order.total,
+      payAmount: entry.order.total - entry.order.bonus,
+      bonusSpent: entry.order.bonus,
+      createdAt: entry.createdAt,
+    }))
+    .reverse()
+}
+
 /** Только тестовый режим: имитация успешной оплаты. Возвращает оплаченный заказ (повторно — null). */
 export function mockPay(orderId: string, token: string): ValidatedOrder | null {
   if (paymentMode() !== 'mock') return null

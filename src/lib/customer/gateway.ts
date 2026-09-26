@@ -8,7 +8,7 @@
  * Тестовый режим (localhost без сервера): код всегда 1234, клиенты и бонусы — в памяти процесса.
  */
 import 'server-only'
-import { callServer, paymentMode } from '@/lib/orders/gateway'
+import { callServer, mockOrdersOf, paymentMode } from '@/lib/orders/gateway'
 
 export type BonusHistoryItem = { type: string; amount: number; note: string; date: string | null }
 export type CustomerOrderItem = {
@@ -84,7 +84,7 @@ function mockProfile(phone: string, amount = 0): CustomerProfile {
     maxSpend: maxBonusSpend(c.balance, amount, MOCK_PCT),
     qrCode: `SB-${phone.replace(/\D/g, '').slice(-10).padStart(10, '0')}`,
     history: [],
-    orders: [],
+    orders: mockOrdersOf(phone),
   }
 }
 

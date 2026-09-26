@@ -370,3 +370,12 @@ export function IconCamera(props: IconProps) {
     </svg>
   )
 }
+
+/** Звезда оценки. filled — закрашенная. */
+export function IconStar({ filled = false, ...props }: IconProps & { filled?: boolean }) {
+  return (
+    <svg {...base(props)} fill={filled ? 'currentColor' : 'none'}>
+      <path d="m12 3.5 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8Z" />
+    </svg>
+  )
+}
