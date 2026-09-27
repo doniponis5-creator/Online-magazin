@@ -3895,6 +3895,24 @@ html.kp-lock body {
   gap: 8px;
 }
 
+/* Кнопка не шире ряда: длинная надпись («Раскрой для распила (Excel)» на 360 px)
+   переносится на вторую строку по центру, кнопка растёт в высоту. Пока текст
+   влезает в строку, вид прежний: высота та же (--h-btn), перенос не нужен. */
+.kp-mstr__actions .btn {
+  max-width: 100%;
+  min-width: 0;
+  height: auto;
+  min-height: var(--h-btn);
+  padding-block: 8px;
+  line-height: 1.25;
+  white-space: normal;
+  text-align: center;
+}
+
+.kp-mstr__actions .btn > svg {
+  flex: none;
+}
+
 .kp-cutmap {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
