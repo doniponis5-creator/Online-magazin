@@ -8,6 +8,16 @@ const roundTrip = (state: KitchenState, known = new Set<string>()) =>
   stateFromQuery(new URLSearchParams(queryFromState(state)), known)
 
 describe('ссылка на кухню: туда и обратно', () => {
+  it('ручка и вытяжка не затирают друг друга в адресе', () => {
+    const state: KitchenState = { ...DEFAULT_STATE, picks: { ...DEFAULT_STATE.picks, hood: 'hd-7' }, handle: 'bar' }
+    const back = roundTrip(state, new Set(['hd-7']))
+    expect(back.picks.hood).toBe('hd-7')
+    expect(back.handle).toBe('bar')
+  })
+  it('старая ссылка с ручкой в hd= открывается с той же ручкой', () => {
+    const back = stateFromQuery(new URLSearchParams('f=corner&hd=knob'), new Set())
+    expect(back.handle).toBe('knob')
+  })
   it('C12: дверца вправо остаётся у того же своего шкафа (40 см)', () => {
     const state: KitchenState = {
       ...DEFAULT_STATE,

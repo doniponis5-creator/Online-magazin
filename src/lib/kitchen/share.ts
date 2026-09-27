@@ -240,7 +240,9 @@ export function stateFromQuery(query: URLSearchParams, known: KnownAppliances): 
   const overFridgeFacade = frontColor(query.get('ofc') ?? undefined)?.id
   const top = topChoice(query.get('tp') ?? undefined)?.id
   const splash = splashChoice(query.get('sp') ?? undefined)?.id
-  const handle = HANDLES.find((h) => h.id === query.get('hd'))?.id
+  // Ручка живёт в `hn=`; `hd=` — ключ вытяжки. Старые ссылки писали ручку в `hd=`:
+  // id ручки не совпадает с id товара, поэтому её оттуда можно прочитать без путаницы.
+  const handle = HANDLES.find((h) => h.id === (query.get('hn') ?? query.get('hd')))?.id
   const handleMetal = HANDLE_METALS.find((m) => m.id === query.get('hm'))?.id
   const hl = query.get('hl')
   return {
@@ -319,7 +321,7 @@ export function queryFromState(state: KitchenState): string {
   if (state.overFridgeFacade) q.set('ofc', state.overFridgeFacade)
   if (state.top) q.set('tp', state.top)
   if (state.splash) q.set('sp', state.splash)
-  if (state.handle) q.set('hd', state.handle)
+  if (state.handle) q.set('hn', state.handle)
   if (state.handleMetal) q.set('hm', state.handleMetal)
   if (state.handleless !== undefined) q.set('hl', state.handleless ? '1' : '0')
   return q.toString()
