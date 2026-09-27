@@ -121,8 +121,14 @@ describe('техника из каталога', () => {
       w: 59,
     })
     expect(applianceFromProduct(product('Встраиваемая поверхность Asco SHAK6222BG 2/2', [['Тип', 'Газовая']]))).toMatchObject({ slot: 'hob', hob: 'gas' })
-    // отдельностоящая плита — не варочная панель
-    expect(applianceFromProduct(product('Газовая плита SHIVAKI 6401E стеклокерамика 4 электро черный', []))).toBeNull()
+    // 2026-09-27: отдельностоящие плиты теперь ставятся в кухню
+    expect(applianceFromProduct(product('Газовая плита SHIVAKI 6401E стеклокерамика 4 электро черный', []))).toMatchObject({
+      slot: 'hob',
+      stove: true,
+      w: 60,
+      h: 85,
+      d: 60,
+    })
   })
   it('полуавтомат, морозильник, товар без цены и без остатка — не для кухни', () => {
     expect(applianceFromProduct(product('Стиральная машина п/а AVANGARD', [['Тип загрузки', 'Вертикальная']]))).toBeNull()

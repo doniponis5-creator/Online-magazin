@@ -20,6 +20,11 @@ export const FRONT_T = 1.8
 export const UPPER_CARCASS_D = 33
 /** Низ верхних шкафов от пола. */
 export const UPPER_BOTTOM = 142
+/** Верх столешницы от пола при её толщине `topCm` (у каждого стиля своя, `Style.topCm`). */
+export const counterTop = (topCm: number): number => BASE_H + topCm
+/** Отдельностоящая плита и верх столешницы: разницу до стольких см ножки плиты не выровняют заметно — вровень. */
+export const STOVE_LEVEL = 1.5
+
 /** Проём встраиваемой ПММ: от пола до низа столешницы; ножки машины добирают ещё до 5 см. */
 export const DW_OPENING = { h: BASE_H, hMax: BASE_H + 5 }
 

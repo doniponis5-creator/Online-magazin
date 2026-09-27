@@ -39,15 +39,26 @@ function allStrings(v: unknown, out: string[] = []): string[] {
   return out
 }
 
+/** Всё, кроме группы `stove`: «Плита» — отдельностоящая плита, свой предмет со своим словом (spec 2026-09-27-kitchen-stove). */
+const exceptStove = (t: ReturnType<typeof kitchenTexts>) => ({ ...t, stove: null })
+
 describe('тексты конструктора — один предмет, одно слово (T13, T17)', () => {
   it('ru: «Духовка» и «Варочная панель» — нигде нет «Плита» и «Духовой шкаф»', () => {
-    const bad = allStrings(kitchenTexts('ru')).filter((s) => /плит(?!к)|духовой шкаф/i.test(s))
+    const bad = allStrings(exceptStove(kitchenTexts('ru'))).filter((s) => /плит(?!к)|духовой шкаф/i.test(s))
     expect(bad).toEqual([])
   })
 
   it('ky: «Бышыруучу панель» и «Сордургуч» — нигде нет «Плита» и «Сордурма»', () => {
-    const bad = allStrings(kitchenTexts('ky')).filter((s) => /плит(?!к)|сордурма/i.test(s))
+    const bad = allStrings(exceptStove(kitchenTexts('ky'))).filter((s) => /плит(?!к)|сордурма/i.test(s))
     expect(bad).toEqual([])
+  })
+
+  it('отдельностоящая плита — «Плита», не «варочная панель» и не «Духовой шкаф»', () => {
+    for (const lang of ['ru', 'ky'] as const) {
+      const t = kitchenTexts(lang)
+      expect(t.stove.name).toBe('Плита')
+      expect(allStrings(t.stove).filter((s) => /варочн|бышыруучу|духовой шкаф|сордурма/i.test(s))).toEqual([])
+    }
   })
 })
 

@@ -1,4 +1,4 @@
-import { BASE_H, hoodNorm, isTall } from './dims'
+import { BASE_H, counterTop, hoodNorm, isTall, STOVE_LEVEL } from './dims'
 import { DEPTH, type Module, type Plan, type Run } from './layout'
 
 /**
@@ -21,6 +21,8 @@ export type Check =
   | { id: 'applianceWider'; level: CheckLevel; slot: 'oven' | 'hood'; w: number; room: number }
   | { id: 'underCounterHeight'; level: CheckLevel; slot: 'washer' | 'dishwasher'; h: number; max: number }
   | { id: 'hoodHeight'; level: CheckLevel; over: number; min: number; gas: boolean }
+  /** отдельностоящая плита против верха столешницы: h — плита, top — столешница, см */
+  | { id: 'stoveHeight'; level: CheckLevel; h: number; top: number }
 
 /**
  * Правило треугольника: каждая сторона 120–270 см, сумма не больше 790 см.
@@ -100,8 +102,11 @@ function tallUnderWindow(plan: Plan): boolean {
   })
 }
 
-/** Что известно только после 3D-сборки: фактический низ вытяжки над панелью, см. */
-export type CheckFacts = { hoodOver?: number }
+/**
+ * Что известно не из раскладки: фактический низ вытяжки над панелью (из 3D) и
+ * толщина столешницы стиля (`Style.topCm`), см.
+ */
+export type CheckFacts = { hoodOver?: number; topCm?: number }
 
 export function checkProject(plan: Plan, facts: CheckFacts = {}): Check[] {
   const out: Check[] = []
@@ -142,6 +147,13 @@ export function checkProject(plan: Plan, facts: CheckFacts = {}): Check[] {
     const min = hoodNorm(gas)
     const over = Math.round(facts.hoodOver * 10) / 10
     out.push({ id: 'hoodHeight', level: over >= min ? 'ok' : 'warn', over, min, gas })
+  }
+  // Плита стоит на полу своей высотой: верх вровень со столешницей — ножками.
+  // Без толщины столешницы пункта нет — как и без фактической высоты вытяжки.
+  if (plan.stove && facts.topCm !== undefined && Number.isFinite(facts.topCm)) {
+    const top = Math.round(counterTop(facts.topCm) * 10) / 10
+    const h = Math.round(plan.stove.h * 10) / 10
+    out.push({ id: 'stoveHeight', level: Math.abs(h - top) <= STOVE_LEVEL + 1e-9 ? 'ok' : 'warn', h, top })
   }
   out.push({ id: 'fits', level: plan.dropped.length === 0 ? 'ok' : 'warn', count: plan.dropped.length })
   return out

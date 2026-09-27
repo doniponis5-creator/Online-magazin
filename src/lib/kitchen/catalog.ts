@@ -20,25 +20,106 @@ const TYPICAL: Record<SlotKind, { w: number; h: number; d: number }> = {
   dishwasher: { w: 60, h: 82, d: 55 },
   washer: { w: 60, h: 85, d: 50 },
 }
+/** Отдельностоящая плита без размеров в характеристиках. */
+const STOVE_TYPICAL = { w: 60, h: 85, d: 60 }
 
-function slotOf(name: string, specs: Spec[]): SlotKind | null {
-  const n = name.toLowerCase()
-  const type = (find(specs, /^тип$/) ?? '').toLowerCase()
-  if (/морозил|ларь/.test(n) || /морозильн(ый|ая) ларь/.test(type)) return null
-  if (/холодильник/.test(n)) return 'fridge'
-  if (/духов/.test(n)) return 'oven'
-  if (/микроволн|свч/.test(n)) return 'microwave'
+/**
+ * Вид товара. stove — отдельностоящая плита; desk — плитка, настольная или
+ * мини-плита; freezer — морозильник; other — известная не кухонная техника
+ * (гриль, вафельница, мини-печь…). Последние три ни в какой слот не идут.
+ */
+type Kind = SlotKind | 'stove' | 'desk' | 'freezer' | 'other'
+
+/**
+ * Слово-вид в начале фразы (слова в нижнем регистре через пробел). Только
+ * именительный падеж: «с духовкой», «для плиты», «сменными плитами» — не вид.
+ */
+const KINDS: [Kind, RegExp][] = [
+  ['desk', /^(электро)?плитк/],
+  ['stove', /^(электро|газо)?плита(?![а-яё])/],
+  ['microwave', /^микроволн|^свч|^печ[ьи] (свч|микроволн)/],
+  ['oven', /^(электро)?духовк[аи](?![а-яё])|^духов(ой|ые) шкаф|^шкаф\S* духов/],
   // В 1С варочные панели часто заведены как «Встраиваемая поверхность …».
-  if (/варочн/.test(n) || /встраиваем\S*\s+поверхност/.test(n)) return 'hob'
-  if (/вытяжк/.test(n)) return 'hood'
-  if (/посудомо/.test(n)) return 'dishwasher'
-  if (/стиральн/.test(n)) {
+  ['hob', /^варочн|^поверхност|^панел\S* варочн/],
+  ['hood', /^вытяжк/],
+  ['dishwasher', /^посудомо|^машин\S* посудомо/],
+  ['washer', /^стиральн|^машин\S* стиральн/],
+  ['fridge', /^холодильник/],
+  ['freezer', /^морозильник|^морозильк|^морозилк|^морозильн\S* (ларь|шкаф)|^ларь/],
+  ['other', /^(электро|аэро)?печ[ьи](?![а-яё])|^(электро|аэро)?гриль|^вафельниц|^сэндвич|^сендвич|^мультипекар|^блинниц|^тостер|^мультиварк/],
+]
+
+/** Определение перед видом или после него: «газовая», «встраиваемая», «мини». */
+const MODIFIER = /^[а-яё]+(ая|яя|ый|ий|ой|ое|ее|ые|ие|ого|его|ую|юю|ым|им|ых|их)$|^(мини|полностью|частично)$/
+/** Граница фразы: после запятой или скобки голову уже не ищем. */
+const STOP = '|'
+
+function words(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[,;()]/g, ` ${STOP} `)
+    .split(/\s+/)
+    .flatMap((t) => (/\d/.test(t) ? [t] : t.split('-'))) // «мини-плита» → мини плита; «4-х» — целиком
+    .map((t) => t.replace(/^[^a-zа-яё0-9|]+|[^a-zа-яё0-9|]+$/g, '')) // «машина*», кавычки
+    .filter(Boolean)
+}
+
+const DESK_WORD = /^настольн|^мини$/
+
+/** Плита «настольная» или «мини» — по её собственным определениям рядом со словом «плита». */
+function deskStove(ws: string[], at: number): boolean {
+  const near: string[] = []
+  for (const step of [-1, 1]) {
+    for (let j = at + step; j >= 0 && j < ws.length && MODIFIER.test(ws[j]); j += step) near.push(ws[j])
+  }
+  return near.some((w) => DESK_WORD.test(w))
+}
+
+/**
+ * Вид по голове фразы: идём по словам, пропуская определения, марки и
+ * числа, до первого существительного. Оно — вид (если это вид техники) или
+ * вида нет (null): дальше в фразе слова вид уже не меняют.
+ */
+function kindOf(text: string): Kind | null {
+  const ws = words(text)
+  for (let i = 0; i < ws.length; i++) {
+    const w = ws[i]
+    if (w === STOP) return null
+    if (/\d/.test(w) || !/[а-яё]/.test(w)) continue // марка, модель, объём
+    const rest = ws.slice(i).join(' ')
+    const hit = KINDS.find(([, re]) => re.test(rest))?.[0]
+    if (hit) return hit === 'stove' && deskStove(ws, i) ? 'desk' : hit
+    if (!MODIFIER.test(w)) return null
+  }
+  return null
+}
+
+/**
+ * Вид решает «Тип», если называет его; иначе — начало названия (в 1С оно с
+ * вида). «Тип» без вида, но с определением «Настольная» — про плиту из названия.
+ * Варочная панель по названию с «Тип» «Газовая плита» — всё та же встроенная
+ * панель: плитой её делает только «Отдельностоящая … плита».
+ */
+function productKind(name: string, type: string): Kind | null {
+  const byType = kindOf(type)
+  const byName = kindOf(name)
+  if (byType === 'stove' && byName === 'hob' && !/отдельностоящ/.test(type)) return 'hob'
+  if (byType) return byType
+  const ws = words(type)
+  const noun = ws.findIndex((w) => !MODIFIER.test(w))
+  const mods = noun < 0 ? ws : ws.slice(0, noun)
+  return byName === 'stove' && mods.some((w) => DESK_WORD.test(w)) ? 'desk' : byName
+}
+
+function slotOf(kind: Kind | null, n: string, type: string, specs: Spec[]): SlotKind | null {
+  if (kind === 'stove') return 'hob'
+  if (kind === 'washer') {
     // В кухню под столешницу встаёт только фронтальная машина-автомат.
     const load = (find(specs, /^тип загрузки$/) ?? '').toLowerCase()
     if (/п\/а|полуавтомат/.test(n) || /полуавтомат/.test(type) || /вертикал/.test(load)) return null
     return 'washer'
   }
-  return null
+  return kind === null || kind === 'desk' || kind === 'freezer' || kind === 'other' ? null : kind
 }
 
 function find(specs: Spec[], label: RegExp): string | undefined {
@@ -139,6 +220,19 @@ function fridgeKind(type: string, w: number): FridgeKind {
   return 'bottom'
 }
 
+/**
+ * Вид плиты по характеристикам («Тип», «Варочная поверхность», «Количество
+ * конфорок»): в 1С название может говорить «газовая» у электрической плиты.
+ * Комбинированная — газовая (нормы вытяжки строже). Не понять — null.
+ */
+function stoveKind(text: string): HobKind | null {
+  if (/индукц/.test(text)) return 'induction'
+  if (/газ|комбинир/.test(text)) return 'gas'
+  // «чугунные решётки» бывают и у газовой, и у электрической — вид не решают
+  if (/электр|стеклокерам|hi-?light/.test(text)) return 'electric'
+  return null
+}
+
 function hobKind(text: string): HobKind {
   if (/индукц/.test(text)) return 'induction'
   if (/газ/.test(text)) return 'gas'
@@ -151,15 +245,17 @@ export function applianceFromProduct(p: Product): KitchenAppliance | null {
   if (p.chatOnly || p.price <= 0) return null
   if (!p.variants.some((v) => v.stock > 0)) return null
   const specs: Spec[] = p.specs.map((s) => ({ label: s.labelRu, value: s.valueRu }))
-  const slot = slotOf(p.nameRu, specs)
+  const type = (find(specs, /^тип$/) ?? '').toLowerCase()
+  const kind = productKind(p.nameRu, type)
+  const slot = slotOf(kind, p.nameRu.toLowerCase(), type, specs)
   if (!slot) return null
 
-  const type = (find(specs, /^тип$/) ?? '').toLowerCase()
   const install = (find(specs, /^установка$/) ?? '').toLowerCase()
   const parsed = parseSize(specs)
-  const typical = TYPICAL[slot]
+  const stove = kind === 'stove'
+  const typical = stove ? STOVE_TYPICAL : TYPICAL[slot]
   // Для встраиваемой техники главное — ширина; для стоящей — ещё и высота.
-  const sizeKnown = slot === 'fridge' || slot === 'washer' ? Boolean(parsed.w && parsed.h) : Boolean(parsed.w)
+  const sizeKnown = slot === 'fridge' || slot === 'washer' || stove ? Boolean(parsed.w && parsed.h) : Boolean(parsed.w)
   let fridge: FridgeKind | undefined
   if (slot === 'fridge') {
     fridge = fridgeKind(type, parsed.w ?? typical.w)
@@ -173,8 +269,9 @@ export function applianceFromProduct(p: Product): KitchenAppliance | null {
 
   const text = `${p.nameRu} ${type} ${install}`.toLowerCase()
   const standing = /отдельностоящ|соло/.test(text)
-  const builtIn =
-    slot === 'oven' || slot === 'hob' || slot === 'hood'
+  const builtIn = stove
+    ? false
+    : slot === 'oven' || slot === 'hob' || slot === 'hood'
       ? true
       : slot === 'fridge' || slot === 'washer'
         ? /встраиваем/.test(text)
@@ -204,8 +301,9 @@ export function applianceFromProduct(p: Product): KitchenAppliance | null {
     finish,
     hood: slot === 'hood' ? hoodKind(type) : undefined,
     fridge,
-    hob: slot === 'hob' ? hobKind(text) : undefined,
+    hob: stove ? (stoveKind([type, find(specs, /варочн/), find(specs, /конфор/)].join(' ').toLowerCase()) ?? hobKind(text)) : slot === 'hob' ? hobKind(text) : undefined,
     burners: slot === 'hob' ? Number(burnersMatch?.[1] ?? 4) : undefined,
+    ...(stove ? { stove: true } : {}),
   }
 }
 
@@ -230,6 +328,8 @@ export function defaultPick(slot: SlotKind, list: KitchenAppliance[]): string | 
   if (slot === 'fridge') prefer((a) => a.w <= 70 && a.h >= 170)
   if (slot === 'dishwasher') prefer((a) => a.builtIn)
   if (slot === 'hood') prefer((a) => a.hood === 'chimney')
+  // Плита — осознанный выбор покупателя; по умолчанию — варочная панель.
+  if (slot === 'hob') prefer((a) => !a.stove)
   if (pool.length === 0) return null
   const sorted = [...pool].sort((x, y) => x.price - y.price)
   return sorted[Math.floor((sorted.length - 1) / 2)].id

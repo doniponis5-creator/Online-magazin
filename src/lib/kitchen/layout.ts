@@ -75,6 +75,8 @@ export type Module = {
   w: number
   /** под варочной — духовка */
   oven?: boolean
+  /** место отдельностоящей плиты: без корпуса и без столешницы, ширина — ровно плита */
+  stove?: boolean
   /** угловой: глухая часть (закрыта соседним рядом) и где она */
   blind?: number
   blindAt?: 'start' | 'end'
@@ -145,6 +147,8 @@ export type Plan = {
   underCounter?: { slot: 'washer' | 'dishwasher'; h: number; wall: RunId }[]
   /** низ вытяжки над варочной панелью, см (решает раскладка, рисует 3D) */
   hoodHeight?: { over: number; gas: boolean }
+  /** отдельностоящая плита встала: её габариты, см, и стена */
+  stove?: { w: number; h: number; d: number; wall: RunId }
 }
 
 export type PlanInput = {
@@ -182,6 +186,11 @@ export type PlanInput = {
   widths?: Partial<Record<SizedItem, number>>
   /** габариты выбранной духовки, см: шкаф под ней не уже её */
   oven?: { w: number; h: number; d: number } | null
+  /**
+   * Выбрана отдельностоящая плита (`hob` — она же), габариты, см: место ровно
+   * её ширины, духовка внутри — пенал с духовкой и отдельная духовка не нужны.
+   */
+  stove?: { w: number; h: number; d: number } | null
   /** ширина выбранной вытяжки, см: её место не уже её */
   hood?: { w: number } | null
   /**
@@ -201,6 +210,7 @@ type Item =
       blind?: number
       blindAt?: 'start' | 'end'
       oven?: boolean
+      stove?: boolean
       front?: BaseFront
       /** своё место: начало вдоль ряда, см (в системе координат ряда) */
       at?: number
@@ -297,7 +307,7 @@ export function resolveRun(length: number, start: number, items: Item[], canSnap
 }
 
 function moduleOf(item: Extract<Item, { kind: ModuleKind }>, x: number): Module {
-  return { kind: item.kind, x, w: item.w, blind: item.blind, blindAt: item.blindAt, oven: item.oven, item: item.item, front: item.front }
+  return { kind: item.kind, x, w: item.w, blind: item.blind, blindAt: item.blindAt, oven: item.oven, item: item.item, front: item.front, ...(item.stove ? { stove: true } : {}) }
 }
 
 /**
@@ -655,17 +665,20 @@ function wallItems(
 export function planKitchen(input: PlanInput, options: { shelves: boolean }): Plan {
   const { shape } = input
   const dropped: Dropped[] = []
-  const apart = Boolean(input.ovenApart) && !input.noOven
-  const hasTall = Boolean(input.microwave?.builtIn) || (Boolean(input.tallOven) && !apart)
+  // Плита: духовка в ней — пенал с духовкой и отдельная духовка не строятся.
+  const stove = input.stove ?? null
+  const apart = !stove && Boolean(input.ovenApart) && !input.noOven
+  const hasTall = Boolean(input.microwave?.builtIn) || (!stove && Boolean(input.tallOven) && !apart)
   const pantries = Math.max(0, Math.min(2, Math.round(input.pantries ?? 0)))
   // В нише у холодильника боковины: место шире на их толщину.
   const fridgeW = slotWidth(input.fridge, 0, input.fridgeOpen ? 0 : NICHE_EXTRA)
   const upperOpts: UpperOpts = { shelves: options.shelves, fridgeOpen: Boolean(input.fridgeOpen) }
   // Шкаф под духовкой (и колонна с ней) не уже самой духовки, кратно 5 см.
   const ovenW = input.oven ? Math.max(HOB_W, up5(input.oven.w)) : HOB_W
-  const ovenUnderHob = !hasTall && !apart
-  const hobFloor = Math.max(hobMinWidth(input.hob), ovenUnderHob ? ovenW : 0)
-  const hobW = Math.max(hobFloor, sizedWidth('hob', input.widths?.hob))
+  const ovenUnderHob = !stove && !hasTall && !apart
+  // Плита стоит на полу без шкафа: место ровно её ширины, не шире и не уже.
+  const hobFloor = stove ? stove.w : Math.max(hobMinWidth(input.hob), ovenUnderHob ? ovenW : 0)
+  const hobW = stove ? stove.w : Math.max(hobFloor, sizedWidth('hob', input.widths?.hob))
   const dwW = input.dishwasher ? (input.dishwasher.w <= 46 ? 45 : 60) : 0
   const sinkW = sizedWidth('sink', input.widths?.sink ?? SINK_W)
   const snapSet = input.snap ? new Set<ItemKey>(input.snap) : null
@@ -677,7 +690,7 @@ export function planKitchen(input: PlanInput, options: { shelves: boolean }): Pl
       case 'fridge':
         return input.fridge ? { kind: 'fridge', w: fridgeW, slot: 'fridge', item: k } : null
       case 'tall': {
-        const w = Math.max(sizedWidth('tall', input.widths?.tall ?? TALL_W), apart ? 0 : ovenW)
+        const w = Math.max(sizedWidth('tall', input.widths?.tall ?? TALL_W), apart || stove ? 0 : ovenW)
         return hasTall ? { kind: 'tall', w, slot: input.microwave?.builtIn ? 'microwave' : 'oven', item: k } : null
       }
       case 'sink':
@@ -687,7 +700,7 @@ export function planKitchen(input: PlanInput, options: { shelves: boolean }): Pl
       case 'washer':
         return input.washer ? { kind: 'washer', w: slotWidth(input.washer, WASHER_W), slot: 'washer', item: k } : null
       case 'hob':
-        return { kind: 'hob', w: hobW, slot: 'hob', oven: !hasTall, item: k }
+        return stove ? { kind: 'hob', w: hobW, slot: 'hob', oven: false, stove: true, item: k } : { kind: 'hob', w: hobW, slot: 'hob', oven: !hasTall, item: k }
       case 'pantry':
         return pantries >= 1 ? { kind: 'pantry', w: sizedWidth('pantry', input.widths?.pantry ?? PANTRY_W), item: k } : null
       case 'pantry2':
@@ -777,10 +790,10 @@ export function planKitchen(input: PlanInput, options: { shelves: boolean }): Pl
   // Духовка: в своём шкафу, если он встал; иначе в пенале; иначе под плитой.
   const ovenPlaced = runs.some((r) => r.modules.some((m) => m.kind === 'oven'))
   const tallPlaced = runs.some((r) => r.modules.some((m) => m.kind === 'tall'))
-  const inTall = tallPlaced && !ovenPlaced
+  const inTall = !stove && tallPlaced && !ovenPlaced
   for (const r of runs)
     for (const m of r.modules) {
-      if (m.kind === 'hob') m.oven = !inTall && !ovenPlaced
+      if (m.kind === 'hob') m.oven = !stove && !inTall && !ovenPlaced
       if (m.kind === 'tall') m.oven = inTall
     }
   // Пенал или свой шкаф духовки не встал, а шкаф плиты есть — духовка под
@@ -826,6 +839,8 @@ export function planKitchen(input: PlanInput, options: { shelves: boolean }): Pl
   if (tooWide.length) plan.tooWide = tooWide
   if (underCounter.length) plan.underCounter = underCounter
   if (hoodHeight) plan.hoodHeight = hoodHeight
+  const stoveRun = stove && runs.find((r) => r.modules.some((m) => m.kind === 'hob' && m.stove))
+  if (stove && stoveRun) plan.stove = { w: stove.w, h: stove.h, d: stove.d, wall: stoveRun.id }
   return plan
 }
 

@@ -41,6 +41,11 @@ export type KitchenAppliance = {
   fridge?: FridgeKind
   hob?: HobKind
   burners?: number
+  /**
+   * Отдельностоящая плита (слот `hob`, `builtIn: false`): варочная и духовка в
+   * одном корпусе на полу. Нет поля — встраиваемая варочная панель.
+   */
+  stove?: boolean
 }
 
 /**

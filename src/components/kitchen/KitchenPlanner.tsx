@@ -1792,6 +1792,8 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
         return t.checks.underCounter(c.slot, c.h, c.max)
       case 'hoodHeight':
         return c.level === 'ok' ? t.checks.hoodHeightOk(c.over, c.gas) : t.checks.hoodHeightWarn(c.over, c.min, c.gas)
+      case 'stoveHeight':
+        return c.level === 'ok' ? t.stove.heightOk(c.h, c.top) : t.stove.heightWarn(c.h, c.top)
     }
   }
 

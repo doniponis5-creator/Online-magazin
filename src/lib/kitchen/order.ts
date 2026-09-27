@@ -28,11 +28,12 @@ export type Chosen = Partial<Record<SlotKind, KitchenAppliance | null>>
 
 /**
  * placed — стоит в 3D; counter — отдельностоящая микроволновка, ставится на
- * столешницу; underHob — духовка уехала под варочную панель; dropped — не
+ * столешницу; underHob — духовка уехала под варочную панель; inStove — выбрана
+ * плита, духовка в ней: своей строки с ценой нет, не в сумме; dropped — не
  * поместилась; typical — товара нет, в 3D типовая модель; noStock — слот
  * нужен (покупатель его не выключал), но в каталоге пусто, в 3D его нет.
  */
-export type ItemStatus = 'placed' | 'counter' | 'underHob' | 'dropped' | 'typical' | 'noStock'
+export type ItemStatus = 'placed' | 'counter' | 'underHob' | 'inStove' | 'dropped' | 'typical' | 'noStock'
 export type ProjectItem = { slot: SlotKind; appliance: KitchenAppliance | null; status: ItemStatus; inTotal: boolean }
 export type OrderPlan = Pick<Plan, 'dropped' | 'ovenMovedUnderHob'>
 
@@ -56,6 +57,7 @@ export function chosenItems(picks: KitchenState['picks'], appliances: readonly K
 export function planInputOf(s: KitchenState, chosen: Chosen, snap?: ItemKey[]): PlanInput {
   const oven = chosen.oven
   const hood = chosen.hood
+  const hob = chosen.hob
   return {
     shape: s.shape,
     a: s.a,
@@ -80,6 +82,7 @@ export function planInputOf(s: KitchenState, chosen: Chosen, snap?: ItemKey[]): 
     widths: s.widths,
     oven: oven ? { w: oven.w, h: oven.h, d: oven.d } : null,
     hood: hood ? { w: hood.w } : null,
+    ...(hob?.stove ? { stove: { w: hob.w, h: hob.h, d: hob.d } } : {}),
     ...(snap ? { snap } : {}),
   }
 }
@@ -95,7 +98,13 @@ export function projectItems(state: KitchenState, plan: OrderPlan, appliances: r
   const chosen = chosenItems(state.picks, appliances)
   const dropped = new Set(plan.dropped.map((d) => d.slot).filter(Boolean))
   const out: ProjectItem[] = []
+  const stove = Boolean(chosen.hob?.stove)
   for (const slot of SLOTS) {
+    // Плита: духовка внутри неё — отдельного товара нет, цену несёт плита.
+    if (slot === 'oven' && stove) {
+      out.push({ slot, appliance: null, status: 'inStove', inTotal: false })
+      continue
+    }
     const a = chosen[slot]
     if (a === null) {
       // выключен покупателем или по умолчанию не ставится — «не нужно»;
@@ -165,8 +174,10 @@ export function whatsappText(items: readonly ProjectItem[], state: KitchenState,
   const t = kitchenTexts(lang)
   const style = getStyle(state.style)
   const lines = [t.waHello, '', `${t.shapes[state.shape][0]}: ${wallsText(state, lang)}`, `${t.waStyle}: ${style[lang]}`, '']
+  const nameOf = (i: ProjectItem) => (i.slot === 'hob' && i.appliance?.stove ? t.stove.name : t.slots[i.slot])
   for (const i of items) {
-    const name = t.slots[i.slot]
+    if (i.status === 'inStove') continue
+    const name = nameOf(i)
     if (i.status === 'typical' || !i.appliance) lines.push(`• ${name}: ${t.waAsk}`)
     else if (i.inTotal) {
       const note = i.status === 'counter' ? ` (${t.waCounter})` : i.status === 'underHob' ? ` (${t.ovenPlace.hob.toLowerCase()})` : ''
@@ -176,7 +187,7 @@ export function whatsappText(items: readonly ProjectItem[], state: KitchenState,
   const out = items.filter((i) => i.status === 'dropped' && i.appliance)
   if (out.length) {
     lines.push('', t.waDropped)
-    for (const i of out) lines.push(`• ${t.slots[i.slot]}: ${i.appliance!.name}`)
+    for (const i of out) lines.push(`• ${nameOf(i)}: ${i.appliance!.name}`)
   }
   const total = projectTotal(items)
   lines.push('', `${t.total}: ${t.pieces(total.count)} · ${formatSom(total.sum)}`, url)
