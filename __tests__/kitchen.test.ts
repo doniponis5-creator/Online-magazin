@@ -616,13 +616,12 @@ describe('проверка проекта', () => {
     expect(pick(list, 'fits')!.level).toBe('ok')
   })
 
-  it('тесная прямая кухня — треугольник слишком маленький, не всё влезло', () => {
+  it('тесная прямая кухня — рабочая линия без «треугольника», не всё влезло', () => {
     const list = checkProject(
       planKitchen({ shape: 'straight', a: 260, b: 0, c: 0, island: 0, ...set, arrangement: { A: ['hob', 'sink', 'dishwasher', 'fridge'] } }, { shelves: false }),
     )
-    const tri = pick(list, 'triangle')!
-    expect(tri.level).toBe('warn')
-    expect(Math.min(...tri.legs)).toBeLessThan(115)
+    // холодильник, мойка и варочная в одном ряду: треугольник вырожден, пункта нет
+    expect(pick(list, 'triangle')).toBeUndefined()
     expect(pick(list, 'fits')).toEqual({ id: 'fits', level: 'warn', count: 1 })
   })
 

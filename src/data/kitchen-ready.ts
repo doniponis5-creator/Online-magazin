@@ -59,10 +59,10 @@ export const READY: ReadyKitchen[] = [
   ),
   // угловые
   kitchen(
-    'corner-240x180-japandi',
-    'f=corner&a=240&b=180&s=japandi&fr=cb-00002233&ov=cb-00002147&hb=cb-00002139&hd=cb-00002138&dw=-&fc=dec-egger-h1145-st10',
-    'Угловая 240 × 180 · Японди, дуб',
-    'Бурчтук 240 × 180 · Японди, эмен',
+    'corner-310x180-japandi',
+    'f=corner&a=310&b=180&s=japandi&fr=cb-00002233&ov=cb-00002147&hb=cb-00002139&hd=cb-00002138&dw=-&o=s_160f_280twpq.h_115v&fc=dec-egger-h1145-st10',
+    'Угловая 310 × 180 · Японди, дуб',
+    'Бурчтук 310 × 180 · Японди, эмен',
   ),
   kitchen(
     'corner-300x240-marble',
@@ -72,14 +72,14 @@ export const READY: ReadyKitchen[] = [
   ),
   kitchen(
     'corner-360x300-english',
-    'f=corner&a=360&b=300&s=english&fr=cb-00002319&ov=cb-00002334&hb=cb-00002338&hd=cb-00001547&dw=cb-00002492&mw=cb-00002331&fc=ral-6028&tp=tq-calacatta',
+    'f=corner&a=360&b=300&s=english&fr=cb-00002319&ov=cb-00002334&hb=cb-00002338&hd=cb-00001547&dw=cb-00002492&mw=cb-00002331&o=s_130df_260twpq.h_180v&fc=ral-6028&tp=tq-calacatta',
     'Угловая 360 × 300 · Английская, зелёная',
     'Бурчтук 360 × 300 · Англис, жашыл',
   ),
   // П-образные
   kitchen(
     'u-300x240-minimal',
-    'f=u&a=300&b=240&c=240&s=minimal&fr=cb-00002320&ov=cb-00001782&hb=cb-00001822&hd=cb-00001444&dw=-&fc=dec-kronospan-k101&tp=tq-grey',
+    'f=u&a=300&b=240&c=240&s=minimal&fr=cb-00002320&ov=cb-00001782&hb=cb-00001822&hd=cb-00001444&dw=-&o=s-1475d.h_150v.f_145wtpq&fc=dec-kronospan-k101&tp=tq-grey',
     'П-образная 300 × 240 · Минимализм, белый',
     'П-формалуу 300 × 240 · Минимализм, ак',
   ),
@@ -91,7 +91,7 @@ export const READY: ReadyKitchen[] = [
   ),
   kitchen(
     'u-420x300-classic',
-    'f=u&a=420&b=300&c=300&s=classic&fr=cb-00002111&ov=cb-00002333&hb=cb-00002337&hd=cb-00001547&dw=cb-00002492&mw=cb-00002332&fc=ral-9001',
+    'f=u&a=420&b=300&c=300&s=classic&fr=cb-00002111&ov=cb-00002333&hb=cb-00002337&hd=cb-00001547&dw=cb-00002492&mw=cb-00002332&o=s_130df_270.h-1825v.twpq&fc=ral-9001',
     'П-образная 420 × 300 · Классика, кремовый',
     'П-формалуу 420 × 300 · Классика, каймак түс',
   ),

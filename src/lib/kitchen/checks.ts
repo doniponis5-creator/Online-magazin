@@ -29,6 +29,7 @@ export type Check =
 /**
  * Правило треугольника: каждая сторона 120–270 см, сумма не больше 790 см.
  * Нижняя граница с запасом 5 см: точку «перед прибором» мы берём примерно.
+ * Только когда приборы на разных рядах: в одном ряду пункта нет.
  */
 export const TRIANGLE = { legMin: 115, legMax: 270, sumMax: 790 }
 /** Столешница по бокам плиты — не меньше 30 см. */
@@ -118,7 +119,9 @@ export function checkProject(plan: Plan, facts: CheckFacts = {}): Check[] {
   const hob = find(plan, 'hob')
   const dw = find(plan, 'dishwasher')
 
-  if (fridge && sink && hob) {
+  // Все три в одном ряду — «рабочая линия»: точки перед ними на одной прямой,
+  // треугольник вырожден (одна сторона = сумме двух), правило к ней не мерило.
+  if (fridge && sink && hob && !(fridge.run === sink.run && sink.run === hob.run)) {
     const legs: [number, number, number] = [dist(front(fridge), front(sink)), dist(front(sink), front(hob)), dist(front(hob), front(fridge))]
     const sum = legs[0] + legs[1] + legs[2]
     const good = legs.every((l) => l >= TRIANGLE.legMin && l <= TRIANGLE.legMax) && sum <= TRIANGLE.sumMax

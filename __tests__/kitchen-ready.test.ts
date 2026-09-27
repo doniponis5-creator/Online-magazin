@@ -55,11 +55,13 @@ describe('готовые кухни (kitchen-ready.ts)', () => {
     for (const k of READY) expect(k.id).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
   })
 
-  it('по три кухни каждой формы; размеры — от 240 см до большой', () => {
+  it('по три кухни каждой формы; размеры — от маленькой до большой', () => {
     const shapes = READY.map((k) => stateOf(k.q).shape)
     for (const s of ['straight', 'corner', 'u', 'island'] as Shape[]) expect(shapes.filter((x) => x === s)).toHaveLength(3)
+    // меньше 300 см по стене A с холодильником и «треугольником» не собрать
     const lengths = READY.map((k) => stateOf(k.q).a)
-    expect(Math.min(...lengths)).toBe(240)
+    expect(Math.min(...lengths)).toBe(300)
+    expect(Math.min(...READY.map((k) => stateOf(k.q)).filter((s) => s.shape === 'corner').map((s) => s.b))).toBe(180)
     expect(Math.max(...lengths)).toBeGreaterThanOrEqual(420)
   })
 
@@ -79,14 +81,11 @@ describe('готовые кухни (kitchen-ready.ts)', () => {
     expect(READY.filter((k) => liveIds.has(new URLSearchParams(k.q).get('dw') ?? '')).length).toBeGreaterThanOrEqual(8)
   })
 
-  it('planKitchen ничего не выкидывает, checkProject без замечаний (кроме совета «треугольник»)', () => {
-    // «Треугольник» (холодильник–мойка–плита 120–270 см) — совет по удобству:
-    // авто-раскладка самого конструктора его обычно не выполняет, а размеры и
-    // безопасность (место, окно, высоты, бока плиты) — обязательны.
+  it('planKitchen ничего не выкидывает, checkProject без замечаний', () => {
     // все замечания разом, чтобы видеть каждую кухню, а не первую
     const bad = READY.flatMap((k) => {
       const plan = planOf(stateOf(k.q), catalog)
-      const warns = checkProject(plan).filter((c) => c.level === 'warn' && c.id !== 'triangle')
+      const warns = checkProject(plan).filter((c) => c.level === 'warn')
       return plan.dropped.length || warns.length ? [{ id: k.id, dropped: plan.dropped, warns }] : []
     })
     expect(bad).toEqual([])

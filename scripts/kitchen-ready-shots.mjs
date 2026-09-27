@@ -7,7 +7,8 @@
  * открывает <BASE>/ru/kitchen?<q> и берёт общий вид «3D» (engine.sheetShot) —
  * тот же кадр, что на листе мастера. Движок находится через React-дерево
  * страницы (на dev-сервере ещё и window.__kp); код сайта не меняется.
- * Только GET-запросы, ничего не отправляется.
+ * Только GET: все прочие запросы страницы (POST /api/visit — счётчик
+ * посещений и т. п.) браузер обрывает, на сайт ничего не отправляется.
  *
  * Запуск (из корня проекта):
  *   node scripts/kitchen-ready-shots.mjs                 # все 12
@@ -17,7 +18,11 @@
  *
  * Настройки: BASE (адрес сайта, по умолчанию https://smarket.kg; для
  * dev-сервера — BASE=http://localhost:3113), NO_GPU=1 — без видеокарты.
- * Браузер — установленный Google Chrome (Playwright свой не скачивает).
+ * Браузер — установленный Google Chrome (Playwright свой не скачивает);
+ * другой путь — CHROME=…, например на Windows (PowerShell):
+ *   $env:CHROME = 'C:\Program Files\Google\Chrome\Application\chrome.exe'
+ *   node scripts/kitchen-ready-shots.mjs
+ * (NO_GPU=1 на Windows обычно не нужен: там Chrome рисует через свой ANGLE.)
  */
 import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -103,6 +108,8 @@ const withTimeout = (p, ms, what) =>
 
 async function shoot(browser, { id, q }) {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
+  // только чтение: POST /api/visit и любые не-GET запросы не уходят на сайт
+  await page.route('**/*', (r) => (r.request().method() === 'GET' ? r.continue() : r.abort()))
   try {
     await page.goto(`${BASE}/ru/kitchen?${q}`, { waitUntil: 'domcontentloaded', timeout: 60_000 })
     // движок собран и кухня построена

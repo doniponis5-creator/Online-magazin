@@ -510,3 +510,35 @@ describe('2026-09-27: верхний ряд поднят встроенной в
     expect(byId(checkProject(plan), 'upperRaised')).toEqual([])
   })
 })
+
+describe('2026-09-27: рабочая линия — холодильник, мойка и варочная в одном ряду', () => {
+  const set = { fridge, hob: hob(), dishwasher: dwBuilt }
+
+  it('прямая кухня 400 см: три прибора на одной линии — пункта «треугольник» нет', () => {
+    const plan = planKitchen({ shape: 'straight', a: 400, ...base, ...set, arrangement: { A: ['fridge', 'sink', 'dishwasher', 'hob'] } }, opts)
+    expect(new Set(['fridge', 'sink', 'hob'].map((k) => plan.runs.find((r) => r.modules.some((m) => m.kind === k))!.id))).toEqual(new Set(['A']))
+    expect(byId(checkProject(plan), 'triangle')).toEqual([])
+  })
+
+  it('остров для хранения: все три у стены A — пункта «треугольник» нет', () => {
+    const plan = planKitchen({ shape: 'island', a: 420, b: 0, c: 0, island: 180, ...set, arrangement: { A: ['fridge', 'sink', 'dishwasher', 'hob'] } }, opts)
+    expect(plan.runs.some((r) => r.id === 'I')).toBe(true)
+    expect(byId(checkProject(plan), 'triangle')).toEqual([])
+  })
+})
+
+describe('2026-09-27: треугольник на разных рядах — как раньше', () => {
+  it('угловая 300×240: холодильник на стене B, мойка и варочная на A — пункт есть, стороны по точкам перед приборами', () => {
+    const plan = planKitchen(
+      { shape: 'corner', a: 300, b: 240, c: 0, island: 0, fridge, hob: hob(), dishwasher: dwBuilt, arrangement: { A: ['sink', 'dishwasher', 'hob'], B: ['fridge'] } },
+      opts,
+    )
+    const walls = (k: string) => plan.runs.find((r) => r.modules.some((m) => m.kind === k))!.id
+    expect([walls('fridge'), walls('sink'), walls('hob')]).toEqual(['B', 'A', 'A'])
+    const [tri] = byId(checkProject(plan), 'triangle')
+    expect(tri).toBeDefined()
+    // не вырожден: самая длинная сторона короче суммы двух других
+    const [s0, s1, s2] = [...tri.legs].sort((x, y) => x - y)
+    expect(s2).toBeLessThan(s0 + s1)
+  })
+})
