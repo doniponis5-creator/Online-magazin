@@ -68,12 +68,26 @@ async function sendToken(token: string): Promise<void> {
 function listen(native: PushPlugin) {
   if (listening) return
   listening = true
-  native.addListener('registration', (data) => {
+  safeListen(native, 'registration', (data) => {
     const token = (data as { value?: string })?.value
     if (token) sendToken(token)
   })
-  native.addListener('registrationError', () => undefined)
+  safeListen(native, 'registrationError', () => undefined)
   listenPushTaps()
+}
+
+/**
+ * Подписка на событие плагина, которая никогда не роняет страницу.
+ * Старая сборка приложения может не знать плагина или вернуть не Promise:
+ * тогда вызов бросает сразу — и без этой обёртки падал бы весь сайт в приложении.
+ */
+function safeListen(native: PushPlugin, event: Parameters<PushPlugin['addListener']>[0], handler: (data: unknown) => void): void {
+  try {
+    const pending = native.addListener(event, handler) as unknown
+    if (pending && typeof (pending as Promise<unknown>).catch === 'function') (pending as Promise<unknown>).catch(() => undefined)
+  } catch {
+    // плагина нет в этой сборке приложения — уведомлений просто не будет
+  }
 }
 
 let tapsListening = false
@@ -95,12 +109,10 @@ export function listenPushTaps(): void {
   const native = plugin()
   if (!native || tapsListening) return
   tapsListening = true
-  native
-    .addListener('pushNotificationActionPerformed', (action) => {
-      const data = (action as { notification?: { data?: { type?: unknown } } })?.notification?.data
-      if (data?.type === 'cart') window.location.assign(`/${currentLang()}/cart`)
-    })
-    .catch(() => undefined)
+  safeListen(native, 'pushNotificationActionPerformed', (action) => {
+    const data = (action as { notification?: { data?: { type?: unknown } } })?.notification?.data
+    if (data?.type === 'cart') window.location.assign(`/${currentLang()}/cart`)
+  })
 }
 
 /**

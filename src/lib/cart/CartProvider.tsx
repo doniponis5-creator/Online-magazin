@@ -91,13 +91,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Приложение: снимок корзины уходит на сервер для напоминаний о забытых товарах
   // (через 5 секунд тишины, без повторов — см. native/cartSync). В браузере — ничего.
+  // Сбой связи с приложением не должен ронять сайт: корзина важнее напоминаний.
   useEffect(() => {
-    if (hydrated) cartChanged(cartSnapshot(lines, demoProducts))
+    if (!hydrated) return
+    try {
+      cartChanged(cartSnapshot(lines, demoProducts))
+    } catch {
+      // напоминание о корзине не уйдёт — покупатель этого не заметит
+    }
   }, [lines, hydrated])
 
   // Нажатие на напоминание «Товары ждут в корзине» открывает корзину — слушаем с любой страницы.
   useEffect(() => {
-    listenPushTaps()
+    try {
+      listenPushTaps()
+    } catch {
+      // плагина уведомлений нет в этой сборке приложения
+    }
   }, [])
 
   // Синхронизация между вкладками: storage приходит только из ДРУГИХ вкладок,
