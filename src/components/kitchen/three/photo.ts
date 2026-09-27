@@ -96,14 +96,17 @@ function trim(img: HTMLImageElement): Photo | null {
   // Снято «три четверти» — видна боковина. Пропорции такого фото бывают
   // похожи на переднюю сторону (холодильник HISENSE RD-43WC прошёл по ним),
   // а на 3D оно лежало косо, с белыми углами. Такое фото лицом не станет.
-  if (sideShare(tops) >= SIDE_SHARE) return null
+  // Снято спереди чуть сверху (плита) — виден верх: он срезается.
+  const cut = frontTop(tops, y1 - y0 + 1)
+  if (cut === null) return null
+  const top = y0 + cut
 
   const cw = x1 - x0 + 1
-  const ch = y1 - y0 + 1
+  const ch = y1 - top + 1
   const out = document.createElement('canvas')
   out.width = cw
   out.height = ch
-  out.getContext('2d')!.drawImage(src, x0, y0, cw, ch, 0, 0, cw, ch)
+  out.getContext('2d')!.drawImage(src, x0, top, cw, ch, 0, 0, cw, ch)
   const texture = new THREE.CanvasTexture(out)
   texture.colorSpace = THREE.SRGBColorSpace
   texture.anisotropy = 8
@@ -124,8 +127,21 @@ export const SIDE_SHARE = 0.06
  * их «кромка» тоже скачет.
  */
 export function sideShare(tops: number[]): number {
+  const { left, right } = edges(tops)
+  return Math.max(left.share, right.share)
+}
+
+type Edge = { share: number; sign: number; top: number }
+
+/**
+ * Кромки слева и справа: какая доля ширины круто уходит вниз или вверх
+ * (share), куда (sign: −1 — верх растёт к середине, если идти от края) и где
+ * верх у самого края (top).
+ */
+function edges(tops: number[]): { left: Edge; right: Edge } {
   const n = tops.length
-  if (n < 10) return 0
+  const none = { share: 0, sign: 0, top: 0 }
+  if (n < 10) return { left: none, right: none }
   // медиана по окну убирает одиночные выбросы: светлую линию на ребре, ножку
   const smooth = tops.map((_, i) => {
     const win = tops
@@ -140,7 +156,7 @@ export function sideShare(tops: number[]): number {
     const b = Math.min(n - 1, i + k)
     return smooth[a] < 0 || smooth[b] < 0 ? 0 : (smooth[b] - smooth[a]) / (b - a)
   }
-  const walk = (from: number, step: 1 | -1) => {
+  const walk = (from: number, step: 1 | -1): Edge => {
     let len = 0
     let sign = 0
     for (let i = from; i >= 0 && i < n && len < n * 0.45; i += step) {
@@ -149,13 +165,46 @@ export function sideShare(tops: number[]): number {
       sign = Math.sign(s)
       len++
     }
-    return len / n
+    let top = -1
+    for (let i = from; top < 0 && i >= 0 && i < n; i += step) top = smooth[i]
+    return { share: len / n, sign, top: Math.max(0, top) }
   }
-  return Math.max(walk(0, 1), walk(n - 1, -1))
+  return { left: walk(0, 1), right: walk(n - 1, -1) }
+}
+
+/** Выше этой доли высоты «видный сверху верх» — уже не плита спереди, а снимок сверху или сбоку. */
+const TOP_SHARE_MAX = 0.15
+
+/**
+ * С какой строки (от верха обрезки) начинается лицевая сторона; null — видна
+ * боковина, фото лицом не станет.
+ *
+ * Боковина у «трёх четвертей» — с одной стороны. Если же кромка круто уходит
+ * вниз к обоим углам и почти одинаково («плечи»), значит товар снят спереди
+ * чуть сверху и виден его верх — стекло плиты в перспективе. Лицо начинается у
+ * переднего края верха: на высоте кромки у самых углов.
+ */
+export function frontTop(tops: number[], height: number): number | null {
+  const { left, right } = edges(tops)
+  const wide = Math.max(left.share, right.share)
+  if (wide < SIDE_SHARE) return 0
+  const roof = left.sign < 0 && right.sign > 0 && Math.min(left.share, right.share) >= wide * 0.6
+  if (!roof) return null
+  const top = Math.max(left.top, right.top)
+  return top <= height * TOP_SHARE_MAX ? top : null
 }
 
 /** Фото годится как лицевая сторона: пропорции совпадают с размерами (±16%). */
 export function fitsFront(photo: Photo | null | undefined, w: number, h: number): photo is Photo {
   if (!photo) return false
   return Math.abs(Math.log(photo.aspect / (w / h))) < 0.16
+}
+
+/**
+ * Фото годится как стекло варочной панели: снято сверху, пропорции совпадают
+ * с шириной и глубиной (±16%). Низ фото — передний край панели (ручки и
+ * сенсоры к покупателю), как на всех фото панелей в каталоге.
+ */
+export function fitsTop(photo: Photo | null | undefined, w: number, d: number): photo is Photo {
+  return fitsFront(photo, w, d)
 }

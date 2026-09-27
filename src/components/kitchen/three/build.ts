@@ -784,7 +784,7 @@ function stoveAt(ctx: Ctx, run: Run, m: Module, g: THREE.Group) {
   // модуль плиты planKitchen ставит только вместе с plan.stove — размер берём оттуда
   const size = ctx.input.plan.stove
   if (!size) return
-  const st = A.stove(app, ctx.mats, size)
+  const st = A.stove(app, ctx.mats, size, app?.image ? ctx.input.photos.get(app.image) : null)
   const x = (m.w - size.w) / 2
   const z = Math.max(0.01, CARCASS_D + FRONT_T - cm(size.d))
   st.position.set(cm(x), 0, z)
@@ -893,7 +893,7 @@ function countertop(ctx: Ctx, run: Run, g: THREE.Group) {
   // у отдельностоящей плиты своя варочная поверхность — в столешницу не врезается
   if (hobM && !hobM.stove && ctx.input.items.hob !== null) {
     const app = ctx.input.items.hob ?? undefined
-    const hb = A.hob(app, mats)
+    const hb = A.hob(app, mats, app?.image ? ctx.input.photos.get(app.image) : null)
     const hw = cm(app?.w ?? 59)
     hb.position.set(cm(hobM.x) + (cm(hobM.w) - hw) / 2, counterY, 0.05)
     tag(hb, 'hob')

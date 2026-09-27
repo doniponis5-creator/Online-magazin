@@ -391,6 +391,28 @@ export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolea
     photo(map: THREE.Texture) {
       return keep(new THREE.MeshPhysicalMaterial({ map, roughness: 0.25, clearcoat: 0.6, clearcoatRoughness: 0.08 }))
     },
+    /**
+     * Фото сверху на стекле варочной панели. Чёрное стекло с зеркальным лаком
+     * отражает светлую комнату и забивает фото — конфорки, надписи и решётки
+     * пропадают. Здесь блик слабый и мягкий, а светлое на фото (кольца,
+     * решётки, надписи) чуть светится само: панель читается, как на карточке
+     * товара, и остаётся стеклом.
+     */
+    hobPhoto(map: THREE.Texture) {
+      return keep(
+        new THREE.MeshPhysicalMaterial({
+          map,
+          emissiveMap: map,
+          emissive: '#ffffff',
+          emissiveIntensity: 0.22,
+          roughness: 0.3,
+          specularIntensity: 0.4,
+          clearcoat: 0.55,
+          clearcoatRoughness: 0.05,
+          envMapIntensity: 0.6,
+        }),
+      )
+    },
     plain(color: string, roughness = 0.6, metalness = 0) {
       return keep(new THREE.MeshStandardMaterial({ color, roughness, metalness }))
     },

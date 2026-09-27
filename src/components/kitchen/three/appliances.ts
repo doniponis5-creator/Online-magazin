@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import type { KitchenAppliance } from '@/lib/kitchen/types'
 import type { Mats } from './materials'
 import { box, mergeAll, mesh, openable, panels, rounded, slab, uvPlane, type Span } from './parts'
-import { fitsFront, type Photo } from './photo'
+import { fitsFront, fitsTop, type Photo } from './photo'
 import { hobTop } from './textures'
 
 /**
@@ -264,17 +264,28 @@ export function fridge(a: KitchenAppliance, mats: Mats, photo?: Photo | null): T
 
 /* ───────── варочная и вытяжка ───────── */
 
-/** Варочная поверхность: стекло на столешнице. */
-export function hob(a: KitchenAppliance | undefined, mats: Mats): THREE.Group {
+/**
+ * Варочная поверхность: стекло на столешнице. Фото товара сверху подходит по
+ * ширине и глубине — оно и есть стекло (конфорки, решётки, ручки — как у
+ * настоящей); низ фото — к покупателю (+z), без поворота и зеркала.
+ */
+export function hob(a: KitchenAppliance | undefined, mats: Mats, photo?: Photo | null): THREE.Group {
   const g = new THREE.Group()
   const w = cm(a?.w ?? 59)
   const d = cm(Math.min(a?.d ?? 52, 54))
   const kind = a?.hob ?? 'electric'
   const color = a?.finish === 'white' ? '#e9e9e7' : a?.finish === 'inox' ? '#bfc2c4' : '#0c0d0f'
-  const map = hobTop(kind, a?.burners ?? 4, color)
-  const top = new THREE.MeshPhysicalMaterial({ map, roughness: 0.08, clearcoat: 1, clearcoatRoughness: 0.03 })
-  g.add(mesh(box(w, 0.006, d), [mats.darkGlass, mats.darkGlass, top, mats.darkGlass, mats.darkGlass, mats.darkGlass], w / 2, 0.003, d / 2))
-  if (kind === 'gas') {
+  const real = a && fitsTop(photo, a.w, a.d) ? photo : null
+  const top = real
+    ? mats.hobPhoto(real.texture)
+    : new THREE.MeshPhysicalMaterial({ map: hobTop(kind, a?.burners ?? 4, color), roughness: 0.08, clearcoat: 1, clearcoatRoughness: 0.03 })
+  // Верх — фото или нарисованные конфорки — ложится целиком: у коробки без
+  // «метровых» UV (не `box`) верхняя грань — u 0…1 слева направо, v = 1 у
+  // задней кромки, 0 — у передней (низ картинки, сенсоры — к покупателю).
+  const glass = new THREE.BoxGeometry(w, 0.006, d)
+  g.add(mesh(glass, [mats.darkGlass, mats.darkGlass, top, mats.darkGlass, mats.darkGlass, mats.darkGlass], w / 2, 0.003, d / 2))
+  // решётки газовой уже на фото
+  if (kind === 'gas' && !real) {
     const iron = mats.plain('#1b1c1e', 0.55, 0.4)
     for (const x of [0.25, 0.75]) g.add(slab(iron, w * x - 0.13, 0.006, 0.04, w * x + 0.13, 0.03, d - 0.04))
   }
@@ -287,7 +298,7 @@ export function hob(a: KitchenAppliance | undefined, mats: Mats): THREE.Group {
  * варочная поверхность, что у встраиваемой (стеклокерамика или газ по `hob`).
  * Начало — левый задний угол у пола, лицо смотрит в +z.
  */
-export function stove(a: KitchenAppliance | undefined, mats: Mats, size: { w: number; h: number; d: number }): THREE.Group {
+export function stove(a: KitchenAppliance | undefined, mats: Mats, size: { w: number; h: number; d: number }, photo?: Photo | null): THREE.Group {
   const g = new THREE.Group()
   const w = cm(size.w)
   const h = cm(size.h)
@@ -301,6 +312,18 @@ export function stove(a: KitchenAppliance | undefined, mats: Mats, size: { w: nu
   const face = d - 0.02
   const panelH = 0.09
   const drawerH = 0.14
+  // варочная поверхность во весь верх
+  const top = hob(a ? { ...a, w: size.w, d: size.d } : undefined, mats)
+  top.position.set(0, bodyTop, Math.max(0, face - cm(Math.min(size.d, 54))))
+  g.add(top)
+  // Фото спереди подходит — оно лицо плиты от пола до варочной (верх, видный
+  // на фото сверху, photo.ts уже срезал), как у духовки.
+  if (a && fitsFront(photo, size.w, size.h)) {
+    g.add(slab(dark, 0.02, 0, 0.03, w - 0.02, feet, d - 0.01))
+    g.add(slab(finish, 0, feet, 0, w, bodyTop, d, true))
+    g.add(photoPart(photo, mats, w, bodyTop, [0, 0, 1, 1], w / 2, bodyTop / 2, d + 0.0015))
+    return g
+  }
   // ножки и тёмный цоколь, корпус до варочной
   g.add(slab(dark, 0.02, 0, 0.03, w - 0.02, feet, face - 0.02))
   g.add(slab(finish, 0, feet, 0, w, bodyTop, face, true))
@@ -320,10 +343,6 @@ export function stove(a: KitchenAppliance | undefined, mats: Mats, size: { w: nu
   const burners = Math.max(2, Math.min(6, a?.burners ?? 4))
   for (let i = 0; i < burners; i++) knob(g, mats, w * (0.12 + (0.5 * i) / Math.max(1, burners - 1)), py0 + panelH / 2, d - 0.004, 0.016)
   g.add(slab(mats.led, w * 0.72, py0 + panelH * 0.35, d - 0.004, w * 0.9, py0 + panelH * 0.65, d - 0.003))
-  // варочная поверхность во весь верх
-  const top = hob(a ? { ...a, w: size.w, d: size.d } : undefined, mats)
-  top.position.set(0, bodyTop, Math.max(0, face - cm(Math.min(size.d, 54))))
-  g.add(top)
   return g
 }
 

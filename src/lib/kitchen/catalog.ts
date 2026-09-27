@@ -233,10 +233,33 @@ function stoveKind(text: string): HobKind | null {
   return null
 }
 
-function hobKind(text: string): HobKind {
+/**
+ * Вид варочной панели. burners — «Тип» и строки про конфорки («Конфорки =
+ * 2 газовые + 2 электрические», «Мощность газовых конфорок»): есть там газ —
+ * панель газовая, даже комбинированная с индукцией (норма вытяжки 75 см).
+ */
+function hobKind(text: string, burners = ''): HobKind {
+  if (/газ/.test(burners)) return 'gas'
   if (/индукц/.test(text)) return 'induction'
   if (/газ/.test(text)) return 'gas'
   return 'electric'
+}
+
+/**
+ * Число конфорок: «Количество конфорок = 3» → 3; «Конфорки = 3 газовые +
+ * 1 инфракрасная» → 4 (сумма); иначе «4 конфорки» в названии или строках;
+ * не понять — 4.
+ */
+function burnersOf(name: string, specs: Spec[]): number {
+  const valid = (n: number | null | undefined): n is number => n !== null && n !== undefined && Number.isInteger(n) && n >= 1 && n <= 6
+  const count = find(specs, /^(количество|число) (конфорок|зон)/)
+  const byCount = count ? rawNumber(count) : null
+  if (valid(byCount)) return byCount
+  const listed = find(specs, /^конфорки$/)?.split('+').map(rawNumber)
+  const sum = listed && listed.every((n) => n !== null) ? listed.reduce((t, n) => t + n!, 0) : null
+  if (valid(sum)) return sum
+  const loose = `${name} ${specs.map((s) => `${s.label} ${s.value}`).join(' ')}`.match(/(\d)\s*(конфор|зон)/i)
+  return Number(loose?.[1] ?? 4)
 }
 
 const round = (v: number) => Math.round(v * 10) / 10
@@ -283,7 +306,11 @@ export function applianceFromProduct(p: Product): KitchenAppliance | null {
     finishOf(p.nameRu.replace(/встраиваем\S*/i, '')) ??
     (slot === 'washer' || slot === 'fridge' ? 'white' : 'black')
 
-  const burnersMatch = `${p.nameRu} ${specs.map((s) => `${s.label} ${s.value}`).join(' ')}`.match(/(\d)\s*(конфор|зон)/i)
+  const burnersText = specs
+    .filter((s) => /^тип$|конфор/.test(s.label.trim().toLowerCase()))
+    .map((s) => `${s.label} ${s.value}`)
+    .join(' ')
+    .toLowerCase()
 
   return {
     id: p.id,
@@ -301,8 +328,8 @@ export function applianceFromProduct(p: Product): KitchenAppliance | null {
     finish,
     hood: slot === 'hood' ? hoodKind(type) : undefined,
     fridge,
-    hob: stove ? (stoveKind([type, find(specs, /варочн/), find(specs, /конфор/)].join(' ').toLowerCase()) ?? hobKind(text)) : slot === 'hob' ? hobKind(text) : undefined,
-    burners: slot === 'hob' ? Number(burnersMatch?.[1] ?? 4) : undefined,
+    hob: stove ? (stoveKind([type, find(specs, /варочн/), find(specs, /конфор/)].join(' ').toLowerCase()) ?? hobKind(text)) : slot === 'hob' ? hobKind(text, burnersText) : undefined,
+    burners: slot === 'hob' ? burnersOf(p.nameRu, specs) : undefined,
     ...(stove ? { stove: true } : {}),
   }
 }
