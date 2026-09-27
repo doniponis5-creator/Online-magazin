@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildKitchen } from '@/components/kitchen/three/build'
 import { planKitchen, type PlanInput } from '@/lib/kitchen/layout'
-import { cutList, frontList, type SpecData } from '@/lib/kitchen/spec'
+import { cutList, extraList, frontList, type SpecData, type SpecExtra } from '@/lib/kitchen/spec'
 import { getTone, STYLES, type KitchenStyle } from '@/lib/kitchen/styles'
 import type { HobKind, KitchenAppliance, Shape } from '@/lib/kitchen/types'
 import { cutParts, edgeTotals, nest, type CutLook, type CutPart, type NestResult } from '@/lib/kitchen/cutting'
@@ -51,7 +51,7 @@ const hood = appliance({ slot: 'hood', w: 60, h: 50, d: 50, hood: 'chimney' })
 const hob = (kind: HobKind = 'electric') => appliance({ slot: 'hob', w: 59, h: 5, d: 52, builtIn: true, hob: kind })
 const dw = (w = 45) => appliance({ slot: 'dishwasher', w: w - 0.2, h: 81.5, d: 55, builtIn: true })
 
-type Kitchen = { shape: Shape; a: number; b: number; c: number; island: number; style?: KitchenStyle; ceiling?: number; toCeiling?: boolean; col?: Partial<PlanInput>; gas?: boolean; dwW?: number }
+type Kitchen = { shape: Shape; a: number; b: number; c: number; island: number; style?: KitchenStyle; tone?: number; ceiling?: number; toCeiling?: boolean; col?: Partial<PlanInput>; gas?: boolean; dwW?: number }
 
 function spec(k: Kitchen): SpecData {
   const style = k.style ?? STYLES[0]
@@ -61,7 +61,7 @@ function spec(k: Kitchen): SpecData {
   return buildKitchen({
     plan,
     style,
-    tone: getTone(style, 0),
+    tone: getTone(style, k.tone ?? 0),
     items,
     photos: new Map(),
     evening: false,
@@ -88,7 +88,9 @@ describe('cutParts: детали корпусов и фасадов', () => {
       expect(total(body(parts))).toBe(total(cut))
       expect(total(body(parts).filter((p) => p.material.kind === 'hdf'))).toBe(total(cut.filter((r) => r.hdf)))
       expect(total(body(parts).filter((p) => p.material.kind === 'ldsp'))).toBe(total(cut.filter((r) => !r.hdf)))
-      expect(total(fronts(parts))).toBe(total(frontList(s.runs)))
+      // таск 01b (Решения §5a): доборы, планки угла и задняя панель острова — тоже в цвет фасадов; раньше их в раскрое не было
+      const panels = extraList(s).filter((r) => r.kind === 'filler' || r.kind === 'strip' || r.kind === 'islandBack')
+      expect(total(fronts(parts))).toBe(total(frontList(s.runs)) + total(panels))
       expect(total(parts)).toBeGreaterThan(40)
     }
   })
@@ -156,7 +158,7 @@ describe('edgeTotals: метры кромки по толщине, запас 10
     expect(edgeTotals(cutParts(oneBase(), {}))).toEqual([
       { thick: 0.4, net: 0.5, meters: 0.6 }, // 0,536 × 1,1 = 0,59
       { thick: 1, net: 2, meters: 2.2 }, // 1,974 × 1,1 = 2,17
-      { thick: 2, net: 2, meters: 2.2 }, // 2,024 × 1,1 = 2,23
+      { thick: 2, net: 2, meters: 2.3 }, // 2,024 × 1,1 = 2,2264 → купить 2,3 (таск 01b: вверх, было до ближайшего 2,2)
     ])
   })
 
@@ -329,12 +331,147 @@ describe('nest на переборе кухонь', () => {
       }
       // каждая деталь из листа — на листе столько раз, сколько штук, или в oversize
       const over = new Set(res.flatMap((r) => r.oversize))
-      for (const p of parts.filter((x) => x.material.kind !== 'mdf')) {
+      // таск 01b: не из листа теперь не только 'mdf', но и 'shop' (стекло, рамочные, фасад стиля) — из листа только ЛДСП и ХДФ
+      const sheetKind = (x: CutPart) => x.material.kind === 'ldsp' || x.material.kind === 'hdf'
+      for (const p of parts.filter(sheetKind)) {
         if (over.has(p.id)) continue
         expect(seen.get(p.id), `${name}: деталь ${p.id}`).toBe(p.count)
       }
-      for (const p of parts.filter((x) => x.material.kind === 'mdf')) expect(seen.has(p.id), name).toBe(false)
+      for (const p of parts.filter((x) => !sheetKind(x))) expect(seen.has(p.id), name).toBe(false)
     }
     expect(n).toBeGreaterThanOrEqual(200)
   }, 120_000)
+})
+
+/* ───────────── второй цвет верха, доборы и планки (таск 01b) ───────────── */
+
+describe('признак upper из 3D: фасады и доборы верхнего ряда', () => {
+  it('угловая и П-образная до потолка: upper — у фасадов выше столешницы (верх, антресоли, над холодильником), у низа — нет', () => {
+    for (const s of [corner, uShape]) {
+      const all = s.runs.flatMap((r) => r.fronts)
+      const high = (f: { y: number }) => f.y >= s.heights.counter
+      expect(all.filter(high).length).toBeGreaterThan(0)
+      expect(all.filter((f) => !high(f)).length).toBeGreaterThan(0)
+      for (const f of all) expect(Boolean(f.upper), `${f.x}:${f.y} ${f.hinge}`).toBe(high(f))
+    }
+  })
+
+  it('добор верхнего ряда — upper, планка углового низа и задняя панель острова — нет', () => {
+    const island = spec({ shape: 'island', a: 330, b: 0, c: 0, island: 160 })
+    const ex = [...(corner.extras ?? []), ...(island.extras ?? [])]
+    expect(ex.some((e) => e.kind === 'islandBack')).toBe(true)
+    for (const e of ex.filter((e) => e.kind === 'islandBack')) expect(Boolean(e.upper)).toBe(false)
+    for (const e of ex.filter((e) => e.kind === 'filler')) expect(e.upper).toBe(true)
+  })
+})
+
+const FRONT_TYPES = ['door', 'framed', 'glass', 'drawer', 'lift', 'dw', 'panel']
+const facades = (parts: CutPart[]) => parts.filter((p) => FRONT_TYPES.includes(p.name))
+
+describe('верх своим цветом (upperFacade)', () => {
+  it('угловая кухня: верх графит, низ белый — штук каждого цвета столько, сколько фасадов выше и ниже столешницы', () => {
+    const all = corner.runs.flatMap((r) => r.fronts)
+    const high = all.filter((f) => f.y >= corner.heights.counter).length
+    const parts = facades(cutParts(corner, { facade: 'lam-white', upperFacade: 'lam-graphite' }))
+    const qty = (label: string) => total(parts.filter((p) => p.material.label === label))
+    expect(qty('Графит')).toBe(high)
+    expect(qty('Белый премиум')).toBe(all.length - high)
+    // графит — отдельная группа листов
+    expect(nest(parts).map((r) => r.material.label).sort()).toEqual(['Белый премиум', 'Графит'])
+  })
+
+  it('без upperFacade и при upperFacade = style без тона — всё как низ', () => {
+    for (const look of [{ facade: 'lam-grey' }, { facade: 'lam-grey', upperFacade: 'style' }] as CutLook[]) {
+      const parts = facades(cutParts(corner, look))
+      expect(new Set(parts.map((p) => p.material.label))).toEqual(new Set(['Серый шифер']))
+      expect(total(parts)).toBe(total(frontList(corner.runs)))
+    }
+  })
+})
+
+describe('цвет верха по умолчанию — тон стиля (styles.ts, materials.ts)', () => {
+  // первый тон с отдельным однотонным верхом: у стиля нет материала фасада — всё в цех фасадов
+  const pick = STYLES.flatMap((st) => st.tones.map((t, i) => ({ st, t, i }))).find((x) => x.t.upper && !x.t.texture && !x.t.upperTexture)!
+  const s = spec({ shape: 'corner', a: 300, b: 240, c: 0, island: 0, style: pick.st, tone: pick.i })
+  const all = s.runs.flatMap((r) => r.fronts)
+  const high = all.filter((f) => f.y >= s.heights.counter).length
+  const colorQty = (parts: CutPart[], color: string) => total(facades(parts).filter((p) => p.material.color === color))
+
+  it('без upperFacade: верх — цветом верха тона, низ — цветом фасадов тона; из листа ничего', () => {
+    const parts = cutParts(s, { tone: pick.t })
+    expect(colorQty(parts, pick.t.upper!)).toBe(high)
+    expect(colorQty(parts, pick.t.facade)).toBe(all.length - high)
+    expect(nest(facades(parts))).toEqual([])
+  })
+
+  it('фасад из каталога — верх как низ (как в 3D); upperFacade = style — снова цвет верха тона', () => {
+    expect(colorQty(cutParts(s, { tone: pick.t, facade: 'lam-grey' }), '#8e9194')).toBe(all.length)
+    const both = cutParts(s, { tone: pick.t, facade: 'lam-grey', upperFacade: 'style' })
+    expect(colorQty(both, pick.t.upper!)).toBe(high)
+    expect(colorQty(both, '#8e9194')).toBe(all.length - high)
+  })
+})
+
+describe('доборы, планки угла, задняя панель острова — в раскрое и листах (Решения §5a)', () => {
+  /** Без шкафов и фасадов: 4 задние панели острова 200 × 80 см, 2 добора верха 15 × 70, планка угла 5 × 71,6 и проём (не деталь). */
+  const withExtras = (extras: SpecExtra[]): SpecData => ({ ...oneBase(), runs: [{ ...oneBase().runs[0], fronts: [] }], carcasses: [], extras })
+  const ex: SpecExtra[] = [
+    ...[1, 2, 3, 4].map((): SpecExtra => ({ kind: 'islandBack', run: 'I', w: 200, h: 80 })),
+    { kind: 'filler', run: 'A', w: 15, h: 70, upper: true },
+    { kind: 'filler', run: 'A', w: 15, h: 70, upper: true },
+    { kind: 'strip', run: 'A', w: 5, h: 71.6 },
+    { kind: 'dwOpening', run: 'A', w: 45, h: 82, hMax: 87 },
+  ]
+  const look: CutLook = { facade: 'lam-white', upperFacade: 'lam-graphite' }
+
+  it('детали в цвет фасада, доборы верха — в цвет верха; ЛДСП 16, кромка 2 мм по кругу; проём — не деталь', () => {
+    const parts = cutParts(withExtras(ex), look)
+    const row = (p: CutPart) => [p.name, p.length, p.width, p.count, p.material.kind, p.material.label]
+    expect(parts.map(row)).toHaveLength(3)
+    expect(parts.map(row)).toEqual(
+      expect.arrayContaining([
+        ['islandBack', 2000, 800, 4, 'ldsp', 'Белый премиум'],
+        ['strip', 716, 50, 1, 'ldsp', 'Белый премиум'],
+        ['filler', 700, 150, 2, 'ldsp', 'Графит'],
+      ]),
+    )
+    for (const p of parts) expect(p.edges).toEqual({ l1: 2, l2: 2, w1: 2, w2: 2 })
+    // 2 мм: 4 × 2 × (2000 + 800) + 2 × 2 × (700 + 150) + 2 × (716 + 50) = 22 400 + 3 400 + 1 532 = 27 332 мм; × 1,1 = 30,07
+    expect(edgeTotals(parts)).toEqual([{ thick: 2, net: 27.3, meters: 30.1 }])
+  })
+
+  it('листов больше на эти детали: белых 2 (6,44 м² > рабочих 2,78 × 2,05 = 5,70 м²), графит — 1; без доборов листов нет', () => {
+    const sheets = (e: SpecExtra[]) => nest(cutParts(withExtras(e), look)).map((r) => [r.material.label, r.sheets.length])
+    expect(sheets(ex)).toEqual([
+      ['Белый премиум', 2],
+      ['Графит', 1],
+    ])
+    expect(sheets([])).toEqual([])
+  })
+
+  it('МДФ — не из листа, в раскладку не идёт; добор из тона стиля — в цех фасадов', () => {
+    const mdf = cutParts(withExtras(ex), { facade: 'en-white' })
+    expect(mdf.filter((p) => p.material.kind === 'ldsp')).toEqual([])
+    expect(total(mdf)).toBe(7)
+    expect(nest(mdf)).toEqual([])
+  })
+})
+
+describe('мелочи ревью (таск 01b)', () => {
+  it('неизвестный id отделки — явный отказ: фасад, верх, корпус, свой цвет фасада', () => {
+    expect(() => cutParts(oneBase(), { facade: 'no-such' })).toThrow(/no-such/)
+    expect(() => cutParts(oneBase(), { upperFacade: 'nope' })).toThrow(/nope/)
+    expect(() => cutParts(oneBase(), { body: 'bad-body' })).toThrow(/bad-body/)
+    const own = oneBase()
+    own.runs[0].fronts[0].color = 'gone'
+    expect(() => cutParts(own, {})).toThrow(/gone/)
+  })
+
+  it('кромку «купить» — вверх до 0,1 м: ровно 2,2 м остаётся 2,2', () => {
+    // деталь 1000 × 0 не бывает — берём фасад 500 × 500 из ЛДСП: 2 мм по кругу = 2000 мм, × 1,1 = 2,2 ровно
+    const sq = oneBase()
+    sq.carcasses = []
+    sq.runs[0].fronts[0] = { ...sq.runs[0].fronts[0], w: 50, h: 50 }
+    expect(edgeTotals(cutParts(sq, {}))).toEqual([{ thick: 2, net: 2, meters: 2.2 }])
+  })
 })

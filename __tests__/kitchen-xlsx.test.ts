@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { kitchenTexts } from '@/components/kitchen/texts'
 import { cutWorkbook } from '@/lib/kitchen/cutExcel'
 import type { CutLook } from '@/lib/kitchen/cutting'
-import { cutList, frontList, type SpecData } from '@/lib/kitchen/spec'
+import { cutList, extraList, frontList, type SpecData } from '@/lib/kitchen/spec'
 import { buildKitchen } from '@/components/kitchen/three/build'
 import { frontColor } from '@/lib/kitchen/finishes'
 import { planKitchen } from '@/lib/kitchen/layout'
@@ -202,7 +202,8 @@ describe('cutWorkbook — листы и колонки по историям 2�
   it('«Фасады»: то, что не из листа, — высота и ширина как у фасада, м², итог', () => {
     const drawer = { x: 0.2, y: 0, w: 59.6, h: 17.6, hinge: 'drawer' as const, glass: false, framed: false, handle: true }
     const two: SpecData = { ...one, runs: [{ ...one.runs[0], fronts: [...one.runs[0].fronts, drawer] }] }
-    const enamel = ['МДФ 18 мм, эмаль', 'Белый мат']
+    // таск 01b: толщины у МДФ-фасадов в каталоге нет — «18 мм» было выдумано, теперь не пишется
+    const enamel = ['МДФ, эмаль', 'Белый мат']
     expect(sheet(book(two, { facade: 'en-white' }), 'Фасады').slice(1)).toEqual([
       ['Дверца', ...enamel, 716, 596, 1, 0.43],
       ['Фасад ящика', ...enamel, 176, 596, 1, 0.1],
@@ -230,9 +231,10 @@ describe('cutWorkbook — листы и колонки по историям 2�
 describe('cutWorkbook — итоги кромки и листов (истории 5, 7)', () => {
   it('«Кромка»: метры каждой толщины, чистые и с запасом 10% (разобрано вручную)', () => {
     // 1 мм: боковины 2 × 720 + дно 568 + полка 566; 0,4: царги 2 × 568; 2 мм: дверца по периметру 2 × (716 + 596)
+    // таск 01b: «купить» — вверх до 0,1 м (было до ближайшего): 1,136 × 1,1 = 1,2496 → 1,3; 2,574 × 1,1 = 2,8314 → 2,9; 2,624 × 1,1 = 2,8864 → 2,9
     expect(sheet(book(), 'Кромка').slice(1, 4)).toEqual([
-      [0.4, 1.1, 1.2],
-      [1, 2.6, 2.8],
+      [0.4, 1.1, 1.3],
+      [1, 2.6, 2.9],
       [2, 2.6, 2.9],
     ])
   })
@@ -305,9 +307,11 @@ describe('угловая кухня: книга → .xlsx → обратно', (
     const cut = sheet(book(corner), 'Распил').slice(1)
     const body = cutList(corner.carcasses, corner.panels)
     const ldspFronts = frontList(corner.runs).filter((r) => r.type !== 'glass' && r.type !== 'framed' && (frontColor(r.color)?.material ?? 'laminate') === 'laminate')
-    expect(cut).toHaveLength(body.length + ldspFronts.length)
+    // таск 01b (Решения §5a): доборы, планки угла и задняя панель острова (белый ламинат) — тоже из листа; раньше их в «Распил» не было
+    const panels = extraList(corner).filter((r) => r.kind === 'filler' || r.kind === 'strip' || r.kind === 'islandBack')
+    expect(cut).toHaveLength(body.length + ldspFronts.length + panels.length)
     const qty = (rows: { count: number }[]) => rows.reduce((s, r) => s + r.count, 0)
-    expect(cut.reduce((s, r) => s + (r[6] as number), 0)).toBe(qty(body) + qty(ldspFronts))
+    expect(cut.reduce((s, r) => s + (r[6] as number), 0)).toBe(qty(body) + qty(ldspFronts) + qty(panels))
   })
 
   it('файл разбирается обратно: листы и ячейки те же, что в книге; ky — свои подписи', () => {
@@ -333,3 +337,67 @@ describe('угловая кухня: книга → .xlsx → обратно', (
   })
 })
 
+
+/* ───────────── таск 01b: фасады из деталей, язык, листы ───────────── */
+
+describe('cutWorkbook — «Фасады» из самих деталей (Решения §5)', () => {
+  const glass = { x: 0.2, y: 150, w: 59.6, h: 71.6, hinge: 'left' as const, glass: true, framed: false, handle: true, upper: true }
+  const withGlass: SpecData = { ...one, runs: [{ ...one.runs[0], fronts: [...one.runs[0].fronts, glass] }] }
+
+  it('стекло в плёнке — в цех фасадов без «МДФ»; дверца из ЛДСП — в «Распил»; 716 × 596 = 0,43 м²', () => {
+    const b = book(withGlass)
+    expect(sheet(b, 'Фасады').slice(1)).toEqual([
+      ['Дверца со стеклом', 'в плёнке', 'Белый премиум', 716, 596, 1, 0.43],
+      ['Итого', null, null, null, null, 1, 0.43],
+    ])
+    expect(sheet(b, 'Распил').filter((r) => r[1] === 'Дверца')).toHaveLength(1)
+  })
+
+  it('фасад стиля без материала — в цех фасадов с пометкой «материал по стилю — уточнить»', () => {
+    const style = { ru: 'Орех стиля', ky: 'Стилдин жаңгагы', color: '#7a5436', wood: true }
+    expect(sheet(book(one, { facade: style }), 'Фасады').slice(1)).toEqual([
+      ['Дверца', 'материал по стилю — уточнить', 'Орех стиля', 716, 596, 1, 0.43],
+      ['Итого', null, null, null, null, 1, 0.43],
+    ])
+  })
+
+  it('МДФ-добор — тоже в «Фасады»: добор 150 × 700 = 0,105 м², итого 0,4267 + 0,105 = 0,53', () => {
+    const withFiller: SpecData = { ...one, extras: [{ kind: 'filler', run: 'A', w: 15, h: 70, upper: true }] }
+    expect(sheet(book(withFiller, { facade: 'en-white' }), 'Фасады').slice(1)).toEqual([
+      ['Дверца', 'МДФ, эмаль', 'Белый мат', 716, 596, 1, 0.43],
+      ['Добор — панель без корпуса', 'МДФ, эмаль', 'Белый мат', 700, 150, 1, 0.11],
+      ['Итого', null, null, null, null, 2, 0.53],
+    ])
+  })
+
+  it('неизвестный id отделки — явный отказ, а не белый', () => {
+    expect(() => book(one, { facade: 'no-such' })).toThrow(/no-such/)
+  })
+})
+
+describe('cutWorkbook — язык, «Листы», ширины (таск 01b)', () => {
+  it('язык — из t: lang в look не спорит с подписями', () => {
+    const ky = kitchenTexts('ky')
+    expect(sheet(cutWorkbook(one, { lang: 'ru' }, ky), 'Кесүү')[1][3]).toBe('Премиум ак')
+  })
+
+  it('пропуски номеров в «Распил» объяснены: дверца из эмали — № 6 в «Фасады»', () => {
+    const rows = sheet(book(one, { facade: 'en-white' }), 'Распил')
+    expect(rows.map((r) => r[0]).filter((v) => typeof v === 'number')).toEqual([1, 2, 3, 4, 5])
+    expect(rows[rows.length - 1]).toEqual(['№ 6 — не из листа: они в листе «Фасады»'])
+  })
+
+  it('«Листы»: у повёрнутой детали размеры как в «Распил» и «Повёрнута: да» (3 панели 2000 × 800 — на лист только поперёк)', () => {
+    const backs: SpecData = { ...one, runs: [{ ...one.runs[0], fronts: [] }], carcasses: [], extras: [1, 2, 3].map(() => ({ kind: 'islandBack' as const, run: 'I' as const, w: 200, h: 80 })) }
+    const b = book(backs)
+    expect(sheet(b, 'Распил')[1].slice(4, 7)).toEqual([2000, 800, 3])
+    const placed = sheet(b, 'Листы').filter((r) => r.length === 7 && typeof r[0] === 'number')
+    expect(placed).toHaveLength(3)
+    for (const r of placed) expect([r[0], r[1], r[2], r[3], r[6]]).toEqual([1, '1 · Задняя панель острова', 2000, 800, 'да'])
+  })
+
+  it('колонки кромки в «Распил» — не уже 11', () => {
+    const w = book().find((s) => s.name === 'Распил')!.widths!
+    for (const i of [7, 8, 9, 10]) expect(w[i]).toBeGreaterThanOrEqual(11)
+  })
+})

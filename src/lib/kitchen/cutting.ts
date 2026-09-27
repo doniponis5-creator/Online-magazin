@@ -1,6 +1,6 @@
-import { FRONT_T } from './dims'
 import { frontColor, type FrontMaterial } from './finishes'
-import { cutList, frontList, LDSP, type CutName, type FrontType, type SpecData } from './spec'
+import { cutList, extraList, frontList, HDF, LDSP, type CutName, type ExtraKind, type FrontType, type SpecData } from './spec'
+import type { Tone } from './styles'
 
 /**
  * Раскрой для пильного центра: детали из листа с кромкой по сторонам,
@@ -11,14 +11,30 @@ import { cutList, frontList, LDSP, type CutName, type FrontType, type SpecData }
 
 /* ───────── отделка ───────── */
 
-/** Отделка без id каталога (фасад стиля): материал, название, цвет, древесный ли декор. */
-export type CutFinish = { material: FrontMaterial; ru: string; ky: string; color: string; wood: boolean }
+/**
+ * Отделка без id каталога: материал, название, цвет, древесный ли декор.
+ * Нет материала — фасад стиля: в цех фасадов с пометкой «материал по стилю — уточнить».
+ */
+export type CutFinish = { material?: FrontMaterial; ru: string; ky: string; color: string; wood: boolean }
+
+/** Тон стиля (`styles.ts`): цвет фасадов и отдельный цвет верха, если есть. */
+export type CutTone = Pick<Tone, 'ru' | 'ky' | 'facade' | 'upper' | 'texture' | 'upperTexture'>
 
 export type EdgeThick = 0 | 0.4 | 1 | 2
 
 export type CutLook = {
   /** фасады: id из каталога отделки (`FRONT_COLORS`) или отделка стиля; нет — белый ламинат */
   facade?: string | CutFinish
+  /**
+   * верхние фасады (`SpecFront.upper`) и доборы верха: id из каталога или своя отделка;
+   * 'style' — цвет верха стиля; нет — как в 3D (`createMaterials`): при фасаде из каталога — как низ, иначе верх тона
+   */
+  upperFacade?: string | CutFinish
+  /**
+   * тон стиля: без `facade` фасады — цветом тона, верх — цветом верха тона (`Tone.upper`);
+   * материала у стиля нет — такие детали идут в цех фасадов
+   */
+  tone?: CutTone
   /** корпус: id из каталога или своя отделка; нет — белый без текстуры */
   body?: string | CutFinish
   /** толщина видимой кромки корпуса, мм; нет — 1 */
@@ -28,22 +44,28 @@ export type CutLook = {
 }
 
 export type CutMaterial = {
-  /** ЛДСП и ХДФ режутся из листа; МДФ-фасады (акрил, эмаль, шпон, Fenix) — в цех фасадов */
-  kind: 'ldsp' | 'hdf' | 'mdf'
+  /**
+   * ЛДСП и ХДФ режутся из листа; МДФ-фасады (акрил, эмаль, шпон, Fenix) — в цех фасадов;
+   * shop — тоже в цех фасадов, но материал основы не утверждаем: стекло, рамочные, фасад стиля
+   */
+  kind: 'ldsp' | 'hdf' | 'mdf' | 'shop'
   /** название цвета или декора */
   label: string
   /** цвет для карты раскроя, #rrggbb */
   color: string
-  /** толщина, мм */
-  thick: number
+  /** толщина, мм; null — не из листа: толщину задаёт цех фасадов (в каталоге её нет) */
+  thick: number | null
 }
+
+/** Фасад или добор как деталь для цеха фасадов: высота и ширина (как в чертеже), отделка; null — фасад стиля, материал уточнить. */
+export type CutFace = { h: number; w: number; finish: FrontMaterial | null }
 
 export type CutPart = {
   /** номер детали в раскрое: «1», «2»… — им подписаны детали на карте листа */
   id: string
-  /** что за деталь: корпус (`CutName`) или фасад (`FrontType`) */
-  name: CutName | FrontType
-  /** фасад, а не деталь корпуса */
+  /** что за деталь: корпус (`CutName`), фасад (`FrontType`) или добор, планка, панель острова (`PanelName`) */
+  name: CutName | FrontType | PanelName
+  /** в цвет фасадов (фасад или добор), а не деталь корпуса */
   front: boolean
   material: CutMaterial
   /** длина, мм: у детали с текстурой — вдоль волокна (вдоль длины листа) */
@@ -53,23 +75,35 @@ export type CutPart = {
   count: number
   /** древесный декор: кладётся только вдоль волокна, не поворачивается */
   grain: boolean
-  /** кромка, мм: l1, l2 — по длинным сторонам (длина), w1, w2 — по ширине; l1/w1 — передняя */
+  /**
+   * кромка, мм: l1, l2 — по сторонам длины (`length`), w1, w2 — по сторонам ширины (`width`); l1/w1 — передняя.
+   * У детали с текстурой длина — вдоль волокна и бывает короче ширины (дно под дерево 268 × 560): Д — не «длинная сторона»
+   */
   edges: { l1: EdgeThick; l2: EdgeThick; w1: EdgeThick; w2: EdgeThick }
+  /** у фасадов и доборов (`front`): высота, ширина и отделка — для листа «Фасады» */
+  facade?: CutFace
   note?: string
 }
 
-/** ХДФ задних стенок, мм. */
-const HDF_T = 3
 /** Белый без текстуры — корпус и фасады, когда отделка не выбрана. */
 const WHITE = 'lam-white'
 
-type Finish = { material: FrontMaterial; label: string; color: string; wood: boolean }
+/** material null — отделка стиля, материал не известен */
+type Finish = { material: FrontMaterial | null; label: string; color: string; wood: boolean }
 
 function finishOf(f: string | CutFinish | undefined, lang: 'ru' | 'ky'): Finish {
-  if (f && typeof f !== 'string') return { material: f.material, label: lang === 'ky' ? f.ky : f.ru, color: f.color, wood: f.wood }
-  const c = frontColor(f) ?? frontColor(WHITE)!
+  if (f && typeof f !== 'string') return { material: f.material ?? null, label: lang === 'ky' ? f.ky : f.ru, color: f.color, wood: f.wood }
+  // неизвестный id — отказ: молча подставленный белый ушёл бы в распил чужим цветом
+  const c = frontColor(f ?? WHITE)
+  if (!c) throw new Error(`Неизвестная отделка: ${f}`)
   return { material: c.material, label: lang === 'ky' ? c.ky : c.ru, color: c.color, wood: c.texture === 'wood' }
 }
+
+const sameFinish = (a: Finish, b: Finish) => a.material === b.material && a.label === b.label && a.color === b.color && a.wood === b.wood
+
+/** Детали в цвет фасадов, которые не фасады: добор верха, планка углового шкафа, задняя панель острова. */
+export type PanelName = Extract<ExtraKind, 'filler' | 'strip' | 'islandBack'>
+const PANELS: PanelName[] = ['filler', 'strip', 'islandBack']
 
 /* ───────── детали ───────── */
 
@@ -77,7 +111,21 @@ function finishOf(f: string | CutFinish | undefined, lang: 'ru' | 'ky'): Finish 
 export function cutParts(spec: SpecData, look: CutLook): CutPart[] {
   const lang = look.lang ?? 'ru'
   const body = finishOf(look.body, lang)
-  const facade = finishOf(look.facade, lang)
+  // цвета тона — названием тона и цветом: у тона одно имя на низ и верх
+  const tone = look.tone
+  const toneFinish = (t: CutTone, color: string, texture: CutTone['texture']): Finish => ({ material: null, label: `${lang === 'ky' ? t.ky : t.ru}, ${color}`, color, wood: texture === 'wood' })
+  const styleFacade = tone ? toneFinish(tone, tone.facade, tone.texture) : null
+  const styleUpper = tone?.upper ? toneFinish(tone, tone.upper, tone.upperTexture) : null
+  const facade = look.facade || !styleFacade ? finishOf(look.facade, lang) : styleFacade
+  // верх — по тем же правилам, что в 3D (`createMaterials`): свой цвет; иначе как низ из каталога; иначе верх тона
+  const upper =
+    look.upperFacade === 'style'
+      ? (styleUpper ?? (look.facade ? (styleFacade ?? facade) : facade))
+      : look.upperFacade
+        ? finishOf(look.upperFacade, lang)
+        : look.facade
+          ? facade
+          : (styleUpper ?? facade)
   const visible = look.bodyEdge ?? 1
   const fronts = frontSides(spec)
   const out: CutPart[] = []
@@ -87,7 +135,7 @@ export function cutParts(spec: SpecData, look: CutLook): CutPart[] {
     const hdf = row.hdf
     const grain = !hdf && body.wood
     const material: CutMaterial = hdf
-      ? { kind: 'hdf', label: body.label, color: body.color, thick: HDF_T }
+      ? { kind: 'hdf', label: body.label, color: body.color, thick: HDF }
       : { kind: 'ldsp', label: body.label, color: body.color, thick: LDSP }
     // передняя сторона детали: боковина — по высоте, дно, крыша, полка, царга — по ширине шкафа
     const front = fronts.get(`${row.name}:${row.a}:${row.b}`) ?? row.a
@@ -101,18 +149,29 @@ export function cutParts(spec: SpecData, look: CutLook): CutPart[] {
     push({ name: row.name, front: false, material, length, width, count: row.count, grain, edges })
   }
 
-  for (const row of frontList(spec.runs)) {
-    const f = row.color && frontColor(row.color) ? finishOf(row.color, lang) : facade
-    // рамка со стеклом и рамочный фасад из плоского листа не выпилить — в цех фасадов
-    const sheet = f.material === 'laminate' && row.type !== 'glass' && row.type !== 'framed'
+  // фасад, добор, планка угла, задняя панель острова — в цвет фасадов (верх — в цвет верха)
+  const face = (name: FrontType | PanelName, w: number, h: number, count: number, f: Finish) => {
+    // рамка со стеклом и рамочный фасад из плоского листа не выпилить, у стиля материала нет — в цех фасадов, без «МДФ»
+    const shop = name === 'glass' || name === 'framed' || f.material === null
+    const sheet = !shop && f.material === 'laminate'
     const grain = f.wood
-    const material: CutMaterial = sheet
-      ? { kind: 'ldsp', label: f.label, color: f.color, thick: LDSP }
-      : { kind: 'mdf', label: f.label, color: f.color, thick: Math.round(FRONT_T * 10) }
-    // волокно фасада — вдоль высоты
-    const [length, width] = grain || row.h >= row.w ? [row.h, row.w] : [row.w, row.h]
+    const material: CutMaterial = { kind: sheet ? 'ldsp' : shop ? 'shop' : 'mdf', label: f.label, color: f.color, thick: sheet ? LDSP : null }
+    // волокно — вдоль высоты
+    const [length, width] = grain || h >= w ? [h, w] : [w, h]
+    // видимые кромки — 2 мм по кругу, как у фасада из ЛДСП; не из листа — без кромки
     const e: EdgeThick = sheet ? 2 : 0
-    push({ name: row.type, front: true, material, length, width, count: row.count, grain, edges: { l1: e, l2: e, w1: e, w2: e } })
+    push({ name, front: true, material, length, width, count, grain, edges: { l1: e, l2: e, w1: e, w2: e }, facade: { h, w, finish: f.material } })
+  }
+  // верх другого цвета — детали верха своими строками; один цвет — как раньше, одним списком
+  const two = !sameFinish(upper, facade)
+  const sides: [boolean | null, Finish][] = two ? [[false, facade], [true, upper]] : [[null, facade]]
+  for (const [up, own] of sides) {
+    const runs = up === null ? spec.runs : spec.runs.map((r) => ({ ...r, fronts: r.fronts.filter((f) => Boolean(f.upper) === up) }))
+    for (const row of frontList(runs)) face(row.type, row.w, row.h, row.count, row.color ? finishOf(row.color, lang) : own)
+  }
+  for (const [up, own] of sides) {
+    const extras = (spec.extras ?? []).filter((e) => PANELS.includes(e.kind as PanelName) && (up === null || Boolean(e.upper) === up))
+    for (const row of extraList({ extras })) face(row.kind as PanelName, row.w, row.h, row.count, own)
   }
   return out
 }
@@ -127,7 +186,7 @@ export type EdgeTotal = {
   thick: EdgeThick
   /** метров чистых, до 0,1 */
   net: number
-  /** метров с запасом 10%, до 0,1 — столько купить */
+  /** метров с запасом 10%, вверх до 0,1 — столько купить */
   meters: number
 }
 
@@ -148,7 +207,8 @@ export function edgeTotals(parts: CutPart[]): EdgeTotal[] {
   const r1 = (m: number) => Math.round(m * 10) / 10
   return [...mmBy.entries()]
     .sort((p, q) => p[0] - q[0])
-    .map(([thick, len]) => ({ thick, net: r1(len / 1000), meters: r1((len / 1000) * (1 + EDGE_SPARE)) }))
+    // купить — вверх: сначала до целого мм, чтобы 2000 × 1,1 = 2200,0000000000005 не стало 2,3 м
+    .map(([thick, len]) => ({ thick, net: r1(len / 1000), meters: Math.ceil(Math.round(len * (1 + EDGE_SPARE)) / 100) / 10 }))
 }
 
 /* ───────── раскладка по листам ───────── */
@@ -197,7 +257,7 @@ export function nest(parts: CutPart[], opts: NestOpts = {}): NestResult[] {
   const trim = opts.trim ?? TRIM
   const groups = new Map<string, { material: CutMaterial; parts: CutPart[] }>()
   for (const p of parts) {
-    if (p.material.kind === 'mdf' || p.count <= 0) continue
+    if ((p.material.kind !== 'ldsp' && p.material.kind !== 'hdf') || p.count <= 0) continue
     const m = p.material
     const key = `${m.kind}|${m.label}|${m.color}|${m.thick}`
     const g = groups.get(key)

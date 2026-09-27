@@ -267,6 +267,8 @@ function addFront(
     framed: doorKind === 'framed',
     handle: withHandle,
     ...(opts.color ? { color: opts.color } : {}),
+    // в цвете верха — фасад верхнего ряда своим материалом верха (у портала антресоль в цвет низа)
+    ...(opts.upper && (mat === mats.upper || mat === mats.overFridge) ? { upper: true } : {}),
   }
 
   const pivot = new THREE.Group()
@@ -1077,7 +1079,7 @@ function uppers(ctx: Ctx, run: Run, g: THREE.Group) {
         panel.add(slab(mats.upper, x + GAP / 2, UB, zf, x + Math.max(w - GAP / 2, GAP / 2 + 0.002), top - GAP / 2, zf + FRONT_T))
         dims(panel, 'filler', u.w, (top - UB) * 100, FRONT_T * 100, { x: u.x, y: UB * 100 })
         g.add(panel)
-        ctx.extras.push({ kind: 'filler', run: run.id, w: u.w, h: (top - UB) * 100 })
+        ctx.extras.push({ kind: 'filler', run: run.id, w: u.w, h: (top - UB) * 100, upper: true })
         addCornice(x, x + w, zf + FRONT_T)
         break
       }
@@ -1195,7 +1197,7 @@ function blindOf(u: Upper, w: number): Blind | null {
 /** Планка углового шкафа: деталь в цвет фасадов, у мебельщика — в «Проёмах и доборах» (D17). */
 function cornerStrip(ctx: Ctx, run: Run, parent: THREE.Object3D, s: [number, number], y0: number, y1: number, z: number, mat: THREE.Material) {
   parent.add(slab(mat, s[0], y0, z, s[1], y1, z + FRONT_T))
-  ctx.extras.push({ kind: 'strip', run: run.id, w: (s[1] - s[0]) * 100, h: (y1 - y0) * 100 })
+  ctx.extras.push({ kind: 'strip', run: run.id, w: (s[1] - s[0]) * 100, h: (y1 - y0) * 100, ...(mat === ctx.mats.upper ? { upper: true } : {}) })
 }
 
 /** Толщина доски рамы портала. */

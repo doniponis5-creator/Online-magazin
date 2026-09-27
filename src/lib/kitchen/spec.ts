@@ -67,6 +67,8 @@ export type SpecFront = {
   handle: boolean
   /** свой цвет фасада (id из каталога отделки) — у шкафа над холодильником; нет — как у гарнитура */
   color?: string
+  /** фасад в цвете верха (верхний ряд, антресоль, шкаф над холодильником, короб вытяжки); нет — в цвете низа */
+  upper?: boolean
 }
 
 export type SpecBox = Dims & { x: number; y: number }
@@ -90,7 +92,8 @@ export type SpecRun = { id: RunId; length: number; modules: SpecModule[]; boxes:
  * высоты проёма.
  */
 export type ExtraKind = 'dwOpening' | 'stoveOpening' | 'filler' | 'strip' | 'islandBack'
-export type SpecExtra = { kind: ExtraKind; run: RunId; w: number; h: number; hMax?: number }
+/** upper — деталь в цвете верха (добор и планка углового в верхнем ряду); нет — в цвете низа */
+export type SpecExtra = { kind: ExtraKind; run: RunId; w: number; h: number; hMax?: number; upper?: boolean }
 
 export type SpecData = {
   runs: SpecRun[]
@@ -113,6 +116,8 @@ export type SpecData = {
 
 /** ЛДСП 16 мм — стандарт для корпусов кухни. */
 export const LDSP = 16
+/** ХДФ задних стенок, мм. */
+export const HDF = 3
 
 export type CutName = 'side' | 'nicheSide' | 'bottom' | 'top' | 'rail' | 'shelf' | 'back'
 export type CutRow = { name: CutName; a: number; b: number; count: number; hdf: boolean }

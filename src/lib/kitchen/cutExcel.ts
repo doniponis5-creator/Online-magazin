@@ -1,7 +1,6 @@
 import type { KitchenTexts } from '@/components/kitchen/texts'
-import { cutParts, edgeTotals, nest, type CutLook, type CutMaterial, type CutPart, type EdgeThick, type NestOpts } from './cutting'
-import { FRONT_COLORS, frontColor, type FrontMaterial } from './finishes'
-import { frontList, hardware, topList, type SpecData } from './spec'
+import { cutParts, edgeTotals, nest, type CutLook, type CutMaterial, type CutPart, type EdgeThick, type NestOpts, type PanelName } from './cutting'
+import { hardware, topList, type CutName, type FrontType, type SpecData } from './spec'
 import type { XlsxCell, XlsxSheet } from './xlsx'
 
 /**
@@ -9,19 +8,22 @@ import type { XlsxCell, XlsxSheet } from './xlsx'
  * «Распил», «Фасады», «Столешница», «Фурнитура», «Кромка», «Листы». Числа —
  * из `cutting.ts` и `spec.ts`, подписи — из `texts.ts` (RU/KY). Колонки
  * меняются только здесь — так файл подгоняется под конкретный пильный центр.
+ * Язык — только из `t` (`t.xl.lang`): `look.lang` здесь не читается, названия цветов и подписи не разойдутся.
  */
 export function cutWorkbook(spec: SpecData, look: CutLook, t: KitchenTexts, opts?: NestOpts): XlsxSheet[] {
   const x = t.xl
-  const parts = cutParts(spec, look)
+  const parts = cutParts(spec, { ...look, lang: x.lang })
   const nested = nest(parts, opts)
   const oversize = new Set(nested.flatMap((r) => r.oversize))
-  const partName = (p: CutPart) => (p.front ? t.frontTypes[p.name as keyof typeof t.frontTypes] : t.cutNames[p.name as keyof typeof t.cutNames])
-  const matName = (m: CutMaterial) => `${x.kinds[m.kind]} ${m.thick} ${x.mm}`
+  const partName = (p: CutPart) =>
+    !p.front ? t.cutNames[p.name as CutName] : p.name in t.extraNames ? t.extraNames[p.name as PanelName] : t.frontTypes[p.name as FrontType]
+  const fromSheet = (p: CutPart) => p.material.kind === 'ldsp' || p.material.kind === 'hdf'
+  const matName = (m: CutMaterial) => `${x.kinds[m.kind as 'ldsp' | 'hdf']} ${m.thick} ${x.mm}`
   const edge = (e: EdgeThick): XlsxCell => (e > 0 ? e : null)
 
   // распил: всё, что режется из листа, — корпуса, ХДФ, фасады из ЛДСП; № — как на карте листа
   const cut = parts
-    .filter((p) => p.material.kind !== 'mdf')
+    .filter(fromSheet)
     .map((p): XlsxCell[] => [
       Number(p.id),
       partName(p),
@@ -37,26 +39,24 @@ export function cutWorkbook(spec: SpecData, look: CutLook, t: KitchenTexts, opts
       p.grain ? x.yes : x.no,
       [p.note, oversize.has(p.id) ? x.oversize : undefined].filter(Boolean).join('; ') || null,
     ])
-  // фасады не из листа (МДФ: плёнка со стеклом, эмаль, акрил, шпон, Fenix) — в цех фасадов;
-  // высота и ширина — по строке `frontList`: у детали раскроя длина — вдоль волокна, а не по высоте
-  const facadeMat: FrontMaterial = typeof look.facade === 'object' ? look.facade.material : (frontColor(look.facade)?.material ?? 'laminate')
-  const catalogMat = (m: CutMaterial) => FRONT_COLORS.find((c) => c.color === m.color && (c.ru === m.label || c.ky === m.label))?.material
-  const frontParts = parts.filter((p) => p.front)
+  // номера деталей не из листа — в «Распил» их нет, пропуск объясняем
+  const away = parts.filter((p) => !fromSheet(p)).map((p) => p.id)
+  if (away.length) cut.push([], [x.cutGaps(away.join(', '))])
+
+  // не из листа — в цех фасадов: МДФ (эмаль, акрил, шпон, Fenix), стекло и рамочные, фасад стиля;
+  // высота, ширина и отделка — у самой детали (у детали раскроя длина — вдоль волокна, а не по высоте)
   const fronts: XlsxCell[][] = []
   let frontCount = 0
   let frontArea = 0
-  for (const row of frontList(spec.runs)) {
-    const k = frontParts.findIndex(
-      (p) => p.name === row.type && p.count === row.count && ((p.length === row.h && p.width === row.w) || (p.length === row.w && p.width === row.h)),
-    )
-    if (k < 0) continue
-    const [p] = frontParts.splice(k, 1)
-    if (p.material.kind !== 'mdf') continue
-    const fm = frontColor(row.color)?.material ?? catalogMat(p.material) ?? facadeMat
-    const area = (row.h * row.w * row.count) / 1e6
-    frontCount += row.count
+  for (const p of parts.filter((q) => q.front && !fromSheet(q))) {
+    const f = p.facade
+    if (!f) throw new Error(`Деталь ${p.id} (${p.name}) не из листа, но без размеров и отделки фасада`)
+    // МДФ — без толщины (её нет в каталоге); стекло и рамочные — без «МДФ»; стиль — уточнить
+    const mat = f.finish === null ? x.styleMat : p.material.kind === 'mdf' ? `${x.kinds.mdf}, ${x.frontMat[f.finish]}` : x.frontMat[f.finish]
+    const area = (f.h * f.w * p.count) / 1e6
+    frontCount += p.count
     frontArea += area
-    fronts.push([t.frontTypes[row.type], `${matName(p.material)}, ${x.frontMat[fm]}`, p.material.label, row.h, row.w, row.count, r2(area)])
+    fronts.push([partName(p), mat, p.material.label, f.h, f.w, p.count, r2(area)])
   }
   if (fronts.length) fronts.push([x.total, null, null, null, null, frontCount, r2(frontArea)])
   else fronts.push([x.frontsInCut])
@@ -97,7 +97,7 @@ export function cutWorkbook(spec: SpecData, look: CutLook, t: KitchenTexts, opts
   const byId = new Map(parts.map((p) => [p.id, p]))
   const size = (L: number, W: number) => `${L} × ${W}`
   const nestRows: XlsxCell[][] = nested.map((r) => [
-    x.kinds[r.material.kind],
+    x.kinds[r.material.kind as 'ldsp' | 'hdf'],
     r.material.label,
     r.material.thick,
     size(r.sheetL, r.sheetW),
@@ -111,14 +111,15 @@ export function cutWorkbook(spec: SpecData, look: CutLook, t: KitchenTexts, opts
     r.sheets.forEach((sh, i) => {
       for (const pl of sh.placements) {
         const p = byId.get(pl.id)
-        nestRows.push([i + 1, p ? `${pl.id} · ${partName(p)}` : pl.id, pl.l, pl.w, pl.x, pl.y, pl.rotated ? x.yes : x.no])
+        // размеры — как в «Распил»; как легла — в «Повёрнута» (да — длина детали поперёк длины листа)
+        nestRows.push([i + 1, p ? `${pl.id} · ${partName(p)}` : pl.id, p?.length ?? pl.l, p?.width ?? pl.w, pl.x, pl.y, pl.rotated ? x.yes : x.no])
       }
     })
   }
 
   const sheet = (name: string, head: string[], rows: XlsxCell[][], widths: number[]): XlsxSheet => ({ name, rows: [head, ...rows], widths })
   return [
-    sheet(x.sheets.cut, x.cutHead, cut, [5, 26, 13, 18, 10, 10, 7, 9, 9, 9, 9, 9, 30]),
+    sheet(x.sheets.cut, x.cutHead, cut, [5, 26, 13, 18, 10, 10, 7, 11, 11, 11, 11, 9, 30]),
     sheet(x.sheets.fronts, x.frontsHead, fronts, [24, 22, 18, 11, 11, 7, 8]),
     sheet(x.sheets.top, x.topHead, tops, [12, 11, 11, 11, 28]),
     sheet(x.sheets.hw, x.hwHead, hwRows, [40, 9]),
