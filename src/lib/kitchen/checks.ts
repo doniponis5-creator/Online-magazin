@@ -11,6 +11,8 @@ export type CheckLevel = 'ok' | 'warn'
 
 export type Check =
   | { id: 'triangle'; level: CheckLevel; legs: [number, number, number]; sum: number }
+  /** все три в одном ряду: order — порядок вдоль ряда, legs — путь между соседними, см */
+  | { id: 'workLine'; level: CheckLevel; legs: [number, number]; order: WorkPoint[] }
   | { id: 'hobSides'; level: CheckLevel; left: number; right: number }
   | { id: 'hobWindow'; level: CheckLevel }
   | { id: 'hobFridge'; level: CheckLevel; gap: number }
@@ -32,6 +34,8 @@ export type Check =
  * Только когда приборы на разных рядах: в одном ряду пункта нет.
  */
 export const TRIANGLE = { legMin: 115, legMax: 270, sumMax: 790 }
+/** Три точки рабочей зоны: и в треугольнике, и на линии. */
+export type WorkPoint = 'fridge' | 'sink' | 'hob'
 /** Столешница по бокам плиты — не меньше 30 см. */
 export const HOB_SIDE = 30
 
@@ -121,7 +125,20 @@ export function checkProject(plan: Plan, facts: CheckFacts = {}): Check[] {
 
   // Все три в одном ряду — «рабочая линия»: точки перед ними на одной прямой,
   // треугольник вырожден (одна сторона = сумме двух), правило к ней не мерило.
-  if (fridge && sink && hob && !(fridge.run === sink.run && sink.run === hob.run)) {
+  // Мерило то же — сторона не длиннее TRIANGLE.legMax, — но по пути: приборы
+  // стоят вдоль ряда по порядку, и мерить надо отрезки между соседними.
+  if (fridge && sink && hob && fridge.run === sink.run && sink.run === hob.run) {
+    const line = (
+      [
+        ['fridge', fridge],
+        ['sink', sink],
+        ['hob', hob],
+      ] as [WorkPoint, Found][]
+    ).sort((p, q) => p[1].m.x - q[1].m.x)
+    const legs: [number, number] = [dist(front(line[0][1]), front(line[1][1])), dist(front(line[1][1]), front(line[2][1]))]
+    const good = legs.every((l) => l <= TRIANGLE.legMax)
+    out.push({ id: 'workLine', level: good ? 'ok' : 'warn', legs, order: line.map((p) => p[0]) })
+  } else if (fridge && sink && hob) {
     const legs: [number, number, number] = [dist(front(fridge), front(sink)), dist(front(sink), front(hob)), dist(front(hob), front(fridge))]
     const sum = legs[0] + legs[1] + legs[2]
     const good = legs.every((l) => l >= TRIANGLE.legMin && l <= TRIANGLE.legMax) && sum <= TRIANGLE.sumMax

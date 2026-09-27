@@ -525,6 +525,35 @@ describe('2026-09-27: рабочая линия — холодильник, мо
     expect(plan.runs.some((r) => r.id === 'I')).toBe(true)
     expect(byId(checkProject(plan), 'triangle')).toEqual([])
   })
+
+  it('прямая 400 см по умолчанию: соседние по линии приборы не дальше 270 см — «рабочая линия» ok', () => {
+    // холодильник 0–65, мойка 105–165, варочная 295–355: отрезки пути около 103 и 190 см
+    const plan = planKitchen({ shape: 'straight', a: 400, ...base, ...set }, opts)
+    const lines = byId(checkProject(plan), 'workLine')
+    expect(lines).toHaveLength(1)
+    const [line] = lines
+    expect(line.level).toBe('ok')
+    expect(line.order).toEqual(['fridge', 'sink', 'hob'])
+    for (const l of line.legs) {
+      expect(l).toBeGreaterThan(0)
+      expect(l).toBeLessThanOrEqual(270)
+    }
+  })
+
+  it('прямая 600 см: мойка у холодильника, варочная у другого конца — warn, длинный отрезок мойка—варочная', () => {
+    const plan = planKitchen(
+      { shape: 'straight', a: 600, ...base, ...set, arrangement: { A: ['fridge', 'sink', 'dishwasher', 'hob'] }, at: { fridge: 30, sink: 100, hob: 570 } },
+      opts,
+    )
+    const [line] = byId(checkProject(plan), 'workLine')
+    expect(line).toBeDefined()
+    expect(line.level).toBe('warn')
+    expect(line.order).toEqual(['fridge', 'sink', 'hob'])
+    // середины около 30, 100 и 570 см (раскладка может сдвинуть мойку на пару десятков см):
+    // первый отрезок короткий, второй — далеко за 270
+    expect(line.legs[0]).toBeLessThanOrEqual(270)
+    expect(line.legs[1]).toBeGreaterThan(400)
+  })
 })
 
 describe('2026-09-27: треугольник на разных рядах — как раньше', () => {
@@ -540,5 +569,14 @@ describe('2026-09-27: треугольник на разных рядах — к
     // не вырожден: самая длинная сторона короче суммы двух других
     const [s0, s1, s2] = [...tri.legs].sort((x, y) => x - y)
     expect(s2).toBeLessThan(s0 + s1)
+  })
+
+  it('мойка на острове, холодильник и варочная у стены A — «треугольник» есть, «рабочей линии» нет', () => {
+    const plan = planKitchen({ shape: 'island', a: 400, b: 0, c: 0, island: 180, fridge, hob: hob(), arrangement: { A: ['fridge', 'hob'], I: ['sink'] } }, opts)
+    const walls = (k: string) => plan.runs.find((r) => r.modules.some((m) => m.kind === k))!.id
+    expect([walls('fridge'), walls('sink'), walls('hob')]).toEqual(['A', 'I', 'A'])
+    const checks = checkProject(plan)
+    expect(byId(checks, 'triangle')).toHaveLength(1)
+    expect(byId(checks, 'workLine')).toEqual([])
   })
 })
