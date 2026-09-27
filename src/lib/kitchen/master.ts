@@ -1,5 +1,8 @@
-import type { FrontMaterial } from './finishes'
-import { edgeTotals, type CutPart, type NestResult, type Sheet } from './cutting'
+import type { KitchenTexts } from '@/components/kitchen/texts'
+import { formatSom } from '@/lib/format'
+import { FRONT_MATERIALS, frontColor, type FrontMaterial } from './finishes'
+import { edgeTotals, type CutMaterial, type CutPart, type NestResult, type Sheet } from './cutting'
+import { projectTotal, type ProjectItem } from './order'
 import { hardware, topList, type SpecData } from './spec'
 
 /**
@@ -11,7 +14,10 @@ import { hardware, topList, type SpecData } from './spec'
 /** цена фасада за м² — по материалу из каталога отделки; 'style' — фасад стиля (материал уточнить) */
 export type FrontPriceKey = FrontMaterial | 'style'
 export type MasterPrices = {
+  /** лист ЛДСП белый — корпус по умолчанию (`lam-white`) */
   ldsp?: number
+  /** лист ЛДСП цветной / декор — в цвет фасадов или верха; нет цены — «цена не указана», белую не подставляем */
+  ldspDecor?: number
   hdf?: number
   edge?: Partial<Record<'0.4' | '1' | '2', number>>
   front?: Partial<Record<FrontPriceKey, number>>
@@ -20,6 +26,14 @@ export type MasterPrices = {
   runner?: number
   lift?: number
   handle?: number
+  /** за шт: толкатель, ножка (опора), навес верхнего шкафа */
+  push?: number
+  leg?: number
+  hanger?: number
+  /** за м: профиль Gola, цоколь */
+  gola?: number
+  plinth?: number
+  /** за погонный метр столешницы */
   work?: number
   delivery?: number
   markup?: number
@@ -40,7 +54,7 @@ export const MASTER_KEY = 'kp-master'
 const VERSION = 1
 const FRONT_KEYS: FrontPriceKey[] = ['laminate', 'acrylic', 'enamel', 'veneer', 'fenix', 'style']
 const EDGE_KEYS = ['0.4', '1', '2'] as const
-const PRICE_KEYS = ['ldsp', 'hdf', 'top', 'hinge', 'runner', 'lift', 'handle', 'work', 'delivery', 'markup'] as const
+const PRICE_KEYS = ['ldsp', 'ldspDecor', 'hdf', 'top', 'hinge', 'runner', 'lift', 'handle', 'push', 'leg', 'hanger', 'gola', 'plinth', 'work', 'delivery', 'markup'] as const
 
 /** Пусто: цен нет — их знает только мастер; кромка корпуса 1 мм, листы — по умолчанию раскроя. */
 export function emptyMaster(): MasterData {
@@ -114,7 +128,24 @@ export function saveMaster(d: MasterData): void {
 /* ───────── смета ───────── */
 
 /** что за строка: листы, кромка, фасады в цех, столешница, фурнитура, работа, доставка и монтаж */
-export type EstimateKey = 'ldsp' | 'hdf' | 'edge' | 'front' | 'top' | 'hinge' | 'runner' | 'lift' | 'handle' | 'work' | 'delivery'
+export type EstimateKey =
+  | 'ldsp'
+  | 'ldspDecor'
+  | 'hdf'
+  | 'edge'
+  | 'front'
+  | 'top'
+  | 'hinge'
+  | 'runner'
+  | 'lift'
+  | 'handle'
+  | 'push'
+  | 'leg'
+  | 'hanger'
+  | 'gola'
+  | 'plinth'
+  | 'work'
+  | 'delivery'
 export type EstimateUnit = 'sheet' | 'm' | 'm2' | 'pcs' | 'pair' | 'job'
 export type EstimateRow = {
   key: EstimateKey
@@ -143,6 +174,11 @@ export type Estimate = {
 
 const r2 = (v: number) => Math.round(v * 100) / 100
 
+/** Белый лист — цвет корпуса по умолчанию (`lam-white`), в каком бы месте кухни он ни стоял. */
+const WHITE = frontColor('lam-white')?.color.toLowerCase()
+/** ЛДСП белый — по цене `ldsp`; любой другой цвет или декор ЛДСП — по цене `ldspDecor`. */
+export const isWhiteSheet = (m: Pick<CutMaterial, 'kind' | 'color'>): boolean => m.kind === 'ldsp' && m.color.toLowerCase() === WHITE
+
 /**
  * Смета мастера: листы из раскладки, кромка с запасом, фасады не из листа — м²,
  * столешница и работа — погонные метры столешницы, фурнитура — из спецификации.
@@ -150,14 +186,16 @@ const r2 = (v: number) => Math.round(v * 100) / 100
  */
 export function estimate(parts: CutPart[], nested: NestResult[], spec: SpecData, prices: MasterPrices): Estimate {
   const rows: EstimateRow[] = []
-  const add = (key: EstimateKey, qty: number, unit: EstimateUnit, price: number | undefined, extra: Pick<EstimateRow, 'what' | 'thick'> = {}) => {
+  const add = (key: EstimateKey, raw: number, unit: EstimateUnit, price: number | undefined, extra: Pick<EstimateRow, 'what' | 'thick'> = {}) => {
+    // кол-во — до сотых, как печатается: 4,78 м × 5 500 = 26 290 сходится глазами
+    const qty = r2(raw)
     if (!(qty > 0)) return
     const p = price ?? null
     rows.push({ key, ...extra, qty, unit, price: p, sum: p === null ? null : Math.round(qty * p) })
   }
   for (const r of nested) {
     if (!r.sheets.length) continue
-    const kind = r.material.kind === 'hdf' ? 'hdf' : 'ldsp'
+    const kind = r.material.kind === 'hdf' ? 'hdf' : isWhiteSheet(r.material) ? 'ldsp' : 'ldspDecor'
     add(kind, r.sheets.length, 'sheet', prices[kind], { what: r.material.label, thick: r.material.thick ?? undefined })
   }
   for (const e of edgeTotals(parts)) {
@@ -179,6 +217,11 @@ export function estimate(parts: CutPart[], nested: NestResult[], spec: SpecData,
   add('runner', hw.runners, 'pair', prices.runner)
   add('lift', hw.lifts, 'pcs', prices.lift)
   add('handle', hw.handles, 'pcs', prices.handle)
+  add('push', hw.push, 'pcs', prices.push)
+  add('leg', hw.legs, 'pcs', prices.leg)
+  add('hanger', hw.hangers, 'pcs', prices.hanger)
+  add('gola', hw.gola, 'm', prices.gola)
+  add('plinth', hw.plinth, 'm', prices.plinth)
   // работа — за погонный метр кухни: по длине столешницы
   add('work', top, 'm', prices.work)
   add('delivery', 1, 'job', prices.delivery)
@@ -188,4 +231,94 @@ export function estimate(parts: CutPart[], nested: NestResult[], spec: SpecData,
   const markup = Math.round((subtotal * markupPct) / 100)
   const missing = [...new Set(rows.filter((r) => r.price === null).map((r) => r.key))]
   return { rows, subtotal, markupPct, markup, total: subtotal + markup, missing }
+}
+
+/* ───────── смета словами: одна и та же на экране и в PDF ───────── */
+
+export type EstimateTotal = { label: string; value: string }
+export type EstimateLines = {
+  head: string[]
+  /** наименование, кол-во с единицей («4,78 м»), цена («цена не указана»), сумма («—») */
+  rows: [string, string, string, string][]
+  /** «Сумма по строкам» и «Наценка» — только при наценке; последняя — «Итого» */
+  totals: EstimateTotal[]
+  missing?: string
+  /** техника магазина — то, что в сумме проекта (`projectItems`, `inTotal`) */
+  tech?: { head: string[]; rows: [string, string, string][]; total: EstimateTotal }
+}
+
+const som = (v: number) => new Intl.NumberFormat('ru-RU').format(v)
+/** число как напечатано: до сотых, с запятой */
+const num = (v: number) => String(r2(v)).replace('.', ',')
+
+/**
+ * Строки сметы клиенту — чистая функция: экран и PDF печатают одно и то же.
+ * Язык — из `t` (`t.xl.lang`). Техника — из `projectItems`, итог — `projectTotal`.
+ */
+export function estimateLines(e: Estimate, items: readonly ProjectItem[], t: KitchenTexts): EstimateLines {
+  const m = t.master
+  const lang = t.xl.lang
+  const name = (r: EstimateRow): string => {
+    switch (r.key) {
+      case 'ldsp':
+      case 'ldspDecor':
+        return m.rowSheet(t.xl.kinds.ldsp, r.thick, r.what ?? '')
+      case 'hdf':
+        return m.rowSheet(t.xl.kinds.hdf, r.thick, r.what ?? '')
+      case 'edge':
+        return m.rowEdge(num(Number(r.what)))
+      case 'front': {
+        const mat = FRONT_MATERIALS.find((x) => x.id === r.what)
+        return m.rowFront(mat ? (lang === 'ky' ? mat.ky : mat.ru) : m.frontStyle)
+      }
+      case 'top':
+        return t.topTitle
+      case 'hinge':
+        return t.hw.hinges
+      case 'runner':
+        return m.rowRunner
+      case 'lift':
+        return t.hw.lifts
+      case 'handle':
+        return t.hw.handles
+      case 'push':
+        return t.hw.push
+      case 'leg':
+        return t.hw.legs
+      case 'hanger':
+        return t.hw.hangers
+      case 'gola':
+        return t.hw.gola
+      case 'plinth':
+        return t.hw.plinth
+      case 'work':
+        return m.rowWork
+      case 'delivery':
+        return m.rowDelivery
+    }
+  }
+  const rows = e.rows.map((r): [string, string, string, string] => [
+    name(r),
+    `${num(r.qty)}${m.units[r.unit] ? ` ${m.units[r.unit]}` : ''}`,
+    r.price === null ? m.noPrice : som(r.price),
+    r.sum === null ? '—' : som(r.sum),
+  ])
+  const totals: EstimateTotal[] = [
+    ...(e.markupPct > 0
+      ? [
+          { label: m.subtotal, value: formatSom(e.subtotal) },
+          // наценка — как ввёл мастер, без округления: 12,25 → «12,25%»
+          { label: m.markup(String(e.markupPct).replace('.', ',')), value: formatSom(e.markup) },
+        ]
+      : []),
+    { label: m.total, value: formatSom(e.total) },
+  ]
+  const tech = items.flatMap((i): [string, string, string][] => (i.inTotal && i.appliance ? [[t.slots[i.slot], i.appliance.name, som(i.appliance.price)]] : []))
+  return {
+    head: [m.colName, m.colQty, m.colPrice, m.colSum],
+    rows,
+    totals,
+    missing: e.missing.length ? m.missing : undefined,
+    tech: tech.length ? { head: [t.colWhat, t.colModel, m.colPrice], rows: tech, total: { label: m.techTotal, value: formatSom(projectTotal(items).sum) } } : undefined,
+  }
 }

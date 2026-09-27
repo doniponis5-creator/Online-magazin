@@ -1,7 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { CutPart, NestResult } from '@/lib/kitchen/cutting'
-import { estimate, loadMaster, saveMaster, type MasterData } from '@/lib/kitchen/master'
-import type { SpecData, SpecFront } from '@/lib/kitchen/spec'
+import './helpers/canvas'
+import { buildKitchen } from '@/components/kitchen/three/build'
+import { kitchenTexts } from '@/components/kitchen/texts'
+import { cutParts, nest, type CutLook, type CutPart, type NestResult } from '@/lib/kitchen/cutting'
+import { planKitchen, type PlanInput } from '@/lib/kitchen/layout'
+import { estimate, estimateLines, isWhiteSheet, loadMaster, saveMaster, type MasterData, type MasterPrices } from '@/lib/kitchen/master'
+import type { ProjectItem } from '@/lib/kitchen/order'
+import { hardware, type SpecData, type SpecFront } from '@/lib/kitchen/spec'
+import { getTone, STYLES, type KitchenStyle } from '@/lib/kitchen/styles'
+import type { KitchenAppliance, Shape } from '@/lib/kitchen/types'
 
 /** localStorage в node: простая память */
 function memory(seed: Record<string, string> = {}) {
@@ -78,7 +85,8 @@ const SPEC: SpecData = {
   heights: { plinth: 10, counter: 86, upperBottom: 140, upperTop: 212, mezzTop: null, ceiling: 260 },
 }
 const edges0 = { l1: 0, l2: 0, w1: 0, w2: 0 } as const
-const white = { kind: 'ldsp', label: 'Белый', color: '#ffffff', thick: 16 } as const
+// белый каталога (`lam-white`) — по цене белого листа
+const white = { kind: 'ldsp', label: 'Белый', color: '#f1f0ec', thick: 16 } as const
 const PARTS: CutPart[] = [
   // 2 × 1000 мм кромки 1 мм = 2,0 м, с запасом 10% — 2,2 м
   { id: '1', name: 'side', front: false, material: white, length: 1000, width: 500, count: 2, grain: false, edges: { ...edges0, l1: 1 } },
@@ -134,5 +142,192 @@ describe('смета мастера', () => {
     expect(e.rows.every((r) => r.price === null && r.sum === null)).toBe(true)
     expect(e.rows.every((r) => r.qty > 0)).toBe(true)
     expect(e.missing).toContain('ldsp')
+  })
+})
+
+/* ───────── таск 04: вся фурнитура, лист белый и цветной, числа как напечатаны ───────── */
+
+describe('цены мастера: новые поля', () => {
+  it('старая запись kp-master без новых полей читается без потерь', () => {
+    const old = { v: 1, name: 'Азамат', phone: '0700', shop: '', prices: { ldsp: 3200, hdf: 900, hinge: 150, runner: 400, work: 2000, markup: 10, edge: { '1': 30 } }, bodyEdge: 1, sheets: {} }
+    vi.stubGlobal('localStorage', memory({ 'kp-master': JSON.stringify(old) }))
+    const { v: _v, ...rest } = old
+    expect(loadMaster()).toEqual(rest)
+  })
+
+  it('ножка, навес, толкатель, Gola, цоколь и цветной лист сохраняются и читаются', () => {
+    const store = memory()
+    vi.stubGlobal('localStorage', store)
+    const d: MasterData = {
+      name: '',
+      phone: '',
+      shop: '',
+      prices: { ldsp: 3200, ldspDecor: 4100, leg: 35, hanger: 60, push: 180, gola: 900, plinth: 450 },
+      bodyEdge: 1,
+      sheets: {},
+    }
+    saveMaster(d)
+    expect(loadMaster()).toEqual(d)
+  })
+})
+
+describe('смета: лист ЛДСП белый и цветной', () => {
+  const decor = { kind: 'ldsp', label: 'Кашемир', color: '#d0c5b7', thick: 16 } as const
+  const withDecor: NestResult[] = [...NESTED, { material: decor, sheetL: 2800, sheetW: 2070, sheets: sheets(3), waste: 0.1, oversize: [] }]
+
+  it('белый (lam-white) — по цене ldsp; цветной — по ldspDecor', () => {
+    expect(isWhiteSheet(white)).toBe(true)
+    expect(isWhiteSheet({ kind: 'ldsp', color: '#F1F0EC' })).toBe(true)
+    // другой белый, не каталожный, — уже цвет: цены знает только мастер
+    expect(isWhiteSheet({ kind: 'ldsp', color: '#ffffff' })).toBe(false)
+    expect(isWhiteSheet({ kind: 'hdf', color: '#f1f0ec' })).toBe(false)
+    const e = estimate(PARTS, withDecor, SPEC, { ldsp: 3000, ldspDecor: 4200 })
+    expect(e.rows.find((r) => r.key === 'ldsp')).toMatchObject({ qty: 2, price: 3000, sum: 6000 })
+    expect(e.rows.find((r) => r.key === 'ldspDecor')).toMatchObject({ qty: 3, price: 4200, sum: 12600, what: 'Кашемир' })
+  })
+
+  it('нет цветной цены — «цена не указана», белую не подставляем', () => {
+    const e = estimate(PARTS, withDecor, SPEC, { ldsp: 3000, ldspDecor: undefined })
+    expect(e.rows.find((r) => r.key === 'ldspDecor')).toMatchObject({ qty: 3, price: null, sum: null })
+    expect(e.missing).toContain('ldspDecor')
+  })
+})
+
+/* реальные кухни, как в kitchen-cutting.test.ts */
+const appliance = (over: Partial<KitchenAppliance>): KitchenAppliance => ({
+  id: 'x', slot: 'fridge', name: 'x', brand: '', price: 1, w: 60, h: 185, d: 65, sizeKnown: true, builtIn: false, finish: 'white', ...over,
+})
+const fridge = appliance({ id: 'f', slot: 'fridge', name: 'Холодильник X', price: 45990 })
+const oven = appliance({ id: 'o', slot: 'oven', name: 'Духовка Y', price: 23990, w: 59.5, h: 59.5, d: 56, builtIn: true })
+const hood = appliance({ id: 'h', slot: 'hood', name: 'Вытяжка Z', price: 12490, w: 60, h: 50, d: 50, hood: 'chimney' })
+const hob = appliance({ id: 'b', slot: 'hob', name: 'Панель W', price: 18990, w: 59, h: 5, d: 52, builtIn: true, hob: 'electric' })
+const dw = appliance({ id: 'd', slot: 'dishwasher', name: 'ПММ V', price: 31990, w: 44.8, h: 81.5, d: 55, builtIn: true })
+function kitchen(shape: Shape, a: number, b: number, c: number, style: KitchenStyle): SpecData {
+  const input: PlanInput = { shape, a, b, c, island: 0, fridge, dishwasher: dw, hob, oven, hood: { w: 60 } }
+  const plan = planKitchen(input, { shelves: style.shelves })
+  return buildKitchen({
+    plan,
+    style,
+    tone: getTone(style, 0),
+    items: { fridge, dishwasher: dw, hob, oven, hood },
+    photos: new Map(),
+    evening: false,
+    room: { ceiling: 270, toCeiling: false },
+    fronts: {},
+    detail: 0.5,
+  }).spec
+}
+const styleOf = (id: string) => STYLES.find((s) => s.id === id) ?? STYLES[0]
+const ITEMS: ProjectItem[] = [
+  { slot: 'fridge', appliance: fridge, status: 'placed', inTotal: true },
+  { slot: 'oven', appliance: oven, status: 'placed', inTotal: true },
+  { slot: 'hob', appliance: hob, status: 'placed', inTotal: true },
+  { slot: 'hood', appliance: hood, status: 'placed', inTotal: true },
+  // не в сумме — и не в смете
+  { slot: 'dishwasher', appliance: dw, status: 'noStock', inTotal: false },
+]
+const FULL: MasterPrices = {
+  ldsp: 3150,
+  ldspDecor: 4275,
+  hdf: 980,
+  edge: { '0.4': 12, '1': 27, '2': 45 },
+  front: { laminate: 3900, acrylic: 5200, enamel: 6100, veneer: 7400, fenix: 8800, style: 5500 },
+  top: 5500,
+  hinge: 150.5,
+  runner: 420,
+  lift: 1250,
+  handle: 180,
+  push: 190,
+  leg: 35,
+  hanger: 65,
+  gola: 950,
+  plinth: 460,
+  work: 3300,
+  delivery: 4000,
+  markup: 12.25,
+}
+/** число как напечатано: «4,78 м» → 4.78, «26 290» → 26290, «12 345 сом» → 12345 */
+const printed = (s: string) => Number((s.match(/^[\d\s\u00a0\u202f]+(,\d+)?/)?.[0] ?? 'NaN').replace(/[\s\u00a0\u202f]/g, '').replace(',', '.'))
+
+describe('смета клиенту: каждая напечатанная строка сходится', () => {
+  const cases: { name: string; spec: SpecData; look: CutLook }[] = [
+    // угловая: низ цветной ЛДСП, верх — акрил (м²), ручки
+    { name: 'угловая', spec: kitchen('corner', 300, 240, 0, styleOf('neoclassic')), look: { facade: 'lam-cashmere', upperFacade: 'acr-white' } },
+    // П-образная без ручек (Gola): низ — декор под дерево, верх — белый ЛДСП (по белой цене)
+    { name: 'П-образная', spec: kitchen('u', 360, 240, 240, styleOf('column')), look: { facade: 'lam-sonoma', upperFacade: 'lam-white' } },
+  ]
+  for (const c of cases)
+    for (const lang of ['ru', 'ky'] as const)
+      it(`${c.name}, ${lang}: кол-во × цена = сумма, строки = «Сумма по строкам», техника = «Итого техника»`, () => {
+        const t = kitchenTexts(lang)
+        const parts = cutParts(c.spec, { ...c.look, lang, tier: t.xl.tier })
+        const nested = nest(parts)
+        const e = estimate(parts, nested, c.spec, FULL)
+        const L = estimateLines(e, ITEMS, t)
+
+        // вся фурнитура из спецификации — своей строкой
+        const hw = hardware(c.spec)
+        const want = { hinge: hw.hinges, runner: hw.runners, lift: hw.lifts, handle: hw.handles, push: hw.push, leg: hw.legs, hanger: hw.hangers, gola: hw.gola, plinth: hw.plinth }
+        for (const [key, qty] of Object.entries(want)) {
+          const row = e.rows.find((r) => r.key === key)
+          if (qty > 0) expect(row, key).toMatchObject({ qty })
+          else expect(row, key).toBeUndefined()
+        }
+        expect(hw.legs * hw.hangers * hw.plinth).toBeGreaterThan(0)
+        // П-образная без ручек — Gola и толкатели; угловая — ручки
+        if (c.name === 'П-образная') expect(hw.gola * hw.push).toBeGreaterThan(0)
+        else expect(hw.handles).toBeGreaterThan(0)
+        expect(e.missing).toEqual([])
+        expect(e.rows.some((r) => r.key === 'ldspDecor')).toBe(true)
+        expect(e.rows.some((r) => r.key === 'ldsp')).toBe(true)
+
+        expect(L.rows).toHaveLength(e.rows.length)
+        let sum = 0
+        for (const [name, qty, price, total] of L.rows) {
+          expect(name.length, name).toBeGreaterThan(0)
+          const q = printed(qty)
+          const p = printed(price)
+          const s = printed(total)
+          expect(Number.isFinite(q) && Number.isFinite(p) && Number.isFinite(s), `${name}: ${qty} × ${price} = ${total}`).toBe(true)
+          expect(Math.round(q * p), `${name}: ${qty} × ${price} = ${total}`).toBe(s)
+          sum += s
+        }
+        const m = t.master
+        const [sub, mk, tot] = L.totals
+        expect(sub.label).toBe(m.subtotal)
+        expect(printed(sub.value)).toBe(sum)
+        expect(mk.label).toBe(m.markup('12,25'))
+        expect(mk.label).toContain('12,25%')
+        expect(printed(mk.value)).toBe(Math.round((sum * 12.25) / 100))
+        expect(tot.label).toBe(m.total)
+        expect(printed(tot.value)).toBe(sum + printed(mk.value))
+
+        // техника: только то, что в сумме проекта
+        expect(L.tech?.rows).toHaveLength(4)
+        const tech = (L.tech?.rows ?? []).reduce((a, r) => a + printed(r[2]), 0)
+        expect(tech).toBe(45990 + 23990 + 18990 + 12490)
+        expect(printed(L.tech?.total.value ?? '')).toBe(tech)
+        expect(L.tech?.total.label).toBe(m.techTotal)
+
+        // направляющие — своим ключом, без обрезки по запятой
+        if (hw.runners > 0) expect(L.rows.some((r) => r[0] === m.rowRunner)).toBe(true)
+      })
+
+  it('кол-во печатается до сотых с запятой и единицей: 4,78 м × 5 500 = 26 290', () => {
+    const t = kitchenTexts('ru')
+    const spec: SpecData = { ...SPEC, runs: [{ ...SPEC.runs[0], length: 478, tops: [{ x0: 0, x1: 478, depth: 60, thick: 3.8, sink: false, hob: false }] }] }
+    const e = estimate([], [], spec, { top: 5500 })
+    const top = estimateLines(e, [], t).rows.find((r) => r[0] === t.topTitle)
+    expect(top?.[1]).toBe('4,78 м')
+    expect(top?.[3].replace(/[\s\u00a0\u202f]/g, '')).toBe('26290')
+  })
+
+  it('без наценки — одна строка «Итого»; без цен — «цена не указана» и «—»', () => {
+    const t = kitchenTexts('ky')
+    const L = estimateLines(estimate(PARTS, NESTED, SPEC, {}), [], t)
+    expect(L.totals.map((x) => x.label)).toEqual([t.master.total])
+    expect(L.rows.every((r) => r[2] === t.master.noPrice && r[3] === '—')).toBe(true)
+    expect(L.missing).toBe(t.master.missing)
+    expect(L.tech).toBeUndefined()
   })
 })

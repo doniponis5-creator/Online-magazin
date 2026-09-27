@@ -58,3 +58,11 @@
 - Работа «за погонный метр» — по длине столешницы; фасад стиля — своя цена `front.style`.
 - `pdfSheet.ts`: `estimateSheet(d: EstimateData): Promise<Blob>`; `SheetData.cutMaps?: {title; maps: CutMap[]}` — карты раскроя страницами в «PDF для мастера»; `CutMap = {title; L; W; rects: {x,y,l,w,label}[]}`.
 - Тексты `t.master.*` (форма, итоги, смета), `t.xl.tier` («— низ / — верх»).
+
+## Из таска 04 — смета без пропусков (на ревью)
+
+- `MasterPrices` += `ldspDecor` (лист ЛДСП цветной; `ldsp` теперь — белый), `push`, `leg`, `hanger` (шт), `gola`, `plinth` (м); `EstimateKey` += те же ключи. Версия `kp-master` прежняя (1).
+- `isWhiteSheet(m: Pick<CutMaterial,'kind'|'color'>): boolean` — белый = цвет `lam-white` из каталога.
+- `estimate` округляет `qty` до сотых до расчёта суммы — как печатается.
+- `estimateLines(e: Estimate, items: readonly ProjectItem[], t: KitchenTexts): EstimateLines` — строки для экрана и PDF: `{head; rows: [name, qty, price, sum][]; totals: {label, value}[]; missing?; tech?: {head; rows: [slot, model, price][]; total}}`; язык — `t.xl.lang`.
+- Тексты: `t.master.fields` += новые ключи; `t.master.rowRunner`, `sheetHalf`, `sheetRange`, `lines`. Поля формы — `id="kp-mf-<ключ>"`.

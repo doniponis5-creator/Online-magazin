@@ -56,7 +56,7 @@ import { cartAdditions, chosenItems, CORE_SLOTS, planInputOf, projectItems, proj
 import { DEFAULT_STATE, loadLast, queryFromState, saveLast, stateFromQuery } from '@/lib/kitchen/share'
 import { cutList, extraList, frontList, hardware, modulesOf, topList, type SpecData } from '@/lib/kitchen/spec'
 import { cutParts, edgeTotals, nest, type CutLook, type NestOpts, type NestResult } from '@/lib/kitchen/cutting'
-import { emptyMaster, estimate, loadMaster, saveMaster, type EstimateRow, type MasterData } from '@/lib/kitchen/master'
+import { emptyMaster, estimate, estimateLines, loadMaster, saveMaster, type MasterData } from '@/lib/kitchen/master'
 import { FLOORS, getStyle, getTone, STYLE_GROUPS, STYLES, WALL_COLORS, type KitchenStyle } from '@/lib/kitchen/styles'
 import type { HandleKind } from '@/lib/kitchen/styles'
 import {
@@ -1973,33 +1973,8 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
         )
       : []
 
-  const som = (v: number) => new Intl.NumberFormat('ru-RU').format(v)
-  const estRowName = (r: EstimateRow): string => {
-    const m = t.master
-    switch (r.key) {
-      case 'ldsp':
-      case 'hdf':
-        return m.rowSheet(t.xl.kinds[r.key], r.thick, r.what ?? '')
-      case 'edge':
-        return m.rowEdge(fmt(Number(r.what)))
-      case 'front':
-        return m.rowFront(r.what === 'style' ? m.frontStyle : nameOf(FRONT_MATERIALS.find((x) => x.id === r.what)))
-      case 'top':
-        return t.topTitle
-      case 'hinge':
-        return t.hw.hinges
-      case 'runner':
-        return t.hw.runners.split(',')[0]
-      case 'lift':
-        return t.hw.lifts
-      case 'handle':
-        return t.hw.handles
-      case 'work':
-        return m.rowWork
-      case 'delivery':
-        return m.rowDelivery
-    }
-  }
+  /** Строки сметы — те же, что в PDF: `estimateLines` из `master.ts`. */
+  const estLines = cut?.ok ? estimateLines(cut.est, project, t) : null
 
   /** Время Бишкека (UTC+6): дата на листе и в имени файла. */
   const bishkekNow = () => {
@@ -2037,12 +2012,11 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   }
 
   const saveEstimate = async () => {
-    if (!cut?.ok || masterBusy) return
+    if (!estLines || masterBusy) return
     setMasterBusy('est')
     const m = t.master
-    const e = cut.est
+    const e = estLines
     const { b, stamp } = bishkekNow()
-    const tech = project.flatMap((i) => (i.inTotal && i.appliance ? [[t.slots[i.slot], i.appliance.name, som(i.appliance.price)]] : []))
     let file: File | null = null
     try {
       const { estimateSheet } = await import('./pdfSheet')
@@ -2051,25 +2025,11 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
         date: t.sheetDate(b.getUTCDate(), b.getUTCMonth(), b.getUTCFullYear()),
         master: { name: master.name, phone: master.phone, shop: master.shop },
         lines: [client.trim() ? m.pdfClient(client.trim()) : '', m.pdfKitchen(`${t.shapes[state.shape][0]} · ${wallsLine}`)].filter(Boolean),
-        table: {
-          title: m.tableTitle,
-          head: [m.colName, m.colQty, m.colPrice, m.colSum],
-          // кол-во — до сотых, как считалась сумма: 4,78 м × 5 500 = 26 290 видно глазами
-          rows: e.rows.map((r) => [estRowName(r), `${String(Math.round(r.qty * 100) / 100).replace('.', ',')}${m.units[r.unit] ? ` ${m.units[r.unit]}` : ''}`, r.price === null ? m.noPrice : som(r.price), r.sum === null ? '—' : som(r.sum)]),
-        },
-        totals: [
-          ...(e.markupPct > 0
-            ? [
-                { label: m.subtotal, value: formatSom(e.subtotal) },
-                { label: m.markup(fmt(e.markupPct)), value: formatSom(e.markup) },
-              ]
-            : []),
-          { label: m.total, value: formatSom(e.total) },
-        ],
-        missing: e.missing.length ? m.missing : undefined,
-        tech: tech.length
-          ? { table: { title: m.techTitle, head: [t.colWhat, t.colModel, m.colPrice], rows: tech, grow: 1 }, total: { label: m.techTotal, value: formatSom(totals.sum) } }
-          : undefined,
+        // кол-во — до сотых, как считалась сумма: 4,78 м × 5 500 = 26 290 видно глазами
+        table: { title: m.tableTitle, head: e.head, rows: e.rows },
+        totals: e.totals,
+        missing: e.missing,
+        tech: e.tech ? { table: { title: m.techTitle, head: e.tech.head, rows: e.tech.rows, grow: 1 }, total: e.tech.total } : undefined,
         url: shareUrl,
         urlLabel: t.pdfOpen3d,
         shop: { text: m.shopLine(phones[0].display), url: whatsappHref(phones[0]) },
@@ -2086,12 +2046,54 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   }
 
   /* форма «Мои цены и данные»: черновик, сохраняется кнопкой */
-  const openMasterForm = () =>
+  // фокус: при открытии — в окно, Tab не уходит за окно, при закрытии — на кнопку, которая открыла
+  const masterOpener = useRef<HTMLElement | null>(null)
+  const masterBox = useRef<HTMLFormElement | null>(null)
+  const masterOpen = masterForm !== null
+  useEffect(() => {
+    if (masterOpen) masterBox.current?.focus()
+  }, [masterOpen])
+  const closeMasterForm = () => {
+    setMasterForm(null)
+    const back = masterOpener.current
+    requestAnimationFrame(() => back?.focus())
+  }
+  const masterKeys = (e: ReactKeyEvent<HTMLDivElement>) => {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      closeMasterForm()
+      return
+    }
+    const box = masterBox.current
+    if (e.key !== 'Tab' || !box) return
+    const list = [...box.querySelectorAll<HTMLElement>('button, input, select, textarea, a[href]')].filter((el) => !el.hasAttribute('disabled'))
+    if (!list.length) return
+    const first = list[0]
+    const last = list[list.length - 1]
+    const at = document.activeElement
+    if (e.shiftKey && (at === first || at === box || !box.contains(at))) {
+      e.preventDefault()
+      last.focus()
+    } else if (!e.shiftKey && (at === last || !box.contains(at))) {
+      e.preventDefault()
+      first.focus()
+    }
+  }
+  /** размер листа: одна сторона без другой или вне 100…6000 мм — подсказка у поля, а не молчаливый пропуск */
+  const sheetHint = (L?: number, W?: number): string | null =>
+    (L === undefined) !== (W === undefined)
+      ? t.master.sheetHalf
+      : [L, W].some((v) => v !== undefined && (v < 100 || v > 6000))
+        ? t.master.sheetRange
+        : null
+  const openMasterForm = (from: HTMLElement) => {
+    masterOpener.current = from
     setMasterForm({
       ...master,
       prices: { ...master.prices, edge: { ...master.prices.edge }, front: { ...master.prices.front } },
       sz: { ldspL: master.sheets.ldsp?.L, ldspW: master.sheets.ldsp?.W, hdfL: master.sheets.hdf?.L, hdfW: master.sheets.hdf?.W },
     })
+  }
   const draftPrice = (f: MasterDraft, k: PriceField) => (k in EDGE_FIELD ? f.prices.edge?.[EDGE_FIELD[k as keyof typeof EDGE_FIELD]] : f.prices[k as PlainPrice])
   const setDraftPrice = (k: PriceField, v: number | undefined) =>
     setMasterForm((f) =>
@@ -2104,19 +2106,30 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   const saveMasterForm = () => {
     if (!masterForm) return
     const { sz, ...d } = masterForm
+    // размер листа не дописан — не сохраняем молча без него: фокус на поле с подсказкой
+    const bad = (['ldsp', 'hdf'] as const).find((k) => sheetHint(sz[`${k}L`], sz[`${k}W`]))
+    if (bad) {
+      const L = sz[`${bad}L`]
+      const side = L === undefined || L < 100 || L > 6000 ? 'L' : 'W'
+      document.getElementById(`kp-mf-${bad}${side}`)?.focus()
+      return
+    }
     const size = (L?: number, W?: number) => (L && W && L >= 100 && W >= 100 && L <= 6000 && W <= 6000 ? { L, W } : undefined)
     const ldsp = size(sz.ldspL, sz.ldspW)
     const hdf = size(sz.hdfL, sz.hdfW)
     const next: MasterData = { ...d, name: d.name.trim(), phone: d.phone.trim(), shop: d.shop.trim(), sheets: { ...(ldsp && { ldsp }), ...(hdf && { hdf }) } }
     saveMaster(next)
     setMaster(next)
-    setMasterForm(null)
+    closeMasterForm()
     setToast(t.master.saved)
   }
-  const numField = (key: string, label: string, value: number | undefined, set: (v: number | undefined) => void) => (
+  const numField = (key: string, label: string, value: number | undefined, set: (v: number | undefined) => void, hint?: string) => (
     <label key={key} className="kp-mform__field">
       <span>{label}</span>
       <input
+        id={`kp-mf-${key}`}
+        aria-invalid={hint ? true : undefined}
+        aria-describedby={hint}
         type="number"
         inputMode="decimal"
         min={0}
@@ -3568,7 +3581,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                 </h3>
                 <p className="kp-note">{t.master.lead}</p>
               </div>
-              <button type="button" className="btn btn--outline btn--sm" onClick={openMasterForm}>
+              <button type="button" className="btn btn--outline btn--sm" onClick={(e) => openMasterForm(e.currentTarget)}>
                 {t.master.prices}
               </button>
             </div>
@@ -3597,6 +3610,58 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                     )}
                   </li>
                 </ul>
+                {estLines && cut.est.rows.some((r) => r.price !== null) && (
+                  <details className="kp-more">
+                    <summary>{t.master.lines}</summary>
+                    <div className="kp-tables">
+                      {/* те же строки, что в PDF; на телефоне в три колонки: «4,78 м × 5 500» переносится, сумма всегда видна */}
+                      {[
+                        {
+                          title: t.master.tableTitle,
+                          head: [t.master.colName, t.master.colQty, t.master.colSum],
+                          // перенос — только перед «×»: «4,78 м» и «× 5 500» не рвутся
+                          rows: estLines.rows.map(([name, qty, price, sum]) => [name, sum === '—' ? `${qty.replace(/ /g, '\u00a0')} · ${price}` : `${qty.replace(/ /g, '\u00a0')} ×\u00a0${price}`, sum]),
+                          totals: estLines.totals,
+                        },
+                        ...(estLines.tech
+                          ? [{ title: t.master.techTitle, head: [t.colModel, t.master.colPrice], rows: estLines.tech.rows.map(([slot, model, price]) => [`${slot}: ${model}`, price]), totals: [estLines.tech.total] }]
+                          : []),
+                      ].map((tb) => (
+                        <section key={tb.title} className="kp-table">
+                          <h3>{tb.title}</h3>
+                          <table>
+                            <thead>
+                              <tr>
+                                {tb.head.map((h, i) => (
+                                  <th key={h} className={i === tb.head.length - 1 ? 'is-num' : undefined} style={i && i < tb.head.length - 1 ? { textAlign: 'right' } : undefined}>
+                                    {h}
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {tb.rows.map((r, ri) => (
+                                <tr key={ri}>
+                                  {r.map((c, i) => (
+                                    <td key={i} className={i === r.length - 1 ? 'is-num' : undefined} style={i && i < r.length - 1 ? { textAlign: 'right' } : undefined}>
+                                      {c}
+                                    </td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                          {tb.totals.map((x) => (
+                            <p key={x.label} className="kp-note">
+                              {x.label}: <b>{x.value}</b>
+                            </p>
+                          ))}
+                        </section>
+                      ))}
+                    </div>
+                    {estLines.missing && <p className="kp-note">{estLines.missing}</p>}
+                  </details>
+                )}
                 <label className="kp-mstr__client">
                   <span>{t.master.client}</span>
                   <input type="text" value={client} maxLength={80} onChange={(e) => setClient(e.target.value)} autoComplete="off" />
@@ -3638,8 +3703,10 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
           </section>
         )}
         {masterForm && (
-          <div className="kp-mform" role="dialog" aria-modal="true" aria-labelledby="kp-mform-title" onKeyDown={(e) => e.key === 'Escape' && setMasterForm(null)}>
+          <div className="kp-mform" role="dialog" aria-modal="true" aria-labelledby="kp-mform-title" onKeyDown={masterKeys}>
             <form
+              ref={masterBox}
+              tabIndex={-1}
               className="kp-mform__box"
               onSubmit={(e) => {
                 e.preventDefault()
@@ -3648,7 +3715,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
             >
               <div className="kp-mform__bar">
                 <h3 id="kp-mform-title">{t.master.prices}</h3>
-                <button type="button" className="btn btn--outline btn--sm" onClick={() => setMasterForm(null)}>
+                <button type="button" className="btn btn--outline btn--sm" onClick={closeMasterForm}>
                   {t.close}
                 </button>
               </div>
@@ -3707,12 +3774,25 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                     {(['ldsp', 'hdf'] as const).flatMap((kind) =>
                       (['L', 'W'] as const).map((side) => {
                         const key = `${kind}${side}` as keyof MasterDraft['sz']
-                        return numField(key, `${t.xl.kinds[kind]}, ${side === 'L' ? t.master.sheetL : t.master.sheetW}`, masterForm.sz[key], (v) =>
-                          setMasterForm((f) => f && { ...f, sz: { ...f.sz, [key]: v } }),
+                        const hint = sheetHint(masterForm.sz[`${kind}L`], masterForm.sz[`${kind}W`]) ? `kp-mf-${kind}-hint` : undefined
+                        return numField(
+                          key,
+                          `${t.xl.kinds[kind]}, ${side === 'L' ? t.master.sheetL : t.master.sheetW}`,
+                          masterForm.sz[key],
+                          (v) => setMasterForm((f) => f && { ...f, sz: { ...f.sz, [key]: v } }),
+                          hint,
                         )
                       }),
                     )}
                   </div>
+                  {(['ldsp', 'hdf'] as const).map((kind) => {
+                    const hint = sheetHint(masterForm.sz[`${kind}L`], masterForm.sz[`${kind}W`])
+                    return hint ? (
+                      <p key={kind} id={`kp-mf-${kind}-hint`} className="kp-mstr__fail" role="status">
+                        {t.xl.kinds[kind]}: {hint}
+                      </p>
+                    ) : null
+                  })}
                 </fieldset>
               </div>
               <div className="kp-mform__foot">
@@ -4096,9 +4176,9 @@ function SlotRow(props: {
 /* форма цен мастера */
 type MasterDraft = MasterData & { sz: Partial<Record<'ldspL' | 'ldspW' | 'hdfL' | 'hdfW', number>> }
 const EDGE_FIELD = { edge04: '0.4', edge1: '1', edge2: '2' } as const
-type PlainPrice = 'ldsp' | 'hdf' | 'top' | 'hinge' | 'runner' | 'lift' | 'handle' | 'work' | 'delivery' | 'markup'
+type PlainPrice = 'ldsp' | 'ldspDecor' | 'hdf' | 'top' | 'hinge' | 'runner' | 'lift' | 'handle' | 'push' | 'leg' | 'hanger' | 'gola' | 'plinth' | 'work' | 'delivery' | 'markup'
 type PriceField = PlainPrice | keyof typeof EDGE_FIELD
-const PRICE_FIELDS: PriceField[] = ['ldsp', 'hdf', 'edge04', 'edge1', 'edge2', 'top', 'hinge', 'runner', 'lift', 'handle', 'work', 'delivery', 'markup']
+const PRICE_FIELDS: PriceField[] = ['ldsp', 'ldspDecor', 'hdf', 'edge04', 'edge1', 'edge2', 'top', 'hinge', 'runner', 'lift', 'handle', 'push', 'leg', 'hanger', 'gola', 'plinth', 'work', 'delivery', 'markup']
 
 const fmt = (v: number) => (Number.isInteger(v) ? String(v) : (Math.round(v * 10) / 10).toFixed(1).replace('.', ','))
 
