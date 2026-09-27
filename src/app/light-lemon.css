@@ -113,6 +113,14 @@ input, textarea { caret-color: var(--color-primary); }
 /* Открытый раздел — лимонный штрих под названием, как в нижней навигации. */
 .subnav__link[aria-current='page'] { font-weight: 750; }
 .subnav__link[aria-current='page']::after { content: ''; position: absolute; left: 10px; right: 10px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--color-lemon); }
+/* С «Галереей кухонь» пунктов десять: на KY при 1440 строка листалась на 110px.
+   На широком экране пункты чуть плотнее — влезают без прокрутки; на RU лишнее
+   место всё равно раздаёт space-between, вид прежний. */
+@media (min-width: 1200px) {
+  .header__subnav { gap: 0; }
+  .subnav__link { padding-inline: 6px; }
+  .subnav__link[aria-current='page']::after { left: 6px; right: 6px; }
+}
 @property --subnav-fade-start { syntax: '<length>'; inherits: false; initial-value: 0px; }
 @property --subnav-fade-end { syntax: '<length>'; inherits: false; initial-value: 0px; }
 @keyframes subnav-fade {

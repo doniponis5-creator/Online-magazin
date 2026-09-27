@@ -28,6 +28,7 @@ export function Footer() {
               <li><Link href={`/${lang}/catalog`}>{t.nav.catalog}</Link></li>
               <li><Link href={`/${lang}/catalog?sale=1`}>{t.footer.saleLink}</Link></li>
               <li><Link href={`/${lang}/kitchen`}>{lang === 'ky' ? 'Ашкананын 3D-конструктору' : '3D-конструктор кухни'}</Link></li>
+              <li><Link href={`/${lang}/kitchen/gallery`}>{t.nav.kitchenGallery}</Link></li>
               <li><Link href={`/${lang}/favorites`}>{t.nav.favorites}</Link></li>
               <li><Link href={`/${lang}/account`}>{t.footer.accountLink}</Link></li>
               <li><Link href={`/${lang}/about`}>{t.footer.aboutLink}</Link></li>

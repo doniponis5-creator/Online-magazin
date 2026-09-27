@@ -241,8 +241,16 @@ function HeaderInner() {
               {lang === 'ky' ? c.nameKy : c.nameRu}
             </Link>
           ))}
-          <Link href={`/${lang}/kitchen`} className="subnav__link subnav__link--kitchen" aria-current={here('kitchen')}>
+          {/* «3D-кухня» не подсвечивается в галерее: там подсвечена «Галерея кухонь» */}
+          <Link
+            href={`/${lang}/kitchen`}
+            className="subnav__link subnav__link--kitchen"
+            aria-current={here('kitchen/gallery') ? undefined : here('kitchen')}
+          >
             {lang === 'ky' ? '3D-ашкана' : '3D-кухня'}
+          </Link>
+          <Link href={`/${lang}/kitchen/gallery`} className="subnav__link subnav__link--kitchen" aria-current={here('kitchen/gallery')}>
+            {t.nav.kitchenGallery}
           </Link>
           <span className="header__city">
             <IconMapPin size={16} />
