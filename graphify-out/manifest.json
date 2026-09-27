@@ -954,9 +954,9 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1790513699.1255047,
-    "seen": 1790515147.3889751,
-    "ast_hash": "2fc184ecc37ef4e2a6cea0539c3b4059",
+    "mtime": 1790521418.6269763,
+    "seen": 1790522088.047633,
+    "ast_hash": "762aff9999a80bd8870cb72422ee0fe5",
     "semantic_hash": ""
   },
   "DESIGN.md": {
@@ -3738,9 +3738,9 @@
     "semantic_hash": ""
   },
   "src/app/sitemap.ts": {
-    "mtime": 1790441275.6385357,
-    "seen": 1790454108.700806,
-    "ast_hash": "f00f79fd12e2a2c4ad0d8cc862399c8d",
+    "mtime": 1790520171.0830393,
+    "seen": 1790520541.075787,
+    "ast_hash": "2764a828cfdf95f07e9e7f9431afb27e",
     "semantic_hash": ""
   },
   "src/components/BonusPromo.tsx": {
@@ -4776,9 +4776,9 @@
     "semantic_hash": ""
   },
   "__tests__/kitchen.test.ts": {
-    "mtime": 1790486095.8012793,
-    "seen": 1790508085.0961568,
-    "ast_hash": "af4daaba2f0424ab4e70cf06ddb750e2",
+    "mtime": 1790519653.067219,
+    "seen": 1790520541.072843,
+    "ast_hash": "049578095d6e380ddfe2baf19931508c",
     "semantic_hash": ""
   },
   "src/app/[lang]/kitchen/page.tsx": {
@@ -4794,9 +4794,9 @@
     "semantic_hash": ""
   },
   "src/components/kitchen/KitchenPlanner.tsx": {
-    "mtime": 1790513275.5495203,
-    "seen": 1790515147.386483,
-    "ast_hash": "ffc9127ee65e681f7d5f090bb6f5aebd",
+    "mtime": 1790520609.7606182,
+    "seen": 1790520646.1023622,
+    "ast_hash": "7d6867ca0e5762e9f49120d8282af188",
     "semantic_hash": ""
   },
   "src/components/kitchen/KitchenPromo.tsx": {
@@ -4818,9 +4818,9 @@
     "semantic_hash": ""
   },
   "src/components/kitchen/texts.ts": {
-    "mtime": 1790514667.9638414,
-    "seen": 1790515147.3865752,
-    "ast_hash": "1d128b549236ded59af8b6a993f4ef5e",
+    "mtime": 1790520731.2261157,
+    "seen": 1790522088.04496,
+    "ast_hash": "4083b4bc0987d327ec0d80c913703d13",
     "semantic_hash": ""
   },
   "src/components/kitchen/three/appliances.ts": {
@@ -4878,9 +4878,9 @@
     "semantic_hash": ""
   },
   "src/lib/kitchen/checks.ts": {
-    "mtime": 1790497785.7706077,
-    "seen": 1790508085.100599,
-    "ast_hash": "5e2e780b0d19a903d472215933267f5f",
+    "mtime": 1790520609.7597601,
+    "seen": 1790520646.1041741,
+    "ast_hash": "8f8a732f1d406ce60d0f45a90214c5bb",
     "semantic_hash": ""
   },
   "src/lib/kitchen/finishes.ts": {
@@ -4902,9 +4902,9 @@
     "semantic_hash": ""
   },
   "src/lib/kitchen/share.ts": {
-    "mtime": 1790512899.3935251,
-    "seen": 1790515147.38756,
-    "ast_hash": "7bebdf526ea63e186af79f8a7a5d6aa6",
+    "mtime": 1790519642.4478748,
+    "seen": 1790520541.077572,
+    "ast_hash": "ee574dc15e8293ad07558e2682e59ccc",
     "semantic_hash": ""
   },
   "src/lib/kitchen/spec.ts": {
@@ -4974,33 +4974,33 @@
     "semantic_hash": ""
   },
   ".autopilot/state.js": {
-    "mtime": 1790515142.0458362,
-    "seen": 1790515147.382056,
-    "ast_hash": "be96d986b47513fbd51c7f099d9e52f0",
+    "mtime": 1790522082.1873465,
+    "seen": 1790522088.0403671,
+    "ast_hash": "2a954728892222f818606e021f8ccec5",
     "semantic_hash": ""
   },
   ".autopilot/sync.py": {
-    "mtime": 1790510740.4930716,
-    "seen": 1790515147.382058,
+    "mtime": 1790517225.7756615,
+    "seen": 1790520541.072374,
     "ast_hash": "22d114328873f502abd4daa20344d913",
     "semantic_hash": ""
   },
   ".autopilot/README.md": {
-    "mtime": 1790515142.0460303,
-    "seen": 1790515147.388902,
-    "ast_hash": "d97efc0125b41f29cf10a223c1bb3505",
+    "mtime": 1790522082.1876411,
+    "seen": 1790522088.0475578,
+    "ast_hash": "167bf6592e83805a67015c0042ea6eab",
     "semantic_hash": ""
   },
   ".autopilot/dashboard.html": {
-    "mtime": 1790515142.0910008,
-    "seen": 1790515147.388902,
-    "ast_hash": "50cd4f3b0120f58d21ca226ff6b7b60d",
+    "mtime": 1790522082.2368927,
+    "seen": 1790522088.047559,
+    "ast_hash": "3251d2dae46fdf89b6e9004ab5f76fe8",
     "semantic_hash": ""
   },
   ".autopilot/index.html": {
-    "mtime": 1790515142.0910008,
-    "seen": 1790515147.388903,
-    "ast_hash": "50cd4f3b0120f58d21ca226ff6b7b60d",
+    "mtime": 1790522082.2368927,
+    "seen": 1790522088.047559,
+    "ast_hash": "3251d2dae46fdf89b6e9004ab5f76fe8",
     "semantic_hash": ""
   },
   "docs/ANDROID_PLAY_UZ.md": {
@@ -5256,9 +5256,9 @@
     "semantic_hash": ""
   },
   "__tests__/kitchen-layout.test.ts": {
-    "mtime": 1790496867.2046955,
-    "seen": 1790508085.0960891,
-    "ast_hash": "a750a0b9cab8f2a6e1ee4bb2fd90f758",
+    "mtime": 1790520619.732752,
+    "seen": 1790520646.0965471,
+    "ast_hash": "e3da8187deb0532717b0fd33442b053d",
     "semantic_hash": ""
   },
   "__tests__/kitchen-order.test.ts": {
@@ -5715,6 +5715,540 @@
     "mtime": 1790511251.8201578,
     "seen": 1790515147.388708,
     "ast_hash": "fc6e9ea3f43265ab6a30c4d02a802c39",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-27-kitchen-colors/state.js": {
+    "mtime": 1790515142.0458362,
+    "seen": 1790520541.0723488,
+    "ast_hash": "be96d986b47513fbd51c7f099d9e52f0",
+    "semantic_hash": ""
+  },
+  "__tests__/fixtures/kitchen-live-appliances.json": {
+    "mtime": 1790518519.4359426,
+    "seen": 1790520541.07256,
+    "ast_hash": "221fff90b86fb0561137b8644a92899b",
+    "semantic_hash": ""
+  },
+  "__tests__/gallery-api.test.ts": {
+    "mtime": 1790521933.633833,
+    "seen": 1790522088.040582,
+    "ast_hash": "6f641b203d377f65ee62c0cc30911bf0",
+    "semantic_hash": ""
+  },
+  "__tests__/gallery-pages.test.ts": {
+    "mtime": 1790520206.965318,
+    "seen": 1790520541.0725608,
+    "ast_hash": "ac6d07d3a5e8a8342f30e04b7b1c29e2",
+    "semantic_hash": ""
+  },
+  "__tests__/gallery-store.test.ts": {
+    "mtime": 1790520061.1515145,
+    "seen": 1790520541.072562,
+    "ast_hash": "5a17393eec96f158c32fba86344578de",
+    "semantic_hash": ""
+  },
+  "__tests__/kitchen-publish.test.ts": {
+    "mtime": 1790520703.7878625,
+    "seen": 1790522088.0408058,
+    "ast_hash": "f4bffa37d970465047d2f7e9592ea0f2",
+    "semantic_hash": ""
+  },
+  "__tests__/kitchen-ready-strip.test.ts": {
+    "mtime": 1790520731.224921,
+    "seen": 1790522088.040807,
+    "ast_hash": "e3cf3cb875d32c77d588f26c25f1b8da",
+    "semantic_hash": ""
+  },
+  "__tests__/kitchen-ready.test.ts": {
+    "mtime": 1790520105.4441793,
+    "seen": 1790520541.072741,
+    "ast_hash": "f7c28894d4f6a994d68ae6e48d125785",
+    "semantic_hash": ""
+  },
+  "scripts/kitchen-ready-shots.mjs": {
+    "mtime": 1790520091.1101148,
+    "seen": 1790520541.074489,
+    "ast_hash": "88b913e619f1a99bf428a39f1a5b98f7",
+    "semantic_hash": ""
+  },
+  "src/app/[lang]/kitchen/gallery/[id]/page.tsx": {
+    "mtime": 1790519044.0982833,
+    "seen": 1790520541.074971,
+    "ast_hash": "37800aee43e7e8a312f98b745f1f224d",
+    "semantic_hash": ""
+  },
+  "src/app/[lang]/kitchen/gallery/page.tsx": {
+    "mtime": 1790519071.5115454,
+    "seen": 1790520541.074972,
+    "ast_hash": "5a65008fefb740ff38f40947f17fa80f",
+    "semantic_hash": ""
+  },
+  "src/app/api/gallery/[id]/comments/route.ts": {
+    "mtime": 1790520080.3600035,
+    "seen": 1790520541.0754938,
+    "ast_hash": "ee2ce6dac22de67a4a9f7da20641f98b",
+    "semantic_hash": ""
+  },
+  "src/app/api/gallery/[id]/photos/route.ts": {
+    "mtime": 1790520080.3601,
+    "seen": 1790520541.075495,
+    "ast_hash": "3fe3de980f9e36618dbdd51166c2cd66",
+    "semantic_hash": ""
+  },
+  "src/app/api/gallery/[id]/rate/route.ts": {
+    "mtime": 1790520080.3595812,
+    "seen": 1790520541.075496,
+    "ast_hash": "4535c14ab5b9ec94b739f8b45aa78825",
+    "semantic_hash": ""
+  },
+  "src/app/api/gallery/[id]/report/route.ts": {
+    "mtime": 1790520080.3597932,
+    "seen": 1790520541.075497,
+    "ast_hash": "85f7a206819e89451db6e40bab955957",
+    "semantic_hash": ""
+  },
+  "src/app/api/gallery/[id]/route.ts": {
+    "mtime": 1790518148.026134,
+    "seen": 1790520541.075497,
+    "ast_hash": "c5bce90acb93d666c41b9b5c1760bd86",
+    "semantic_hash": ""
+  },
+  "src/app/api/gallery/helpers.ts": {
+    "mtime": 1790520080.3591335,
+    "seen": 1790520541.0754979,
+    "ast_hash": "b50eea1b652602f50b8a54d6a880c0ca",
+    "semantic_hash": ""
+  },
+  "src/app/api/gallery/image/[name]/route.ts": {
+    "mtime": 1790519311.6715105,
+    "seen": 1790520541.075499,
+    "ast_hash": "700a89a7a1c4a2c8b22e64d7544819c9",
+    "semantic_hash": ""
+  },
+  "src/app/api/gallery/route.ts": {
+    "mtime": 1790520731.2240014,
+    "seen": 1790522088.043884,
+    "ast_hash": "4f63c6241f97947fe196c6c4d101c67a",
+    "semantic_hash": ""
+  },
+  "src/app/panel/gallery/route.ts": {
+    "mtime": 1790521941.1911724,
+    "seen": 1790522088.044111,
+    "ast_hash": "34a8f6cc0c7dc70b0b65c325c04ace6d",
+    "semantic_hash": ""
+  },
+  "src/components/gallery/KitchenTile.tsx": {
+    "mtime": 1790521925.2153995,
+    "seen": 1790522088.044815,
+    "ast_hash": "785b60d9651b262d78e71876db921d3a",
+    "semantic_hash": ""
+  },
+  "src/components/gallery/KitchenView.tsx": {
+    "mtime": 1790521911.412598,
+    "seen": 1790522088.0448158,
+    "ast_hash": "b63578567baa65d598571c1a917add45",
+    "semantic_hash": ""
+  },
+  "src/components/gallery/data.ts": {
+    "mtime": 1790520206.9651654,
+    "seen": 1790520541.076409,
+    "ast_hash": "3cc43dbaa1fed58838e85be791521f94",
+    "semantic_hash": ""
+  },
+  "src/components/gallery/social.tsx": {
+    "mtime": 1790521925.2152598,
+    "seen": 1790522088.044838,
+    "ast_hash": "087400d69e7f6513a59defbffb6eea80",
+    "semantic_hash": ""
+  },
+  "src/components/kitchen/Modal.tsx": {
+    "mtime": 1790520731.2250977,
+    "seen": 1790522088.044872,
+    "ast_hash": "1aa7636b96869d7ad8170ef7728dc019",
+    "semantic_hash": ""
+  },
+  "src/components/kitchen/PublishDialog.tsx": {
+    "mtime": 1790520751.7140758,
+    "seen": 1790522088.044889,
+    "ast_hash": "a9e0bb0aefafde0cd3d545e5e2921e82",
+    "semantic_hash": ""
+  },
+  "src/components/kitchen/PublishLoader.tsx": {
+    "mtime": 1790520731.2255042,
+    "seen": 1790522088.0448902,
+    "ast_hash": "c1c73feb3e9b8bccb0f19b9034222266",
+    "semantic_hash": ""
+  },
+  "src/components/kitchen/ReadyStrip.tsx": {
+    "mtime": 1790520731.2246377,
+    "seen": 1790522088.0448909,
+    "ast_hash": "eb37cbcbf5af11f556a6a266495c2e6e",
+    "semantic_hash": ""
+  },
+  "src/components/kitchen/publish.ts": {
+    "mtime": 1790520731.224109,
+    "seen": 1790522088.0449421,
+    "ast_hash": "e31b46f66240d0093c53ed83d2ee534c",
+    "semantic_hash": ""
+  },
+  "src/components/kitchen/ready.ts": {
+    "mtime": 1790520731.224378,
+    "seen": 1790522088.044943,
+    "ast_hash": "192a9a8a4e8fd1e0a440c82aee7fb32c",
+    "semantic_hash": ""
+  },
+  "src/components/kitchen/shot.ts": {
+    "mtime": 1790518713.7233188,
+    "seen": 1790520541.076503,
+    "ast_hash": "a8731505c8ee9fedee87a2389f2a272c",
+    "semantic_hash": ""
+  },
+  "src/data/kitchen-ready.ts": {
+    "mtime": 1790520091.1097474,
+    "seen": 1790520541.0767841,
+    "ast_hash": "106dc4af7df0738c5bb96ac42025e92c",
+    "semantic_hash": ""
+  },
+  "src/lib/gallery/author.ts": {
+    "mtime": 1790519155.0025957,
+    "seen": 1790520541.077333,
+    "ast_hash": "a25fb3741271dc8602cd3dd1bc81bb9b",
+    "semantic_hash": ""
+  },
+  "src/lib/gallery/image.ts": {
+    "mtime": 1790520039.3579278,
+    "seen": 1790520541.077334,
+    "ast_hash": "6d0edf8c97aceb6946f0beb0f5a2d40c",
+    "semantic_hash": ""
+  },
+  "src/lib/gallery/rules.ts": {
+    "mtime": 1790520731.2238007,
+    "seen": 1790522088.045822,
+    "ast_hash": "95c3b2f59b97ea9172b971670817cd35",
+    "semantic_hash": ""
+  },
+  "src/lib/gallery/store.ts": {
+    "mtime": 1790520061.1509883,
+    "seen": 1790520541.0773351,
+    "ast_hash": "6f0542f3bbb3a33d82ec27aadd4f141c",
+    "semantic_hash": ""
+  },
+  "src/lib/gallery/texts.ts": {
+    "mtime": 1790520751.7136638,
+    "seen": 1790522088.045839,
+    "ast_hash": "385759f1a2c4a39d1e998c1a7c2eee30",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/corner-300x240-marble-card.jpg": {
+    "mtime": 1790518838.4817512,
+    "seen": 1790520541.082686,
+    "ast_hash": "ba765cf02b8e7c63baf493126b91a690",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/corner-300x240-marble-s.jpg": {
+    "mtime": 1790518838.4815698,
+    "seen": 1790520541.082687,
+    "ast_hash": "0ba38d7c923b5726d89ba3b49c97117b",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/corner-300x240-marble.jpg": {
+    "mtime": 1790518838.4811623,
+    "seen": 1790520541.082687,
+    "ast_hash": "a10352382ffe32197ea18a5a517e2bef",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/corner-310x180-japandi-card.jpg": {
+    "mtime": 1790520111.3811474,
+    "seen": 1790520541.082688,
+    "ast_hash": "bf42b37f92a46599c7b4d8c5a48dd4b9",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/corner-310x180-japandi-s.jpg": {
+    "mtime": 1790520111.3807771,
+    "seen": 1790520541.082688,
+    "ast_hash": "aca228acd5a7347b0a1ba627e75536a0",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/corner-310x180-japandi.jpg": {
+    "mtime": 1790520111.3801398,
+    "seen": 1790520541.082689,
+    "ast_hash": "09d11e10533ef1d5483ebc8d9680768e",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/corner-360x300-english-card.jpg": {
+    "mtime": 1790520118.0142848,
+    "seen": 1790520541.082689,
+    "ast_hash": "80d8e627a072f061c6ca88ec73920012",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/corner-360x300-english-s.jpg": {
+    "mtime": 1790520118.0140355,
+    "seen": 1790520541.08269,
+    "ast_hash": "155cb2d7927cc3f539f296c7e7fca082",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/corner-360x300-english.jpg": {
+    "mtime": 1790520118.0137122,
+    "seen": 1790520541.08269,
+    "ast_hash": "486724fc1728eee77c6c8d086bd74f8b",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/island-320-modern-card.jpg": {
+    "mtime": 1790518867.500179,
+    "seen": 1790520541.082691,
+    "ast_hash": "ad216f83c18fdad71e6736dfefd7dafc",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/island-320-modern-s.jpg": {
+    "mtime": 1790518867.5000424,
+    "seen": 1790520541.082691,
+    "ast_hash": "91bb210ff316b6ea36a84bd4050b6642",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/island-320-modern.jpg": {
+    "mtime": 1790518867.4997845,
+    "seen": 1790520541.0826921,
+    "ast_hash": "ebb668d89ddc7036a37d1bd9882b561f",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/island-380-quiet-card.jpg": {
+    "mtime": 1790518873.6798859,
+    "seen": 1790520541.082693,
+    "ast_hash": "b2d3c4e07cdc7cd46308f1d5f2b89794",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/island-380-quiet-s.jpg": {
+    "mtime": 1790518873.679602,
+    "seen": 1790520541.0826938,
+    "ast_hash": "dc9a139b87b7770c9ac9f4224d407b73",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/island-380-quiet.jpg": {
+    "mtime": 1790518873.6791656,
+    "seen": 1790520541.0826938,
+    "ast_hash": "71fd866e22086fab1974dce4daff1585",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/island-450-gold-card.jpg": {
+    "mtime": 1790518879.9701505,
+    "seen": 1790520541.082695,
+    "ast_hash": "19c9c619137871ecd032259b0c2c7df9",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/island-450-gold-s.jpg": {
+    "mtime": 1790518879.970044,
+    "seen": 1790520541.082696,
+    "ast_hash": "38a7ba8043cc5673b5fcff38a53a4d59",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/island-450-gold.jpg": {
+    "mtime": 1790518879.9698524,
+    "seen": 1790520541.082696,
+    "ast_hash": "80bb50696cfce967d82f294d4b659377",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/straight-300-scandi-card.jpg": {
+    "mtime": 1790518815.7839115,
+    "seen": 1790520541.082697,
+    "ast_hash": "5be2751b49570b41e8cc78ef8fd798c1",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/straight-300-scandi-s.jpg": {
+    "mtime": 1790518815.7837691,
+    "seen": 1790520541.0826979,
+    "ast_hash": "31aee51784c6ba3fabb9fb2aa707858d",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/straight-300-scandi.jpg": {
+    "mtime": 1790518815.783425,
+    "seen": 1790520541.0826979,
+    "ast_hash": "0c4b36998dd10bdb1ccb02dd7a2abfef",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/straight-320-loft-card.jpg": {
+    "mtime": 1790518820.7881267,
+    "seen": 1790520541.082699,
+    "ast_hash": "1022da34cecb82bf71ab5c44eb93a6de",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/straight-320-loft-s.jpg": {
+    "mtime": 1790518820.787882,
+    "seen": 1790520541.082699,
+    "ast_hash": "e718633b7b6bedc1e262906cdd4d706f",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/straight-320-loft.jpg": {
+    "mtime": 1790518820.787398,
+    "seen": 1790520541.0827,
+    "ast_hash": "b1cde3a6b28a229ecd1d1e22b36c03b4",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/straight-380-hitech-card.jpg": {
+    "mtime": 1790518827.1190486,
+    "seen": 1790520541.0827,
+    "ast_hash": "8104e8dae12cc8dd5695baae27ecb4ee",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/straight-380-hitech-s.jpg": {
+    "mtime": 1790518827.1188612,
+    "seen": 1790520541.082701,
+    "ast_hash": "88b27f4f5a8681e62ffee460965ccfa8",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/straight-380-hitech.jpg": {
+    "mtime": 1790518827.1185431,
+    "seen": 1790520541.0827022,
+    "ast_hash": "349fdfdeddfc022095b777f18f437822",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/u-300x240-minimal-card.jpg": {
+    "mtime": 1790520123.9867187,
+    "seen": 1790520541.0827022,
+    "ast_hash": "bce03e4c9533f380324249af024130b0",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/u-300x240-minimal-s.jpg": {
+    "mtime": 1790520123.986141,
+    "seen": 1790520541.082703,
+    "ast_hash": "f6a3f74662dcd0478d491c4e2587c9c5",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/u-300x240-minimal.jpg": {
+    "mtime": 1790520123.9856992,
+    "seen": 1790520541.0827038,
+    "ast_hash": "1dcbd9a1906488245c5c9f779f180719",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/u-360x270-artdeco-card.jpg": {
+    "mtime": 1790518854.9251642,
+    "seen": 1790520541.0827038,
+    "ast_hash": "d2966fd5cf01cc7522c593a3ca683839",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/u-360x270-artdeco-s.jpg": {
+    "mtime": 1790518854.9240665,
+    "seen": 1790520541.0827048,
+    "ast_hash": "027c9fc836b6cbbb47abed659f716e45",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/u-360x270-artdeco.jpg": {
+    "mtime": 1790518854.9227407,
+    "seen": 1790520541.0827048,
+    "ast_hash": "ebae21c7f6120a82f48472ade7f7c5ae",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/u-420x300-classic-card.jpg": {
+    "mtime": 1790520130.340618,
+    "seen": 1790520541.082706,
+    "ast_hash": "94bc9b5f68bffc732a31ffce004732c4",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/u-420x300-classic-s.jpg": {
+    "mtime": 1790520130.3401644,
+    "seen": 1790520541.082706,
+    "ast_hash": "522da83dad5e89c9e0ff2bae461ca10c",
+    "semantic_hash": ""
+  },
+  "public/kitchen/ready/u-420x300-classic.jpg": {
+    "mtime": 1790520130.3395255,
+    "seen": 1790520541.082707,
+    "ast_hash": "72f845ca5d5354f32a61f2e4eefaf529",
+    "semantic_hash": ""
+  },
+  "__tests__/gallery-format.test.ts": {
+    "mtime": 1790521890.822583,
+    "seen": 1790522088.040583,
+    "ast_hash": "127da43b8fbdda58eab2a0cfd5aff224",
+    "semantic_hash": ""
+  },
+  "src/lib/gallery/format.ts": {
+    "mtime": 1790521901.2495432,
+    "seen": 1790522088.045805,
+    "ast_hash": "1867feb4a80de8f0a99b49953a4abc36",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-27-kitchen-gallery/2026-09-27-brief.md": {
+    "mtime": 1790517760.5521078,
+    "seen": 1790522088.0473611,
+    "ast_hash": "10640adbe0633892947283ce88dee9d0",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-27-kitchen-gallery/interfaces.md": {
+    "mtime": 1790519518.0742786,
+    "seen": 1790522088.0473611,
+    "ast_hash": "7db5ad725492258089268e375e0d2f45",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-27-kitchen-gallery/manifest.md": {
+    "mtime": 1790522082.1878824,
+    "seen": 1790522088.047362,
+    "ast_hash": "a81e11324e6788fef922681755c2dd0e",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-27-kitchen-gallery/spec.md": {
+    "mtime": 1790517963.795178,
+    "seen": 1790522088.047362,
+    "ast_hash": "0054d71e3abf8eb74ae941c82adfd85d",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-27-kitchen-gallery/tickets/01-gallery-store-api.md": {
+    "mtime": 1790517760.5727837,
+    "seen": 1790522088.047363,
+    "ast_hash": "94f211175c81d42d0acee369524731a3",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-27-kitchen-gallery/tickets/02-ready-kitchens.md": {
+    "mtime": 1790517594.7376347,
+    "seen": 1790522088.047364,
+    "ast_hash": "3a484f3362c5401fc5d2b67b08cc9a03",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-27-kitchen-gallery/tickets/03-gallery-pages.md": {
+    "mtime": 1790517963.7955601,
+    "seen": 1790522088.047364,
+    "ast_hash": "9ce7e829e04ffbd612ab0ecbc248f4d0",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-27-kitchen-gallery/tickets/04-constructor-publish.md": {
+    "mtime": 1790517760.5725486,
+    "seen": 1790522088.0473652,
+    "ast_hash": "17c80b04514113729f895139b1b86486",
+    "semantic_hash": ""
+  },
+  "docs/adr/0011-gallery-storage-files-not-db.md": {
+    "mtime": 1790521028.8468363,
+    "seen": 1790522088.048256,
+    "ast_hash": "2c74ac8a0bb0b56fb61801b603741af4",
+    "semantic_hash": ""
+  },
+  "docs/adr/0012-gallery-kitchen-canonical-link.md": {
+    "mtime": 1790521028.8745458,
+    "seen": 1790522088.048258,
+    "ast_hash": "ddbb0906117a90aebf5f1d349aaae440",
+    "semantic_hash": ""
+  },
+  "docs/adr/0013-ready-kitchens-data-in-repo.md": {
+    "mtime": 1790521028.891392,
+    "seen": 1790522088.048259,
+    "ast_hash": "fa7d692df2a3a9cbe438b419065abec9",
+    "semantic_hash": ""
+  },
+  "docs/adr/0014-ready-kitchens-triangle-warnings.md": {
+    "mtime": 1790521028.909623,
+    "seen": 1790522088.048259,
+    "ast_hash": "b2bae117e9d45ab2be18b063033bec22",
+    "semantic_hash": ""
+  },
+  "docs/adr/0015-ready-kitchens-catalog-fixture.md": {
+    "mtime": 1790521028.927265,
+    "seen": 1790522088.0482602,
+    "ast_hash": "d882ab0174dacd8e3c98fc97321a21fe",
+    "semantic_hash": ""
+  },
+  "docs/adr/0016-single-row-triangle-rule.md": {
+    "mtime": 1790521028.9452305,
+    "seen": 1790522088.0482612,
+    "ast_hash": "8fe05f5c9f208636b259a7c57a9dd902",
     "semantic_hash": ""
   }
 }
