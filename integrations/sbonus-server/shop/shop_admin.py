@@ -14,6 +14,8 @@
   GET  /webhook/site/notes          подпись сайта    тот же текст для чата на сайте
   POST /webhook/site/lead           подпись сайта    «перезвоните мне» из чата → WhatsApp владельцу
   POST /webhook/site/visit          подпись сайта    отметка о посещении страницы
+  POST /webhook/site/push-cart      подпись сайта    снимок корзины для напоминаний
+  POST /webhook/site/cart-consent   подпись сайта    согласие на напоминания: записать / прочитать
 
 Настройки лежат в таблице settings SBonus и действуют сразу, без перезапуска.
 Значения проверяются здесь: из 1С может прийти что угодно, а в базе должно
@@ -375,12 +377,95 @@ async def account_delete(request: Request, db: AsyncSession = Depends(get_db)):
         return {"ok": False, "error": "phone обязателен"}
     try:
         from .shop_push import forget_phone
+        from .shop_cart_remind import forget as forget_cart
         removed = await forget_phone(db, phone)
+        # Снимок корзины и согласие на напоминания — тоже данные человека.
+        cart_removed = await forget_cart(db, phone)
     except Exception as error:
         logger.error(f"account-delete: адреса телефона не стёрлись ...{phone[-4:]}: {error}")
         return {"ok": False, "error": "не удалось"}
-    logger.info(f"account-delete: покупатель ...{phone[-4:]} удалил учётную запись, адресов стёрто: {removed}")
-    return {"ok": True, "pushRemoved": removed}
+    logger.info(
+        f"account-delete: покупатель ...{phone[-4:]} удалил учётную запись, "
+        f"адресов стёрто: {removed}, корзин: {cart_removed}"
+    )
+    return {"ok": True, "pushRemoved": removed, "cartRemoved": cart_removed}
+
+
+# ── Напоминание о корзине ────────────────────────────────────────────────────
+#
+# Приложение присылает снимок корзины вошедшего покупателя и его ответ
+# «напоминать ли». Телефон — только из тела, подписанного сайтом: сайт берёт
+# его из сессии, а не из того, что прислал телефон. Когда и что напоминать —
+# решает shop_cart_remind.py (задача cron раз в 30 минут).
+
+class PushCart(BaseModel):
+    phone: str = ""
+    items: list = []
+    count: int = 0
+    total: float = 0
+
+
+class CartConsent(BaseModel):
+    phone: str = ""
+    consent: bool | None = None
+
+
+@router_site_admin.post("/push-cart")
+async def push_cart(request: Request, db: AsyncSession = Depends(get_db)):
+    """
+    Снимок корзины: {phone, items (до трёх названий), count, total}.
+    Пустая корзина — count: 0. Изменение состава начинает расписание заново.
+    В ответе — текущее согласие, чтобы приложение знало, спрашивать ли.
+    """
+    body = await _verify_site_body(request)
+    from .shop_cart_remind import clean_phone, clean_snapshot, save_cart
+    try:
+        payload = PushCart.parse_raw(body)
+    except Exception:
+        return {"ok": False, "saved": False, "error": "body"}
+    phone = clean_phone(payload.phone)
+    snapshot = clean_snapshot(payload.items, payload.count, payload.total)
+    if not phone or snapshot is None:
+        return {"ok": False, "saved": False, "error": "phone" if not phone else "cart"}
+    try:
+        consent = await save_cart(db, phone, *snapshot)
+    except Exception as error:
+        # Напоминание — не повод ломать сайт.
+        await db.rollback()
+        logger.warning(f"push-cart не записан ...{phone[-4:]} ({type(error).__name__})")
+        return {"ok": True, "saved": False}
+    return {"ok": True, "saved": True, "consent": consent}
+
+
+@router_site_admin.post("/cart-consent")
+async def cart_consent(request: Request, db: AsyncSession = Depends(get_db)):
+    """
+    Согласие на напоминания о корзине.
+      {phone, consent: true|false} — записать ответ;
+      {phone} без consent          — только прочитать.
+    Ответ: {ok, consent: true|false|null}; null — ещё не спрашивали.
+    Номер в теле, а не в адресе запроса: адреса попадают в журналы nginx.
+    """
+    body = await _verify_site_body(request)
+    from .shop_cart_remind import clean_phone, get_consent, set_consent
+    try:
+        payload = CartConsent.parse_raw(body)
+    except Exception:
+        return {"ok": False, "error": "body"}
+    phone = clean_phone(payload.phone)
+    if not phone:
+        return {"ok": False, "error": "phone"}
+    try:
+        if payload.consent is None:
+            consent = await get_consent(db, phone)
+        else:
+            consent = await set_consent(db, phone, payload.consent)
+            logger.info(f"cart-consent ...{phone[-4:]}: {'да' if consent else 'нет'}")
+    except Exception as error:
+        await db.rollback()
+        logger.warning(f"cart-consent не прочитан/не записан ...{phone[-4:]} ({type(error).__name__})")
+        return {"ok": False, "error": "db"}
+    return {"ok": True, "consent": consent}
 
 
 @router_site_admin.post("/visit")

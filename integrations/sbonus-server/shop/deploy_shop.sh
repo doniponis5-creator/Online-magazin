@@ -25,8 +25,8 @@ SRC="$(cd "$(dirname "$0")" && pwd)"
 API=sbonus_api
 DB=sbonus_db
 TS=$(date +%Y%m%d_%H%M%S)
-FILES="__init__.py shop_models.py shop_router.py shop_catalog.py shop_telegram.py shop_customers.py shop_admin.py shop_push.py shop_push_fcm.py shop_whatsapp.py shop_installments_calc.py shop_installments.py shop_stock.py shop_wa_bot.py"
-MIGRATIONS="001_shop_orders_migration.sql 002_shop_catalog_migration.sql 003_shop_bonus_migration.sql 004_shop_stats_migration.sql 005_shop_push_migration.sql 006_shop_installments_migration.sql 007_shop_notes_migration.sql 008_shop_chat_extra_migration.sql 009_shop_push_token_len_migration.sql"
+FILES="__init__.py shop_models.py shop_router.py shop_catalog.py shop_telegram.py shop_customers.py shop_admin.py shop_push.py shop_push_fcm.py shop_cart_rules.py shop_cart_remind.py shop_whatsapp.py shop_installments_calc.py shop_installments.py shop_stock.py shop_wa_bot.py"
+MIGRATIONS="001_shop_orders_migration.sql 002_shop_catalog_migration.sql 003_shop_bonus_migration.sql 004_shop_stats_migration.sql 005_shop_push_migration.sql 006_shop_installments_migration.sql 007_shop_notes_migration.sql 008_shop_chat_extra_migration.sql 009_shop_push_token_len_migration.sql 010_shop_cart_reminders_migration.sql"
 
 echo "=== Деплой: интернет-магазин (заказы + каталог + вход и бонусы) ==="
 
@@ -67,6 +67,9 @@ import app.shop_precheck.shop_stock as stock
 import app.shop_precheck.shop_wa_bot as wabot
 import app.shop_precheck.shop_push as push
 assert push.fcm.classify(200, {}) == 'ok' and push.fcm.load_account('') is None
+import app.shop_precheck.shop_cart_remind as cart
+assert cart.rules.reminder_text(['A'], 1)[0] and callable(cart.run_once) and callable(cart.main)
+assert cart.clean_phone('+996555000000') and cart.clean_snapshot([], 0, 0) == ([], 0, 0)
 assert callable(wabot.poll_once) and callable(wabot.send_digest)
 assert stock.shortages([{'oneCId': 'a', 'qty': 1, 'name': 'A'}], [{'id': 'a', 'stock': 1, 'availability': 'По остатку'}], {'a': 1}) == ['A']
 assert inst.parse_phones('0558311031/0558882507') == ['+996558311031', '+996558882507']
@@ -287,6 +290,10 @@ docker cp "$SRC/009_shop_push_token_len_migration.sql" "$DB:/tmp/009_shop_push_t
 docker exec "$DB" psql -U sbonus -d sbonus_db -v ON_ERROR_STOP=1 -f /tmp/009_shop_push_token_len_migration.sql \
     && echo "✓ Адрес телефона в shop_push_devices до 1024 знаков (уведомления на Android)" \
     || { echo "❌ Миграция адресов Android не прошла — стоп (код не пересобран)"; exit 1; }
+docker cp "$SRC/010_shop_cart_reminders_migration.sql" "$DB:/tmp/010_shop_cart_reminders_migration.sql"
+docker exec "$DB" psql -U sbonus -d sbonus_db -v ON_ERROR_STOP=1 -f /tmp/010_shop_cart_reminders_migration.sql \
+    && echo "✓ Таблица shop_cart_reminders (напоминания о корзине)" \
+    || { echo "❌ Миграция напоминаний о корзине не прошла — стоп (код не пересобран)"; exit 1; }
 
 # ── 6. Секрет сайта в .env (создаётся один раз) ──────────────────────────────
 if grep -q '^SHOP_SITE_SECRET=' "$ENV_FILE" 2>/dev/null; then
@@ -349,6 +356,15 @@ cat > /etc/cron.d/sbonus-wa-digest <<'CRONEOF'
 CRONEOF
 chmod 644 /etc/cron.d/sbonus-wa-digest
 echo "✓ cron: утренняя сводка консультанта владельцу в 9:05 (/etc/cron.d/sbonus-wa-digest)"
+# Напоминания о корзине: раз в 30 минут одна проверка и выход. «День по Бишкеку»,
+# расписание и согласие проверяет сам модуль — часовой пояс сервера не важен.
+# Файл в /etc/cron.d перезаписывается целиком: повторный деплой строку не дублирует.
+# flock — чтобы медленный прогон не наложился на следующий.
+cat > /etc/cron.d/sbonus-cart-remind <<'CRONEOF'
+*/30 * * * * root flock -n /var/lock/sbonus-cart-remind.lock docker exec -e PYTHONPATH=/app sbonus_api python3 -m app.shop.shop_cart_remind >> /root/shop_cart_remind.log 2>&1
+CRONEOF
+chmod 644 /etc/cron.d/sbonus-cart-remind
+echo "✓ cron: напоминания о корзине раз в 30 минут (/etc/cron.d/sbonus-cart-remind, журнал /root/shop_cart_remind.log)"
 
 # ── 8. Проверка ──────────────────────────────────────────────────────────────
 echo "=== ПРОВЕРКА ==="
@@ -366,6 +382,9 @@ curl -s -o /dev/null -w "  HTTP %{http_code}\n" -X POST https://api.smartcentr.s
 echo "--- рассрочка для чата: 1С и сайт без подписи (ожидается 401 и 401) ---"
 curl -s -o /dev/null -w "  HTTP %{http_code}\n" -X POST https://api.smartcentr.store/api/v1/webhook/1c/shop/installments
 curl -s -o /dev/null -w "  HTTP %{http_code}\n" https://api.smartcentr.store/api/v1/webhook/site/customer/996555000000/installment
+echo "--- корзина и согласие на напоминания без подписи (ожидается 401 и 401) ---"
+curl -s -o /dev/null -w "  HTTP %{http_code}\n" -X POST https://api.smartcentr.store/api/v1/webhook/site/push-cart
+curl -s -o /dev/null -w "  HTTP %{http_code}\n" -X POST https://api.smartcentr.store/api/v1/webhook/site/cart-consent
 echo "--- знания для чата без подписи (ожидается 401) ---"
 curl -s -o /dev/null -w "  HTTP %{http_code}\n" https://api.smartcentr.store/api/v1/webhook/site/notes
 echo "--- ошибки запуска ---"
@@ -378,3 +397,4 @@ echo ""
 echo "ОТКАТ КОДА (данные заказов и бонусов остаются в БД):"
 echo "  cp $APP/main.py.bak_$TS $APP/main.py && rm -rf $DST && { [ -d $DST.bak_$TS ] && cp -r $DST.bak_$TS $DST; }"
 echo "  cd $CD && docker compose -f $COMPOSE build api && docker compose -f $COMPOSE up -d --no-deps api"
+echo "  rm -f /etc/cron.d/sbonus-cart-remind   # если откатываете до версии без напоминаний о корзине"

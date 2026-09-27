@@ -308,7 +308,18 @@ async def site_create_order(request: Request, db: AsyncSession = Depends(get_db)
         await _log(db, order, "invoice_failed", {"error": str(error)})
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, "O!Деньги недоступны")
 
-    return {"order_id": order.order_id, "token": order.token, "pay_url": order.pay_url}
+    answer = {"order_id": order.order_id, "token": order.token, "pay_url": order.pay_url}
+    # Заказ оформлен — напоминать о корзине этого номера больше не о чем.
+    # Ответ собран заранее: откат ниже сбрасывает загруженные поля заказа.
+    # Сбой здесь заказу не мешает: задача напоминаний и так пропускает тех,
+    # у кого после изменения корзины есть заказ.
+    try:
+        from .shop_cart_remind import clear_after_order
+        await clear_after_order(db, payload.customer.phone)
+    except Exception as error:
+        await db.rollback()
+        logger.info(f"корзина не обнулена {answer['order_id']}: {type(error).__name__}")
+    return answer
 
 
 @router_site.get("/{order_id}")
