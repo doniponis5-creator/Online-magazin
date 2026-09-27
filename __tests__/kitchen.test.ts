@@ -114,6 +114,16 @@ describe('техника из каталога', () => {
     const a = applianceFromProduct(product('Встраиваемая вытяжка Asco', [['Тип', 'Телескопическая встраиваемая вытяжка'], ['Ширина', '60 см']]))
     expect(a).toMatchObject({ slot: 'hood', hood: 'telescopic', w: 60 })
   })
+  it('«Встраиваемая поверхность» из 1С — варочная панель', () => {
+    expect(applianceFromProduct(product('Встраиваемая поверхность MIDEA MC-6T3401R216 (черный)', [['Ширина', '59 см']]))).toMatchObject({
+      slot: 'hob',
+      builtIn: true,
+      w: 59,
+    })
+    expect(applianceFromProduct(product('Встраиваемая поверхность Asco SHAK6222BG 2/2', [['Тип', 'Газовая']]))).toMatchObject({ slot: 'hob', hob: 'gas' })
+    // отдельностоящая плита — не варочная панель
+    expect(applianceFromProduct(product('Газовая плита SHIVAKI 6401E стеклокерамика 4 электро черный', []))).toBeNull()
+  })
   it('полуавтомат, морозильник, товар без цены и без остатка — не для кухни', () => {
     expect(applianceFromProduct(product('Стиральная машина п/а AVANGARD', [['Тип загрузки', 'Вертикальная']]))).toBeNull()
     expect(applianceFromProduct(product('Морозилька LEVO 278', []))).toBeNull()

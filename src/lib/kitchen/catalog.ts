@@ -28,7 +28,8 @@ function slotOf(name: string, specs: Spec[]): SlotKind | null {
   if (/холодильник/.test(n)) return 'fridge'
   if (/духов/.test(n)) return 'oven'
   if (/микроволн|свч/.test(n)) return 'microwave'
-  if (/варочн/.test(n)) return 'hob'
+  // В 1С варочные панели часто заведены как «Встраиваемая поверхность …».
+  if (/варочн/.test(n) || /встраиваем\S*\s+поверхност/.test(n)) return 'hob'
   if (/вытяжк/.test(n)) return 'hood'
   if (/посудомо/.test(n)) return 'dishwasher'
   if (/стиральн/.test(n)) {
