@@ -73,6 +73,34 @@ function listen(native: PushPlugin) {
     if (token) sendToken(token)
   })
   native.addListener('registrationError', () => undefined)
+  listenPushTaps()
+}
+
+let tapsListening = false
+
+/** Язык, на котором покупатель сейчас смотрит сайт: первая часть адреса. Не понять — русский. */
+function currentLang(): string {
+  const first = window.location?.pathname?.split('/')[1] ?? ''
+  return first === 'ru' || first === 'ky' ? first : 'ru'
+}
+
+/**
+ * Нажатие на уведомление. Напоминание о корзине (`type: "cart"`) открывает корзину
+ * на текущем языке; уведомления о заказах — как раньше, никуда не переводим.
+ *
+ * Это JS сайта, поэтому работает и в уже вышедшем приложении без новой сборки.
+ * Если приложение было закрыто, плагин придержит нажатие до появления слушателя.
+ */
+export function listenPushTaps(): void {
+  const native = plugin()
+  if (!native || tapsListening) return
+  tapsListening = true
+  native
+    .addListener('pushNotificationActionPerformed', (action) => {
+      const data = (action as { notification?: { data?: { type?: unknown } } })?.notification?.data
+      if (data?.type === 'cart') window.location.assign(`/${currentLang()}/cart`)
+    })
+    .catch(() => undefined)
 }
 
 /**
