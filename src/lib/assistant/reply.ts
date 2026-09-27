@@ -123,7 +123,14 @@ function keepCase(sample: string, word: string): string {
 }
 
 export function houseStyle(text: string, talk: TalkLang): string {
+  // Ссылки и адрес сайта — вон: человек пишет нам, а не читает рассылку.
   let out = text
+    .replace(/https?:\/\/\S+/gi, '')
+    .replace(/\(?\bsmarket\.kg\b\)?/gi, '')
+    .replace(/[ \t]+([.,;:!?])/g, '$1')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/[ \t]+\n/g, '\n')
+    .trim()
   if (talk === 'uz') {
     const map: Record<string, string> = { ў: 'у', ғ: 'г', қ: 'к', ҳ: 'х', Ў: 'У', Ғ: 'Г', Қ: 'К', Ҳ: 'Х' }
     out = out.replace(/[ўғқҳЎҒҚҲ]/g, (ch) => map[ch] ?? ch)

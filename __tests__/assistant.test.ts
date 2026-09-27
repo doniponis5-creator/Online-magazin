@@ -307,3 +307,15 @@ describe('houseStyle — правим то, что модель нарушает
     expect(houseStyle('Передам сотруднику, сотрудник перезвонит. Менеджер уточнит.', 'ru')).toBe('Передам руководству, руководство перезвонит. Руководство уточнит.')
   })
 })
+
+describe('без ссылок в ответах', () => {
+  it('houseStyle убирает URL и smarket.kg', async () => {
+    const { houseStyle } = await import('@/lib/assistant/reply')
+    expect(houseStyle('Азыр жок. smarket.kg сайтыбыздан карап көрүңүз, же https://smarket.kg/ru/catalog .', 'ky')).toBe('Азыр жок. сайтыбыздан карап көрүңүз, же.')
+    expect(houseStyle('Есть, 21 400 сом.', 'ru')).toBe('Есть, 21 400 сом.')
+  })
+  it('в правилах нет адреса сайта как совета', () => {
+    expect(systemInstruction('ru', null, 'ru', products)).not.toMatch(/посмотреть на сайте smarket\.kg/)
+    expect(systemInstruction('ru', null, 'ru', products)).toMatch(/Никаких ссылок и адресов сайтов/)
+  })
+})

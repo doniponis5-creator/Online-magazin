@@ -406,8 +406,9 @@ async def _send_photos(digits: str, products: list[dict]) -> None:
     host, instance, token = _url()
     async with httpx.AsyncClient(timeout=30) as client:
         for product in [p for p in products if str(p.get("image") or "").startswith("http")][:MAX_PHOTOS]:
-            href = str(product.get("href") or "")
-            caption = f"{product.get('name')} — {product.get('priceLabel')}" + (f"\n{_site_base_url()}{href}" if href else "")
+            # Без ссылки: три фото — три ссылки, и переписка выглядела как рассылка.
+            # Заказ оформляется тут же в чате, ссылка на сайт покупателю не нужна.
+            caption = f"{product.get('name')} — {product.get('priceLabel')}"
             try:
                 await client.post(f"{host}/waInstance{instance}/sendFileByUrl/{token}", json={
                     "chatId": f"{digits}@c.us",
