@@ -1,7 +1,7 @@
 window.STATE =
 {
   "slug": "push-apns-fcm",
-  "dir": "2026-09-27-push-apns-fcm--wip",
+  "dir": "2026-09-27-push-apns-fcm",
   "title": "Уведомления на телефон: iPhone в боевой режим, Android через Firebase",
   "mode": "semi",
   "depth": "normal",
@@ -11,8 +11,8 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-27T21:52:46+06:00",
-  "updatedAt": "2026-09-27T22:26:35+06:00",
-  "finishedAt": null,
+  "updatedAt": "2026-09-27T22:48:23+06:00",
+  "finishedAt": "2026-09-27T22:48:23+06:00",
   "stages": [
     {
       "id": "preflight",
@@ -46,28 +46,33 @@ window.STATE =
     },
     {
       "id": "build",
-      "status": "active",
+      "status": "done",
       "startedAt": "2026-09-27T22:11:45+06:00",
-      "note": "3 из 6 тасков готовы"
+      "note": "6 из 6 тасков готовы",
+      "finishedAt": "2026-09-27T22:42:02+06:00"
     },
     {
       "id": "review",
-      "status": "active",
+      "status": "done",
       "startedAt": "2026-09-27T22:20:45+06:00",
-      "note": "проверено 3 из 6"
+      "note": "проверено 6 из 6, 1 исправление",
+      "finishedAt": "2026-09-27T22:42:02+06:00"
     },
     {
       "id": "final",
-      "status": "pending"
+      "status": "done",
+      "startedAt": "2026-09-27T22:42:02+06:00",
+      "finishedAt": "2026-09-27T22:48:23+06:00",
+      "note": "слепая приёмка: расхождений нет; живьём на телефоне не проверено"
     }
   ],
   "requirements": {
-    "total": 13,
-    "done": 7,
-    "inTicket": 6,
+    "total": 14,
+    "done": 13,
+    "inTicket": 0,
     "inSpec": 0,
     "placeholder": 0,
-    "deferred": 0,
+    "deferred": 1,
     "dropped": 0
   },
   "tickets": [
@@ -193,11 +198,24 @@ window.STATE =
         "scripts/fcm-remote.sh",
         "docs/"
       ],
-      "status": "in-progress",
+      "status": "done",
       "retries": 0,
       "repairs": 0,
       "handoffs": 0,
-      "startedAt": "2026-09-27T22:19:38+06:00"
+      "startedAt": "2026-09-27T22:19:38+06:00",
+      "finishedAt": "2026-09-27T22:31:38+06:00",
+      "commit": "2449bf8",
+      "tests": {
+        "passed": 11,
+        "failed": 0
+      },
+      "files": [
+        "scripts/setup-fcm.sh",
+        "scripts/setup-fcm.ps1",
+        "scripts/fcm-remote.sh",
+        "docs/ANDROID_PUSH_UZ.md",
+        "docs/*.md"
+      ]
     },
     {
       "id": "05",
@@ -213,10 +231,26 @@ window.STATE =
       "zone": [
         "integrations/sbonus-server/shop/"
       ],
-      "status": "pending",
+      "status": "done",
       "retries": 0,
       "repairs": 0,
-      "handoffs": 0
+      "handoffs": 0,
+      "startedAt": "2026-09-27T22:26:51+06:00",
+      "finishedAt": "2026-09-27T22:40:47+06:00",
+      "commit": "4130725",
+      "tests": {
+        "passed": 12,
+        "failed": 0
+      },
+      "files": [
+        "shop_cart_rules.py",
+        "shop_cart_remind.py",
+        "010_shop_cart_reminders_migration.sql",
+        "test_shop_cart_rules.py",
+        "shop_admin.py",
+        "shop_router.py",
+        "deploy_shop.sh"
+      ]
     },
     {
       "id": "06",
@@ -237,15 +271,37 @@ window.STATE =
         "src/components/AccountView.tsx",
         "src/lib/i18n/dictionaries.ts"
       ],
-      "status": "pending",
+      "status": "done",
       "retries": 0,
-      "repairs": 0,
-      "handoffs": 0
+      "repairs": 1,
+      "handoffs": 0,
+      "startedAt": "2026-09-27T22:26:51+06:00",
+      "repairFindings": [
+        "ответ сервера 200 {ok:false} на согласие считается успехом — отказ от напоминаний теряется молча (G01.1i)"
+      ],
+      "finishedAt": "2026-09-27T22:42:02+06:00",
+      "commit": "c9d4e29",
+      "tests": {
+        "passed": 728,
+        "failed": 0
+      },
+      "files": [
+        "src/app/api/push/cart/",
+        "src/app/api/push/consent/",
+        "src/lib/native/cartSync.ts",
+        "src/lib/native/push.ts",
+        "src/lib/cart/CartProvider.tsx",
+        "src/lib/customer/gateway.ts",
+        "src/components/AccountView.tsx",
+        "src/components/account.css",
+        "src/lib/i18n/dictionaries.ts",
+        "__tests__/push-cart-*.test.ts"
+      ]
     }
   ],
   "singlePass": null,
   "tests": {
-    "passed": 699,
+    "passed": 756,
     "failed": 0
   },
   "debt": {
@@ -258,7 +314,8 @@ window.STATE =
     ]
   },
   "additions": [
-    "Нажатие на напоминание о корзине открывает корзину — ради G01"
+    "Нажатие на напоминание о корзине открывает корзину — ради G01",
+    "Пункт Play «Data safety»: адрес телефона от Google (Device or other IDs) — иначе декларация в Play станет неверной"
   ],
   "coverage": {
     "found": 5,
@@ -282,11 +339,39 @@ window.STATE =
     "push-device.test — нет случая platform:null → ios",
     "сайт: список платформ записан трижды (тип, TOKEN_SHAPE, pushPlatform)",
     "Кыргызский путь в настройках Android («Жөндөөлөр → Колдонмолор → …») не сверен носителем",
-    "Android: на телефоне сборку не запускали — устройства не было"
+    "Android: на телефоне сборку не запускали — устройства не было",
+    "fcm-remote.sh:62–71 — временный файл с env и ключом без trap: при обрыве ssh останется в /opt/sbonus",
+    "fcm-remote.sh:36, setup-fcm.sh:100 — ключ с BOM проходит проверку (utf-8-sig), а сервер читает строгий utf-8 → FCMOK, но Android молчит",
+    "setup-fcm.ps1 не запускался и не разбирался парсером (pwsh нет)",
+    "проверки fcm-remote.sh (дубли, копия, слово-ответ) остались в черновике — не в репозитории",
+    "ANDROID_PUSH_UZ.md:171–191 — в таблице ошибок нет 4 редких сообщений; «Не удалось скопировать google-services.json» — после записи ключа, «Ничего не записано» для него неверно",
+    "ANDROID_PUSH_UZ.md §7 — обещает один канал «Заказы» при открытом приложении; сверить с находкой по плагину (таск 03)",
+    "Серверные замечания таска 05 (SQL не выполнялся на PostgreSQL, журнал с номером, дубль при сбое счётчика, тест MAX_REMINDERS) — переданы в docs/TZ_PUSH_PROMO_1C.md §4 для PC до выкладки",
+    "shop_cart_remind.py:113–140 — changed_at значит и изменение корзины, и момент согласия, и заказ",
+    "Согласие «да» перезапускает расписание: выкл/вкл = ещё три напоминания на ту же корзину",
+    "сайт: CartSnapshot объявлен дважды, пределы сайта (без верхней границы, 200 знаков) расходятся с сервером (999, 1e8, 120)",
+    "CartProvider.tsx:99–101 — слушатель нажатий уведомлений запускается из компонента корзины",
+    "Карточка согласия в «Кабинете» глазами не проверена — видна только в приложении; тестов отрисовки нет",
+    "Кыргызские тексты карточки согласия — перевод исполнителя, показать носителю"
   ],
   "reviewers": {
     "manifestSpec": "a69b46ac2139b4316",
     "craft": "a61bc9605481b2095"
   },
-  "blind": null
+  "blind": {
+    "agreed": 13,
+    "drift": 0,
+    "notBuilt": [
+      "G02 — рассылки «Скидка»/«Новинка» из 1С: отложено владельцем на PC (docs/TZ_PUSH_PROMO_1C.md)"
+    ],
+    "notVerifiable": "доставка уведомлений на телефон: нет телефона, живого сервера и файлов Firebase; сервер с этими изменениями ещё не выложен",
+    "commands": [
+      "npm test → 48 files / 728 passed",
+      "npx next typegen && npm run typecheck → 0",
+      "test_shop_push_fcm → 16 OK",
+      "test_shop_cart_rules → 12 OK",
+      "cap sync android + assembleDebug → BUILD SUCCESSFUL (без Firebase и с учебным файлом)",
+      "setup-fcm.sh --check → понятные сообщения"
+    ]
+  }
 }

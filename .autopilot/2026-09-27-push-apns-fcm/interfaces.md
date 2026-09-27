@@ -69,6 +69,31 @@
 - Тесты: `__tests__/push-device.test.ts`, `__tests__/push-platform.test.ts` — образец для новых тестов маршрутов push
 - `npm run typecheck` в этой рабочей копии требует сначала `npx next typegen` (иначе 10 старых ошибок `RouteContext` в чужих маршрутах)
 
+### Из таска 04 — владельцу
+
+- `bash scripts/setup-fcm.sh [--check] [google-services.json] [ключ.json]`; `setup-fcm.ps1 [-Check] [-GoogleServices p] [-KeyFile p]`; `google-services.json` копируется в `android/app/` только после `FCMOK`
+- `scripts/fcm-remote.sh`: stdin — одна строка base64 → stdout одно слово `FCMOK|NOENV|BADJSON|NOTSA|NOPY|NOBAK`; пишет `FCM_SERVICE_ACCOUNT_B64=<b64>` + строку-подпись `# Firebase push:`; путь env — `FCM_ENV_FILE` (по умолчанию `/opt/sbonus/.env.production`); временный файл на сервере `/tmp/fcm_setup.sh`
+- `docs/ANDROID_PUSH_UZ.md` — инструкция владельцу (§6 — три команды выпуска)
+
+### Из таска 05 — сервер, напоминания о корзине
+
+- `shop_cart_rules` (без импортов приложения): `due(row, now) -> bool`, `reminder_text(items, count) -> (title, body)`, `daytime(now) -> bool`, `pause_days(sent) -> int|None`, `SCHEDULE_DAYS = (1, 3, 7)` (выбор владельца «1»), `MAX_REMINDERS`, `SHOP_TZ = Asia/Bishkek`
+- `shop_cart_remind`: `clean_phone(raw)`, `clean_snapshot(items, count, total)`, `save_cart(...)`, `set_consent(db, phone, bool)`, `get_consent(db, phone)`, `clear_after_order(db, phone)`, `forget(db, phone) -> int`, `run_once(db, now) -> {due, sent}`; запуск `python3 -m app.shop.shop_cart_remind`; cron — `/etc/cron.d/sbonus-cart-remind` (перезаписывается при деплое)
+- `POST /webhook/site/push-cart` `{phone, items, count, total}` → `{ok:true, saved:true, consent: bool|null}`; плохой телефон/корзина → `{ok:false, saved:false, error:'phone'|'cart'|'body'}`; сбой БД → `{ok:true, saved:false}`
+- `POST /webhook/site/cart-consent`: `{phone, consent: bool}` — сохранить; `{phone}` без `consent` — прочитать; ответ `{ok:true, consent: bool|null}`. **GET нет** — телефон не попадает в адрес
+- Телефон: `+?\d{9,15}`; проверка «был заказ после изменения корзины» работает, только если сайт шлёт тот же формат `+996…`, что в `shop_orders`
+- `account-delete` в ответе добавляет `cartRemoved: int`; время в `shop_cart_reminders` — UTC без зоны
+- Тесты: `uv run python -m unittest integrations/sbonus-server/shop/test_shop_cart_rules.py` (12)
+
+### Из таска 06 — сайт, корзина и согласие
+
+- `POST /api/push/cart` `{items: string[] ≤3 (непустые, ≤200), count: целое ≥0, total ≥0}` → `200 {ok:true}` | `200 {ok:true, saved:false}` | `400 {error:'items'|'count'|'total'}` | `401 {error:'login'}`
+- `GET /api/push/consent` → `{ok:true, consent: boolean|null}` | 401 | `502 {error:'server-unavailable'}`; `POST /api/push/consent` `{consent: boolean}` → `{ok:true, consent}` | `400 {error:'consent'}` | 401 | 502
+- gateway: `type CartSnapshot = {items, count, total}`; `saveCartSnapshot(phone, cart)` → `push-cart`; `cartConsent(phone): Promise<boolean|null>` → `cart-consent {phone}`; `setCartConsent(phone, consent)` → `cart-consent {phone, consent}`; в `mock` согласие в памяти — **образец для любого нового согласия**
+- `src/lib/native/cartSync.ts`: `cartSnapshot(lines, products)`, `cartChanged(snapshot)`, `cartSignedIn()`, `cartSignedOut()`, `CART_SYNC_DELAY = 5000`; `count` — число строк корзины; `items` — `nameRu`
+- `src/lib/native/push.ts`: `listenPushTaps(): void` (один раз; `data.type === 'cart'` → `/{ru|ky}/cart`, язык из адреса) — **сюда добавлять новые типы нажатий**
+- Словарь `account.*`: `remindAsk, remindTitle, remindText, remindYes, remindNo, remindOn, remindOff, remindFailed` (ru + ky); карточка — по образцу «Быстрого входа», переключатель `role="switch"`
+
 ### Из таска 03 — приложение Android
 
 - `android.includePlugins` = `['@capacitor/push-notifications']` ⇔ есть `android/app/google-services.json`, иначе `[]` (`capacitor.config.ts`)
