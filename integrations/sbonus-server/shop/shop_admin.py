@@ -314,22 +314,30 @@ class PushDevice(BaseModel):
     phone: str | None = None
 
 
+# Самый длинный адрес телефона для каждой платформы (колонка token — 1024, миграция 009).
+_PUSH_TOKEN_LIMIT = {"ios": 200, "android": 1024}
+
+
 
 @router_site_admin.post("/push-device")
 async def push_device(request: Request, db: AsyncSession = Depends(get_db)):
     """
     Приложение прислало «адрес» телефона для уведомлений о заказах.
 
-    Адрес выдаёт Apple, он ничего не говорит о человеке. Телефон покупателя
-    пишем рядом, если он вошёл: иначе некому будет отправить «заказ готов».
+    Адрес выдаёт Apple (iPhone) или Google (Android), он ничего не говорит
+    о человеке. Телефон покупателя пишем рядом, если он вошёл: иначе некому
+    будет отправить «заказ готов».
     """
     payload = PushDevice.parse_raw(await _verify_site_body(request))
     token = (payload.token or "").strip()
-    if not token or len(token) > 200:
+    platform = (payload.platform or "ios").strip()
+    # Адрес Apple короткий, у Google — длиннее; чужие платформы не принимаем.
+    limit = _PUSH_TOKEN_LIMIT.get(platform)
+    if not token or not limit or len(token) > limit:
         return {"ok": True, "saved": False}
     try:
         from .shop_push import save_device
-        await save_device(db, token, payload.platform or "ios", payload.phone)
+        await save_device(db, token, platform, payload.phone)
     except Exception as error:
         # Уведомления — не повод ломать сайт.
         logger.warning(f"push-device не записан: {error}")
