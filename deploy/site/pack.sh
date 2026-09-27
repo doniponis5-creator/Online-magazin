@@ -22,7 +22,10 @@ done
 
 # COPYFILE_DISABLE: иначе macOS кладёт в архив свои служебные файлы ._имя,
 # и сборка на сервере спотыкается о них.
-COPYFILE_DISABLE=1 tar -czf "$OUT" \
+# --no-xattrs --no-mac-metadata: без них в архив едут метки macOS
+# (com.apple.provenance), и tar на сервере печатает сотни строк
+# «Ignoring unknown extended header keyword».
+COPYFILE_DISABLE=1 tar --no-xattrs --no-mac-metadata -czf "$OUT" \
     --exclude='public/Бренд лого' \
     --exclude='*.log' \
     --exclude='__pycache__' \
