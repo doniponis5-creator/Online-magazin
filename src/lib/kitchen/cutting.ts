@@ -112,9 +112,14 @@ function finishOf(f: string | CutFinish | undefined, lang: 'ru' | 'ky'): Finish 
 
 const sameFinish = (a: Finish, b: Finish) => a.material === b.material && a.label === b.label && a.color === b.color && a.wood === b.wood
 
-/** Детали в цвет фасадов, которые не фасады: добор верха, планка углового шкафа, задняя панель острова. */
-export type PanelName = Extract<ExtraKind, 'filler' | 'strip' | 'islandBack'>
-const PANELS: PanelName[] = ['filler', 'strip', 'islandBack']
+/**
+ * Детали в цвет фасадов, которые не фасады: добор верха, планка углового шкафа,
+ * глухие панели у духовки, пилястры и капители «камина», задняя панель острова.
+ */
+export type PanelName = Extract<ExtraKind, 'filler' | 'strip' | 'ovenSide' | 'pilaster' | 'capital' | 'islandBack'>
+const PANELS: PanelName[] = ['filler', 'strip', 'ovenSide', 'pilaster', 'capital', 'islandBack']
+/** Объёмный фрезерованный декор: из плоского листа не выпилить — в цех фасадов. */
+const DECOR: PanelName[] = ['pilaster', 'capital']
 
 /* ───────── детали ───────── */
 
@@ -166,10 +171,10 @@ export function cutParts(spec: SpecData, look: CutLook): CutPart[] {
     push({ name: row.name, front: false, material, length, width, count: row.count, grain, edges })
   }
 
-  // фасад, добор, планка угла, задняя панель острова — в цвет фасадов (верх — в цвет верха, остров — в цвет острова)
+  // фасад, добор, планка угла, панели у духовки, пилястры, задняя панель острова — в цвет фасадов (верх — в цвет верха, остров — в цвет острова)
   const face = (name: FrontType | PanelName, w: number, h: number, count: number, f: Finish) => {
-    // рамка со стеклом и рамочный фасад из плоского листа не выпилить, у стиля материала нет — в цех фасадов, без «МДФ»
-    const shop = name === 'glass' || name === 'framed' || f.material === null
+    // рамка со стеклом, рамочный фасад, пилястру и капитель из плоского листа не выпилить, у стиля материала нет — в цех фасадов, без «МДФ»
+    const shop = name === 'glass' || name === 'framed' || DECOR.includes(name as PanelName) || f.material === null
     const sheet = !shop && f.material === 'laminate'
     const grain = f.wood
     const material: CutMaterial = { kind: sheet ? 'ldsp' : shop ? 'shop' : 'mdf', label: f.label, color: f.color, thick: sheet ? LDSP : null }

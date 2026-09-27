@@ -90,10 +90,12 @@ export type SpecRun = { id: RunId; length: number; modules: SpecModule[]; boxes:
  * Проёмы и доборы — то, что не шкаф: проём под встраиваемую посудомойку
  * (без корпуса), место под отдельностоящую плиту (без корпуса, столешница
  * прерывается; h — высота плиты), доборная панель в верхнем ряду, планка
- * углового шкафа, задняя панель острова. w, h — см; hMax — верх диапазона
+ * углового шкафа, глухие панели по бокам духовки в колонне шире духовки,
+ * пилястры и капители «камина» (классика), задняя панель острова.
+ * w, h — см (у пилястры и капители — лицевая сторона); hMax — верх диапазона
  * высоты проёма.
  */
-export type ExtraKind = 'dwOpening' | 'stoveOpening' | 'filler' | 'strip' | 'islandBack'
+export type ExtraKind = 'dwOpening' | 'stoveOpening' | 'filler' | 'strip' | 'ovenSide' | 'pilaster' | 'capital' | 'islandBack'
 /**
  * upper — деталь в цвете верха (добор и планка углового в верхнем ряду);
  * island — в цвете острова (задняя панель острова своего цвета); нет — в цвете низа
@@ -175,7 +177,7 @@ export function extraList(data: Pick<SpecData, 'extras'>): ExtraRow[] {
     if (row) row.count++
     else rows.set(key, { kind: e.kind, w, h, ...(hMax === undefined ? {} : { hMax }), count: 1 })
   }
-  const order: ExtraKind[] = ['dwOpening', 'stoveOpening', 'filler', 'strip', 'islandBack']
+  const order: ExtraKind[] = ['dwOpening', 'stoveOpening', 'filler', 'strip', 'ovenSide', 'pilaster', 'capital', 'islandBack']
   return [...rows.values()].sort((p, q) => order.indexOf(p.kind) - order.indexOf(q.kind) || q.h - p.h || q.w - p.w)
 }
 

@@ -4,9 +4,10 @@
  *
  * Источник: RAL gGmbH, коллекция RAL Classic (ral-farben.de/en/ral-classic), вместе с 2017 и 9012,
  * добавленными в 2020. 6040 «Helloliv» сюда не входит — это палитра RAL F9 (камуфляж).
- * Экранный цвет — сторонняя таблица sRGB: en.wikipedia.org «List of RAL colours», столбец sRGB
- * (приблизительный пересчёт из CIELab; сверено 27.09.2026). Названия — ru.wikipedia.org «RAL»,
- * у 9012 — перевод английского «Cleanroom white». На экране цвет примерный: настоящий — по вееру RAL.
+ * Экранный цвет (hex) — общепринятая sRGB-таблица RAL Classic: значения совпадают со сторонними
+ * таблицами, например lackundzubehoer.de (с en.wikipedia «List of RAL colours» — нет: там, например,
+ * 7016 = #373F43, здесь #383e42). Экранный цвет примерный: настоящий — по вееру RAL.
+ * Названия — ru.wikipedia.org «RAL», у 9012 — перевод английского «Cleanroom white».
  */
 
 export type RalColor = { code: string; hex: string; ru: string }

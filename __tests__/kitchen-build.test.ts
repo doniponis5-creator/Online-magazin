@@ -598,3 +598,103 @@ describe('G01: корпус в 3D — материал корпуса, как в
     expect(frontColors.has(graphite)).toBe(true)
   })
 })
+
+describe('таск 05: всё, что в 3D цвета фасада, — в спецификации', () => {
+  it('угловая 400 × 300, колонна 80 см с духовкой 59,5: по бокам глухие панели 101 × 604 мм — 2 шт', () => {
+    const base = cornerDefault()
+    const { spec } = build({ ...base, input: { ...base.input, a: 400, b: 300, tallOven: true, widths: { tall: 80 } } })
+    // ширина: (80 − 59,5) / 2 = 10,25 см минус полшва 0,15 → 101 мм;
+    // высота: от низа духовки 83 до её верха 83 + 59,5 + 1,2 минус шов 0,3 → 60,4 см
+    expect(extraList(spec).filter((r) => r.kind === 'ovenSide')).toEqual([{ kind: 'ovenSide', w: 101, h: 604, count: 2 }])
+  })
+
+  it('«камин» классики: у шкафа под панелью 2 пилястры 55 × 670 и 2 капители 67 × 46 мм', () => {
+    const { spec } = build({ ...cornerDefault(), style: getStyle('classic') })
+    // пилястра 5,5 см от цоколя 10 до 82 − 5 = 77 см; капитель 0,6 + 5,5 + 0,6 см от 77 до 82 − 0,4 см
+    const rows = extraList(spec).filter((r) => r.kind === 'pilaster' || r.kind === 'capital')
+    expect(rows).toEqual([
+      { kind: 'pilaster', w: 55, h: 670, count: 2 },
+      { kind: 'capital', w: 67, h: 46, count: 2 },
+    ])
+  })
+
+  it('на переборе: колонна по духовке и без «камина» — новых деталей нет; с «камином» — ровно 2 пилястры и 2 капители', () => {
+    const OLD = ['dwOpening', 'stoveOpening', 'filler', 'strip', 'islandBack']
+    let mantels = 0
+    for (const { c, spec } of SPECS) {
+      const kinds = (spec.extras ?? []).map((e) => e.kind as string)
+      if (!c.style.mantel) {
+        expect(kinds.filter((k) => !OLD.includes(k)), c.name).toEqual([])
+        continue
+      }
+      mantels++
+      expect(kinds.filter((k) => k === 'pilaster').length, c.name).toBe(2)
+      expect(kinds.filter((k) => k === 'capital').length, c.name).toBe(2)
+      expect(kinds.filter((k) => k === 'ovenSide'), c.name).toEqual([])
+    }
+    expect(mantels).toBeGreaterThan(5)
+  })
+
+  /** Кухня из перебора, собранная с графитовыми фасадами (корпус — белый ЛДСП по умолчанию). */
+  const graphiteBuild = (c: Case) =>
+    buildKitchen({
+      plan: planKitchen(c.input, { shelves: c.style.shelves }),
+      style: c.style,
+      tone: getTone(c.style, 0),
+      items: c.items,
+      photos: new Map(),
+      evening: false,
+      room: { ceiling: c.ceiling, toCeiling: c.toCeiling },
+      fronts: {},
+      detail: 0.5,
+      finish: { facade: frontColor('lam-graphite') },
+    }).root
+  const hex = (id: string) => new THREE.Color(frontColor(id)!.color).getHex()
+  const colorOf = (m: THREE.Object3D) => ((m as THREE.Mesh).material as THREE.MeshStandardMaterial).color?.getHex()
+  const sizeOf = (m: THREE.Object3D) => new THREE.Box3().setFromObject(m).getSize(new THREE.Vector3())
+
+  it('модуль-добор низа: за глухой планкой — корпус (белый), в цвет фасада только сама планка', () => {
+    const c = SPECS.find(({ plan }) => plan.runs.some((r) => r.modules.some((m) => m.kind === 'filler')))!.c
+    const root = graphiteBuild(c)
+    root.updateMatrixWorld(true)
+    // объём добора в модуле низа: выше 50 см и глубиной во весь корпус (цоколь ниже, планка — фасад)
+    const blocks: THREE.Object3D[] = []
+    root.traverse((o) => {
+      if (o.userData.dims?.kind !== 'filler') return
+      for (const m of o.children) if ((m as THREE.Mesh).isMesh && !m.userData.front && sizeOf(m).y > 0.5 && Math.max(sizeOf(m).x, sizeOf(m).z) > 0.3) blocks.push(m)
+    })
+    expect(blocks.length, c.name).toBeGreaterThan(0)
+    for (const m of blocks) expect(colorOf(m), c.name).toBe(hex('lam-white'))
+  })
+
+  it('портал: боковины ниши холодильника и доска портала — белый ЛДСП корпуса при графитовых фасадах; все, что в спецификации', () => {
+    const base = cornerDefault()
+    const c = { ...base, name: 'портал', style: getStyle('portal'), toCeiling: true }
+    const { spec, root } = buildKitchen({
+      plan: planKitchen(c.input, { shelves: c.style.shelves }),
+      style: c.style,
+      tone: getTone(c.style, 0),
+      items: c.items,
+      photos: new Map(),
+      evening: false,
+      room: { ceiling: c.ceiling, toCeiling: c.toCeiling },
+      fronts: {},
+      detail: 0.5,
+      finish: { facade: frontColor('lam-graphite') },
+    })
+    root.updateMatrixWorld(true)
+    const meshes: THREE.Object3D[] = []
+    root.traverse((m) => (m as THREE.Mesh).isMesh && meshes.push(m))
+    // доска портала (3,2 см) и боковина ниши (1,6 см): тонкая сторона, глубина d и длина h — как в спецификации
+    const like = (m: THREE.Object3D, p: SpecData['panels'][number]) => {
+      const [t, a, b] = sizeOf(m).toArray().sort((x, y) => x - y)
+      const [d, h] = [p.d / 100, p.h / 100].sort((x, y) => x - y)
+      return t > 0.012 && t < 0.035 && Math.abs(a - d) < 0.001 && Math.abs(b - h) < 0.001
+    }
+    const found = new Set<THREE.Object3D>()
+    for (const p of spec.panels) meshes.filter((m) => like(m, p)).forEach((m) => found.add(m))
+    expect(spec.panels.length).toBeGreaterThan(1)
+    expect(found.size).toBeGreaterThanOrEqual(spec.panels.reduce((n, p) => n + p.count, 0))
+    for (const m of found) expect(colorOf(m)).toBe(hex('lam-white'))
+  })
+})

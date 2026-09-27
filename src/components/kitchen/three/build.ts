@@ -593,7 +593,9 @@ function baseModule(ctx: Ctx, run: Run, m: Module, i: number): THREE.Group {
       addFront(ctx, g, { x: GAP / 2, y: frontY, z, w: w - GAP, h: frontTop - frontY, hinge: 'drawer' })
       break
     case 'filler':
-      g.add(slab(mats.facade, 0, PLINTH, 0, w, BODY_TOP, CARCASS_D))
+      // Видна только глухая планка (фасад `panel` — в раскрое в цвет фасадов); объём за ней —
+      // крепёж к соседним шкафам, отдельной детали в цвет фасада нет: рисуем корпусом.
+      g.add(slab(mats.body, 0, PLINTH, 0, w, BODY_TOP, CARCASS_D))
       plinth()
       addFront(ctx, g, { x: GAP / 2, y: frontY, z, w: w - GAP, h: frontTop - frontY, hinge: 'none', kind: 'slab' })
       break
@@ -749,10 +751,17 @@ function baseModule(ctx: Ctx, run: Run, m: Module, i: number): THREE.Group {
       const zones = cut && cut - topY > 0.08 ? [[topY, cut], [cut + GAP, top]] : [[topY, top]]
       for (const [y0, y1] of zones) if (y1 - y0 > 0.08) liftsIn(ctx, g, 0, y0, y1 - GAP, z, w, false, mats.facade)
       // Колонна шире духовки (покупатель сделал её шире) — по бокам духовки
-      // и микроволновки глухие панели в цвет фасадов, а не пустой короб.
-      const side = (w - Math.max(cm(ovenApp?.w ?? 59.5), mwApp ? cm(mwApp.w) : 0)) / 2
-      if (side > 0.01) {
-        for (const x0 of [GAP / 2, w - side]) g.add(slab(mats.facade, x0, ovenY, z, x0 + side - GAP / 2, topY - GAP, z + FRONT_T))
+      // и микроволновки глухие панели в цвет фасадов, а не пустой короб;
+      // у мебельщика — в «Проёмах и доборах» (`ovenSide`). Духовка в своём
+      // шкафу — её место закрыто дверцами, панели только у микроволновки.
+      const inner = Math.max(ovenHere ? cm(ovenApp?.w ?? 59.5) : 0, mwApp ? cm(mwApp.w) : 0)
+      const side = (w - inner) / 2
+      const sideY = ovenHere ? ovenY : mwY
+      if (inner > 0 && side > 0.01) {
+        for (const x0 of [GAP / 2, w - side]) {
+          g.add(slab(mats.facade, x0, sideY, z, x0 + side - GAP / 2, topY - GAP, z + FRONT_T))
+          ctx.extras.push({ kind: 'ovenSide', run: run.id, w: (side - GAP / 2) * 100, h: (topY - GAP - sideY) * 100 })
+        }
       }
       break
     }
@@ -776,11 +785,16 @@ function baseModule(ctx: Ctx, run: Run, m: Module, i: number): THREE.Group {
     }
   }
   // Классика с «камином»: шкаф под плитой выступает — по бокам пилястры с капителью.
+  // Они в цвет фасадов — у мебельщика в «Проёмах и доборах» (`pilaster`, `capital`: ширина × высота лица).
   if (style.mantel && m.kind === 'hob') {
     const zf = CARCASS_D + FRONT_T
-    for (const px of [0, w - 0.055]) {
-      g.add(slab(mats.facade, px, PLINTH, CARCASS_D - 0.01, px + 0.055, BODY_TOP - 0.05, zf + 0.03, true))
-      g.add(slab(mats.facade, px - 0.006, BODY_TOP - 0.05, CARCASS_D - 0.01, px + 0.061, BODY_TOP - 0.004, zf + 0.04, true))
+    const [pw, capOut, capY] = [0.055, 0.006, BODY_TOP - 0.05]
+    const island = ctx.island ? { island: true } : {}
+    for (const px of [0, w - pw]) {
+      g.add(slab(mats.facade, px, PLINTH, CARCASS_D - 0.01, px + pw, capY, zf + 0.03, true))
+      g.add(slab(mats.facade, px - capOut, capY, CARCASS_D - 0.01, px + pw + capOut, BODY_TOP - 0.004, zf + 0.04, true))
+      ctx.extras.push({ kind: 'pilaster', run: run.id, w: pw * 100, h: (capY - PLINTH) * 100, ...island })
+      ctx.extras.push({ kind: 'capital', run: run.id, w: (pw + 2 * capOut) * 100, h: (BODY_TOP - 0.004 - capY) * 100, ...island })
     }
   }
   if (m.item) tagItem(g, m.item)
@@ -1214,8 +1228,9 @@ function cornerStrip(ctx: Ctx, run: Run, parent: THREE.Object3D, s: [number, num
 const PORTAL_BOARD = 0.032
 
 /**
- * Рама портала: ниша между колоннами обшита доской цвета верхних фасадов —
- * сверху (под антресолями) и по бокам у колонн, вровень с их фасадами.
+ * Рама портала: ниша между колоннами обшита доской из ЛДСП корпуса —
+ * сверху (под антресолями) и по бокам у колонн, вровень с их фасадами;
+ * у мебельщика — боковины ниши (`nicheSide`).
  */
 function portalFrame(ctx: Ctx, run: Run, g: THREE.Group) {
   const mz = ctx.mezz
@@ -1817,7 +1832,7 @@ function assemble(input: BuildInput): Built {
     ctx.uvRun = ri * 3.7
     ctx.tops = []
     // остров своего цвета: весь ряд строится материалом острова вместо низа —
-    // фасады, видимые бока, задняя панель (как верх берёт `mats.upper`)
+    // фасады, пилястры, задняя панель (как верх берёт `mats.upper`); корпус — общий `mats.body`
     // подмена — только на этот ряд: finally вернёт общие материалы, даже если ряд упал
     ctx.island = !run.wall && mats.island !== mats.facade
     ctx.mats = ctx.island ? { ...mats, facade: mats.island, textured: mats.islandTextured } : mats

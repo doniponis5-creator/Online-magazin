@@ -6,7 +6,7 @@ import { frontColor } from '@/lib/kitchen/finishes'
 import { DECORS } from '@/lib/kitchen/decors'
 import { planKitchen, type Plan, type PlanInput } from '@/lib/kitchen/layout'
 import { cutList, extraList, frontList, type SpecData, type SpecExtra } from '@/lib/kitchen/spec'
-import { getTone, STYLES, type KitchenStyle } from '@/lib/kitchen/styles'
+import { getStyle, getTone, STYLES, type KitchenStyle } from '@/lib/kitchen/styles'
 import type { HobKind, KitchenAppliance, Shape } from '@/lib/kitchen/types'
 import { cutParts, edgeTotals, nest, type CutLook, type CutPart, type NestResult } from '@/lib/kitchen/cutting'
 import { cutWorkbook } from '@/lib/kitchen/cutExcel'
@@ -736,5 +736,27 @@ describe('код цвета в подписи раскроя и в Excel (тас
     expect(col('Фасады', 2)).toContain('RAL 7016 Антрацитово-серый')
     expect(col('Распил', 3)).toContain(EGGER)
     expect(col('Фасады', 2)).not.toContain(EGGER)
+  })
+})
+
+describe('таск 05: глухие панели у духовки, пилястры и капители «камина» — в раскрое', () => {
+  it('колонна 80 см: 2 панели 604 × 101 — ЛДСП фасада из листа; в Excel — «Глухая панель у духовки»', () => {
+    const s = spec({ shape: 'corner', a: 400, b: 300, c: 0, island: 0, col: { tallOven: true, widths: { tall: 80 } } })
+    const side = cutParts(s, { facade: 'lam-graphite' }).filter((p) => p.name === 'ovenSide')
+    expect(side.map((p) => [p.length, p.width, p.count, p.material.kind, p.material.label, p.front])).toEqual([[604, 101, 2, 'ldsp', 'Графит', true]])
+    const cells = cutWorkbook(s, { facade: 'lam-graphite' }, kitchenTexts('ru')).flatMap((b) => b.rows.flat())
+    expect(cells).toContain('Глухая панель у духовки')
+  })
+
+  it('«камин»: пилястры и капители — цвет фасада, в цех фасадов (объёмные, из листа не выпилить)', () => {
+    const s = spec({ shape: 'corner', a: 300, b: 240, c: 0, island: 0, style: getStyle('classic') })
+    const decor = cutParts(s, { facade: 'lam-graphite' }).filter((p) => ['pilaster', 'capital'].includes(p.name))
+    expect(decor.map((p) => [p.name, p.length, p.width, p.count, p.material.kind, p.material.label])).toEqual([
+      ['pilaster', 670, 55, 2, 'shop', 'Графит'],
+      ['capital', 67, 46, 2, 'shop', 'Графит'],
+    ])
+    expect(nest(decor)).toEqual([])
+    const cells = cutWorkbook(s, { facade: 'lam-graphite' }, kitchenTexts('ky')).flatMap((b) => b.rows.flat())
+    expect(cells).toContain('Пилястра')
   })
 })
