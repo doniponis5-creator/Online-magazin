@@ -12,7 +12,7 @@ import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { forgetFaceId, hasLockKey, lockKind, loginWithFaceId, rememberForFaceId } from '@/lib/native/appLock'
 import { clearBonusCard, inNativeApp, saveBonusCard, showBonusCard } from '@/lib/native/bonusCard'
-import { enablePush, pushState, resumePush } from '@/lib/native/push'
+import { enablePush, pushPlatform, pushState, resumePush } from '@/lib/native/push'
 import type { CustomerProfile } from '@/lib/customer/gateway'
 
 const CABINET_URL = 'https://cabinet.smartcentr.store'
@@ -271,7 +271,10 @@ export function AccountView() {
           <a href={CABINET_URL} className="btn btn--outline" target="_blank" rel="noopener noreferrer">{a.cabinetLink}</a>
           <button type="button" className="btn btn--ghost" onClick={leave}>{a.logout}</button>
         </div>
-        {push === 'denied' && <p className="account-push-off">{a.pushDenied}</p>}
+        {/* Путь в настройках у iPhone и Android разный — показываем тот, что на руках */}
+        {push === 'denied' && (
+          <p className="account-push-off">{pushPlatform() === 'android' ? a.pushDeniedAndroid : a.pushDenied}</p>
+        )}
       </section>
 
       {nativeApp && (

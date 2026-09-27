@@ -205,18 +205,22 @@ export async function getSiteSettings(): Promise<SiteSettings> {
   }
 }
 
+/** Чей телефон: iPhone — уведомления идут через Apple, Android — через Google (FCM). */
+export type PushPlatform = 'ios' | 'android'
+
 /**
  * Адрес телефона для push-уведомлений.
  *
- * Сервер хранит адреса и рассылает по ним сообщения о заказах. В тестовом режиме
- * просто пишем в консоль: сервера нет, отправлять некуда.
+ * Сервер хранит адреса и рассылает по ним сообщения о заказах. Платформа нужна серверу,
+ * чтобы выбрать, через кого слать: Apple или Google. В тестовом режиме просто пишем
+ * в консоль: сервера нет, отправлять некуда.
  */
-export async function registerPushDevice(token: string, phone: string | null): Promise<void> {
+export async function registerPushDevice(token: string, phone: string | null, platform: PushPlatform): Promise<void> {
   if (paymentMode() === 'mock') {
-    console.log('[push] тестовый режим, адрес телефона получен:', token.slice(0, 12) + '…', phone ?? 'без входа')
+    console.log('[push] тестовый режим, адрес телефона получен:', platform, token.slice(0, 12) + '…', phone ?? 'без входа')
     return
   }
-  await call('/api/v1/webhook/site/push-device', { method: 'POST', body: { token, platform: 'ios', phone } })
+  await call('/api/v1/webhook/site/push-device', { method: 'POST', body: { token, platform, phone } })
 }
 
 /** Отметка о посещении страницы — для счётчика людей в «Панели сайта». */
