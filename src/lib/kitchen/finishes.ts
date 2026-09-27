@@ -1,3 +1,5 @@
+import { decor, decorCode, DECORS, type DecorBrand } from './decors'
+import { RAL, ralColor } from './ral'
 import type { HandleKind, Metal, SplashKind } from './styles'
 
 /**
@@ -25,6 +27,10 @@ export type FrontColor = {
   ky: string
   color: string
   texture?: 'wood' | 'concrete'
+  /** печатный код для мастера: «RAL 7016», «Egger H1145 ST10»; нет — цвет каталога без кода */
+  code?: string
+  /** бренд декора ЛДСП; нет — не декор */
+  brand?: DecorBrand
 }
 
 export const FRONT_COLORS: FrontColor[] = [
@@ -87,8 +93,85 @@ export const FRONT_COLORS: FrontColor[] = [
   { id: 'fx-fes', material: 'fenix', ru: 'Blu Fes', ky: 'Blu Fes', color: '#303f55' },
 ]
 
+/** RAL и декоры, собранные по запросу: один и тот же объект на один id. */
+const built = new Map<string, FrontColor>()
+
+/**
+ * Отделка фасада по id — единственный разбор id: каталог (`lam-white`…),
+ * любой RAL Classic (`ral-7016` — эмаль этого цвета), декор ЛДСП (`dec-egger-h1145-st10` —
+ * ламинат с фактурой декора). Неизвестный id — undefined.
+ */
 export function frontColor(id: string | undefined): FrontColor | undefined {
-  return id ? FRONT_COLORS.find((c) => c.id === id) : undefined
+  if (!id) return undefined
+  const hit = built.get(id) ?? FRONT_COLORS.find((c) => c.id === id)
+  if (hit) return hit
+  const c = madeColor(id)
+  if (c) built.set(id, c)
+  return c
+}
+
+function madeColor(id: string): FrontColor | undefined {
+  const ral = /^ral-(\d{4})$/.exec(id)
+  if (ral) {
+    const r = ralColor(ral[1])
+    // название RAL — имя цвета, в KY тот же код и русское название (решение §3)
+    return r && { id, material: 'enamel', ru: r.ru, ky: r.ru, color: r.hex, code: `RAL ${r.code}` }
+  }
+  const d = id.startsWith('dec-') ? decor(id) : undefined
+  return d && { id, material: 'laminate', ru: d.ru, ky: d.ky, color: d.color, ...(d.texture ? { texture: d.texture } : {}), code: decorCode(d), brand: d.brand }
+}
+
+/**
+ * Цвет словами для мастера и покупателя: «RAL 7016 Антрацитово-серый»,
+ * «Egger H1145 ST10 Дуб Бардолино натуральный», «Lamarty Графит»; без кода — одно название.
+ * Одна подпись на раскрой, Excel, смету, PDF и WhatsApp.
+ */
+export function frontLabel(c: FrontColor, lang: 'ru' | 'ky' = 'ru'): string {
+  const name = lang === 'ky' ? c.ky : c.ru
+  return c.code ? `${c.code} ${name}` : name
+}
+
+/** Больше в выдаче поиска не показываем: дальше уточняют запрос. */
+const FIND_MAX = 60
+
+const norm = (s: string) => s.toLowerCase().replace(/ё/g, 'е').replace(/[\s\-_.]+/g, '')
+
+type Findable = { id: string; codes: string[]; names: string[] }
+
+/** Всё, что ищется: каталог (без кода), RAL (`7016`, `ral7016`), декоры (`h1145st10`, `eggerh1145st10`). */
+let findables: Findable[] | undefined
+function allFindable(): Findable[] {
+  findables ??= [
+    ...FRONT_COLORS.map((c) => ({ id: c.id, codes: [], names: [c.ru, c.ky] })),
+    ...RAL.map((r) => ({ id: `ral-${r.code}`, codes: [r.code, `ral${r.code}`], names: [r.ru] })),
+    ...DECORS.map((d) => ({ id: d.id, codes: [d.code, decorCode(d)].filter(Boolean), names: [d.ru, d.ky] })),
+  ].map((f) => ({ id: f.id, codes: f.codes.map(norm), names: f.names.map(norm) }))
+  return findables
+}
+
+/**
+ * Поиск цвета фасада по коду или названию во всех видах — каталог, RAL, декоры ЛДСП —
+ * без учёта регистра, пробелов и «ё»: «7016», «RAL 7016», «h1145», «дуб». Сначала совпадение
+ * кода целиком, потом начало кода, потом код содержит запрос, потом название. Названия — русские;
+ * `lang: 'ky'` — ещё и кыргызские. Пустой запрос — []; не больше 60 результатов.
+ */
+export function findColors(query: string, lang: 'ru' | 'ky' = 'ru'): FrontColor[] {
+  const q = norm(query)
+  if (!q) return []
+  const rank = (f: Findable): number => {
+    if (f.codes.some((c) => c === q)) return 0
+    if (f.codes.some((c) => c.startsWith(q))) return 1
+    if (f.codes.some((c) => c.includes(q))) return 2
+    // names: [ru, ky] у каталога и декоров, [ru] у RAL (KY — то же русское название)
+    const names = lang === 'ky' ? f.names : f.names.slice(0, 1)
+    return names.some((n) => n.includes(q)) ? 3 : -1
+  }
+  return allFindable()
+    .map((f, i) => ({ f, i, r: rank(f) }))
+    .filter((x) => x.r >= 0)
+    .sort((a, b) => a.r - b.r || a.i - b.i)
+    .slice(0, FIND_MAX)
+    .map((x) => frontColor(x.f.id)!)
 }
 
 /* ───────── столешницы ───────── */
