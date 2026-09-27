@@ -213,13 +213,19 @@ PC — сайт, расширение 1С и сервер SBonus: `src/`, `publi
 - `estimate`: ЛДСП — цена `ldsp`, если `isWhiteSheet` (hex = `lam-white`), иначе `ldspDecor`; кромка — по толщине; фасады не из листа — м² по `front[finish ?? 'style']`; `top` и `work` — погонные метры столешницы; фурнитура — из `hardware(spec)`; `delivery` — 1; `markup` — % к сумме строк. `qty` округлён до сотых до умножения — сумма = напечатанному.
 - `estimateLines` — одни строки для экрана (там 3 колонки) и PDF сметы; техника — только `inTotal` из `projectItems`, итог — `projectTotal`. Карта раскроя — `cutMaps()` в `KitchenPlanner.tsx`: SVG на экране и `SheetData.cutMaps` в «PDF для мастера» после таблиц.
 - Файлы `smarket-raskroy-<время>.xlsx` и `smarket-smeta-<время>.pdf` (Бишкек); `cutExcel`, `xlsx`, `pdfSheet` — через `import()`; телефон — «Поделиться», компьютер — «Загрузки» (`deliver`). Поля формы цен — `id="kp-mf-<ключ>"` (`edge04`, `front-acrylic`, `ldspL`).
+- Пакет цвета (27.09.2026), id отделки: каталог `lam-/acr-/en-/ven-/fx-` (52); `ral-NNNN` — эмаль (МДФ, в цех), `src/lib/kitchen/ral.ts`: `RAL` (216 кодов RAL Classic), `ralColor`, `parseRal` («RAL-7016», «ral7016» → «7016», чужое — `null`); `dec-<бренд>-<код>` — ламинат (ЛДСП из листа), `src/lib/kitchen/decors.ts`: `DECORS` (по 12 у Egger/Kronospan/Lamarty), `decor(id)`, `decorCode`; источники кодов — комментарий в шапке файла.
+- `finishes.ts` `frontColor(id)` — единственный разбор id (RAL/декор собирается и кэшируется — один объект на id; `FrontColor.code` «RAL 7016»/«Egger H1145 ST10», `brand`); `frontLabel(c, lang)` — одна подпись «код + название» для раскроя, Excel, сметы, PDF, WhatsApp; `findColors(query, lang)`: код целиком → начало кода → код содержит → название, ≤ 60.
+- Остров: `KitchenState.islandFacade` (id как у `facade`; нет — как низ), ссылка `if=` пишется только при `shape === 'island'` → `FinishLook.island` (3D строит ряд острова с `mats.facade = mats.island`) и `CutLook.islandFacade`; `SpecFront.island`/`SpecExtra.island` (`islandBack`) — только когда цвет острова ≠ низу (`materials.ts` сравнивает id).
+- `order.ts` `facadeTiers(state)` → `{tier: 'lower'|'upper'|'island', color}[]` (без «как в стиле»; верх и остров без своего — как низ) → `frontsText(state, lang, {asStyle?, label?})` — одно правило «какой части какой цвет» для `whatsappText` и PDF (`KitchenPlanner.tsx`, с `asStyle`); у всех частей один цвет — одной строкой.
+- `Mats.body` (`three/materials.ts`) = `catalogFront(frontColor('lam-white'))` — корпус белый, как в раскрое: `carcass()` в `build.ts` (боковины, дно, крыша, спинка, полки), боковины ниши и портал холодильника; фасады, доборы, планки, задняя панель острова — цвет фасада.
 
-Тесты (`npx vitest run` → 35 файлов, 519 passed на 27.09.2026; один — `npx vitest run __tests__/kitchen-layout.test.ts`):
+Тесты (`npx vitest run` → 36 файлов, 569 passed на 27.09.2026; один — `npx vitest run __tests__/kitchen-layout.test.ts`):
 - `kitchen-layout` — раскладка и проверки: угол, духовка под варочной, нехватка по стенам, узкий верх, окно над высокими, `snap`, вытяжка.
 - `kitchen-build` — `buildKitchen` в node с заглушкой холста (`import './helpers/canvas'` — `__tests__/helpers/canvas.ts`, общая для всех тестов с `buildKitchen`; сама не тест: `include` в `vitest.config.ts` — только `*.test.ts`): перебор, пределы деталей, высота вытяжки, рамки 3D ↔ `spec` ±1 см.
 - `kitchen-cutting` — детали = `cutList` + `frontList`, кромка по сторонам и `edgeTotals` вручную, `nest` на ≥ 200 кухнях, текстура не поворачивается, цвет верха как в 3D, доборы и планки, неизвестный id — отказ.
 - `kitchen-xlsx` — zip и CRC, числа числами, шесть листов RU/KY, книга → .xlsx → обратно, «Фасады» из деталей, лист мастера в «Листы».
 - `kitchen-master` — `kp-master` (битая запись, старая без новых полей), белый/цветной лист, на двух кухнях RU/KY каждая строка «кол-во × цена = сумма», вся `hardware` в смете, техника = `projectTotal`.
+- `kitchen-colors` — RAL (216, 9012 есть, 6040 нет, `parseRal`), декоры (id, фактура, Lamarty без кода, Kronospan только ЛДСП), `findColors`, ссылка туда-обратно, раскрой: RAL → МДФ в цех, декор-дерево → ЛДСП с волокном; остров цвета низа деталей не меняет.
 - `kitchen-order` — что входит в сумму, «Добавить всё» без повторов, текст WhatsApp RU/KY.
 - `kitchen-drawing` — 400 случайных кухонь: цепочки размеров сходятся с длиной стены, без NaN; отметки, масштаб, план, угол в списке = на развёртке.
 - `kitchen-share` — адрес туда-обратно, чужие и старые ссылки, `parseSize`, `kp-last`, `kitchenLinkFor`.
@@ -248,6 +254,10 @@ PC — сайт, расширение 1С и сервер SBonus: `src/`, `publi
 - Всё из `hardware(spec)` — своей строкой в `estimate` (`kitchen-master` сверяет по ключам): новое поле `Hardware` — строка сметы и цена. Фартук (`spec.splash`) — только в Excel «Фурнитура», в смете его нет.
 - Текстура (`grain`, декор под дерево): `length` — вдоль волокна (у фасада — высота), поэтому бывает меньше `width`; `nest` такую деталь не поворачивает — поперёк не влезла → `oversize`.
 - Неизвестный id отделки — `cutParts` бросает (белый молча не подставлять): экран ловит в `cut` → `t.master.failed`. `pdfKey` (кэш «PDF для мастера») содержит `master.bodyEdge` и `master.sheets`: новое поле мастера, меняющее раскрой, — туда же, иначе уйдёт старый файл.
+- Новый цвет фасада — только строкой в `RAL`/`DECORS`/`FRONT_COLORS`: ссылка (`fc`/`uf`/`ofc`/`if`), 3D, раскрой и поиск поймут его через `frontColor`; свой разбор id рядом не писать.
+- Lamarty без номеров: `code: ''`, id — по адресу страницы на lamarty.ru, печать «Lamarty <название>». Kronospan — только декоры, которые выпускаются как ЛДСП (K091/K200/K201/K203/K205 — столешницы/HPL, их нет); однотоны с буквой K (K112, не 0112).
+- Экранные цвета RAL (sRGB из en.wikipedia) и декоров (вручную) — примерные, покупателю это сказано (`t.colors.approx`); фото декоров не брать — права производителя, рисунок из `wood`/`concrete`.
+- «3D = раскрой»: что раскрой считает корпусом — в 3D `mats.body`, что панелью цвета фасада — цвет фасада. Новую видимую деталь 3D добавляй и в `spec`/раскрой, иначе мастер её не выпилит.
 
 ### Android (25.09.2026)
 
