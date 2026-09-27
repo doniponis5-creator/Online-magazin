@@ -3,11 +3,14 @@ import './helpers/canvas'
 import { buildKitchen } from '@/components/kitchen/three/build'
 import type { FinishLook } from '@/components/kitchen/three/materials'
 import { frontColor } from '@/lib/kitchen/finishes'
+import { DECORS } from '@/lib/kitchen/decors'
 import { planKitchen, type Plan, type PlanInput } from '@/lib/kitchen/layout'
 import { cutList, extraList, frontList, type SpecData, type SpecExtra } from '@/lib/kitchen/spec'
 import { getTone, STYLES, type KitchenStyle } from '@/lib/kitchen/styles'
 import type { HobKind, KitchenAppliance, Shape } from '@/lib/kitchen/types'
 import { cutParts, edgeTotals, nest, type CutLook, type CutPart, type NestResult } from '@/lib/kitchen/cutting'
+import { cutWorkbook } from '@/lib/kitchen/cutExcel'
+import { kitchenTexts } from '@/components/kitchen/texts'
 
 /**
  * Раскрой для распила (пакет мастера, истории 2, 4–8): детали, кромка,
@@ -644,5 +647,94 @@ describe('цвет верха: колонна и стиль без своего 
     // цвет стиля — в цех фасадов, названием тона
     for (const p of upper) expect(p.material).toMatchObject({ kind: 'shop', label: pick.t.ru })
     expect(total(parts.filter((p) => p.material.color === '#8e9194'))).toBe(all.length - high)
+  })
+})
+
+/* ───────────── R10: остров своим цветом ───────────── */
+
+describe('остров своим цветом (islandFacade)', () => {
+  const islandSpec = spec({ shape: 'island', a: 330, b: 0, c: 0, island: 160, finish: { facade: frontColor('lam-white'), island: frontColor('lam-graphite') } })
+  const islandFronts = islandSpec.runs.find((r) => r.id === 'I')!.fronts.length
+  const allFronts = islandSpec.runs.flatMap((r) => r.fronts).length
+  const panels = (parts: CutPart[]) => parts.filter((p) => p.name === 'islandBack')
+
+  it('фасады и задняя панель острова — графит, остальное — белый; штук столько же, сколько фасадов', () => {
+    const parts = cutParts(islandSpec, { facade: 'lam-white', islandFacade: 'lam-graphite' })
+    const f = facades(parts)
+    const qty = (label: string) => total(f.filter((p) => p.material.label === label))
+    expect(islandFronts).toBeGreaterThan(0)
+    expect(qty('Графит')).toBe(islandFronts)
+    expect(qty('Белый премиум')).toBe(allFronts - islandFronts)
+    expect(total(f)).toBe(total(frontList(islandSpec.runs)))
+    expect(panels(parts).length).toBeGreaterThan(0)
+    for (const p of panels(parts)) expect(p.material.label).toBe('Графит')
+    // остров из ЛДСП — своя группа листов
+    expect(nest(parts.filter((p) => p.front)).map((r) => r.material.label).sort()).toEqual(['Белый премиум', 'Графит'])
+  })
+
+  it('верх, низ и остров — три цвета, каждый своими строками', () => {
+    const parts = facades(cutParts(islandSpec, { facade: 'lam-white', upperFacade: 'lam-grey', islandFacade: 'lam-graphite' }))
+    const upper = islandSpec.runs.flatMap((r) => r.fronts).filter((f) => f.upper).length
+    const qty = (label: string) => total(parts.filter((p) => p.material.label === label))
+    expect(upper).toBeGreaterThan(0)
+    expect(qty('Графит')).toBe(islandFronts)
+    expect(qty('Серый шифер')).toBe(upper)
+    expect(qty('Белый премиум')).toBe(allFronts - islandFronts - upper)
+  })
+
+  it('остров МДФ (акрил) — в цех фасадов, из листа ЛДСП не пилится', () => {
+    const acr = frontColor('acr-vanilla')!
+    const parts = cutParts(islandSpec, { facade: 'lam-white', islandFacade: acr.id })
+    const own = parts.filter((p) => p.front && p.material.label === acr.ru)
+    expect(total(own)).toBe(islandFronts + total(panels(parts)))
+    for (const p of own) expect(p.material.kind).toBe('mdf')
+    expect(nest(parts).map((r) => r.material.label)).not.toContain(acr.ru)
+    // в Excel «Фасады» — строки острова своим цветом, столько же штук
+    const rows = cutWorkbook(islandSpec, { facade: 'lam-white', islandFacade: acr.id }, kitchenTexts('ru')).find((b) => b.name === 'Фасады')!.rows
+    expect(rows.filter((r) => r[2] === acr.ru).reduce((n, r) => n + Number(r[5]), 0)).toBe(total(own))
+  })
+
+  it('без islandFacade — как раньше: остров цветом низа, одна группа фасадов', () => {
+    const parts = cutParts(islandSpec, { facade: 'lam-white' })
+    expect(new Set(parts.filter((p) => p.front).map((p) => p.material.label))).toEqual(new Set(['Белый премиум']))
+    expect(total(facades(parts))).toBe(total(frontList(islandSpec.runs)))
+  })
+})
+
+/* ───────────── R07, R04: код цвета в раскрое и Excel ───────────── */
+
+describe('код цвета в подписи раскроя и в Excel (таск 03)', () => {
+  const EGGER = 'Egger H1145 ST10 Дуб Бардолино натуральный'
+  const book = (look: CutLook) => cutWorkbook(corner, look, kitchenTexts('ru'))
+  const colorsOf = (look: CutLook, sheet: string, col: number) => new Set(book(look).find((b) => b.name === sheet)!.rows.slice(1).map((r) => r[col]).filter((v) => v !== null))
+
+  it('декор Egger: «Распил» и «Листы» — «Egger H1145 ST10 Дуб Бардолино натуральный», дерево — текстура «да»', () => {
+    const look: CutLook = { facade: 'dec-egger-h1145-st10' }
+    expect(colorsOf(look, 'Распил', 3)).toContain(EGGER)
+    expect(colorsOf(look, 'Листы', 1)).toContain(EGGER)
+    const rows = book(look).find((b) => b.name === 'Распил')!.rows.filter((r) => r[3] === EGGER)
+    expect(rows.length).toBeGreaterThan(0)
+    for (const r of rows) expect(r[11]).toBe('да')
+  })
+
+  it('RAL 7016: «Фасады» — «МДФ, эмаль»-цех, цвет «RAL 7016 Антрацитово-серый»; в распил не идёт', () => {
+    const look: CutLook = { facade: 'ral-7016' }
+    expect(colorsOf(look, 'Фасады', 2)).toEqual(new Set(['RAL 7016 Антрацитово-серый']))
+    expect(colorsOf(look, 'Распил', 3)).not.toContain('RAL 7016 Антрацитово-серый')
+  })
+
+  it('Lamarty без номера — «Lamarty Графит»; каталожный цвет — без кода, как раньше', () => {
+    const lam = DECORS.find((d) => d.brand === 'lamarty' && d.ru === 'Графит')!
+    expect(colorsOf({ facade: lam.id }, 'Распил', 3)).toContain('Lamarty Графит')
+    expect(colorsOf({ facade: 'lam-graphite' }, 'Распил', 3)).toContain('Графит')
+  })
+
+  it('низ RAL, остров декором: RAL — в «Фасады» (цех), фасады острова из ЛДСП — в «Распил», оба с кодом', () => {
+    const islandSpec = spec({ shape: 'island', a: 330, b: 0, c: 0, island: 160, finish: { facade: frontColor('ral-7016'), island: frontColor('dec-egger-h1145-st10') } })
+    const wb = cutWorkbook(islandSpec, { facade: 'ral-7016', islandFacade: 'dec-egger-h1145-st10' }, kitchenTexts('ru'))
+    const col = (sheet: string, i: number) => new Set(wb.find((b) => b.name === sheet)!.rows.slice(1).map((r) => r[i]))
+    expect(col('Фасады', 2)).toContain('RAL 7016 Антрацитово-серый')
+    expect(col('Распил', 3)).toContain(EGGER)
+    expect(col('Фасады', 2)).not.toContain(EGGER)
   })
 })

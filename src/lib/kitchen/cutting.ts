@@ -1,4 +1,4 @@
-import { frontColor, type FrontMaterial } from './finishes'
+import { frontColor, frontLabel, type FrontMaterial } from './finishes'
 import { cutList, extraList, frontList, HDF, LDSP, type CutName, type ExtraKind, type FrontType, type SpecData } from './spec'
 import type { Tone } from './styles'
 
@@ -30,6 +30,11 @@ export type CutLook = {
    * 'style' — цвет верха стиля; нет — как в 3D (`createMaterials`): при фасаде из каталога — как низ, иначе верх тона
    */
   upperFacade?: string | CutFinish
+  /**
+   * фасады и задняя панель острова (`SpecFront.island`, `SpecExtra.island`): id из каталога
+   * или своя отделка; нет — как низ (как в 3D: `FinishLook.island`)
+   */
+  islandFacade?: string | CutFinish
   /**
    * тон стиля: без `facade` фасады — цветом тона, верх — цветом верха тона (`Tone.upper`);
    * материала у стиля нет — такие детали идут в цех фасадов
@@ -101,7 +106,8 @@ function finishOf(f: string | CutFinish | undefined, lang: 'ru' | 'ky'): Finish 
   // неизвестный id — отказ: молча подставленный белый ушёл бы в распил чужим цветом
   const c = frontColor(f ?? WHITE)
   if (!c) throw new Error(`Неизвестная отделка: ${f}`)
-  return { material: c.material, label: lang === 'ky' ? c.ky : c.ru, color: c.color, wood: c.texture === 'wood' }
+  // подпись с кодом («RAL 7016 …», «Egger H1145 ST10 …»): мастер заказывает лист и краску по ней
+  return { material: c.material, label: frontLabel(c, lang), color: c.color, wood: c.texture === 'wood' }
 }
 
 const sameFinish = (a: Finish, b: Finish) => a.material === b.material && a.label === b.label && a.color === b.color && a.wood === b.wood
@@ -135,6 +141,8 @@ export function cutParts(spec: SpecData, look: CutLook): CutPart[] {
         : look.facade
           ? facade
           : (styleUpper ?? facade)
+  // остров — свой цвет; нет — как низ
+  const island = look.islandFacade ? finishOf(look.islandFacade, lang) : facade
   const visible = look.bodyEdge ?? 1
   const fronts = frontSides(spec)
   const out: CutPart[] = []
@@ -158,7 +166,7 @@ export function cutParts(spec: SpecData, look: CutLook): CutPart[] {
     push({ name: row.name, front: false, material, length, width, count: row.count, grain, edges })
   }
 
-  // фасад, добор, планка угла, задняя панель острова — в цвет фасадов (верх — в цвет верха)
+  // фасад, добор, планка угла, задняя панель острова — в цвет фасадов (верх — в цвет верха, остров — в цвет острова)
   const face = (name: FrontType | PanelName, w: number, h: number, count: number, f: Finish) => {
     // рамка со стеклом и рамочный фасад из плоского листа не выпилить, у стиля материала нет — в цех фасадов, без «МДФ»
     const shop = name === 'glass' || name === 'framed' || f.material === null
@@ -171,15 +179,20 @@ export function cutParts(spec: SpecData, look: CutLook): CutPart[] {
     const e: EdgeThick = sheet ? 2 : 0
     push({ name, front: true, material, length, width, count, grain, edges: { l1: e, l2: e, w1: e, w2: e }, facade: { h, w, finish: f.material } })
   }
-  // верх другого цвета — детали верха своими строками; один цвет — как раньше, одним списком
-  const two = !sameFinish(upper, facade)
-  const sides: [boolean | null, Finish][] = two ? [[false, facade], [true, upper]] : [[null, facade]]
-  for (const [up, own] of sides) {
-    const runs = up === null ? spec.runs : spec.runs.map((r) => ({ ...r, fronts: r.fronts.filter((f) => Boolean(f.upper) === up) }))
+  // верх и остров другого цвета — их детали своими строками; один цвет — как раньше, одним списком
+  const ownUpper = !sameFinish(upper, facade)
+  const ownIsland = !sameFinish(island, facade)
+  type Side = 'lower' | 'upper' | 'island'
+  const sideOf = (x: { upper?: boolean; island?: boolean }): Side => (ownIsland && x.island ? 'island' : ownUpper && x.upper ? 'upper' : 'lower')
+  const sides: [Side, Finish][] = [['lower', facade]]
+  if (ownUpper) sides.push(['upper', upper])
+  if (ownIsland) sides.push(['island', island])
+  for (const [side, own] of sides) {
+    const runs = spec.runs.map((r) => ({ ...r, fronts: r.fronts.filter((f) => sideOf(f) === side) }))
     for (const row of frontList(runs)) face(row.type, row.w, row.h, row.count, row.color ? finishOf(row.color, lang) : own)
   }
-  for (const [up, own] of sides) {
-    const extras = (spec.extras ?? []).filter((e) => PANELS.includes(e.kind as PanelName) && (up === null || Boolean(e.upper) === up))
+  for (const [side, own] of sides) {
+    const extras = (spec.extras ?? []).filter((e) => PANELS.includes(e.kind as PanelName) && sideOf(e) === side)
     for (const row of extraList({ extras })) face(row.kind as PanelName, row.w, row.h, row.count, own)
   }
   return out

@@ -204,3 +204,47 @@ describe('«Примерить в кухне» с карточки товара'
     expect(kitchenLinkFor(product('wm-2', 'Стиральная машина п/а AVANGARD', [['Тип загрузки', 'Вертикальная']]), 'ru')).toBeNull()
   })
 })
+
+describe('R10: свой цвет острова в ссылке (if=)', () => {
+  const island: KitchenState = { ...DEFAULT_STATE, shape: 'island', a: 400, island: 240, facade: 'lam-white', islandFacade: 'lam-graphite' }
+
+  it('туда и обратно: цвет острова ложится в if= и возвращается', () => {
+    const q = new URLSearchParams(queryFromState(island))
+    expect(q.get('if')).toBe('lam-graphite')
+    const back = roundTrip(island)
+    expect(back.islandFacade).toBe('lam-graphite')
+    // низ острова не подменяет
+    expect(back.facade).toBe('lam-white')
+  })
+  it('неизвестный цвет острова отбрасывается без ошибки, как у fc=', () => {
+    const back = stateFromQuery(new URLSearchParams('f=island&a=400&i=240&fc=lam-white&if=no-such-color'), new Set())
+    expect(back.islandFacade).toBeUndefined()
+    expect(back.facade).toBe('lam-white')
+  })
+  it('старая ссылка без if= — остров как низ (поля нет)', () => {
+    const back = stateFromQuery(new URLSearchParams('f=island&a=400&i=240&fc=lam-white'), new Set())
+    expect('islandFacade' in back).toBe(false)
+    expect(new URLSearchParams(queryFromState(back)).has('if')).toBe(false)
+  })
+  it('у кухни без острова if= в ссылку не пишется, как i=', () => {
+    for (const shape of ['straight', 'corner', 'u'] as const) {
+      const q = new URLSearchParams(queryFromState({ ...island, shape }))
+      expect(q.has('i'), shape).toBe(false)
+      expect(q.has('if'), shape).toBe(false)
+    }
+  })
+  it('автосохранение (kp-last) хранит цвет острова', () => {
+    const data = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (k: string) => data.get(k) ?? null,
+      setItem: (k: string, v: string) => void data.set(k, String(v)),
+      removeItem: (k: string) => void data.delete(k),
+    })
+    try {
+      saveLast(island)
+      expect(loadLast(new Set())?.islandFacade).toBe('lam-graphite')
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+})

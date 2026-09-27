@@ -161,6 +161,11 @@ type Ctx = {
   tops: SpecTop[]
   /** проёмы и доборы — не шкафы */
   extras: SpecExtra[]
+  /**
+   * строится остров своего цвета (`FinishLook.island`): на время ряда
+   * `mats.facade` — материал острова, фасады и задняя панель помечаются `island`
+   */
+  island: boolean
 }
 
 /**
@@ -269,6 +274,8 @@ function addFront(
     ...(opts.color ? { color: opts.color } : {}),
     // в цвете верха — фасад верхнего ряда своим материалом верха (у портала антресоль в цвет низа)
     ...(opts.upper && (mat === mats.upper || mat === mats.overFridge) ? { upper: true } : {}),
+    // фасад острова своего цвета — мебельщику своей строкой
+    ...(ctx.island && !opts.upper && mat === mats.facade ? { island: true } : {}),
   }
 
   const pivot = new THREE.Group()
@@ -405,8 +412,9 @@ function drawersIn(ctx: Ctx, parent: THREE.Object3D, x: number, y0: number, y1: 
 }
 
 /**
- * Короб шкафа, как у мебельщика: боковины цвета фасада (их видно с торца),
- * а дно, спинка и полки — светлый ЛДСП. Внутри пусто — дверцу можно открыть.
+ * Короб шкафа, как у мебельщика и как в раскрое: боковины, дно, крыша, спинка и полки —
+ * ЛДСП корпуса (`mats.body`); цвет фасада — только у фасадов, доборов и планок (G01).
+ * Внутри пусто — дверцу можно открыть.
  */
 function carcass(
   ctx: Ctx,
@@ -418,7 +426,7 @@ function carcass(
   opts: { shelves?: number[]; top?: boolean; bottom?: boolean; sides?: THREE.Material; back?: boolean } = {},
 ) {
   const t = PANEL_T
-  const sides = opts.sides ?? ctx.mats.facade
+  const sides = opts.sides ?? ctx.mats.body
   g.add(mesh(panels([[0, y0, 0, t, y1, depth], [w - t, y0, 0, w, y1, depth]]), sides))
   const inner: Span[] = []
   if (opts.back !== false) inner.push([t, y0, 0, w - t, y1, 0.008])
@@ -429,7 +437,7 @@ function carcass(
   else if (opts.top) inner.push([t, y1 - t, 0, w - t, y1, depth])
   // «Лёгкий»: полки не рисуем, но мебельщику они считаются как прежде
   if (!ctx.mats.lite) for (const y of opts.shelves ?? []) inner.push([t, y - t / 2, 0.008, w - t, y + t / 2, depth - 0.02])
-  if (inner.length) g.add(mesh(panels(inner), ctx.mats.interior))
+  if (inner.length) g.add(mesh(panels(inner), ctx.mats.body))
   ctx.carcasses.push({
     row: y0 >= 1 ? 'upper' : y1 - y0 > 1 ? 'tall' : 'base',
     w: w * 100,
@@ -681,8 +689,9 @@ function baseModule(ctx: Ctx, run: Run, m: Module, i: number): THREE.Group {
         // боковина выше листа — из двух частей, стык на линии антресолей (C08)
         const cut = cutAt(ctx, 0, ctx.columnTop)
         for (const [y0, y1] of cut ? [[0, cut], [cut, ctx.columnTop]] : [[0, ctx.columnTop]]) {
-          sides.add(slab(mats.facade, 0, y0, 0, PANEL_T, y1, nd))
-          sides.add(slab(mats.facade, w - PANEL_T, y0, 0, w, y1, nd))
+          // боковины ниши раскрой считает корпусом (`nicheSide`) — ЛДСП корпуса
+          sides.add(slab(mats.body, 0, y0, 0, PANEL_T, y1, nd))
+          sides.add(slab(mats.body, w - PANEL_T, y0, 0, w, y1, nd))
           ctx.nichePanels.push({ h: (y1 - y0) * 100, d: nd * 100, count: 2 })
         }
         dims(sides, 'panel', PANEL_T * 100, ctx.columnTop * 100, nd * 100, at0)
@@ -973,8 +982,9 @@ function uppers(ctx: Ctx, run: Run, g: THREE.Group) {
     cab.position.x = x
     const depth = portal ? CARCASS_D : UPPER_D
     const from = portal ? mz.from + PORTAL_BOARD : mz.from
+    // фасады антресоли — цвет фасада (у портала — низа, иначе — верха); короб — ЛДСП корпуса
     const mat = portal ? mats.facade : mats.upper
-    carcass(ctx, cab, w, from, mz.to, depth, { top: true, sides: mat })
+    carcass(ctx, cab, w, from, mz.to, depth, { top: true })
     // у углового — подъёмник только над открытой частью, у глухой — планка (C05)
     const [o0, o1] = blind?.open ?? [0, w]
     liftsIn(ctx, cab, o0, from + GAP / 2, mz.to - GAP / 2, depth, o1 - o0, false, mat)
@@ -1031,7 +1041,7 @@ function uppers(ctx: Ctx, run: Run, g: THREE.Group) {
       const shelves = h > 0.8 ? [bottom + h / 3, bottom + (2 * h) / 3] : [bottom + h / 2]
       const cab = new THREE.Group()
       cab.position.x = x
-      carcass(ctx, cab, w, bottom, upperTop, UPPER_D, { top: true, shelves, sides: mats.upper })
+      carcass(ctx, cab, w, bottom, upperTop, UPPER_D, { top: true, shelves })
       if (glass || w >= 0.4) dishes(ctx, cab, 0.02, w - 0.02, shelves[0] + 0.008, UPPER_D)
       if (glass) {
         // подсветка витрины: днём незаметна, вечером светится
@@ -1159,7 +1169,7 @@ function uppers(ctx: Ctx, run: Run, g: THREE.Group) {
         const shelves = variant !== 'lift' && h >= 0.3 ? [bottom + h / 2] : []
         const cab = new THREE.Group()
         cab.position.x = x + PANEL_T
-        carcass(ctx, cab, cw, bottom, top, CARCASS_D, { top: true, sides: mats.upper, shelves })
+        carcass(ctx, cab, cw, bottom, top, CARCASS_D, { top: true, shelves })
         dims(cab, 'overFridge', cw * 100, h * 100, (CARCASS_D + FRONT_T) * 100, { x: (x + PANEL_T) * 100, y: bottom * 100 })
         cab.userData.cab = { key, row: 'upper', variant, fridge: true } satisfies CabInfo
         g.add(cab)
@@ -1212,7 +1222,8 @@ function portalFrame(ctx: Ctx, run: Run, g: THREE.Group) {
   if (!mz) return
   const high = (m: Module | undefined) => Boolean(m && (m.kind === 'tall' || m.kind === 'pantry' || m.kind === 'fridge'))
   const depth = CARCASS_D + FRONT_T
-  const mat = ctx.mats.upper
+  // доска и боковины портала в раскрое — корпус (`nicheSide`): ЛДСП корпуса
+  const mat = ctx.mats.body
   let start = -1
   const close = (end: number) => {
     if (start < 0) return
@@ -1510,7 +1521,9 @@ function islandExtras(ctx: Ctx, run: Run, g: THREE.Group) {
   // длиннее листа — из нескольких равных частей, как доска портала (C08)
   g.add(slab(mats.facade, 0, 0, -0.02, L, counterY - cm(style.topCm), 0))
   const backs = partsOf(L)
-  for (let k = 0; k < backs; k++) ctx.extras.push({ kind: 'islandBack', run: run.id, w: run.length / backs, h: (counterY - cm(style.topCm)) * 100 })
+  for (let k = 0; k < backs; k++) {
+    ctx.extras.push({ kind: 'islandBack', run: run.id, w: run.length / backs, h: (counterY - cm(style.topCm)) * 100, ...(ctx.island ? { island: true } : {}) })
+  }
   const n = Math.max(2, Math.floor(L / 0.55))
   const seat = mats.plain(style.id === 'loft' ? '#6b4a33' : style.group === 'hitech' ? '#1d1e21' : '#d8cfc2', 0.6)
   const legs = mats.metal(style.metal === 'wood' ? 'black' : style.metal)
@@ -1791,6 +1804,7 @@ function assemble(input: BuildInput): Built {
     splash: 0,
     tops: [],
     extras: [],
+    island: false,
   }
   const root = new THREE.Group()
   room(ctx, root)
@@ -1802,22 +1816,32 @@ function assemble(input: BuildInput): Built {
     g.rotation.y = run.rot
     ctx.uvRun = ri * 3.7
     ctx.tops = []
-    run.modules.forEach((m, i) => g.add(baseModule(ctx, run, m, i)))
-    countertop(ctx, run, g)
-    if (run.wall) {
-      backsplash(ctx, run, g)
-      const over = new THREE.Group()
-      ctx.overhead.push(over)
-      g.add(over)
-      uppers(ctx, run, over)
-      if (ctx.style.handle === 'gola') golaChannel(ctx, run, g)
-      if (ctx.style.led) underLight(ctx, run, g)
-    } else {
-      islandExtras(ctx, run, g)
+    // остров своего цвета: весь ряд строится материалом острова вместо низа —
+    // фасады, видимые бока, задняя панель (как верх берёт `mats.upper`)
+    // подмена — только на этот ряд: finally вернёт общие материалы, даже если ряд упал
+    ctx.island = !run.wall && mats.island !== mats.facade
+    ctx.mats = ctx.island ? { ...mats, facade: mats.island, textured: mats.islandTextured } : mats
+    try {
+      run.modules.forEach((m, i) => g.add(baseModule(ctx, run, m, i)))
+      countertop(ctx, run, g)
+      if (run.wall) {
+        backsplash(ctx, run, g)
+        const over = new THREE.Group()
+        ctx.overhead.push(over)
+        g.add(over)
+        uppers(ctx, run, over)
+        if (ctx.style.handle === 'gola') golaChannel(ctx, run, g)
+        if (ctx.style.led) underLight(ctx, run, g)
+      } else {
+        islandExtras(ctx, run, g)
+      }
+      decorRun(ctx, run, g)
+      root.add(g)
+      specRuns.push(collectRun(ctx, run, g))
+    } finally {
+      ctx.mats = mats
+      ctx.island = false
     }
-    decorRun(ctx, run, g)
-    root.add(g)
-    specRuns.push(collectRun(ctx, run, g))
   })
 
   // Потолочные споты для вечера.

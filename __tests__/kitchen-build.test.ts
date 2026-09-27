@@ -5,6 +5,7 @@ import { buildKitchen, type Built } from '@/components/kitchen/three/build'
 import { planKitchen, type Plan, type PlanInput } from '@/lib/kitchen/layout'
 import { UNDER_COUNTER } from '@/lib/kitchen/checks'
 import { BASE_H, BODY, PLINTH } from '@/lib/kitchen/dims'
+import { frontColor } from '@/lib/kitchen/finishes'
 import { cutList, extraList, frontList, modulesOf, type SpecData } from '@/lib/kitchen/spec'
 import { getStyle, getTone, STYLES, type KitchenStyle } from '@/lib/kitchen/styles'
 import type { HobKind, HoodKind, KitchenAppliance, Shape } from '@/lib/kitchen/types'
@@ -460,5 +461,140 @@ describe('2026-09-27: встроенная вытяжка поднимает в�
       expect(built.spec.heights.upperBottom, name).toBe(142)
       for (const b of rowBottoms(built.spec)) expect(b.y, `${name}: ${b.run} ${b.kind} x=${b.x}`).toBeCloseTo(142, 1)
     }
+  })
+})
+
+/* ───────────── R10: свой цвет острова ───────────── */
+
+describe('R10: остров своего цвета — фасады и задняя панель', () => {
+  const graphite = new THREE.Color(frontColor('lam-graphite')!.color).getHex()
+  const islandKitchen = () => {
+    const base = cornerDefault()
+    return { ...base, input: { ...base.input, shape: 'island' as const, a: 330, b: 0, c: 0, island: 160 } }
+  }
+  const withFinish = (island?: string): Built => {
+    const c = islandKitchen()
+    const plan = planKitchen(c.input, { shelves: c.style.shelves })
+    return buildKitchen({
+      plan,
+      style: c.style,
+      tone: getTone(c.style, 0),
+      items: c.items,
+      photos: new Map(),
+      evening: false,
+      room: { ceiling: c.ceiling, toCeiling: c.toCeiling },
+      fronts: {},
+      detail: 0.5,
+      finish: { facade: frontColor('lam-white'), ...(island ? { island: frontColor(island) } : {}) },
+    })
+  }
+  const colors = (o: THREE.Object3D) => {
+    const out: number[] = []
+    o.traverse((m) => {
+      const mat = (m as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined
+      if ((m as THREE.Mesh).isMesh && mat?.color) out.push(mat.color.getHex())
+    })
+    return out
+  }
+
+  it('фасады острова помечены island, у стены — нет; задняя панель острова — тоже island', () => {
+    const { spec } = withFinish('lam-graphite')
+    const I = spec.runs.find((r) => r.id === 'I')!
+    expect(I.fronts.length).toBeGreaterThan(0)
+    expect(I.fronts.every((f) => f.island === true)).toBe(true)
+    expect(spec.runs.filter((r) => r.id !== 'I').flatMap((r) => r.fronts).some((f) => f.island)).toBe(false)
+    const backs = (spec.extras ?? []).filter((e) => e.kind === 'islandBack')
+    expect(backs.length).toBeGreaterThan(0)
+    expect(backs.every((e) => e.island === true)).toBe(true)
+  })
+
+  it('в 3D фасады острова и задняя панель — цвет острова; фасады у стены — нет', () => {
+    const { root } = withFinish('lam-graphite')
+    root.updateMatrixWorld(true)
+    const fronts: THREE.Object3D[] = []
+    root.traverse((o) => {
+      if (o.userData.front) fronts.push(o)
+    })
+    const island = fronts.filter((o) => o.userData.front.island)
+    expect(island.length).toBeGreaterThan(0)
+    for (const o of island) expect(colors(o)).toContain(graphite)
+    for (const o of fronts.filter((f) => !f.userData.front.island)) expect(colors(o)).not.toContain(graphite)
+    // задняя панель: деталь не-фасад в цвете острова во всю длину острова (160 см), толщиной 2 см
+    const inFront = new Set<THREE.Object3D>()
+    for (const o of fronts) o.traverse((m) => inFront.add(m))
+    const panels: THREE.Vector3[] = []
+    root.traverse((m) => {
+      const mat = (m as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined
+      if ((m as THREE.Mesh).isMesh && !inFront.has(m) && mat?.color?.getHex() === graphite) panels.push(new THREE.Box3().setFromObject(m).getSize(new THREE.Vector3()))
+    })
+    expect(panels.some((s) => Math.abs(Math.max(s.x, s.z) - 1.6) < 0.01 && Math.abs(Math.min(s.x, s.z) - 0.02) < 0.005)).toBe(true)
+  })
+
+  it('цвет острова тот же, что у низа, — тот же материал, без пометок island', () => {
+    const { spec, root } = withFinish('lam-white')
+    expect(spec.runs.flatMap((r) => r.fronts).some((f) => f.island)).toBe(false)
+    expect((spec.extras ?? []).some((e) => e.island)).toBe(false)
+    const mats = new Set<THREE.Material>()
+    root.traverse((o) => {
+      if (o.userData.front) o.traverse((m) => (m as THREE.Mesh).isMesh && mats.add((m as THREE.Mesh).material as THREE.Material))
+    })
+    const plain = new Set<THREE.Material>()
+    withFinish().root.traverse((o) => {
+      if (o.userData.front) o.traverse((m) => (m as THREE.Mesh).isMesh && plain.add((m as THREE.Mesh).material as THREE.Material))
+    })
+    // сколько разных материалов у фасадов — столько же, сколько без цвета острова
+    expect(mats.size).toBe(plain.size)
+  })
+
+  it('без islandFacade — как раньше: ни одной пометки island и ни одного графита', () => {
+    const { spec, root } = withFinish()
+    expect(spec.runs.flatMap((r) => r.fronts).some((f) => f.island)).toBe(false)
+    expect((spec.extras ?? []).some((e) => e.island)).toBe(false)
+    expect(colors(root)).not.toContain(graphite)
+  })
+})
+
+describe('G01: корпус в 3D — материал корпуса, как в раскрое', () => {
+  const hex = (id: string) => new THREE.Color(frontColor(id)!.color).getHex()
+  const [graphite, white] = [hex('lam-graphite'), hex('lam-white')]
+  const colorOf = (m: THREE.Object3D) => ((m as THREE.Mesh).material as THREE.MeshStandardMaterial).color?.getHex()
+
+  it('цветные фасады: боковины, дно и полки корпусов (низ, верх, остров) — белый ЛДСП корпуса, фасады — цвет фасада', () => {
+    const base = cornerDefault()
+    const c = { ...base, input: { ...base.input, shape: 'island' as const, a: 330, b: 0, c: 0, island: 160 } }
+    const plan = planKitchen(c.input, { shelves: c.style.shelves })
+    const { root } = buildKitchen({
+      plan,
+      style: c.style,
+      tone: getTone(c.style, 0),
+      items: c.items,
+      photos: new Map(),
+      evening: false,
+      room: { ceiling: c.ceiling, toCeiling: c.toCeiling },
+      fronts: {},
+      detail: 0.5,
+      finish: { facade: frontColor('lam-graphite') },
+    })
+    root.updateMatrixWorld(true)
+    // короб шкафа — прямые детали модуля во всю его ширину и выше 30 см (не фасад, не техника)
+    const box: THREE.Object3D[] = []
+    const fronts: THREE.Object3D[] = []
+    root.traverse((o) => {
+      if (o.userData.front) fronts.push(o)
+      const d = o.userData.dims
+      if (!d || d.kind === 'filler' || d.kind === 'mantel') return
+      for (const m of o.children) {
+        if (!(m as THREE.Mesh).isMesh || m.userData.front) continue
+        const s = new THREE.Box3().setFromObject(m).getSize(new THREE.Vector3())
+        if (Math.abs(Math.max(s.x, s.z) - d.w / 100) < 0.01 && s.y > 0.3) box.push(m)
+      }
+    })
+    expect(box.filter((m) => colorOf(m) === white).length).toBeGreaterThan(5)
+    expect(box.filter((m) => colorOf(m) === graphite)).toEqual([])
+    // фасады — цвет фасада
+    expect(fronts.length).toBeGreaterThan(0)
+    const frontColors = new Set<number | undefined>()
+    for (const f of fronts) f.traverse((m) => (m as THREE.Mesh).isMesh && frontColors.add(colorOf(m)))
+    expect(frontColors.has(graphite)).toBe(true)
   })
 })

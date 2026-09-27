@@ -238,6 +238,8 @@ export function stateFromQuery(query: URLSearchParams, known: KnownAppliances): 
   const facade = frontColor(query.get('fc') ?? undefined)?.id
   const upperFacade = query.get('uf') === 'style' ? 'style' : frontColor(query.get('uf') ?? undefined)?.id
   const overFridgeFacade = frontColor(query.get('ofc') ?? undefined)?.id
+  // остров своего цвета (R10); неизвестный id отбрасывается, как у fc=
+  const islandFacade = frontColor(query.get('if') ?? undefined)?.id
   const top = topChoice(query.get('tp') ?? undefined)?.id
   const splash = splashChoice(query.get('sp') ?? undefined)?.id
   // Ручка живёт в `hn=`; `hd=` — ключ вытяжки. Старые ссылки писали ручку в `hd=`:
@@ -275,6 +277,7 @@ export function stateFromQuery(query: URLSearchParams, known: KnownAppliances): 
     ...(facade ? { facade } : {}),
     ...(upperFacade ? { upperFacade } : {}),
     ...(overFridgeFacade ? { overFridgeFacade } : {}),
+    ...(islandFacade ? { islandFacade } : {}),
     ...(top ? { top } : {}),
     ...(splash ? { splash } : {}),
     ...(handle ? { handle } : {}),
@@ -319,6 +322,7 @@ export function queryFromState(state: KitchenState): string {
   if (state.facade) q.set('fc', state.facade)
   if (state.upperFacade) q.set('uf', state.upperFacade)
   if (state.overFridgeFacade) q.set('ofc', state.overFridgeFacade)
+  if (state.shape === 'island' && state.islandFacade) q.set('if', state.islandFacade)
   if (state.top) q.set('tp', state.top)
   if (state.splash) q.set('sp', state.splash)
   if (state.handle) q.set('hn', state.handle)

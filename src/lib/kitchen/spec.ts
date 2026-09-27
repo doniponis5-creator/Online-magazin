@@ -69,6 +69,8 @@ export type SpecFront = {
   color?: string
   /** фасад в цвете верха (верхний ряд, антресоль, шкаф над холодильником, короб вытяжки); нет — в цвете низа */
   upper?: boolean
+  /** фасад острова своего цвета (`islandFacade`); нет — в цвете низа */
+  island?: boolean
 }
 
 export type SpecBox = Dims & { x: number; y: number }
@@ -92,8 +94,11 @@ export type SpecRun = { id: RunId; length: number; modules: SpecModule[]; boxes:
  * высоты проёма.
  */
 export type ExtraKind = 'dwOpening' | 'stoveOpening' | 'filler' | 'strip' | 'islandBack'
-/** upper — деталь в цвете верха (добор и планка углового в верхнем ряду); нет — в цвете низа */
-export type SpecExtra = { kind: ExtraKind; run: RunId; w: number; h: number; hMax?: number; upper?: boolean }
+/**
+ * upper — деталь в цвете верха (добор и планка углового в верхнем ряду);
+ * island — в цвете острова (задняя панель острова своего цвета); нет — в цвете низа
+ */
+export type SpecExtra = { kind: ExtraKind; run: RunId; w: number; h: number; hMax?: number; upper?: boolean; island?: boolean }
 
 export type SpecData = {
   runs: SpecRun[]

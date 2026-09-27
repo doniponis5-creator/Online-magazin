@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import type { FrontColor, TopChoice } from '@/lib/kitchen/finishes'
+import { frontColor, type FrontColor, type TopChoice } from '@/lib/kitchen/finishes'
 import type { FrontTexture, KitchenStyle, Metal, Tone } from '@/lib/kitchen/styles'
 import type { Finish, FloorKind } from '@/lib/kitchen/types'
 import * as T from './textures'
@@ -19,9 +19,10 @@ export type RoomLook = { floor?: FloorKind; wall?: string | null }
 /** Отделка из каталога вместо цвета стиля: фасады низа и верха, столешница. */
 /**
  * upper: 'style' — верх в цвете стиля, даже если низ из каталога (двухцветная кухня);
- * overFridge — свой цвет фасада шкафа над холодильником
+ * overFridge — свой цвет фасада шкафа над холодильником;
+ * island — свой цвет фасадов и задней панели острова (нет — как низ)
  */
-export type FinishLook = { facade?: FrontColor; upper?: FrontColor | 'style'; top?: TopChoice; overFridge?: FrontColor }
+export type FinishLook = { facade?: FrontColor; upper?: FrontColor | 'style'; top?: TopChoice; overFridge?: FrontColor; island?: FrontColor }
 
 /** lite — «Лёгкий»: те же цвета и картинки, но без рельефа (bump) и карт шероховатости. */
 export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolean, room: RoomLook = {}, finish: FinishLook = {}, lite = false) {
@@ -123,6 +124,10 @@ export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolea
     finish.upper === 'style' ? styleUpper() : finish.upper ? catalogFront(finish.upper) : finish.facade ? facade : tone.upper ? front(tone.upper, tone.upperTexture) : facade
   // Шкаф над холодильником может быть своего цвета; нет — как верх.
   const overFridge = finish.overFridge ? catalogFront(finish.overFridge) : upper
+  // Остров может быть своего цвета; нет или тот же цвет, что у низа, — тот же материал, что у низа
+  // (сборка сравнивает материалы: одинаковые — остров без пометок `island`).
+  const ownIsland = finish.island && finish.island.id !== finish.facade?.id ? finish.island : undefined
+  const island = ownIsland ? catalogFront(ownIsland) : facade
   /** у фасада своя фактура — рисунок надо сдвигать от дверцы к дверце */
   const texturedOf = (c: FrontColor | undefined, t: FrontTexture | undefined) => (c ? Boolean(c.texture) || c.material === 'veneer' : Boolean(t))
   const textured = texturedOf(finish.facade, tone.texture)
@@ -136,6 +141,7 @@ export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolea
           : tone.upper
             ? Boolean(tone.upperTexture)
             : textured
+  const islandTextured = ownIsland ? texturedOf(ownIsland, undefined) : textured
 
   const catalogTop = (c: TopChoice) => {
     const { look } = c
@@ -330,6 +336,9 @@ export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolea
   }
   // Внутри шкафов — светлый ЛДСП, как у настоящей мебели.
   const interior = keep(new THREE.MeshStandardMaterial({ color: '#eeebe5', roughness: 0.62 }))
+  // Корпус (боковины, дно, крыша, полки, спинка, боковины ниши и портала) — белый ламинат,
+  // тот же `lam-white`, из которого раскрой (`cutting.ts`, WHITE) считает детали корпуса.
+  const body = catalogFront(frontColor('lam-white')!)
   const inside = (color: string, roughness: number, metalness = 0) =>
     keep(new THREE.MeshStandardMaterial({ color, roughness, metalness, side: THREE.BackSide }))
   const enamel = inside('#1c1c1f', 0.35)
@@ -351,8 +360,11 @@ export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolea
     facade,
     upper,
     overFridge,
+    /** фасады и задняя панель острова; без своего цвета — тот же объект, что `facade` */
+    island,
     textured,
     upperTextured,
+    islandTextured,
     trimMetal,
     fluted,
     top,
@@ -376,6 +388,7 @@ export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolea
     darkGlass,
     rubber,
     interior,
+    body,
     enamel,
     tub,
     fridgeInside,
