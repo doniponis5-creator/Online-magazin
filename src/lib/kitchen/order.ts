@@ -10,6 +10,7 @@
 import { kitchenTexts } from '@/components/kitchen/texts'
 import { formatSom } from '@/lib/format'
 import type { Lang } from '@/lib/i18n/config'
+import { frontColor, frontLabel, type FrontColor } from './finishes'
 import { defaultPick } from './catalog'
 import type { Plan, PlanInput } from './layout'
 import { getStyle } from './styles'
@@ -164,16 +165,65 @@ export function wallsText(s: KitchenState, lang: Lang): string {
   return parts.join(' · ')
 }
 
+export type FacadeTier = 'lower' | 'upper' | 'island'
+
 /**
- * Сообщение консультанту: форма и стены, стиль; каждая единица техники с ценой
- * («на столешницу» у отдельностоящей микроволновки); «не поместилось» — отдельно,
- * без цены в итоге; типовая модель — «нет в наличии, подскажите»; итог; ссылка.
+ * Какого цвета фасады низа, верха и острова — только там, где цвет выбран, а не «как в стиле»
+ * (у стиля нет кода, мастер берёт его из стиля). Верх без своего цвета — как низ,
+ * остров без своего — как низ (те же правила, что в 3D и раскрое). Для WhatsApp и PDF мастеру.
+ */
+export function facadeTiers(state: KitchenState): { tier: FacadeTier; color: FrontColor }[] {
+  const lower = frontColor(state.facade)
+  const upper = state.upperFacade === 'style' ? undefined : state.upperFacade ? frontColor(state.upperFacade) : lower
+  const island = state.shape !== 'island' ? undefined : state.islandFacade ? frontColor(state.islandFacade) : lower
+  const out: { tier: FacadeTier; color: FrontColor }[] = []
+  if (lower) out.push({ tier: 'lower', color: lower })
+  if (upper) out.push({ tier: 'upper', color: upper })
+  if (island) out.push({ tier: 'island', color: island })
+  return out
+}
+
+/**
+ * Фасады одной строкой — одно правило для WhatsApp и PDF мастеру (кто какого цвета — `facadeTiers`).
+ * У всех частей кухни (низ, верх, остров — если он есть) один цвет — просто «RAL 7016 …»;
+ * иначе «низ — …, верх — …, остров — …». Часть «как в стиле» пишется как `asStyle`
+ * (PDF: «Модерн · Графит»), без него пропускается (WhatsApp); ничего нет — ''.
+ * `label` — как назвать цвет (PDF добавляет материал), по умолчанию `frontLabel`.
+ */
+export function frontsText(
+  state: KitchenState,
+  lang: Lang,
+  opts: { asStyle?: string; label?: (c: FrontColor) => string } = {},
+): string {
+  const t = kitchenTexts(lang)
+  const tiers = facadeTiers(state)
+  const label = opts.label ?? ((c: FrontColor) => frontLabel(c, lang))
+  const all: FacadeTier[] = state.shape === 'island' ? ['lower', 'upper', 'island'] : ['lower', 'upper']
+  const rows: { tier: FacadeTier; key: string; text: string }[] = []
+  for (const tier of all) {
+    const c = tiers.find((x) => x.tier === tier)?.color
+    if (c) rows.push({ tier, key: c.id, text: label(c) })
+    else if (opts.asStyle) rows.push({ tier, key: 'style', text: opts.asStyle })
+  }
+  if (!rows.length) return ''
+  if (rows.length === all.length && rows.every((r) => r.key === rows[0].key)) return rows[0].text
+  return rows.map((r) => `${t.frontTier[r.tier]} — ${r.text}`).join(', ')
+}
+
+/**
+ * Сообщение консультанту: форма и стены, стиль, фасады с кодами (`frontsText`); каждая
+ * единица техники с ценой («на столешницу» у отдельностоящей микроволновки); «не поместилось» —
+ * отдельно, без цены в итоге; типовая модель — «нет в наличии, подскажите»; итог; ссылка.
  * Мебель и модули сюда не идут — они в ссылке и в PDF.
  */
 export function whatsappText(items: readonly ProjectItem[], state: KitchenState, url: string, lang: Lang): string {
   const t = kitchenTexts(lang)
   const style = getStyle(state.style)
-  const lines = [t.waHello, '', `${t.shapes[state.shape][0]}: ${wallsText(state, lang)}`, `${t.waStyle}: ${style[lang]}`, '']
+  const lines = [t.waHello, '', `${t.shapes[state.shape][0]}: ${wallsText(state, lang)}`, `${t.waStyle}: ${style[lang]}`]
+  // цвета с кодами («RAL 7016 …», «Egger H1145 ST10 …») — продавец и мастер видят, что заказано
+  const fronts = frontsText(state, lang)
+  if (fronts) lines.push(`${t.waFronts}: ${fronts}`)
+  lines.push('')
   const nameOf = (i: ProjectItem) => (i.slot === 'hob' && i.appliance?.stove ? t.stove.name : t.slots[i.slot])
   for (const i of items) {
     if (i.status === 'inStove') continue

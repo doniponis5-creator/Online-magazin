@@ -153,6 +153,8 @@ export type EstimateRow = {
   what?: string
   /** толщина листа, мм (ldsp, hdf) */
   thick?: number
+  /** цвет фасадов с кодом (front): «RAL 7016 Антрацитово-серый» — мастер заказывает по нему */
+  color?: string
   qty: number
   unit: EstimateUnit
   /** цена мастера за единицу; null — «цена не указана», строка не входит в итог */
@@ -186,7 +188,7 @@ export const isWhiteSheet = (m: Pick<CutMaterial, 'kind' | 'color'>): boolean =>
  */
 export function estimate(parts: CutPart[], nested: NestResult[], spec: SpecData, prices: MasterPrices): Estimate {
   const rows: EstimateRow[] = []
-  const add = (key: EstimateKey, raw: number, unit: EstimateUnit, price: number | undefined, extra: Pick<EstimateRow, 'what' | 'thick'> = {}) => {
+  const add = (key: EstimateKey, raw: number, unit: EstimateUnit, price: number | undefined, extra: Pick<EstimateRow, 'what' | 'thick' | 'color'> = {}) => {
     // кол-во — до сотых, как печатается: 4,78 м × 5 500 = 26 290 сходится глазами
     const qty = r2(raw)
     if (!(qty > 0)) return
@@ -202,14 +204,18 @@ export function estimate(parts: CutPart[], nested: NestResult[], spec: SpecData,
     const k = String(e.thick) as '0.4' | '1' | '2'
     add('edge', e.meters, 'm', prices.edge?.[k], { what: k })
   }
-  // фасады и доборы не из листа — в цех фасадов, по м²; материал стиля — своя цена «по стилю»
-  const area = new Map<FrontPriceKey, number>()
+  // фасады и доборы не из листа — в цех фасадов, по м²; материал стиля — своя цена «по стилю»;
+  // цена — по материалу, строка — по материалу и цвету: низ RAL 9003 и верх RAL 7016 — две строки
+  const area = new Map<string, { k: FrontPriceKey; color: string; m2: number }>()
   for (const p of parts) {
     if (!p.front || !p.facade || p.material.kind === 'ldsp' || p.material.kind === 'hdf') continue
     const k: FrontPriceKey = p.facade.finish ?? 'style'
-    area.set(k, (area.get(k) ?? 0) + (p.facade.h * p.facade.w * p.count) / 1e6)
+    const key = `${k}|${p.material.label}`
+    const a = area.get(key) ?? { k, color: p.material.label, m2: 0 }
+    a.m2 += (p.facade.h * p.facade.w * p.count) / 1e6
+    area.set(key, a)
   }
-  for (const [k, m2] of area) add('front', r2(m2), 'm2', prices.front?.[k], { what: k })
+  for (const a of area.values()) add('front', r2(a.m2), 'm2', prices.front?.[a.k], { what: a.k, color: a.color })
   const top = topList(spec.runs).total
   add('top', top, 'm', prices.top)
   const hw = hardware(spec)
@@ -269,7 +275,7 @@ export function estimateLines(e: Estimate, items: readonly ProjectItem[], t: Kit
         return m.rowEdge(num(Number(r.what)))
       case 'front': {
         const mat = FRONT_MATERIALS.find((x) => x.id === r.what)
-        return m.rowFront(mat ? (lang === 'ky' ? mat.ky : mat.ru) : m.frontStyle)
+        return m.rowFront(mat ? (lang === 'ky' ? mat.ky : mat.ru) : m.frontStyle, r.color)
       }
       case 'top':
         return t.topTitle

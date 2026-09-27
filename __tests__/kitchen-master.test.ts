@@ -343,3 +343,17 @@ describe('смета клиенту: каждая напечатанная ст�
       expect(withHob?.[0][0]).toBe(t.slots.hob)
     })
 })
+
+describe('смета: цвет с кодом в строках листов и фасадов (таск 03)', () => {
+  it('декор Egger — строка листа с кодом; RAL — строка фасадов «Эмаль, RAL 7016 …»; разные цвета одного материала — разные строки', () => {
+    const t = kitchenTexts('ru')
+    const s = kitchen('straight', 300, 0, 0, STYLES[0])
+    const parts = cutParts(s, { facade: 'dec-egger-h1145-st10', upperFacade: 'ral-7016' })
+    const names = estimateLines(estimate(parts, nest(parts), s, {}), [], t).rows.map((r) => r[0])
+    expect(names).toContain('Лист ЛДСП 16 мм, Egger H1145 ST10 Дуб Бардолино натуральный')
+    expect(names).toContain('Фасады — Эмаль, RAL 7016 Антрацитово-серый')
+    const two = cutParts(s, { facade: 'ral-9003', upperFacade: 'ral-7016' })
+    const fronts = estimateLines(estimate(two, nest(two), s, {}), [], t).rows.map((r) => r[0]).filter((n) => n.startsWith('Фасады'))
+    expect(fronts.sort()).toEqual(['Фасады — Эмаль, RAL 7016 Антрацитово-серый', 'Фасады — Эмаль, RAL 9003 Сигнальный белый'])
+  })
+})

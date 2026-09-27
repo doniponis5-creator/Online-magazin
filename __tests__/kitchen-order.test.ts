@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { planKitchen } from '@/lib/kitchen/layout'
-import { cartAdditions, chosenItems, planInputOf, projectItems, projectTotal, whatsappText } from '@/lib/kitchen/order'
+import { cartAdditions, chosenItems, frontsText, planInputOf, projectItems, projectTotal, whatsappText } from '@/lib/kitchen/order'
 import { DEFAULT_STATE } from '@/lib/kitchen/share'
 import { getStyle } from '@/lib/kitchen/styles'
 import type { KitchenAppliance, KitchenState, SlotKind } from '@/lib/kitchen/types'
@@ -120,5 +120,62 @@ describe('состав проекта (order.ts)', () => {
     expect(text).toMatch(/148\s000 сом/)
     expect(text).toContain('https://x.kg/ky/kitchen?f=corner')
     expect(text).not.toContain('Здравствуйте')
+  })
+})
+
+describe('WhatsApp: цвета фасадов с кодами (таск 03)', () => {
+  const EGG_RU = 'Egger H1145 ST10 Дуб Бардолино натуральный'
+  const text = (s: KitchenState, lang: 'ru' | 'ky' = 'ru') => whatsappText(projectItems(s, planOf(s), CATALOG), s, 'https://x.kg/k', lang)
+  const line = (s: KitchenState, lang: 'ru' | 'ky' = 'ru') => text(s, lang).split('\n').find((l) => /^Фасад/.test(l))
+
+  it('RU: низ RAL, верх декор — «Фасады: низ — RAL 7016 …, верх — Egger H1145 ST10 …»', () => {
+    expect(line({ ...withMw, facade: 'ral-7016', upperFacade: 'dec-egger-h1145-st10' })).toBe(`Фасады: низ — RAL 7016 Антрацитово-серый, верх — ${EGG_RU}`)
+  })
+
+  it('RU: остров своим цветом; верх без своего цвета — как низ', () => {
+    const s: KitchenState = { ...withMw, shape: 'island', facade: 'lam-white', islandFacade: 'dec-egger-h1145-st10' }
+    expect(line(s)).toBe(`Фасады: низ — Белый премиум, верх — Белый премиум, остров — ${EGG_RU}`)
+  })
+
+  it('«как в стиле» не пишется: всё из стиля — строки нет; верх «как в стиле» — только низ', () => {
+    expect(line(withMw)).toBeUndefined()
+    expect(line({ ...withMw, facade: 'ral-9003', upperFacade: 'style' })).toBe('Фасады: низ — RAL 9003 Сигнальный белый')
+    // islandFacade у кухни без острова не печатается
+    expect(line({ ...withMw, facade: 'ral-9003', upperFacade: 'style', islandFacade: 'ral-7016' })).toBe('Фасады: низ — RAL 9003 Сигнальный белый')
+  })
+
+  it('KY: «Фасаддар: асты — …, үстү — …, аралча — …», декор — кыргызча аты, код ошол эле', () => {
+    const s: KitchenState = { ...withMw, shape: 'island', facade: 'ral-7016', upperFacade: 'lam-white', islandFacade: 'dec-egger-h1145-st10' }
+    expect(line(s, 'ky')).toBe('Фасаддар: асты — RAL 7016 Антрацитово-серый, үстү — Премиум ак, аралча — Egger H1145 ST10 Бардолино эмени, табигый')
+  })
+
+  it('у всех частей один цвет — одна запись «Фасады: X» и в WhatsApp, и в PDF (frontsText)', () => {
+    const ral = 'RAL 7016 Антрацитово-серый'
+    // верх без своего цвета — как низ; свой, но тот же; остров того же цвета
+    for (const s of [
+      { ...withMw, facade: 'ral-7016' },
+      { ...withMw, facade: 'ral-7016', upperFacade: 'ral-7016' },
+      { ...withMw, shape: 'island', facade: 'ral-7016' },
+    ] as KitchenState[]) {
+      expect(line(s)).toBe(`Фасады: ${ral}`)
+      expect(frontsText(s, 'ru', { asStyle: 'Модерн · Графит' })).toBe(ral)
+    }
+    expect(line({ ...withMw, facade: 'ral-7016' }, 'ky')).toBe(`Фасаддар: ${ral}`)
+  })
+
+  it('PDF — то же правило, что WhatsApp: «как в стиле» словами стиля, цвет — своей подписью', () => {
+    const upStyle: KitchenState = { ...withMw, facade: 'ral-9003', upperFacade: 'style' }
+    expect(frontsText(upStyle, 'ru')).toBe('низ — RAL 9003 Сигнальный белый')
+    expect(frontsText(upStyle, 'ru', { asStyle: 'Модерн · Графит' })).toBe('низ — RAL 9003 Сигнальный белый, верх — Модерн · Графит')
+    // всё из стиля: WhatsApp молчит, PDF — одна запись стиля
+    expect(frontsText(withMw, 'ru')).toBe('')
+    expect(frontsText(withMw, 'ru', { asStyle: 'Модерн · Графит' })).toBe('Модерн · Графит')
+    // те же части в том же порядке; label меняет только подпись (в PDF — с материалом)
+    const s: KitchenState = { ...withMw, shape: 'island', facade: 'ral-7016', upperFacade: 'lam-white', islandFacade: 'dec-egger-h1145-st10' }
+    expect(frontsText(s, 'ru', { asStyle: '—', label: (c) => `[${c.id}]` })).toBe('низ — [ral-7016], верх — [lam-white], остров — [dec-egger-h1145-st10]')
+    // остров своим цветом, низ и верх из стиля
+    expect(frontsText({ ...withMw, shape: 'island', islandFacade: 'ral-7016' }, 'ru', { asStyle: 'Стиль' })).toBe(
+      'низ — Стиль, верх — Стиль, остров — RAL 7016 Антрацитово-серый',
+    )
   })
 })

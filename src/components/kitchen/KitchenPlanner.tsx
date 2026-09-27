@@ -8,9 +8,11 @@ import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { checkProject, type Check } from '@/lib/kitchen/checks'
 import {
+  findColors,
   FRONT_COLORS,
   FRONT_MATERIALS,
   frontColor,
+  frontLabel as colorLabel,
   HANDLE_METALS,
   HANDLES,
   SPLASH_GROUPS,
@@ -19,10 +21,13 @@ import {
   TOP_MATERIALS,
   topChoice,
   TOPS,
+  type FrontColor,
   type FrontMaterial,
   type SplashGroup,
   type TopMaterial,
 } from '@/lib/kitchen/finishes'
+import { DECOR_BRANDS, DECORS, type DecorBrand } from '@/lib/kitchen/decors'
+import { parseRal, RAL } from '@/lib/kitchen/ral'
 import { BASE_FRONTS, baseKey, OVER_FRIDGE_FRONTS, UPPER_FRONTS, upperKey } from '@/lib/kitchen/fronts'
 import {
   canChangeWall,
@@ -52,7 +57,7 @@ import {
   type RunId,
   type Run,
 } from '@/lib/kitchen/layout'
-import { cartAdditions, chosenItems, CORE_SLOTS, planInputOf, projectItems, projectTotal, wallsText, whatsappText, type ItemStatus } from '@/lib/kitchen/order'
+import { cartAdditions, chosenItems, CORE_SLOTS, frontsText, planInputOf, projectItems, projectTotal, wallsText, whatsappText, type ItemStatus } from '@/lib/kitchen/order'
 import { DEFAULT_STATE, loadLast, queryFromState, saveLast, stateFromQuery } from '@/lib/kitchen/share'
 import { cutList, extraList, frontList, hardware, modulesOf, topList, type SpecData } from '@/lib/kitchen/spec'
 import { cutParts, edgeTotals, nest, type CutLook, type NestOpts, type NestResult } from '@/lib/kitchen/cutting'
@@ -202,6 +207,28 @@ async function shareFile(file: File, text: string, title: string): Promise<'ok' 
 const STACKED = '(max-width: 900px) and (min-height: 521px)'
 const isStacked = () => window.matchMedia(STACKED).matches
 
+/** «Для чего» красим фасады (вся кухня, низ, верх, остров). */
+type PaintTarget = 'all' | 'lower' | 'upper' | 'island'
+/** Цель → поле состояния. «Вся кухня» пишет в поле низа, а верх и остров снимает — они идут «как низ». */
+const PAINT_FIELD = { all: 'facade', lower: 'facade', upper: 'upperFacade', island: 'islandFacade' } as const satisfies Record<
+  PaintTarget,
+  keyof KitchenState
+>
+
+/** Палитра RAL по первой цифре кода: 1 — жёлтые … 9 — белые и чёрные. Считается один раз, не на каждую отрисовку. */
+const RAL_GROUPS = '123456789'.split('').map((digit) => {
+  const items = RAL.filter((r) => r.code[0] === digit)
+  return {
+    digit,
+    count: items.length,
+    dot: items[Math.floor(items.length / 2)].hex,
+    tiles: items.flatMap((r) => {
+      const c = frontColor(`ral-${r.code}`)
+      return c ? [{ c, code: r.code }] : []
+    }),
+  }
+})
+
 /**
  * Группы выбора (role=radio и role=tab) ходят стрелками, как обычные
  * радиокнопки: ←/→/↑/↓ — соседний вариант, Home/End — крайние. Выбор сразу
@@ -268,9 +295,15 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   const [fullPanel, setFullPanel] = useState(false)
   const [quality, setQuality] = useState<Quality>('hd')
   const [qualityPx, setQualityPx] = useState('')
-  /** отделка: что красим (весь гарнитур, низ, верх) и какой материал открыт */
-  const [paintFor, setPaintFor] = useState<'all' | 'lower' | 'upper'>('all')
-  const [frontMat, setFrontMat] = useState<FrontMaterial>('laminate')
+  /** отделка: что красим (вся кухня, низ, верх, остров) и какой вид цвета открыт — материал, RAL или декоры */
+  const [paintFor, setPaintFor] = useState<PaintTarget>('all')
+  const [frontMat, setFrontMat] = useState<FrontMaterial | 'ral' | 'decor'>('laminate')
+  const [decorBrand, setDecorBrand] = useState<DecorBrand>('egger')
+  const [colorQuery, setColorQuery] = useState('')
+  /** выдача поиска цвета — на компьютере докручиваем до неё, чтобы не пряталась под рядом «Дальше» */
+  const foundRef = useRef<HTMLDivElement>(null)
+  /** открытые группы RAL (первая цифра кода); пока не трогали — открыта группа выбранного цвета */
+  const [ralOpen, setRalOpen] = useState<ReadonlySet<string>>()
   const [ofMat, setOfMat] = useState<FrontMaterial | null>(null)
   const [topMat, setTopMat] = useState<TopMaterial>('quartz')
   const [splashGroup, setSplashGroup] = useState<SplashGroup>('stone')
@@ -745,8 +778,9 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       upper: state.upperFacade === 'style' ? ('style' as const) : frontColor(state.upperFacade),
       top: topSel,
       overFridge: frontColor(state.overFridgeFacade),
+      island: state.shape === 'island' ? frontColor(state.islandFacade) : undefined,
     }),
-    [state.facade, state.upperFacade, topSel, state.overFridgeFacade],
+    [state.facade, state.upperFacade, topSel, state.overFridgeFacade, state.shape, state.islandFacade],
   )
   const buildInput: BuildInput = useMemo(
     () => ({
@@ -1107,6 +1141,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     const finish: Partial<KitchenState> = {
       facade: undefined,
       upperFacade: undefined,
+      islandFacade: undefined,
       top: undefined,
       splash: undefined,
       handle: undefined,
@@ -1860,19 +1895,22 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
 
   /** Отделка словами — для мастера: материал и цвет фасадов, ручки, столешница. */
   const nameOf = (x: { ru: string; ky: string } | undefined) => (x ? (lang === 'ky' ? x.ky : x.ru) : '')
+  const frontDescOf = (c: FrontColor) => `${nameOf(FRONT_MATERIALS.find((m) => m.id === c.material))} · ${colorLabel(c, lang)}`
   const frontDesc = (id: string | undefined) => {
     const c = frontColor(id)
-    return c ? `${nameOf(FRONT_MATERIALS.find((m) => m.id === c.material))} · ${nameOf(c)}` : ''
+    return c ? frontDescOf(c) : ''
   }
+  /** свой цвет острова — только у кухни с островом */
+  const islandOwn = state.shape === 'island' ? state.islandFacade : undefined
   const finishFacts = () => {
-    const lower = frontDesc(state.facade) || `${nameOf(style)} · ${nameOf(tone)}`
-    const upper = state.upperFacade && state.upperFacade !== 'style' ? frontDesc(state.upperFacade) : ''
+    // кто какого цвета — то же правило, что в WhatsApp (order.ts); здесь ещё материал и «как в стиле» словами
+    const fronts = frontsText(state, lang, { asStyle: `${nameOf(style)} · ${nameOf(tone)}`, label: frontDescOf })
     const handleName = handleless
       ? t.handleless
       : `${nameOf(HANDLES.find((h) => h.id === handle))} · ${nameOf(HANDLE_METALS.find((m) => m.id === (state.handleMetal ?? style.metal)))}`
     const topName = topSel ? `${nameOf(TOP_MATERIALS.find((m) => m.id === topSel.material))} · ${nameOf(topSel)}, ${topSel.cm * 10} мм` : ''
     return [
-      { label: t.frontsTitle2, value: upper ? `${lower} / ${upper}` : lower },
+      { label: t.frontsTitle2, value: fronts },
       { label: t.handlesTitle, value: handleName },
       ...(topName ? [{ label: t.topTitle, value: topName }] : []),
       ...(splashSel ? [{ label: t.splashTitle, value: `${nameOf(SPLASH_GROUPS.find((g) => g.id === splashSel.group))} · ${nameOf(splashSel)}` }] : []),
@@ -1884,7 +1922,8 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   const finishNow = {
     fronts: (() => {
       const lower = ownFront(state.facade) || `${t.asStyle} · ${nameOf(tone)}`
-      return state.upperFacade ? `${lower} / ${ownFront(state.upperFacade) || t.asStyle}` : lower
+      const both = state.upperFacade ? `${lower} / ${ownFront(state.upperFacade) || t.asStyle}` : lower
+      return islandOwn ? `${both} / ${t.finishTarget.island}: ${ownFront(islandOwn)}` : both
     })(),
     handles: handleless
       ? t.handleless
@@ -1893,6 +1932,74 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     splash: splashSel ? `${nameOf(SPLASH_GROUPS.find((g) => g.id === splashSel.group))} · ${nameOf(splashSel)}` : t.asStyle,
     floor: nameOf(FLOORS.find((f) => f.id === (state.floor ?? style.floor))),
     walls: nameOf(WALL_COLORS[state.wallColor ?? 0]),
+  }
+
+  /* ───────── «Фасады»: для чего красим, выбор цвета (каталог, RAL, декор, поиск) ───────── */
+  const tc = t.colors
+  const paintTargets = state.shape === 'island' ? (['all', 'lower', 'upper', 'island'] as const) : (['all', 'lower', 'upper'] as const)
+  // «Остров» выбран, а кухню сделали без острова — красим всю кухню
+  const paintTarget: PaintTarget = paintFor === 'island' && state.shape !== 'island' ? 'all' : paintFor
+  /** свой цвет цели сейчас (undefined — «как в стиле» / «как у низа») */
+  const paintOwn = state[PAINT_FIELD[paintTarget]]
+  // «вся кухня» отмечена, только когда у верха и острова нет своего цвета
+  const paintWhole = paintTarget !== 'all' || (!state.upperFacade && !islandOwn)
+  const isOn = (id: string) => paintWhole && paintOwn === id
+  /** покрасить цель; undefined — снять свой цвет */
+  const pickFront = (id: string | undefined) => {
+    if (paintTarget === 'all') return update({ facade: id, upperFacade: undefined, islandFacade: undefined })
+    const patch: Partial<KitchenState> = {}
+    patch[PAINT_FIELD[paintTarget]] = id
+    // свой цвет низа: верх, шедший «как низ», остаётся «как в стиле»
+    if (paintTarget === 'lower' && id) patch.upperFacade = state.upperFacade ?? 'style'
+    update(patch)
+  }
+  const colorTile = (c: FrontColor, code?: string) => (
+    <button key={c.id} type="button" role="radio" aria-checked={isOn(c.id)} className="kp-color" onClick={() => pickFront(c.id)}>
+      <span className={`kp-color__chip kp-color__chip--${c.material}`} style={{ background: colorSwatch(c.color, c.texture) }} />
+      {code ? (
+        <span className="kp-color__txt">
+          <span className="kp-color__code">{code}</span>
+          <small>{lang === 'ky' ? c.ky : c.ru}</small>
+        </span>
+      ) : (
+        <span>{lang === 'ky' ? c.ky : c.ru}</span>
+      )}
+    </button>
+  )
+  // «как в стиле» (у острова — «как у низа»): свой цвет снят
+  const lowerNow = frontColor(state.facade)
+  const resetTile = (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={paintWhole && !paintOwn}
+      className="kp-color"
+      onClick={() => pickFront(undefined)}
+    >
+      <span
+        className="kp-color__chip"
+        style={{ background: paintTarget === 'island' && lowerNow ? colorSwatch(lowerNow.color, lowerNow.texture) : toneSwatch(tone.facade, tone.upper, tone.texture) }}
+      />
+      <span>{paintTarget === 'island' ? tc.asLower : t.asStyle}</span>
+    </button>
+  )
+  const found = colorQuery.trim() ? findColors(colorQuery, lang) : []
+  // группы RAL: плитки есть только у открытых; пока их не трогали — открыта группа выбранного цвета
+  const ralNow = paintOwn ? parseRal(paintOwn) : null
+  const ralOpenNow = ralOpen ?? new Set(ralNow ? [ralNow[0]] : [])
+  const toggleRal = (digit: string, open: boolean) => {
+    if (open === ralOpenNow.has(digit)) return
+    const next = new Set(ralOpenNow)
+    if (open) next.add(digit)
+    else next.delete(digit)
+    setRalOpen(next)
+  }
+  /** код из поля «Код RAL»; false — такого цвета нет (прежний остаётся). Группа цвета раскрывается. */
+  const applyRal = (code: string) => {
+    if (!frontColor(`ral-${code}`)) return false
+    pickFront(`ral-${code}`)
+    setRalOpen(new Set(ralOpenNow).add(code[0]))
+    return true
   }
 
   const sheetTables = () => {
@@ -1947,7 +2054,15 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   /** Раскрой из той же спецификации: отделка как в 3D (фасад, верх, тон стиля), кромка и листы — мастера. */
   const cut = useMemo(() => {
     if (!spec) return null
-    const look: CutLook = { facade: state.facade, upperFacade: state.upperFacade, tone, bodyEdge: master.bodyEdge, lang, tier: t.xl.tier }
+    const look: CutLook = {
+      facade: state.facade,
+      upperFacade: state.upperFacade,
+      islandFacade: state.shape === 'island' ? state.islandFacade : undefined,
+      tone,
+      bodyEdge: master.bodyEdge,
+      lang,
+      tier: t.xl.tier,
+    }
     const opts: NestOpts = { sheets: master.sheets }
     try {
       const parts = cutParts(spec, look)
@@ -1957,7 +2072,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       // неизвестная отделка, фасад без размеров — блок «Мастеру» объясняет, страница живёт дальше
       return { ok: false as const }
     }
-  }, [spec, state.facade, state.upperFacade, tone, master, lang, t])
+  }, [spec, state.facade, state.upperFacade, state.shape, state.islandFacade, tone, master, lang, t])
 
   const sheetName = (r: NestResult) =>
     `${t.xl.kinds[r.material.kind === 'hdf' ? 'hdf' : 'ldsp']}${r.material.thick ? ` ${r.material.thick} ${t.master.mm}` : ''} · ${r.material.label}`
@@ -3029,65 +3144,121 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                 <div className="kp-parts">
                   <Part title={t.frontsTitle2} value={finishNow.fronts} open onOpen={(el) => reveal(el, 'steps')}>
                     <div className="kp-seg kp-seg--wide" role="radiogroup" aria-label={t.frontsTitle2}>
-                      {(['all', 'lower', 'upper'] as const).map((k) => (
-                        <button key={k} type="button" role="radio" aria-checked={paintFor === k} className="kp-seg__btn" onClick={() => setPaintFor(k)}>
+                      {paintTargets.map((k) => (
+                        <button key={k} type="button" role="radio" aria-checked={paintTarget === k} className="kp-seg__btn" onClick={() => setPaintFor(k)}>
                           {t.finishTarget[k]}
                         </button>
                       ))}
                     </div>
-                    <div className="kp-chips" role="tablist" aria-label={t.frontsTitle2}>
-                      {FRONT_MATERIALS.map((m) => (
-                        <button key={m.id} type="button" role="tab" aria-selected={frontMat === m.id} className="kp-chip" onClick={() => setFrontMat(m.id)}>
-                          {lang === 'ky' ? m.ky : m.ru}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="kp-note kp-note--tight">
-                      {(() => {
-                        const m = FRONT_MATERIALS.find((x) => x.id === frontMat)!
-                        return lang === 'ky' ? m.noteKy : m.noteRu
-                      })()}
-                    </p>
-                    <div className="kp-colors" role="radiogroup" aria-label={t.frontsTitle2}>
-                      <button
-                        type="button"
-                        role="radio"
-                        aria-checked={paintFor === 'upper' ? !state.upperFacade : !state.facade}
-                        className="kp-color"
-                        onClick={() =>
-                          paintFor === 'upper'
-                            ? update({ upperFacade: undefined })
-                            : paintFor === 'lower'
-                              ? update({ facade: undefined })
-                              : update({ facade: undefined, upperFacade: undefined })
-                        }
-                      >
-                        <span className="kp-color__chip" style={{ background: toneSwatch(tone.facade, tone.upper, tone.texture) }} />
-                        <span>{t.asStyle}</span>
-                      </button>
-                      {FRONT_COLORS.filter((c) => c.material === frontMat).map((c) => {
-                        const on = paintFor === 'upper' ? state.upperFacade === c.id : state.facade === c.id && (paintFor === 'lower' || !state.upperFacade)
-                        return (
-                          <button
-                            key={c.id}
-                            type="button"
-                            role="radio"
-                            aria-checked={on}
-                            className="kp-color"
-                            onClick={() =>
-                              paintFor === 'upper'
-                                ? update({ upperFacade: c.id })
-                                : paintFor === 'lower'
-                                  ? update({ facade: c.id, upperFacade: state.upperFacade ?? 'style' })
-                                  : update({ facade: c.id, upperFacade: undefined })
-                            }
-                          >
-                            <span className={`kp-color__chip kp-color__chip--${c.material}`} style={{ background: colorSwatch(c.color, c.texture) }} />
-                            <span>{lang === 'ky' ? c.ky : c.ru}</span>
-                          </button>
-                        )
-                      })}
-                    </div>
+                    <label className="kp-csearch">
+                      <span className="visually-hidden">{tc.search}</span>
+                      <input
+                        type="search"
+                        className="kp-csearch__input"
+                        value={colorQuery}
+                        onChange={(e) => {
+                          setColorQuery(e.target.value)
+                          // на компьютере выдача не уходит под липкий ряд «Дальше»: первая плитка — в видимую часть
+                          if (!isStacked()) {
+                            requestAnimationFrame(() => {
+                              const box = foundRef.current
+                              ;(box?.children[1] ?? box)?.scrollIntoView({ block: 'nearest' })
+                            })
+                          }
+                        }}
+                        placeholder={tc.searchPlaceholder}
+                        enterKeyHint="search"
+                        autoComplete="off"
+                        spellCheck={false}
+                      />
+                    </label>
+                    {colorQuery.trim() ? (
+                      <>
+                        {!found.length && <p className="kp-note kp-note--tight">{tc.notFound(colorQuery.trim())}</p>}
+                        <div ref={foundRef} className="kp-colors kp-colors--codes kp-found" role="radiogroup" aria-label={tc.search}>
+                          {resetTile}
+                          {found.map((c) => colorTile(c, c.code))}
+                        </div>
+                        <p className="kp-note kp-note--tight kp-approx">{tc.approx}</p>
+                      </>
+                    ) : (
+                      <>
+                        <div className="kp-chips" role="tablist" aria-label={t.frontsTitle2}>
+                          {FRONT_MATERIALS.map((m) => (
+                            <button key={m.id} type="button" role="tab" aria-selected={frontMat === m.id} className="kp-chip" onClick={() => setFrontMat(m.id)}>
+                              {lang === 'ky' ? m.ky : m.ru}
+                            </button>
+                          ))}
+                          {(['ral', 'decor'] as const).map((k) => (
+                            <button key={k} type="button" role="tab" aria-selected={frontMat === k} className="kp-chip" onClick={() => setFrontMat(k)}>
+                              {tc[k]}
+                            </button>
+                          ))}
+                        </div>
+                        {frontMat === 'ral' ? (
+                          <>
+                            <p className="kp-note kp-note--tight">{tc.ralNote}</p>
+                            <RalCodeForm tc={tc} onApply={applyRal} />
+                            <div className="kp-colors kp-colors--codes" role="radiogroup" aria-label={t.frontsTitle2}>
+                              {resetTile}
+                            </div>
+                            <div className="kp-ralgroups">
+                              {RAL_GROUPS.map((g, i) => (
+                                <details
+                                  key={g.digit}
+                                  className="kp-ralgroup"
+                                  open={ralOpenNow.has(g.digit)}
+                                  onToggle={(e) => toggleRal(g.digit, e.currentTarget.open)}
+                                >
+                                  <summary>
+                                    <span className="kp-ralgroup__dot" style={{ background: g.dot }} />
+                                    {g.digit} — {tc.ralGroups[i]} <small>{g.count}</small>
+                                  </summary>
+                                  {ralOpenNow.has(g.digit) && (
+                                    <div className="kp-colors kp-colors--codes" role="radiogroup" aria-label={tc.ralGroups[i]}>
+                                      {g.tiles.map((x) => colorTile(x.c, x.code))}
+                                    </div>
+                                  )}
+                                </details>
+                              ))}
+                            </div>
+                            <p className="kp-note kp-note--tight kp-approx">{tc.approx}</p>
+                          </>
+                        ) : frontMat === 'decor' ? (
+                          <>
+                            <div className="kp-chips" role="tablist" aria-label={tc.decor}>
+                              {DECOR_BRANDS.map((b) => (
+                                <button key={b.id} type="button" role="tab" aria-selected={decorBrand === b.id} className="kp-chip" onClick={() => setDecorBrand(b.id)}>
+                                  {b.name}
+                                </button>
+                              ))}
+                            </div>
+                            <p className="kp-note kp-note--tight">{tc.decorNote}</p>
+                            <div className="kp-colors kp-colors--codes" role="radiogroup" aria-label={tc.decor}>
+                              {resetTile}
+                              {DECORS.filter((d) => d.brand === decorBrand).map((d) => {
+                                const c = frontColor(d.id)
+                                return c ? colorTile(c, d.code) : null
+                              })}
+                            </div>
+                            <p className="kp-note kp-note--tight kp-approx">{tc.approx}</p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="kp-note kp-note--tight">
+                              {(() => {
+                                const m = FRONT_MATERIALS.find((x) => x.id === frontMat)!
+                                return lang === 'ky' ? m.noteKy : m.noteRu
+                              })()}
+                            </p>
+                            <div className="kp-colors" role="radiogroup" aria-label={t.frontsTitle2}>
+                              {resetTile}
+                              {FRONT_COLORS.filter((c) => c.material === frontMat).map((c) => colorTile(c))}
+                            </div>
+                          </>
+                        )}
+                      </>
+                    )}
                   </Part>
 
                   <Part title={t.handlesTitle} value={finishNow.handles} onOpen={(el) => reveal(el, 'steps')}>
@@ -3245,7 +3416,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                     </div>
                   </Part>
                 </div>
-                {(state.facade || state.upperFacade || state.top || state.splash || state.handle || state.handleMetal || state.handleless !== undefined) && (
+                {(state.facade || state.upperFacade || state.islandFacade || state.top || state.splash || state.handle || state.handleMetal || state.handleless !== undefined) && (
                   <button
                     type="button"
                     className="btn btn--ghost btn--sm kp-reset"
@@ -3253,6 +3424,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                       update({
                         facade: undefined,
                         upperFacade: undefined,
+                        islandFacade: undefined,
                         top: undefined,
                         splash: undefined,
                         handle: undefined,
@@ -3892,6 +4064,55 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
  * раскрывается. Открыт один раздел за раз (name у details). Открыли рукой —
  * раздел встаёт на виду целиком; первый раздел открыт сразу и никуда не листает.
  */
+/**
+ * Поле «Код RAL» со своим состоянием: набор цифр перерисовывает только эту форму,
+ * а не весь конструктор с палитрой. `onApply(code)` — false, если такого цвета нет.
+ */
+function RalCodeForm({ tc, onApply }: { tc: KitchenTexts['colors']; onApply: (code: string) => boolean }) {
+  const [value, setValue] = useState('')
+  const [miss, setMiss] = useState(false)
+  return (
+    <form
+      className="kp-ralcode"
+      onSubmit={(e) => {
+        e.preventDefault()
+        const code = parseRal(value)
+        // неизвестный код — подпись, прежний цвет остаётся
+        setMiss(!(code && onApply(code)))
+      }}
+    >
+      <label className="kp-ralcode__label" htmlFor="kp-ral-code">
+        {tc.ralCode}
+      </label>
+      <div className="kp-ralcode__row">
+        <input
+          id="kp-ral-code"
+          className="kp-csearch__input"
+          inputMode="numeric"
+          enterKeyHint="done"
+          autoComplete="off"
+          value={value}
+          placeholder={tc.ralPlaceholder}
+          aria-invalid={miss}
+          aria-describedby={miss ? 'kp-ral-miss' : undefined}
+          onChange={(e) => {
+            setValue(e.target.value)
+            setMiss(false)
+          }}
+        />
+        <button type="submit" className="btn btn--sm kp-ralcode__apply">
+          {tc.ralApply}
+        </button>
+      </div>
+      {miss && (
+        <p id="kp-ral-miss" className="kp-ralcode__miss" role="alert">
+          {tc.ralMissing}
+        </p>
+      )}
+    </form>
+  )
+}
+
 function Part(props: { title: string; value: string; open?: boolean; onOpen: (el: HTMLElement) => void; children: React.ReactNode }) {
   const byHand = useRef(false)
   return (
