@@ -330,4 +330,16 @@ describe('смета клиенту: каждая напечатанная ст�
     expect(L.missing).toBe(t.master.missing)
     expect(L.tech).toBeUndefined()
   })
+
+  for (const lang of ['ru', 'ky'] as const)
+    it(`техника, ${lang}: отдельностоящая плита — t.stove.name («Плита»), варочная панель — как была`, () => {
+      const t = kitchenTexts(lang)
+      const stove = appliance({ id: 's', slot: 'hob', name: 'Плита S', price: 27990, w: 50, h: 85, d: 60, stove: true, hob: 'electric' })
+      const e = estimate(PARTS, NESTED, SPEC, {})
+      const withStove = estimateLines(e, [{ slot: 'hob', appliance: stove, status: 'placed', inTotal: true }], t).tech?.rows
+      expect(withStove?.[0][0]).toBe(t.stove.name)
+      expect(withStove?.[0][0]).not.toBe(t.slots.hob)
+      const withHob = estimateLines(e, [{ slot: 'hob', appliance: hob, status: 'placed', inTotal: true }], t).tech?.rows
+      expect(withHob?.[0][0]).toBe(t.slots.hob)
+    })
 })

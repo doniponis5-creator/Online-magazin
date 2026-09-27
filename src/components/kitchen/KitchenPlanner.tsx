@@ -1907,9 +1907,10 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       [t.hw.push, `${drawing.hw.push} ${t.pcs}`],
       [t.hw.legs, `${drawing.hw.legs} ${t.pcs}`],
       [t.hw.hangers, `${drawing.hw.hangers} ${t.pcs}`],
-      [t.hw.gola, `${fmt(drawing.hw.gola)} ${t.meters}`],
-      [t.hw.plinth, `${fmt(drawing.hw.plinth)} ${t.meters}`],
-      [t.hw.splash, `${fmt(spec.splash)} ${t.m2}`],
+      // метры и м² — до сотых, как в смете мастера и в Excel: «4,78 м», не «4,8 м»
+      [t.hw.gola, `${fmt2(drawing.hw.gola)} ${t.meters}`],
+      [t.hw.plinth, `${fmt2(drawing.hw.plinth)} ${t.meters}`],
+      [t.hw.splash, `${fmt2(spec.splash)} ${t.m2}`],
     ].filter((r) => !/^0([.,]0+)?\s/.test(String(r[1])))
     return [
       {
@@ -3614,26 +3615,25 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                   <details className="kp-more">
                     <summary>{t.master.lines}</summary>
                     <div className="kp-tables">
-                      {/* те же строки, что в PDF; на телефоне в три колонки: «4,78 м × 5 500» переносится, сумма всегда видна */}
+                      {/* те же строки, что в PDF; «4,78 м × 5 500» и сумма не рвутся, на телефоне «кол-во × цена» — строкой под названием (kitchen.css, .kp-table--est) */}
                       {[
                         {
                           title: t.master.tableTitle,
                           head: [t.master.colName, t.master.colQty, t.master.colSum],
-                          // перенос — только перед «×»: «4,78 м» и «× 5 500» не рвутся
-                          rows: estLines.rows.map(([name, qty, price, sum]) => [name, sum === '—' ? `${qty.replace(/ /g, '\u00a0')} · ${price}` : `${qty.replace(/ /g, '\u00a0')} ×\u00a0${price}`, sum]),
+                          rows: estLines.rows.map(([name, qty, price, sum]) => [name, sum === '—' ? `${qty} · ${price}` : `${qty} × ${price}`, sum]),
                           totals: estLines.totals,
                         },
                         ...(estLines.tech
                           ? [{ title: t.master.techTitle, head: [t.colModel, t.master.colPrice], rows: estLines.tech.rows.map(([slot, model, price]) => [`${slot}: ${model}`, price]), totals: [estLines.tech.total] }]
                           : []),
                       ].map((tb) => (
-                        <section key={tb.title} className="kp-table">
+                        <section key={tb.title} className="kp-table kp-table--est">
                           <h3>{tb.title}</h3>
                           <table>
                             <thead>
                               <tr>
                                 {tb.head.map((h, i) => (
-                                  <th key={h} className={i === tb.head.length - 1 ? 'is-num' : undefined} style={i && i < tb.head.length - 1 ? { textAlign: 'right' } : undefined}>
+                                  <th key={h} className={i === tb.head.length - 1 ? 'is-num' : i ? 'is-mid' : undefined}>
                                     {h}
                                   </th>
                                 ))}
@@ -3643,7 +3643,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                               {tb.rows.map((r, ri) => (
                                 <tr key={ri}>
                                   {r.map((c, i) => (
-                                    <td key={i} className={i === r.length - 1 ? 'is-num' : undefined} style={i && i < r.length - 1 ? { textAlign: 'right' } : undefined}>
+                                    <td key={i} className={i === r.length - 1 ? 'is-num' : i ? 'is-mid' : undefined}>
                                       {c}
                                     </td>
                                   ))}
@@ -4181,6 +4181,8 @@ type PriceField = PlainPrice | keyof typeof EDGE_FIELD
 const PRICE_FIELDS: PriceField[] = ['ldsp', 'ldspDecor', 'hdf', 'edge04', 'edge1', 'edge2', 'top', 'hinge', 'runner', 'lift', 'handle', 'push', 'leg', 'hanger', 'gola', 'plinth', 'work', 'delivery', 'markup']
 
 const fmt = (v: number) => (Number.isInteger(v) ? String(v) : (Math.round(v * 10) / 10).toFixed(1).replace('.', ','))
+/** до сотых, лишние нули не пишем — как `num` в `master.ts`: 4.78 → «4,78», 4.8 → «4,8» */
+const fmt2 = (v: number) => String(Math.round(v * 100) / 100).replace('.', ',')
 
 /** Образец цвета из каталога: шпон и дерево — с полосками, бетон — с пятнами. */
 function colorSwatch(color: string, texture?: 'wood' | 'concrete'): string {

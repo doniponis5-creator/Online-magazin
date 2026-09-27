@@ -313,7 +313,9 @@ export function estimateLines(e: Estimate, items: readonly ProjectItem[], t: Kit
       : []),
     { label: m.total, value: formatSom(e.total) },
   ]
-  const tech = items.flatMap((i): [string, string, string][] => (i.inTotal && i.appliance ? [[t.slots[i.slot], i.appliance.name, som(i.appliance.price)]] : []))
+  // отдельностоящая плита — товар слота hob со stove: подпись «Плита», как на экране и в WhatsApp
+  const slotName = (i: ProjectItem) => (i.slot === 'hob' && i.appliance?.stove ? t.stove.name : t.slots[i.slot])
+  const tech = items.flatMap((i): [string, string, string][] => (i.inTotal && i.appliance ? [[slotName(i), i.appliance.name, som(i.appliance.price)]] : []))
   return {
     head: [m.colName, m.colQty, m.colPrice, m.colSum],
     rows,

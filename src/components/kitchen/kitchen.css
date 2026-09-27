@@ -2518,6 +2518,65 @@ html.kp-lock body {
   margin: 6px 0 0;
 }
 
+/* Смета по строкам (блок «Мастеру»): «кол-во × цена», сумма и заголовки — в одну
+   строку (не «КОЛ-/ВО»), переносится только название. Уже 380 px (телефон: три
+   колонки туда не влезают — вылезали вбок) строка складывается в две:
+   название | сумма, под названием — «4,78 м × 5 500». Порог 380 — тот же, что у
+   сетки .kp-tables: шире таблица не бывает узкой. */
+.kp-table--est {
+  container-type: inline-size;
+}
+
+.kp-table--est th {
+  white-space: nowrap;
+}
+
+.kp-table--est .is-mid {
+  text-align: right;
+  white-space: nowrap;
+  padding-left: 10px;
+}
+
+@container (max-width: 379px) {
+  .kp-table--est table,
+  .kp-table--est thead,
+  .kp-table--est tbody {
+    display: block;
+  }
+
+  .kp-table--est tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 10px;
+    border-bottom: 1px solid var(--kp-line);
+  }
+
+  .kp-table--est th,
+  .kp-table--est td {
+    border-bottom: 0;
+  }
+
+  .kp-table--est .is-num {
+    padding-left: 0;
+  }
+
+  .kp-table--est th.is-mid {
+    display: none;
+  }
+
+  .kp-table--est td.is-mid {
+    grid-column: 1;
+    grid-row: 2;
+    padding: 0 0 6px;
+    text-align: left;
+    color: var(--kp-muted);
+  }
+
+  .kp-table--est td:has(+ td.is-mid) {
+    padding-bottom: 2px;
+  }
+}
+
 .kp-maker__title--small {
   font-size: 17px;
 }
