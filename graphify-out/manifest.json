@@ -294,8 +294,8 @@
     "semantic_hash": ""
   },
   "ios/App/CapApp-SPM/Package.swift": {
-    "mtime": 1789926086.0156476,
-    "seen": 1790524507.314548,
+    "mtime": 1790525754.9858499,
+    "seen": 1790526592.775231,
     "ast_hash": "6afff4174aae0cb67b1c393c63006f66",
     "semantic_hash": ""
   },
@@ -954,9 +954,9 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1790524475.1785493,
-    "seen": 1790524507.3150349,
-    "ast_hash": "762aff9999a80bd8870cb72422ee0fe5",
+    "mtime": 1790524508.913621,
+    "seen": 1790526592.793385,
+    "ast_hash": "aefe58ac5c4b65e83cd7e6fd9448b83f",
     "semantic_hash": ""
   },
   "DESIGN.md": {
