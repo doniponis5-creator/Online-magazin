@@ -42,7 +42,8 @@ hech narsa buyurtma qilinmadi.
 
 **Tekshirilmagan:**
 
-- Push-xabar — Android da umuman yo'q (buning uchun Firebase kerak).
+- Push-xabar — Android da umuman yo'q (buning uchun Firebase kerak). Qanday ulash —
+  [ANDROID_PUSH_UZ.md](ANDROID_PUSH_UZ.md): ikki fayl va bitta buyruq.
 - Haqiqiy Android telefon — hali birorta telefonda sinalmagan.
 - WhatsApp, Telegram, Instagram o'rnatilgan telefonda havola shu ilovaning o'zida ochilishi — emulyatorda ular yo'q, havolalar brauzerda ochildi.
 - Haqiqiy O!Деньги sahifasiga o'tish — sinov rejimida to'lov sahifasi saytning o'zida ochiladi.
@@ -157,7 +158,8 @@ Google qoidasida bu «Shared» hisoblanmaydi).
 | App activity → **App interactions** (sahifalar hisoblagichi) | Analytics | — |
 
 **Yig'ilmaydi**: joylashuv, kontaktlar, karta ma'lumoti, qurilma ID si,
-mikrofon. Android da push-xabar yo'q.
+mikrofon. Android da push-xabar hozircha yo'q. Firebase ulangach **Device or other IDs**
+qo'shiladi — [ANDROID_PUSH_UZ.md](ANDROID_PUSH_UZ.md), 6.3-bo'lim.
 
 ### 3.6. Account deletion (hisobni o'chirish)
 

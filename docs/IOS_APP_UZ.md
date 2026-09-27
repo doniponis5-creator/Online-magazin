@@ -221,6 +221,9 @@ Apple Push Notifications service):
 қўшилди. Apple калити ёзилган: Key ID `8CH49X79SQ`, Team ID `434V33P6X2`,
 ҳозирча sandbox (илова App Store да эмас). Сервер «ключ Apple задан: True» дейди.
 
+**27.09.2026:** эгаси серверни жанговар режимга ўтказди — `APNS_PRODUCTION=1`.
+Android учун push — [ANDROID_PUSH_UZ.md](ANDROID_PUSH_UZ.md).
+
 Сайт ҳам янгиланди (`update_site.sh`). Текширилди: `/api/push/device` телефон
 манзилини қабул қилиб, базага ёзди; `/api/customer/native-key` кирмаган одамни 401
 билан қайтарди.
