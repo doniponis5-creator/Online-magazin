@@ -44,6 +44,8 @@ export type DrawingLabels = {
   islandView: string
   /** подпись к высоте «низ вытяжки — панель» */
   hoodOver: string
+  /** рамка отдельностоящей плиты (`t.stove.name`); нет — как у варочной */
+  stove?: string
   /** разрез острова со свесом */
   section: string
   /** высоты окна типовые (покупатель их не вводил): подоконник и верх, см */
@@ -235,14 +237,16 @@ export function elevationSvg(
     p.chainX(cuts, Y(H) - fs * 1.9, 'up')
   }
 
-  // высота низа вытяжки над панелью
+  // высота низа вытяжки над панелью, у отдельностоящей плиты — над её верхом
   const hood = boxes.find((b) => b.slot === 'hood')
-  const over = hood ? hood.y - heights.counter : 0
+  const stove = boxes.find((b) => b.stove)
+  const cook = stove ? stove.y + stove.h : heights.counter
+  const over = hood ? hood.y - cook : 0
   if (hood && over > 5) {
     const x = hood.x + hood.w / 2
-    p.line(x, Y(heights.counter), x, Y(hood.y), 'el-dim')
-    for (const y of [heights.counter, hood.y]) p.line(x - fs * 0.45, Y(y), x + fs * 0.45, Y(y), 'el-dim')
-    const mid = Y(heights.counter + over / 2)
+    p.line(x, Y(cook), x, Y(hood.y), 'el-dim')
+    for (const y of [cook, hood.y]) p.line(x - fs * 0.45, Y(y), x + fs * 0.45, Y(y), 'el-dim')
+    const mid = Y(cook + over / 2)
     p.text(x + fs * 0.35, mid, fmt(over), 'el-num', { anchor: 'start', data: { dim: 'hood' } })
     const size = Math.min(fs * 0.72, (over - 4) / (labels.hoodOver.length * CHAR))
     p.text(x - fs * 0.55, mid, labels.hoodOver, 'el-cap', { size, rotate: true })
@@ -308,12 +312,16 @@ function front(p: Pen, f: SpecFront, Y: (y: number) => number) {
   }
 }
 
-/** Техника: рамка, название и размер — вписаны в рамку; высокая узкая — подписана вдоль. */
+/**
+ * Техника: рамка, название и размер — вписаны в рамку; высокая узкая — подписана
+ * вдоль. Варочная панель лежит на столешнице — без рамки; отдельностоящая плита
+ * стоит на полу — рамка «Плита W×H».
+ */
 function appliance(p: Pen, b: SpecBox, Y: (y: number) => number, labels: DrawingLabels) {
-  if (!b.slot || b.slot === 'hob') return
+  if (!b.slot || (b.slot === 'hob' && !b.stove)) return
   const fs = p.fs
   p.rect(b.x, Y(b.y + b.h), b.w, b.h, 'el-tech')
-  const name = labels.appliance(b.slot)
+  const name = b.stove ? (labels.stove ?? labels.appliance(b.slot)) : labels.appliance(b.slot)
   const dims = `${fmt(b.w)}×${fmt(b.h)}`
   const cx = b.x + b.w / 2
   const cy = Y(b.y + b.h / 2)
@@ -575,6 +583,7 @@ export function makerList(plan: Plan, items: MakerItems, t: KitchenTexts, inProj
     const lower = mods.map((m) => {
       let name = t.modules[m.kind]
       if (m.kind === 'hob' && m.oven && items.oven !== null) name = t.ovenUnder
+      if (m.stove) name = t.stove.name
       if (m.kind === 'fridge' && items.fridge) name = `${name} (${items.fridge.brand || items.fridge.name})`
       return `${name} ${Math.round(m.w)}`
     })

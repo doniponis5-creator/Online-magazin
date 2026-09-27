@@ -60,6 +60,26 @@ describe('тексты конструктора — один предмет, о�
       expect(allStrings(t.stove).filter((s) => /варочн|бышыруучу|духовой шкаф|сордурма/i.test(s))).toEqual([])
     }
   })
+
+  it('духовка внутри плиты — «Духовка» на обоих языках; ky «Сордургуч» — это вытяжка', () => {
+    for (const lang of ['ru', 'ky'] as const) {
+      const t = kitchenTexts(lang)
+      expect(t.slots.hood).toBe(lang === 'ru' ? 'Вытяжка' : 'Сордургуч')
+      expect(t.stove.group).toMatch(/духовка/i)
+      expect(t.stove.ovenNote).toMatch(/духовка/i)
+      const oven = [t.stove.group, t.stove.ovenNote, t.stove.ovenInStove]
+      expect(oven.filter((s) => /сордургуч|вытяжк/i.test(s))).toEqual([])
+    }
+  })
+
+  it('проверки проекта при плите говорят «плита», не «варочная панель»', () => {
+    for (const lang of ['ru', 'ky'] as const) {
+      const c = kitchenTexts(lang).stove.checks
+      const all = [c.sidesOk(60, 60), c.sidesWarn(20, 60), c.window, c.fridge(10), c.hoodOk(65, false), c.hoodWarn(50, 75, true)]
+      for (const s of all) expect(s).toMatch(/плит/i)
+      expect(all.filter((s) => /варочн|бышыруучу|панел/i.test(s))).toEqual([])
+    }
+  })
 })
 
 describe('тексты конструктора — правки аудита T01–T18', () => {

@@ -42,7 +42,17 @@ export type DimsKind =
  * детали в координатах ряда, см (не габарит 3D-группы: ручки, кронштейны и
  * посуда рамку не сдвигают — D10).
  */
-export type Dims = { kind: DimsKind; w: number; h: number; d: number; slot?: SlotKind; x?: number; y?: number }
+export type Dims = {
+  kind: DimsKind
+  w: number
+  h: number
+  d: number
+  slot?: SlotKind
+  x?: number
+  y?: number
+  /** отдельностоящая плита (техника слота `hob` на полу): на развёртке — рамка «Плита» от пола */
+  stove?: boolean
+}
 
 export type SpecHinge = 'left' | 'right' | 'top' | 'fold' | 'drawer' | 'none'
 
@@ -74,10 +84,12 @@ export type SpecRun = { id: RunId; length: number; modules: SpecModule[]; boxes:
 
 /**
  * Проёмы и доборы — то, что не шкаф: проём под встраиваемую посудомойку
- * (без корпуса), доборная панель в верхнем ряду, планка углового шкафа,
- * задняя панель острова. w, h — см; hMax — верх диапазона высоты проёма.
+ * (без корпуса), место под отдельностоящую плиту (без корпуса, столешница
+ * прерывается; h — высота плиты), доборная панель в верхнем ряду, планка
+ * углового шкафа, задняя панель острова. w, h — см; hMax — верх диапазона
+ * высоты проёма.
  */
-export type ExtraKind = 'dwOpening' | 'filler' | 'strip' | 'islandBack'
+export type ExtraKind = 'dwOpening' | 'stoveOpening' | 'filler' | 'strip' | 'islandBack'
 export type SpecExtra = { kind: ExtraKind; run: RunId; w: number; h: number; hMax?: number }
 
 export type SpecData = {
@@ -153,7 +165,7 @@ export function extraList(data: Pick<SpecData, 'extras'>): ExtraRow[] {
     if (row) row.count++
     else rows.set(key, { kind: e.kind, w, h, ...(hMax === undefined ? {} : { hMax }), count: 1 })
   }
-  const order: ExtraKind[] = ['dwOpening', 'filler', 'strip', 'islandBack']
+  const order: ExtraKind[] = ['dwOpening', 'stoveOpening', 'filler', 'strip', 'islandBack']
   return [...rows.values()].sort((p, q) => order.indexOf(p.kind) - order.indexOf(q.kind) || q.h - p.h || q.w - p.w)
 }
 

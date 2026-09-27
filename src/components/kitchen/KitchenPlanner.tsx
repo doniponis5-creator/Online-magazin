@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyEvent } from 'react'
+import { Fragment, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyEvent } from 'react'
 import { phones, telHref, whatsappHref } from '@/data/contacts'
 import { useCart } from '@/lib/cart/CartProvider'
 import { formatSom } from '@/lib/format'
@@ -786,6 +786,13 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     }
   }, [engineState, buildInput])
 
+  // Выбор — до перестройки: setKitchen сам обводит выбранное заново, пока
+  // новая техника ещё на месте. Позже рамка ловила её в прыжке «замены»
+  // (+35 см) и так и висела над ней.
+  useEffect(() => {
+    engineRef.current?.setSelected(selected)
+  }, [selected, engineState, buildInput])
+
   const prev = useRef<{ style: string; tone: number; shape: Shape; ids: string } | null>(null)
   useEffect(() => {
     const engine = engineRef.current
@@ -851,10 +858,6 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   useEffect(() => {
     engineRef.current?.setEvening(evening)
   }, [evening, engineState])
-
-  useEffect(() => {
-    engineRef.current?.setSelected(selected)
-  }, [selected, engineState, buildInput])
 
   // На весь экран: страница под 3D не прокручивается, Esc — свернуть.
   const toggleFull = (on: boolean) => {
@@ -1705,6 +1708,8 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     return t.dimsKinds[d.kind]
   }
   const mwBuiltIn = Boolean(items.microwave?.builtIn)
+  /** выбрана отдельностоящая плита: духовка в ней (то же правило, что в order.ts) */
+  const stoveOn = Boolean(chosen.hob?.stove)
   const ovenPlace: 'hob' | 'tall' | 'apart' = state.ovenApart ? 'apart' : state.tallOven || mwBuiltIn ? 'tall' : 'hob'
 
   const share = async () => {
@@ -1761,18 +1766,22 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
 
   /* ───────── проверка проекта ───────── */
 
-  const checks = useMemo(() => checkProject(plan, { hoodOver }), [plan, hoodOver])
+  // толщина столешницы та же, что в 3D (выбранная или стиля), — для проверки «плита вровень со столешницей»
+  const checks = useMemo(() => checkProject(plan, { hoodOver, topCm: lookStyle.topCm }), [plan, hoodOver, lookStyle.topCm])
   const checksOk = checks.filter((c) => c.level === 'ok').length
   const checkText = (c: Check): string => {
+    // при плите правила те же, что у варочной панели, — но говорим «плита»
+    const st = plan.stove ? t.stove.checks : null
     switch (c.id) {
       case 'triangle':
         return c.level === 'ok' ? t.checks.triangleOk(c.sum) : t.checks.triangleWarn(c.legs, c.sum)
       case 'hobSides':
+        if (st) return c.level === 'ok' ? st.sidesOk(c.left, c.right) : st.sidesWarn(c.left, c.right)
         return c.level === 'ok' ? t.checks.hobSidesOk(c.left, c.right) : t.checks.hobSidesWarn(c.left, c.right)
       case 'hobWindow':
-        return t.checks.hobWindow
+        return st ? st.window : t.checks.hobWindow
       case 'hobFridge':
-        return t.checks.hobFridge(c.gap)
+        return st ? st.fridge(c.gap) : t.checks.hobFridge(c.gap)
       case 'sinkDw':
         return c.level === 'ok' ? t.checks.sinkDwOk : t.checks.sinkDwWarn
       case 'sinkWindow':
@@ -1791,6 +1800,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       case 'underCounterHeight':
         return t.checks.underCounter(c.slot, c.h, c.max)
       case 'hoodHeight':
+        if (st) return c.level === 'ok' ? st.hoodOk(c.over, c.gas) : st.hoodWarn(c.over, c.min, c.gas)
         return c.level === 'ok' ? t.checks.hoodHeightOk(c.over, c.gas) : t.checks.hoodHeightWarn(c.over, c.min, c.gas)
       case 'stoveHeight':
         return c.level === 'ok' ? t.stove.heightOk(c.h, c.top) : t.stove.heightWarn(c.h, c.top)
@@ -1815,7 +1825,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   const [zoomWall, setZoomWall] = useState<string | null>(null)
   const drawing = useMemo(() => {
     if (!spec) return null
-    const labels: DrawingLabels = { cm: t.cm, appliance: (slot: string) => t.techShort[slot as SlotKind] ?? slot, ...t.drawing }
+    const labels: DrawingLabels = { cm: t.cm, appliance: (slot: string) => t.techShort[slot as SlotKind] ?? slot, ...t.drawing, stove: t.stove.name }
     const winOf = (id: string) => windowFor(plan, id, ceiling, WINDOW)
     const overhang = islandOverhang(spec.runs)
     // один масштаб на все развёртки листа: самый крупный, при котором влезает самая большая стена
@@ -1910,7 +1920,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       {
         title: t.extrasTitle,
         head: [t.colPart, t.colSize, t.colQty],
-        rows: extraList(spec).map((r) => [t.extraNames[r.kind], r.hMax ? `${r.w} × ${r.h}–${r.hMax}` : size(r.w, r.h), r.count]),
+        rows: extraList(spec).map((r) => [r.kind === 'stoveOpening' ? t.stove.opening : t.extraNames[r.kind], r.hMax ? `${r.w} × ${r.h}–${r.hMax}` : size(r.w, r.h), r.count]),
       },
       { title: t.hardwareTitle, head: [t.colWhat, t.colQtyUnit], rows: hwRows },
     ]
@@ -2183,10 +2193,10 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                       className={`kp-tag${selected === slot ? ' is-on' : ''}`}
                       ref={(el) => engineRef.current?.setTag(slot, el)}
                       onClick={() => openSlot(slot)}
-                      aria-label={`${t.slots[slot]}: ${a.name}, ${formatSom(a.price)}. ${t.pickHint}`}
+                      aria-label={`${a.stove ? t.stove.name : t.slots[slot]}: ${a.name}, ${formatSom(a.price)}. ${t.pickHint}`}
                     >
                       <span className="kp-tag__in">
-                        <span className="kp-tag__brand">{a.brand || t.slots[slot]}</span>
+                        <span className="kp-tag__brand">{a.brand || (a.stove ? t.stove.name : t.slots[slot])}</span>
                         <span className="kp-tag__price">{formatSom(a.price)}</span>
                       </span>
                     </button>
@@ -3061,7 +3071,15 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
             {step === 'size' && (
               <div className="kp-extra">
                 <h2 className="kp-sub">{t.furnitureTitle}</h2>
-                {items.oven !== null && (
+                {stoveOn && (
+                  <div className="kp-oven kp-oven--stove">
+                    <span className="kp-switch__text">
+                      {t.ovenTitle}
+                      <small>{t.stove.ovenNote}</small>
+                    </span>
+                  </div>
+                )}
+                {!stoveOn && items.oven !== null && (
                   <div className="kp-oven">
                     <span className="kp-switch__text">
                       {t.ovenTitle}
@@ -3608,36 +3626,49 @@ function SlotRow(props: {
 }) {
   const { slot, list, current, pickedNone, status, open, style, t } = props
   const size = (a: KitchenAppliance) =>
-    (a.slot === 'fridge' || a.slot === 'washer' ? `${fmt(a.w)}×${fmt(a.h)} ${t.cm}` : `${t.width} ${fmt(a.w)} ${t.cm}`) +
+    (a.slot === 'fridge' || a.slot === 'washer' || a.stove ? `${fmt(a.w)}×${fmt(a.h)} ${t.cm}` : `${t.width} ${fmt(a.w)} ${t.cm}`) +
     (a.sizeKnown ? '' : ` · ${t.typicalSize}`)
   const none = pickedNone
   const optional = OPTIONAL.includes(slot)
   const listId = `kp-opts-${slot}`
+  // Духовка при плите — внутри плиты: без выбора, без цены и без ссылки на товар.
+  const inStove = status === 'inStove'
+  const shown = inStove ? null : current
+  // Варочная панель и плита — один слот: плиты в списке отдельной группой.
+  const panels = list.filter((a) => !a.stove)
+  const stoves = list.filter((a) => a.stove)
   return (
-    <li className={`kp-slot${open ? ' is-open' : ''}${status === 'dropped' ? ' is-dropped' : ''}`} id={`kp-slot-${slot}`}>
-      <button type="button" className="kp-slot__head" aria-expanded={open} aria-controls={listId} onClick={props.onToggle}>
-        <span className="kp-slot__thumb">{current?.image && !none ? <img src={current.image} alt="" loading="lazy" /> : <SlotIcon slot={slot} />}</span>
+    <li className={`kp-slot${open && !inStove ? ' is-open' : ''}${status === 'dropped' ? ' is-dropped' : ''}${inStove ? ' is-fixed' : ''}`} id={`kp-slot-${slot}`}>
+      <button
+        type="button"
+        className="kp-slot__head"
+        aria-expanded={inStove ? undefined : open}
+        aria-controls={inStove ? undefined : listId}
+        aria-disabled={inStove || undefined}
+        onClick={inStove ? undefined : props.onToggle}
+      >
+        <span className="kp-slot__thumb">{shown?.image && !none ? <img src={shown.image} alt="" loading="lazy" /> : <SlotIcon slot={slot} />}</span>
         <span className="kp-slot__text">
-          <span className="kp-slot__kind">{t.slots[slot]}</span>
-          <span className="kp-slot__name">{none ? t.none : current ? current.name : t.noStock}</span>
+          <span className="kp-slot__kind">{current?.stove && !none ? t.stove.name : t.slots[slot]}</span>
+          <span className="kp-slot__name">{inStove ? t.stove.ovenInStove : none ? t.none : current ? current.name : t.noStock}</span>
           {status === 'dropped' && <span className="kp-slot__warn">{t.notFit}</span>}
           {status === 'counter' && <span className="kp-slot__note">{t.counterNote}</span>}
           {status === 'underHob' && <span className="kp-slot__note">{t.ovenPlace.hob}</span>}
           {status === 'typical' && <span className="kp-slot__note">{t.typicalNote}</span>}
         </span>
-        <span className="kp-slot__price">{current && !none ? formatSom(current.price) : ''}</span>
+        <span className="kp-slot__price">{shown && !none ? formatSom(shown.price) : ''}</span>
       </button>
-      {current && !none && (
-        <a className="kp-slot__more" href={`/${props.lang}/product/${current.id}`} target="_blank" rel="noopener noreferrer">
+      {shown && !none && (
+        <a className="kp-slot__more" href={`/${props.lang}/product/${shown.id}`} target="_blank" rel="noopener noreferrer">
           {t.details}
         </a>
       )}
-      {!current && !none && (
+      {!current && !none && !inStove && (
         <a className="kp-slot__more kp-slot__supply" href={props.supplyHref} target="_blank" rel="noopener noreferrer">
           {t.askSupply}
         </a>
       )}
-      {open && (
+      {open && !inStove && (
         <div className="kp-opts" id={listId} role="radiogroup" aria-label={t.slots[slot]}>
           {optional && (
             <label className="kp-opt">
@@ -3660,27 +3691,30 @@ function SlotRow(props: {
               )}
             </p>
           )}
-          {list.map((a) => (
-            <label key={a.id} className="kp-opt">
-              <input type="radio" name={listId} checked={!none && current?.id === a.id} onChange={() => props.onPick(a.id)} />
-              <span className="kp-opt__thumb">{a.image ? <img src={a.image} alt="" loading="lazy" /> : <SlotIcon slot={slot} />}</span>
-              <span className="kp-opt__text">
-                <span className="kp-opt__name">{a.name}</span>
-                <a className="kp-opt__more" href={`/${props.lang}/product/${a.id}`} target="_blank" rel="noopener noreferrer">
-                  {t.details}
-                </a>
-                <span className="kp-opt__meta">
-                  {size(a)}
-                  {slot === 'dishwasher' && a.builtIn && ` · ${t.hidden}`}
-                  {slot === 'microwave' && a.builtIn && ` · ${t.builtInMicrowave}`}
+          {[...panels, ...stoves].map((a, i) => (
+            <Fragment key={a.id}>
+              {a.stove && i === panels.length && <p className="kp-opts__group">{t.stove.group}</p>}
+              <label className="kp-opt">
+                <input type="radio" name={listId} checked={!none && current?.id === a.id} onChange={() => props.onPick(a.id)} />
+                <span className="kp-opt__thumb">{a.image ? <img src={a.image} alt="" loading="lazy" /> : <SlotIcon slot={slot} />}</span>
+                <span className="kp-opt__text">
+                  <span className="kp-opt__name">{a.name}</span>
+                  <a className="kp-opt__more" href={`/${props.lang}/product/${a.id}`} target="_blank" rel="noopener noreferrer">
+                    {t.details}
+                  </a>
+                  <span className="kp-opt__meta">
+                    {size(a)}
+                    {slot === 'dishwasher' && a.builtIn && ` · ${t.hidden}`}
+                    {slot === 'microwave' && a.builtIn && ` · ${t.builtInMicrowave}`}
+                  </span>
+                  {style.finishes.includes(a.finish) && <span className="kp-opt__badge">{t.matches}</span>}
                 </span>
-                {style.finishes.includes(a.finish) && <span className="kp-opt__badge">{t.matches}</span>}
-              </span>
-              <span className="kp-opt__price">
-                {formatSom(a.price)}
-                {a.oldPrice ? <s>{formatSom(a.oldPrice)}</s> : null}
-              </span>
-            </label>
+                <span className="kp-opt__price">
+                  {formatSom(a.price)}
+                  {a.oldPrice ? <s>{formatSom(a.oldPrice)}</s> : null}
+                </span>
+              </label>
+            </Fragment>
           ))}
         </div>
       )}

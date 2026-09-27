@@ -115,8 +115,9 @@ export type Built = {
   /** всё для мебельщика: корпуса, фасады, столешница */
   spec: SpecData
   /**
-   * Фактическая высота низа вытяжки над варочной панелью, см (D16); нет —
-   * вытяжки в 3D нет. Экран передаёт её в `checkProject(plan, { hoodOver })`.
+   * Фактическая высота низа вытяжки над варочной панелью, см (D16), а при
+   * отдельностоящей плите — над верхом плиты; нет — вытяжки в 3D нет. Экран
+   * передаёт её в `checkProject(plan, { hoodOver })`.
    */
   hoodOver?: number
   dispose(): void
@@ -127,6 +128,8 @@ type Ctx = {
   style: KitchenStyle
   input: BuildInput
   counterY: number
+  /** варочная поверхность, м от пола: столешница или верх отдельностоящей плиты */
+  cookY: number
   /** верх основного ряда верхних шкафов */
   upperTop: number
   /** второй ряд до потолка (антресоли) */
@@ -165,15 +168,19 @@ type Ctx = {
  * поставленной вытяжке — `hoodOverOf`.
  */
 function hoodAt(ctx: Ctx): number {
-  return ctx.counterY + cm(ctx.input.plan.hoodHeight?.over ?? KD.hoodNorm(ctx.input.items.hob?.hob === 'gas'))
+  return ctx.cookY + cm(ctx.input.plan.hoodHeight?.over ?? KD.hoodNorm(ctx.input.items.hob?.hob === 'gas'))
 }
 
-/** Низ поставленной вытяжки над столешницей, см — по самому объекту в сцене (D16); нет вытяжки — нет поля. */
-function hoodOverOf(root: THREE.Object3D, hood: THREE.Object3D | undefined, counterY: number): { hoodOver?: number } {
+/**
+ * Низ поставленной вытяжки над варочной поверхностью, см — по самому объекту
+ * в сцене (D16): над столешницей, а у отдельностоящей плиты — над её верхом.
+ * Нет вытяжки — нет поля.
+ */
+function hoodOverOf(root: THREE.Object3D, hood: THREE.Object3D | undefined, cookY: number): { hoodOver?: number } {
   if (!hood) return {}
   root.updateMatrixWorld(true)
   const box = new THREE.Box3().setFromObject(hood).applyMatrix4(root.matrixWorld.clone().invert())
-  return { hoodOver: r5((box.min.y - counterY) * 100) }
+  return { hoodOver: r5((box.min.y - cookY) * 100) }
 }
 
 const cm = (v: number) => v / 100
@@ -477,6 +484,12 @@ function baseModule(ctx: Ctx, run: Run, m: Module, i: number): THREE.Group {
   const g = new THREE.Group()
   const w = cm(m.w)
   g.position.x = cm(m.x)
+  // Отдельностоящая плита: ни корпуса, ни цоколя, ни столешницы — она сама на полу.
+  if (m.kind === 'hob' && m.stove) {
+    stoveAt(ctx, run, m, g)
+    if (m.item) tagItem(g, m.item)
+    return g
+  }
   const frontTop = style.handle === 'gola' ? BODY_TOP - 0.04 : BODY_TOP - GAP
   const frontY = PLINTH + GAP
   const z = CARCASS_D
@@ -762,6 +775,28 @@ function baseModule(ctx: Ctx, run: Run, m: Module, i: number): THREE.Group {
   return g
 }
 
+/**
+ * Место отдельностоящей плиты: плита на полу по центру места, лицом вровень
+ * с фасадами (глубже — выступает вперёд); у мебельщика — проём без корпуса.
+ */
+function stoveAt(ctx: Ctx, run: Run, m: Module, g: THREE.Group) {
+  const app = ctx.input.items.hob ?? undefined
+  // модуль плиты planKitchen ставит только вместе с plan.stove — размер берём оттуда
+  const size = ctx.input.plan.stove
+  if (!size) return
+  const st = A.stove(app, ctx.mats, size)
+  const x = (m.w - size.w) / 2
+  const z = Math.max(0.01, CARCASS_D + FRONT_T - cm(size.d))
+  st.position.set(cm(x), 0, z)
+  applianceDims(st, app, 'hob', [size.w, size.h, size.d], { x: m.x + x, y: 0 })
+  ;(st.userData.dims as Dims).stove = true
+  tag(st, 'hob')
+  ctx.objects.hob = st
+  g.add(st)
+  anchor(ctx, 'hob', g, cm(m.w / 2), cm(size.h) + 0.04, z + cm(size.d) * 0.6)
+  ctx.extras.push({ kind: 'stoveOpening', run: run.id, w: m.w, h: size.h })
+}
+
 /** Где делить высокий корпус на корпус и антресоль: только если он длиннее листа (C08). */
 function partCut(ctx: Ctx, top: number): number | null {
   return cutAt(ctx, PLINTH, top)
@@ -803,11 +838,11 @@ function pantryGoods(ctx: Ctx, g: THREE.Object3D, w: number, shelves: number[]) 
   if (boxes.length) g.add(mesh(mergeAll(boxes), ctx.mats.plain('#c9a77c', 0.7), 0, 0, 0, false))
 }
 
-/** Отрезки ряда, закрытые столешницей (без холодильника и пенала). */
+/** Отрезки ряда, закрытые столешницей (без холодильника, пенала и отдельностоящей плиты). */
 function counterSpans(run: Run): [number, number][] {
   const spans: [number, number][] = []
   for (const m of run.modules) {
-    if (m.kind === 'fridge' || m.kind === 'tall' || m.kind === 'pantry') continue
+    if (m.kind === 'fridge' || m.kind === 'tall' || m.kind === 'pantry' || m.stove) continue
     const last = spans[spans.length - 1]
     if (last && Math.abs(last[1] - m.x) < 0.5) last[1] = m.x + m.w
     else spans.push([m.x, m.x + m.w])
@@ -855,7 +890,8 @@ function countertop(ctx: Ctx, run: Run, g: THREE.Group) {
     tagItem(sinkParts, 'sink')
     g.add(sinkParts)
   }
-  if (hobM && ctx.input.items.hob !== null) {
+  // у отдельностоящей плиты своя варочная поверхность — в столешницу не врезается
+  if (hobM && !hobM.stove && ctx.input.items.hob !== null) {
     const app = ctx.input.items.hob ?? undefined
     const hb = A.hob(app, mats)
     const hw = cm(app?.w ?? 59)
@@ -1727,6 +1763,7 @@ function assemble(input: BuildInput): Built {
     style: input.style,
     input,
     counterY,
+    cookY: input.plan.stove ? cm(input.plan.stove.h) : counterY,
     upperTop: h.upperTop,
     mezz: h.mezz,
     columnTop: h.columnTop,
@@ -1822,7 +1859,7 @@ function assemble(input: BuildInput): Built {
     bounds,
     wallH: ctx.wallH,
     spec,
-    ...hoodOverOf(root, ctx.objects.hood, counterY),
+    ...hoodOverOf(root, ctx.objects.hood, ctx.cookY),
     dispose() {
       // Геометрию освобождаем, а материалы — нет: у освобождённого материала
       // видеокарта выбрасывает и его шейдер, и следующая кухня собирала бы

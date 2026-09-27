@@ -1466,6 +1466,18 @@ html:has(.kp-photo) .assistant {
   color: var(--kp-muted);
 }
 
+/* плиты в списке «Варочная панель» — своей группой: духовка внутри */
+.kp-opts__group {
+  margin: 6px 2px 0;
+  font: 600 12px/1.3 var(--font);
+  color: #52607a;
+}
+
+/* духовка при плите — в плите: строку не раскрыть */
+.kp-slot.is-fixed .kp-slot__head {
+  cursor: default;
+}
+
 .kp-opt__badge {
   align-self: flex-start;
   margin-top: 3px;
@@ -1834,6 +1846,10 @@ html:has(.kp-photo) .assistant {
   border: 1px solid var(--kp-line);
   border-radius: var(--radius-tile);
   background: #fff;
+}
+
+.kp-oven--stove {
+  padding-bottom: 12px;
 }
 
 .kp-oven .kp-seg--wide {

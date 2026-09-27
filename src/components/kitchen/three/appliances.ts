@@ -281,6 +281,52 @@ export function hob(a: KitchenAppliance | undefined, mats: Mats): THREE.Group {
   return g
 }
 
+/**
+ * Отдельностоящая плита на полу: корпус цвета `finish`, внизу ящик, над ним
+ * дверца духовки со стеклом и ручкой, под варочной — панель ручек; сверху та же
+ * варочная поверхность, что у встраиваемой (стеклокерамика или газ по `hob`).
+ * Начало — левый задний угол у пола, лицо смотрит в +z.
+ */
+export function stove(a: KitchenAppliance | undefined, mats: Mats, size: { w: number; h: number; d: number }): THREE.Group {
+  const g = new THREE.Group()
+  const w = cm(size.w)
+  const h = cm(size.h)
+  const d = cm(size.d)
+  const finish = mats.appliance(a?.finish ?? 'white')
+  const dark = mats.plain('#1b1c1e', 0.55)
+  const steel = mats.metal('steel')
+  const topT = 0.006
+  const bodyTop = h - topT
+  const feet = 0.03
+  const face = d - 0.02
+  const panelH = 0.09
+  const drawerH = 0.14
+  // ножки и тёмный цоколь, корпус до варочной
+  g.add(slab(dark, 0.02, 0, 0.03, w - 0.02, feet, face - 0.02))
+  g.add(slab(finish, 0, feet, 0, w, bodyTop, face, true))
+  // ящик внизу
+  const dy1 = feet + drawerH
+  g.add(slab(finish, 0.006, feet + 0.004, face, w - 0.006, dy1 - 0.004, d, true))
+  g.add(slab(steel, w * 0.3, dy1 - 0.03, d, w * 0.7, dy1 - 0.018, d + 0.012, true))
+  // дверца духовки: стекло и ручка во всю ширину
+  const oy0 = dy1 + 0.004
+  const oy1 = bodyTop - panelH - 0.004
+  g.add(slab(finish, 0.006, oy0, face, w - 0.006, oy1, d, true))
+  g.add(slab(mats.darkGlass, w * 0.12, oy0 + (oy1 - oy0) * 0.14, d, w * 0.88, oy1 - (oy1 - oy0) * 0.22, d + 0.002))
+  g.add(slab(steel, w * 0.08, oy1 - 0.05, d, w * 0.92, oy1 - 0.035, d + 0.03, true))
+  // панель ручек
+  const py0 = bodyTop - panelH
+  g.add(slab(finish, 0, py0, face, w, bodyTop, d - 0.004, true))
+  const burners = Math.max(2, Math.min(6, a?.burners ?? 4))
+  for (let i = 0; i < burners; i++) knob(g, mats, w * (0.12 + (0.5 * i) / Math.max(1, burners - 1)), py0 + panelH / 2, d - 0.004, 0.016)
+  g.add(slab(mats.led, w * 0.72, py0 + panelH * 0.35, d - 0.004, w * 0.9, py0 + panelH * 0.65, d - 0.003))
+  // варочная поверхность во весь верх
+  const top = hob(a ? { ...a, w: size.w, d: size.d } : undefined, mats)
+  top.position.set(0, bodyTop, Math.max(0, face - cm(Math.min(size.d, 54))))
+  g.add(top)
+  return g
+}
+
 /** Каминная и наклонная вытяжка: колпак и труба до верха стены. */
 export function chimneyHood(a: KitchenAppliance, mats: Mats, chimney: number): THREE.Group {
   const g = new THREE.Group()
