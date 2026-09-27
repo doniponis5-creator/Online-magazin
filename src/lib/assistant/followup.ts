@@ -13,6 +13,7 @@ import type { ChatTurn } from './gemini'
 import type { Lang } from '@/lib/i18n/config'
 import { lookupIn, salesCatalogNow } from './live'
 import { talkLang } from './reply'
+import { cleanName } from './talk'
 import { formatSom } from '@/lib/format'
 
 export type FollowUp = { text: string } | { skip: 'ordered' | 'no-product' | 'not-shown' }
@@ -28,12 +29,13 @@ export async function followUp(turns: ChatTurn[], shown: string[], lang: Lang, n
   if (!product) return { skip: 'no-product' }
 
   const talk = talkLang(turns, lang)
-  const who = name?.trim() ? `${name.trim().slice(0, 40)}, ` : ''
+  const clean = cleanName(name)
+  const who = clean ? `${clean}, ` : ''
   const item = `${product.nameRu} — ${formatSom(product.price)}`
   const say = {
-    ru: `${who}вы смотрели ${item}. Ещё актуально? Если остались вопросы — отвечу здесь. Оформить можно прямо в этом чате: напишите «беру».`,
-    ky: `${who}${item} караган элеңиз. Дагы керекпи? Суроо болсо ушул жерде жооп берем. Заказды ушул чатта эле берсеңиз болот: «алам» деп жазыңыз.`,
-    uz: `${who}${item} курган эдингиз. Хали керакми? Савол булса шу ерда жавоб бераман. Буюртмани шу чатда бериш мумкин: «оламан» деб ёзинг.`,
+    ru: `${who}вы смотрели ${item}. Ещё нужно? Если что — пишите, оформлю здесь: «беру».`,
+    ky: `${who}${item} караган элеңиз. Дагы керекпи? Суроо болсо жазыңыз, ушул жерден эле тариздейм: «алам».`,
+    uz: `${who}${item} курган эдингиз. Хали керакми? Савол булса ёзинг, шу ердан расмийлаштираман: «оламан».`,
   }
   const text = say[talk]
   return { text: text.charAt(0).toUpperCase() + text.slice(1) }

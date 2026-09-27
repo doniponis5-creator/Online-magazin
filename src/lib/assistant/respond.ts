@@ -11,6 +11,7 @@ import 'server-only'
 
 import type { Lang } from '@/lib/i18n/config'
 import { answer, talkLang } from './reply'
+import { cleanName } from './talk'
 import { AFFIRM, BUY_INTENT, DEFER, OFFER, cancel, hasDraft, looksLikeQuestion, start, step } from '@/lib/telegram/order'
 import { CALL_INTENT, cancelLead, hasLead, leadContext, leadStep, startLead } from './leads'
 import { lookupIn, salesCatalogNow } from './live'
@@ -52,7 +53,7 @@ export async function respond(
   if (flow) return flow
   // «Ок», «👍», «рахмат» в ответ на напоминание или наш ответ — это не вопрос.
   // Отвечать «какую технику ищете?» на «Ок» — верный способ выглядеть роботом.
-  if (channel.leadChannel === 'whatsapp' && isAcknowledgement(turns)) {
+  if (channel.leadChannel === 'whatsapp' && (isAcknowledgement(turns) || isJunk(turns))) {
     return { text: '', products: [], source: 'flow', silent: true }
   }
   const reply = await answer(turns, lang, customer, page, channel.known.name)
@@ -63,10 +64,11 @@ export async function respond(
     const talk = talkLang(turns, lang)
     const last = turns[turns.length - 1]?.text ?? ''
     const context = `Сообщение для руководства (WhatsApp):\n${last.slice(0, 600)}`
-    const who = { name: channel.known.name ?? customer?.name ?? nameFromTurns(turns), phone: channel.known.phone }
+    const who = { name: cleanName(channel.known.name) ?? customer?.name ?? nameFromTurns(turns), phone: channel.known.phone }
     // Номер в WhatsApp известен всегда — заявка уходит молча. Без номера анкету не заводим: это не «перезвоните».
     if (who.phone) await startLead(channel.key, talk, context, who, 'whatsapp')
-    return { text: reply.text || pick(STAFF_ACK, talk), products: [], source: reply.source, handoff: true }
+    // Всегда одна и та же короткая фраза на языке покупателя — так решил владелец.
+    return { text: pick(STAFF_ACK, talk), products: [], source: reply.source, handoff: true }
   }
   return reply
 }
@@ -76,6 +78,12 @@ const ACK_WORD =
   '(ок|ok|окей|okay|хорошо|ладно|понял|поняла|понятно|спасибо|благодарю|макул|болду|болот|түшүндүм|тушундум|рахмат|ырахмат|чоң рахмат|катта рахмат|жарайт|хоп|хуп|яхши|тушундим|тушунарли|майли|mayli|xop|rahmat|yaxshi|tushundim|ha|ха|да|ооба|вам|сизге|сизга|👍|👌|🙏|✅|❤️|👍🏻|👍🏼|👍🏽|🤝)'
 /** До трёх «ок/спасибо/рахмат» подряд, с любыми знаками и эмодзи вокруг. */
 const ACK = new RegExp(`^[\\s\\p{P}\\p{S}]*(?:${ACK_WORD}[\\s\\p{P}\\p{S}]*){0,3}$`, 'iu')
+
+/** «{{SWE001}}», один знак, e-mail — сообщение не человеку, отвечать нечего. */
+function isJunk(turns: ChatTurn[]): boolean {
+  const text = turns[turns.length - 1]?.text.trim() ?? ''
+  return /^\{\{[^}]*\}\}$/.test(text) || /^[\p{P}\p{S}]{1,3}$/u.test(text) || /^[\w.+-]+@[\w-]+\.[\w.]+$/.test(text)
+}
 
 function isAcknowledgement(turns: ChatTurn[]): boolean {
   const last = turns[turns.length - 1]
@@ -89,9 +97,9 @@ function isAcknowledgement(turns: ChatTurn[]): boolean {
 }
 
 const STAFF_ACK = {
-  ru: 'Понятно — передам руководству, с вами свяжутся.',
-  ky: 'Түшүндүм — руководствого айтып коём, сиз менен байланышат.',
-  uz: 'Тушундим — руководствога айтаман, сиз билан богланишади.',
+  ru: 'Понял, передам руководству.',
+  ky: 'Түшүндүм, руководствого айтып коём.',
+  uz: 'Тушундим, руководствога айтаман.',
 }
 const pick = (say: Record<'ru' | 'ky' | 'uz', string>, lang: 'ru' | 'ky' | 'uz') => say[lang]
 
@@ -113,7 +121,7 @@ async function salesFlow(
   const text = turns[turns.length - 1]?.text ?? ''
   const talk = talkLang(turns, lang)
   const only = (reply: string, handoff = false): Reply => ({ text: reply, products: [], source: 'flow', handoff })
-  const who = { name: known.name ?? customer?.name ?? nameFromTurns(turns), phone: known.phone }
+  const who = { name: cleanName(known.name) ?? customer?.name ?? nameFromTurns(turns), phone: known.phone }
 
   // Передумал посреди шагов — выходим, не доспрашивая.
   if (/^(отмена|стоп|bekor|бекор|токтот|жок|cancel|не надо)$/i.test(text.trim()) && (hasDraft(key) || hasLead(key))) {
@@ -138,7 +146,7 @@ async function salesFlow(
 
   if (typeof buy === 'string' && find(buy)) {
     cancelLead(key)
-    return only(await start(key, [buy], talk, orderSource, who))
+    return only(await start(key, [buy], talk, orderSource, who, wantedQty(text)))
   }
 
   if (CALL_INTENT.test(text)) {
@@ -149,17 +157,39 @@ async function salesFlow(
     return only(reply, Boolean(who.phone))
   }
 
+  // «Приеду и возьму сам», «барып алам», «o'zim boraman» — это визит в магазин, не заказ: пусть консультант даст адрес.
+  const visiting = VISIT.test(text)
   // «беру», «куда платить» — или «да» сразу после того, как консультант предложил оформить.
   const lastAnswer = [...turns].reverse().find((t) => t.role === 'assistant')?.text ?? ''
   // Длинная фраза со словом «заказ» — обычно вопрос («если закажем, оплатить
   // при получении можно?»). На него отвечает консультант, а не анкета заказа.
-  const wantsToBuy = BUY_INTENT.test(text) && !looksLikeQuestion(text.replace(/\?/g, '')) && !DEFER.test(text)
+  const wantsToBuy = BUY_INTENT.test(text) && !visiting && !looksLikeQuestion(text.replace(/\?/g, '')) && !DEFER.test(text)
   // «Ооба, но денег пока нет, через 5 дней» — это не «да».
   const agreed = AFFIRM.test(text) && OFFER.test(lastAnswer) && !looksLikeQuestion(text) && !DEFER.test(text)
   if (shown.length > 0 && (wantsToBuy || agreed)) {
-    return only(await start(key, shown, talk, orderSource, who))
+    return only(await start(key, shown, talk, orderSource, who, wantedQty(text)))
   }
   return null
+}
+
+/** Едет в магазин сам — не заказ. */
+const VISIT = /(барып|барам|барайын|барабыз|бараман|өзүм барам|озум барам|келип ал|kelib ol|келиб ол|boraman|borib|бораман|бориб|приеду|приедем|заеду|сам приду|сам заберу)/iu
+
+/**
+ * Сколько штук: «беру 2», «2 шт», «иккита», «эки даана». Нет числа — одна.
+ * «8 кг», «2 камеры» — это не количество.
+ */
+export function wantedQty(text: string): number {
+  const low = text.toLowerCase()
+  const words: [RegExp, number][] = [
+    [/(?<![\p{L}])(два|две|иккита|ikkita|экөө|эки даана|эки|ikki|икки)(?![\p{L}])/u, 2],
+    [/(?<![\p{L}])(три|учта|uchta|үч даана|үчөө|uch|уч)(?![\p{L}])/u, 3],
+    [/(?<![\p{L}])(четыре|туртта|to'rtta|төртөө|төрт даана)(?![\p{L}])/u, 4],
+    [/(?<![\p{L}])(пять|бешта|beshta|бешөө|беш даана)(?![\p{L}])/u, 5],
+  ]
+  for (const [re, n] of words) if (re.test(low)) return n
+  const m = low.match(/(?<![\d.,])([2-9])\s*(?:шт|штук|даана|та|дона|ta|dona|ни|шт\.)?(?!\s*(кг|kg|л\b|литр|см|мм|м\b|год|жыл|йил|мес|ой|ай|камер|конф|скорост|программ))(?![\p{L}\d])/u)
+  return m ? Number(m[1]) : 1
 }
 
 /** Бот спросил имя. */
