@@ -401,3 +401,19 @@ describe('cutWorkbook — язык, «Листы», ширины (таск 01b)'
     for (const i of [7, 8, 9, 10]) expect(w[i]).toBeGreaterThanOrEqual(11)
   })
 })
+
+describe('cutWorkbook — цвет стиля низ и верх словами (таск 03)', () => {
+  it('тон стиля с отдельным верхом: в «Фасадах» «… — низ» и «… — верх», без hex; KY — своими словами', () => {
+    const corner = cornerSpec()
+    const tone = { ru: 'Кашемир и дуб', ky: 'Кашемир жана эмен', facade: '#cfc5b8', upper: '#b58d63', upperTexture: 'wood' as const }
+    const ruColors = new Set(sheet(book(corner, { tone }), 'Фасады').slice(1, -1).map((r) => r[2]))
+    expect(ruColors).toEqual(new Set(['Кашемир и дуб — низ', 'Кашемир и дуб — верх']))
+    const ky = kitchenTexts('ky')
+    const kyColors = new Set(sheet(book(corner, { tone }, ky), ky.xl.sheets.fronts).slice(1, -1).map((r) => r[2]))
+    expect(kyColors).toEqual(new Set(['Кашемир жана эмен — асты', 'Кашемир жана эмен — үстү']))
+    // тон без отдельного верха — просто название тона
+    const plain = new Set(sheet(book(corner, { tone: { ru: 'Графит', ky: 'Графит', facade: '#333333' } }), 'Фасады').slice(1, -1).map((r) => r[2]))
+    expect(plain).toEqual(new Set(['Графит']))
+    for (const b of [book(corner, { tone })]) for (const s of b) for (const r of s.rows) for (const c of r) expect(String(c ?? '')).not.toMatch(/#[0-9a-f]{3,6}\b/i)
+  })
+})

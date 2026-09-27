@@ -55,6 +55,8 @@ import {
 import { cartAdditions, chosenItems, CORE_SLOTS, planInputOf, projectItems, projectTotal, wallsText, whatsappText, type ItemStatus } from '@/lib/kitchen/order'
 import { DEFAULT_STATE, loadLast, queryFromState, saveLast, stateFromQuery } from '@/lib/kitchen/share'
 import { cutList, extraList, frontList, hardware, modulesOf, topList, type SpecData } from '@/lib/kitchen/spec'
+import { cutParts, edgeTotals, nest, type CutLook, type NestOpts, type NestResult } from '@/lib/kitchen/cutting'
+import { emptyMaster, estimate, loadMaster, saveMaster, type EstimateRow, type MasterData } from '@/lib/kitchen/master'
 import { FLOORS, getStyle, getTone, STYLE_GROUPS, STYLES, WALL_COLORS, type KitchenStyle } from '@/lib/kitchen/styles'
 import type { HandleKind } from '@/lib/kitchen/styles'
 import {
@@ -77,6 +79,7 @@ import { tallMin, WINDOW } from '@/lib/kitchen/dims'
 import { DRAWING_CSS, elevationSvg, islandOverhang, makerList, PLAN_BOX, pickScale, planSvg, techRows, windowFor, type DrawingLabels } from './drawing'
 import { PlanSketch } from './PlanSketch'
 import { kitchenTexts, type KitchenTexts } from './texts'
+import type { CutMap } from './pdfSheet'
 import { parseVariants, type Variant } from '@/lib/kitchen/variants'
 import type { BuildInput, CabInfo, Dims } from './three/build'
 import type { DragPreview, DragTarget, EngineEvents, KitchenEngine, PhotoState, Pick, Quality, View } from './three/engine'
@@ -1931,6 +1934,202 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     ]
   }
 
+  /* ───────── пакет мастера: раскрой, листы, кромка, смета ───────── */
+
+  // цены и данные мастера — только в этом браузере (`kp-master`); читаем после гидратации
+  const [master, setMaster] = useState<MasterData>(emptyMaster)
+  const [masterForm, setMasterForm] = useState<MasterDraft | null>(null)
+  const [client, setClient] = useState('')
+  const [masterBusy, setMasterBusy] = useState<'xl' | 'est' | null>(null)
+  useEffect(() => setMaster(loadMaster()), [])
+
+  /** Раскрой из той же спецификации: отделка как в 3D (фасад, верх, тон стиля), кромка и листы — мастера. */
+  const cut = useMemo(() => {
+    if (!spec) return null
+    const look: CutLook = { facade: state.facade, upperFacade: state.upperFacade, tone, bodyEdge: master.bodyEdge, lang, tier: t.xl.tier }
+    const opts: NestOpts = { sheets: master.sheets }
+    try {
+      const parts = cutParts(spec, look)
+      const nested = nest(parts, opts)
+      return { ok: true as const, look, opts, nested, edges: edgeTotals(parts), est: estimate(parts, nested, spec, master.prices) }
+    } catch {
+      // неизвестная отделка, фасад без размеров — блок «Мастеру» объясняет, страница живёт дальше
+      return { ok: false as const }
+    }
+  }, [spec, state.facade, state.upperFacade, tone, master, lang, t])
+
+  const sheetName = (r: NestResult) =>
+    `${t.xl.kinds[r.material.kind === 'hdf' ? 'hdf' : 'ldsp']}${r.material.thick ? ` ${r.material.thick} ${t.master.mm}` : ''} · ${r.material.label}`
+  /** Карта раскроя: каждый лист — прямоугольники деталей с номерами, как в Excel. */
+  const cutMaps = (): CutMap[] =>
+    cut?.ok
+      ? cut.nested.flatMap((r) =>
+          r.sheets.map((sh, i) => ({
+            title: t.master.mapOf(sheetName(r), i + 1, r.sheets.length),
+            L: r.sheetL,
+            W: r.sheetW,
+            rects: sh.placements.map((p) => ({ x: p.x, y: p.y, l: p.l, w: p.w, label: p.id })),
+          })),
+        )
+      : []
+
+  const som = (v: number) => new Intl.NumberFormat('ru-RU').format(v)
+  const estRowName = (r: EstimateRow): string => {
+    const m = t.master
+    switch (r.key) {
+      case 'ldsp':
+      case 'hdf':
+        return m.rowSheet(t.xl.kinds[r.key], r.thick, r.what ?? '')
+      case 'edge':
+        return m.rowEdge(fmt(Number(r.what)))
+      case 'front':
+        return m.rowFront(r.what === 'style' ? m.frontStyle : nameOf(FRONT_MATERIALS.find((x) => x.id === r.what)))
+      case 'top':
+        return t.topTitle
+      case 'hinge':
+        return t.hw.hinges
+      case 'runner':
+        return t.hw.runners.split(',')[0]
+      case 'lift':
+        return t.hw.lifts
+      case 'handle':
+        return t.hw.handles
+      case 'work':
+        return m.rowWork
+      case 'delivery':
+        return m.rowDelivery
+    }
+  }
+
+  /** Время Бишкека (UTC+6): дата на листе и в имени файла. */
+  const bishkekNow = () => {
+    const b = new Date(Date.now() + 6 * 3600 * 1000)
+    return { b, stamp: b.toISOString().slice(0, 16).replace('T', '-').replace(':', '') }
+  }
+
+  /** Файл мастеру: на телефоне — окно «Поделиться», как у PDF мастеру; на компьютере — в «Загрузки». */
+  const deliver = async (file: File, saved: string) => {
+    if (window.matchMedia('(pointer: coarse)').matches || inAppBrowser()) {
+      const res = await shareFile(file, '', file.name)
+      if (res === 'ok') return
+      if (res === 'late') return setNote({ text: t.master.fileReady, act: { label: t.pdfSendNow, run: () => void shareFile(file, '', file.name) } })
+    }
+    download(file, file.name)
+    setToast(saved)
+  }
+
+  const saveExcel = async () => {
+    if (!spec || !cut?.ok || masterBusy) return
+    setMasterBusy('xl')
+    let file: File | null = null
+    try {
+      const [{ cutWorkbook }, { xlsx }] = await Promise.all([import('@/lib/kitchen/cutExcel'), import('@/lib/kitchen/xlsx')])
+      const bytes = xlsx(cutWorkbook(spec, cut.look, t, cut.opts))
+      file = new File([bytes as Uint8Array<ArrayBuffer>], `smarket-raskroy-${bishkekNow().stamp}.xlsx`, {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      })
+    } catch {
+      file = null
+    }
+    setMasterBusy(null)
+    if (!file) return setToast(t.master.excelFailed)
+    await deliver(file, t.master.excelSaved)
+  }
+
+  const saveEstimate = async () => {
+    if (!cut?.ok || masterBusy) return
+    setMasterBusy('est')
+    const m = t.master
+    const e = cut.est
+    const { b, stamp } = bishkekNow()
+    const tech = project.flatMap((i) => (i.inTotal && i.appliance ? [[t.slots[i.slot], i.appliance.name, som(i.appliance.price)]] : []))
+    let file: File | null = null
+    try {
+      const { estimateSheet } = await import('./pdfSheet')
+      const blob = await estimateSheet({
+        title: m.pdfTitle,
+        date: t.sheetDate(b.getUTCDate(), b.getUTCMonth(), b.getUTCFullYear()),
+        master: { name: master.name, phone: master.phone, shop: master.shop },
+        lines: [client.trim() ? m.pdfClient(client.trim()) : '', m.pdfKitchen(`${t.shapes[state.shape][0]} · ${wallsLine}`)].filter(Boolean),
+        table: {
+          title: m.tableTitle,
+          head: [m.colName, m.colQty, m.colPrice, m.colSum],
+          // кол-во — до сотых, как считалась сумма: 4,78 м × 5 500 = 26 290 видно глазами
+          rows: e.rows.map((r) => [estRowName(r), `${String(Math.round(r.qty * 100) / 100).replace('.', ',')}${m.units[r.unit] ? ` ${m.units[r.unit]}` : ''}`, r.price === null ? m.noPrice : som(r.price), r.sum === null ? '—' : som(r.sum)]),
+        },
+        totals: [
+          ...(e.markupPct > 0
+            ? [
+                { label: m.subtotal, value: formatSom(e.subtotal) },
+                { label: m.markup(fmt(e.markupPct)), value: formatSom(e.markup) },
+              ]
+            : []),
+          { label: m.total, value: formatSom(e.total) },
+        ],
+        missing: e.missing.length ? m.missing : undefined,
+        tech: tech.length
+          ? { table: { title: m.techTitle, head: [t.colWhat, t.colModel, m.colPrice], rows: tech, grow: 1 }, total: { label: m.techTotal, value: formatSom(totals.sum) } }
+          : undefined,
+        url: shareUrl,
+        urlLabel: t.pdfOpen3d,
+        shop: { text: m.shopLine(phones[0].display), url: whatsappHref(phones[0]) },
+        note: m.note,
+        page: t.pdfPage,
+      })
+      file = new File([blob], `smarket-smeta-${stamp}.pdf`, { type: 'application/pdf' })
+    } catch {
+      file = null
+    }
+    setMasterBusy(null)
+    if (!file) return setToast(m.estimateFailed)
+    await deliver(file, m.estimateSaved)
+  }
+
+  /* форма «Мои цены и данные»: черновик, сохраняется кнопкой */
+  const openMasterForm = () =>
+    setMasterForm({
+      ...master,
+      prices: { ...master.prices, edge: { ...master.prices.edge }, front: { ...master.prices.front } },
+      sz: { ldspL: master.sheets.ldsp?.L, ldspW: master.sheets.ldsp?.W, hdfL: master.sheets.hdf?.L, hdfW: master.sheets.hdf?.W },
+    })
+  const draftPrice = (f: MasterDraft, k: PriceField) => (k in EDGE_FIELD ? f.prices.edge?.[EDGE_FIELD[k as keyof typeof EDGE_FIELD]] : f.prices[k as PlainPrice])
+  const setDraftPrice = (k: PriceField, v: number | undefined) =>
+    setMasterForm((f) =>
+      !f
+        ? f
+        : k in EDGE_FIELD
+          ? { ...f, prices: { ...f.prices, edge: { ...f.prices.edge, [EDGE_FIELD[k as keyof typeof EDGE_FIELD]]: v } } }
+          : { ...f, prices: { ...f.prices, [k]: v } },
+    )
+  const saveMasterForm = () => {
+    if (!masterForm) return
+    const { sz, ...d } = masterForm
+    const size = (L?: number, W?: number) => (L && W && L >= 100 && W >= 100 && L <= 6000 && W <= 6000 ? { L, W } : undefined)
+    const ldsp = size(sz.ldspL, sz.ldspW)
+    const hdf = size(sz.hdfL, sz.hdfW)
+    const next: MasterData = { ...d, name: d.name.trim(), phone: d.phone.trim(), shop: d.shop.trim(), sheets: { ...(ldsp && { ldsp }), ...(hdf && { hdf }) } }
+    saveMaster(next)
+    setMaster(next)
+    setMasterForm(null)
+    setToast(t.master.saved)
+  }
+  const numField = (key: string, label: string, value: number | undefined, set: (v: number | undefined) => void) => (
+    <label key={key} className="kp-mform__field">
+      <span>{label}</span>
+      <input
+        type="number"
+        inputMode="decimal"
+        min={0}
+        step="any"
+        value={value ?? ''}
+        onChange={(e) => {
+          const n = e.target.valueAsNumber
+          set(e.target.value !== '' && Number.isFinite(n) && n >= 0 ? n : undefined)
+        }}
+      />
+    </label>
+  )
+
   /* ───────── PDF для мастера ───────── */
 
   /*
@@ -1939,7 +2138,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     «Поделиться» телефона — и PDF уходит в WhatsApp или Telegram файлом.
     Готовый файл помним, пока кухня не изменилась: второе нажатие — сразу.
   */
-  const pdfKey = `${lang}|${query}`
+  const pdfKey = `${lang}|${query}|${master.bodyEdge}|${JSON.stringify(master.sheets)}`
   const pdfDone = useRef<{ key: string; file: File } | null>(null)
   const pdfJob = useRef<{ key: string; job: Promise<File | null> } | null>(null)
   const [pdfBusy, setPdfBusy] = useState(false)
@@ -1987,6 +2186,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
           },
           ...sheetTables(),
         ],
+        cutMaps: { title: t.master.mapTitle, maps: cutMaps() },
         note: t.specNote,
         page: t.pdfPage,
       })
@@ -3357,6 +3557,172 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
             </details>
           </>
         )}
+
+        {/* Мастеру: раскрой в Excel, листы и кромка, смета клиенту — ниже всего, что видит покупатель */}
+        {spec && (
+          <section className="kp-mstr" aria-labelledby="kp-mstr-title">
+            <div className="kp-mstr__head">
+              <div>
+                <h3 id="kp-mstr-title" className="kp-mstr__title">
+                  {t.master.title}
+                </h3>
+                <p className="kp-note">{t.master.lead}</p>
+              </div>
+              <button type="button" className="btn btn--outline btn--sm" onClick={openMasterForm}>
+                {t.master.prices}
+              </button>
+            </div>
+            {cut && !cut.ok && (
+              <p className="kp-mstr__fail" role="alert">
+                {t.master.failed}
+              </p>
+            )}
+            {cut?.ok && (
+              <>
+                <ul className="kp-mstr__sum">
+                  {cut.nested
+                    .filter((r) => r.sheets.length)
+                    .map((r) => (
+                      <li key={`${r.material.kind}|${r.material.label}|${r.material.color}`}>{t.master.sheetLine(sheetName(r), r.sheets.length, Math.round(r.waste * 100))}</li>
+                    ))}
+                  {cut.edges.length > 0 && <li>{t.master.edgeLine(cut.edges.map((e) => t.master.edgePart(fmt(e.thick), fmt(e.meters))).join(', '))}</li>}
+                  <li className="kp-mstr__total">
+                    {cut.est.rows.some((r) => r.price !== null) ? (
+                      <>
+                        <b>{t.master.sum(formatSom(cut.est.total))}</b>
+                        {cut.est.missing.length > 0 && <span className="kp-note"> · {t.master.sumMissing(cut.est.rows.filter((r) => r.price === null).length)}</span>}
+                      </>
+                    ) : (
+                      <span className="kp-mstr__hint">{t.master.noPrices}</span>
+                    )}
+                  </li>
+                </ul>
+                <label className="kp-mstr__client">
+                  <span>{t.master.client}</span>
+                  <input type="text" value={client} maxLength={80} onChange={(e) => setClient(e.target.value)} autoComplete="off" />
+                </label>
+                <div className="kp-mstr__actions">
+                  <button type="button" className="btn btn--primary" onClick={() => void saveExcel()} disabled={Boolean(masterBusy)} aria-busy={masterBusy === 'xl'}>
+                    <IconFile />
+                    {masterBusy === 'xl' ? t.master.preparing : t.master.excel}
+                  </button>
+                  <button type="button" className="btn btn--outline" onClick={() => void saveEstimate()} disabled={Boolean(masterBusy)} aria-busy={masterBusy === 'est'}>
+                    {masterBusy === 'est' ? t.master.preparing : t.master.estimatePdf}
+                  </button>
+                </div>
+                <h4 className="kp-mstr__sub">{t.master.mapTitle}</h4>
+                <div className="kp-cutmap">
+                  {cutMaps().map((m) => (
+                    <figure key={m.title} className="kp-cutmap__sheet">
+                      <figcaption>{m.title}</figcaption>
+                      <svg viewBox={`0 0 ${m.L} ${m.W}`} role="img" aria-label={m.title}>
+                        <rect x={0} y={0} width={m.L} height={m.W} className="kp-cutmap__waste" />
+                        {m.rects.map((r) => (
+                          <g key={`${r.label}-${r.x}-${r.y}`}>
+                            <rect x={r.x} y={r.y} width={r.l} height={r.w} className="kp-cutmap__part" />
+                            {r.w > 70 && r.l > 70 && (
+                              <text x={r.x + r.l / 2} y={r.y + r.w / 2} className="kp-cutmap__id" style={{ fontSize: Math.min(110, r.w * 0.6, (r.l / Math.max(1, r.label.length)) * 1.3) }}>
+                                {r.label}
+                              </text>
+                            )}
+                          </g>
+                        ))}
+                      </svg>
+                    </figure>
+                  ))}
+                </div>
+                {cut.nested.some((r) => r.oversize.length) && <p className="kp-mstr__fail">{t.master.oversize(cut.nested.flatMap((r) => r.oversize).join(', '))}</p>}
+                <p className="kp-note">{t.master.mapNote}</p>
+              </>
+            )}
+          </section>
+        )}
+        {masterForm && (
+          <div className="kp-mform" role="dialog" aria-modal="true" aria-labelledby="kp-mform-title" onKeyDown={(e) => e.key === 'Escape' && setMasterForm(null)}>
+            <form
+              className="kp-mform__box"
+              onSubmit={(e) => {
+                e.preventDefault()
+                saveMasterForm()
+              }}
+            >
+              <div className="kp-mform__bar">
+                <h3 id="kp-mform-title">{t.master.prices}</h3>
+                <button type="button" className="btn btn--outline btn--sm" onClick={() => setMasterForm(null)}>
+                  {t.close}
+                </button>
+              </div>
+              <div className="kp-mform__body">
+                <p className="kp-note">{t.master.formLead}</p>
+                <fieldset>
+                  <legend>{t.master.you}</legend>
+                  <div className="kp-mform__grid">
+                    {(['name', 'phone', 'shop'] as const).map((k) => (
+                      <label key={k} className="kp-mform__field">
+                        <span>{t.master[k]}</span>
+                        <input
+                          type={k === 'phone' ? 'tel' : 'text'}
+                          autoComplete={k === 'name' ? 'name' : k === 'phone' ? 'tel' : 'organization'}
+                          maxLength={120}
+                          value={masterForm[k]}
+                          onChange={(e) => {
+                            const v = e.target.value
+                            setMasterForm((f) => f && { ...f, [k]: v })
+                          }}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+                <fieldset>
+                  <legend>{t.master.pricesTitle}</legend>
+                  <div className="kp-mform__grid">
+                    {PRICE_FIELDS.map((k) => numField(k, t.master.fields[k], draftPrice(masterForm, k), (v) => setDraftPrice(k, v)))}
+                  </div>
+                </fieldset>
+                <fieldset>
+                  <legend>{t.master.frontTitle}</legend>
+                  <div className="kp-mform__grid">
+                    {[...FRONT_MATERIALS.map((x) => ({ id: x.id, label: nameOf(x) })), { id: 'style' as const, label: t.master.frontStyle }].map((x) =>
+                      numField(`front-${x.id}`, x.label, masterForm.prices.front?.[x.id], (v) =>
+                        setMasterForm((f) => f && { ...f, prices: { ...f.prices, front: { ...f.prices.front, [x.id]: v } } }),
+                      ),
+                    )}
+                  </div>
+                </fieldset>
+                <fieldset>
+                  <legend>{t.master.edgeTitle}</legend>
+                  <div className="kp-mform__seg" role="radiogroup" aria-label={t.master.edgeTitle}>
+                    {([0.4, 1, 2] as const).map((v) => (
+                      <button key={v} type="button" role="radio" aria-checked={masterForm.bodyEdge === v} onClick={() => setMasterForm((f) => f && { ...f, bodyEdge: v })}>
+                        {fmt(v)} {t.master.mm}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="kp-note">{t.master.edgeHint}</p>
+                </fieldset>
+                <fieldset>
+                  <legend>{t.master.sheetTitle}</legend>
+                  <div className="kp-mform__grid">
+                    {(['ldsp', 'hdf'] as const).flatMap((kind) =>
+                      (['L', 'W'] as const).map((side) => {
+                        const key = `${kind}${side}` as keyof MasterDraft['sz']
+                        return numField(key, `${t.xl.kinds[kind]}, ${side === 'L' ? t.master.sheetL : t.master.sheetW}`, masterForm.sz[key], (v) =>
+                          setMasterForm((f) => f && { ...f, sz: { ...f.sz, [key]: v } }),
+                        )
+                      }),
+                    )}
+                  </div>
+                </fieldset>
+              </div>
+              <div className="kp-mform__foot">
+                <button type="submit" className="btn btn--primary">
+                  {t.master.save}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
       </section>
 
       <section className="kp-maker" aria-labelledby="kp-maker-title" ref={makerRef}>
@@ -3726,6 +4092,13 @@ function SlotRow(props: {
     </li>
   )
 }
+
+/* форма цен мастера */
+type MasterDraft = MasterData & { sz: Partial<Record<'ldspL' | 'ldspW' | 'hdfL' | 'hdfW', number>> }
+const EDGE_FIELD = { edge04: '0.4', edge1: '1', edge2: '2' } as const
+type PlainPrice = 'ldsp' | 'hdf' | 'top' | 'hinge' | 'runner' | 'lift' | 'handle' | 'work' | 'delivery' | 'markup'
+type PriceField = PlainPrice | keyof typeof EDGE_FIELD
+const PRICE_FIELDS: PriceField[] = ['ldsp', 'hdf', 'edge04', 'edge1', 'edge2', 'top', 'hinge', 'runner', 'lift', 'handle', 'work', 'delivery', 'markup']
 
 const fmt = (v: number) => (Number.isInteger(v) ? String(v) : (Math.round(v * 10) / 10).toFixed(1).replace('.', ','))
 

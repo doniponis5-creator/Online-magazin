@@ -38,8 +38,42 @@ export type SheetData = {
   /** план сверху: заголовок, SVG из planSvg и его масштаб 1:N */
   plan?: { title: string; svg: string; scale?: number }
   tables: SheetTable[]
+  /** карта раскроя: листы с деталями (пакет мастера, история 7a) — после таблиц */
+  cutMaps?: { title: string; maps: CutMap[] }
   /** кому звонить по проекту: строка с телефоном магазина и ссылка WhatsApp */
   contacts: { text: string; url: string }
+  note: string
+  page: (n: number, total: number) => string
+}
+
+/** Один лист раскроя: размер листа, обрезка края и детали (мм, x — вдоль длины листа), подпись — номер детали. */
+export type CutMap = {
+  title: string
+  L: number
+  W: number
+  rects: { x: number; y: number; l: number; w: number; label: string }[]
+}
+
+/** Смета клиенту от мастера (пакет мастера, история 11): шапка мастера и клиента, таблица, итог, техника магазина. */
+export type EstimateData = {
+  /** «Смета на кухню» */
+  title: string
+  date: string
+  /** мастер: имя, телефон, мастерская — что вписал; пустое не печатается */
+  master: { name: string; phone: string; shop: string }
+  /** строки под заголовком: клиент, что за кухня */
+  lines: string[]
+  table: SheetTable
+  /** итог: «Сумма по строкам», «Наценка», «Итого» — последняя строка крупно */
+  totals: { label: string; value: string }[]
+  /** строки без цены не вошли в итог — пояснение мелко под итогом */
+  missing?: string
+  /** техника магазина отдельным блоком */
+  tech?: { table: SheetTable; total: { label: string; value: string } }
+  url: string
+  urlLabel: string
+  /** контакты магазина мелким в подвале */
+  shop: { text: string; url: string }
   note: string
   page: (n: number, total: number) => string
 }
@@ -74,19 +108,27 @@ export async function sheetPdf(d: SheetData): Promise<Blob> {
   if (d.plan) s.plan(d.plan.title, d.plan.svg, d.plan.scale, d.scaleLabel)
   s.walls(d.wallsTitle, d.walls, d.wallsScale, d.scaleLabel)
   for (const tb of d.tables) s.table(tb)
+  if (d.cutMaps?.maps.length) s.cutMaps(d.cutMaps.title, d.cutMaps.maps)
   s.note(d.note)
   s.footers(d)
+  return s.pdf(d.title)
+}
 
-  const pages: PdfPage[] = []
-  for (let i = 0; i < s.canvases.length; i++) {
-    const c = s.canvases[i]
-    const blob = await jpeg(c)
-    pages.push({ jpeg: new Uint8Array(await blob.arrayBuffer()), width: PX, height: PY, links: s.links[i] })
-    // память телефона: холст больше не нужен
-    c.width = 0
-    c.height = 0
+/** Смета клиенту: тот же растровый PDF (кириллица и «ң» — как в листе мастеру), собирается в телефоне. */
+export async function estimateSheet(d: EstimateData): Promise<Blob> {
+  await fontsReady()
+  const s = new Sheet()
+  s.page()
+  s.masterHeader(d)
+  s.table(d.table)
+  s.totals(d.totals, d.missing)
+  if (d.tech) {
+    s.table(d.tech.table)
+    s.totals([d.tech.total])
   }
-  return buildPdf(pages, d.title)
+  s.note(d.note)
+  s.estimateFooters(d)
+  return s.pdf(d.title)
 }
 
 class Sheet {
@@ -110,6 +152,19 @@ class Sheet {
     this.links.push([])
     this.ctx = ctx
     this.y = M
+  }
+
+  async pdf(title: string): Promise<Blob> {
+    const pages: PdfPage[] = []
+    for (let i = 0; i < this.canvases.length; i++) {
+      const c = this.canvases[i]
+      const blob = await jpeg(c)
+      pages.push({ jpeg: new Uint8Array(await blob.arrayBuffer()), width: PX, height: PY, links: this.links[i] })
+      // память телефона: холст больше не нужен
+      c.width = 0
+      c.height = 0
+    }
+    return buildPdf(pages, title)
   }
 
   /** Не влезает до низа листа — переходим на новый. */
@@ -226,6 +281,144 @@ class Sheet {
     // нажали на картинку в PDF — открывается эта кухня в 3D
     this.link(M, this.y, CW, h, url)
     this.y += h + 30
+  }
+
+  /** Шапка сметы: мастер крупно, телефон и мастерская, дата справа; ниже заголовок и клиент. */
+  masterHeader(d: EstimateData) {
+    const ctx = this.ctx
+    const { name, phone, shop } = d.master
+    this.font(19)
+    this.write(d.date, PX - M, this.y + 24, MUTED, 'right')
+    const dateW = ctx.measureText(d.date).width + 30
+    this.font(34, 800)
+    for (const line of wrap(ctx, name || phone || shop, CW - dateW)) {
+      this.write(line, M, this.y + 30)
+      this.y += 44
+    }
+    const sub = [name ? phone : '', name || phone ? shop : ''].filter(Boolean).join(' · ')
+    if (sub) {
+      this.font(22, 700)
+      for (const line of wrap(ctx, sub, CW)) {
+        this.write(line, M, this.y + 20, MUTED)
+        this.y += 32
+      }
+    }
+    this.y += 14
+    ctx.fillStyle = INK
+    ctx.fillRect(M, this.y, CW, 3)
+    this.y += 34
+    this.font(40, 800)
+    for (const line of wrap(ctx, d.title, CW)) {
+      this.write(line, M, this.y + 30)
+      this.y += 50
+    }
+    this.font(22)
+    for (const text of d.lines) {
+      for (const line of wrap(ctx, text, CW)) {
+        this.write(line, M, this.y + 16, MUTED)
+        this.y += 30
+      }
+    }
+    this.y += 24
+  }
+
+  /** Итог справа: подпись и сумма; последняя строка — крупно. */
+  totals(list: { label: string; value: string }[], missing?: string) {
+    this.room(list.length * 40 + 30)
+    list.forEach((r, i) => {
+      const last = i === list.length - 1
+      this.font(last ? 28 : 21, last ? 800 : 500)
+      const h = last ? 44 : 34
+      this.write(r.value, PX - M, this.y + h - 12, INK, 'right')
+      const vw = this.ctx.measureText(r.value).width
+      this.font(last ? 24 : 21, last ? 800 : 500)
+      this.write(r.label, PX - M - vw - 28, this.y + h - 12, last ? INK : MUTED, 'right')
+      this.y += h
+    })
+    if (missing) {
+      this.font(18)
+      for (const l of wrap(this.ctx, missing, CW)) {
+        this.room(26)
+        this.font(18)
+        this.write(l, PX - M, this.y + 22, MUTED, 'right')
+        this.y += 26
+      }
+    }
+    this.y += 30
+  }
+
+  /** Карта раскроя: листы по два в ряд, детали с номерами, отход серым. */
+  cutMaps(title: string, maps: CutMap[]) {
+    const gap = 24
+    const cw = (CW - gap) / 2
+    const cap = 34
+    const hOf = (m: CutMap) => cap + (cw * m.W) / m.L
+    this.heading(title, hOf(maps[0]) + 10)
+    for (let i = 0; i < maps.length; i += 2) {
+      const row = maps.slice(i, i + 2)
+      const h = Math.max(...row.map(hOf))
+      this.room(h + gap)
+      row.forEach((m, j) => this.cutMap(m, M + j * (cw + gap), this.y, cw))
+      this.y += h + gap
+    }
+    this.y += 10
+  }
+
+  cutMap(m: CutMap, x: number, y: number, w: number) {
+    const ctx = this.ctx
+    this.font(19, 700)
+    this.write(wrap(ctx, m.title, w)[0], x, y + 22)
+    const top = y + 34
+    const k = w / m.L
+    const h = m.W * k
+    // лист — серым: всё, что не занято деталями, — отход
+    ctx.fillStyle = '#d5dae1'
+    ctx.fillRect(x, top, w, h)
+    ctx.strokeStyle = INK
+    ctx.lineWidth = 2
+    ctx.strokeRect(x, top, w, h)
+    for (const r of m.rects) {
+      const rx = x + r.x * k
+      const ry = top + r.y * k
+      const rw = r.l * k
+      const rh = r.w * k
+      ctx.fillStyle = '#fff'
+      ctx.fillRect(rx, ry, rw, rh)
+      ctx.strokeStyle = MUTED
+      ctx.lineWidth = 1.2
+      ctx.strokeRect(rx, ry, rw, rh)
+      const size = Math.min(22, rh * 0.7, (rw / Math.max(1, r.label.length)) * 1.4)
+      if (size < 7) continue
+      ctx.font = `700 ${size}px ${FONT}`
+      ctx.fillStyle = INK
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(r.label, rx + rw / 2, ry + rh / 2)
+    }
+    ctx.textBaseline = 'alphabetic'
+    this.font(20)
+  }
+
+  /** Подвал сметы: ссылка на 3D-проект и контакты магазина мелким, номер страницы. */
+  estimateFooters(d: EstimateData) {
+    const total = this.canvases.length
+    this.canvases.forEach((c, i) => {
+      const ctx = c.getContext('2d')
+      if (!ctx) return
+      this.ctx = ctx
+      this.links.length = Math.max(this.links.length, i + 1)
+      const at = (x: number, y: number, w: number, h: number, url: string) => this.links[i].push({ x: x / PX, y: y / PY, w: w / PX, h: h / PY, url })
+      this.font(16, 700)
+      const w = ctx.measureText(d.urlLabel).width
+      this.write(d.urlLabel, M, PY - M + 14, BLUE)
+      at(M - 4, PY - M - 4, w + 8, 26, d.url)
+      this.font(16)
+      this.write(d.page(i + 1, total), PX - M, PY - M + 14, MUTED, 'right')
+      this.font(15)
+      const sw = ctx.measureText(d.shop.text).width
+      this.write(d.shop.text, M, PY - M + 38, MUTED)
+      at(M - 4, PY - M + 20, sw + 8, 24, d.shop.url)
+    })
   }
 
   /** Заголовок раздела; next — сколько места нужно сразу под ним, чтобы он не остался один внизу листа. */

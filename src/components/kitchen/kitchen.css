@@ -3738,3 +3738,278 @@ html.kp-lock body {
     margin: 0;
   }
 }
+
+/* ───────── Мастеру: раскрой, листы, кромка, смета (пакет мастера) ───────── */
+
+.kp-mstr {
+  margin-top: 20px;
+  padding: 18px;
+  border: 1px solid var(--kp-line);
+  border-radius: var(--radius-tile);
+  background: #fff;
+}
+
+.kp-mstr__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px 16px;
+}
+
+.kp-mstr__head .kp-note {
+  margin: 4px 0 0;
+  max-width: 60ch;
+}
+
+.kp-mstr__title {
+  margin: 0;
+  font: 800 20px/1.25 var(--font);
+  color: var(--kp-ink);
+}
+
+.kp-mstr__sub {
+  margin: 18px 0 8px;
+  font: 800 15px/1.3 var(--font);
+  color: var(--kp-ink);
+}
+
+.kp-mstr__sum {
+  display: grid;
+  gap: 6px;
+  margin: 14px 0;
+  padding: 0;
+  list-style: none;
+  font: 600 15px/1.4 var(--font);
+  font-variant-numeric: tabular-nums;
+  color: var(--kp-ink);
+}
+
+.kp-mstr__sum li {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--kp-stage);
+}
+
+.kp-mstr__total b {
+  font-weight: 800;
+}
+
+.kp-mstr__hint {
+  color: var(--kp-cobalt);
+  font-weight: 700;
+}
+
+.kp-mstr__fail {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff4e5;
+  color: #7a4b00;
+  font: 600 14px/1.4 var(--font);
+}
+
+.kp-mstr__client {
+  display: grid;
+  gap: 4px;
+  max-width: 420px;
+  margin: 0 0 12px;
+  font: 600 13px/1.3 var(--font);
+  color: var(--kp-muted);
+}
+
+.kp-mstr__client input,
+.kp-mform__field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--kp-line-strong);
+  border-radius: 10px;
+  background: #fff;
+  font: 600 16px/1.3 var(--font);
+  color: var(--kp-ink);
+}
+
+.kp-mstr__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.kp-cutmap {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.kp-cutmap__sheet {
+  margin: 0;
+}
+
+.kp-cutmap__sheet figcaption {
+  margin: 0 0 4px;
+  font: 700 13px/1.3 var(--font);
+  color: var(--kp-soft);
+}
+
+.kp-cutmap__sheet svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.kp-cutmap__waste {
+  fill: #d5dae1;
+  stroke: var(--kp-ink);
+  stroke-width: 8;
+}
+
+.kp-cutmap__part {
+  fill: #fff;
+  stroke: var(--kp-muted);
+  stroke-width: 4;
+}
+
+.kp-cutmap__id {
+  fill: var(--kp-ink);
+  font-family: var(--font);
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+/* форма «Мои цены и данные»: окно на компьютере, лист на весь экран на телефоне */
+.kp-mform {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgb(15 23 42 / 45%);
+}
+
+.kp-mform__box {
+  display: flex;
+  flex-direction: column;
+  width: min(720px, 100%);
+  max-height: 100%;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 20px 60px rgb(15 23 42 / 25%);
+}
+
+.kp-mform__bar,
+.kp-mform__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--kp-line);
+}
+
+.kp-mform__foot {
+  justify-content: flex-end;
+  border-top: 1px solid var(--kp-line);
+  border-bottom: 0;
+}
+
+.kp-mform__bar h3 {
+  margin: 0;
+  font: 800 18px/1.3 var(--font);
+}
+
+.kp-mform__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 18px 18px;
+  overscroll-behavior: contain;
+}
+
+.kp-mform fieldset {
+  margin: 14px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.kp-mform legend {
+  margin: 0 0 8px;
+  padding: 0;
+  font: 800 15px/1.3 var(--font);
+  color: var(--kp-ink);
+}
+
+.kp-mform__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 12px;
+}
+
+.kp-mform__field {
+  display: grid;
+  gap: 4px;
+  align-content: end;
+  font: 600 13px/1.3 var(--font);
+  color: var(--kp-muted);
+}
+
+.kp-mform__seg {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.kp-mform__seg button {
+  min-width: 72px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--kp-line-strong);
+  border-radius: 10px;
+  background: #fff;
+  font: 700 15px/1 var(--font);
+  color: var(--kp-ink);
+  cursor: pointer;
+}
+
+.kp-mform__seg button[aria-checked='true'] {
+  border-color: var(--kp-cobalt);
+  background: var(--kp-ice);
+  color: var(--kp-cobalt);
+}
+
+@media (max-width: 640px) {
+  .kp-mstr {
+    padding: 14px;
+  }
+
+  .kp-mstr__actions .btn {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  .kp-cutmap {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .kp-mform {
+    align-items: stretch;
+    padding: 0;
+  }
+
+  .kp-mform__box {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+
+  .kp-mform__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kp-mform__foot .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

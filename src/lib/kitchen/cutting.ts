@@ -41,6 +41,11 @@ export type CutLook = {
   bodyEdge?: 0.4 | 1 | 2
   /** язык названий цветов; нет — ru */
   lang?: 'ru' | 'ky'
+  /**
+   * слова «низ» и «верх» (`t.xl.tier`) — к названию тона, когда у тона свой цвет верха:
+   * «Кашемир и дуб — низ» / «— верх»; нет — одно название тона на оба ряда
+   */
+  tier?: { lower: string; upper: string }
 }
 
 export type CutMaterial = {
@@ -111,11 +116,15 @@ const PANELS: PanelName[] = ['filler', 'strip', 'islandBack']
 export function cutParts(spec: SpecData, look: CutLook): CutPart[] {
   const lang = look.lang ?? 'ru'
   const body = finishOf(look.body, lang)
-  // цвета тона — названием тона и цветом: у тона одно имя на низ и верх
+  // цвета тона — названием тона; у тона с отдельным верхом одно имя на оба ряда — различаем словами «низ» / «верх», без hex
   const tone = look.tone
-  const toneFinish = (t: CutTone, color: string, texture: CutTone['texture']): Finish => ({ material: null, label: `${lang === 'ky' ? t.ky : t.ru}, ${color}`, color, wood: texture === 'wood' })
-  const styleFacade = tone ? toneFinish(tone, tone.facade, tone.texture) : null
-  const styleUpper = tone?.upper ? toneFinish(tone, tone.upper, tone.upperTexture) : null
+  const toneFinish = (t: CutTone, color: string, texture: CutTone['texture'], tier: string | undefined): Finish => {
+    const name = lang === 'ky' ? t.ky : t.ru
+    return { material: null, label: tier ? `${name} — ${tier}` : name, color, wood: texture === 'wood' }
+  }
+  const split = Boolean(tone?.upper)
+  const styleFacade = tone ? toneFinish(tone, tone.facade, tone.texture, split ? look.tier?.lower : undefined) : null
+  const styleUpper = tone?.upper ? toneFinish(tone, tone.upper, tone.upperTexture, look.tier?.upper) : null
   const facade = look.facade || !styleFacade ? finishOf(look.facade, lang) : styleFacade
   // верх — по тем же правилам, что в 3D (`createMaterials`): свой цвет; иначе как низ из каталога; иначе верх тона
   const upper =

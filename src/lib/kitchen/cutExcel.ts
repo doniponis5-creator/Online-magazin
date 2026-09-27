@@ -12,7 +12,7 @@ import type { XlsxCell, XlsxSheet } from './xlsx'
  */
 export function cutWorkbook(spec: SpecData, look: CutLook, t: KitchenTexts, opts?: NestOpts): XlsxSheet[] {
   const x = t.xl
-  const parts = cutParts(spec, { ...look, lang: x.lang })
+  const parts = cutParts(spec, { ...look, lang: x.lang, tier: x.tier })
   const nested = nest(parts, opts)
   const oversize = new Set(nested.flatMap((r) => r.oversize))
   const partName = (p: CutPart) =>
