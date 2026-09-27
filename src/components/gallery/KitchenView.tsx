@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { formatSom } from '@/lib/format'
 import type { Lang } from '@/lib/i18n/config'
+import { galleryDate } from '@/lib/gallery/format'
 import { galleryTexts } from '@/lib/gallery/texts'
 import type { KitchenPageData } from './data'
 import { Comments, KitchenMedia, OwnerTools, Rating, ShareButton } from './social'
@@ -15,9 +16,7 @@ export type Viewer = { mine: boolean; stars: number | null }
 export function KitchenView({ page, lang, viewer }: { page: KitchenPageData; lang: Lang; viewer: Viewer | null }) {
   const t = galleryTexts(lang)
   const f = page.facts
-  const date = page.createdAt
-    ? new Date(page.createdAt).toLocaleDateString(lang === 'ky' ? 'ky-KG' : 'ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
-    : null
+  const date = page.createdAt ? galleryDate(page.createdAt, lang, 'long') || null : null
   return (
     <div className="container gl-page">
       <nav className="gl-back">

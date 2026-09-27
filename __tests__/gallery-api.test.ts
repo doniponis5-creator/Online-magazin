@@ -246,6 +246,30 @@ describe('API галереи', () => {
     expect((await one.GET(new Request(url(`/api/gallery/${id}`)), ctx({ id }))).status).toBe(404)
   })
 
+  it('скрытый комментарий не считается ни в панели, ни в карточке галереи', async () => {
+    const id = await publishAs(phone())
+    login(phone(), 'Болот Исаков')
+    const posted = await comments.POST(json(`/api/gallery/${id}/comments`, { text: 'Красивая кухня' }), ctx({ id }))
+    const commentId = ((await posted.json()) as { comment: { id: string } }).comment.id
+    process.env.ASSISTANT_LOG_KEY = 'test-panel-key'
+    const panelHtml = async () => (await panel.GET(new Request(url('/panel/gallery?key=test-panel-key')))).text()
+    const cardComments = async () =>
+      ((await (await list.GET(new Request(url('/api/gallery?sort=new')) as never)).json()) as { items: { commentCount: number }[] })
+        .items[0].commentCount
+    expect(await panelHtml()).toContain('комментариев 1')
+    expect(await cardComments()).toBe(1)
+
+    const form = new FormData()
+    form.set('key', 'test-panel-key')
+    form.set('kitchen', id)
+    form.set('comment', commentId)
+    expect((await panel.POST(new Request(url('/panel/gallery'), { method: 'POST', body: form }))).status).toBe(303)
+    const html = await panelHtml()
+    expect(html).toContain('комментариев 0')
+    expect(html).not.toContain('комментариев 1')
+    expect(await cardComments()).toBe(0)
+  })
+
   it('«мои» без входа — 401', async () => {
     const res = await list.GET(new Request(url('/api/gallery?mine=1')) as never)
     expect(res.status).toBe(401)

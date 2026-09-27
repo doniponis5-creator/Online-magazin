@@ -98,7 +98,7 @@ function kitchenCard(row: StoredKitchen, key: string): string {
     ${pic}
     <div class="body">
       <b>${esc(row.title)}</b>
-      <div class="meta">${when(row.createdAt)} · ${author} · ${rating(row)} · комментариев ${row.comments.length}${row.reports ? ` · <span class="rep">жалоб: ${row.reports}</span>` : ''}</div>
+      <div class="meta">${when(row.createdAt)} · ${author} · ${rating(row)} · комментариев ${row.comments.filter((c) => c.status !== 'hidden').length}${row.reports ? ` · <span class="rep">жалоб: ${row.reports}</span>` : ''}</div>
       ${photos ? `<div class="photos">${photos}</div>` : ''}
       ${row.status === 'published' ? hideButton(key, { kitchen: row.id }, 'Скрыть эту кухню? Картинки будут удалены.') : '<span class="state">Скрыта вами</span>'}
     </div>

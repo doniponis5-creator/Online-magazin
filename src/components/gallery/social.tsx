@@ -6,6 +6,7 @@ import { CustomerLogin } from '@/components/CustomerLogin'
 import '@/components/account.css'
 import type { Lang } from '@/lib/i18n/config'
 import { MAX_COMMENT, MAX_REAL_PHOTOS, MIN_COMMENT, type GalleryComment } from '@/lib/gallery/rules'
+import { galleryDate, galleryNumber } from '@/lib/gallery/format'
 import { errorText, galleryTexts } from '@/lib/gallery/texts'
 import { shrinkPhoto } from '@/lib/reviews/shrink'
 
@@ -197,7 +198,7 @@ export function Rating(props: { lang: Lang; apiId: string; avg: number; count: n
   return (
     <div className="gl-rate">
       <div className="gl-rate__row">
-        <span className="gl-rate__avg">{count ? avg.toLocaleString(lang === 'ky' ? 'ky-KG' : 'ru-RU') : '—'}</span>
+        <span className="gl-rate__avg">{count ? galleryNumber(avg) : '—'}</span>
         <span className="gl-rate__stars" role="group" aria-label={t.rateTitle} onMouseLeave={() => setHover(0)}>
           {[1, 2, 3, 4, 5].map((n) => (
             <button
@@ -287,7 +288,7 @@ export function Comments({ lang, apiId, initial, loggedIn }: { lang: Lang; apiId
               <div className="gl-comment__head">
                 <b>{c.author}</b>
                 <time className="gl-muted" dateTime={c.at}>
-                  {new Date(c.at).toLocaleDateString(lang === 'ky' ? 'ky-KG' : 'ru-RU')}
+                  {galleryDate(c.at, lang)}
                 </time>
                 <button type="button" className="gl-link gl-small" onClick={() => report(c.id)}>
                   {reported.has(c.id) ? t.reported : t.report}

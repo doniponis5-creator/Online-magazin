@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { formatSom } from '@/lib/format'
 import type { Lang } from '@/lib/i18n/config'
+import { galleryNumber } from '@/lib/gallery/format'
 import { galleryTexts } from '@/lib/gallery/texts'
 import type { Tile } from './data'
 import './gallery.css'
@@ -48,7 +49,7 @@ export function KitchenTile({ tile, lang }: { tile: Tile; lang: Lang }) {
                 <>
                   <StarsView value={tile.avg} />
                   <span>
-                    {tile.avg.toLocaleString(lang === 'ky' ? 'ky-KG' : 'ru-RU')} · {t.ratings(tile.count)}
+                    {galleryNumber(tile.avg)} · {t.ratings(tile.count)}
                   </span>
                 </>
               ) : (
