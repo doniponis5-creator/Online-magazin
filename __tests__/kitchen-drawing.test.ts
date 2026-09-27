@@ -76,7 +76,7 @@ function rng(seed: number) {
 
 type Kitchen = { name: string; plan: Plan; spec: SpecData; lang: 'ru' | 'ky'; ceiling: number }
 
-function kitchen(input: PlanInput, o: { style?: number; ceiling: number; toCeiling: boolean; hood?: 'chimney' | 'inclined' | 'telescopic'; gas?: boolean; lang?: 'ru' | 'ky' }): Kitchen {
+function kitchen(input: PlanInput, o: { style?: number; ceiling: number; toCeiling: boolean; hood?: 'chimney' | 'inclined' | 'telescopic' | 'insert'; gas?: boolean; lang?: 'ru' | 'ky' }): Kitchen {
   const style = STYLES[(o.style ?? 0) % STYLES.length]
   const plan = planKitchen(input, { shelves: style.shelves })
   const items = {
@@ -267,6 +267,23 @@ describe('отметки высот, вытяжка, остров, масшта�
     const dim = texts(svgOf(cornerDefault, run)).find((t) => t.a['data-dim'] === 'hood')
     expect(dim).toBeTruthy()
     expect(num(dim!.s)).toBeCloseTo(hood.y - cornerDefault.spec.heights.counter, 0)
+  })
+
+  it('2026-09-27: встроенная вытяжка — отметка низа верхнего ряда на обеих стенах поднята, «до вытяжки» = норма 65', () => {
+    const k = kitchen(
+      { shape: 'corner', a: 300, b: 240, c: 0, island: 0, fridge, hob: appliance({ slot: 'hob', w: 59, h: 5, builtIn: true }), oven: { w: 59.5, h: 59.5, d: 56 }, hood: { w: 60 } },
+      { ceiling: 270, toCeiling: false, hood: 'telescopic' },
+    )
+    const ub = k.spec.heights.upperBottom
+    expect(ub).toBeGreaterThan(142)
+    for (const run of k.spec.runs) {
+      const marks = marksOf(svgOf(k, run))
+      expect(marks, run.id).toContainEqual(expect.closeTo(ub, 1))
+      expect(marks, run.id).not.toContainEqual(expect.closeTo(142, 0.5))
+    }
+    const run = k.spec.runs.find((r) => r.boxes.some((b) => b.slot === 'hood'))!
+    const dim = texts(svgOf(k, run)).find((t) => t.a['data-dim'] === 'hood')
+    expect(num(dim!.s)).toBe(65)
   })
 
   it('D18: остров — без стены и отметок верхних шкафов, со свесом в разрезе', () => {

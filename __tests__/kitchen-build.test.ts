@@ -6,7 +6,7 @@ import { UNDER_COUNTER } from '@/lib/kitchen/checks'
 import { BASE_H, BODY, PLINTH } from '@/lib/kitchen/dims'
 import { cutList, extraList, frontList, modulesOf, type SpecData } from '@/lib/kitchen/spec'
 import { getStyle, getTone, STYLES, type KitchenStyle } from '@/lib/kitchen/styles'
-import type { HobKind, KitchenAppliance, Shape } from '@/lib/kitchen/types'
+import type { HobKind, HoodKind, KitchenAppliance, Shape } from '@/lib/kitchen/types'
 
 /**
  * 3D-сборка в node, как в аудите: текстуры рисуются на заглушке холста.
@@ -50,7 +50,7 @@ const appliance = (over: Partial<KitchenAppliance>): KitchenAppliance => ({
 
 const fridge = appliance({ slot: 'fridge' })
 const oven = appliance({ slot: 'oven', w: 59.5, h: 59.5, d: 56, builtIn: true })
-const hood = (kind: 'chimney' | 'inclined' | 'telescopic' = 'chimney') => appliance({ slot: 'hood', w: 60, h: 50, d: 50, hood: kind })
+const hood = (kind: HoodKind = 'chimney') => appliance({ slot: 'hood', w: 60, h: 50, d: 50, hood: kind })
 const hob = (kind: HobKind = 'electric') => appliance({ slot: 'hob', w: 59, h: 5, d: 52, builtIn: true, hob: kind })
 const dw = (w = 45) => appliance({ slot: 'dishwasher', w: w - 0.2, h: 81.5, d: 55, builtIn: true })
 
@@ -414,5 +414,67 @@ describe('08/D16: hoodOver меряется по поставленной выт
       seen++
     }
     expect(seen).toBeGreaterThan(50)
+  })
+})
+
+/* ───────────── 2026-09-27: встроенная вытяжка поднимает весь ряд ───────────── */
+
+describe('2026-09-27: встроенная вытяжка поднимает весь верхний ряд', () => {
+  /** угловая по умолчанию с вытяжкой `kind` над панелью `hobKind` */
+  const withHood = (kind: HoodKind, hobKind: HobKind = 'electric', style = STYLES[0]) => {
+    const base = cornerDefault()
+    return build({ ...base, style, input: { ...base.input, hob: hob(hobKind) }, items: { ...base.items, hob: hob(hobKind), hood: hood(kind) } })
+  }
+  /** низ каждого шкафа и добора верхнего ряда на всех стенах, см (антресоли и шкаф над холодильником — не ряд) */
+  const ROW = new Set(['upper', 'vitrine', 'lift'])
+  const rowBottoms = (spec: SpecData) =>
+    spec.runs.flatMap((r) => {
+      const m = modulesOf(r)
+      return [...m.upper.filter((b) => ROW.has(b.kind)), ...m.fillers.filter((b) => b.y > 100)].map((b) => ({ run: r.id, kind: b.kind, x: b.x, y: b.y }))
+    })
+
+  for (const [kind, hobKind, norm] of [
+    ['telescopic', 'electric', 65],
+    ['insert', 'electric', 65],
+    ['telescopic', 'gas', 75],
+    ['insert', 'gas', 75],
+  ] as const)
+    it(`${kind} над ${hobKind === 'gas' ? 'газовой' : 'электрической'}: все верхние шкафы на обеих стенах на одной высоте, низ вытяжки — ${norm} см`, () => {
+      const built = withHood(kind, hobKind)
+      const counter = 82 + STYLES[0].topCm
+      const bottoms = rowBottoms(built.spec)
+      expect(new Set(bottoms.map((b) => b.run))).toEqual(new Set(['A', 'B']))
+      const ub = built.spec.heights.upperBottom
+      // разница 0 мм: низ шкафа с вытяжкой = низ соседей
+      for (const b of bottoms) expect(b.y, `${b.run} ${b.kind} x=${b.x}`).toBeCloseTo(ub, 1)
+      // ряд поднят — 58 см над столешницей не хватает до нормы вытяжки
+      expect(ub).toBeGreaterThanOrEqual(counter + norm)
+      expect(built.hoodOver).toBe(norm)
+      const strip = built.spec.runs.flatMap((r) => r.boxes).find((b) => b.slot === 'hood')!
+      expect(strip.y - counter).toBeCloseTo(norm, 1)
+    })
+
+  it('каминная, наклонная, без вытяжки, «камин» классики и вытяжка над островом — ряд прежний: 142 см на всех стенах', () => {
+    const base = cornerDefault()
+    // варочная панель на острове — вытяжка висит над ней, не в ряду у стены
+    const island = {
+      ...base,
+      input: { ...base.input, shape: 'island' as const, a: 330, b: 0, island: 160, arrangement: { A: ['fridge', 'sink', 'dishwasher', 'oven'], I: ['hob'] } } satisfies PlanInput,
+      items: { ...base.items, hood: hood('telescopic') },
+    }
+    const kitchens: [string, Built][] = [
+      ['каминная', withHood('chimney')],
+      ['наклонная над газовой', withHood('inclined', 'gas')],
+      ['без вытяжки', build({ ...base, input: { ...base.input, hood: null }, items: { ...base.items, hood: null } })],
+      ['«камин» классики, телескопическая', withHood('telescopic', 'electric', getStyle('classic'))],
+      ['остров, телескопическая', build(island)],
+    ]
+    const onIsland = planKitchen(island.input, { shelves: island.style.shelves })
+    expect(onIsland.runs.find((r) => !r.wall)?.modules.some((m) => m.kind === 'hob')).toBe(true)
+    expect(onIsland.hoodHeight).toBeDefined()
+    for (const [name, built] of kitchens) {
+      expect(built.spec.heights.upperBottom, name).toBe(142)
+      for (const b of rowBottoms(built.spec)) expect(b.y, `${name}: ${b.run} ${b.kind} x=${b.x}`).toBeCloseTo(142, 1)
+    }
   })
 })

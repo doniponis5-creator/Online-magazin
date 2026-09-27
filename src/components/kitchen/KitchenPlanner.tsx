@@ -42,6 +42,7 @@ import {
   planKitchen,
   resolveArrangement,
   stepItem,
+  upperBottomOf,
   WIDTH_LIMITS,
   WINDOW_LIMITS,
   wallOf,
@@ -72,7 +73,7 @@ import {
   type SlotKind,
   type WallId,
 } from '@/lib/kitchen/types'
-import { tallMin, UPPER_BOTTOM, WINDOW } from '@/lib/kitchen/dims'
+import { tallMin, WINDOW } from '@/lib/kitchen/dims'
 import { DRAWING_CSS, elevationSvg, islandOverhang, makerList, PLAN_BOX, pickScale, planSvg, techRows, windowFor, type DrawingLabels } from './drawing'
 import { PlanSketch } from './PlanSketch'
 import { kitchenTexts, type KitchenTexts } from './texts'
@@ -733,6 +734,8 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     }),
     [style, handle, state.handleMetal, topSel, splashSel],
   )
+  // низ верхнего ряда — как в 3D: встроенная вытяжка поднимает весь ряд
+  const upperBottom = useMemo(() => upperBottomOf(plan, items.hood, lookStyle), [plan, items.hood, lookStyle])
   const finish = useMemo(
     () => ({
       facade: frontColor(state.facade),
@@ -1331,13 +1334,13 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     const ceil = ceiling - 0.4
     let top = ceil
     if (state.lowUppers) {
-      top = Math.min(UPPER_BOTTOM + style.upperCm, ceil)
+      top = Math.min(upperBottom + style.upperCm, ceil)
       if (items.fridge && !state.fridgeOpen) top = Math.min(ceil, Math.max(top, items.fridge.h + 35))
     }
     const max = Math.floor(top)
     const min = k === 'tall' ? tallMin(Boolean(items.microwave?.builtIn)) : COLUMN_HEIGHT.min
     return { key: k as ColumnItem, value: Math.min(max, Math.round(state.heights?.[k as ColumnItem] ?? max)), min, max }
-  }, [target, ceiling, state.lowUppers, state.fridgeOpen, state.heights, style.upperCm, items.fridge, items.microwave])
+  }, [target, ceiling, state.lowUppers, state.fridgeOpen, state.heights, style.upperCm, upperBottom, items.fridge, items.microwave])
 
   const setHeight = (dir: 1 | -1) => {
     if (!heightCtl) return
@@ -1767,7 +1770,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   /* ───────── проверка проекта ───────── */
 
   // толщина столешницы та же, что в 3D (выбранная или стиля), — для проверки «плита вровень со столешницей»
-  const checks = useMemo(() => checkProject(plan, { hoodOver, topCm: lookStyle.topCm }), [plan, hoodOver, lookStyle.topCm])
+  const checks = useMemo(() => checkProject(plan, { hoodOver, topCm: lookStyle.topCm, upperBottom }), [plan, hoodOver, lookStyle.topCm, upperBottom])
   const checksOk = checks.filter((c) => c.level === 'ok').length
   const checkText = (c: Check): string => {
     // при плите правила те же, что у варочной панели, — но говорим «плита»
@@ -1804,6 +1807,8 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
         return c.level === 'ok' ? t.checks.hoodHeightOk(c.over, c.gas) : t.checks.hoodHeightWarn(c.over, c.min, c.gas)
       case 'stoveHeight':
         return c.level === 'ok' ? t.stove.heightOk(c.h, c.top) : t.stove.heightWarn(c.h, c.top)
+      case 'upperRaised':
+        return t.checks.upperRaised(c.over)
     }
   }
 

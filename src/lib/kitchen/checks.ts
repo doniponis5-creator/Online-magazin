@@ -1,4 +1,4 @@
-import { BASE_H, counterTop, hoodNorm, isTall, STOVE_LEVEL } from './dims'
+import { BASE_H, counterTop, hoodNorm, isTall, STOVE_LEVEL, UPPER_BOTTOM } from './dims'
 import { DEPTH, type Module, type Plan, type Run } from './layout'
 
 /**
@@ -23,6 +23,8 @@ export type Check =
   | { id: 'hoodHeight'; level: CheckLevel; over: number; min: number; gas: boolean }
   /** отдельностоящая плита против верха столешницы: h — плита, top — столешница, см */
   | { id: 'stoveHeight'; level: CheckLevel; h: number; top: number }
+  /** верхний ряд поднят встроенной вытяжкой: over — его низ над столешницей, см; только пояснение */
+  | { id: 'upperRaised'; level: CheckLevel; over: number }
 
 /**
  * Правило треугольника: каждая сторона 120–270 см, сумма не больше 790 см.
@@ -103,10 +105,11 @@ function tallUnderWindow(plan: Plan): boolean {
 }
 
 /**
- * Что известно не из раскладки: фактический низ вытяжки над панелью (из 3D) и
- * толщина столешницы стиля (`Style.topCm`), см.
+ * Что известно не из раскладки: фактический низ вытяжки над панелью (из 3D),
+ * толщина столешницы стиля (`Style.topCm`) и низ верхнего ряда от пола
+ * (`upperBottomOf` в layout.ts), см.
  */
-export type CheckFacts = { hoodOver?: number; topCm?: number }
+export type CheckFacts = { hoodOver?: number; topCm?: number; upperBottom?: number }
 
 export function checkProject(plan: Plan, facts: CheckFacts = {}): Check[] {
   const out: Check[] = []
@@ -154,6 +157,10 @@ export function checkProject(plan: Plan, facts: CheckFacts = {}): Check[] {
     const top = Math.round(counterTop(facts.topCm) * 10) / 10
     const h = Math.round(plan.stove.h * 10) / 10
     out.push({ id: 'stoveHeight', level: Math.abs(h - top) <= STOVE_LEVEL + 1e-9 ? 'ok' : 'warn', h, top })
+  }
+  // Встроенная вытяжка подняла весь верхний ряд — покупателю объяснить почему.
+  if (facts.upperBottom !== undefined && facts.topCm !== undefined && Number.isFinite(facts.upperBottom) && facts.upperBottom > UPPER_BOTTOM + 0.05) {
+    out.push({ id: 'upperRaised', level: 'ok', over: Math.round(facts.upperBottom - counterTop(facts.topCm)) })
   }
   out.push({ id: 'fits', level: plan.dropped.length === 0 ? 'ok' : 'warn', count: plan.dropped.length })
   return out

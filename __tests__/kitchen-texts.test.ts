@@ -153,3 +153,14 @@ describe('тексты конструктора — правки аудита T0
     expect(ky.photoFailed).not.toMatch(/Төмөндө/)
   })
 })
+
+describe('2026-09-27: верхний ряд поднят встроенной вытяжкой', () => {
+  it('RU и KY: пояснение простыми словами — на сколько поднят ряд и почему', () => {
+    const ru = kitchenTexts('ru').checks.upperRaised(70)
+    const ky = kitchenTexts('ky').checks.upperRaised(70)
+    expect(ru).toBe('Верхние шкафы подняты до 70 см над столешницей — так требует встроенная вытяжка.')
+    expect(ky).toContain('70 см')
+    expect(ky).toMatch(/сордургуч/i)
+    expect(ky).not.toBe(ru)
+  })
+})

@@ -6,6 +6,7 @@ import {
   type Cabinet,
   type CabinetId,
   type FixedItem,
+  type HoodKind,
   type ItemKey,
   type KitchenAppliance,
   type Shape,
@@ -13,7 +14,7 @@ import {
   type SlotKind,
   type WallId,
 } from './types'
-import { CARCASS_D, FRONT_T, hoodNorm, isTall, UPPER_CARCASS_D, up5 } from './dims'
+import { CARCASS_D, counterTop, FRONT_T, hoodBelow, hoodNorm, isTall, UPPER_BOTTOM, UPPER_CARCASS_D, up5 } from './dims'
 
 /**
  * Раскладка кухни по стенам — как её сделал бы мебельщик.
@@ -149,6 +150,25 @@ export type Plan = {
   hoodHeight?: { over: number; gas: boolean }
   /** отдельностоящая плита встала: её габариты, см, и стена */
   stove?: { w: number; h: number; d: number; wall: RunId }
+}
+
+/**
+ * Низ верхнего ряда от пола, см — одно число для 3D, чертежа, экрана и
+ * проверки. Встроенная вытяжка (телескопическая, полностью встраиваемая)
+ * стоит в шкафу ряда, и её низ должен быть на норме над панелью
+ * (`hoodHeight.over`): тогда поднимается весь верхний ряд на всех стенах —
+ * шкафы ровные, угол сходится. Каминная и наклонная висят на стене между
+ * шкафами, «камин» стиля — свой короб, над островом — своя вытяжка: ряд
+ * прежний, `UPPER_BOTTOM`. Панель — верх столешницы (`look.topCm`) или верх
+ * отдельностоящей плиты.
+ */
+export function upperBottomOf(plan: Plan, hood: { hood?: HoodKind } | null | undefined, look: { topCm: number; mantel?: boolean }): number {
+  const below = hood ? hoodBelow(hood.hood) : null
+  if (below === null || look.mantel || !plan.hoodHeight) return UPPER_BOTTOM
+  if (!plan.runs.some((r) => r.wall && r.uppers.some((u) => u.kind === 'hood'))) return UPPER_BOTTOM
+  const cook = plan.stove ? plan.stove.h : counterTop(look.topCm)
+  // до миллиметра вверх: вытяжка не опускается ниже нормы из-за округления
+  return Math.max(UPPER_BOTTOM, Math.ceil((cook + plan.hoodHeight.over + below) * 10 - 1e-6) / 10)
 }
 
 export type PlanInput = {

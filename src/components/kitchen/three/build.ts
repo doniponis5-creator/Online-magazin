@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { baseKey, DRAWER_PARTS, MIN_EDIT_W, OVER_FRIDGE_FRONTS, upperKey } from '@/lib/kitchen/fronts'
 import * as KD from '@/lib/kitchen/dims'
-import { CEILING, DEPTH, type Module, type Plan, type Run, type Upper } from '@/lib/kitchen/layout'
+import { CEILING, DEPTH, upperBottomOf, type Module, type Plan, type Run, type Upper } from '@/lib/kitchen/layout'
 import type { Dims, DimsKind, SpecBox, SpecCarcass, SpecData, SpecExtra, SpecFront, SpecRun, SpecTop } from '@/lib/kitchen/spec'
 import type { DoorKind, KitchenStyle, Tone } from '@/lib/kitchen/styles'
 import { isCabinet, type BaseFront, type ColumnItem, type FloorKind, type FrontVariant, type ItemKey, type KitchenAppliance, type SlotKind, type UpperFront } from '@/lib/kitchen/types'
@@ -22,7 +22,6 @@ const BODY = KD.BODY / 100
 const CARCASS_D = KD.CARCASS_D / 100
 const TOP_D = KD.TOP_D / 100
 const UPPER_D = KD.UPPER_CARCASS_D / 100
-const UPPER_BOTTOM = KD.UPPER_BOTTOM / 100
 /** Планка у глухой части углового шкафа, м. */
 const STRIP = KD.CORNER_STRIP / 100
 /** потолок по умолчанию */
@@ -130,6 +129,8 @@ type Ctx = {
   counterY: number
   /** варочная поверхность, м от пола: столешница или верх отдельностоящей плиты */
   cookY: number
+  /** низ верхнего ряда на всех стенах (`upperBottomOf`) */
+  upperBottom: number
   /** верх основного ряда верхних шкафов */
   upperTop: number
   /** второй ряд до потолка (антресоли) */
@@ -921,7 +922,7 @@ function backsplash(ctx: Ctx, run: Run, g: THREE.Group) {
     if (x1 - x0 < 0.5) return
     const mid = (x0 + x1) / 2
     const up = run.uppers.find((u) => u.x <= mid && u.x + u.w >= mid)
-    let top = UPPER_BOTTOM
+    let top = ctx.upperBottom
     if (up?.kind === 'hood' && tall) top = ctx.upperTop
     if (mid > w0 && mid < w1) top = WINDOW.backSill
     const last = pieces[pieces.length - 1]
@@ -944,7 +945,7 @@ function backsplash(ctx: Ctx, run: Run, g: THREE.Group) {
 
 function uppers(ctx: Ctx, run: Run, g: THREE.Group) {
   const { mats, style, input, upperTop } = ctx
-  const UB = UPPER_BOTTOM
+  const UB = ctx.upperBottom
   const corniceMat = mats.upper
   // Карниз закрывает верх шкафа до стены и выступает вперёд профилем.
   // До потолка карниза нет: шкафы упираются в потолок.
@@ -1123,14 +1124,14 @@ function uppers(ctx: Ctx, run: Run, g: THREE.Group) {
           anchor(ctx, 'hood', g, x + w / 2, bottom + 0.2, 0.5)
           break
         }
-        // Встраиваемая вытяжка прячется в шкаф: снизу видна только планка.
-        // Шкаф над панелью выше соседних: низ вытяжки — на норме над панелью (D16).
-        const lift = app.hood === 'telescopic' ? 0.045 : 0
-        const hb = Math.max(UB - 0.005, hoodAt(ctx))
-        cabinet(hb + 0.005 + lift, 'doors')
+        // Встраиваемая вытяжка прячется в шкаф: снизу видна только планка
+        // (у телескопической — ещё козырёк). Шкаф — вровень с соседями: ради
+        // нормы над панелью (D16) поднят весь ряд (`upperBottomOf`).
+        const hb = UB - cm(KD.hoodBelow(app.hood) ?? KD.HOOD_BELOW.insert)
+        cabinet(UB, 'doors')
         mezzanine(x, w)
         const strip = new THREE.Group()
-        strip.add(slab(mats.appliance(app.finish), hx, hb, 0.02, hx + aw, hb + 0.005 + lift, app.hood === 'telescopic' ? UPPER_D + 0.05 : UPPER_D - 0.01, true))
+        strip.add(slab(mats.appliance(app.finish), hx, hb, 0.02, hx + aw, UB, app.hood === 'telescopic' ? UPPER_D + 0.05 : UPPER_D - 0.01, true))
         tag(strip, 'hood')
         applianceDims(strip, app, 'hood', [60, 30, 30], { x: hx * 100, y: hb * 100 })
         ctx.objects.hood = strip
@@ -1729,8 +1730,10 @@ function room(ctx: Ctx, root: THREE.Group) {
 function heights(input: BuildInput) {
   const wallH = cm(input.room.ceiling)
   const ceil = wallH - 0.004
-  const main = UPPER_BOTTOM + cm(input.style.upperCm)
-  let upperTop = main
+  const upperBottom = cm(upperBottomOf(input.plan, input.items.hood, input.style))
+  const main = upperBottom + cm(input.style.upperCm)
+  // поднятый встроенной вытяжкой ряд при низком потолке упирается в потолок
+  let upperTop = Math.min(main, ceil)
   let mezz: Ctx['mezz'] = null
   if (input.room.toCeiling) {
     // Щель под потолком меньше 25 см — просто высокие шкафы в один ряд.
@@ -1742,7 +1745,7 @@ function heights(input: BuildInput) {
   const fridge = input.items.fridge
   const niche = input.plan.runs.some((r) => r.uppers.some((u) => u.kind === 'fridge'))
   if (fridge && niche && !input.room.toCeiling) columnTop = Math.min(ceil, Math.max(columnTop, cm(fridge.h) + 0.05 + 0.3))
-  return { wallH, upperTop, mezz, columnTop }
+  return { wallH, upperBottom, upperTop, mezz, columnTop }
 }
 
 export function buildKitchen(input: BuildInput): Built {
@@ -1764,6 +1767,7 @@ function assemble(input: BuildInput): Built {
     input,
     counterY,
     cookY: input.plan.stove ? cm(input.plan.stove.h) : counterY,
+    upperBottom: h.upperBottom,
     upperTop: h.upperTop,
     mezz: h.mezz,
     columnTop: h.columnTop,
@@ -1841,7 +1845,7 @@ function assemble(input: BuildInput): Built {
     heights: {
       plinth: PLINTH * 100,
       counter: Math.round(counterY * 1000) / 10,
-      upperBottom: UPPER_BOTTOM * 100,
+      upperBottom: Math.round(ctx.upperBottom * 1000) / 10,
       upperTop: Math.round(ctx.upperTop * 1000) / 10,
       mezzTop: ctx.mezz ? Math.round(ctx.mezz.to * 1000) / 10 : null,
       ceiling: input.room.ceiling,
@@ -1917,7 +1921,7 @@ function underLight(ctx: Ctx, run: Run, g: THREE.Group) {
   const x1 = cm(Math.max(...spans.map((s) => s.x + s.w)))
   const x = (x0 + x1) / 2
   const light = eveningLight(ctx, new THREE.SpotLight('#fff0d8', 6, 3, 1.35, 0.95, 1.2))
-  light.position.set(x, UPPER_BOTTOM - 0.02, 0.18)
+  light.position.set(x, ctx.upperBottom - 0.02, 0.18)
   light.target.position.set(x, ctx.counterY, 0.32)
   g.add(light, light.target)
 }

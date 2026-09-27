@@ -494,3 +494,19 @@ describe('D16: высота вытяжки над панелью', () => {
     expect(byId(checkProject(plan, { hoodOver: 70 }), 'hoodHeight')).toEqual([])
   })
 })
+
+describe('2026-09-27: верхний ряд поднят встроенной вытяжкой — строка-пояснение', () => {
+  const straight = { shape: 'straight' as const, a: 300, ...base, hood: { w: 60 }, hob: hob() }
+
+  it('низ ряда 155 см при столешнице 3 см (верх 85) — «подняты до 70 см над столешницей»', () => {
+    const plan = planKitchen(straight, opts)
+    expect(byId(checkProject(plan, { upperBottom: 155, topCm: 3 }), 'upperRaised')).toEqual([{ id: 'upperRaised', level: 'ok', over: 70 }])
+  })
+
+  it('ряд на обычных 142 см или без фактов — строки нет', () => {
+    const plan = planKitchen(straight, opts)
+    expect(byId(checkProject(plan, { upperBottom: 142, topCm: 3 }), 'upperRaised')).toEqual([])
+    expect(byId(checkProject(plan, { topCm: 3 }), 'upperRaised')).toEqual([])
+    expect(byId(checkProject(plan), 'upperRaised')).toEqual([])
+  })
+})
