@@ -47,9 +47,28 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!-- Как выглядят уведомления магазина (их показывает Firebase, а при
+             открытом приложении — плагин push по тем же настройкам):
+             белый знак «S» в строке состояния, лимонный акцент бренда и
+             канал «Заказы» (его создаёт MainActivity при запуске).
+             Без google-services.json Firebase в сборке нет и эти строки
+             просто никто не читает. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_s" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/brand_lemon" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="orders" />
     </application>
 
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Android 13+ показывает уведомления только с разрешения покупателя.
+         Системное окно открывает сайт после входа (requestPermissions). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>
