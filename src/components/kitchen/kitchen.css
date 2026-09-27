@@ -1489,9 +1489,18 @@ html:has(.kp-photo) .assistant {
   color: var(--kp-soft);
 }
 
-/* итог */
+/*
+  Итог — компактно: слева «Техника · N товаров» и сумма, справа «Всё в
+  корзину»; ниже WhatsApp и «Позвонить» одной строкой и строка пояснения.
+  Раньше блок занимал 210–300 px, и на ноутбуке 1366 × 768 настройкам шага
+  между вкладками и итогом оставалось меньше 100 px.
+*/
 .kp-sum {
-  padding: 14px 18px 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 8px 18px 10px;
   border-top: 1px solid var(--kp-line);
   background: #fff;
   border-radius: 0 0 var(--radius-card) 0;
@@ -1499,41 +1508,41 @@ html:has(.kp-photo) .assistant {
 
 .kp-sum__row {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .kp-sum__label {
-  font: 650 13px/1.3 var(--font);
+  font: 650 12.5px/1.25 var(--font);
   color: var(--kp-soft);
 }
 
 .kp-sum__price {
-  font: 800 22px/1.1 var(--font);
+  font: 800 20px/1.1 var(--font);
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
 .kp-sum__cta {
-  width: 100%;
+  height: 40px;
+  padding: 0 18px;
+  font-size: 15px;
 }
 
-/* короткие подписи итога — только на узком телефоне */
-.kp-sum__short {
-  display: none;
-}
-
+/* «Вся техника уже в корзине» — на месте кнопки, справа */
 .kp-sum__done {
+  max-width: 220px;
   margin: 0;
-  min-height: 50px;
+  min-height: 40px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 10px;
-  font: 650 14px/1.4 var(--font);
+  justify-content: flex-end;
+  gap: 0 8px;
+  font: 650 13px/1.3 var(--font);
+  text-align: right;
   color: var(--color-success);
 }
 
@@ -1544,9 +1553,10 @@ html:has(.kp-photo) .assistant {
 }
 
 .kp-sum__honest {
-  margin: 10px 0 0;
-  font-size: 12px;
-  line-height: 1.45;
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.35;
   color: var(--kp-muted);
 }
 
@@ -3433,16 +3443,8 @@ html.kp-lock body {
      прилипшая к низу строка с меню сайта под ней отнимала у телефона
      полэкрана. Долистали до конца шага — вот сумма и «Добавить всё в корзину». */
   .kp-sum {
-    padding: 16px 20px 20px;
+    padding: 12px 20px 14px;
     border-radius: 0;
-  }
-
-  .kp-sum__price {
-    font-size: 20px;
-  }
-
-  .kp-sum__cta {
-    height: 50px;
   }
 
   /* пока открыта карточка выбранного, кнопка консультанта не закрывает её кнопки */
@@ -3544,21 +3546,10 @@ html.kp-lock body {
     padding: 12px 12px 14px;
   }
 
-  /* итог в одну строку: сумма слева, корзина справа — иначе кнопка уходит под меню */
+  /* итог мельче: сумма слева, корзина справа — иначе кнопка уходит под меню */
   .kp-sum {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 2px 10px;
+    gap: 6px 10px;
     padding: 8px 12px;
-  }
-
-  .kp-sum__row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1px;
-    min-width: 0;
-    margin: 0;
   }
 
   .kp-sum__label {
@@ -3570,7 +3561,6 @@ html.kp-lock body {
   }
 
   .kp-sum__cta {
-    width: auto;
     height: 42px;
     padding: 0 12px;
     font-size: 13px;
@@ -3581,13 +3571,8 @@ html.kp-lock body {
     font-size: 12.5px;
   }
 
-  .kp-sum__long,
   .kp-sum__honest {
     display: none;
-  }
-
-  .kp-sum__short {
-    display: inline;
   }
 
   /* кнопка консультанта — в правом нижнем углу 3D, как на компьютере */
@@ -3722,33 +3707,53 @@ html.kp-lock body {
 
 /* ───────── таск 05: плашка «Продолжить», связь с магазином, пределы размеров ───────── */
 
+/* Плашка «Продолжить» — одна строка: текст слева, «Продолжить» и «Заново»
+   справа (полные подписи — в aria-label). Раньше кнопки стояли одна под
+   другой, и плашка занимала 90–140 px над вкладками шагов. */
 .kp-resume {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 6px 10px;
-  margin: 0 0 10px;
-  padding: 8px 12px;
+  gap: 8px;
+  margin: 0;
+  padding: 3px 3px 3px 12px;
   border-radius: var(--radius-tile);
   background: #eef4ff;
   border: 1px solid #cfdcf5;
-  font: 600 13px/1.45 var(--font);
+  font: 600 13px/1.3 var(--font);
   color: var(--kp-ink);
 }
 
 .kp-resume p {
-  flex: 1 1 100%;
+  flex: 1 1 auto;
+  min-width: 0;
   margin: 0;
+}
+
+.kp-resume__row {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+}
+
+.kp-resume__row .btn {
+  height: 34px;
+  padding: 0 14px;
+  font-size: 13.5px;
+}
+
+.kp-resume__row .btn--ghost {
+  padding: 0 10px;
 }
 
 .kp-restart {
   margin-top: 12px;
 }
 
-.kp-resume__row,
+/* WhatsApp и «Позвонить» — маленькие, в один ряд под суммой */
 .kp-sum__ask {
+  grid-column: 1 / -1;
   display: flex;
-  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -3761,12 +3766,29 @@ html.kp-lock body {
   margin-top: 8px;
 }
 
-.kp-sum__ask {
-  margin-top: 8px;
-}
-
 .kp-sum__ask .btn {
   flex: 1 1 auto;
+  height: auto;
+  min-height: 32px;
+  padding: 3px 10px;
+  font-size: 13px;
+  line-height: 1.15;
+  white-space: normal;
+  text-align: center;
+}
+
+/* пальцем — цели не меньше 44 px */
+@media (pointer: coarse) {
+  .kp-resume__row .btn,
+  .kp-sum__ask .btn,
+  .kp-sum__cta {
+    min-height: 44px;
+    height: 44px;
+  }
+
+  .kp-sum__done {
+    min-height: 44px;
+  }
 }
 
 .kp-slot__note {
@@ -3871,29 +3893,6 @@ html.kp-lock body {
   cursor: progress;
 }
 
-/* На телефоне обе кнопки плашки «Продолжить» — в одну строку: так
-   «Начать заново» не уходит вниз под полоску корзины сайта. Тот же запрос,
-   что STACKED в KitchenPlanner.tsx. */
-@media (max-width: 900px) and (min-height: 521px) {
-  .kp-resume__row {
-    flex-wrap: nowrap;
-    align-items: stretch;
-  }
-
-  .kp-resume__row .btn {
-    height: auto;
-    min-height: 44px;
-    padding-block: 6px;
-    white-space: normal;
-    line-height: 1.25;
-    text-align: center;
-  }
-
-  .kp-resume__row .btn--primary {
-    flex: 1 1 auto;
-  }
-}
-
 /* На компьютере полоска корзины сайта стоит по центру внизу (24 px от края,
    высота около 70 px). Пока она видна, кнопка консультанта в углу сцены
    встаёт над ней, а не поверх «Оформить». Саму полоску не трогаем. */
@@ -3923,6 +3922,14 @@ html.kp-lock body {
 }
 
 @media not all and (max-width: 900px) and (min-height: 521px) {
+  /* Нижнее поле прокрутки — внутри ряда: раньше под прилипшим рядом
+     оставалась щель 20 px, и в ней просвечивал текст шага. scroll-padding —
+     фокус с клавиатуры и scrollIntoView останавливаются над рядом, а не под ним. */
+  .kp-body {
+    padding-bottom: 0;
+    scroll-padding-bottom: 72px;
+  }
+
   .kp-next-row {
     position: sticky;
     bottom: 0;
@@ -3931,9 +3938,10 @@ html.kp-lock body {
     flex-wrap: wrap;
     align-items: center;
     gap: 6px;
-    margin-top: 18px;
+    margin-top: 6px;
+    padding: 8px 0 12px;
     background: var(--kp-panel-bg);
-    box-shadow: 0 -12px 14px -2px var(--kp-panel-bg);
+    box-shadow: 0 -8px 10px -2px var(--kp-panel-bg);
   }
 
   /* поуже — чтобы и по-кыргызски обе кнопки встали в одну строку */
@@ -3946,13 +3954,100 @@ html.kp-lock body {
   .kp-next-row .kp-next {
     flex: 1 1 auto;
     width: auto;
+    height: 42px;
     margin: 0;
+    font-size: 15px;
   }
 
   /* выдача поиска цвета: KitchenPlanner.tsx докручивает до первой плитки
      (scrollIntoView nearest) — запас снизу на высоту липкого ряда с тенью */
   .kp-found > .kp-color {
     scroll-margin-bottom: 84px;
+  }
+}
+
+/* невысокий ноутбук (1366 × 768, 1280 × 800): вкладки шагов ниже на 8 px — место настройкам */
+@media (min-width: 901px) and (max-height: 860px) {
+  .kp-steps__btn {
+    min-height: 56px;
+    padding: 8px 4px;
+    gap: 4px;
+  }
+}
+
+/* ───────── полный экран на компьютере: панель настроек справа ───────── */
+
+/* кнопка «Настройки» — только в полном экране вне телефонной раскладки */
+.kp-tools__panel {
+  display: none;
+}
+
+@keyframes kp-side {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+  Компьютер и телефон боком (всё, кроме STACKED из KitchenPlanner.tsx —
+  строка та же): в полном экране та же панель, что в обычном виде — вкладки,
+  шаг, итог с корзиной, — стоит справа, а сцена сужается на её ширину. Кухня
+  не лежит под панелью: движок видит новый размер холста, KitchenPlanner
+  перецентровывает камеру. is-panel — панель открыта (кнопка «Настройки» или
+  клавиша S); по умолчанию открыта, выбор помнит localStorage['kp-full-side'].
+  Телефон стоя — свой лист снизу (is-panel в @media STACKED), его не трогаем.
+*/
+@media not all and (max-width: 900px) and (min-height: 521px) {
+  /* справа в строке инструментов — место под «Настройки»: кнопка всегда
+     в правом верхнем углу, сколько бы рядов ни заняли остальные */
+  .kp--full .kp-tools {
+    padding-right: 136px;
+  }
+
+  .kp--full .kp-tools__panel {
+    display: inline-flex;
+    position: absolute;
+    top: 0;
+    right: 0;
+  }
+
+  /* меню «ещё» (узкое окно) — под своей кнопкой, а не под «Настройками» */
+  .kp--full .kp-tools__extra.is-open {
+    right: 136px;
+  }
+
+  .kp--full.is-panel .kp-stage {
+    right: var(--kp-panel-w);
+  }
+
+  .kp--full.is-panel .kp-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 201;
+    width: var(--kp-panel-w);
+    padding-top: env(safe-area-inset-top, 0px);
+    border: 0;
+    border-left: 1px solid var(--kp-line);
+    border-radius: 0;
+    animation: kp-side 200ms var(--ease-out) both;
+  }
+
+  .kp--full.is-panel .kp-sum {
+    border-radius: 0;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kp--full.is-panel .kp-panel {
+    animation: none;
   }
 }
 

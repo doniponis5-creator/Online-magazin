@@ -209,6 +209,15 @@ async function shareFile(file: File, text: string, title: string): Promise<'ok' 
  */
 const STACKED = '(max-width: 900px) and (min-height: 521px)'
 const isStacked = () => window.matchMedia(STACKED).matches
+/** Полный экран на компьютере: открыта ли панель настроек справа ('0' — спрятали). */
+const SIDE_KEY = 'kp-full-side'
+const sidePanelSaved = () => {
+  try {
+    return window.localStorage.getItem(SIDE_KEY) !== '0'
+  } catch {
+    return true
+  }
+}
 
 /** «Для чего» красим фасады (вся кухня, низ, верх, остров). */
 type PaintTarget = 'all' | 'lower' | 'upper' | 'island'
@@ -293,8 +302,9 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   const [view, setView] = useState<View>('angle')
   const [prices, setPrices] = useState(true)
   const [full, setFull] = useState(false)
-  // Полный экран на телефоне: настройки шага выезжают листом поверх 3D.
-  // Вход и выход из полного экрана всегда начинаются со спрятанным листом.
+  // Полный экран: панель настроек. Телефон стоя — лист поверх 3D, вход в полный
+  // экран всегда со спрятанным листом. Компьютер и телефон боком — панель справа
+  // от 3D (сцена сужается), открыта или нет — как оставили (localStorage).
   const [fullPanel, setFullPanel] = useState(false)
   const [quality, setQuality] = useState<Quality>('hd')
   const [qualityPx, setQualityPx] = useState('')
@@ -915,8 +925,19 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   // На весь экран: страница под 3D не прокручивается, Esc — свернуть.
   const toggleFull = (on: boolean) => {
     setFull(on)
-    setFullPanel(false)
+    setFullPanel(on && !isStacked() && sidePanelSaved())
   }
+  // компьютер: панель справа — запомнить выбор и перецентровать кухню под новую ширину сцены
+  useEffect(() => {
+    if (!full || isStacked()) return
+    try {
+      window.localStorage.setItem(SIDE_KEY, fullPanel ? '1' : '0')
+    } catch {
+      // браузер не даёт хранить — панель просто откроется в следующий раз
+    }
+    const timer = setTimeout(() => engineRef.current?.reframe(), 80)
+    return () => clearTimeout(timer)
+  }, [full, fullPanel])
   useEffect(() => {
     if (!full) return
     document.documentElement.classList.add('kp-lock')
@@ -1498,6 +1519,10 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       closeSelection()
     } else if (['1', '2', '3', '4'].includes(e.key) && engineState === 'ready') {
       changeView((['angle', 'eye', 'front', 'top'] as View[])[Number(e.key) - 1])
+    } else if (e.code === 'KeyS' && full && !isStacked()) {
+      // S — показать или спрятать панель настроек в полном экране на компьютере
+      e.preventDefault()
+      setFullPanel((p) => !p)
     }
   }
   useEffect(() => {
@@ -2767,6 +2792,20 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
               >
                 {full ? <IconShrink /> : <IconExpand />}
               </button>
+              {/* полный экран на компьютере: панель настроек справа от 3D — открыть или спрятать (клавиша S) */}
+              {full && (
+                <button
+                  type="button"
+                  className="kp-toggle kp-tools__panel"
+                  aria-pressed={fullPanel}
+                  aria-controls="kp-panel"
+                  title={`${t.panelToggle} (S)`}
+                  onClick={() => setFullPanel((p) => !p)}
+                >
+                  <IconPanel />
+                  <span>{t.panelToggle}</span>
+                </button>
+              )}
             </div>
           )}
 
@@ -3042,16 +3081,16 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
           )}
         </div>
 
-        <aside className="kp-panel" aria-label={t.panelLabel} ref={panelRef}>
+        <aside className="kp-panel" id="kp-panel" aria-label={t.panelLabel} ref={panelRef}>
           {resume && (
             <div className="kp-resume" role="status">
               <p>{t.resumeLead}</p>
               <div className="kp-resume__row">
-                <button type="button" className="btn btn--primary btn--sm" onClick={resumeLast}>
-                  {t.resume}
+                <button type="button" className="btn btn--primary btn--sm" aria-label={t.resume} onClick={resumeLast}>
+                  {t.resumeShort}
                 </button>
-                <button type="button" className="btn btn--ghost btn--sm" onClick={startOver}>
-                  {t.startOver}
+                <button type="button" className="btn btn--ghost btn--sm" aria-label={t.startOver} onClick={startOver}>
+                  {t.startOverShort}
                 </button>
               </div>
             </div>
@@ -3641,12 +3680,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
 
           <div className="kp-sum">
             <div className="kp-sum__row">
-              <span className="kp-sum__label">
-                <span className="kp-sum__long">
-                  {t.total} · {t.pieces(totals.count)}
-                </span>
-                <span className="kp-sum__short">{t.totalShort(totals.count)}</span>
-              </span>
+              <span className="kp-sum__label">{t.totalShort(totals.count)}</span>
               <span className="kp-sum__price">{formatSom(totals.sum)}</span>
             </div>
             {cartResult || (totals.count > 0 && missing.length === 0) ? (
@@ -3660,8 +3694,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
               </p>
             ) : (
               <button type="button" className="btn btn--primary kp-sum__cta" disabled={totals.count === 0} onClick={addAll}>
-                <span className="kp-sum__long">{t.addAll}</span>
-                <span className="kp-sum__short">{t.addAllShort}</span>
+                {t.addAllShort}
               </button>
             )}
             <div className="kp-sum__ask">
@@ -3672,7 +3705,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                 {t.call}
               </a>
             </div>
-            <p className="kp-sum__honest">{t.honest}</p>
+            <p className="kp-sum__honest">{t.honestShort}</p>
           </div>
         </aside>
       </div>
@@ -4762,6 +4795,14 @@ function IconArrow({ flip = false, down = false }: { flip?: boolean; down?: bool
   return (
     <svg {...iconProps} style={flip ? { transform: 'scaleX(-1)' } : down ? { transform: 'rotate(90deg)' } : undefined}>
       <path d="M5 12h14M13 6l6 6-6 6" {...stroke} />
+    </svg>
+  )
+}
+
+function IconPanel() {
+  return (
+    <svg {...iconProps}>
+      <path d="M4 5h16v14H4zM14 5v14M16.5 9h1.5M16.5 12h1.5" {...stroke} />
     </svg>
   )
 }
