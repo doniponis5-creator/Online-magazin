@@ -1,7 +1,12 @@
 package kg.smarket.app;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.media.AudioAttributes;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.webkit.WebView;
 import androidx.activity.OnBackPressedCallback;
 import androidx.webkit.WebViewCompat;
@@ -20,6 +25,10 @@ public class MainActivity extends BridgeActivity {
     // Плагины, которыми пользуется страница «Нет связи» (ios-web/index.html).
     private static final String[] OFFLINE_PAGE_PLUGINS = { "BonusCard", "OfflineCatalog" };
 
+    // Канал уведомлений о заказах. Тот же id стоит в AndroidManifest.xml
+    // (канал Firebase по умолчанию) и в уведомлениях с сервера SBonus.
+    static final String ORDERS_CHANNEL_ID = "orders";
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         // Свои плагины Capacitor сам не находит: их подключают до super.onCreate.
@@ -27,6 +36,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(AppLockPlugin.class);
         registerPlugin(OfflineCatalogPlugin.class);
         super.onCreate(savedInstanceState);
+        createOrdersChannel();
         connectOfflinePage();
 
         // Кнопка и жест «назад» листают страницы сайта, как в браузере.
@@ -42,6 +52,29 @@ public class MainActivity extends BridgeActivity {
                 }
             }
         });
+    }
+
+    // Канал «Заказы» должен существовать до первого уведомления: иначе Android 8+
+    // покажет его в безымянном служебном канале, тихо и без всплывающего окна.
+    // Создаём при каждом запуске — повторный вызов ничего не меняет.
+    // Без Firebase канал просто стоит пустым; разрешение он не спрашивает
+    // (это делает сайт после входа).
+    private void createOrdersChannel() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
+        NotificationManager manager = getSystemService(NotificationManager.class);
+        if (manager == null) return;
+        NotificationChannel channel = new NotificationChannel(
+            ORDERS_CHANNEL_ID,
+            getString(R.string.orders_channel_name),
+            NotificationManager.IMPORTANCE_HIGH
+        );
+        // Высокая важность — всплывает поверх экрана; звук — обычный звук уведомлений телефона.
+        channel.setSound(
+            Settings.System.DEFAULT_NOTIFICATION_URI,
+            new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION).build()
+        );
+        channel.enableVibration(true);
+        manager.createNotificationChannel(channel);
     }
 
     // Страница «Нет связи» открывается с https://localhost, а Capacitor вставляет

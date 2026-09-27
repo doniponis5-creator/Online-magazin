@@ -1,9 +1,15 @@
 import type { CapacitorConfig } from '@capacitor/cli'
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 
 // Приложение показывает живой сайт smarket.kg внутри своей оболочки.
 // Отдельный фронтенд для телефона не собираем: сайт серверный (output: standalone),
 // каталог и заказы приходят из 1С и SBonus через его же API.
 // ios-web/ — это не сайт, а страница-заглушка на случай, когда сети нет.
+// Файл проекта Firebase от Google. Кладёт его владелец (scripts/setup-fcm.sh),
+// в репозитории его может и не быть. Проверяем при каждом `cap sync`.
+const hasFirebase = existsSync(join(__dirname, 'android', 'app', 'google-services.json'))
+
 const config: CapacitorConfig = {
   appId: 'kg.smarket.app',
   appName: 'S Маркет',
@@ -33,11 +39,13 @@ const config: CapacitorConfig = {
     // Подложка под страницей — белая, как на iPhone.
     backgroundColor: '#ffffff',
     zoomEnabled: false,
-    // Push на Android пока выключен: ему нужен свой проект Firebase у Google
-    // и отправка через FCM на сервере SBonus. Без Firebase плагин роняет
-    // приложение при подписке, поэтому на Android его просто не подключаем —
-    // сайт тогда видит «уведомлений нет» и кнопку не показывает.
-    includePlugins: [],
+    // Push на Android работает только через Firebase (FCM). Без файла
+    // google-services.json плагин роняет приложение при подписке, поэтому
+    // подключаем его, только если файл лежит в android/app/. Нет файла —
+    // сборка ровно прежняя: плагина нет, сайт видит «уведомлений нет»
+    // и кнопку не показывает. Файл появился — `cap sync` добавит плагин,
+    // а build.gradle сам подключит Google-сервисы.
+    includePlugins: hasFirebase ? ['@capacitor/push-notifications'] : [],
   },
   plugins: {
     // Android 15+ растягивает приложение под часы и под полоску жестов.
@@ -47,6 +55,11 @@ const config: CapacitorConfig = {
     SystemBars: {
       initialViewportFitValueHint: 'cover',
       style: 'LIGHT',
+    },
+    // Уведомление о заказе видно и со звуком, даже когда приложение открыто.
+    // Android читает это при каждом уведомлении; iPhone — со следующей сборки.
+    PushNotifications: {
+      presentationOptions: ['alert', 'sound'],
     },
   },
 }

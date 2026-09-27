@@ -205,18 +205,74 @@ export async function getSiteSettings(): Promise<SiteSettings> {
   }
 }
 
+/** Чей телефон: iPhone — уведомления идут через Apple, Android — через Google (FCM). */
+export type PushPlatform = 'ios' | 'android'
+
 /**
  * Адрес телефона для push-уведомлений.
  *
- * Сервер хранит адреса и рассылает по ним сообщения о заказах. В тестовом режиме
- * просто пишем в консоль: сервера нет, отправлять некуда.
+ * Сервер хранит адреса и рассылает по ним сообщения о заказах. Платформа нужна серверу,
+ * чтобы выбрать, через кого слать: Apple или Google. В тестовом режиме просто пишем
+ * в консоль: сервера нет, отправлять некуда.
  */
-export async function registerPushDevice(token: string, phone: string | null): Promise<void> {
+export async function registerPushDevice(token: string, phone: string | null, platform: PushPlatform): Promise<void> {
   if (paymentMode() === 'mock') {
-    console.log('[push] тестовый режим, адрес телефона получен:', token.slice(0, 12) + '…', phone ?? 'без входа')
+    console.log('[push] тестовый режим, адрес телефона получен:', platform, token.slice(0, 12) + '…', phone ?? 'без входа')
     return
   }
-  await call('/api/v1/webhook/site/push-device', { method: 'POST', body: { token, platform: 'ios', phone } })
+  await call('/api/v1/webhook/site/push-device', { method: 'POST', body: { token, platform, phone } })
+}
+
+/** Снимок корзины для напоминаний: первые 3 названия, число позиций и сумма. */
+export type CartSnapshot = { items: string[]; count: number; total: number }
+
+// Согласие на напоминания в тестовом режиме: сервера нет, помним сами, чтобы «Кабинет» работал.
+const mockCartConsent = ((globalThis as { __scMockCartConsent?: Map<string, boolean> }).__scMockCartConsent ??=
+  new Map<string, boolean>())
+
+/**
+ * Сервер магазина на сбой базы или плохой номер отвечает 200 с `{ok:false, error}` —
+ * `call()` такое пропускает. Для корзины и согласия это ошибка: иначе «Кабинет»
+ * покажет «Выключены», а в базе останется «да».
+ */
+async function callShop<T extends { ok?: unknown }>(path: string, body: unknown): Promise<T> {
+  const answer = await call<T>(path, { method: 'POST', body })
+  if (answer?.ok === false) {
+    const error = (answer as { error?: unknown }).error
+    throw new CustomerApiError(502, typeof error === 'string' ? error : 'not-saved')
+  }
+  return answer
+}
+
+/**
+ * Корзина покупателя из приложения — серверу. Сегодня корзина живёт только на телефоне;
+ * чтобы напомнить о забытых товарах, сервер должен знать, что в ней лежит.
+ */
+export async function saveCartSnapshot(phone: string, cart: CartSnapshot): Promise<void> {
+  if (paymentMode() === 'mock') {
+    console.log('[push] тестовый режим, корзина получена:', phone, cart.count, 'поз.')
+    return
+  }
+  await callShop('/api/v1/webhook/site/push-cart', { phone, ...cart })
+}
+
+/**
+ * Согласен ли покупатель на напоминания о корзине. null — ещё не спрашивали.
+ * Сервер отвечает на тот же адрес, что и для записи, только без поля consent.
+ */
+export async function cartConsent(phone: string): Promise<boolean | null> {
+  if (paymentMode() === 'mock') return mockCartConsent.get(phone) ?? null
+  const answer = await callShop<{ ok?: unknown; consent?: unknown }>('/api/v1/webhook/site/cart-consent', { phone })
+  return typeof answer?.consent === 'boolean' ? answer.consent : null
+}
+
+/** Записать ответ покупателя: да — напоминать, нет — не напоминать. */
+export async function setCartConsent(phone: string, consent: boolean): Promise<void> {
+  if (paymentMode() === 'mock') {
+    mockCartConsent.set(phone, consent)
+    return
+  }
+  await callShop('/api/v1/webhook/site/cart-consent', { phone, consent })
 }
 
 /** Отметка о посещении страницы — для счётчика людей в «Панели сайта». */

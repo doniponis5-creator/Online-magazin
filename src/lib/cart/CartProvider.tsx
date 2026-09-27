@@ -19,6 +19,8 @@ import {
   type CartLine,
 } from './logic'
 import { products as demoProducts } from '@/data/products'
+import { cartChanged, cartSnapshot } from '@/lib/native/cartSync'
+import { listenPushTaps } from '@/lib/native/push'
 
 const STORAGE_KEY = 'sc-cart-v1'
 
@@ -86,6 +88,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
       // приватный режим — остаёмся в памяти
     }
   }, [lines, hydrated])
+
+  // Приложение: снимок корзины уходит на сервер для напоминаний о забытых товарах
+  // (через 5 секунд тишины, без повторов — см. native/cartSync). В браузере — ничего.
+  useEffect(() => {
+    if (hydrated) cartChanged(cartSnapshot(lines, demoProducts))
+  }, [lines, hydrated])
+
+  // Нажатие на напоминание «Товары ждут в корзине» открывает корзину — слушаем с любой страницы.
+  useEffect(() => {
+    listenPushTaps()
+  }, [])
 
   // Синхронизация между вкладками: storage приходит только из ДРУГИХ вкладок,
   // поэтому цикла записи не возникает. Повторно нормализуем входящие данные.

@@ -4,4 +4,6 @@
     <string name="title_activity_main">S Маркет</string>
     <string name="package_name">kg.smarket.app</string>
     <string name="custom_url_scheme">kg.smarket.app</string>
+    <!-- Канал уведомлений о заказах: так он называется в настройках телефона. -->
+    <string name="orders_channel_name">Заказы</string>
 </resources>

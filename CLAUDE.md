@@ -284,7 +284,7 @@ PC — сайт, расширение 1С и сервер SBonus: `src/`, `publi
 
 - `android/` — оболочка Capacitor 8 (`kg.smarket.app`) над `https://smarket.kg`; свои плагины `BonusCard`, `AppLock`, `OfflineCatalog` регистрирует `MainActivity.onCreate` до `super.onCreate`; контракт с сайтом общий с iPhone (`src/lib/native/*.ts`) — имена плагинов и вызовов не менять.
 - Java 21 keg-only, в PATH нет, `adb`/`emulator` тоже — всегда полные пути. AAB для Play, из корня: `npx cap sync android && cd android && JAVA_HOME=/opt/homebrew/opt/openjdk@21 ./gradlew bundleRelease` → `android/app/build/outputs/bundle/release/app-release.aab`; копию — в `build-play/smarket-1.0-code<versionCode>.aab` (`build-play/` вне git).
-- `versionCode` в `android/app/build.gradle` — сейчас 3 (`build-play/smarket-1.0-code3.aab`); перед каждой загрузкой в Play +1, тот же номер Play не примет.
+- `versionCode` в `android/app/build.gradle` — сейчас 4 (поднят под выпуск с push; в Play лежит code3); перед каждой загрузкой в Play +1, тот же номер Play не примет.
 - Подпись: ключ `~/smarket-keys/smarket-upload.jks` (алиас `smarket-upload`) и `android/keystore.properties` вне git, создаёт один раз `scripts/android-keystore.sh`; без `keystore.properties` release выйдет неподписанным. Файл не открывать, пароли не печатать.
 - Эмулятор: AVD `smarket-api36` (API 36 Play Store arm64, Pixel 7, датчик отпечатка) сделан руками в `~/.android/avd/` — brew-овский `avdmanager` SDK не видит. Запуск: `~/Library/Android/sdk/emulator/emulator -avd smarket-api36 -no-window -no-audio -no-boot-anim -no-snapshot-save -gpu swiftshader_indirect`.
 - APK на эмулятор, из корня: `npx cap sync android && cd android && JAVA_HOME=/opt/homebrew/opt/openjdk@21 ./gradlew assembleRelease && cd .. && ~/Library/Android/sdk/platform-tools/adb install -r android/app/build/outputs/apk/release/app-release.apk`.
@@ -292,7 +292,7 @@ PC — сайт, расширение 1С и сервер SBonus: `src/`, `publi
 - «Повторить» на «Нет связи» открывает главную smarket.kg, не ту страницу, где был покупатель; «Назад» листает историю сайта, на первой странице сворачивает приложение.
 - Вход без демо-кода (он секрет владельца, не искать): временно в `capacitor.config.ts` `server.url: 'http://10.0.2.2:3100'` и `server.cleartext: true`, сайт `SHOP_PAYMENT_MODE=mock npx next dev -p 3100` (код 1234, оплата понарошку), `npx cap sync android` и пересборка; потом вернуть `https://smarket.kg`, убрать `cleartext`, снова `npx cap sync android`.
 - Конец сессии (180 дней) для «Войти по отпечатку» — перевести часы эмулятора вперёд, потом `~/Library/Android/sdk/platform-tools/adb shell settings put global auto_time 1`.
-- Push на Android выключен: `android.includePlugins: []` в `capacitor.config.ts` — без Firebase плагин роняет приложение; включать только вместе с `android/app/google-services.json` (сейчас нет) и отправкой через FCM на сервере SBonus.
+- Push на Android — см. «Push-уведомления» ниже: плагин в сборке только при `android/app/google-services.json`.
 - Шаги для владельца (Play Console, картинки, следующая версия) — `docs/ANDROID_PLAY_UZ.md`; снимки и логи проверок — `build-play/android-check/<таск>/`.
 - Play Console → «Финансовые функции» — только «В моем приложении нет финансовых функций». Бонусы SBonus отмечены как «поощрительные программы» → 26.09.2026 отказ: финансовые функции публикуют лишь аккаунты-организации, а наш аккаунт личный.
 - Аккаунт Play личный: в «Рабочую версию» только после закрытого теста ≥ 12 тестировщиков × ≥ 14 дней (канал «Закрытое тестирование – Alpha», список «Smart Centr testers», страна — Киргизия). Аккаунт разработчика заведён 06–07.06.2026 (письмо Google «вы зарегистрировали новый аккаунт разработчика»), поэтому правило действует — Gmail старше, но считается дата аккаунта разработчика. «Открытое тестирование» тоже заперто до доступа к рабочей версии.
@@ -300,4 +300,37 @@ PC — сайт, расширение 1С и сервер SBonus: `src/`, `publi
 - 27.09.2026: оба закрытых канала «Активно», на панели шаг «не менее 12 участников» зачёркнут (набрано). Остался шаг «14 дней» — кнопка «Подать заявку» откроется не раньше ~11.10.2026, если никто не выйдет из теста.
 - 26.09.2026 в 19:12 Alpha кто-то приостановил («Неактивно»), в ~23:00 возобновлено. Приостановленный канал не раздаёт приложение тестировщикам — перед заявкой на рабочую версию проверить, что Alpha «Активно».
 - `smarket.kg` за Cloudflare Bot Fight Mode: проверка ссылок Play Console получает 403 (у нас и у Googlebot — 200). Это предупреждение, не ошибка.
+
+### Push-уведомления (27.09.2026)
+
+- Путь: приложение (Capacitor) → `src/lib/native/push.ts` → `POST /api/push/device` `{token, platform?}` (телефон — из `currentSession()`) → `gateway.ts` `registerPushDevice` → SBonus `POST /api/v1/webhook/site/push-device` `{token, platform, phone}` → `shop_push_devices` → `shop_push.send()` → Apple (APNs) или Google (FCM HTTP v1, `shop_push_fcm.py`) по платформе адреса.
+- `shop_push.send(db, phone, title, body, data) -> int` (сколько телефонов получили, не бросает) — единственный отправщик: заказы (`shop_router.py` `_push`, data `{orderId, token}`) и корзина (`{type: "cart"}`). Второй отправщик не писать; сигнатуры `send`/`save_device`/`forget_phone` не менять.
+- `enabled() = apple_enabled() or fcm_enabled()`; пути Apple и Google независимы, всё не-`android` уходит в Apple. Платформы строго `ios`/`android`, без платформы — `ios`. Адрес: `ios` hex 60–200, `android` `[A-Za-z0-9_:-]` 100–1024 (сайт → 400, сервер → `{ok:true, saved:false}`); `shop_push_devices.token VARCHAR(1024)` (миграция `009`); адреса с `failed ≥ 3` не используются.
+- `shop_push_fcm.py` и `shop_cart_rules.py` — без импортов приложения (тесты идут без сервера). `classify(status, body)` → `ok|drop|fail|auth`: `drop` — адрес мёртв, стереть; `auth` — виноват ключ, адреса не трогать. FCM `data` — только строки (`_text` переводит сам).
+- Новый модуль/миграция сервера — как `shop_push_fcm.py`, `009`, `010` в `deploy_shop.sh`: `FILES`, `MIGRATIONS` + шаг применения, импорт в предпроверке; `test_*.py` в `FILES` не класть.
+- Android: плагин push попадает в сборку только при `android/app/google-services.json` (`capacitor.config.ts` → `hasFirebase` → `includePlugins`), без файла плагин роняет приложение. Файла пока нет; он не секрет и идёт в git (`android/.gitignore` его не прячет).
+- Канал `orders` («Заказы», высокая важность) — `MainActivity.ORDERS_CHANNEL_ID`, создаётся при каждом запуске; FCM шлёт в него (`shop_push_fcm.CHANNEL_ID`); значок `@drawable/ic_stat_s`, в манифесте `POST_NOTIFICATIONS`.
+- `versionCode 4` уже поднят под выпуск с push (в Play лежит code3) — для этого AAB ещё +1 не делать.
+- Нажатие на уведомление — `listenPushTaps()` в `push.ts` (JS сайта, без пересборки приложения): `data.type === 'cart'` → `/{ru|ky}/cart`; новые типы нажатий — сюда.
+
+Напоминание о корзине:
+- Снимок: `CartProvider.tsx` → `src/lib/native/cartSync.ts` (только в приложении, после 5 с тишины, тот же снимок не повторяет, до входа молчит — `cartSignedIn`/`cartSignedOut` зовёт `AccountView.tsx`) → `POST /api/push/cart` `{items ≤ 3 названия, count строк, total}` (телефон из сессии, без входа 401) → `webhook/site/push-cart` → `shop_cart_reminders` (миграция `010`, время UTC без зоны).
+- Согласие: карточка в «Кабинете» (`AccountView.tsx`, при разрешении `granted`) → `GET`/`POST /api/push/consent` → `webhook/site/cart-consent`: `{phone}` — прочитать, `{phone, consent}` — записать; `null` — ещё не спрашивали. На сервере GET нет — телефон не попадает в адрес. В `mock` согласие хранится в памяти (`gateway.ts`).
+- Расписание — `shop_cart_rules.py`: `SCHEDULE_DAYS = (1, 3, 7)` (первая пауза от изменения корзины, дальше от прошлого напоминания; `...` в конце — повторять), `MAX_REMINDERS = 10`; тихие часы — шлёт только 10:00–20:00 по Бишкеку (`DAY_START_HOUR`/`DAY_END_HOUR`, `SHOP_TZ`).
+- Шлёт cron `/etc/cron.d/sbonus-cart-remind` (раз в 30 мин `python3 -m app.shop.shop_cart_remind` → `run_once`, журнал `/root/shop_cart_remind.log`); файл целиком пишет `deploy_shop.sh`. `sent` растёт, только если дошло хоть до одного телефона; изменение корзины начинает расписание заново.
+- Пропускает: нет согласия, пустая корзина, нет живого адреса, был заказ с этого номера после изменения корзины — `shop_orders.customer_phone = phone` строкой, формат `+996…` должен совпадать. Заказ зовёт `clear_after_order`; `account-delete` стирает и корзину (`cartRemoved`).
+
+Окружение SBonus (`/opt/sbonus/.env.production`, только имена): `APNS_KEY_P8`, `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_BUNDLE_ID` (по умолчанию `kg.smarket.app`), `APNS_PRODUCTION` (1 — App Store), `FCM_SERVICE_ACCOUNT_B64` (JSON сервисного аккаунта Firebase в base64; в коде `_cfg("fcm_service_account_b64")`).
+
+Владельцу: Firebase — `docs/ANDROID_PUSH_UZ.md` (§6 — выкладка). `bash scripts/setup-fcm.sh` (`--check` — только проверка; Windows — `scripts/setup-fcm.ps1 -Check`): ключ идёт через stdin в `scripts/fcm-remote.sh` → `FCM_SERVICE_ACCOUNT_B64` с резервной копией `.env`, ответ одним словом `FCMOK|NOENV|BADJSON|NOTSA|NOPY|NOBAK`; `google-services.json` копируется в `android/app/` только после `FCMOK`. Apple — `scripts/setup-apns.sh`.
+
+Тесты (прогнаны 27.09.2026):
+- `npm test` — 728 зелёных; маршруты push — `__tests__/push-device.test.ts`, `push-platform`, `push-cart-routes`, `push-cart-sync`, `push-cart-tap` (образец для новых).
+- `uv run --with cryptography python -m unittest integrations/sbonus-server/shop/test_shop_push_fcm.py` — 16 (локально `cryptography` нет, отсюда `--with`).
+- `uv run python -m unittest integrations/sbonus-server/shop/test_shop_cart_rules.py` — 12.
+
+Подводные камни:
+- `npx cap sync android` в рабочей копии, где `node_modules` — ссылка, переписывает путь в `android/capacitor.settings.gradle` → после sync `git checkout -- android/capacitor.settings.gradle`.
+- `npm run typecheck` в такой рабочей копии — сначала `npx next typegen`, иначе старые ошибки `RouteContext` в чужих маршрутах.
+- Следующая задача — уведомления «Скидка»/«Новинка» из 1С по шаблонам: `docs/TZ_PUSH_PROMO_1C.md` (делает PC).
 <!-- autopilot:end -->

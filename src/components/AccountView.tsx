@@ -12,7 +12,8 @@ import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { forgetFaceId, hasLockKey, lockKind, loginWithFaceId, rememberForFaceId } from '@/lib/native/appLock'
 import { clearBonusCard, inNativeApp, saveBonusCard, showBonusCard } from '@/lib/native/bonusCard'
-import { enablePush, pushState, resumePush } from '@/lib/native/push'
+import { cartSignedIn, cartSignedOut } from '@/lib/native/cartSync'
+import { enablePush, pushPlatform, pushState, resumePush } from '@/lib/native/push'
 import type { CustomerProfile } from '@/lib/customer/gateway'
 
 const CABINET_URL = 'https://cabinet.smartcentr.store'
@@ -30,9 +31,14 @@ export function useCustomer(amount = 0, full = false) {
     if (!response) return setFailed(true)
     const data = await response.json().catch(() => null)
     if (data && 'guestCheckout' in data) setGuestCheckout(data.guestCheckout !== false)
-    if (response.status === 401) return setCustomer(null)
+    // Корзина в приложении уходит на сервер только вошедшим — сообщаем, вошёл ли покупатель.
+    if (response.status === 401) {
+      cartSignedOut()
+      return setCustomer(null)
+    }
     if (data?.ok) {
       setFailed(false)
+      cartSignedIn()
       setCustomer(data.customer)
     } else setFailed(true)
   }, [amount, full])
@@ -43,6 +49,7 @@ export function useCustomer(amount = 0, full = false) {
 
   const logout = useCallback(async () => {
     await fetch('/api/customer/me', { method: 'DELETE' }).catch(() => null)
+    cartSignedOut()
     setCustomer(null)
   }, [])
 
@@ -74,6 +81,42 @@ export function AccountView() {
   const [lockCheck, setLockCheck] = useState<boolean | null>(null)
   // Удаление учётной записи: 'idle' → 'confirm' → 'busy' → 'failed'.
   const [wipe, setWipe] = useState<'idle' | 'confirm' | 'busy' | 'failed'>('idle')
+  // Напоминания о корзине: undefined — карточку не показываем (грузим или сервер молчит),
+  // null — ещё не спрашивали, true/false — ответ покупателя.
+  const [remind, setRemind] = useState<boolean | null | undefined>(undefined)
+  const [remindBusy, setRemindBusy] = useState(false)
+  const [remindFailed, setRemindFailed] = useState(false)
+  const phone = customer?.phone
+
+  // Спрашиваем про напоминания, только когда уведомления уже разрешены:
+  // иначе «да» ничего бы не значило — телефон их не покажет.
+  useEffect(() => {
+    if (!phone || push !== 'granted') return
+    let alive = true
+    fetch('/api/push/consent', { cache: 'no-store' })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (alive && data?.ok) setRemind(typeof data.consent === 'boolean' ? data.consent : null)
+      })
+      .catch(() => undefined)
+    return () => {
+      alive = false
+    }
+  }, [phone, push])
+
+  /** Ответ покупателя — на сервер. Не сохранилось — остаёмся на прежнем и говорим об этом. */
+  const saveRemind = useCallback(async (consent: boolean) => {
+    setRemindBusy(true)
+    setRemindFailed(false)
+    const response = await fetch('/api/push/consent', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ consent }),
+    }).catch(() => null)
+    setRemindBusy(false)
+    if (response?.ok) setRemind(consent)
+    else setRemindFailed(true)
+  }, [])
 
   /** Перечитать состояние быстрого входа: умеет ли телефон и есть ли ключ. */
   const refreshLock = useCallback(async () => {
@@ -271,8 +314,54 @@ export function AccountView() {
           <a href={CABINET_URL} className="btn btn--outline" target="_blank" rel="noopener noreferrer">{a.cabinetLink}</a>
           <button type="button" className="btn btn--ghost" onClick={leave}>{a.logout}</button>
         </div>
-        {push === 'denied' && <p className="account-push-off">{a.pushDenied}</p>}
+        {/* Путь в настройках у iPhone и Android разный — показываем тот, что на руках */}
+        {push === 'denied' && (
+          <p className="account-push-off">{pushPlatform() === 'android' ? a.pushDeniedAndroid : a.pushDenied}</p>
+        )}
       </section>
+
+      {/* Напоминания о корзине — реклама, поэтому только с явного согласия (Apple 4.5.4):
+          сначала вопрос, после ответа — переключатель, чтобы передумать в любой момент. */}
+      {push === 'granted' && remind !== undefined && (
+        <section className="account-remind" aria-busy={remindBusy}>
+          {remind === null ? (
+            <>
+              <h2>{a.remindAsk}</h2>
+              <p className="account-remind__note">{a.remindText}</p>
+              <div className="account-actions">
+                <button type="button" className="btn btn--primary" disabled={remindBusy} onClick={() => saveRemind(true)}>
+                  {a.remindYes}
+                </button>
+                <button type="button" className="btn btn--ghost" disabled={remindBusy} onClick={() => saveRemind(false)}>
+                  {a.remindNo}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="account-remind__row">
+                <div>
+                  <h2 id="account-remind-title">{a.remindTitle}</h2>
+                  <p className={`account-remind__state ${remind ? 'is-on' : 'is-off'}`}>
+                    {remind ? a.remindOn : a.remindOff}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={remind}
+                  aria-labelledby="account-remind-title"
+                  className="account-switch"
+                  disabled={remindBusy}
+                  onClick={() => saveRemind(!remind)}
+                />
+              </div>
+              <p className="account-remind__note">{a.remindText}</p>
+            </>
+          )}
+          {remindFailed && <p className="field__error" role="alert">{a.remindFailed}</p>}
+        </section>
+      )}
 
       {nativeApp && (
         <section className="account-lock">
