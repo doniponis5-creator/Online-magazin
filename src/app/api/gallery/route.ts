@@ -57,7 +57,8 @@ export async function POST(request: Request) {
 
   try {
     const out = await publishKitchen({ q, title, role, phone: session.phone, name: session.name, image, thumb })
-    return out === 'too-many' ? fail(out, 'often') : typeof out === 'string' ? fail(out) : done(out)
+    // day — пять кухонь за сутки с одного телефона: экран так и пишет, а не «слишком часто»
+    return out === 'too-many' ? fail(out, 'day') : typeof out === 'string' ? fail(out) : done(out)
   } catch (error) {
     console.error('[gallery] не удалось сохранить кухню:', error)
     return fail('save')

@@ -134,7 +134,8 @@ describe('API галереи', () => {
     for (let i = 0; i < 5; i += 1) await publishAs(p)
     const res = await list.POST(publishForm())
     expect(res.status).toBe(429)
-    expect(await res.json()).toEqual({ ok: false, error: 'too-many', reason: 'often' })
+    // day — экран пишет «Сегодня уже 5 кухонь», а не «слишком часто»
+    expect(await res.json()).toEqual({ ok: false, error: 'too-many', reason: 'day' })
   })
 
   it('оценка: вошедший, не автор, 1–5', async () => {

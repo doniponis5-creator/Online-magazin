@@ -31,7 +31,7 @@ import {
  */
 
 const SHAPES: Shape[] = ['straight', 'corner', 'u', 'island']
-const SLOT_KEYS: Record<SlotKind, string> = {
+export const SLOT_KEYS: Record<SlotKind, string> = {
   fridge: 'fr',
   oven: 'ov',
   microwave: 'mw',

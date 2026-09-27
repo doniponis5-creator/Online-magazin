@@ -6,7 +6,7 @@ import { phones, telHref, whatsappHref } from '@/data/contacts'
 import { useCart } from '@/lib/cart/CartProvider'
 import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
-import { checkProject, type Check } from '@/lib/kitchen/checks'
+import { checkProject, TRIANGLE, type Check } from '@/lib/kitchen/checks'
 import {
   findColors,
   FRONT_COLORS,
@@ -86,6 +86,9 @@ import { PlanSketch } from './PlanSketch'
 import { kitchenTexts, type KitchenTexts } from './texts'
 import type { CutMap } from './pdfSheet'
 import { parseVariants, type Variant } from '@/lib/kitchen/variants'
+import { keepOnLink, openQuery } from './ready'
+import { PublishLoader } from './PublishLoader'
+import { ReadyStrip } from './ReadyStrip'
 import type { BuildInput, CabInfo, Dims } from './three/build'
 import type { DragPreview, DragTarget, EngineEvents, KitchenEngine, PhotoState, Pick, Quality, View } from './three/engine'
 import type { Photo } from './three/photo'
@@ -322,6 +325,10 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
   /** ширины всех шкафов прямо в 3D */
   const [showDims, setShowDims] = useState(false)
   const [variants, setVariants] = useState<Variant[]>([])
+  /** после «Сохранить вариант» — вопрос «Показать всем в галерее?» */
+  const [askGallery, setAskGallery] = useState(false)
+  /** открыта форма «В галерею» */
+  const [publishing, setPublishing] = useState(false)
   const [, setHistTick] = useState(0)
   const [hint, setHint] = useState(true)
   const [origin, setOrigin] = useState('')
@@ -455,12 +462,18 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
 
   /** Сохранённая кухня ждёт ответа «Продолжить / Начать заново»; пока ждёт — не перезаписываем её. */
   const [resume, setResume] = useState<KitchenState | null>(null)
+  /** кухня из автосохранения, которую ссылка заменила: положить в «Мои варианты» */
+  const [linkKeep, setLinkKeep] = useState<KitchenState | null>(null)
   useEffect(() => {
     setOrigin(window.location.origin)
     const q = new URLSearchParams(window.location.search)
     const last = loadLast(byId)
-    if (q.has('f')) setState(stateFromQuery(q, byId))
-    else {
+    if (q.has('f')) {
+      // по ссылке («Хочу такую же», «Поделиться») — своя несохранённая кухня уходит в «Мои варианты»
+      const next = stateFromQuery(q, byId)
+      setState(next)
+      if (keepOnLink(last, next)) setLinkKeep(last)
+    } else {
       // адрес с одной моделью (кнопка «Примерить в кухне» на карточке товара) —
       // ставим её в сохранённую кухню, а нет сохранённой — в кухню по умолчанию
       // без URLSearchParams.size: в Safari до 17 его нет, и модель терялась
@@ -1779,6 +1792,27 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       // нет доступа к хранилищу — просто без сохранённых вариантов
     }
   }, [])
+  // Открыли по ссылке, а своя кухня была другой — кладём её в «Мои варианты»
+  // (варианты к этому времени уже прочитаны), «Отменить» возвращает её на экран.
+  useEffect(() => {
+    if (!linkKeep) return
+    setLinkKeep(null)
+    const prev = linkKeep
+    if (variants.some((v) => v.q === queryFromState(prev))) return
+    const dropped = variants.length >= 8 ? variants[variants.length - 1].name : null
+    if (!addVariant(prev, '')) return setToast(t.variantFailed)
+    setNote({
+      text: dropped ? `${t.gallery.keptLast} ${t.gallery.droppedOld(dropped)}` : t.gallery.keptLast,
+      act: {
+        label: t.undo,
+        run: () => {
+          track()
+          setState(prev)
+        },
+      },
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkKeep])
   /** Сохраняет список; false — браузер не дал записать (приватный режим, нет места). */
   const storeVariants = (list: Variant[]): boolean => {
     setVariants(list)
@@ -1789,14 +1823,43 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
       return false
     }
   }
-  const saveVariant = () => {
-    const img = engineRef.current?.snapshot(360, 225) ?? ''
+  /** Кладёт кухню в «Мои варианты»; img — кадр 3D, пусто — без картинки. */
+  const addVariant = (s: KitchenState, img: string): boolean => {
     const n = variants.reduce((max, v) => Math.max(max, Number(v.name.replace(/\D/g, '')) || 0), 0) + 1
-    const label = `${t.shapes[state.shape][0]} · ${lang === 'ky' ? style.ky : style.ru}`
-    const saved = storeVariants(
-      [{ id: Date.now().toString(36), name: t.variantName(n), label, q: queryFromState(state), img, at: Date.now() }, ...variants].slice(0, 8),
-    )
-    setToast(saved ? t.variantSaved : t.variantFailed)
+    const st = getStyle(s.style)
+    const label = `${t.shapes[s.shape][0]} · ${lang === 'ky' ? st.ky : st.ru}`
+    return storeVariants([{ id: Date.now().toString(36), name: t.variantName(n), label, q: queryFromState(s), img, at: Date.now() }, ...variants].slice(0, 8))
+  }
+  const saveVariant = () => {
+    const saved = addVariant(state, engineRef.current?.snapshot(360, 225) ?? '')
+    // «Показать всем?» — только когда есть кадр 3D; иначе сразу говорим, почему нельзя
+    setToast(saved ? (galleryWhy ? `${t.variantSaved}. ${galleryWhy}` : t.variantSaved) : t.variantFailed)
+    setAskGallery(saved && !galleryWhy)
+  }
+  /** почему «В галерею» сейчас недоступна; null — можно */
+  const galleryWhy = fail3d ? t.gallery.no3d : engineState === 'lost' ? t.gallery.lost3d : engineState !== 'ready' ? t.gallery.wait3d : null
+
+  /* ───────── готовые кухни ───────── */
+
+  /** Своя кухня (не по умолчанию); нетронутую готовую узнаёт полоса. */
+  const ownQuery = queryFromState(resume ?? state)
+  const ownKitchen = ownQuery !== queryFromState(DEFAULT_STATE) ? ownQuery : null
+  /** своя уже лежит в «Мои варианты» — второй раз не кладём */
+  const ownSaved = variants.some((v) => v.q === ownQuery)
+  /** Открыть готовую (или из галереи) как по ссылке; save — своя сначала уходит в «Мои варианты». */
+  const openReady = (q: string, name: string, save: boolean) => {
+    if (save && !ownSaved && !addVariant(resume ?? state, resume ? '' : (engineRef.current?.snapshot(360, 225) ?? ''))) {
+      // не записалось (приватный режим, нет места) — свою кухню не теряем
+      setToast(t.variantFailed)
+      return
+    }
+    const { state: next, missing: gone } = openQuery(q, appliances)
+    track(resume ?? undefined)
+    setResume(null)
+    setCartResult(null)
+    setState(next)
+    const text = gone.length > 0 ? t.gallery.missing(gone.map((s) => t.slots[s]).join(', ')) : t.gallery.opened(name)
+    setNote({ text, act: { label: t.undo, run: undo } })
   }
   const openVariant = (v: Variant) => {
     track()
@@ -1816,6 +1879,8 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     switch (c.id) {
       case 'triangle':
         return c.level === 'ok' ? t.checks.triangleOk(c.sum) : t.checks.triangleWarn(c.legs, c.sum)
+      case 'workLine':
+        return c.level === 'ok' ? t.checks.workLineOk : t.checks.workLineWarn(c.legs, c.order, TRIANGLE.legMax)
       case 'hobSides':
         if (st) return c.level === 'ok' ? st.sidesOk(c.left, c.right) : st.sidesWarn(c.left, c.right)
         return c.level === 'ok' ? t.checks.hobSidesOk(c.left, c.right) : t.checks.hobSidesWarn(c.left, c.right)
@@ -3038,6 +3103,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                 ))}
               </div>
             )}
+            {step === 'shape' && <ReadyStrip lang={lang} t={t} appliances={appliances} own={ownKitchen} dropName={!ownSaved && variants.length >= 8 ? variants[variants.length - 1].name : null} onOpen={openReady} />}
 
             {step === 'size' && (
               <div className="kp-sizes">
@@ -3990,10 +4056,20 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
             <button type="button" className="btn btn--outline btn--sm" onClick={() => void share()}>
               {t.share}
             </button>
+            <button
+              type="button"
+              className="btn btn--outline btn--sm"
+              onClick={() => setPublishing(true)}
+              disabled={galleryWhy !== null}
+              title={galleryWhy ?? undefined}
+            >
+              {t.gallery.toGallery}
+            </button>
             <a className="btn btn--ghost btn--sm" href={whatsappHref(phones[0], waText)} target="_blank" rel="noopener noreferrer">
               {t.ask}
             </a>
           </div>
+          {galleryWhy && <p className="kp-note">{galleryWhy}</p>}
         </div>
         <PlanSketch plan={plan} labels={wallLabels} showWidths className="kp-maker__sketch" />
       </section>
@@ -4010,6 +4086,24 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
             {t.saveVariant}
           </button>
         </div>
+        {askGallery && !galleryWhy && (
+          <div className="kp-ask" role="group" aria-label={t.gallery.ask}>
+            <span className="kp-ask__text">{t.gallery.ask}</span>
+            <button
+              type="button"
+              className="btn btn--primary btn--sm"
+              onClick={() => {
+                setAskGallery(false)
+                setPublishing(true)
+              }}
+            >
+              {t.gallery.yes}
+            </button>
+            <button type="button" className="btn btn--ghost btn--sm" onClick={() => setAskGallery(false)}>
+              {t.gallery.no}
+            </button>
+          </div>
+        )}
         {variants.length > 0 && (
           <ul className="kp-variants__list">
             {variants.map((v) => (
@@ -4030,6 +4124,16 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
           </ul>
         )}
       </section>
+
+      {publishing && (
+        <PublishLoader
+          lang={lang}
+          t={t}
+          q={query}
+          shot={() => engineRef.current?.sheetShot(1200, 750) ?? null}
+          onClose={() => setPublishing(false)}
+        />
+      )}
 
       {note && (
         <div className={`kp-toast${note.act ? ' kp-toast--act' : ''}`} role="status">

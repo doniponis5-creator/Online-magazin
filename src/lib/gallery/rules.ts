@@ -61,8 +61,8 @@ export const ROLES: readonly Role[] = ['buyer', 'master']
 
 /** no-space — кончилось место под картинки галереи (507). */
 export type GalleryError = 'login' | 'too-many' | 'bad-input' | 'not-found' | 'forbidden' | 'no-space'
-/** Уточнение к too-many: больше 5 фото, 300 комментариев на кухне, слишком часто. */
-export type TooManyReason = 'photos' | 'comments' | 'often'
+/** Уточнение к too-many: больше 5 фото, 300 комментариев на кухне, слишком часто, 5 публикаций за сутки. */
+export type TooManyReason = 'photos' | 'comments' | 'often' | 'day'
 
 /** Комментарий, каким его видят все. */
 export type GalleryComment = {

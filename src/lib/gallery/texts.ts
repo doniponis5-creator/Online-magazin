@@ -103,6 +103,7 @@ const ru = {
     photos: 'Не больше 5 фото.',
     comments: 'Комментариев слишком много.',
     often: 'Слишком часто — подождите.',
+    day: 'Сегодня уже 5 кухонь — завтра можно ещё.',
   } as Record<TooManyReason, string>,
   photoError: 'Фото не подошло: нужен JPEG, PNG или WebP.',
 }
@@ -197,6 +198,7 @@ const ky: GalleryTexts = {
     photos: '5 сүрөттөн ашпасын.',
     comments: 'Пикирлер өтө көп.',
     often: 'Өтө тез-тез — күтө туруңуз.',
+    day: 'Бүгүн 5 ашкана коюлду — эртең дагы болот.',
   },
   photoError: 'Сүрөт туура келбеди: JPEG, PNG же WebP керек.',
 }
