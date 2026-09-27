@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { describe, expect, it } from 'vitest'
+import './helpers/canvas'
 import { buildKitchen, type Built } from '@/components/kitchen/three/build'
 import { planKitchen, type Module, type PlanInput } from '@/lib/kitchen/layout'
 import { elevationSvg, type DrawingLabels } from '@/components/kitchen/drawing'
@@ -12,22 +13,6 @@ import type { KitchenAppliance } from '@/lib/kitchen/types'
  * Отдельностоящая плита в 3D и у мебельщика
  * (`.autopilot/2026-09-27-kitchen-stove/spec.md`, пункты 6–8).
  */
-
-/* заглушка холста для текстур — как в kitchen-build.test.ts */
-const ctx2d: unknown = new Proxy({} as Record<string | symbol, unknown>, {
-  get: (t, k) => {
-    if (k in t) return t[k]
-    if (k === 'getImageData') return (_x: number, _y: number, w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) })
-    return () => ctx2d
-  },
-  set: (t, k, v) => {
-    t[k] = v
-    return true
-  },
-})
-;(globalThis as { document?: unknown }).document = {
-  createElement: () => ({ width: 0, height: 0, getContext: () => ctx2d }),
-}
 
 const base = { brand: '', sizeKnown: true, finish: 'black' as const }
 const STOVE: KitchenAppliance = {

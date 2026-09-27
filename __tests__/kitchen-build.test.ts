@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { describe, expect, it } from 'vitest'
+import './helpers/canvas'
 import { buildKitchen, type Built } from '@/components/kitchen/three/build'
 import { planKitchen, type Plan, type PlanInput } from '@/lib/kitchen/layout'
 import { UNDER_COUNTER } from '@/lib/kitchen/checks'
@@ -13,23 +14,6 @@ import type { HobKind, HoodKind, KitchenAppliance, Shape } from '@/lib/kitchen/t
  * Находки C05–C08, C11, D01, D02, D05, D10, D13, D16, D17, D25
  * (`.autopilot/2026-09-26-kitchen-3d-audit-pro--wip/`).
  */
-
-/* ───────────── заглушка холста для текстур ───────────── */
-
-const ctx2d: unknown = new Proxy({} as Record<string | symbol, unknown>, {
-  get: (t, k) => {
-    if (k in t) return t[k]
-    if (k === 'getImageData') return (_x: number, _y: number, w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) })
-    return () => ctx2d
-  },
-  set: (t, k, v) => {
-    t[k] = v
-    return true
-  },
-})
-;(globalThis as { document?: unknown }).document = {
-  createElement: () => ({ width: 0, height: 0, getContext: () => ctx2d }),
-}
 
 /* ───────────── техника и кухни ───────────── */
 

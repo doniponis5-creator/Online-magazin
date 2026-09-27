@@ -1,8 +1,9 @@
 import { crc32 } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
+import './helpers/canvas'
 import { kitchenTexts } from '@/components/kitchen/texts'
 import { cutWorkbook } from '@/lib/kitchen/cutExcel'
-import type { CutLook } from '@/lib/kitchen/cutting'
+import { cutParts, nest, type CutLook } from '@/lib/kitchen/cutting'
 import { cutList, extraList, frontList, type SpecData } from '@/lib/kitchen/spec'
 import { buildKitchen } from '@/components/kitchen/three/build'
 import { frontColor } from '@/lib/kitchen/finishes'
@@ -271,19 +272,6 @@ describe('cutWorkbook — итоги кромки и листов (истори�
 
 /* ───────────── настоящая угловая кухня: от 3D до файла ───────────── */
 
-const ctx2d: unknown = new Proxy({} as Record<string | symbol, unknown>, {
-  get: (t, k) => {
-    if (k in t) return t[k]
-    if (k === 'getImageData') return (_x: number, _y: number, w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) })
-    return () => ctx2d
-  },
-  set: (t, k, v) => {
-    t[k] = v
-    return true
-  },
-})
-;(globalThis as { document?: unknown }).document = { createElement: () => ({ width: 0, height: 0, getContext: () => ctx2d }) }
-
 const appliance = (over: Partial<KitchenAppliance>): KitchenAppliance => ({ id: 'x', slot: 'fridge', name: 'x', brand: '', price: 1, w: 60, h: 185, d: 65, sizeKnown: true, builtIn: false, finish: 'white', ...over })
 
 /** Угловая 300 × 240 по умолчанию, как на экране: холодильник, посудомойка, варочная панель, духовка, вытяжка. */
@@ -415,5 +403,113 @@ describe('cutWorkbook — цвет стиля низ и верх словами 
     const plain = new Set(sheet(book(corner, { tone: { ru: 'Графит', ky: 'Графит', facade: '#333333' } }), 'Фасады').slice(1, -1).map((r) => r[2]))
     expect(plain).toEqual(new Set(['Графит']))
     for (const b of [book(corner, { tone })]) for (const s of b) for (const r of s.rows) for (const c of r) expect(String(c ?? '')).not.toMatch(/#[0-9a-f]{3,6}\b/i)
+  })
+})
+
+/* ───────────── таск 05: поломки, которые тесты раньше пропускали ───────────── */
+
+type Placed = { sheet: number; label: string; len: number; wid: number; x: number; y: number; rotated: boolean }
+
+/** Разделы «Листы» по материалу: заголовок, размер листа из заголовка, строки раскладки. */
+function sections(b: XlsxSheet[]): { head: string; L: number; W: number; rows: Placed[] }[] {
+  const out: { head: string; L: number; W: number; rows: Placed[] }[] = []
+  for (const r of sheet(b, 'Листы')) {
+    const size = typeof r[0] === 'string' ? / · лист (\d+) × (\d+) мм$/.exec(r[0]) : null
+    if (size) out.push({ head: r[0] as string, L: Number(size[1]), W: Number(size[2]), rows: [] })
+    else if (r.length === 7 && typeof r[0] === 'number')
+      out[out.length - 1].rows.push({ sheet: r[0], label: r[1] as string, len: r[2] as number, wid: r[3] as number, x: r[4] as number, y: r[5] as number, rotated: r[6] === 'да' })
+  }
+  return out
+}
+
+/** Деталь целиком на листе за обрезкой: X — вдоль длины листа, Y — вдоль ширины; у повёрнутой вдоль длины листа — её ширина. */
+function expectOnSheet(sec: { L: number; W: number; rows: Placed[] }, trim = 10) {
+  for (const p of sec.rows) {
+    const [alongL, alongW] = p.rotated ? [p.wid, p.len] : [p.len, p.wid]
+    expect(p.x, p.label).toBeGreaterThanOrEqual(trim)
+    expect(p.y, p.label).toBeGreaterThanOrEqual(trim)
+    expect(p.x + alongL, `${p.label}: X ${p.x} + ${alongL}`).toBeLessThanOrEqual(sec.L - trim)
+    expect(p.y + alongW, `${p.label}: Y ${p.y} + ${alongW}`).toBeLessThanOrEqual(sec.W - trim)
+  }
+}
+
+describe('cutWorkbook — таск 05: «Листы», цвет, количество, имена листов', () => {
+  it('«Листы»: X — вдоль длины листа, Y — вдоль ширины; места те же, что у nest', () => {
+    // 3 однотонные панели 900 × 500: вдоль длины листа в ряд — X третьей 1818, с шириной 900 за ширину листа 2070 не влезла бы
+    const row: SpecData = { ...one, runs: [{ ...one.runs[0], fronts: [] }], carcasses: [], extras: [1, 2, 3].map(() => ({ kind: 'islandBack' as const, run: 'I' as const, w: 90, h: 50 })) }
+    const [sec] = sections(book(row))
+    expect(sec.rows).toHaveLength(3)
+    expectOnSheet(sec)
+    // проверка чувствительна: хотя бы одна деталь при X ↔ Y вышла бы за ширину листа
+    expect(sec.rows.some((p) => p.x + (p.rotated ? p.len : p.wid) > sec.W - 10)).toBe(true)
+    const pl = nest(cutParts(row, {})).flatMap((r) => r.sheets.flatMap((s) => s.placements))
+    expect(sec.rows.map((p) => [p.x, p.y, p.rotated])).toEqual(pl.map((p) => [p.x, p.y, p.rotated]))
+    // угловая кухня: каждая деталь каждого листа — на своём листе
+    const all = sections(book(cornerSpec()))
+    expect(all.length).toBeGreaterThanOrEqual(2)
+    for (const s of all) expectOnSheet(s)
+  })
+
+  it('у каждого материала — цвет: два цвета ЛДСП — две строки сводки и два раздела; в «Распил» цвет у каждой детали', () => {
+    const b = book(one, { facade: 'lam-graphite' })
+    expect(sheet(b, 'Листы').slice(1, 4).map((r) => r.slice(0, 5))).toEqual([
+      ['ЛДСП', 'Белый премиум', 16, '2800 × 2070', 1],
+      ['ХДФ', 'Белый премиум', 3, '2800 × 2070', 1],
+      ['ЛДСП', 'Графит', 16, '2800 × 2070', 1],
+    ])
+    expect(sections(b).map((s) => s.head)).toEqual([
+      'ЛДСП 16 мм · Белый премиум · лист 2800 × 2070 мм',
+      'ХДФ 3 мм · Белый премиум · лист 2800 × 2070 мм',
+      'ЛДСП 16 мм · Графит · лист 2800 × 2070 мм',
+    ])
+    const cut = sheet(b, 'Распил').slice(1)
+    expect(cut).toHaveLength(6)
+    for (const r of cut) expect(typeof r[3] === 'string' && r[3].length > 0, String(r[1])).toBe(true)
+    expect(cut.find((r) => r[1] === 'Дверца')!.slice(2, 4)).toEqual(['ЛДСП 16 мм', 'Графит'])
+    expect(cut.find((r) => r[1] === 'Боковина')!.slice(2, 4)).toEqual(['ЛДСП 16 мм', 'Белый премиум'])
+    // «Фасады»: у МДФ — тоже цвет
+    expect(sheet(book(one, { facade: 'en-sage' }), 'Фасады')[1].slice(1, 3)).toEqual(['МДФ, эмаль', frontColor('en-sage')!.ru])
+  })
+
+  it('«Фасады»: две одинаковые дверцы — одна строка, кол-во 2 и м² за обе; итог — все штуки (разобрано вручную)', () => {
+    const door = one.runs[0].fronts[0]
+    const drawer = { ...door, y: 0, h: 17.6, hinge: 'drawer' as const }
+    const three: SpecData = { ...one, runs: [{ ...one.runs[0], fronts: [door, { ...door, x: 60.2 }, drawer] }] }
+    // 716 × 596 = 426 736 мм², × 2 = 0,853 м²; ящик 176 × 596 = 104 896 мм² = 0,105; всего 0,958 м², 3 шт.
+    expect(sheet(book(three, { facade: 'en-white' }), 'Фасады').slice(1)).toEqual([
+      ['Дверца', 'МДФ, эмаль', 'Белый мат', 716, 596, 2, 0.85],
+      ['Фасад ящика', 'МДФ, эмаль', 'Белый мат', 176, 596, 1, 0.1],
+      ['Итого', null, null, null, null, 3, 0.96],
+    ])
+    // из ЛДСП — в «Распил» одной строкой, 2 штуки
+    expect(sheet(book(three), 'Распил').filter((r) => r[1] === 'Дверца').map((r) => r.slice(4, 7))).toEqual([[716, 596, 2]])
+  })
+
+  it('имена листов в файле — ровно шесть, по-русски и по-кыргызски', () => {
+    const want = {
+      ru: ['Распил', 'Фасады', 'Столешница', 'Фурнитура', 'Кромка', 'Листы'],
+      ky: ['Кесүү', 'Фасаддар', 'Столешница', 'Фурнитура', 'Кромка', 'Листтер'],
+    }
+    for (const lang of ['ru', 'ky'] as const) {
+      const names = sheetsOf(unzip(xlsx(cutWorkbook(one, {}, kitchenTexts(lang))))).map((s) => s.name)
+      expect(names, lang).toEqual(want[lang])
+    }
+  })
+
+  it('лист мастера (opts.sheets) доходит до «Листы»: ЛДСП 2750 × 1830, ХДФ — 2800 × 2070; детали — на своём листе', () => {
+    const b = cutWorkbook(cornerSpec(), {}, ru, { sheets: { ldsp: { L: 2750, W: 1830 } } })
+    const sum = sheet(b, 'Листы').slice(1, 3)
+    expect(sum.map((r) => r.slice(0, 4))).toEqual([
+      ['ЛДСП', 'Белый премиум', 16, '2750 × 1830'],
+      ['ХДФ', 'Белый премиум', 3, '2800 × 2070'],
+    ])
+    const secs = sections(b)
+    expect(secs.map((s) => [s.L, s.W])).toEqual([
+      [2750, 1830],
+      [2800, 2070],
+    ])
+    for (const s of secs) expectOnSheet(s)
+    // на меньшем листе ЛДСП листов не меньше, чем на 2800 × 2070
+    expect(sum[0][4] as number).toBeGreaterThanOrEqual(sheet(book(cornerSpec()), 'Листы')[1][4] as number)
   })
 })

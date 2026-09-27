@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { describe, expect, it } from 'vitest'
+import './helpers/canvas'
 import type { Product } from '@/data/products'
 import { applianceFromProduct } from '@/lib/kitchen/catalog'
 import { getStyle, getTone } from '@/lib/kitchen/styles'
@@ -129,22 +130,6 @@ describe('варочная панель из каталога: вид и чис�
 })
 
 /* ───────── фото на стекле панели в 3D ───────── */
-
-// текстуры материалов рисуются на заглушке холста (как в kitchen-build)
-const ctx2d: unknown = new Proxy({} as Record<string | symbol, unknown>, {
-  get: (t, k) => {
-    if (k in t) return t[k]
-    if (k === 'getImageData') return (_x: number, _y: number, w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) })
-    return () => ctx2d
-  },
-  set: (t, k, v) => {
-    t[k] = v
-    return true
-  },
-})
-;(globalThis as { document?: unknown }).document = {
-  createElement: () => ({ width: 0, height: 0, getContext: () => ctx2d }),
-}
 
 /** Точки грани, на которой лежит картинка: [u, v, x, z]. */
 function photoFace(g: THREE.Object3D, texture: THREE.Texture): [number, number, number, number][] {

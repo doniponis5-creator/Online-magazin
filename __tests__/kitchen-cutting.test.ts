@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
+import './helpers/canvas'
 import { buildKitchen } from '@/components/kitchen/three/build'
-import { planKitchen, type PlanInput } from '@/lib/kitchen/layout'
+import type { FinishLook } from '@/components/kitchen/three/materials'
+import { frontColor } from '@/lib/kitchen/finishes'
+import { planKitchen, type Plan, type PlanInput } from '@/lib/kitchen/layout'
 import { cutList, extraList, frontList, type SpecData, type SpecExtra } from '@/lib/kitchen/spec'
 import { getTone, STYLES, type KitchenStyle } from '@/lib/kitchen/styles'
 import type { HobKind, KitchenAppliance, Shape } from '@/lib/kitchen/types'
@@ -10,23 +13,6 @@ import { cutParts, edgeTotals, nest, type CutLook, type CutPart, type NestResult
  * Раскрой для распила (пакет мастера, истории 2, 4–8): детали, кромка,
  * раскладка по листам. Кухни собираются в node, как в kitchen-build.test.ts.
  */
-
-/* ───────────── заглушка холста для текстур ───────────── */
-
-const ctx2d: unknown = new Proxy({} as Record<string | symbol, unknown>, {
-  get: (t, k) => {
-    if (k in t) return t[k]
-    if (k === 'getImageData') return (_x: number, _y: number, w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) })
-    return () => ctx2d
-  },
-  set: (t, k, v) => {
-    t[k] = v
-    return true
-  },
-})
-;(globalThis as { document?: unknown }).document = {
-  createElement: () => ({ width: 0, height: 0, getContext: () => ctx2d }),
-}
 
 /* ───────────── техника и кухни ───────────── */
 
@@ -51,14 +37,19 @@ const hood = appliance({ slot: 'hood', w: 60, h: 50, d: 50, hood: 'chimney' })
 const hob = (kind: HobKind = 'electric') => appliance({ slot: 'hob', w: 59, h: 5, d: 52, builtIn: true, hob: kind })
 const dw = (w = 45) => appliance({ slot: 'dishwasher', w: w - 0.2, h: 81.5, d: 55, builtIn: true })
 
-type Kitchen = { shape: Shape; a: number; b: number; c: number; island: number; style?: KitchenStyle; tone?: number; ceiling?: number; toCeiling?: boolean; col?: Partial<PlanInput>; gas?: boolean; dwW?: number }
+type Kitchen = { shape: Shape; a: number; b: number; c: number; island: number; style?: KitchenStyle; tone?: number; ceiling?: number; toCeiling?: boolean; col?: Partial<PlanInput>; gas?: boolean; dwW?: number; finish?: FinishLook }
 
 function spec(k: Kitchen): SpecData {
+  return built(k).spec
+}
+
+/** Кухня целиком: раскладка (где какой модуль) и спецификация из 3D. */
+function built(k: Kitchen): { plan: Plan; spec: SpecData } {
   const style = k.style ?? STYLES[0]
   const items = { fridge, dishwasher: dw(k.dwW ?? 45), hob: hob(k.gas ? 'gas' : 'electric'), oven, hood }
   const input: PlanInput = { shape: k.shape, a: k.a, b: k.b, c: k.c, island: k.island, ...k.col, fridge, dishwasher: items.dishwasher, hob: items.hob, oven, hood: { w: 60 } }
   const plan = planKitchen(input, { shelves: style.shelves })
-  return buildKitchen({
+  const b = buildKitchen({
     plan,
     style,
     tone: getTone(style, k.tone ?? 0),
@@ -68,7 +59,9 @@ function spec(k: Kitchen): SpecData {
     room: { ceiling: k.ceiling ?? 270, toCeiling: k.toCeiling ?? false },
     fronts: {},
     detail: 0.5,
-  }).spec
+    finish: k.finish,
+  })
+  return { plan, spec: b.spec }
 }
 
 const corner = spec({ shape: 'corner', a: 300, b: 240, c: 0, island: 0 })
@@ -212,6 +205,40 @@ const square = (id: string, count: number, grain = false): CutPart => ({
 })
 const placed = (r: NestResult) => r.sheets.flatMap((s) => s.placements)
 
+/** Лист, пропил и обрезка, которые ждём (не из ответа nest). */
+type Expect = { L: number; W: number; kerf: number; trim: number }
+const DEFAULT: Expect = { L: 2800, W: 2070, kerf: 4, trim: 10 }
+
+/**
+ * Свойства раскладки, а не координаты: лист того размера, что ждём; детали внутри
+ * листа за обрезкой, не пересекаются, между ними не меньше пропила; размеры — как в
+ * раскрое; повёрнута только деталь без текстуры.
+ */
+function expectLayout(r: NestResult, parts: CutPart[], e: Expect, name = '') {
+  expect([r.sheetL, r.sheetW], name).toEqual([e.L, e.W])
+  const byId = new Map(parts.map((p) => [p.id, p]))
+  for (const sh of r.sheets) {
+    const pl = sh.placements
+    expect(pl.length, name).toBeGreaterThan(0)
+    for (const p of pl) {
+      const part = byId.get(p.id)!
+      expect(part.material, name).toEqual(r.material)
+      expect(p.rotated ? [p.w, p.l] : [p.l, p.w], name).toEqual([part.length, part.width])
+      if (part.grain) expect(p.rotated, `${name}: деталь ${p.id} с текстурой`).toBe(false)
+      expect(p.x, name).toBeGreaterThanOrEqual(e.trim)
+      expect(p.y, name).toBeGreaterThanOrEqual(e.trim)
+      expect(p.x + p.l, name).toBeLessThanOrEqual(e.L - e.trim)
+      expect(p.y + p.w, name).toBeLessThanOrEqual(e.W - e.trim)
+    }
+    for (let i = 0; i < pl.length; i++)
+      for (let j = i + 1; j < pl.length; j++) {
+        const [p, q] = [pl[i], pl[j]]
+        const apart = p.x + p.l + e.kerf <= q.x || q.x + q.l + e.kerf <= p.x || p.y + p.w + e.kerf <= q.y || q.y + q.w + e.kerf <= p.y
+        expect(apart, `${name}: ${JSON.stringify(p)} ${JSON.stringify(q)}`).toBe(true)
+      }
+  }
+}
+
 describe('nest: раскладка по листам (истории 6–8)', () => {
   it('4 детали 1000 × 1000 — один лист 2800 × 2070, отход 1 − 4 м² / (2,78 × 2,05) = 29,8%; пятая — второй лист', () => {
     const [one] = nest([square('1', 4)])
@@ -230,7 +257,9 @@ describe('nest: раскладка по листам (истории 6–8)', ()
     expect(placed(g).map((p) => p.id)).toEqual(['1'])
     const [plain] = nest([wide(false)])
     expect(plain.oversize).toEqual([])
-    expect(placed(plain)).toEqual([{ id: '7', x: 10, y: 10, l: 2100, w: 600, rotated: true }])
+    expect(placed(plain)).toMatchObject([{ id: '7', l: 2100, w: 600, rotated: true }])
+    expectLayout(plain, [wide(false)], DEFAULT)
+    expectLayout(g, [wide(true), square('1', 1, true)], DEFAULT)
   })
 
   it('длиннее листа — в oversize, не теряется; МДФ в раскладку не идёт; ЛДСП и ХДФ, разные цвета — отдельно', () => {
@@ -243,13 +272,40 @@ describe('nest: раскладка по листам (истории 6–8)', ()
     expect(nest(cutParts(corner, { facade: 'acr-white' })).map((x) => x.material.kind).sort()).toEqual(['hdf', 'ldsp'])
   })
 
-  it('свой лист, пропил и обрезка из опций', () => {
-    const [r] = nest([square('1', 2)], { sheet: { L: 2440, W: 1220 }, kerf: 5, trim: 15 })
-    expect(r).toMatchObject({ sheetL: 2440, sheetW: 1220 })
-    expect(placed(r)).toEqual([
-      { id: '1', x: 15, y: 15, l: 1000, w: 1000, rotated: false },
-      { id: '1', x: 1020, y: 15, l: 1000, w: 1000, rotated: false },
-    ])
+  it('свой лист, пропил и обрезка из опций: обе детали на листе 2440 × 1220, за обрезкой 15 и через пропил 5', () => {
+    const parts = [square('1', 2)]
+    const [r] = nest(parts, { sheet: { L: 2440, W: 1220 }, kerf: 5, trim: 15 })
+    expect(r.sheets).toHaveLength(1)
+    expect(placed(r)).toHaveLength(2)
+    expectLayout(r, parts, { L: 2440, W: 1220, kerf: 5, trim: 15 })
+  })
+
+  it('лист мастера по материалу (opts.sheets): ЛДСП 2750 × 1830 — листов больше; ХДФ — по умолчанию; sheets важнее sheet', () => {
+    const hdf: CutPart = { ...square('9', 1), name: 'back', material: { kind: 'hdf', label: 'Белый', color: '#fff', thick: 3 } }
+    const parts = [square('1', 4), hdf]
+    const [l, h] = nest(parts, { sheets: { ldsp: { L: 2750, W: 1830 } } })
+    // 1000 × 1000 на рабочей 2730 × 1810: в ряд две (2 × 1000 + 4 ≤ 2730), второго ряда нет (2 × 1000 + 4 > 1810) — 2 листа; на 2800 × 2070 был бы один
+    expect(l.sheets).toHaveLength(2)
+    expectLayout(l, parts, { ...DEFAULT, L: 2750, W: 1830 })
+    expectLayout(h, parts, DEFAULT)
+    const [l2, h2] = nest(parts, { sheet: { L: 2440, W: 1220 }, sheets: { ldsp: { L: 2750, W: 1830 } } })
+    expect([l2.sheetL, l2.sheetW, h2.sheetL, h2.sheetW]).toEqual([2750, 1830, 2440, 1220])
+    expect(nest([square('1', 4)])[0].sheets).toHaveLength(1)
+  })
+
+  it('перебор порядков и поворотов (история 7a): каждой из двух кухонных задач нужен свой способ — один проход сделал бы 2 листа', () => {
+    // 3 однотонные панели 2000 × 800: вдоль листа — по одной в полосе, 2 полосы (3 × 800 + 2 × 4 > 2050) → 2 листа;
+    // повёрнутые (800 вдоль листа, 2000 поперёк) — три в ряд: 3 × 800 + 2 × 4 = 2408 ≤ 2780 → 1 лист
+    const panels: CutPart = { ...square('1', 3), length: 2000, width: 800 }
+    const [a] = nest([panels])
+    expect(a.sheets).toHaveLength(1)
+    expectLayout(a, [panels], DEFAULT)
+    // 4 детали 1350 × 1000: без поворота — 2 в ряд (2 × 1350 + 4 = 2704 ≤ 2780), 2 ряда (2 × 1000 + 4 = 2004 ≤ 2050) → 1 лист;
+    // повёрнутые (1000 вдоль, 1350 поперёк) — 2 в ряд, второго ряда нет (2 × 1350 > 2050) → 2 листа
+    const blocks: CutPart = { ...square('2', 4), length: 1350, width: 1000 }
+    const [b] = nest([blocks])
+    expect(b.sheets).toHaveLength(1)
+    expectLayout(b, [blocks], DEFAULT)
   })
 })
 
@@ -285,48 +341,73 @@ function* kitchens(): Generator<{ name: string; spec: SpecData; look: CutLook; o
         }
 }
 
+/**
+ * Передняя кромка корпуса — независимо от кода: пары (передняя сторона, глубина), мм,
+ * по каждому шкафу и нише: боковина — высота × глубина, дно и крыша — ширина внутри × глубина,
+ * полка — на 2 мм уже и на 20 мельче, царга — ширина внутри × 100, боковина ниши — высота × глубина.
+ */
+function frontPairs(s: SpecData): Map<string, Set<string>> {
+  const mm = (cm: number) => Math.round(cm * 10)
+  const out = new Map<string, Set<string>>()
+  const add = (name: string, front: number, depth: number) => out.set(name, (out.get(name) ?? new Set()).add(`${front}×${depth}`))
+  for (const c of s.carcasses) {
+    const inner = mm(c.w) - 32
+    add('side', mm(c.h), mm(c.d))
+    add('bottom', inner, mm(c.d))
+    add('top', inner, mm(c.d))
+    add('rail', inner, 100)
+    add('shelf', inner - 2, mm(c.d) - 20)
+  }
+  for (const p of s.panels) add('nicheSide', mm(p.h), mm(p.d))
+  return out
+}
+
+/** Каждая деталь корпуса из ЛДСП — ровно одна кромка: царга 0,4 по длинной, остальные видимой толщины по передней стороне; ХДФ — без кромки. */
+function expectBodyEdges(s: SpecData, parts: CutPart[], visible: number, name: string) {
+  const pairs = frontPairs(s)
+  for (const p of body(parts)) {
+    const e = p.edges
+    const on = (['l1', 'l2', 'w1', 'w2'] as const).filter((k) => e[k] > 0)
+    if (p.material.kind === 'hdf') {
+      expect(on, `${name}: ${p.name} ${p.id}`).toEqual([])
+      continue
+    }
+    expect(on, `${name}: ${p.name} ${p.id} ${p.length}×${p.width}`).toHaveLength(1)
+    expect(e[on[0]], `${name}: ${p.name} ${p.id}`).toBe(p.name === 'rail' ? 0.4 : visible)
+    // кромка — на передней стороне: сторона с кромкой × другая = (передняя × глубина) какого-то шкафа
+    const [front, depth] = on[0][0] === 'l' ? [p.length, p.width] : [p.width, p.length]
+    expect(pairs.get(p.name)?.has(`${front}×${depth}`), `${name}: ${p.name} ${p.id} кромка по ${front}, другая ${depth}`).toBe(true)
+  }
+}
+
+/** Лист, который ждём для материала: свой мастера → общий → 2800 × 2070. */
+const sheetFor = (kind: string, opts: (typeof OPTS)[number]): Expect => {
+  const o = opts as { sheet?: { L: number; W: number }; sheets?: Record<string, { L: number; W: number }>; kerf?: number; trim?: number } | undefined
+  const sh = o?.sheets?.[kind] ?? o?.sheet ?? { L: 2800, W: 2070 }
+  return { L: sh.L, W: sh.W, kerf: o?.kerf ?? 4, trim: o?.trim ?? 10 }
+}
+
 describe('nest на переборе кухонь', () => {
-  it('≥ 200 кухонь: всё размещено, без пересечений, пропил между деталями, внутри рабочей зоны, текстура вдоль, листов ≥ нижней границы', () => {
+  it('≥ 200 кухонь: всё размещено, свойства раскладки, листов ≥ площадь деталей / рабочая площадь; кромка корпуса — спереди', () => {
     let n = 0
     for (const { name, spec: s, look, opts } of kitchens()) {
       n++
       const parts = cutParts(s, look)
+      expectBodyEdges(s, parts, look.bodyEdge ?? 1, name)
       const res = nest(parts, opts)
-      const kerf = opts?.kerf ?? 4
-      const trim = opts?.trim ?? 10
-      const byId = new Map(parts.map((p) => [p.id, p]))
       const seen = new Map<string, number>()
       for (const r of res) {
-        const box = { L: r.sheetL - 2 * trim, W: r.sheetW - 2 * trim }
-        let area = 0
-        for (const sh of r.sheets) {
-          const pl = sh.placements
-          expect(pl.length, name).toBeGreaterThan(0)
-          for (const p of pl) {
-            const part = byId.get(p.id)!
-            expect(part.material, name).toEqual(r.material)
-            seen.set(p.id, (seen.get(p.id) ?? 0) + 1)
-            area += p.l * p.w
-            // размеры детали — как в раскрое, повёрнута только однотонная
-            expect(p.rotated ? [p.w, p.l] : [p.l, p.w], name).toEqual([part.length, part.width])
-            if (part.grain) expect(p.rotated, name).toBe(false)
-            // внутри рабочей зоны листа
-            expect(p.x, name).toBeGreaterThanOrEqual(trim)
-            expect(p.y, name).toBeGreaterThanOrEqual(trim)
-            expect(p.x + p.l, name).toBeLessThanOrEqual(r.sheetL - trim)
-            expect(p.y + p.w, name).toBeLessThanOrEqual(r.sheetW - trim)
-          }
-          // не пересекаются, между деталями — не меньше пропила
-          for (let i = 0; i < pl.length; i++)
-            for (let j = i + 1; j < pl.length; j++) {
-              const [p, q] = [pl[i], pl[j]]
-              const apart = p.x + p.l + kerf <= q.x || q.x + q.l + kerf <= p.x || p.y + p.w + kerf <= q.y || q.y + q.w + kerf <= p.y
-              expect(apart, `${name}: ${JSON.stringify(p)} ${JSON.stringify(q)}`).toBe(true)
-            }
-        }
-        // листов не меньше, чем по площади; отход — по формуле истории 7
-        expect(r.sheets.length, name).toBeGreaterThanOrEqual(Math.ceil(area / (box.L * box.W)))
-        if (r.sheets.length) expect(r.waste, name).toBeCloseTo(1 - area / (r.sheets.length * box.L * box.W), 9)
+        const e = sheetFor(r.material.kind, opts)
+        expectLayout(r, parts, e, name)
+        for (const p of placed(r)) seen.set(p.id, (seen.get(p.id) ?? 0) + 1)
+        // нижняя граница — не из раскладки: площадь деталей этого материала из раскроя / рабочая площадь листа мастера, вверх
+        const mine = parts.filter((p) => JSON.stringify(p.material) === JSON.stringify(r.material) && !r.oversize.includes(p.id))
+        const area = mine.reduce((sum, p) => sum + p.length * p.width * p.count, 0)
+        const work = (e.L - 2 * e.trim) * (e.W - 2 * e.trim)
+        expect(area, name).toBeGreaterThan(0)
+        expect(r.sheets.length, name).toBeGreaterThanOrEqual(Math.ceil(area / work))
+        // отход — по истории 7: 1 − площадь деталей / (листов × рабочая площадь)
+        expect(r.waste, name).toBeCloseTo(1 - area / (r.sheets.length * work), 9)
         for (const id of r.oversize) expect(seen.has(id), name).toBe(false)
       }
       // каждая деталь из листа — на листе столько раз, сколько штук, или в oversize
@@ -473,5 +554,95 @@ describe('мелочи ревью (таск 01b)', () => {
     sq.carcasses = []
     sq.runs[0].fronts[0] = { ...sq.runs[0].fronts[0], w: 50, h: 50 }
     expect(edgeTotals(cutParts(sq, {}))).toEqual([{ thick: 2, net: 2, meters: 2.2 }])
+  })
+})
+
+/* ───────────── таск 05: тесты, которые падают на поломке ───────────── */
+
+describe('кромка крыши и боковины ниши (история 4)', () => {
+  it('шкаф 30 см с крышей и ниша 210 × 60: крыша — передняя по ширине шкафа (268), боковина ниши — по высоте, 1 мм', () => {
+    const s = oneBase({ top: true })
+    s.panels = [{ h: 210, d: 60, count: 2 }]
+    const parts = cutParts(s, {})
+    expect(byName(parts, 'top')).toMatchObject({ length: 560, width: 268, count: 1, edges: { l1: 0, l2: 0, w1: 1, w2: 0 } })
+    expect(byName(parts, 'nicheSide')).toMatchObject({ length: 2100, width: 600, count: 2, edges: { l1: 1, l2: 0, w1: 0, w2: 0 } })
+    // под дерево и видимая 2 мм: длина — вдоль передней кромки, кромка — l1
+    const wood = cutParts(s, { body: 'lam-sonoma', bodyEdge: 2 })
+    expect(byName(wood, 'top')).toMatchObject({ length: 268, width: 560, grain: true, edges: { l1: 2, l2: 0, w1: 0, w2: 0 } })
+    expect(byName(wood, 'nicheSide')).toMatchObject({ length: 2100, width: 600, grain: true, edges: { l1: 2, l2: 0, w1: 0, w2: 0 } })
+    // 1 мм: 2 × 720 боковины + 268 дно + 268 крыша + 266 полка + 2 × 2100 ниша = 6442; 2 мм — дверца 2 × (716 + 296) = 2024
+    expect(edgeTotals(parts)).toEqual([
+      { thick: 1, net: 6.4, meters: 7.1 }, // 6,442 × 1,1 = 7,0862 → 7,1
+      { thick: 2, net: 2, meters: 2.3 },
+    ])
+  })
+
+  it('настоящие кухни (угловая, П-образная до потолка с нишей холодильника): у каждой крыши и боковины ниши — видимая кромка спереди', () => {
+    for (const s of [corner, uShape]) {
+      const parts = cutParts(s, {})
+      expect(parts.some((p) => p.name === 'top')).toBe(true)
+      expectBodyEdges(s, parts, 1, 'кухня')
+    }
+    expect(cutParts(uShape, {}).some((p) => p.name === 'nicheSide')).toBe(true)
+  })
+})
+
+describe('текстура фасада — вдоль высоты фасада (истории 4, 8)', () => {
+  /** Только фасад ящика 596 × 176 мм: шире, чем выше. */
+  const drawer = (): SpecData => {
+    const s = oneBase()
+    s.carcasses = []
+    s.runs[0].fronts = [{ x: 0.2, y: 10, w: 59.6, h: 17.6, hinge: 'drawer', glass: false, framed: false, handle: true }]
+    return s
+  }
+
+  it('ящик под дерево: длина 176 — по высоте, вдоль волокна, на листе не повёрнут; однотонный — длинной стороной', () => {
+    const [wood] = cutParts(drawer(), { facade: 'lam-sonoma' })
+    expect(wood).toMatchObject({ length: 176, width: 596, grain: true, facade: { h: 176, w: 596 } })
+    const [r] = nest([wood])
+    expect(placed(r)).toMatchObject([{ l: 176, w: 596, rotated: false }])
+    const [plain] = cutParts(drawer(), { facade: 'lam-grey' })
+    expect(plain).toMatchObject({ length: 596, width: 176, grain: false })
+  })
+
+  it('угловая кухня под дерево: у каждого фасада и добора из ЛДСП длина — высота, ширина — ширина; широкие (ящики, подъёмные) есть', () => {
+    const f = fronts(cutParts(corner, { facade: 'lam-sonoma' })).filter((p) => p.material.kind === 'ldsp')
+    expect(f.some((p) => p.facade!.w > p.facade!.h)).toBe(true)
+    for (const p of f) expect([p.length, p.width, p.grain], `${p.name} ${p.id}`).toEqual([p.facade!.h, p.facade!.w, true])
+  })
+})
+
+describe('цвет верха: колонна и стиль без своего верха', () => {
+  it('колонна с духовкой — цветом низа: её фасады выше столешницы (подъёмный над духовкой) без upper, в раскрое — цветом низа (build.ts, upper)', () => {
+    // 3D и раскрой — с одной отделкой, как на экране: низ белый, верх графит
+    const finish: FinishLook = { facade: frontColor('lam-white'), upper: frontColor('lam-graphite') }
+    const { plan, spec: s } = built({ shape: 'corner', a: 300, b: 240, c: 0, island: 0, col: { tallOven: true }, finish })
+    const cols = plan.runs.flatMap((r) => r.modules.filter((m) => m.kind === 'tall').map((m) => ({ run: r.id, x0: m.x, x1: m.x + m.w })))
+    expect(cols.length).toBeGreaterThan(0)
+    const inCol = s.runs.flatMap((r) => r.fronts.filter((f) => cols.some((c) => c.run === r.id && f.x >= c.x0 - 1 && f.x + f.w <= c.x1 + 1)))
+    // над духовкой — подъёмный фасад выше столешницы: по высоте он «верх», по цвету — нет
+    expect(inCol.some((f) => f.hinge === 'top' && f.y >= s.heights.counter)).toBe(true)
+    for (const f of inCol) expect(Boolean(f.upper), `${f.hinge} ${f.x}:${f.y}`).toBe(false)
+    // верх графит — у колонны ни одного графитового фасада; графитовых — сколько upper-фасадов вне колонны
+    const parts = facades(cutParts(s, { facade: 'lam-white', upperFacade: 'lam-graphite' }))
+    const all = s.runs.flatMap((r) => r.fronts)
+    const up = all.filter((f) => f.upper).length
+    expect(up).toBeGreaterThan(0)
+    expect(total(parts.filter((p) => p.material.label === 'Графит'))).toBe(up)
+    expect(total(parts.filter((p) => p.material.label === 'Белый премиум'))).toBe(all.length - up)
+  })
+
+  it('upperFacade = style, фасад из каталога, тон без своего верха — верх цветом низа тона (как в 3D: materials.ts styleUpper)', () => {
+    const pick = STYLES.flatMap((st) => st.tones.map((t, i) => ({ st, t, i }))).find((x) => !x.t.upper && !x.t.texture && x.t.facade !== '#8e9194')!
+    const s = spec({ shape: 'corner', a: 300, b: 240, c: 0, island: 0, style: pick.st, tone: pick.i })
+    const all = s.runs.flatMap((r) => r.fronts)
+    const high = all.filter((f) => f.y >= s.heights.counter).length
+    expect(high).toBeGreaterThan(0)
+    const parts = facades(cutParts(s, { tone: pick.t, facade: 'lam-grey', upperFacade: 'style' }))
+    const upper = parts.filter((p) => p.material.color === pick.t.facade)
+    expect(total(upper)).toBe(high)
+    // цвет стиля — в цех фасадов, названием тона
+    for (const p of upper) expect(p.material).toMatchObject({ kind: 'shop', label: pick.t.ru })
+    expect(total(parts.filter((p) => p.material.color === '#8e9194'))).toBe(all.length - high)
   })
 })
