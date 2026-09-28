@@ -164,6 +164,25 @@ input, textarea { caret-color: var(--color-primary); }
 .section__title { font-size: clamp(24px, 2.5vw, 32px); font-weight: 800; letter-spacing: -.025em; }
 .section__cta { font-size: 13px; font-weight: 700; }
 .cat-tiles { gap: 14px; }
+/* Разделы всегда в три колонки. Последний добирает пустые клетки своей строки:
+   один в строке — на всю ширину, двое — второй на две клетки. Кратно трём —
+   правила не срабатывают. */
+.cat-tiles > .cat-tile:last-child:nth-child(3n + 1) { grid-column: 1 / -1; }
+.cat-tiles > .cat-tile:last-child:nth-child(3n + 2) { grid-column: span 2; }
+/* Плитка с фото: белая, тонкая рамка, фото сверху (с 1000px — слева), название под ним.
+   Подложка под фото БЕЛАЯ, как фон снимков из 1С: белое на белом не видно ни в одном
+   браузере. Прежде подложка была светло-серой, а белый фон снимка «растворял»
+   mix-blend-mode — на телефонах (28.09.2026) он не срабатывал, и вокруг каждого
+   товара стоял белый квадрат. brightness дотягивает «почти белое» (254, на экране
+   ~250) до чистого белого; 1.04 уже съедало край у белой техники. */
+.cat-tile.cat-tile--photo { flex-direction: column; justify-content: flex-start; text-align: center; padding: 0; gap: 0; align-items: stretch; background: #fff; border: 1px solid var(--color-border); overflow: hidden; transition: border-color 160ms, transform 160ms; }
+.cat-tile.cat-tile--photo:hover { background: #fff; border-color: #b6c2d1; }
+.cat-tile__media { display: flex; align-items: center; justify-content: center; height: 84px; padding-top: 8px; background: #fff; }
+.cat-tile__photo { display: block; width: 66px; height: 66px; object-fit: contain; filter: brightness(1.02); transition: transform 220ms var(--ease-out); }
+.cat-tile--photo:hover .cat-tile__photo { transform: scale(1.07); }
+.cat-tile__text { flex: 1; display: flex; flex-direction: column; justify-content: center; min-width: 0; padding: 6px 6px 12px; }
+.cat-tile__go { display: none; }
+@media (prefers-reduced-motion: reduce) { .cat-tile__photo, .cat-tile__go { transition: none; } .cat-tile--photo:hover .cat-tile__photo, .cat-tile--photo:hover .cat-tile__go { transform: none; } }
 .cat-tile { background: var(--color-surface); border: 0; padding: 22px 12px; color: var(--color-ink); font-size: 13px; box-shadow: none; gap: 16px; }
 .cat-tile:hover { background: #eef3f9; color: var(--color-ink); transform: translateY(-2px); box-shadow: none; }
 .cat-tile__icon { background: transparent; width: 64px; height: 64px; padding: 4px; }
@@ -182,9 +201,20 @@ input, textarea { caret-color: var(--color-primary); }
 .card__price--sale, .purchase__price--sale { color: var(--color-danger); }
 .card__actions { margin-top: 20px; }
 .card__actions .btn { font-size: 13px; }
+/* Нет в наличии: фото приглушено, наклейки и сердечко — нет (их можно нажать). */
+.card--sold-out .card__media-link { opacity: .55; filter: grayscale(.6); }
+/* Товар в корзине: счётчик той же высоты, что кнопка «В корзину» (--h-btn-sm, 44px),
+   и той же ширины — карточка не прыгает и не сужается в момент добавления. */
+.card__stepper .stepper { width: 100%; height: var(--h-btn-sm); justify-content: space-between; padding: 0; border-radius: 12px; }
+.card__stepper .stepper__btn { width: 44px; height: 100%; }
 .badge { border-radius: 6px; font-weight: 700; }
 .badge--hit { color: #344000; background: #eff5b2; }
 .badge--new { color: #24508c; background: #eaf3ff; }
+/* «Скоро» (предзаказ) — белая с синей каймой и часами. Не заливка, как у «Хита»
+   и «Новинки»: это состояние товара, а не отметка витрины. Синий — тот же, что
+   у точки «Скоро в продаже» на странице товара и пометки в корзине. */
+.badge--soon { gap: 4px; padding: 0 9px 0 7px; color: var(--color-primary); background: #fff; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-primary) 32%, transparent); }
+.badge--soon svg { flex: none; }
 /* Две фирменные витрины: лимонная — программа SBonus+, синяя — рассрочка.
    Мягкий переход цвета и тонкая рамка вместо плоской заливки: блок выглядит
    как витрина магазина, а не как цветной прямоугольник. */
@@ -412,6 +442,17 @@ input, textarea { caret-color: var(--color-primary); }
   .cat-tile { flex-direction: row; justify-content: flex-start; gap: 14px; padding: 14px 18px; font-size: 14px; font-weight: 700; text-align: left; }
   .cat-tile__icon { width: 48px; height: 48px; padding: 0; flex: none; }
   .cat-tile__icon svg { width: 48px; height: 48px; }
+}
+
+/* Плитка с фото лежит строкой только на широком экране: на планшете (601–999px)
+   три колонки узкие, и название заезжало на стрелку («Энергоснабже…»). */
+@media (min-width: 1000px) {
+  .cat-tile.cat-tile--photo { flex-direction: row; text-align: left; }
+  .cat-tile__media { width: 96px; height: auto; padding-top: 0; flex: none; }
+  .cat-tile__photo { width: 70px; height: 70px; }
+  .cat-tile__text { padding: 18px 8px 18px 4px; }
+  .cat-tile__go { display: block; flex: none; align-self: center; margin-right: 16px; color: var(--color-border-strong); transition: color 160ms, transform 160ms var(--ease-out); }
+  .cat-tile--photo:hover .cat-tile__go { color: var(--color-primary); transform: translateX(2px); }
 }
 
 @media (min-width: 540px) and (max-width: 900px) {

@@ -5,13 +5,17 @@ import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { categoryName } from '@/data/categories'
 import { formatSom } from '@/lib/format'
+import { phones, whatsappHref } from '@/data/contacts'
+import { SITE_URL } from '@/lib/seo'
 import type { Product } from '@/data/products'
 import { useCart } from '@/lib/cart/CartProvider'
 import { AddToCartButton } from './AddToCartButton'
 import { FavoriteButton } from './FavoriteButton'
+import { IconWhatsApp } from './Icons'
 import { ProductImage } from './ProductImage'
 import { PromoCountdown } from './PromoCountdown'
 import { QuantityStepper } from './QuantityStepper'
+import { SoonBadge } from './SoonBadge'
 
 export function ProductCard({ product }: { product: Product }) {
   const { t, lang } = useI18n()
@@ -21,6 +25,8 @@ export function ProductCard({ product }: { product: Product }) {
   const variant = product.variants[0]
   const inStock = variant.stock > 0
   const href = `/${lang}/product/${product.id}`
+  // Цена есть, а товара нет — фото приглушаем: статус виден до того, как дочитали до кнопки.
+  const soldOut = product.price > 0 && !inStock
 
   // если товар уже в корзине — кнопка превращается в количество
   const line = cart.lines.find(
@@ -38,9 +44,10 @@ export function ProductCard({ product }: { product: Product }) {
   }, [line])
 
   return (
-    <article className="card">
+    <article className={`card${soldOut ? ' card--sold-out' : ''}`}>
       <div className="card__media">
         <div className="card__badges">
+          {product.preorder && <SoonBadge />}
           {product.badge === 'hit' && <span className="badge badge--hit">{t.catalog.badgeHit}</span>}
           {product.badge === 'new' && <span className="badge badge--new">{t.catalog.badgeNew}</span>}
         </div>
@@ -74,9 +81,18 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
         <div className="card__actions" ref={actions} tabIndex={-1} aria-label={`${t.cart.quantity}: ${name}`}>
           {product.price <= 0 ? (
-            <button type="button" className="btn btn--outline btn--sm btn--block" disabled>
-              {t.catalog.priceOnRequest}
-            </button>
+            // Цена по запросу: вместо мёртвой кнопки с тем же текстом — вопрос в WhatsApp,
+            // уже с названием и ссылкой на товар (как «Спросить в WhatsApp» на странице товара).
+            <a
+              className="btn btn--outline btn--sm btn--block"
+              href={whatsappHref(phones[0], `${t.contactWidget.askAbout} ${name}
+${SITE_URL}${href}`)}
+              target="_blank"
+              rel="noopener"
+            >
+              <IconWhatsApp size={16} />
+              {t.catalog.askPrice}
+            </a>
           ) : !inStock ? (
             <button type="button" className="btn btn--outline btn--sm btn--block" disabled>
               {t.catalog.outOfStock}
@@ -91,7 +107,8 @@ export function ProductCard({ product }: { product: Product }) {
               />
             </div>
           ) : (
-            <AddToCartButton productId={product.id} variantId={variant.id} block small onAdded={(keyboard) => {
+            <AddToCartButton productId={product.id} variantId={variant.id} block small
+              label={product.preorder ? t.catalog.preorder : undefined} noIcon={product.preorder} onAdded={(keyboard) => {
               focusAfterAdd.current = keyboard
               setAnnouncement(`${name}: ${t.catalog.added}`)
             }} />

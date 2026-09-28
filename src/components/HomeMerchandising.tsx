@@ -13,6 +13,7 @@ import { ProductCard } from './ProductCard'
 import { ProductArt } from './ProductArt'
 import { ProductImage } from './ProductImage'
 import { PromoCountdown } from './PromoCountdown'
+import { SoonBadge } from './SoonBadge'
 import { BrandLogo, hasBrandImage } from './BrandLogo'
 import { IconArrowUpRight, IconCart, IconChevronRight, IconClock, IconGift, IconInstagram, IconUser } from './Icons'
 import { Brand } from './Brand'
@@ -41,6 +42,7 @@ export function DailySelection() {
         <span className="daily-selection__tags" aria-hidden="true">
           <span className="daily-selection__label">{ky ? 'Күндүн товары' : 'Товар дня'}</span>
           {discountPct(daily) > 0 && <span className="daily-selection__discount">−{discountPct(daily)}%</span>}
+          {daily.preorder && <SoonBadge />}
         </span>
         <ProductCard product={daily} />
       </div>
@@ -266,7 +268,12 @@ export function SaleSection() {
   return <section className="section sale-section" aria-labelledby="sale-title">
     <Heading id="sale-title" title={lang === 'ky' ? 'Арзандатылган товарлар' : 'Распродажа'} />
     <div className="sale-section__grid">{sale.map(product => <div key={product.id} className="sale-section__item">
-      {product.oldPrice && product.oldPrice > product.price && <span className="sale-section__discount">−{Math.round((1-product.price/product.oldPrice)*100)}%</span>}<ProductCard product={product} />
+      {/* Своя наклейка вместо наклеек карточки (они здесь скрыты): скидка, под ней «Скоро» */}
+      <span className="sale-section__tags" aria-hidden="true">
+        {product.oldPrice && product.oldPrice > product.price && <span className="sale-section__discount">−{Math.round((1-product.price/product.oldPrice)*100)}%</span>}
+        {product.preorder && <SoonBadge />}
+      </span>
+      <ProductCard product={product} />
     </div>)}</div>
   </section>
 }

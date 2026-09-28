@@ -13,6 +13,8 @@
 /* Скидка всегда ПОД «Товаром дня», столбиком: в одну строку они упирались
    в сердечко на узкой колонке фото. */
 .daily-selection__discount { background: var(--color-danger); color: #fff; border-radius: 8px; padding: 6px 9px; font-size: 12px; font-weight: 800; }
+/* «Скоро» здесь того же размера, что «Товар дня» и скидка: столбик ровный. */
+.daily-selection__tags .badge--soon, .sale-section__tags .badge--soon { height: auto; padding: 6px 10px 6px 8px; border-radius: 8px; font-size: 12px; font-weight: 800; }
 /* Лишнюю высоту забирает фото, а не пустота между названием и ценой:
    текстовая часть компактная, картинка растягивается до высоты ряда. */
 .daily-selection__card .card__media { flex: 1 1 auto; }
@@ -176,7 +178,8 @@
 .sale-section__item .card { height: 100%; }
 /* Процент скидки красный, а не лимонный: на распродаже он главное число
    на карточке, а лимонный сливался с кнопкой «В корзину». */
-.sale-section__discount { position: absolute; top: 16px; left: 14px; z-index: 3; background: var(--color-danger); color: #fff; border-radius: 6px; padding: 5px 9px; font-weight: 800; font-size: 13px; letter-spacing: .01em; box-shadow: 0 2px 8px rgba(214, 64, 45, .28); }
+.sale-section__tags { position: absolute; top: 16px; left: 14px; z-index: 3; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; pointer-events: none; }
+.sale-section__discount { background: var(--color-danger); color: #fff; border-radius: 6px; padding: 5px 9px; font-weight: 800; font-size: 13px; letter-spacing: .01em; box-shadow: 0 2px 8px rgba(214, 64, 45, .28); }
 .sale-section .card__badges { display: none; }
 .social-account { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 .instagram-panel, .account-panel { padding: clamp(24px,3vw,40px); border-radius: 16px; }

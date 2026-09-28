@@ -42,7 +42,8 @@ function normalize(s: string): string {
   return s.toLowerCase().replace(/ё/g, 'е').trim()
 }
 
-const inStock = (p: Product) => p.variants.some((v) => v.stock > 0)
+// Предзаказ купить можно, но на складе его нет — «Только в наличии» его не показывает.
+const inStock = (p: Product) => !p.preorder && p.variants.some((v) => v.stock > 0)
 const onSale = (p: Product) => Boolean(p.oldPrice && p.oldPrice > p.price)
 
 function CatalogViewInner() {

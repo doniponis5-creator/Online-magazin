@@ -14,6 +14,7 @@ export function AddToCartButton({
   block,
   small,
   label,
+  noIcon,
   onAdded,
 }: {
   productId: string
@@ -22,6 +23,8 @@ export function AddToCartButton({
   block?: boolean
   small?: boolean
   label?: string
+  /** без значка корзины: длинной подписи на узкой карточке телефона он не оставляет места */
+  noIcon?: boolean
   onAdded?: (keyboard: boolean) => void
 }) {
   const { t } = useI18n()
@@ -65,7 +68,7 @@ export function AddToCartButton({
       disabled={disabled || !cart.hydrated || unavailable || atLimit || noPrice}
       aria-live="polite"
     >
-      {noPrice ? null : added ? <IconCheck size={18} /> : <IconCart size={18} />}
+      {noPrice || (noIcon && !added) ? null : added ? <IconCheck size={18} /> : <IconCart size={18} />}
       {noPrice ? t.catalog.priceOnRequest : unavailable ? t.catalog.outOfStock : atLimit ? t.cart.maxStock : added ? t.catalog.added : (label ?? t.catalog.addToCart)}
     </button>
   )

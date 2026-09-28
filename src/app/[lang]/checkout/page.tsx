@@ -315,6 +315,7 @@ export default function CheckoutPage() {
                   <span>
                     {lang === 'ky' ? product.nameKy : product.nameRu} × {line.qty}
                     {label && <span style={{ color: 'var(--color-muted)' }}> ({label})</span>}
+                    {product.preorder && <span className="cart-line__preorder">{t.cart.preorderNote}</span>}
                   </span>
                   <strong>{formatSom(price * line.qty)}</strong>
                 </div>

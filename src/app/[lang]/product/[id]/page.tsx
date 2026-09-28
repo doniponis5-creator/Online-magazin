@@ -59,7 +59,9 @@ export default async function ProductPage({
       '@type': 'Offer',
       price: product.price,
       priceCurrency: 'KGS',
-      availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      availability: product.preorder
+        ? 'https://schema.org/PreOrder'
+        : inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
       url: canonical(`/${lang}/product/${product.id}`),
       seller: { '@type': 'Store', name: SITE_NAME, '@id': `${SITE_URL}/#store` },
     } : undefined,

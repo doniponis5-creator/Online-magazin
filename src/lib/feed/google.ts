@@ -20,8 +20,12 @@ function xml(value: string): string {
 }
 
 export function googleFeedXml(list: Product[], site: string, pages: Set<string>): string {
-  const items = metaFeedRows(list, site, pages).map((row) => {
-    const field = Object.fromEntries(COLUMNS.map((name, i) => [name, row[i]])) as Record<(typeof COLUMNS)[number], string>
+  const fields = metaFeedRows(list, site, pages).map(
+    (row) => Object.fromEntries(COLUMNS.map((name, i) => [name, row[i]])) as Record<(typeof COLUMNS)[number], string>,
+  )
+  // Предзаказ Google принимает только с датой поступления (availability_date),
+  // а в 1С её нет. Без даты товар отклонят — такие товары в файл не кладём.
+  const items = fields.filter((field) => field.availability !== 'preorder').map((field) => {
     const tags = [
       `<g:id>${xml(field.id)}</g:id>`,
       `<title>${xml(field.title)}</title>`,

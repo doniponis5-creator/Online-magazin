@@ -32,6 +32,12 @@ describe('googleFeedXml', () => {
     expect(out).toContain('<g:additional_image_link>https://smarket.kg/products/2.jpg</g:additional_image_link>')
     expect(out).toContain('<link>https://smarket.kg/ru/product/x1</link>')
   })
+  it('предзаказ не кладём: Google требует дату поступления, её нет', () => {
+    const soon = { ...item, id: 'x2', preorder: true, variants: [{ id: 'std', stock: 99 }] } as Product
+    const xml = googleFeedXml([item, soon], 'https://smarket.kg', new Set(['x1', 'x2']))
+    expect(xml).toContain('<g:id>x1</g:id>')
+    expect(xml).not.toContain('<g:id>x2</g:id>')
+  })
   it('без страницы — пустой список', () => {
     expect(googleFeedXml([item], 'https://smarket.kg', new Set())).not.toContain('<item>')
   })

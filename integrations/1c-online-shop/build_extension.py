@@ -209,6 +209,8 @@ def build_registers(out):
         [("Номенклатура", "Номенклатура", t_nomenclature())],
         [("Скрыть", "Скрыть с сайта", t_bool()),
          ("Наличие", "Наличие на сайте", t_str(20)),
+         # Раздел сайта выбран руками; пусто — по группе 1С и названию (сайт решает сам).
+         ("РазделСайта", "Раздел на сайте", t_str(40)),
          ("ЦенаСайта", "Цена на сайте", t_num(15, 2)),
          ("СтараяЦена", "Старая цена", t_num(15, 2)),
          ("Распродажа", "Распродажа", t_bool()),
@@ -450,18 +452,23 @@ class Form:
 
 
 PROCESSOR = "ИМ_ОнлайнМагазин"
-AVAILABILITY = ["По остатку", "В наличии", "Нет в наличии"]
+AVAILABILITY = ["По остатку", "В наличии", "Предзаказ", "Нет в наличии"]
+# Разделы сайта: как РазделыСайта() в ОбщийМодульСервер.bsl и src/data/1c/categories.ts.
+SITE_SECTIONS = ["Авто", "Холодильники", "Стиральные машины", "Телевизоры и ТВ", "Кухонная техника",
+                 "Мелкая техника", "Уборка и уход", "Климат", "Энергоснабжение", "Швейные машины",
+                 "Транспорт и спорт", "Для дома"]
 # «Показывать» отвечает на вопросы, которые владелец задаёт каждый день:
 # что ещё не готово к продаже и что уже висит на сайте.
 SHOW_MODES = ["Все", "На сайте", "Скрытые", "Без цены", "С ценой", "Без фото",
               "Без описания", "Распродажа", "Товар дня", "Специально для вас",
-              "Хит", "Новинка"]
+              "Хит", "Новинка", "Предзаказ"]
 # Панель сайта: за какой срок считать сводку. Порядок = порядок в списке.
 PANEL_PERIODS = ["Сегодня", "Вчера", "7 дней", "30 дней", "Этот месяц", "Прошлый месяц", "Свой период"]
 # Какие заказы показать в таблице внизу панели. Ключи для сервера — в ПанельСайтаМодуль.bsl.
 PANEL_ORDER_FILTERS = ["Все заказы", "Продажи", "Ждут оплаты", "Не оплатили", "Оплачены, не отгружены", "Отменены"]
 # Вкладка «Склад и сайт»: слова те же, что пишет РасхожденияСкладаИСайта в ЗаказыСайтаСервер.bsl.
-PANEL_STOCK_FILTERS = ["Все", "Продаётся без остатка", "Нет цены на сайте", "«Нет в наличии» при остатке"]
+PANEL_STOCK_FILTERS = ["Все", "Продаётся без остатка", "Нет цены на сайте", "«Нет в наличии» при остатке",
+                       "Предзаказ, а товар пришёл"]
 # Вкладка «Уведомления»: какие товары показать и какой шаблон текста. Слова — в ПанельСайтаМодуль.bsl.
 PANEL_PROMO_FILTERS = ["Со скидкой", "Новинки", "Все товары"]
 PANEL_PROMO_TEMPLATES = ["Скидка", "Новинка", "Свой текст"]
@@ -483,6 +490,7 @@ def list_form():
         ("Фото", "Фото", t_num(3)),
         ("Скрыть", "Скрыть", t_bool()),
         ("Наличие", "Наличие на сайте", t_str(20)),
+        ("РазделСайта", "Раздел на сайте", t_str(40)),
         ("ЦенаСайта", "Цена на сайте", t_num(15, 2)),
         ("СтараяЦена", "Старая цена", t_num(15, 2)),
         ("Скидка", "Скидка %", t_num(3)),
@@ -534,6 +542,7 @@ def list_form():
         f.input("ТоварыМаржа", "Товары.Маржа", readonly=True, width=10, table=True, negatives=True),
         f.input("ТоварыМаржаПроцент", "Товары.МаржаПроцент", readonly=True, width=7, table=True, negatives=True),
         f.input("ТоварыНаличие", "Товары.Наличие", width=13, choices=AVAILABILITY, table=True, title="Наличие"),
+        f.input("ТоварыРазделСайта", "Товары.РазделСайта", width=15, choices=SITE_SECTIONS, table=True, title="Раздел"),
         f.check("ТоварыСкрыть", "Товары.Скрыть", table=True, width=6),
         f.input("ТоварыФото", "Товары.Фото", readonly=True, width=5, table=True),
         f.check("ТоварыЕстьОписание", "Товары.ЕстьОписание", readonly=True, table=True, width=8),
@@ -590,6 +599,7 @@ def card_form():
     for name, title, type_xml in [
         ("Скрыть", "Скрыть с сайта", t_bool()),
         ("Наличие", "Наличие на сайте", t_str(20)),
+        ("РазделСайта", "Раздел на сайте", t_str(40)),
         ("ЦенаСайта", "Цена на сайте", t_num(15, 2)),
         ("СтараяЦена", "Старая цена (зачёркнутая)", t_num(15, 2)),
         ("Распродажа", "Распродажа", t_bool()),
@@ -654,6 +664,8 @@ def card_form():
     settings = f.group("ГруппаНастройки", [
         f.check("Скрыть", "Скрыть", title_location="Right", events=change),
         f.input("Наличие", "Наличие", width=16, choices=AVAILABILITY, events=change),
+        # «Авто» — раздел по группе 1С; выбранный руками важнее группы.
+        f.input("РазделСайта", "РазделСайта", width=16, choices=SITE_SECTIONS, events=change),
         f.input("Себестоимость", "Себестоимость", readonly=True, width=12),
         f.input("ЦенаСайта", "ЦенаСайта", width=12, events=price_change, hint="ваша цена"),
         f.input("СтараяЦена", "СтараяЦена", width=12, events=price_change, hint="для скидки"),
@@ -799,6 +811,7 @@ def panel_form():
     f.attribute("СкладБезОстатка", t_num(6, 0))
     f.attribute("СкладБезЦены", t_num(6, 0))
     f.attribute("СкладНетВНаличии", t_num(6, 0))
+    f.attribute("СкладПредзаказ", t_num(6, 0))
 
     f.attribute("ПриветственныйБонус", t_num(6, 0), title="Приветственный бонус новому покупателю, сом", saved_data=True)
     f.attribute("МаксимумБонусами", t_num(3, 0), title="Можно оплатить бонусами, % от заказа", saved_data=True)
@@ -1132,7 +1145,7 @@ def build_configuration(out, variant):
           '<v8:Value xsi:type="app:ApplicationUsePurpose">PlatformApplication</v8:Value></UsePurposes>'
           "<ScriptVariant>Russian</ScriptVariant><DefaultRoles>"
           f'<xr:Item xsi:type="xr:MDObjectRef">Role.{ROLE}</xr:Item></DefaultRoles>'
-          "<Vendor>Smart Centr</Vendor><Version>1.6.0.0</Version>"
+          "<Vendor>Smart Centr</Vendor><Version>1.8.0.0</Version>"
           f"<DefaultLanguage>Language.{variant['default_language']}</DefaultLanguage>"
           "<BriefInformation/><DetailedInformation/><Copyright/><VendorInformationAddress/>"
           "<ConfigurationInformationAddress/><InterfaceCompatibilityMode>TaxiEnableVersion8_2</InterfaceCompatibilityMode>"

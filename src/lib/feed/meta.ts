@@ -49,7 +49,7 @@ export function metaFeedRows(list: Product[], site: string, pages: Set<string>):
       p.id,
       title,
       description,
-      inStock ? 'in stock' : 'out of stock',
+      p.preorder ? 'preorder' : inStock ? 'in stock' : 'out of stock',
       'new',
       `${onSale ? p.oldPrice : p.price} KGS`,
       onSale ? `${p.price} KGS` : '',

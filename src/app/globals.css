@@ -1813,6 +1813,10 @@ main#content {
   background: var(--color-danger);
 }
 
+.stock-dot--soon {
+  background: var(--color-primary);
+}
+
 .stock-note {
   font-size: 13px;
   color: var(--color-muted);
@@ -2166,6 +2170,28 @@ main#content {
   color: var(--color-muted);
   font-size: 13px;
   margin-top: 2px;
+}
+
+/* и в корзине, и в «Ваш заказ» при оплате — отдельной строкой под названием.
+   Текст не синий: синий под названием-ссылкой читался как ещё одна ссылка.
+   Синяя только точка — та же, что у «Скоро в продаже» на странице товара. */
+.cart-line__preorder {
+  display: block;
+  color: var(--color-ink-soft);
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.cart-line__preorder::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  vertical-align: 1px;
 }
 
 .cart-line__unit {

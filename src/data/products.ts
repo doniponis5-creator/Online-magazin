@@ -31,6 +31,8 @@ export type ArtKind =
   | 'stove'
   | 'fan'
   | 'battery'
+  | 'bike'
+  | 'sewing'
   | 'box'
 
 export type ColorOption = { key: string; labelRu: string; labelKy: string; hex: string }
@@ -89,6 +91,11 @@ export type Product = {
    * отношения не имеет, поэтому покупателю его не показываем — только «В наличии».
    */
   stockHidden?: boolean
+  /**
+   * «Предзаказ» в 1С: товар скоро привезут. Купить можно уже сейчас — оплата
+   * сразу, отдадим, когда товар поступит. Сайт пишет «Скоро» и «Предзаказ».
+   */
+  preorder?: boolean
   /**
    * Лежит на складе, но на сайте его нет (скрыт или без цены сайта). Знает о
    * нём только чат: страницы, фото и корзины у такого товара нет, цену
@@ -566,6 +573,33 @@ export const products: Product[] =
 
 export function getProduct(id: string): Product | undefined {
   return products.find((p) => p.id === id)
+}
+
+/**
+ * Фото раздела на главной — снимок настоящего товара из этого раздела.
+ * Сначала узнаваемые модели (адреса товаров ниже); продали или убрали их —
+ * первый товар раздела с фото. Фото нет совсем — плитка рисует значок раздела.
+ */
+const CATEGORY_COVERS: Record<string, string[]> = {
+  fridges: ['cb-00001994', 'cb-00002320', 'cb-00002319'],
+  washers: ['cb-00002324', 'cb-00002385'],
+  tv: ['cb-00002160', 'cb-00002246'],
+  kitchen: ['cb-00002401', 'cb-00000808', 'cb-00002487'],
+  'small-kitchen': ['cb-00001963', 'cb-00002482'],
+  care: ['cb-00002411', 'cb-00001634'],
+  climate: ['cb-00002472', 'cb-00002113'],
+  power: ['cb-00002043', 'cb-00002055'],
+  sewing: ['cb-00000456', 'cb-00000849'],
+  sport: ['cb-00002422', 'cb-00002461'],
+  home: ['cb-00001771', 'cb-00001765'],
+}
+
+export function categoryCover(categoryId: string): string | undefined {
+  for (const id of CATEGORY_COVERS[categoryId] ?? []) {
+    const product = getProduct(id)
+    if (product?.image && product.categoryId === categoryId) return product.image
+  }
+  return products.find((p) => p.categoryId === categoryId && p.image && !p.chatOnly)?.image
 }
 
 /** Все уникальные бренды каталога */

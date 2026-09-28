@@ -7,7 +7,7 @@
  */
 
 import type { ArtKind, Product, SpecRow } from '../products'
-import { categoryForGroup, oneCCategories } from './categories'
+import { categoryForGroup, categoryForSection, oneCCategories } from './categories'
 
 export type OneCItem = {
   id: string
@@ -19,10 +19,18 @@ export type OneCItem = {
   specs?: { label: string; value: string }[]
   group?: string
   parentGroup?: string
+  /** «Раздел на сайте» из карточки товара в 1С; нет поля — раздел по группе и названию */
+  section?: string
   brand?: string
   stock: number
   /** «По остатку» | «В наличии» | «Нет в наличии» */
   availability?: string
+  /**
+   * «Предзаказ» в 1С: товара ещё нет, но его скоро привезут. 1С шлёт такой товар
+   * как «В наличии» (серверу SBonus не нужно его знать — остаток не проверяется)
+   * и с этим флагом: сайт пишет «Скоро · предзаказ» вместо «В наличии».
+   */
+  preorder?: boolean
   price: number
   oldPrice?: number
   sale?: boolean
@@ -74,10 +82,16 @@ function cleanName(name: string): string {
  */
 const ALWAYS_IN_STOCK = 99
 
+/** Флаг из 1С; само слово «Предзаказ» тоже понимаем — так пишет ручная выгрузка. */
+function isPreorder(item: OneCItem): boolean {
+  return item.preorder === true || item.availability === 'Предзаказ'
+}
+
 function stockFor(item: OneCItem): number {
   const stock = Math.max(0, Math.floor(item.stock || 0))
   if (item.availability === 'Нет в наличии') return 0
-  if (item.availability === 'В наличии') return Math.max(stock, ALWAYS_IN_STOCK)
+  // Предзаказ продаётся, как «В наличии»: оплатили — 1С отгрузит, когда товар приедет.
+  if (item.availability === 'В наличии' || isPreorder(item)) return Math.max(stock, ALWAYS_IN_STOCK)
   return stock
 }
 
@@ -106,7 +120,8 @@ export function detectBrand(...texts: (string | undefined)[]): string {
 
 export function productFromOneC(item: OneCItem): Product {
   const name = cleanName(item.name)
-  const categoryId = categoryForGroup(item.group ?? '', item.parentGroup ?? '', name)
+  // Раздел, выбранный владельцем в 1С, важнее угадывания по группе и названию.
+  const categoryId = categoryForSection(item.section) ?? categoryForGroup(item.group ?? '', item.parentGroup ?? '', name)
   const rawBrand = item.brand || detectBrand(item.name, item.article)
   const brand = BRAND_ALIASES[rawBrand.toUpperCase()] ?? rawBrand
   const price = Math.max(0, Math.round(item.price || 0))
@@ -154,7 +169,8 @@ export function productFromOneC(item: OneCItem): Product {
     dealOfDay: Boolean(item.dealOfDay),
     forYou: Boolean(item.forYou),
     deliveryPrice: Math.max(0, Math.round(item.deliveryPrice || 0)),
-    stockHidden: item.availability === 'В наличии',
+    stockHidden: item.availability === 'В наличии' || isPreorder(item),
+    preorder: isPreorder(item) || undefined,
     promoUntil: item.promoUntil,
     oneCId: item.id,
     oneCCode: item.code,

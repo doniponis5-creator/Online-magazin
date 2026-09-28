@@ -98,6 +98,7 @@ export default function CartPage() {
                       {lang === 'ky' ? product.nameKy : product.nameRu}
                     </Link>
                     {variantLabel$ && <div className="cart-line__variant">{variantLabel$}</div>}
+                    {product.preorder && <div className="cart-line__preorder">{t.cart.preorderNote}</div>}
                     <div className="cart-line__unit">
                       {formatSom(price)} / {t.cart.perItem}
                     </div>

@@ -28,6 +28,7 @@ type Hit = {
   price: number
   priceLabel: string
   inStock: boolean
+  preorder?: boolean
   href: string
 }
 
@@ -279,6 +280,7 @@ export function AssistantChat() {
                             <span className="assistant__hit-name">{hit.name}</span>
                             <span className="assistant__hit-price">{hit.priceLabel}</span>
                             {!hit.inStock && <span className="assistant__hit-out">{a.outOfStock}</span>}
+                            {hit.preorder && <span className="assistant__hit-note">{a.preorder}</span>}
                           </a>
                         ) : (
                           // Товар есть в магазине, но страницы на сайте у него нет — только в чате.

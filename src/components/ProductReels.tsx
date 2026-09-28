@@ -14,6 +14,7 @@ import { FavoriteButton } from './FavoriteButton'
 import { ProductImage } from './ProductImage'
 import { ShareButton } from './ShareButton'
 import { IconArrowDown, IconCart, IconChevronRight, IconClose } from './Icons'
+import { SoonBadge } from './SoonBadge'
 import './product-reels.css'
 
 /**
@@ -285,6 +286,7 @@ function ReelsSlide({
       <div className="reels__media">
         <div className="reels__badges">
           {pct > 0 && <span className="badge reels__badge-sale">−{pct}%</span>}
+          {product.preorder && <SoonBadge />}
           {product.badge === 'hit' && <span className="badge badge--hit">{t.catalog.badgeHit}</span>}
           {product.badge === 'new' && <span className="badge badge--new">{t.catalog.badgeNew}</span>}
         </div>
@@ -330,7 +332,8 @@ function ReelsSlide({
         <div className="reels__actions">
           {/* Без цены в корзину не положить — остаётся только «Подробнее» на всю ширину */}
           {product.price <= 0 ? null : inStock ? (
-            <AddToCartButton productId={product.id} variantId={variant.id} block />
+            <AddToCartButton productId={product.id} variantId={variant.id} block
+              label={product.preorder ? t.catalog.preorder : undefined} />
           ) : (
             <button type="button" className="btn btn--outline btn--block" disabled>
               {t.catalog.outOfStock}

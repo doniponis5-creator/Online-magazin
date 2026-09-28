@@ -232,4 +232,17 @@ describe('остаток из 1С', () => {
     expect(item('Нет в наличии', 7)).toBe(0)
     expect(item('По остатку', 3)).toBe(3)
   })
+
+  // 1С шлёт предзаказ как «В наличии» + preorder: сервер SBonus не проверяет остаток,
+  // сайт пишет «Скоро». Ручная выгрузка пишет само слово «Предзаказ».
+  it('предзаказ продаётся при нуле и помечен', () => {
+    const fromJob = productFromOneC({ id: 'g1', code: 'C1', name: 'Тест', stock: 0, availability: 'В наличии', preorder: true, price: 100 })
+    const fromScript = productFromOneC({ id: 'g1', code: 'C1', name: 'Тест', stock: 0, availability: 'Предзаказ', price: 100 })
+    for (const p of [fromJob, fromScript]) {
+      expect(p.preorder).toBe(true)
+      expect(p.stockHidden).toBe(true)
+      expect(p.variants[0].stock).toBeGreaterThanOrEqual(99)
+    }
+    expect(productFromOneC({ id: 'g1', code: 'C1', name: 'Тест', stock: 0, availability: 'В наличии', price: 100 }).preorder).toBeUndefined()
+  })
 })

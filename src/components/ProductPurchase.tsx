@@ -14,8 +14,16 @@ import { AddToCartButton } from './AddToCartButton'
 import { FavoriteButton } from './FavoriteButton'
 import { PromoCountdown } from './PromoCountdown'
 
-function StockLine({ stock, hidden }: { stock: number; hidden?: boolean }) {
+function StockLine({ stock, hidden, preorder }: { stock: number; hidden?: boolean; preorder?: boolean }) {
   const { t } = useI18n()
+  if (preorder) {
+    return (
+      <span className="stock-line">
+        <span className="stock-dot stock-dot--soon" />
+        {t.product.preorderStock}
+      </span>
+    )
+  }
   if (stock <= 0) {
     return (
       <span className="stock-line">
@@ -138,8 +146,8 @@ export function ProductPurchase({
 
       {variant ? (
         <div>
-          <StockLine stock={variant.stock} hidden={product.stockHidden} />
-          <p className="stock-note">{t.product.stockNote}</p>
+          <StockLine stock={variant.stock} hidden={product.stockHidden} preorder={product.preorder} />
+          <p className="stock-note">{product.preorder ? t.product.preorderNote : t.product.stockNote}</p>
           <WarrantyBadge months={product.warrantyMonths} />
         </div>
       ) : (
@@ -226,6 +234,7 @@ export function ProductPurchase({
             productId={product.id}
             variantId={variant.id}
             disabled={variant.stock <= 0}
+            label={product.preorder ? t.product.preorderButton : undefined}
           />
         ) : (
           <button type="button" className="btn btn--primary" disabled aria-live="polite">

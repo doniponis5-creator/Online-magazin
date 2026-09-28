@@ -12,7 +12,7 @@ export type OneCCategory = {
   nameRu: string
   nameKy: string
   /** иконка раздела и плейсхолдер товара без фото */
-  art: 'fridge' | 'washer' | 'tv' | 'stove' | 'coffee' | 'robot' | 'fan' | 'battery' | 'box'
+  art: 'fridge' | 'washer' | 'tv' | 'stove' | 'coffee' | 'robot' | 'fan' | 'battery' | 'bike' | 'sewing' | 'box'
 }
 
 export const oneCCategories: OneCCategory[] = [
@@ -24,6 +24,11 @@ export const oneCCategories: OneCCategory[] = [
   { id: 'care', nameRu: 'Уборка и уход', nameKy: 'Тазалоо жана кам көрүү', art: 'robot' },
   { id: 'climate', nameRu: 'Климат', nameKy: 'Климат', art: 'fan' },
   { id: 'power', nameRu: 'Энергоснабжение', nameKy: 'Энергия менен камсыздоо', art: 'battery' },
+  // Швейные машины и оверлоки: 10 моделей (28.09.2026) — больше, чем в «Климате».
+  { id: 'sewing', nameRu: 'Швейные машины', nameKy: 'Тигүү машиналары', art: 'sewing' },
+  // Электровелосипеды, детские электромотоциклы и машинки, беговые дорожки.
+  // До 28.09.2026 они лежали в «Для дома» вместе со швейными машинами.
+  { id: 'sport', nameRu: 'Транспорт и спорт', nameKy: 'Транспорт жана спорт', art: 'bike' },
   { id: 'home', nameRu: 'Для дома', nameKy: 'Үй үчүн', art: 'box' },
 ]
 
@@ -65,8 +70,12 @@ const GROUP_RULES: [string, string][] = [
   ['товары для дома', 'home'],
   ['гардероб', 'home'],
   ['полки', 'home'],
-  ['транспорт', 'home'],
-  ['швейн', 'home'],
+  ['транспорт', 'sport'],
+  ['спорт', 'sport'],
+  ['тренаж', 'sport'],
+  ['велосип', 'sport'],
+  ['швейн', 'sewing'],
+  ['оверлок', 'sewing'],
 ]
 
 /** Слова в названии товара без группы → раздел сайта */
@@ -88,7 +97,29 @@ const NAME_RULES: [RegExp, string][] = [
   [new RegExp(`инвертор|${W}ups(?:$|[^a-z])|ибп|аккумулят|генератор|стабилизат|удлинит|разветв|разветк|розетк`), 'power'],
 ]
 
+/**
+ * Названия, которые говорят о товаре точнее группы 1С: казан — посуда, даже
+ * если лежит в группе мелкой техники; «Ледогенератор» — не генератор тока.
+ * Проверяются раньше групп. Сюда — только то, что по названию не спутать.
+ */
+const STRONG_NAME_RULES: [RegExp, string][] = [
+  [/ледогенер/, 'small-kitchen'],
+  [/швейн|оверлок|overlo[ck]/, 'sewing'],
+  [/сушилк\S*\s+напольн|напольн\S*\s+сушилк|сушилк.*для\s+бел/, 'home'],
+  [new RegExp(`${W}казан`), 'home'],
+  [/газов\S*\s+панел/, 'kitchen'],
+  [
+    new RegExp(
+      `беговая\\s+дорожк|велотренаж|тренаж[её]р|самокат|гироскут|велосипед|${W}велик(?:$|[^а-я])|мотоцикл|мототцикл|${W}эндуро|квадроцикл|электромобил|трактор|беговел`,
+    ),
+    'sport',
+  ],
+]
+
 export function categoryForGroup(group: string, parentGroup: string, name: string): string {
+  const lower = ` ${name.toLowerCase().replace(/ё/g, 'е')}`
+  const strong = STRONG_NAME_RULES.find(([pattern]) => pattern.test(lower))
+  if (strong) return strong[1]
   const groups = `${parentGroup} ${group}`.toLowerCase()
   if (groups.trim()) {
     // сначала узкая группа товара, потом верхняя
@@ -98,7 +129,17 @@ export function categoryForGroup(group: string, parentGroup: string, name: strin
       if (rule) return rule[1]
     }
   }
-  const lower = ` ${name.toLowerCase().replace(/ё/g, 'е')}`
   const rule = NAME_RULES.find(([pattern]) => pattern.test(lower))
   return rule ? rule[1] : FALLBACK_CATEGORY
+}
+
+/**
+ * Раздел, выбранный руками в 1С (карточка товара → «Раздел на сайте»).
+ * Приходит названием раздела, как его видит владелец. «Авто», пусто или
+ * незнакомое название — undefined: раздел выберут группа 1С и название.
+ */
+export function categoryForSection(section: string | undefined): string | undefined {
+  const wanted = (section ?? '').trim().toLowerCase()
+  if (!wanted) return undefined
+  return oneCCategories.find((c) => c.nameRu.toLowerCase() === wanted || c.id === wanted)?.id
 }

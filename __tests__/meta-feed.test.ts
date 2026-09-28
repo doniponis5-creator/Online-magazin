@@ -29,6 +29,10 @@ describe('metaFeedCsv', () => {
     expect(row).toContain('in stock,new,20000 KGS,,https://smarket.kg/ru/product/x1')
     expect(row).toContain('https://smarket.kg/products/2.jpg')
   })
+  it('предзаказ — preorder', () => {
+    const csv = metaFeedCsv([{ ...base, preorder: true, variants: [{ id: 'std', stock: 99 }] }], 'https://smarket.kg', new Set(['x1']))
+    expect(csv).toContain('preorder,new,20000 KGS')
+  })
   it('скидка: price — прежняя, sale_price — сегодняшняя', () => {
     const csv = metaFeedCsv([{ ...base, oldPrice: 25000 }], 'https://smarket.kg', new Set(['x1']))
     expect(csv).toContain('25000 KGS,20000 KGS')

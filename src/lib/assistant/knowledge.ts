@@ -22,6 +22,8 @@ export type ProductHit = {
   price: number
   priceLabel: string
   inStock: boolean
+  /** скоро поступит: купить можно только предзаказом */
+  preorder?: boolean
   href: string
   image?: string
 }
@@ -76,6 +78,7 @@ export function toHit(product: Product, lang: Lang): ProductHit {
     price: product.price,
     priceLabel: product.price > 0 ? formatSom(product.price) : lang === 'ky' ? 'Баасы суроо боюнча' : 'Цена по запросу',
     inStock: isInStock(product),
+    preorder: product.preorder || undefined,
     // У товара «только для чата» страницы нет — карточка без ссылки.
     href: product.chatOnly ? '' : `/${lang}/product/${product.id}`,
     image: product.image,
@@ -242,7 +245,10 @@ export function catalogForQuestion(list: Product[], question: string, lang: Lang
 function productLine(product: Product): string {
   const price = product.price > 0 ? `${product.price} сом` : 'цена по запросу'
   const old = product.oldPrice ? `, было ${product.oldPrice} сом` : ''
-  const stock = isInStock(product) ? 'есть' : 'нет в наличии'
+  // Предзаказ — не «есть»: модель пообещала бы забрать сегодня.
+  const stock = product.preorder
+    ? 'скоро поступит — только предзаказ: оплата сейчас, отдадим, когда привезут; срок уточнит сотрудник'
+    : isInStock(product) ? 'есть' : 'нет в наличии'
   return [
     `id=${product.id}`,
     // Бренд уже в названии из 1С — не дублируем: «FLAGMAN Стиральная машина FLAGMAN» модель

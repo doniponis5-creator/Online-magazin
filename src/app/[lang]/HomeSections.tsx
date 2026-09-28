@@ -7,7 +7,7 @@
 
 import Link from 'next/link'
 import { categories } from '@/data/categories'
-import { getNew, getPopular } from '@/data/products'
+import { categoryCover, getNew, getPopular } from '@/data/products'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { DailySelection, CampaignBanner, HitMosaic, ReelsEntry, BrandStrip, SaleSection, SocialAndAccount } from '@/components/HomeMerchandising'
 import { StorefrontHero } from '@/components/StorefrontHero'
@@ -36,14 +36,32 @@ function CategoryTiles() {
         </h2>
       </div>
       <div className="cat-tiles">
-        {categories.map((c) => (
-          <Link key={c.id} href={`/${lang}/catalog?cat=${c.id}`} className="cat-tile">
-            <span className="cat-tile__icon">
-              <ProductArt kind={c.art} color="#245BEB" />
-            </span>
-            {lang === 'ky' ? c.nameKy : c.nameRu}
-          </Link>
-        ))}
+        {categories.map((c) => {
+          // Настоящий товар раздела узнаётся быстрее рисунка. Плитка устроена как
+          // карточка товара: белая, фото на белой подложке. Число товаров не пишем —
+          // владелец против (28.09.2026): «5 товаров» в разделе выглядит бедно.
+          const cover = categoryCover(c.id)
+          const name = lang === 'ky' ? c.nameKy : c.nameRu
+          if (cover) {
+            return (
+              <Link key={c.id} href={`/${lang}/catalog?cat=${c.id}`} className="cat-tile cat-tile--photo">
+                <span className="cat-tile__media">
+                  <img className="cat-tile__photo" src={cover} alt="" loading="lazy" decoding="async" />
+                </span>
+                <span className="cat-tile__text">{name}</span>
+                <IconChevronRight size={18} className="cat-tile__go" />
+              </Link>
+            )
+          }
+          return (
+            <Link key={c.id} href={`/${lang}/catalog?cat=${c.id}`} className="cat-tile">
+              <span className="cat-tile__icon">
+                <ProductArt kind={c.art} color="#245BEB" />
+              </span>
+              {name}
+            </Link>
+          )
+        })}
       </div>
     </section>
   )

@@ -32,6 +32,8 @@ export function ProductArt({
       {kind === 'stove' && <StoveArt color={color} />}
       {kind === 'fan' && <FanArt color={color} />}
       {kind === 'battery' && <BatteryArt color={color} />}
+      {kind === 'bike' && <BikeArt color={color} />}
+      {kind === 'sewing' && <SewingArt color={color} />}
       {kind === 'box' && <BoxArt color={color} />}
     </svg>
   )
@@ -270,6 +272,40 @@ function BatteryArt({ color }: { color: string }) {
       <rect x="64" y="38" width="22" height="14" rx="4" fill={edge} />
       <rect x="114" y="38" width="22" height="14" rx="4" fill={edge} />
       <path d="M108 74 80 116h22l-10 32 30-44H100l8-30Z" fill={color} />
+    </g>
+  )
+}
+
+/** Электровелосипед: раздел «Транспорт и спорт» — велосипеды, детские мотоциклы, тренажёры. */
+function BikeArt({ color }: { color: string }) {
+  return (
+    <g>
+      <circle cx="56" cy="136" r="32" fill="#FDFEFF" stroke={edge} strokeWidth="2" />
+      <circle cx="56" cy="136" r="22" fill="none" stroke={edge} strokeWidth="2" />
+      <circle cx="144" cy="136" r="32" fill="#FDFEFF" stroke={edge} strokeWidth="2" />
+      <circle cx="144" cy="136" r="22" fill="none" stroke={edge} strokeWidth="2" />
+      <path d="M56 136 84 88h46M84 88l16 48 30-48M56 136h44M130 88l14 48" fill="none" stroke={color} strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="92" y="100" width="30" height="14" rx="5" transform="rotate(-58 107 107)" fill={light} stroke={edge} strokeWidth="2" />
+      <path d="M122 70h20M130 70l0 18" fill="none" stroke={color} strokeWidth="6" strokeLinecap="round" opacity="0.8" />
+      <rect x="70" y="78" width="26" height="9" rx="4.5" fill={edge} />
+      <circle cx="56" cy="136" r="6" fill={color} />
+      <circle cx="144" cy="136" r="6" fill={color} />
+    </g>
+  )
+}
+
+/** Швейная машина: стойка с маховиком справа, рукав сверху, игла слева. */
+function SewingArt({ color }: { color: string }) {
+  return (
+    <g>
+      <rect x="32" y="140" width="136" height="22" rx="8" fill="#FDFEFF" stroke={edge} strokeWidth="2" />
+      <path d="M152 140V70a16 16 0 0 0-16-16H56a12 12 0 0 0-12 12v38h24V84h56v56Z" fill="#FDFEFF" stroke={edge} strokeWidth="2" strokeLinejoin="round" />
+      <circle cx="158" cy="94" r="13" fill={color} opacity="0.85" />
+      <circle cx="158" cy="94" r="4" fill="#FDFEFF" />
+      <path d="M56 54h80a16 16 0 0 1 16 16v4H44v-8a12 12 0 0 1 12-12Z" fill={color} />
+      <path d="M56 104v22" stroke={color} strokeWidth="3.5" strokeLinecap="round" />
+      <rect x="47" y="126" width="20" height="6" rx="3" fill={color} opacity="0.7" />
+      <path d="M84 148h52" stroke={edge} strokeWidth="3" strokeLinecap="round" />
     </g>
   )
 }

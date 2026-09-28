@@ -89,6 +89,7 @@ export async function POST(request: Request) {
       href: p.href,
       image: p.image,
       inStock: p.inStock,
+      preorder: p.preorder,
     })),
   })
 }
