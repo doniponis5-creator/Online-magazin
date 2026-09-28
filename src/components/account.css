@@ -23,6 +23,8 @@
 .login-card__welcome { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--color-lime-soft); font-weight: 650; display: flex; align-items: flex-start; gap: 10px; }
 .login-card__welcome-icon { flex: 0 0 auto; margin-top: 1px; }
 .login-card__links { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+/* «Я не робот» (Cloudflare): место под виджет 65 px держим сразу — кнопка под ним не прыгает */
+.turnstile { min-height: 65px; max-width: 100%; }
 
 .link-btn { background: none; border: 0; padding: 6px 0; color: var(--color-ink-soft); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .link-btn:hover { color: var(--color-ink); }

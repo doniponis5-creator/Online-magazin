@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { formatSom } from '@/lib/format'
 import { IconGift, IconTelegram, IconWhatsApp } from '@/components/Icons'
+import { Turnstile, useTurnstileKey } from '@/components/Turnstile'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { inNativeApp } from '@/lib/native/bonusCard'
 import { normalizePhone } from '@/lib/orders/order'
@@ -25,6 +26,10 @@ type Step = 'phone' | 'code' | 'name' | 'wa'
  * WhatsApp — ниже. Apple вернула приложение (4.2.3), потому что проверяющий
  * увидел одну кнопку WhatsApp, а WhatsApp у него нет. Демо-номер для Apple
  * входит через эту форму без всяких приложений.
+ *
+ * «Я не робот» (Cloudflare Turnstile): каждый код — платное сообщение, поэтому
+ * «Получить код» и «Войти через WhatsApp» ждут токен, если владелец включил
+ * проверку. Выключена — виджета нет, всё как раньше.
  */
 const WA_POLL_MS = 3000
 const WA_WAIT_MS = 5 * 60_000
@@ -49,6 +54,11 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
   // В приложении форма открыта сразу.
   const [showCode, setShowCode] = useState(nativeApp)
   const waTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const { siteKey, reload: reloadCaptcha } = useTurnstileKey()
+  const [captcha, setCaptcha] = useState<string | null>(null)
+  const [captchaRound, setCaptchaRound] = useState(0)
+  // Виджет есть, а токена ещё нет — кнопки, которые шлют сообщения, ждут
+  const needCaptcha = Boolean(siteKey) && !captcha
 
   const post = async (url: string, body: unknown) => {
     const response = await fetch(url, {
@@ -63,11 +73,24 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
   const serverError = (status: number, data: { error?: string } | null) =>
     status >= 400 && status < 500 && data?.error && data.error.length > 8 ? data.error : a.errorServer
 
+  // Токен одноразовый: после любого ответа просим новый. Сервер ответил
+  // «captcha» — показываем, что надо пройти проверку ещё раз.
+  const captchaRejected = (status: number, data: { error?: string } | null) => {
+    setCaptchaRound((n) => n + 1)
+    if (status !== 403 || data?.error !== 'captcha') return false
+    // Виджета нет, а сервер спрашивает — проверку включили, пока страница была открыта
+    if (!siteKey) reloadCaptcha()
+    setError(a.errorCaptcha)
+    return true
+  }
+
   const waStart = async () => {
+    if (needCaptcha) return setError(a.errorCaptcha)
     setBusy(true)
     setError('')
-    const { status, data } = await post('/api/customer/wa-login/start', {})
+    const { status, data } = await post('/api/customer/wa-login/start', { turnstile: captcha ?? undefined })
     setBusy(false)
+    if (captchaRejected(status, data)) return
     if (!data?.ok) return setError(serverError(status, data))
     setWa({ code: data.code, waPhone: data.waPhone, startedAt: Date.now() })
     setStep('wa')
@@ -123,10 +146,12 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
     e?.preventDefault()
     const value = normalizePhone(phone) || normalized
     if (!value) return setError(a.errorPhone)
+    if (needCaptcha) return setError(a.errorCaptcha)
     setBusy(true)
     setError('')
-    const { status, data } = await post('/api/customer/send-code', { phone: value })
+    const { status, data } = await post('/api/customer/send-code', { phone: value, turnstile: captcha ?? undefined })
     setBusy(false)
+    if (captchaRejected(status, data)) return
     if (!data?.ok) return setError(status === 422 ? a.errorPhone : serverError(status, data))
     setNormalized(value)
     setChannel(data.channel === 'whatsapp' || data.channel === 'demo' ? data.channel : 'telegram')
@@ -165,9 +190,11 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
     onDone(data.customer, data.welcomeBonus ?? 0)
   }
 
+  const captchaWidget = siteKey ? <Turnstile siteKey={siteKey} onToken={setCaptcha} resetKey={captchaRound} /> : null
+
   const waButton = (
     <>
-      <button type="button" className="btn btn--block login-card__wa" onClick={() => void waStart()} disabled={busy} aria-busy={busy}>
+      <button type="button" className="btn btn--block login-card__wa" onClick={() => void waStart()} disabled={busy || needCaptcha} aria-busy={busy}>
         <IconWhatsApp size={22} />
         {a.waLogin}
       </button>
@@ -179,6 +206,7 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
     <div className="login-card">
       {step === 'phone' && (
         <form onSubmit={requestCode} noValidate>
+          {!nativeApp && captchaWidget}
           {!nativeApp && waButton}
           {!nativeApp && !showCode && (
             <button type="button" className="link-btn login-card__other" onClick={() => setShowCode(true)}>
@@ -205,8 +233,9 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
             </p>
           </div>
           )}
+          {nativeApp && captchaWidget}
           {showCode && (
-          <button type="submit" className="btn btn--primary btn--block" disabled={busy} aria-busy={busy}>
+          <button type="submit" className="btn btn--primary btn--block" disabled={busy || needCaptcha} aria-busy={busy}>
             {busy ? a.sending : a.sendCode}
           </button>
           )}
@@ -268,11 +297,13 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
           <button type="submit" className="btn btn--primary btn--block" disabled={busy} aria-busy={busy}>
             {busy ? a.checking : a.verify}
           </button>
+          {/* «Отправить код ещё раз» — снова платное сообщение, тоже через проверку */}
+          {captchaWidget}
           <div className="login-card__links">
             <button type="button" className="link-btn" onClick={() => { setStep('phone'); setError('') }}>
               {a.changePhone}
             </button>
-            <button type="button" className="link-btn" onClick={() => requestCode()} disabled={busy}>
+            <button type="button" className="link-btn" onClick={() => requestCode()} disabled={busy || needCaptcha}>
               {a.resend}
             </button>
           </div>

@@ -2,7 +2,8 @@ import { getProduct } from '@/data/products'
 import { getProfile, getSiteSettings, isDemoPhone } from '@/lib/customer/gateway'
 import { createOrder } from '@/lib/orders/gateway'
 import { applyBonus, validateOrder, type OrderRequest } from '@/lib/orders/order'
-import { currentSession, errorResponse } from '../customer/route-helpers'
+import { verifyTurnstile } from '@/lib/security/turnstile'
+import { clientIp, currentSession, errorResponse } from '../customer/route-helpers'
 
 /**
  * Создать заказ: проверка корзины по каталогу → бонусы SBonus (если покупатель вошёл)
@@ -14,9 +15,9 @@ import { currentSession, errorResponse } from '../customer/route-helpers'
  * сессии, иначе чужим счётом мог бы распорядиться кто угодно.
  */
 export async function POST(request: Request) {
-  let body: OrderRequest
+  let body: OrderRequest & { turnstile?: unknown }
   try {
-    body = (await request.json()) as OrderRequest
+    body = (await request.json()) as OrderRequest & { turnstile?: unknown }
   } catch {
     return Response.json({ ok: false, errors: ['bad-request'] }, { status: 400 })
   }
@@ -25,6 +26,11 @@ export async function POST(request: Request) {
   // Владелец может выключить заказ без входа в 1С — «Панель сайта»
   if (!session && !(await getSiteSettings()).guestCheckout) {
     return Response.json({ ok: false, errors: ['login'] }, { status: 401 })
+  }
+  // Заказ без входа — счёт O!Деньги: сначала «я не робот». Вошедший уже
+  // подтвердил телефон кодом, его не спрашиваем.
+  if (!session && (await verifyTurnstile(body?.turnstile, clientIp(request))) === 'fail') {
+    return Response.json({ ok: false, errors: ['captcha'] }, { status: 403 })
   }
   const customer = session
     ? { name: body.customer?.name ?? session.name, phone: session.phone }

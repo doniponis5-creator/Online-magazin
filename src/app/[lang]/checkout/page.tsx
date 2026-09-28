@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useCustomer } from '@/components/AccountView'
 import { CustomerLogin } from '@/components/CustomerLogin'
+import { Turnstile, useTurnstileKey } from '@/components/Turnstile'
 import '@/components/account.css'
 import { useCart } from '@/lib/cart/CartProvider'
 import { unitPrice } from '@/lib/cart/logic'
@@ -62,6 +63,14 @@ export default function CheckoutPage() {
   const bonus = useBonus ? Math.max(0, Math.min(maxBonus, Math.floor(Number(bonusInput) || 0))) : 0
   const payTotal = total - bonus
 
+  // Заказ без входа — счёт O!Деньги: сначала «я не робот» (если владелец включил).
+  // Вошедший уже подтвердил телефон кодом — ему виджет не нужен.
+  const { siteKey: captchaKey, reload: reloadCaptcha } = useTurnstileKey()
+  const [captcha, setCaptcha] = useState<string | null>(null)
+  const [captchaRound, setCaptchaRound] = useState(0)
+  const showCaptcha = customer === null && !needLogin && Boolean(captchaKey)
+  const needCaptcha = showCaptcha && !captcha
+
   useEffect(() => {
     if (customer && !name) setName(customer.name)
     if (customer) setPhone(customer.phone)
@@ -107,6 +116,7 @@ export default function CheckoutPage() {
       else if (code === 'cart-empty') next.form = t.checkout.errorCart
       else if (code === 'login') next.form = t.checkout.errorLogin
       else if (code === 'bonus') next.form = t.checkout.errorBonus
+      else if (code === 'captcha') next.form = t.checkout.errorCaptcha
       else next.form = t.checkout.errorServer
     }
     return next
@@ -120,6 +130,7 @@ export default function CheckoutPage() {
     if (!normalizePhone(phone)) next.phone = t.checkout.errorPhone
     if (delivery === 'delivery' && region.trim().length < 2) next.region = t.checkout.errorRegion
     if (delivery === 'delivery' && address.trim().length < 4) next.address = t.checkout.errorAddress
+    if (needCaptcha) next.form = t.checkout.errorCaptcha
     setErrors(next)
     if (Object.keys(next).length > 0) return
 
@@ -135,12 +146,17 @@ export default function CheckoutPage() {
           lines: cart.lines,
           bonus,
           lang,
+          turnstile: captcha ?? undefined,
         }),
       })
+      // Токен одноразовый: для следующей попытки нужен новый
+      setCaptchaRound((n) => n + 1)
       const data = await response.json().catch(() => ({ ok: false, errors: ['server'] }))
       if (!data.ok) {
         setErrors(serverErrorText(data.errors ?? ['server']))
         if (data.errors?.includes('login') || data.errors?.includes('bonus')) reloadCustomer()
+        // Виджета нет, а сервер спрашивает — проверку включили, пока страница была открыта
+        if (data.errors?.includes('captcha') && !captchaKey) reloadCaptcha()
         setSending(false)
         return
       }
@@ -154,6 +170,7 @@ export default function CheckoutPage() {
       if (data.mock || !/^https?:\/\//.test(data.payUrl)) router.push(orderPage)
       else window.location.assign(data.payUrl)
     } catch {
+      setCaptchaRound((n) => n + 1)
       setErrors({ form: t.checkout.errorServer })
       setSending(false)
     }
@@ -380,10 +397,11 @@ export default function CheckoutPage() {
             <span>{formatSom(payTotal)}</span>
           </div>
           {errors.form && <p role="alert" className="field__error">{errors.form}</p>}
+          {showCaptcha && captchaKey && <Turnstile siteKey={captchaKey} onToken={setCaptcha} resetKey={captchaRound} />}
           <button
             type="submit"
             className="btn btn--primary btn--block checkout-pay"
-            disabled={sending || customer === undefined || needLogin}
+            disabled={sending || customer === undefined || needLogin || needCaptcha}
             aria-busy={sending}
           >
             {sending ? t.checkout.paying : `${t.checkout.pay} ${t.checkout.payVia}`}
