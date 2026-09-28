@@ -52,6 +52,8 @@ export const ru = {
   },
   categories: {
     title: 'Категории',
+    /** последняя клетка сетки разделов на главной — весь каталог */
+    all: 'Весь каталог',
     smartphones: 'Смартфоны',
     laptops: 'Ноутбуки',
     tv: 'Телевизоры',
@@ -580,6 +582,7 @@ export const ky: Dict = {
   },
   categories: {
     title: 'Категориялар',
+    all: 'Бүт каталог',
     smartphones: 'Смартфондор',
     laptops: 'Ноутбуктар',
     tv: 'Телевизорлор',

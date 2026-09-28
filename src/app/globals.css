@@ -969,53 +969,6 @@ main#content {
 }
 
 
-/* ---------- Category tiles: always wrapped, no horizontal scroll ---------- */
-.cat-tiles {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-}
-
-@media (min-width: 768px) {
-  .cat-tiles {
-    grid-template-columns: repeat(6, 1fr);
-  }
-}
-
-.cat-tile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 14px 8px 12px;
-  border-radius: var(--radius-tile);
-  background: var(--color-surface);
-  font-size: 12px;
-  font-weight: 600;
-  text-align: center;
-  color: var(--color-ink);
-  transition: transform var(--speed) var(--ease), background-color var(--speed) var(--ease),
-    box-shadow var(--speed) var(--ease);
-}
-
-.cat-tile:hover {
-  background: #e6eeff;
-  box-shadow: var(--shadow-card);
-}
-
-.cat-tile:active {
-  transform: scale(0.97);
-}
-
-.cat-tile__icon {
-  color: var(--color-primary);
-}
-
-.cat-tile__icon svg {
-  width: 46px;
-  height: 46px;
-}
-
 /* ---------- Product card ---------- */
 .product-grid {
   display: grid;

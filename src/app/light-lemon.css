@@ -163,29 +163,53 @@ input, textarea { caret-color: var(--color-primary); }
 .section__head { margin-bottom: 24px; align-items: baseline; }
 .section__title { font-size: clamp(24px, 2.5vw, 32px); font-weight: 800; letter-spacing: -.025em; }
 .section__cta { font-size: 13px; font-weight: 700; }
-.cat-tiles { gap: 14px; }
-/* Разделы всегда в три колонки. Последний добирает пустые клетки своей строки:
-   один в строке — на всю ширину, двое — второй на две клетки. Кратно трём —
-   правила не срабатывают. */
-.cat-tiles > .cat-tile:last-child:nth-child(3n + 1) { grid-column: 1 / -1; }
-.cat-tiles > .cat-tile:last-child:nth-child(3n + 2) { grid-column: span 2; }
-/* Плитка с фото: белая, тонкая рамка, фото сверху (с 1000px — слева), название под ним.
-   Подложка под фото БЕЛАЯ, как фон снимков из 1С: белое на белом не видно ни в одном
-   браузере. Прежде подложка была светло-серой, а белый фон снимка «растворял»
-   mix-blend-mode — на телефонах (28.09.2026) он не срабатывал, и вокруг каждого
-   товара стоял белый квадрат. brightness дотягивает «почти белое» (254, на экране
-   ~250) до чистого белого; 1.04 уже съедало край у белой техники. */
-.cat-tile.cat-tile--photo { flex-direction: column; justify-content: flex-start; text-align: center; padding: 0; gap: 0; align-items: stretch; background: #fff; border: 1px solid var(--color-border); overflow: hidden; transition: border-color 160ms, transform 160ms; }
-.cat-tile.cat-tile--photo:hover { background: #fff; border-color: #b6c2d1; }
-.cat-tile__media { display: flex; align-items: center; justify-content: center; height: 84px; padding-top: 8px; background: #fff; }
-.cat-tile__photo { display: block; width: 66px; height: 66px; object-fit: contain; filter: brightness(1.02); transition: transform 220ms var(--ease-out); }
-.cat-tile--photo:hover .cat-tile__photo { transform: scale(1.07); }
-.cat-tile__text { flex: 1; display: flex; flex-direction: column; justify-content: center; min-width: 0; padding: 6px 6px 12px; }
-.cat-tile__go { display: none; }
-@media (prefers-reduced-motion: reduce) { .cat-tile__photo, .cat-tile__go { transition: none; } .cat-tile--photo:hover .cat-tile__photo, .cat-tile--photo:hover .cat-tile__go { transform: none; } }
-.cat-tile { background: var(--color-surface); border: 0; padding: 22px 12px; color: var(--color-ink); font-size: 13px; box-shadow: none; gap: 16px; }
-.cat-tile:hover { background: #eef3f9; color: var(--color-ink); transform: translateY(-2px); box-shadow: none; }
-.cat-tile__icon { background: transparent; width: 64px; height: 64px; padding: 4px; }
+/* Категории — сетка «иконок», как в приложениях магазинов (владелец выбрал
+   28.09.2026): квадрат с нашим товаром раздела и подпись под ним. Обложки
+   одного вида делает scripts/category-icons.mjs.
+   Телефон — 4 в ряд, планшет и ноутбук — 6, широкий экран — все 12 одной
+   строкой (11 разделов + «Весь каталог»). Подложка под фото БЕЛАЯ с тонкой рамкой,
+   как фон снимков из 1С: mix-blend-mode не нужен — на телефонах он не
+   срабатывал, и вокруг товара стоял белый квадрат. brightness дотягивает
+   «почти белое» (254) до чистого белого; 1.04 уже съедало край у белой техники. */
+.cat-icons { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px 8px; margin: 0; padding: 0; list-style: none; }
+.cat-icon { display: flex; flex-direction: column; align-items: center; gap: 8px; height: 100%; color: var(--color-ink); text-align: center; -webkit-tap-highlight-color: transparent; }
+.cat-icon:focus-visible { outline: none; }
+.cat-icon__media { display: grid; place-items: center; width: 100%; max-width: 76px; aspect-ratio: 1; border: 1px solid var(--color-border); border-radius: 22px; background: #fff; color: var(--color-ink); overflow: hidden; transition: border-color 160ms, box-shadow 160ms, transform 220ms var(--ease-out); }
+.cat-icon__photo { display: block; width: 82%; height: 82%; object-fit: contain; filter: brightness(1.02); }
+/* готовая обложка (scripts/category-icons.mjs): поля и белый фон уже в самой картинке */
+.cat-icon__photo--fit { width: 100%; height: 100%; filter: none; }
+.cat-icon__media > svg { width: 56%; height: 56%; }
+/* Подпись шире своей колонки на половину промежутка с каждой стороны, а шрифт
+   сжимается с экраном (11px на 360px): «Холодильники» и «Муздаткычтар» влезают
+   в строку и на узком Android. Переносом режется только длинное слово, которое
+   не влезет никак («Энергоснаб-жение»): hyphenate-limit-chars не даёт рвать
+   короткие («Швей-ные»). text-wrap: balance тут нельзя — ради ровных строк он
+   рвал слова и там, где хватало места («Стираль-ные машины»). */
+.cat-icon__name { width: calc(100% + 8px); margin-inline: -4px; font: 650 clamp(11px, 3.05vw, 12px)/1.25 var(--font); letter-spacing: -.005em; hyphens: auto; hyphenate-limit-chars: 12 5 5; overflow-wrap: break-word; }
+.cat-icon:hover .cat-icon__media { border-color: #b6c2d1; transform: translateY(-2px); }
+.cat-icon:active .cat-icon__media { transform: scale(.96); }
+.cat-icon:focus-visible .cat-icon__media { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgb(37 99 235 / 30%); }
+/* «Весь каталог»: четыре обложки мозаикой 2×2 в том же белом квадрате */
+/* у каждой обложки свои белые поля — мини-картинки чуть увеличены, иначе товары мелкие */
+.cat-icon__media--all { grid-template-columns: 1fr 1fr; padding: 6%; }
+.cat-icon__media--all img { display: block; width: 100%; height: 100%; object-fit: contain; transform: scale(1.2); }
+@media (min-width: 601px) {
+  .cat-icons { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 24px 16px; }
+  .cat-icon { gap: 10px; }
+  .cat-icon__media { max-width: 112px; border-radius: 28px; }
+  .cat-icon__name { width: 100%; margin-inline: 0; font-size: 14px; }
+}
+/* Одной строкой — только когда колонка не уже ~87px: на 1100–1239px подписи
+   рвались переносом («Холодиль-ники»), там остаются две строки по 6. */
+@media (min-width: 1240px) {
+  .cat-icons { grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px 12px; }
+  .cat-icon__media { max-width: 96px; border-radius: 26px; }
+  .cat-icon__name { width: calc(100% + 12px); margin-inline: -6px; font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cat-icon__media { transition: none; }
+  .cat-icon:hover .cat-icon__media, .cat-icon:active .cat-icon__media { transform: none; }
+}
 .product-grid { gap: 22px; }
 .card { background: #fff; border: 1px solid var(--color-border); box-shadow: none; border-radius: 16px; overflow: hidden; transition: border-color 160ms, transform 160ms; }
 .card:hover { border-color: #b6c2d1; transform: translateY(-3px); box-shadow: none; }
@@ -392,9 +416,6 @@ input, textarea { caret-color: var(--color-primary); }
   .section__head { gap: 16px; margin-bottom: 19px; }
   .section__title { font-size: 25px; }
   .section__cta { font-size: 11px; }
-  .cat-tiles { grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
-  .cat-tile { font-size: 11px; padding: 17px 6px; gap: 10px; }
-  .cat-tile__icon { width: 48px; height: 48px; }
   .product-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
   .card__media { aspect-ratio: 1; }
   .card__media-link { padding: 20px; }
@@ -430,31 +451,6 @@ input, textarea { caret-color: var(--color-primary); }
   .footer__bottom { flex-direction: column; align-items: flex-start; gap: 8px; }
 }
 
-/* Планшет и компьютер (от 601px): три колонки, плитка лежит строкой —
-   значок слева, название справа. Стоячие плитки были почти пустыми (мелкий
-   значок посреди большого поля), а на компьютере девять категорий ложились
-   в 6 + 3 с полупустым вторым рядом. Три на три — ровный блок без хвоста.
-   Блок стоит ПОСЛЕ телефонного (max-width: 900px) и содержит только плитки
-   категорий: однажды сюда попали телефонные правила карточек, и на
-   компьютере «Новинки» встали в две колонки. */
-@media (min-width: 601px) {
-  .cat-tiles { grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
-  .cat-tile { flex-direction: row; justify-content: flex-start; gap: 14px; padding: 14px 18px; font-size: 14px; font-weight: 700; text-align: left; }
-  .cat-tile__icon { width: 48px; height: 48px; padding: 0; flex: none; }
-  .cat-tile__icon svg { width: 48px; height: 48px; }
-}
-
-/* Плитка с фото лежит строкой только на широком экране: на планшете (601–999px)
-   три колонки узкие, и название заезжало на стрелку («Энергоснабже…»). */
-@media (min-width: 1000px) {
-  .cat-tile.cat-tile--photo { flex-direction: row; text-align: left; }
-  .cat-tile__media { width: 96px; height: auto; padding-top: 0; flex: none; }
-  .cat-tile__photo { width: 70px; height: 70px; }
-  .cat-tile__text { padding: 18px 8px 18px 4px; }
-  .cat-tile__go { display: block; flex: none; align-self: center; margin-right: 16px; color: var(--color-border-strong); transition: color 160ms, transform 160ms var(--ease-out); }
-  .cat-tile--photo:hover .cat-tile__go { color: var(--color-primary); transform: translateX(2px); }
-}
-
 @media (min-width: 540px) and (max-width: 900px) {
   .hero3d { --scene-h: 540px; }
   .hero3d__content { width: 65%; }
@@ -473,8 +469,8 @@ input, textarea { caret-color: var(--color-primary); }
   .hero3d { height: var(--scene-h); }
   .hero3d__sticky { position: relative; top: 0; }
   .hero3d__frame { transform: none; }
-  .btn, .card, .cat-tile { transition: none; }
-  .card:hover, .cat-tile:hover, .btn:active:not(:disabled) { transform: none; }
+  .btn, .card { transition: none; }
+  .card:hover, .btn:active:not(:disabled) { transform: none; }
 }
 
 /* Доступные размеры элементов управления и нативный выбор клиента. */
