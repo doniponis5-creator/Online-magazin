@@ -331,3 +331,21 @@ describe('аудит 26–28.09: формулировки', () => {
     expect(text).toContain('кнопка «Оплатить онлайн»')
   })
 })
+
+describe('менеджер по продажам, а не «помощник»', () => {
+  it('сам себя ботом не называет, на прямой вопрос не врёт', () => {
+    const text = systemInstruction('ru', null, 'ru', products)
+    expect(text).toMatch(/Сам не называй себя ботом/)
+    expect(text).toMatch(/не ври: «Это онлайн-консультант Smart Centr/)
+    expect(text).toMatch(/ОДИН шаг вперёд/)
+  })
+})
+
+describe('без похвалы, по которой узнают робота', () => {
+  it('«отличные варианты», «с радостью» — вон', async () => {
+    const { houseStyle } = await import('@/lib/assistant/reply')
+    expect(houseStyle('Есть отличные варианты дешевле: Midea за 29 800 сом.', 'ru')).toBe('Есть варианты дешевле: Midea за 29 800 сом.')
+    expect(houseStyle('Отличный выбор! FLAGMAN за 21 400 сом.', 'ru')).toBe('FLAGMAN за 21 400 сом.')
+    expect(houseStyle('Тазагул, эң сонун тандоо! FLAGMAN бар.', 'ky')).toBe('Тазагул, FLAGMAN бар.')
+  })
+})
