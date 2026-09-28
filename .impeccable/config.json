@@ -11,6 +11,12 @@
         ],
         "createdAt": "2026-09-17T09:45:03.694Z",
         "reason": "Claude: editor runs inside 1C client window, not the storefront; uses the 1C/Windows UI font on purpose"
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        "createdAt": "2026-09-28T12:41:04.773Z",
+        "reason": "intentional celebratory pop on the post-signup badge (.hello__badge), documented in the comment above it in account.css; added 2026-09-21 (b19c931e), predates this session"
       }
     ]
   }
