@@ -102,7 +102,21 @@ if ($packages -notcontains $Package) {
     Fail "В google-services.json нет приложения $Package (в файле: $inFile). Добавьте в Firebase Android-приложение с именем пакета $Package и скачайте файл заново. $Nothing"
 }
 
-$sa = Read-Json $SaPath
+# Ключ читаем так же строго, как сервер (shop_push_fcm.load_account): байты —
+# строгий UTF-8, битый байт — ошибка, а не «?» на его месте. BOM в начале сервер
+# не принимает — пропускаем его здесь, и на сервер уходят те же байты без BOM:
+# «подходит» здесь ⇔ сервер этот ключ прочтёт.
+$SaBytes = [System.IO.File]::ReadAllBytes($SaPath)
+$SaSkip = 0
+if ($SaBytes.Length -ge 3 -and $SaBytes[0] -eq 0xEF -and $SaBytes[1] -eq 0xBB -and $SaBytes[2] -eq 0xBF) { $SaSkip = 3 }
+$sa = $null
+try {
+    $strict = New-Object System.Text.UTF8Encoding $false, $true
+    $sa = $strict.GetString($SaBytes, $SaSkip, $SaBytes.Length - $SaSkip) | ConvertFrom-Json
+} catch {
+    $sa = $null
+}
+if (-not ($sa -is [System.Management.Automation.PSCustomObject])) { $sa = $null }
 if ($null -eq $sa) { Fail "Ключ «$SaPath» не читается как JSON. Создайте ключ заново: Сервисные аккаунты → Создать закрытый ключ. $Nothing" }
 if ($sa.project_info -and $sa.client) { Fail "Файлы перепутаны: вместо ключа сервисного аккаунта дан google-services.json. $Nothing" }
 if ($sa.type -ne 'service_account') {
@@ -129,7 +143,9 @@ if ($Check) {
 }
 
 # 3. Ключ — на сервер, в base64: так переносы строк не портятся по дороге.
-$KeyB64 = [Convert]::ToBase64String([System.IO.File]::ReadAllBytes($SaPath))
+# Те самые байты, что проверены выше, уже без BOM.
+$KeyB64 = [Convert]::ToBase64String($SaBytes, $SaSkip, $SaBytes.Length - $SaSkip)
+$SaBytes = $null
 
 # Серверную часть кладём отдельным файлом. Windows-переводы строк bash
 # не понимает, поэтому убираем CR. Секретов в этом файле нет — ключ идёт в stdin.

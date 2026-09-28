@@ -29,11 +29,16 @@ KEY_B64=$(printf '%s' "$KEY_B64" | tr -d '\r\t ')
 command -v python3 >/dev/null 2>&1 || { echo NOPY; exit 1; }
 
 # Ключ идёт в python через stdin (printf — встроенная команда bash, в ps не видна).
-# Те же поля, что проверяет сервер при загрузке: shop_push_fcm.load_account.
+# Читаем ровно как сервер при загрузке (shop_push_fcm.load_account): пробелы
+# убираем, недостающие «=» дописываем, байты — строгий UTF-8. BOM в начале —
+# ошибка, как и у сервера: иначе здесь было бы FCMOK, а Android молчал бы.
+# Те же поля; сверх того — «PRIVATE KEY» в ключе: без него подписать нечем.
 VERDICT=$(printf '%s' "$KEY_B64" | python3 -c '
 import base64, json, sys
+value = "".join(sys.stdin.read().split())
 try:
-    data = json.loads(base64.b64decode(sys.stdin.read(), validate=True).decode("utf-8-sig"))
+    raw = base64.b64decode(value + "=" * (-len(value) % 4), validate=True)
+    data = json.loads(raw.decode("utf-8"))
 except Exception:
     data = None
 if not isinstance(data, dict):
@@ -60,6 +65,11 @@ cp -p "$ENV" "$ENV.bak_$(date +%Y%m%d_%H%M%S)" || { echo NOBAK; exit 1; }
 # Собираем во временном файле рядом, потом переписываем .env.production
 # содержимым — сам файл остаётся тем же: права и владелец не меняются.
 TMP=$(mktemp "$ENV.XXXXXX") || { echo NOBAK; exit 1; }
+# В TMP — весь .env.production с ключом. Оборвалась связь, Ctrl+C — файл
+# всё равно стираем. На сигнал именно выходим: иначе bash пошёл бы дальше,
+# и «cat» без TMP обнулил бы .env.production.
+trap 'rm -f "$TMP"' EXIT
+trap 'exit 1' HUP INT TERM PIPE
 grep -v -e '^FCM_SERVICE_ACCOUNT_B64=' -e '^# Firebase push:' "$ENV" > "$TMP"
 {
     # Если последняя строка без перевода строки — добавим, чтобы не склеить.

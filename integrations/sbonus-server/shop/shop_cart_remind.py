@@ -184,24 +184,46 @@ async def run_once(db: AsyncSession, now: datetime) -> dict:
         if isinstance(items, str):
             items = json.loads(items or "[]")
         title, body = rules.reminder_text(items, row["count"])
-        if not await send(db, phone, title, body, {"type": "cart"}):
-            continue
+        sent = int(row["sent"] or 0)
+        mark = {"ph": phone, "changed": row["changed_at"], "sent": sent}
+        # Сначала отмечаем, потом шлём. Наоборот при сбое записи через 30 минут
+        # ушёл бы дубль; так худшее — одно пропущенное напоминание.
+        # changed_at и sent в условии: корзина поменялась или строку уже отметили —
+        # расписание не наше, ничего не трогаем.
         try:
-            # changed_at в условии: корзина поменялась, пока шло уведомление, —
-            # расписание уже начато заново, счётчик не трогаем.
-            await db.execute(
+            marked = await db.execute(
                 text(
                     f"UPDATE shop_cart_reminders SET sent = sent + 1, last_sent_at = {NOW_UTC} "
-                    "WHERE phone = :ph AND changed_at = :changed"
+                    "WHERE phone = :ph AND changed_at = :changed AND sent = :sent RETURNING phone"
                 ),
-                {"ph": phone, "changed": row["changed_at"]},
+                mark,
             )
+            claimed = marked.first() is not None
             await db.commit()
         except Exception as error:
             await db.rollback()
-            logger.warning(f"cart: счётчик не записан {_tail(phone)} ({type(error).__name__})")
+            logger.warning(f"cart: отметка не записана {_tail(phone)} ({type(error).__name__}), не шлём")
+            continue
+        if not claimed:
+            continue
+        if not await send(db, phone, title, body, {"type": "cart"}):
+            # Не дошло ни до одного телефона — отметку снимаем: напоминание не считается,
+            # придёт в следующий раз. Не снялась — один раз промолчим, это не страшно.
+            try:
+                await db.execute(
+                    text(
+                        "UPDATE shop_cart_reminders SET sent = :sent, last_sent_at = :last "
+                        "WHERE phone = :ph AND changed_at = :changed AND sent = :sent + 1"
+                    ),
+                    {**mark, "last": row["last_sent_at"]},
+                )
+                await db.commit()
+            except Exception as error:
+                await db.rollback()
+                logger.warning(f"cart: отметка не снята {_tail(phone)} ({type(error).__name__})")
+            continue
         delivered += 1
-        logger.info(f"cart: напомнили {_tail(phone)}, №{int(row['sent'] or 0) + 1}")
+        logger.info(f"cart: напомнили {_tail(phone)}, №{sent + 1}")
     return {"due": due, "sent": delivered}
 
 
@@ -224,9 +246,8 @@ def main() -> None:
     try:
         result = asyncio.run(once())
     except Exception as error:
-        # Только первая строка: в тексте ошибки SQLAlchemy ниже идут параметры запроса с номерами.
-        first = str(error).splitlines()[0][:200] if str(error) else ""
-        print(f"{datetime.now():%Y-%m-%d %H:%M} ошибка: {type(error).__name__}: {first}")
+        # Только тип: даже первая строка ошибки asyncpg может нести значение параметра — номер.
+        print(f"{datetime.now():%Y-%m-%d %H:%M} ошибка: {type(error).__name__}")
         raise SystemExit(1)
     if result.get("due") or result.get("sent"):
         print(f"{datetime.now():%Y-%m-%d %H:%M} пора напомнить: {result['due']}, доставлено: {result['sent']}")

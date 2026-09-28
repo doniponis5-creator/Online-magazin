@@ -16,6 +16,11 @@
   POST /webhook/site/visit          подпись сайта    отметка о посещении страницы
   POST /webhook/site/push-cart      подпись сайта    снимок корзины для напоминаний
   POST /webhook/site/cart-consent   подпись сайта    согласие на напоминания: записать / прочитать
+  POST /webhook/site/promo-consent  подпись сайта    согласие на «Новинки и скидки»: записать / прочитать
+  GET  /webhook/1c/shop/promo/candidates  ключ 1С    товары для рассылки: со скидкой, новинки, остальные
+  POST /webhook/1c/shop/promo/preview     подпись 1С сколько получат и можно ли слать (ничего не шлёт)
+  POST /webhook/1c/shop/promo/send        подпись 1С отправить рассылку (в фоне)
+  GET  /webhook/1c/shop/promo/history     ключ 1С    последние 20 рассылок
 
 Настройки лежат в таблице settings SBonus и действуют сразу, без перезапуска.
 Значения проверяются здесь: из 1С может прийти что угодно, а в базе должно
@@ -29,7 +34,7 @@ from datetime import date, datetime, timedelta, timezone
 
 import hashlib
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -341,8 +346,9 @@ async def push_device(request: Request, db: AsyncSession = Depends(get_db)):
         from .shop_push import save_device
         await save_device(db, token, platform, payload.phone)
     except Exception as error:
-        # Уведомления — не повод ломать сайт.
-        logger.warning(f"push-device не записан: {error}")
+        # Уведомления — не повод ломать сайт. Текст ошибки базы может нести номер — только тип.
+        await db.rollback()
+        logger.warning(f"push-device не записан ({type(error).__name__})")
         return {"ok": True, "saved": False}
     return {"ok": True, "saved": True}
 
@@ -375,20 +381,32 @@ async def account_delete(request: Request, db: AsyncSession = Depends(get_db)):
     phone = (payload.phone or "").strip()
     if not phone:
         return {"ok": False, "error": "phone обязателен"}
-    try:
-        from .shop_push import forget_phone
-        from .shop_cart_remind import forget as forget_cart
-        removed = await forget_phone(db, phone)
-        # Снимок корзины и согласие на напоминания — тоже данные человека.
-        cart_removed = await forget_cart(db, phone)
-    except Exception as error:
-        logger.error(f"account-delete: адреса телефона не стёрлись ...{phone[-4:]}: {error}")
-        return {"ok": False, "error": "не удалось"}
+    from .shop_push import forget_phone
+    from .shop_cart_remind import forget as forget_cart
+    from .shop_promo import forget as forget_promo
+
+    # Каждая чистка — сама по себе: сбой одной не должен оставить несделанными
+    # остальные. Снимок корзины и согласия на уведомления — тоже данные человека.
+    # В журнал — только тип ошибки: текст ошибки базы может нести сам номер.
+    removed: dict[str, int] = {}
+    for key, what, forget in (
+        ("pushRemoved", "адреса телефона", forget_phone),
+        ("cartRemoved", "корзина и согласие на напоминания", forget_cart),
+        ("promoRemoved", "согласие на новинки и скидки", forget_promo),
+    ):
+        try:
+            removed[key] = await forget(db, phone)
+        except Exception as error:
+            await db.rollback()
+            logger.error(f"account-delete: не стёрлись {what} ...{phone[-4:]} ({type(error).__name__})")
+    if len(removed) < 3:
+        return {"ok": False, "error": "не удалось", **removed}
     logger.info(
         f"account-delete: покупатель ...{phone[-4:]} удалил учётную запись, "
-        f"адресов стёрто: {removed}, корзин: {cart_removed}"
+        f"адресов стёрто: {removed['pushRemoved']}, корзин: {removed['cartRemoved']}, "
+        f"согласий на рассылки: {removed['promoRemoved']}"
     )
-    return {"ok": True, "pushRemoved": removed, "cartRemoved": cart_removed}
+    return {"ok": True, **removed}
 
 
 # ── Напоминание о корзине ────────────────────────────────────────────────────
@@ -466,6 +484,151 @@ async def cart_consent(request: Request, db: AsyncSession = Depends(get_db)):
         logger.warning(f"cart-consent не прочитан/не записан ...{phone[-4:]} ({type(error).__name__})")
         return {"ok": False, "error": "db"}
     return {"ok": True, "consent": consent}
+
+
+# ── Рассылки «Скидка» / «Новинка» из 1С ──────────────────────────────────────
+#
+# Владелец сам отправляет из «Панели сайта» по готовым шаблонам — только кнопкой,
+# не по событию каталога. Получают те, кто включил «Новинки и скидки» в «Кабинете»
+# (это согласие отдельное от напоминаний о корзине). Одна рассылка в день и только
+# днём по Бишкеку — это проверяет сервер, а не 1С. Правила — shop_promo_rules.py,
+# база и отправка — shop_promo.py.
+
+class PromoConsent(BaseModel):
+    phone: str = ""
+    consent: bool | None = None
+
+
+class PromoRequest(BaseModel):
+    kind: str = ""
+    code: str = ""
+    title: str = ""
+    body: str = ""
+
+
+@router_site_admin.post("/promo-consent")
+async def promo_consent(request: Request, db: AsyncSession = Depends(get_db)):
+    """
+    Согласие на «Новинки и скидки» — так же, как cart-consent:
+      {phone, consent: true|false} — записать; {phone} — только прочитать.
+    Ответ: {ok, consent: true|false|null}; null — ещё не спрашивали.
+    """
+    body = await _verify_site_body(request)
+    from .shop_cart_remind import clean_phone
+    from .shop_promo import get_consent, set_consent
+    try:
+        payload = PromoConsent.parse_raw(body)
+    except Exception:
+        return {"ok": False, "error": "body"}
+    phone = clean_phone(payload.phone)
+    if not phone:
+        return {"ok": False, "error": "phone"}
+    try:
+        if payload.consent is None:
+            consent = await get_consent(db, phone)
+        else:
+            consent = await set_consent(db, phone, payload.consent)
+            logger.info(f"promo-consent ...{phone[-4:]}: {'да' if consent else 'нет'}")
+    except Exception as error:
+        await db.rollback()
+        logger.warning(f"promo-consent не прочитан/не записан ...{phone[-4:]} ({type(error).__name__})")
+        return {"ok": False, "error": "db"}
+    return {"ok": True, "consent": consent}
+
+
+@router_1c_admin.get("/promo/candidates")
+async def promo_candidates(_=Depends(_verify_1c_key), db: AsyncSession = Depends(get_db)):
+    """
+    Товары для рассылки из каталога сервера — того, что видит сайт. Сначала со
+    скидкой, потом новинки, потом остальные; только те, что можно заказать.
+    У каждого — готовые тексты шаблонов (saleTitle/saleBody, newTitle/newBody):
+    цены в них только из каталога 1С. Нет saleTitle — шаблон «Скидка» не подходит.
+    """
+    from . import shop_promo_rules as rules
+
+    items = await _catalog(db)
+    return {"ok": True, "items": rules.candidates(items), "titleMax": rules.TITLE_MAX, "bodyMax": rules.BODY_MAX}
+
+
+async def _promo_check(db: AsyncSession, payload: PromoRequest, now: datetime) -> dict:
+    """
+    Всё, что нужно знать до отправки: сколько получат и почему нельзя (если нельзя).
+    Сначала то, что не зависит от текста (ключи, тихие часы, «одна в день»), —
+    это владелец видит сразу, ещё до выбора товара.
+    """
+    from . import shop_promo as promo, shop_promo_rules as rules
+    from .shop_push import enabled
+
+    kind = (payload.kind or "").strip()
+    title = rules.clean_text(payload.title)
+    body = rules.clean_text(payload.body)
+    count = await promo.recipients(db)
+    last = await promo.last_send(db)
+    url, code, reason = rules.HOME_URL, None, None
+    if not enabled():
+        reason = "На сервере не настроены уведомления (ключи Apple и Google) — отправить нельзя."
+    if not reason:
+        reason = rules.blocked_reason(now, last)
+    if not reason and count == 0:
+        reason = "Пока никто не включил «Новинки и скидки» в приложении — отправлять некому."
+    if not reason:
+        url, code, reason = rules.target(kind, payload.code, await _catalog(db))
+    if not reason:
+        reason = rules.text_problem(title, body)
+    return {
+        "recipients": count,
+        "blockedReason": reason,
+        "lastSentAt": _iso(last),
+        "kind": kind, "code": code, "url": url, "title": title, "body": body,
+    }
+
+
+def _promo_answer(check: dict) -> dict:
+    return {key: check[key] for key in ("recipients", "blockedReason", "lastSentAt")}
+
+
+@router_1c_admin.post("/promo/preview")
+async def promo_preview(request: Request, db: AsyncSession = Depends(get_db)):
+    """{kind, code?, title, body} → {ok, recipients, blockedReason, lastSentAt}. Ничего не шлёт."""
+    payload = PromoRequest.parse_raw(await _verify_1c_body(request))
+    check = await _promo_check(db, payload, datetime.now(timezone.utc))
+    return {"ok": True, **_promo_answer(check)}
+
+
+@router_1c_admin.post("/promo/send")
+async def promo_send(request: Request, background: BackgroundTasks, db: AsyncSession = Depends(get_db)):
+    """
+    То же, что preview, и отправка в фоне через shop_push.send().
+    Ответ сразу: {ok, sent, id, recipients}; сколько дошло — в /promo/history.
+    Нельзя — {ok: false, sent: false, blockedReason}.
+    """
+    from . import shop_promo as promo
+
+    payload = PromoRequest.parse_raw(await _verify_1c_body(request))
+    now = datetime.now(timezone.utc)
+    check = await _promo_check(db, payload, now)
+    if check["blockedReason"]:
+        return {"ok": False, "sent": False, **_promo_answer(check)}
+    phones = await promo.recipient_phones(db)
+    send_id = await promo.start_send(
+        db, now, check["kind"], check["code"], check["title"], check["body"], check["url"], len(phones)
+    )
+    if send_id is None:
+        return {"ok": False, "sent": False, **_promo_answer(check),
+                "blockedReason": "Сегодня рассылка уже была — не больше одной в день."}
+    background.add_task(
+        promo.deliver, send_id, phones, check["title"], check["body"], {"type": "promo", "url": check["url"]}
+    )
+    logger.info(f"promo: рассылка №{send_id} ({check['kind']}) пошла {len(phones)} покупателям")
+    return {"ok": True, "sent": True, "id": send_id, "recipients": len(phones)}
+
+
+@router_1c_admin.get("/promo/history")
+async def promo_history(_=Depends(_verify_1c_key), db: AsyncSession = Depends(get_db)):
+    """Последние 20 рассылок: когда, что, скольким слали, до скольких дошло."""
+    from . import shop_promo as promo
+
+    return {"ok": True, "items": await promo.history(db, datetime.now(timezone.utc))}
 
 
 @router_site_admin.post("/visit")

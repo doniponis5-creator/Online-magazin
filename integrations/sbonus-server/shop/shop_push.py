@@ -118,7 +118,8 @@ def _jwt() -> str | None:
         signature = _b64(r.to_bytes(32, "big") + s.to_bytes(32, "big"))
         token = f"{header}.{claims}.{signature}"
     except Exception as error:
-        logger.error(f"push: не удалось подписать пропуск для Apple: {error}")
+        # Только тип ошибки: ключ в журнал попасть не должен.
+        logger.error(f"push: не удалось подписать пропуск для Apple ({type(error).__name__})")
         return None
     _cached_jwt = (token, now)
     return token
@@ -188,7 +189,14 @@ async def send(db: AsyncSession, phone: str, title: str, body: str, data: dict |
     try:
         devices = await _devices(db, phone)
     except Exception as error:
-        logger.warning(f"push: не удалось прочитать адреса ...{phone[-4:]}: {error}")
+        # Только тип: текст ошибки SQLAlchemy несёт параметры запроса — номер целиком.
+        logger.warning(f"push: не удалось прочитать адреса ...{phone[-4:]} ({type(error).__name__})")
+        # Упавший запрос оставляет соединение в ошибке — без отката следующий
+        # покупатель в той же рассылке тоже ничего бы не получил.
+        try:
+            await db.rollback()
+        except Exception:
+            pass
         return 0
     if not devices:
         return 0
@@ -232,7 +240,8 @@ async def _send_apple(
                         f"{_host()}/3/device/{token}", json=payload, headers=headers
                     )
                 except Exception as error:
-                    logger.info(f"push: Apple недоступна: {error}")
+                    # Без текста: в нём бывает адрес запроса, а в адресе — адрес телефона.
+                    logger.info(f"push: Apple недоступна ({type(error).__name__})")
                     break
                 if response.status_code == 200:
                     sent += 1
@@ -248,7 +257,7 @@ async def _send_apple(
                     await _fail(db, token)
                     logger.info(f"push: Apple отказала ({response.status_code} {reason})")
     except Exception as error:
-        logger.warning(f"push: отправка не удалась ...{phone[-4:]}: {error}")
+        logger.warning(f"push: отправка не удалась ...{phone[-4:]} ({type(error).__name__})")
     return sent
 
 

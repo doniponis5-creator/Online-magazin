@@ -98,9 +98,27 @@ function currentLang(): string {
   return first === 'ru' || first === 'ky' ? first : 'ru'
 }
 
+/** Свой адрес сайта: `/ru/...` или `/ky/...`. Чужой сайт, `//`, `?` и `#` сюда не проходят. */
+const OWN_PATH = /^\/(ru|ky)(\/[A-Za-z0-9._~%-]+)*\/?$/
+
+/**
+ * Куда вести по нажатию на «Скидку» или «Новинку». Сервер шлёт адрес товара на русском
+ * (`/ru/product/...`) — меняем язык на тот, что выбрал покупатель. Адрес не наш,
+ * с `..` или его нет — открываем главную: на чужой сайт из уведомления не уводим.
+ */
+function promoPath(url: unknown): string {
+  const lang = currentLang()
+  if (typeof url !== 'string' || !OWN_PATH.test(url)) return `/${lang}`
+  // `..` и `%2e%2e` в адресе значат «на уровень вверх» — такие адреса не открываем.
+  if (url.split('/').some((part) => /^\.+$/.test(part.replace(/%2e/gi, '.')))) return `/${lang}`
+  return `/${lang}${url.slice(3)}`
+}
+
 /**
  * Нажатие на уведомление. Напоминание о корзине (`type: "cart"`) открывает корзину
- * на текущем языке; уведомления о заказах — как раньше, никуда не переводим.
+ * на текущем языке; «Скидка» и «Новинка» из 1С (`type: "promo"`) — страницу товара
+ * из `data.url` (только свои адреса), рассылка без товара — главную. Уведомления
+ * о заказах — как раньше, никуда не переводим.
  *
  * Это JS сайта, поэтому работает и в уже вышедшем приложении без новой сборки.
  * Если приложение было закрыто, плагин придержит нажатие до появления слушателя.
@@ -110,8 +128,9 @@ export function listenPushTaps(): void {
   if (!native || tapsListening) return
   tapsListening = true
   safeListen(native, 'pushNotificationActionPerformed', (action) => {
-    const data = (action as { notification?: { data?: { type?: unknown } } })?.notification?.data
+    const data = (action as { notification?: { data?: { type?: unknown; url?: unknown } } })?.notification?.data
     if (data?.type === 'cart') window.location.assign(`/${currentLang()}/cart`)
+    else if (data?.type === 'promo') window.location.assign(promoPath(data.url))
   })
 }
 

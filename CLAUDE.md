@@ -311,7 +311,7 @@ PC — сайт, расширение 1С и сервер SBonus: `src/`, `publi
 - Android: плагин push попадает в сборку только при `android/app/google-services.json` (`capacitor.config.ts` → `hasFirebase` → `includePlugins`), без файла плагин роняет приложение. Файла пока нет; он не секрет и идёт в git (`android/.gitignore` его не прячет).
 - Канал `orders` («Заказы», высокая важность) — `MainActivity.ORDERS_CHANNEL_ID`, создаётся при каждом запуске; FCM шлёт в него (`shop_push_fcm.CHANNEL_ID`); значок `@drawable/ic_stat_s`, в манифесте `POST_NOTIFICATIONS`.
 - `versionCode 4` уже поднят под выпуск с push (в Play лежит code3) — для этого AAB ещё +1 не делать.
-- Нажатие на уведомление — `listenPushTaps()` в `push.ts` (JS сайта, без пересборки приложения): `data.type === 'cart'` → `/{ru|ky}/cart`; новые типы нажатий — сюда.
+- Нажатие на уведомление — `listenPushTaps()` в `push.ts` (JS сайта, без пересборки приложения): `data.type === 'cart'` → `/{ru|ky}/cart`; `'promo'` → `data.url` (только `/ru|ky/...`, язык — текущий, иначе главная); новые типы нажатий — сюда.
 
 Напоминание о корзине:
 - Снимок: `CartProvider.tsx` → `src/lib/native/cartSync.ts` (только в приложении, после 5 с тишины, тот же снимок не повторяет, до входа молчит — `cartSignedIn`/`cartSignedOut` зовёт `AccountView.tsx`) → `POST /api/push/cart` `{items ≤ 3 названия, count строк, total}` (телефон из сессии, без входа 401) → `webhook/site/push-cart` → `shop_cart_reminders` (миграция `010`, время UTC без зоны).
@@ -324,13 +324,14 @@ PC — сайт, расширение 1С и сервер SBonus: `src/`, `publi
 
 Владельцу: Firebase — `docs/ANDROID_PUSH_UZ.md` (§6 — выкладка). `bash scripts/setup-fcm.sh` (`--check` — только проверка; Windows — `scripts/setup-fcm.ps1 -Check`): ключ идёт через stdin в `scripts/fcm-remote.sh` → `FCM_SERVICE_ACCOUNT_B64` с резервной копией `.env`, ответ одним словом `FCMOK|NOENV|BADJSON|NOTSA|NOPY|NOBAK`; `google-services.json` копируется в `android/app/` только после `FCMOK`. Apple — `scripts/setup-apns.sh`.
 
-Тесты (прогнаны 27.09.2026):
-- `npm test` — 728 зелёных; маршруты push — `__tests__/push-device.test.ts`, `push-platform`, `push-cart-routes`, `push-cart-sync`, `push-cart-tap` (образец для новых).
-- `uv run --with cryptography python -m unittest integrations/sbonus-server/shop/test_shop_push_fcm.py` — 16 (локально `cryptography` нет, отсюда `--with`).
-- `uv run python -m unittest integrations/sbonus-server/shop/test_shop_cart_rules.py` — 12.
+Тесты (прогнаны 28.09.2026 на PC):
+- `npm test` — 770 зелёных; маршруты push — `__tests__/push-device.test.ts`, `push-platform`, `push-cart-routes`, `push-cart-sync`, `push-cart-tap`, `push-promo-routes`, `push-promo-tap` (образец для новых).
+- `uv run --with cryptography python -m unittest integrations/sbonus-server/shop/test_shop_push_fcm.py` — 18 (локально `cryptography` нет, отсюда `--with`).
+- `uv run python -m unittest integrations/sbonus-server/shop/test_shop_cart_rules.py` — 18; `test_shop_promo_rules.py` — 24; `test_shop_push_send.py` — 6 (`send()` с подменёнными HTTP и базой).
 
 Подводные камни:
 - `npx cap sync android` в рабочей копии, где `node_modules` — ссылка, переписывает путь в `android/capacitor.settings.gradle` → после sync `git checkout -- android/capacitor.settings.gradle`.
 - `npm run typecheck` в такой рабочей копии — сначала `npx next typegen`, иначе старые ошибки `RouteContext` в чужих маршрутах.
-- Следующая задача — уведомления «Скидка»/«Новинка» из 1С по шаблонам: `docs/TZ_PUSH_PROMO_1C.md` (делает PC).
+- Рассылки «Скидка»/«Новинка» из 1С (сделано на PC 28.09.2026, ТЗ — `docs/TZ_PUSH_PROMO_1C.md`): 1С «Панель сайта» → вкладка «Уведомления» (`ПанельСайтаМодуль.bsl`, запросы — `ЗаказыСайтаСервер.bsl` `ТоварыДляУведомлений`/`ПроверитьУведомление`/`ОтправитьУведомление`/`ИсторияУведомлений`) → `webhook/1c/shop/promo/{candidates,preview,send,history}` в `shop_admin.py`. Правила без импортов приложения — `shop_promo_rules.py` (шаблоны, цены только из каталога, 10:00–20:00 по Бишкеку, заголовок ≤ 60, текст ≤ 180); база и фоновая отправка — `shop_promo.py`; миграция `011` (`shop_promo_consent`, `shop_promo_sends` с уникальным `send_day` — одна рассылка в день, `failed` день не занимает). Согласие «Новинки и скидки» отдельно от корзины: «Кабинет» → `/api/push/promo-consent` → `webhook/site/promo-consent`; `account-delete` стирает и его (`promoRemoved`). Не автоматически — только кнопкой владельца.
+- Проверка без боевого сервера (PC): временный PostgreSQL 17 из `C:\Program Files\PostgreSQL\17\bin` (`initdb -A trust`, порт 55432) + заглушка приложения SBonus вокруг настоящего `app/shop`; тестовую копию 1С можно на время направить на такой сервер (регистр `ИМ_НастройкиМагазина`, ключ «Основные», `АдресСервера`) и вернуть адрес обратно.
 <!-- autopilot:end -->

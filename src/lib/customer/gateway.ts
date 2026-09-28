@@ -229,6 +229,9 @@ export type CartSnapshot = { items: string[]; count: number; total: number }
 // Согласие на напоминания в тестовом режиме: сервера нет, помним сами, чтобы «Кабинет» работал.
 const mockCartConsent = ((globalThis as { __scMockCartConsent?: Map<string, boolean> }).__scMockCartConsent ??=
   new Map<string, boolean>())
+// То же для «Новинки и скидки» — отдельно: это другое согласие.
+const mockPromoConsent = ((globalThis as { __scMockPromoConsent?: Map<string, boolean> }).__scMockPromoConsent ??=
+  new Map<string, boolean>())
 
 /**
  * Сервер магазина на сбой базы или плохой номер отвечает 200 с `{ok:false, error}` —
@@ -273,6 +276,25 @@ export async function setCartConsent(phone: string, consent: boolean): Promise<v
     return
   }
   await callShop('/api/v1/webhook/site/cart-consent', { phone, consent })
+}
+
+/**
+ * Согласен ли покупатель на уведомления «Новинки и скидки». null — ещё не спрашивали.
+ * Это отдельное согласие: «да» напоминаниям о корзине сюда не считается.
+ */
+export async function promoConsent(phone: string): Promise<boolean | null> {
+  if (paymentMode() === 'mock') return mockPromoConsent.get(phone) ?? null
+  const answer = await callShop<{ ok?: unknown; consent?: unknown }>('/api/v1/webhook/site/promo-consent', { phone })
+  return typeof answer?.consent === 'boolean' ? answer.consent : null
+}
+
+/** Записать ответ покупателя: да — сообщать о новинках и скидках, нет — не сообщать. */
+export async function setPromoConsent(phone: string, consent: boolean): Promise<void> {
+  if (paymentMode() === 'mock') {
+    mockPromoConsent.set(phone, consent)
+    return
+  }
+  await callShop('/api/v1/webhook/site/promo-consent', { phone, consent })
 }
 
 /** Отметка о посещении страницы — для счётчика людей в «Панели сайта». */

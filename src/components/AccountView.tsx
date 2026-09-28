@@ -61,6 +61,111 @@ function formatDate(value: string | null, lang: string) {
   return new Date(value).toLocaleDateString(lang === 'ky' ? 'ky-KG' : 'ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
+/**
+ * Согласие на рекламные уведомления по адресу сайта (`/api/push/consent` или `/api/push/promo-consent`).
+ * consent: undefined — пункт не показываем (грузим или сервер молчит), null — ещё не спрашивали,
+ * true/false — ответ покупателя. Без номера (не вошёл или уведомления не разрешены) сервер не спрашиваем.
+ */
+function usePushConsent(url: string, phone: string | undefined) {
+  const [consent, setConsent] = useState<boolean | null | undefined>(undefined)
+  const [busy, setBusy] = useState(false)
+  const [failed, setFailed] = useState(false)
+
+  useEffect(() => {
+    if (!phone) return
+    let alive = true
+    fetch(url, { cache: 'no-store' })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (alive && data?.ok) setConsent(typeof data.consent === 'boolean' ? data.consent : null)
+      })
+      .catch(() => undefined)
+    return () => {
+      alive = false
+    }
+  }, [url, phone])
+
+  /** Ответ покупателя — на сервер. Не сохранилось — остаёмся на прежнем и говорим об этом. */
+  const save = useCallback(async (value: boolean) => {
+    setBusy(true)
+    setFailed(false)
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ consent: value }),
+    }).catch(() => null)
+    setBusy(false)
+    if (response?.ok) setConsent(value)
+    else setFailed(true)
+  }, [url])
+
+  return { consent, busy, failed, save }
+}
+
+/**
+ * Один пункт карточки согласий: сначала вопрос с ответами «Да»/«Нет»,
+ * после ответа — переключатель, чтобы передумать в любой момент.
+ * id — у каждого пункта свой: по нему переключатель находит свой заголовок.
+ */
+function ConsentItem({
+  id,
+  state,
+  ask,
+  title,
+  text,
+  yes,
+}: {
+  id: string
+  state: ReturnType<typeof usePushConsent>
+  ask: string
+  title: string
+  text: string
+  yes: string
+}) {
+  const a = useI18n().t.account
+  const { consent, busy, failed, save } = state
+  return (
+    <div className="account-remind__item" aria-busy={busy}>
+      {consent === null ? (
+        <>
+          <h2>{ask}</h2>
+          <p className="account-remind__note">{text}</p>
+          <div className="account-actions">
+            <button type="button" className="btn btn--primary" disabled={busy} onClick={() => save(true)}>
+              {yes}
+            </button>
+            <button type="button" className="btn btn--ghost" disabled={busy} onClick={() => save(false)}>
+              {a.remindNo}
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="account-remind__row">
+            <div>
+              <h2 id={id}>{title}</h2>
+              <p className={`account-remind__state ${consent ? 'is-on' : 'is-off'}`}>
+                {consent ? a.remindOn : a.remindOff}
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={consent === true}
+              aria-labelledby={id}
+              className="account-switch"
+              disabled={busy}
+              onClick={() => save(!consent)}
+            />
+          </div>
+          <p className="account-remind__note">{text}</p>
+        </>
+      )}
+      {failed && <p className="field__error" role="alert">{a.remindFailed}</p>}
+    </div>
+  )
+}
+
 export function AccountView() {
   const { t, lang } = useI18n()
   const a = t.account
@@ -81,42 +186,12 @@ export function AccountView() {
   const [lockCheck, setLockCheck] = useState<boolean | null>(null)
   // Удаление учётной записи: 'idle' → 'confirm' → 'busy' → 'failed'.
   const [wipe, setWipe] = useState<'idle' | 'confirm' | 'busy' | 'failed'>('idle')
-  // Напоминания о корзине: undefined — карточку не показываем (грузим или сервер молчит),
-  // null — ещё не спрашивали, true/false — ответ покупателя.
-  const [remind, setRemind] = useState<boolean | null | undefined>(undefined)
-  const [remindBusy, setRemindBusy] = useState(false)
-  const [remindFailed, setRemindFailed] = useState(false)
-  const phone = customer?.phone
-
-  // Спрашиваем про напоминания, только когда уведомления уже разрешены:
-  // иначе «да» ничего бы не значило — телефон их не покажет.
-  useEffect(() => {
-    if (!phone || push !== 'granted') return
-    let alive = true
-    fetch('/api/push/consent', { cache: 'no-store' })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data) => {
-        if (alive && data?.ok) setRemind(typeof data.consent === 'boolean' ? data.consent : null)
-      })
-      .catch(() => undefined)
-    return () => {
-      alive = false
-    }
-  }, [phone, push])
-
-  /** Ответ покупателя — на сервер. Не сохранилось — остаёмся на прежнем и говорим об этом. */
-  const saveRemind = useCallback(async (consent: boolean) => {
-    setRemindBusy(true)
-    setRemindFailed(false)
-    const response = await fetch('/api/push/consent', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ consent }),
-    }).catch(() => null)
-    setRemindBusy(false)
-    if (response?.ok) setRemind(consent)
-    else setRemindFailed(true)
-  }, [])
+  // Спрашиваем про напоминания о корзине и «Новинки и скидки», только когда уведомления
+  // уже разрешены: иначе «да» ничего бы не значило — телефон их не покажет.
+  // Это два разных согласия: «да» одному не включает другое.
+  const consentPhone = push === 'granted' ? customer?.phone : undefined
+  const remind = usePushConsent('/api/push/consent', consentPhone)
+  const promo = usePushConsent('/api/push/promo-consent', consentPhone)
 
   /** Перечитать состояние быстрого входа: умеет ли телефон и есть ли ключ. */
   const refreshLock = useCallback(async () => {
@@ -320,46 +395,30 @@ export function AccountView() {
         )}
       </section>
 
-      {/* Напоминания о корзине — реклама, поэтому только с явного согласия (Apple 4.5.4):
-          сначала вопрос, после ответа — переключатель, чтобы передумать в любой момент. */}
-      {push === 'granted' && remind !== undefined && (
-        <section className="account-remind" aria-busy={remindBusy}>
-          {remind === null ? (
-            <>
-              <h2>{a.remindAsk}</h2>
-              <p className="account-remind__note">{a.remindText}</p>
-              <div className="account-actions">
-                <button type="button" className="btn btn--primary" disabled={remindBusy} onClick={() => saveRemind(true)}>
-                  {a.remindYes}
-                </button>
-                <button type="button" className="btn btn--ghost" disabled={remindBusy} onClick={() => saveRemind(false)}>
-                  {a.remindNo}
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="account-remind__row">
-                <div>
-                  <h2 id="account-remind-title">{a.remindTitle}</h2>
-                  <p className={`account-remind__state ${remind ? 'is-on' : 'is-off'}`}>
-                    {remind ? a.remindOn : a.remindOff}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={remind}
-                  aria-labelledby="account-remind-title"
-                  className="account-switch"
-                  disabled={remindBusy}
-                  onClick={() => saveRemind(!remind)}
-                />
-              </div>
-              <p className="account-remind__note">{a.remindText}</p>
-            </>
+      {/* Напоминания о корзине и «Новинки и скидки» — реклама, поэтому только с явного согласия
+          (Apple 4.5.4). Два пункта в одной карточке, у каждого свой вопрос и свой переключатель. */}
+      {push === 'granted' && (remind.consent !== undefined || promo.consent !== undefined) && (
+        <section className="account-remind">
+          {remind.consent !== undefined && (
+            <ConsentItem
+              id="account-remind-title"
+              state={remind}
+              ask={a.remindAsk}
+              title={a.remindTitle}
+              text={a.remindText}
+              yes={a.remindYes}
+            />
           )}
-          {remindFailed && <p className="field__error" role="alert">{a.remindFailed}</p>}
+          {promo.consent !== undefined && (
+            <ConsentItem
+              id="account-promo-title"
+              state={promo}
+              ask={a.promoAsk}
+              title={a.promoTitle}
+              text={a.promoText}
+              yes={a.promoYes}
+            />
+          )}
         </section>
       )}
 

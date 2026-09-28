@@ -119,7 +119,9 @@ def build_message(token: str, title: str, body: str, data: dict | None) -> dict:
 
 # Ответы FCM, после которых адрес мёртв: приложение удалили, адрес от другого
 # проекта Firebase, адреса не существует. Такой адрес стираем, чтобы не слать зря.
-_DEAD_CODES = {"UNREGISTERED", "SENDER_ID_MISMATCH"}
+_DEAD_CODES = {"UNREGISTERED", "SENDER_ID_MISMATCH", "NOT_FOUND"}
+# «Адреса нет» FCM пишет и в error.status, не только в коде FCM.
+_GONE = {"UNREGISTERED", "NOT_FOUND"}
 
 
 def _error_info(body: dict | str) -> tuple[str, str, str, list[str]]:
@@ -160,7 +162,9 @@ def classify(status: int, body: dict | str) -> str:
     if status == 200:
         return "ok"
     name, code, message, fields = _error_info(body)
-    if code in _DEAD_CODES or name == "NOT_FOUND" or status == 404:
+    # Стираем только по словам самого FCM в теле ответа. Голый 404 без JSON
+    # (страница прокси, не тот путь) — не про адрес: это fail, адрес живёт.
+    if code in _DEAD_CODES or name in _GONE:
         return "drop"
     if "INVALID_ARGUMENT" in (name, code) and (
         "message.token" in fields or "registration token" in message.lower()

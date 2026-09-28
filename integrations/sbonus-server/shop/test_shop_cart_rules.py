@@ -11,6 +11,7 @@ import importlib.util
 import pathlib
 import unittest
 from datetime import datetime, timezone
+from unittest import mock
 
 _path = pathlib.Path(__file__).with_name("shop_cart_rules.py")
 _spec = importlib.util.spec_from_file_location("shop_cart_rules", _path)
@@ -71,6 +72,57 @@ class ScheduleTest(unittest.TestCase):
         row = cart(sent=3, last_sent_at=datetime(2026, 10, 1, 6, 0))
         self.assertFalse(rules.due(row, utc(2026, 10, 20, 6, 0)))
         self.assertFalse(rules.due(row, utc(2027, 3, 1, 6, 0)))
+
+
+def schedule(test: unittest.TestCase, days=None, limit=None):
+    """Другая схема или предел — только на время теста, потом всё как было."""
+    for name, value in (("SCHEDULE_DAYS", days), ("MAX_REMINDERS", limit)):
+        if value is not None:
+            patcher = mock.patch.object(rules, name, value)
+            patcher.start()
+            test.addCleanup(patcher.stop)
+
+
+class RepeatUntilPurchaseTest(unittest.TestCase):
+    """Вариант 2 — «...» в конце: последнюю паузу повторяем, пока человек не купит."""
+
+    def test_every_three_days(self):
+        schedule(self, days=(3, ...))
+        self.assertEqual([rules.pause_days(sent) for sent in range(6)], [3, 3, 3, 3, 3, 3])
+
+    def test_first_pauses_then_the_last_one_repeats(self):
+        schedule(self, days=(1, 3, ...))
+        self.assertEqual([rules.pause_days(sent) for sent in range(6)], [1, 3, 3, 3, 3, 3])
+
+    def test_fifth_reminder_three_days_after_the_fourth(self):
+        # Без «...» после трёх напоминаний была бы тишина, а тут — ещё через 3 дня.
+        schedule(self, days=(3, ...))
+        row = cart(sent=4, last_sent_at=datetime(2026, 10, 2, 6, 0))
+        self.assertFalse(rules.due(row, utc(2026, 10, 5, 5, 59)))
+        self.assertTrue(rules.due(row, utc(2026, 10, 5, 6, 0)))
+
+
+class MaxRemindersTest(unittest.TestCase):
+    """Даже «до покупки» больше MAX_REMINDERS напоминаний на одну корзину не шлём."""
+
+    def test_repeat_stops_at_the_limit(self):
+        schedule(self, days=(3, ...))
+        self.assertEqual(rules.pause_days(rules.MAX_REMINDERS - 1), 3)
+        self.assertIsNone(rules.pause_days(rules.MAX_REMINDERS))
+        self.assertIsNone(rules.pause_days(rules.MAX_REMINDERS + 5))
+
+    def test_last_allowed_goes_then_silence(self):
+        schedule(self, days=(3, ...), limit=4)
+        last = cart(sent=3, last_sent_at=datetime(2026, 9, 29, 6, 0))
+        self.assertTrue(rules.due(last, utc(2026, 10, 2, 6, 0)))
+        over = cart(sent=4, last_sent_at=datetime(2026, 10, 2, 6, 0))
+        self.assertFalse(rules.due(over, utc(2026, 10, 5, 6, 0)))
+        self.assertFalse(rules.due(over, utc(2027, 3, 1, 6, 0)))
+
+    def test_limit_also_cuts_a_fixed_schedule(self):
+        # Предел меньше длины расписания — третьего (через 7 дней) уже не будет.
+        schedule(self, limit=2)
+        self.assertEqual([rules.pause_days(sent) for sent in range(4)], [1, 3, None, None])
 
 
 class QuietHoursTest(unittest.TestCase):

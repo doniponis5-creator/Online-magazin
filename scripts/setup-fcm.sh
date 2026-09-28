@@ -96,6 +96,9 @@ gs_path, sa_path, package = sys.argv[1:4]
 
 
 def load(path):
+    # utf-8-sig — это строгий UTF-8, только BOM в начале пропускается. Сервер
+    # (shop_push_fcm.load_account) BOM не принимает, поэтому ключ на шаге 3
+    # уходит уже без BOM: «OK» здесь ⇔ сервер этот ключ прочтёт.
     try:
         with open(path, encoding="utf-8-sig") as f:
             data = json.load(f)
@@ -176,7 +179,17 @@ if [ "$CHECK" = 1 ]; then
 fi
 
 # 3. Ключ — на сервер. Идёт в base64 через stdin: в списке процессов его не видно.
-KEY_B64=$(base64 < "$SA" | tr -d '\n')
+# BOM (его дописывают некоторые редакторы) отрезаем: сервер читает строгий UTF-8
+# и с BOM ключ бы не прочёл — FCMOK был бы, а Android молчал.
+KEY_B64=$(python3 -c '
+import base64, codecs, sys
+with open(sys.argv[1], "rb") as f:
+    raw = f.read()
+if raw.startswith(codecs.BOM_UTF8):
+    raw = raw[len(codecs.BOM_UTF8):]
+print(base64.b64encode(raw).decode("ascii"))
+' "$SA")
+[ -n "$KEY_B64" ] || { echo "Не удалось прочитать ключ «$SA». $NOTHING"; exit 1; }
 TMP=$(mktemp)
 tr -d '\r' < "$REMOTE" > "$TMP"
 

@@ -202,6 +202,34 @@ class ClassifyTest(unittest.TestCase):
         body = json.dumps(_error(404, "NOT_FOUND", "Requested entity was not found.", _fcm_code("UNREGISTERED")))
         self.assertEqual(fcm.classify(404, body), "drop")
 
+    def test_404_without_fcm_answer_keeps_the_address(self):
+        # 404 от прокси или не тот путь — телефон тут ни при чём, стирать нельзя.
+        cases = {
+            "страница прокси": "<html><body>404 Not Found</body></html>",
+            "простой текст": "Not Found",
+            "пустой JSON": {},
+            "пустой JSON текстом": "{}",
+            "пустой ответ": "",
+            "ошибка без статуса и кода": {"error": {"code": 404, "message": "Not Found"}},
+        }
+        for name, body in cases.items():
+            with self.subTest(name):
+                self.assertEqual(fcm.classify(404, body), "fail")
+
+    def test_address_is_dropped_only_by_fcm_words(self):
+        cases = {
+            "404 NOT_FOUND в статусе": (404, _error(404, "NOT_FOUND", "Requested entity was not found.")),
+            "404 NOT_FOUND в коде FCM": (404, {"error": {"code": 404, "details": [_fcm_code("NOT_FOUND")]}}),
+            "404 UNREGISTERED в коде FCM": (404, {"error": {"code": 404, "details": [_fcm_code("UNREGISTERED")]}}),
+            "400 UNREGISTERED в коде FCM": (400, _error(400, "INVALID_ARGUMENT", "Invalid value", _fcm_code("UNREGISTERED"))),
+            "UNREGISTERED после другой подробности": (404, _error(404, "NOT_FOUND", "Requested entity was not found.",
+                                                                 {"@type": "type.googleapis.com/google.rpc.DebugInfo"},
+                                                                 _fcm_code("UNREGISTERED"))),
+        }
+        for name, (status, body) in cases.items():
+            with self.subTest(name):
+                self.assertEqual(fcm.classify(status, body), "drop")
+
 
 if __name__ == "__main__":
     unittest.main()

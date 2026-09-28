@@ -25,8 +25,8 @@ SRC="$(cd "$(dirname "$0")" && pwd)"
 API=sbonus_api
 DB=sbonus_db
 TS=$(date +%Y%m%d_%H%M%S)
-FILES="__init__.py shop_models.py shop_router.py shop_catalog.py shop_telegram.py shop_customers.py shop_admin.py shop_push.py shop_push_fcm.py shop_cart_rules.py shop_cart_remind.py shop_whatsapp.py shop_installments_calc.py shop_installments.py shop_stock.py shop_wa_bot.py"
-MIGRATIONS="001_shop_orders_migration.sql 002_shop_catalog_migration.sql 003_shop_bonus_migration.sql 004_shop_stats_migration.sql 005_shop_push_migration.sql 006_shop_installments_migration.sql 007_shop_notes_migration.sql 008_shop_chat_extra_migration.sql 009_shop_push_token_len_migration.sql 010_shop_cart_reminders_migration.sql"
+FILES="__init__.py shop_models.py shop_router.py shop_catalog.py shop_telegram.py shop_customers.py shop_admin.py shop_push.py shop_push_fcm.py shop_cart_rules.py shop_cart_remind.py shop_promo_rules.py shop_promo.py shop_whatsapp.py shop_installments_calc.py shop_installments.py shop_stock.py shop_wa_bot.py"
+MIGRATIONS="001_shop_orders_migration.sql 002_shop_catalog_migration.sql 003_shop_bonus_migration.sql 004_shop_stats_migration.sql 005_shop_push_migration.sql 006_shop_installments_migration.sql 007_shop_notes_migration.sql 008_shop_chat_extra_migration.sql 009_shop_push_token_len_migration.sql 010_shop_cart_reminders_migration.sql 011_shop_promo_migration.sql"
 
 echo "=== Деплой: интернет-магазин (заказы + каталог + вход и бонусы) ==="
 
@@ -66,10 +66,16 @@ import app.shop_precheck.shop_installments as inst
 import app.shop_precheck.shop_stock as stock
 import app.shop_precheck.shop_wa_bot as wabot
 import app.shop_precheck.shop_push as push
-assert push.fcm.classify(200, {}) == 'ok' and push.fcm.load_account('') is None
+import app.shop_precheck.shop_push_fcm as fcm
+assert callable(push.send) and fcm.classify(200, {}) == 'ok' and fcm.load_account('') is None
+import app.shop_precheck.shop_cart_rules as cart_rules
 import app.shop_precheck.shop_cart_remind as cart
-assert cart.rules.reminder_text(['A'], 1)[0] and callable(cart.run_once) and callable(cart.main)
+assert cart_rules.reminder_text(['A'], 1)[0] and callable(cart.run_once) and callable(cart.main)
 assert cart.clean_phone('+996555000000') and cart.clean_snapshot([], 0, 0) == ([], 0, 0)
+import app.shop_precheck.shop_promo_rules as promo_rules
+import app.shop_precheck.shop_promo as promo
+assert promo_rules.template('new', {'name': 'A'})[0] == 'Новинка: A' and callable(promo.deliver)
+assert {'/promo/candidates', '/promo/preview', '/promo/send', '/promo/history'} <= {x.path.replace('/webhook/1c/shop', '') for x in ad.router_1c_admin.routes}
 assert callable(wabot.poll_once) and callable(wabot.send_digest)
 assert stock.shortages([{'oneCId': 'a', 'qty': 1, 'name': 'A'}], [{'id': 'a', 'stock': 1, 'availability': 'По остатку'}], {'a': 1}) == ['A']
 assert inst.parse_phones('0558311031/0558882507') == ['+996558311031', '+996558882507']
@@ -294,6 +300,8 @@ docker cp "$SRC/010_shop_cart_reminders_migration.sql" "$DB:/tmp/010_shop_cart_r
 docker exec "$DB" psql -U sbonus -d sbonus_db -v ON_ERROR_STOP=1 -f /tmp/010_shop_cart_reminders_migration.sql \
     && echo "✓ Таблица shop_cart_reminders (напоминания о корзине)" \
     || { echo "❌ Миграция напоминаний о корзине не прошла — стоп (код не пересобран)"; exit 1; }
+docker cp "$SRC/011_shop_promo_migration.sql" "$DB:/tmp/011_shop_promo_migration.sql"
+docker exec "$DB" psql -U sbonus -d sbonus_db -v ON_ERROR_STOP=1 -f /tmp/011_shop_promo_migration.sql     && echo "✓ Таблицы shop_promo_consent и shop_promo_sends (рассылки «Скидка» / «Новинка» из 1С)"     || { echo "❌ Миграция рассылок не прошла — стоп (код не пересобран)"; exit 1; }
 
 # ── 6. Секрет сайта в .env (создаётся один раз) ──────────────────────────────
 if grep -q '^SHOP_SITE_SECRET=' "$ENV_FILE" 2>/dev/null; then
@@ -385,6 +393,13 @@ curl -s -o /dev/null -w "  HTTP %{http_code}\n" https://api.smartcentr.store/api
 echo "--- корзина и согласие на напоминания без подписи (ожидается 401 и 401) ---"
 curl -s -o /dev/null -w "  HTTP %{http_code}\n" -X POST https://api.smartcentr.store/api/v1/webhook/site/push-cart
 curl -s -o /dev/null -w "  HTTP %{http_code}\n" -X POST https://api.smartcentr.store/api/v1/webhook/site/cart-consent
+echo "--- рассылки: согласие сайта и 1С без подписи (ожидается 401, 401, 401) ---"
+curl -s -o /dev/null -w "  HTTP %{http_code}
+" -X POST https://api.smartcentr.store/api/v1/webhook/site/promo-consent
+curl -s -o /dev/null -w "  HTTP %{http_code}
+" https://api.smartcentr.store/api/v1/webhook/1c/shop/promo/candidates
+curl -s -o /dev/null -w "  HTTP %{http_code}
+" -X POST https://api.smartcentr.store/api/v1/webhook/1c/shop/promo/send
 echo "--- знания для чата без подписи (ожидается 401) ---"
 curl -s -o /dev/null -w "  HTTP %{http_code}\n" https://api.smartcentr.store/api/v1/webhook/site/notes
 echo "--- ошибки запуска ---"
