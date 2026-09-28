@@ -70,7 +70,10 @@ export async function callServer<T>(path: string, init: { method: 'GET' | 'POST'
   })
   if (!response.ok) {
     const text = await response.text().catch(() => '')
-    throw new Error(`Сервер заказов ответил ${response.status}: ${text.slice(0, 300)}`)
+    // status — чтобы вызывающий отличил «заказ уже оплачен» (409) от сбоя
+    throw Object.assign(new Error(`Сервер заказов ответил ${response.status}: ${text.slice(0, 300)}`), {
+      status: response.status,
+    })
   }
   return (await response.json()) as T
 }
@@ -128,6 +131,34 @@ export async function getOrder(orderId: string, token: string): Promise<PublicOr
     )
   } catch {
     return null
+  }
+}
+
+/**
+ * Покупатель отменяет неоплаченный заказ. paid — заказ уже оплачен или в работе
+ * (отменить можно только через магазин: там возврат денег); failed — сервер не
+ * ответил или не знает такого заказа.
+ */
+export type CancelResult = { ok: true; order: PublicOrder } | { ok: false; reason: 'paid' | 'failed' }
+
+export async function cancelOrder(orderId: string, token: string): Promise<CancelResult> {
+  if (paymentMode() === 'mock') {
+    const entry = mockOrders.get(orderId)
+    if (!entry || entry.token !== token) return { ok: false, reason: 'failed' }
+    if (entry.status === 'awaiting_payment') entry.status = 'cancelled'
+    else if (entry.status !== 'cancelled') return { ok: false, reason: 'paid' }
+    return { ok: true, order: toPublic(orderId, entry, null) }
+  }
+  try {
+    const order = await callServer<PublicOrder>(`/api/v1/webhook/site/orders/${encodeURIComponent(orderId)}/cancel`, {
+      method: 'POST',
+      body: { token },
+    })
+    return { ok: true, order }
+  } catch (error) {
+    if ((error as { status?: number }).status === 409) return { ok: false, reason: 'paid' }
+    console.error('[orders] отмена не прошла', orderId, error)
+    return { ok: false, reason: 'failed' }
   }
 }
 

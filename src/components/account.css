@@ -102,6 +102,9 @@
 .checkout-bonus__row label { display: inline-flex; align-items: center; gap: 8px; font-weight: 650; cursor: pointer; }
 .checkout-bonus__row input[type='number'] { width: 130px; }
 .order-row--bonus strong { color: var(--color-success); }
+/* «Запомнить адрес» — во всю ширину под двумя полями адреса */
+.checkout-remember { grid-column: 1 / -1; display: inline-flex; align-items: center; gap: 10px; min-height: 44px; margin-top: -4px; font-size: 14px; font-weight: 600; color: var(--color-ink-soft); cursor: pointer; }
+.checkout-remember input { width: 18px; height: 18px; accent-color: var(--color-primary); flex: none; }
 
 /* ── Быстрый вход (Face ID) ─────────────────────────────────────────────
    Виден только внутри приложения для телефона: в браузере такого нет.
@@ -330,4 +333,86 @@
   .account-switch::after {
     transition: none;
   }
+}
+
+/* ── Кабинет: меню и разделы (28.09.2026) ─────────────────────────────────
+   Владелец: «всё в одном месте, по порядку». Слева — карточка бонусов и меню
+   (иконки в лимонных кружках, как на карточке SBonus на главной), справа —
+   открытый раздел. Телефон: сначала меню, нажали — раздел на месте меню
+   с «← Кабинет» (раздел в адресе #orders, «Назад» телефона тоже работает). */
+.cab-wrap { display: grid; gap: 16px; padding-top: 24px; }
+.cab-wrap > .account-remind { margin-top: 0; }
+.cab-wrap > .hello { max-width: 560px; margin-top: 0; }
+.cab { display: grid; grid-template-columns: minmax(300px, 360px) minmax(0, 1fr); gap: 28px; align-items: start; scroll-margin-top: 88px; }
+.cab__side { display: grid; gap: 16px; min-width: 0; }
+.cab__main { min-width: 0; }
+
+.cab-profile { padding: 24px; border-radius: 16px; background: var(--color-lime-soft, #f9fbdc); }
+.cab-profile__name { margin: 18px 0 2px; font-size: 24px; line-height: 1.2; letter-spacing: -0.02em; overflow-wrap: anywhere; }
+.cab-profile__phone { margin: 0; color: var(--color-ink-soft); font-weight: 600; font-variant-numeric: tabular-nums; }
+.cab-profile .account-balance { margin: 18px 0 6px; }
+.cab-profile__tier { margin: 0; color: var(--color-ink-soft); font-size: 14px; line-height: 1.5; }
+.cab-profile__card { margin-top: 16px; }
+
+.cab-menu { padding: 6px; border: 1px solid var(--color-border); border-radius: 18px; background: #fff; }
+.cab-menu ul { margin: 0; padding: 0; list-style: none; }
+.cab-menu li + li { border-top: 1px solid var(--color-border); }
+.cab-menu__item { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; min-height: 66px; padding: 10px 12px; border: 0; border-radius: 12px; background: none; color: var(--color-ink); font: inherit; text-align: left; cursor: pointer; transition: background-color 160ms; }
+.cab-menu__item:hover { background: var(--color-surface); }
+.cab-menu__item:focus-visible { outline-offset: -3px; }
+.cab-menu__icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--color-lemon); color: var(--color-ink); }
+.cab-menu__text { display: grid; gap: 2px; min-width: 0; }
+.cab-menu__text strong { font-size: 15px; font-weight: 750; line-height: 1.3; }
+.cab-menu__text small { overflow: hidden; color: var(--color-muted); font-size: 13px; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
+.cab-menu__go { color: var(--color-border-strong); transition: color 160ms, transform 160ms var(--ease-out); }
+.cab-menu__item:hover .cab-menu__go { color: var(--color-ink); transform: translateX(2px); }
+.cab-menu__logout { display: block; width: 100%; min-height: 48px; margin-top: 2px; padding: 12px; border: 0; border-top: 1px solid var(--color-border); border-radius: 0 0 12px 12px; background: none; color: var(--color-ink-soft); font: inherit; font-weight: 650; cursor: pointer; }
+.cab-menu__logout:hover { color: var(--color-danger); }
+
+.cab__back { display: none; }
+.cab-section { padding: 24px; border: 1px solid var(--color-border); border-radius: 18px; background: #fff; }
+.cab-section__title { margin: 0 0 16px; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+.cab-section__lead { max-width: 60ch; margin: -6px 0 18px; color: var(--color-ink-soft); line-height: 1.6; }
+.cab-section__actions { margin-top: 0; }
+.cab-section__sub { margin: 28px 0 12px; font-size: 17px; font-weight: 800; letter-spacing: -0.2px; }
+.cab-section__empty { margin: 0; color: var(--color-ink-soft); }
+/* Настройки — свои карточки (уведомления, вход, удаление): внешняя рамка лишняя */
+.cab-section:has(> .account-wipe) { padding: 0; border: 0; background: none; }
+.cab-section:has(> .account-wipe) > .cab-section__title { margin-bottom: 0; }
+
+/* Статус заказа в списке — маленькой плашкой тех же цветов, что на странице заказа */
+.cab-status { justify-self: start; margin-top: 4px; padding: 2px 9px; border-radius: 999px; background: var(--color-surface); color: var(--color-ink-soft); font-size: 12px; font-style: normal; font-weight: 700; line-height: 1.5; }
+.cab-status--awaiting_payment { background: var(--color-lemon-soft, #f9fbdc); color: #7a6a00; }
+.cab-status--paid, .cab-status--in_1c { background: #e7f6ee; color: var(--color-success); }
+.cab-status--cancelled, .cab-status--failed { background: #fdecea; color: var(--color-danger); }
+
+.cab-address { display: grid; gap: 14px; max-width: 540px; }
+.cab-address__actions { margin-top: 4px; }
+.cab-address__status { min-height: 22px; margin: 0; }
+.cab-address__ok { display: inline-flex; align-items: center; gap: 6px; color: var(--color-success); font-weight: 700; }
+
+@media (min-width: 900px) {
+  .cab-menu__item[aria-current='true'] { background: var(--color-surface); }
+  .cab-menu__item[aria-current='true'] .cab-menu__go { color: var(--color-ink); }
+}
+
+@media (max-width: 899px) {
+  .cab { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .cab--open .cab__side { display: none; }
+  .cab:not(.cab--open) .cab__main { display: none; }
+  .cab__back { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; margin: -6px 0 8px -6px; padding: 0 8px 0 2px; border: 0; background: none; color: var(--color-ink); font: inherit; font-weight: 750; cursor: pointer; }
+  .cab-section { padding: 20px; }
+  /* Телефон: карточка бонусов ниже — меню видно на первом экране, без прокрутки */
+  .cab-profile { padding: 18px 20px; }
+  .cab-profile__name { margin-top: 14px; font-size: 20px; }
+  .cab-profile .account-balance { margin: 12px 0 4px; gap: 0; }
+  .cab-profile .account-balance__label { font-size: 13px; }
+  .cab-profile .account-balance__value { font-size: 32px; }
+  .cab-profile__tier { font-size: 13px; }
+  .cab-menu__item { min-height: 62px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cab-menu__item, .cab-menu__go { transition: none; }
+  .cab-menu__item:hover .cab-menu__go { transform: none; }
 }

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { useCustomer } from '@/components/AccountView'
 import { CustomerLogin } from '@/components/CustomerLogin'
 import { Turnstile, useTurnstileKey } from '@/components/Turnstile'
@@ -12,6 +12,7 @@ import { unitPrice } from '@/lib/cart/logic'
 import { getProduct, type Product } from '@/data/products'
 import { paymentMethods } from '@/data/payment-methods'
 import { variantLabel } from '@/lib/cart/sku'
+import { cleanAddress, LOCAL_ADDRESS_KEY, type SavedAddress } from '@/lib/customer/address-rules'
 import { bonusRule } from '@/lib/customer/bonusRule'
 import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
@@ -31,6 +32,8 @@ export default function CheckoutPage() {
   const [region, setRegion] = useState('')
   const [address, setAddress] = useState('')
   const [comment, setComment] = useState('')
+  // «Запомнить адрес»: вошедшему — в кабинет (виден с любого устройства), гостю — в этот браузер
+  const [remember, setRemember] = useState(true)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [sending, setSending] = useState(false)
 
@@ -75,6 +78,51 @@ export default function CheckoutPage() {
     if (customer && !name) setName(customer.name)
     if (customer) setPhone(customer.phone)
   }, [customer]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Постоянный адрес подставляем один раз и только в пустые поля: набранное не трогаем.
+  const prefilled = useRef(false)
+  useEffect(() => {
+    if (customer === undefined || prefilled.current) return
+    prefilled.current = true
+    const fill = (saved: SavedAddress | null) => {
+      if (!saved) return
+      setRegion((v) => v || saved.city)
+      setAddress((v) => v || saved.address)
+    }
+    if (customer === null) {
+      try {
+        fill(cleanAddress(JSON.parse(localStorage.getItem(LOCAL_ADDRESS_KEY) ?? 'null')))
+      } catch {
+        // приватный режим — просто без подсказки
+      }
+      return
+    }
+    fetch('/api/customer/address', { cache: 'no-store' })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => fill(data?.ok ? cleanAddress(data.address) : null))
+      .catch(() => undefined)
+  }, [customer])
+
+  /** Запомнить адрес доставки. Заказ уже создан — ждём не дольше полутора секунд. */
+  const rememberAddress = async () => {
+    const saved = cleanAddress({ city: region, address })
+    if (delivery !== 'delivery' || !remember || !saved) return
+    if (!customer) {
+      try {
+        localStorage.setItem(LOCAL_ADDRESS_KEY, JSON.stringify(saved))
+      } catch {
+        // приватный режим
+      }
+      return
+    }
+    const put = fetch('/api/customer/address', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(saved),
+      keepalive: true,
+    }).catch(() => null)
+    await Promise.race([put, new Promise((resolve) => setTimeout(resolve, 1500))])
+  }
 
   if (!cart.hydrated) {
     return (
@@ -141,7 +189,8 @@ export default function CheckoutPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           customer: { name, phone },
-          delivery: { method: delivery, city: region, address },
+          // Самовывоз — без адреса: подставленный из кабинета адрес сотруднику тут не нужен
+          delivery: delivery === 'delivery' ? { method: delivery, city: region, address } : { method: delivery, city: '', address: '' },
           comment,
           lines: cart.lines,
           bonus,
@@ -165,6 +214,7 @@ export default function CheckoutPage() {
       } catch {
         // без localStorage покупатель вернётся к заказу по ссылке из WhatsApp
       }
+      await rememberAddress()
       cart.clear()
       const orderPage = `/${lang}/order/${encodeURIComponent(data.orderId)}?token=${data.token}`
       if (data.mock || !/^https?:\/\//.test(data.payUrl)) router.push(orderPage)
@@ -307,6 +357,10 @@ export default function CheckoutPage() {
                 />
                 {errors.address && <span id="co-address-error" className="field__error">{errors.address}</span>}
               </div>
+              <label className="checkout-remember">
+                <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+                {t.checkout.rememberAddress}
+              </label>
             </div>
           )}
 

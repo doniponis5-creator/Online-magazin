@@ -1,3 +1,4 @@
+import { removeAddress } from '@/lib/customer/addresses'
 import { deleteAccount } from '@/lib/customer/gateway'
 import { currentSession, endSession, errorResponse } from '../route-helpers'
 
@@ -7,9 +8,9 @@ import { currentSession, endSession, errorResponse } from '../route-helpers'
  * Apple требует, чтобы человек мог удалить учётную запись там же, где её
  * завёл, а не письмом в магазин (правило 5.1.1). Поэтому точка есть.
  *
- * Что происходит: сервер стирает адреса телефона для уведомлений, сайт
- * закрывает вход, а приложение стирает со своей стороны бонусную карту и ключ
- * быстрого входа. Бонусный счёт в SBonus и прошлые заказы остаются: счёт общий
+ * Что происходит: сайт стирает постоянный адрес доставки, сервер — адреса
+ * телефона для уведомлений, сайт закрывает вход, а приложение стирает со
+ * своей стороны бонусную карту и ключ быстрого входа. Бонусный счёт в SBonus и прошлые заказы остаются: счёт общий
  * с кассой магазина, а заказы обязан хранить бухгалтерский учёт. Приложение
  * говорит об этом человеку и даёт телефон магазина.
  *
@@ -19,6 +20,8 @@ import { currentSession, endSession, errorResponse } from '../route-helpers'
 export async function POST() {
   const session = await currentSession()
   if (!session) return Response.json({ ok: false, error: 'login' }, { status: 401 })
+  // Постоянный адрес лежит на самом сайте — стираем его здесь же, первым.
+  await removeAddress(session.phone).catch((error) => console.error('[customer] адрес не стёрся', error))
   try {
     const result = await deleteAccount(session.phone)
     await endSession()

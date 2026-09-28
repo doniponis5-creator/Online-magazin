@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useParams, useSearchParams } from 'next/navigation'
 import { Suspense, useCallback, useEffect, useState } from 'react'
+import { phones, whatsappHref } from '@/data/contacts'
 import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import type { PublicOrder } from '@/lib/orders/gateway'
@@ -21,6 +22,9 @@ function OrderView() {
   const [order, setOrder] = useState<PublicOrder | null>(null)
   const [missing, setMissing] = useState(false)
   const [paying, setPaying] = useState(false)
+  // Отмена: idle → ask (переспросили) → busy → idle; ошибка — отдельной строкой
+  const [cancel, setCancel] = useState<'idle' | 'ask' | 'busy'>('idle')
+  const [cancelError, setCancelError] = useState<'paid' | 'failed' | null>(null)
 
   useEffect(() => {
     if (token) return
@@ -59,6 +63,24 @@ function OrderView() {
     setPaying(false)
   }
 
+  /** Отменить неоплаченный заказ. Уже оплачен — сервер скажет «paid», покажем, куда писать. */
+  const cancelOrder = async () => {
+    setCancel('busy')
+    setCancelError(null)
+    const response = await fetch(`/api/orders/${encodeURIComponent(orderId)}/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    }).catch(() => null)
+    const data = await response?.json().catch(() => null)
+    if (data?.ok) setOrder(data.order)
+    else {
+      setCancelError(data?.error === 'paid' ? 'paid' : 'failed')
+      await load()
+    }
+    setCancel('idle')
+  }
+
   if (missing) {
     return (
       <div className="empty">
@@ -85,6 +107,12 @@ function OrderView() {
   const bonusSpend = order.bonusSpend ?? 0
   const payAmount = order.payAmount ?? order.total
   const isTest = orderId.startsWith('TEST-')
+  // «Хочу отменить заказ …» — в WhatsApp магазина, если сами отменить не можем
+  const writeUs = (
+    <a className="order-cancel__wa" href={whatsappHref(phones[0], t.order.cancelWa.replace('{id}', order.orderId))} target="_blank" rel="noopener noreferrer">
+      {t.order.writeUs}
+    </a>
+  )
 
   return (
     <div className="order-page">
@@ -101,7 +129,14 @@ function OrderView() {
       <div className="checkout-layout">
         <div className="form-card">
           {paid ? (
-            <p className="order-page__note">{t.order.paidNote}</p>
+            <>
+              <p className="order-page__note">{t.order.paidNote}</p>
+              <p className="order-cancel__help">
+                {t.order.paidHelp} {writeUs}
+              </p>
+            </>
+          ) : order.status === 'cancelled' ? (
+            <p className="order-page__note">{t.order.cancelledNote}</p>
           ) : order.status === 'awaiting_payment' ? (
             <>
               <p className="order-page__note">{t.order.waitNote}</p>
@@ -118,8 +153,35 @@ function OrderView() {
                 )}
               </div>
               {isTest && <p className="summary-card__note">{t.checkout.testMode}</p>}
+              {/* Отмена — тихой ссылкой под оплатой и только после второго «да»:
+                  главное действие на странице — оплатить, а не отменить. */}
+              <div className="order-cancel">
+                {cancel === 'idle' ? (
+                  <button type="button" className="link-btn order-cancel__start" onClick={() => setCancel('ask')}>
+                    {t.order.cancel}
+                  </button>
+                ) : (
+                  <div className="order-cancel__ask" role="group" aria-labelledby="order-cancel-title">
+                    <p className="order-cancel__title" id="order-cancel-title">{t.order.cancelAsk}</p>
+                    <p className="order-cancel__text">{t.order.cancelText}</p>
+                    <div className="order-page__actions">
+                      <button type="button" className="btn btn--danger" onClick={cancelOrder} disabled={cancel === 'busy'} aria-busy={cancel === 'busy'}>
+                        {cancel === 'busy' ? t.order.cancelling : t.order.cancelYes}
+                      </button>
+                      <button type="button" className="btn btn--ghost" onClick={() => setCancel('idle')} disabled={cancel === 'busy'}>
+                        {t.order.cancelNo}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </>
           ) : null}
+          {cancelError && (
+            <p className="field__error order-cancel__error" role="alert">
+              {cancelError === 'paid' ? t.order.cancelPaid : t.order.cancelFailed} {writeUs}
+            </p>
+          )}
           {order.number1c && (
             <p className="order-page__note">
               {t.order.number1c}: <strong>{order.number1c}</strong>
@@ -158,7 +220,7 @@ function OrderView() {
             </div>
           )}
           <div className="summary-card__total">
-            <span>{paid ? t.order.moneyPaid : t.checkout.total}</span>
+            <span>{paid ? t.order.moneyPaid : order.status === 'awaiting_payment' ? t.checkout.total : t.order.sum}</span>
             <span>{formatSom(payAmount)}</span>
           </div>
           {(order.bonusEarned ?? 0) > 0 && (

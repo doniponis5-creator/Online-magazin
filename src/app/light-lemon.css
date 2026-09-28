@@ -512,4 +512,15 @@ input, textarea { caret-color: var(--color-primary); }
 .order-status--cancelled, .order-status--failed { background: #fdecea; color: var(--color-danger); }
 .order-page__note { color: var(--color-ink-soft); font-size: 15px; line-height: 1.55; margin-bottom: 16px; }
 .order-page__actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+/* Отмена заказа: тихая ссылка под оплатой; после нажатия — вопрос с двумя ответами */
+.order-cancel { margin: -2px 0 16px; }
+.order-cancel__start { font-size: 14px; color: var(--color-muted); }
+.order-cancel__start:hover { color: var(--color-danger); }
+.order-cancel__ask { padding: 16px; border: 1px solid #f3cfcb; border-radius: 14px; background: #fff8f7; }
+.order-cancel__title { margin: 0; font-size: 16px; font-weight: 800; color: var(--color-ink); }
+.order-cancel__text { margin: 6px 0 14px; font-size: 14px; line-height: 1.55; color: var(--color-ink-soft); }
+.order-cancel__ask .order-page__actions { margin-bottom: 0; }
+.order-cancel__help { margin: -6px 0 16px; font-size: 14px; line-height: 1.55; color: var(--color-ink-soft); }
+.order-cancel__error { margin: 0 0 16px; line-height: 1.55; }
+.order-cancel__wa { font-weight: 700; color: var(--color-primary); text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
 .checkout-pay { white-space: normal; text-align: center; line-height: 1.3; min-height: 52px; }
