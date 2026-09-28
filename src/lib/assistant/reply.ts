@@ -17,7 +17,7 @@ import { askGemini, geminiConfigured, type ChatTurn } from './gemini'
 import { dayBudgetLeft } from './limits'
 import { toHit, type CustomerBrief, type ProductHit } from './knowledge'
 import { localAnswer, parseAnswer, type Audience } from './local'
-import { detectLang, type TalkLang } from './talk'
+import { detectLang, detectLangScored, type TalkLang } from './talk'
 import { systemInstruction } from './prompt'
 
 export type AssistantReply = {
@@ -75,12 +75,14 @@ export async function answer(
  * прошлым вопросом — уже легко. Человек не меняет язык посреди разговора.
  */
 export function talkLang(turns: ChatTurn[], lang: Lang) {
-  const said = turns
-    .filter((t) => t.role === 'user')
-    .slice(-2)
-    .map((t) => ownWords(t.text))
-    .join(' ')
-  return detectLang(said, lang)
+  const users = turns.filter((t) => t.role === 'user').map((t) => ownWords(t.text))
+  const recent = detectLangScored(users.slice(-2).join(' '), lang)
+  if (recent.strong) return recent.lang
+  // «Доставкасын айтып койгулачы Таласка» без единой приметы давало «русский»,
+  // хотя весь разговор шёл по-кыргызски, и покупатель писал «орусча түшүнбөйм».
+  // Неуверенно — берём язык всего разговора.
+  const whole = detectLangScored(users.slice(-6).join(' '), lang)
+  return whole.strong ? whole.lang : recent.lang
 }
 
 /**
@@ -144,5 +146,7 @@ export function houseStyle(text: string, talk: TalkLang): string {
   out = out.replace(/(?<![\p{L}])(рахбарият|ходим(?:лар)?(?:имиз)?)(нинг|га|ни|дан)?(?![\p{L}])/giu, (m, _w, end = '') =>
     keepCase(m, 'руководство' + (UZ_ENDING[end.toLowerCase()] ?? '')),
   )
+  // «наш сотрудник» → «наш руководство» — так не говорят.
+  out = out.replace(/(?<![\p{L}])(наш[аеиу]?|ваш[аеиу]?|бизнинг|биздин)\s+(руководств)/giu, (_m, _p, w: string) => w)
   return out
 }

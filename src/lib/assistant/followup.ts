@@ -13,7 +13,6 @@ import type { ChatTurn } from './gemini'
 import type { Lang } from '@/lib/i18n/config'
 import { lookupIn, salesCatalogNow } from './live'
 import { talkLang } from './reply'
-import { cleanName } from './talk'
 import { formatSom } from '@/lib/format'
 
 export type FollowUp = { text: string } | { skip: 'ordered' | 'no-product' | 'not-shown' }
@@ -29,8 +28,10 @@ export async function followUp(turns: ChatTurn[], shown: string[], lang: Lang, n
   if (!product) return { skip: 'no-product' }
 
   const talk = talkLang(turns, lang)
-  const clean = cleanName(name)
-  const who = clean ? `${clean}, ` : ''
+  // Без имени: в телефоне владельца оно записано как «Жанатим. Онам», «Ааааааа»,
+  // «Ойбек ака налог», а в профиле WhatsApp — «Dilshadakanvaliyeva». Обращаться так нельзя.
+  void name
+  const who = ''
   const item = `${product.nameRu} — ${formatSom(product.price)}`
   const say = {
     ru: `${who}вы смотрели ${item}. Ещё нужно? Если что — пишите, оформлю здесь: «беру».`,

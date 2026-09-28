@@ -415,7 +415,7 @@ def _notify_paid(order: ShopOrder) -> None:
                 f"Здравствуйте, {order.customer_name.split()[0]}!\n"
                 f"Оплата заказа {order.order_id} получена ✅\n💵 {money}\n\n"
                 f"{lines}\n{how}\n\n"
-                f"Сотрудник Smart Centr свяжется с вами."
+                f"С вами свяжется руководство Smart Centr."
             ),
             "Статус заказа",
             order_url,

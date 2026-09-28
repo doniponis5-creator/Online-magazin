@@ -319,3 +319,15 @@ describe('без ссылок в ответах', () => {
     expect(systemInstruction('ru', null, 'ru', products)).toMatch(/Никаких ссылок и адресов сайтов/)
   })
 })
+
+describe('аудит 26–28.09: формулировки', () => {
+  it('«наш руководство» не бывает', async () => {
+    const { houseStyle } = await import('@/lib/assistant/reply')
+    expect(houseStyle('Оплатите заказ, и наш сотрудник свяжется с вами.', 'ru')).toBe('Оплатите заказ, и руководство свяжется с вами.')
+  })
+  it('возраст и габариты — только из характеристик; рассрочку платят кнопкой из напоминания', () => {
+    const text = systemInstruction('ru', null, 'ru', products)
+    expect(text).toContain('ВОЗРАСТ, РОСТ, ГАБАРИТЫ')
+    expect(text).toContain('кнопка «Оплатить онлайн»')
+  })
+})

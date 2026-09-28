@@ -109,7 +109,8 @@ describe('напоминание «ещё актуально?»', () => {
     const r = await followUp([{ role: 'user', text: 'muzlatgich narxi qancha' }, { role: 'assistant', text: 'x' }], [product.id], 'ru', 'Aziz')
     expect(r).toHaveProperty('text')
     const text = (r as { text: string }).text
-    expect(text).toMatch(/^Aziz, /)
+    // Имя не ставим: в телефоне владельца оно бывает «Жанатим. Онам», «Ааааааа».
+    expect(text).not.toMatch(/^Aziz/)
     expect(text).toContain(product.nameRu)
     expect(text).toContain('оламан')
   })
@@ -316,5 +317,58 @@ describe('уроки из журнала WhatsApp 22–26.09', () => {
     expect(detectLang('Ассалом алекум досм кандесан', 'ru')).toBe('ky')
     expect(detectLang('Даставка кылып саласынарбы Кара кулжага, ушул 8кг алат элем', 'ru')).toBe('ky')
     expect(detectLang('Суротун жонотчу укам, 8 кг стиральный', 'ru')).toBe('ky')
+  })
+})
+
+describe('аудит 26–28.09: WhatsApp', () => {
+  const wa = (key: string) => ({ key, orderSource: 'Заказ из WhatsApp', leadChannel: 'whatsapp' as const, known: { phone: '+996555000030' } })
+
+  it('«Ок» и «{{SWE001}}» — молчим, но чат не глушим; чужой автоответ и эхо — глушим', async () => {
+    const { respond } = await import('@/lib/assistant/respond')
+    const junk = await respond(wa('wa:a1'), [{ role: 'user', text: '{{SWE001}}' }], 'ru', null)
+    expect(junk.silent).toBe(true)
+    expect(junk.mute).not.toBe(true)
+    const ok = await respond(wa('wa:a2'), [{ role: 'user', text: 'Ок' }], 'ru', null)
+    expect(ok.mute).not.toBe(true)
+    const bot = await respond(wa('wa:a3'), [{ role: 'user', text: 'Добро пожаловать! Спасибо за обращение в Мухаммадумар! Чем мы можем вам помочь?' }], 'ru', null)
+    expect(bot.silent && bot.mute).toBe(true)
+    const echo = await respond(wa('wa:a4'), [{ role: 'assistant', text: 'Тушундим, руководствога айтаман.' }, { role: 'user', text: 'Тушундим, руководствога айтаман.' }], 'ru', null)
+    expect(echo.silent && echo.mute).toBe(true)
+  })
+
+  it('номер телефона после показа товара — начинаем заказ', async () => {
+    const { respond } = await import('@/lib/assistant/respond')
+    const r = await respond(wa('wa:a5'), [{ role: 'assistant', text: 'UAKEEN ZL-940, 13 900 сом. Буйрутма кылабызбы?' }, { role: 'user', text: '0700441154 синий' }], 'ky', null, undefined, [product.id])
+    expect(r.source).toBe('flow')
+    expect(r.text).toContain(product.nameRu)
+  })
+
+  it('полный адрес на шаге «куда» — сразу заказ; «озум алам» на шаге «адрес» — самовывоз', async () => {
+    await start('wa:a6', [product.id], 'ky', 'Заказ из WhatsApp', { name: 'Айгүл', phone: '+996555000031' })
+    expect(await step('wa:a6', 'Ош шаары Араван району жаны арык айылы.Айтиев жоро кочосу 20 уй', 'ky', 'ky')).toMatch(/Даяр!/)
+    await start('wa:a7', [product.id], 'ky', 'Заказ из WhatsApp', { name: 'Айгүл', phone: '+996555000032' })
+    expect(await step('wa:a7', 'Ош', 'ky', 'ky')).toMatch(/Дарек/)
+    const done = await step('wa:a7', 'Озум алам', 'ky', 'ky')
+    expect(done).toMatch(/Даяр!/)
+  })
+
+  it('«Доставкасын айтып койгулачы Таласка» на шаге «адрес» — не адрес', async () => {
+    await start('wa:a8', [product.id], 'ky', 'Заказ из WhatsApp', { name: 'Турдакун', phone: '+996555000033' })
+    expect(await step('wa:a8', 'Талас', 'ky', 'ky')).toMatch(/Дарек/)
+    expect(await step('wa:a8', 'Доставкасын айтып койгулачы Таласка', 'ky', 'ky')).toBeNull()
+  })
+
+  it('язык: кыргызский без примет — по разговору; вопросительное «-бы/-бу»', async () => {
+    const { talkLang } = await import('@/lib/assistant/reply')
+    const turns = [
+      { role: 'user' as const, text: 'Ооба, Талас. Эртең төлөйм' },
+      { role: 'assistant' as const, text: '…' },
+      { role: 'user' as const, text: 'Доставкасын айтып койгулачы Таласка' },
+    ]
+    expect(talkLang(turns, 'ru')).toBe('ky')
+    expect(detectLang('Рассрочка кандай болуп калат', 'ru')).toBe('ky')
+    expect(talkLang([{ role: 'user', text: 'Мына озубузду араванбы же оштобу' }], 'ru')).toBe('ky')
+    expect(talkLang([{ role: 'user', text: 'Kara baltada barby flial' }, { role: 'user', text: 'Stralnyi mašina 8 kg' }], 'ru')).toBe('ky')
+    expect(talkLang([{ role: 'user', text: 'Где купить грибы и зубы чистить?' }], 'ru')).toBe('ru')
   })
 })

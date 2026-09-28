@@ -25,8 +25,14 @@ export type Reply = {
   source: 'gemini' | 'local' | 'flow'
   /** покупатель попросил живого человека — заявка ушла сотруднику */
   handoff?: boolean
-  /** сообщение не для магазина (рабочие, родные) — ничего не отправлять */
+  /** ничего не отправлять («Ок», «{{SWE001}}», чужой автоответ, не про магазин) */
   silent?: boolean
+  /**
+   * Замолчать в этом чате на 12 часов. Только когда пишет не покупатель (рабочие,
+   * родные, чужой бот). «Ок» и «{{SWE001}}» чат не глушат: следом обычно идёт
+   * настоящий вопрос («Токмокко доставка канча?»), и на него надо ответить.
+   */
+  mute?: boolean
 }
 
 export type Channel = {
@@ -53,13 +59,21 @@ export async function respond(
   if (flow) return flow
   // «Ок», «👍», «рахмат» в ответ на напоминание или наш ответ — это не вопрос.
   // Отвечать «какую технику ищете?» на «Ок» — верный способ выглядеть роботом.
-  if (channel.leadChannel === 'whatsapp' && (isAcknowledgement(turns) || isJunk(turns))) {
-    return { text: '', products: [], source: 'flow', silent: true }
+  if (channel.leadChannel === 'whatsapp') {
+    // Чужой автоответ или наша же фраза, вернувшаяся эхом, — два бота заговорят друг с другом.
+    if (isOtherBot(turns)) return { text: '', products: [], source: 'flow', silent: true, mute: true }
+    if (isAcknowledgement(turns) || isJunk(turns)) return { text: '', products: [], source: 'flow', silent: true }
   }
   const reply = await answer(turns, lang, customer, page, channel.known.name)
   // Сайт — там только покупатели. В WhatsApp модель ещё смотрит, кому адресовано.
   if (channel.leadChannel !== 'whatsapp') return reply
-  if (reply.audience === 'personal') return { text: '', products: [], source: reply.source, silent: true }
+  // Идёт продажа (бот показывал товар) — это покупатель, даже если пишет о своём:
+  // «Эртең Nova 7 сатсам…» у покупателя из Таласа модель сочла личным и замолчала.
+  const selling = Array.isArray(shown) && shown.length > 0
+  if (reply.audience === 'personal' && !selling) {
+    return { text: '', products: [], source: reply.source, silent: true, mute: true }
+  }
+  if (reply.audience === 'personal') return reply
   if (reply.audience === 'staff') {
     const talk = talkLang(turns, lang)
     const last = turns[turns.length - 1]?.text ?? ''
@@ -78,6 +92,19 @@ const ACK_WORD =
   '(ок|ok|окей|okay|хорошо|ладно|понял|поняла|понятно|спасибо|благодарю|макул|болду|болот|түшүндүм|тушундум|рахмат|ырахмат|чоң рахмат|катта рахмат|жарайт|хоп|хуп|яхши|тушундим|тушунарли|майли|mayli|xop|rahmat|yaxshi|tushundim|ha|ха|да|ооба|вам|сизге|сизга|👍|👌|🙏|✅|❤️|👍🏻|👍🏼|👍🏽|🤝)'
 /** До трёх «ок/спасибо/рахмат» подряд, с любыми знаками и эмодзи вокруг. */
 const ACK = new RegExp(`^[\\s\\p{P}\\p{S}]*(?:${ACK_WORD}[\\s\\p{P}\\p{S}]*){0,3}$`, 'iu')
+
+/** Автоответ чужого WhatsApp Business или наша же фраза, пришедшая назад. */
+const OTHER_BOT =
+  /(спасибо за (ваше )?обращение|благодарим за (ваше )?(обращение|сообщение)|добро пожаловать!|мы (скоро )?(ответим|свяжемся)|сейчас (мы )?не на связи|автоответ|in the office|we are (currently )?away|thanks for (contacting|your message)|кайрылганыңыз үчүн рахмат|murojaatingiz uchun rahmat)/i
+
+function isOtherBot(turns: ChatTurn[]): boolean {
+  const last = turns[turns.length - 1]
+  if (!last || last.role !== 'user') return false
+  const text = last.text.trim()
+  if (OTHER_BOT.test(text)) return true
+  const ours = turns.filter((t) => t.role === 'assistant').slice(-4).map((t) => t.text.trim())
+  return text.length > 8 && ours.includes(text)
+}
 
 /** «{{SWE001}}», один знак, e-mail — сообщение не человеку, отвечать нечего. */
 function isJunk(turns: ChatTurn[]): boolean {
@@ -157,6 +184,12 @@ async function salesFlow(
     return only(reply, Boolean(who.phone))
   }
 
+  // Покупатель, которому показали товар, прислал свой номер («0700441154 синий») —
+  // он оформляет заказ. Номер — только для заказа: ни бонусов, ни чужих данных он не открывает.
+  const typedPhone = phoneIn(text)
+  if (shown.length > 0 && typedPhone && !hasDraft(key)) {
+    return only(await start(key, shown, talk, orderSource, { name: who.name, phone: who.phone ?? typedPhone }, wantedQty(text.replace(typedPhone, ''))))
+  }
   // «Приеду и возьму сам», «барып алам», «o'zim boraman» — это визит в магазин, не заказ: пусть консультант даст адрес.
   const visiting = VISIT.test(text)
   // «беру», «куда платить» — или «да» сразу после того, как консультант предложил оформить.
@@ -170,6 +203,14 @@ async function salesFlow(
     return only(await start(key, shown, talk, orderSource, who, wantedQty(text)))
   }
   return null
+}
+
+/** Номер телефона в тексте: 0700 441 154, +996 700 441154, 996700441154. */
+function phoneIn(text: string): string | undefined {
+  const m = text.match(/(?:\+?996[\s-]?|0)\d{3}[\s-]?\d{2,3}[\s-]?\d{2,3}[\s-]?\d{0,2}/)
+  if (!m) return undefined
+  const digits = m[0].replace(/\D/g, '')
+  return digits.length >= 9 && digits.length <= 12 ? m[0] : undefined
 }
 
 /** Едет в магазин сам — не заказ. */

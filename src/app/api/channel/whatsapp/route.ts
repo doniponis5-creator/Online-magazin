@@ -82,6 +82,8 @@ export async function POST(request: Request) {
     handoff: Boolean(reply.handoff),
     // Сообщение не для магазина (рабочие, родные владельца) — сервер ничего не шлёт.
     silent: Boolean(reply.silent),
+    // Глушить чат на 12 часов — только когда пишет не покупатель.
+    mute: Boolean(reply.mute),
     products: reply.products.map((p) => ({
       id: p.id,
       name: p.name,

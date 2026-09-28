@@ -339,9 +339,11 @@ async def _answer(digits: str, name: str) -> bool:
 
         reply = await _ask_site(digits, name)
         if reply and reply.get("silent"):
-            # Не покупатель (рабочие, поставщики, родные) — робот в этом чате молчит 12 часов.
-            await redis_client.set(f"wa:human:{digits}", "1", ex=HUMAN_QUIET)
-            logger.info(f"wa bot: не для магазина, молчу ...{digits[-4:]}")
+            # Не покупатель (рабочие, родные, чужой бот) — робот в этом чате молчит 12 часов.
+            # «Ок» и «{{SWE001}}» чат не глушат: следом идёт настоящий вопрос.
+            if reply.get("mute"):
+                await redis_client.set(f"wa:human:{digits}", "1", ex=HUMAN_QUIET)
+                logger.info(f"wa bot: не для магазина, молчу ...{digits[-4:]}")
             return False
         if not reply or not reply.get("text"):
             return False
