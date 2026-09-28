@@ -336,6 +336,45 @@ async def site_order_status(order_id: str, request: Request, token: str = "", db
     return order.to_site_dict()
 
 
+class SiteOrderCancel(BaseModel):
+    token: str
+
+
+@router_site.post("/{order_id}/cancel")
+async def site_order_cancel(order_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    """
+    Покупатель сам отменяет НЕоплаченный заказ (страница заказа, кабинет).
+
+    Оплаченный так не отменить: там возврат денег, это решает магазин. Перед
+    отменой спрашиваем O!Деньги — вдруг оплата уже прошла, а колбэк ещё в пути.
+    Если оплата всё же придёт позже по старой ссылке (она живёт 24 часа), заказ
+    станет оплаченным обычным путём (_check_and_confirm): деньги получены —
+    заказ выполняем, а в заметке сотруднику будет пометка «после отмены».
+    Товар, придержанный под заказ, освобождается сам: taken_now считает только
+    awaiting_payment.
+    """
+    body = await _verify_site_body(request)
+    try:
+        payload = SiteOrderCancel.parse_raw(body)
+    except Exception:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "неверный запрос")
+    res = await db.execute(select(ShopOrder).where(ShopOrder.order_id == order_id).with_for_update())
+    order = res.scalar_one_or_none()
+    if not order or not payload.token or not hmac.compare_digest(order.token, payload.token):
+        raise HTTPException(404, "заказ не найден")
+    # Второе нажатие (или две вкладки) — уже отменён, это не ошибка.
+    if order.status == "cancelled" and not order.paid:
+        return order.to_site_dict()
+    if order.status == "awaiting_payment" and not order.paid and obank.is_api_mode():
+        await _check_and_confirm(db, order, by="cancel_check")
+    if order.paid or order.status != "awaiting_payment":
+        raise HTTPException(status.HTTP_409_CONFLICT, "заказ уже оплачен или в работе")
+    order.status = "cancelled"
+    await db.commit()
+    await _log(db, order, "cancelled_by_customer", ip=request.client.host if request.client else None)
+    return order.to_site_dict()
+
+
 # ── Подтверждение оплаты ────────────────────────────────────────────────────
 
 async def _check_and_confirm(db: AsyncSession, order: ShopOrder, by: str, raw: dict | None = None) -> bool:
@@ -352,14 +391,18 @@ async def _check_and_confirm(db: AsyncSession, order: ShopOrder, by: str, raw: d
         await _log(db, order, "amount_mismatch", {"paid": float(paid_amount)})
         return False
 
+    # Покупатель отменил заказ, а потом всё же оплатил по старой ссылке.
+    after_cancel = order.status == "cancelled"
     order.paid = True
     order.paid_at = datetime.utcnow()
     order.status = "paid"
+    if after_cancel:
+        order.note = "⚠ оплачен после отмены покупателем — уточните, нужен ли ещё заказ"
     order.obank_trans_id = st.get("trans_id") or order.obank_trans_id
     if raw is not None:
         order.obank_raw = raw
     await db.commit()
-    await _log(db, order, "paid", {"by": by, "trans_id": order.obank_trans_id})
+    await _log(db, order, "paid", {"by": by, "trans_id": order.obank_trans_id, "after_cancel": after_cancel})
 
     if Decimal(str(order.bonus_spend or 0)) > 0:
         try:
