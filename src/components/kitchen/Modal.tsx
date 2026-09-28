@@ -15,6 +15,7 @@ export function Modal({
   alert = false,
   small = false,
   locked = false,
+  className,
   onClose,
   children,
 }: {
@@ -25,6 +26,8 @@ export function Modal({
   small?: boolean
   /** идёт отправка — Escape и щелчок мимо окна его не закрывают */
   locked?: boolean
+  /** своё оформление окна поверх общего (окно товара — без внутренних отступов) */
+  className?: string
   onClose: () => void
   children: ReactNode
 }) {
@@ -77,7 +80,7 @@ export function Modal({
   return createPortal(
     <div className="kp-dialog" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && !locked && onClose()}>
       <div
-        className={`kp-dialog__box${small ? ' kp-dialog__box--small' : ''}`}
+        className={`kp-dialog__box${small ? ' kp-dialog__box--small' : ''}${className ? ` ${className}` : ''}`}
         role={alert ? 'alertdialog' : 'dialog'}
         aria-modal="true"
         aria-label={label}

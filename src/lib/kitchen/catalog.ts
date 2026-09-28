@@ -1,5 +1,6 @@
 import type { Product } from '@/data/products'
-import type { Finish, FridgeKind, HobKind, HoodKind, KitchenAppliance, SlotKind } from './types'
+import type { Lang } from '@/lib/i18n/config'
+import type { ApplianceInfo, Finish, FridgeKind, HobKind, HoodKind, KitchenAppliance, SlotKind } from './types'
 
 /**
  * Какая техника из каталога встаёт в кухню и какого она размера.
@@ -339,6 +340,28 @@ export function kitchenAppliances(products: Product[]): KitchenAppliance[] {
     .map(applianceFromProduct)
     .filter((a): a is KitchenAppliance => a !== null)
     .sort((x, y) => x.price - y.price)
+}
+
+/**
+ * Фото, описание и характеристики техники для окна «Подробнее» — на языке
+ * страницы и только для того, что стоит в конструкторе.
+ */
+export function applianceInfo(products: Product[], ids: Iterable<string>, lang: Lang): Record<string, ApplianceInfo> {
+  const wanted = new Set(ids)
+  const out: Record<string, ApplianceInfo> = {}
+  for (const p of products) {
+    if (!wanted.has(p.id)) continue
+    const ky = lang === 'ky'
+    out[p.id] = {
+      name: (ky ? p.nameKy : p.nameRu) || p.nameRu,
+      images: p.images?.length ? p.images : p.image ? [p.image] : [],
+      desc: ((ky ? p.descKy : p.descRu) || p.descRu || '').trim(),
+      specs: p.specs
+        .map((s): [string, string] => [(ky ? s.labelKy : s.labelRu) || s.labelRu, (ky ? s.valueKy : s.valueRu) || s.valueRu])
+        .filter(([label, value]) => label.trim() && value.trim()),
+    }
+  }
+  return out
 }
 
 /**

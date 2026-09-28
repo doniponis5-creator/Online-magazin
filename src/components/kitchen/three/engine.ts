@@ -275,11 +275,14 @@ export class KitchenEngine {
     } catch {
       saved = null
     }
-    // Без сохранённого выбора: компьютер (ПК, MacBook — любая видеокарта) — 4K
-    // в полном качестве, владелец так решил 24.09.2026; медленные кадры в
-    // движении снизит губернатор, в покое кадр всегда полный. Телефон — HD,
-    // простой телефон — «Лёгкий»: ему не по силам даже HD.
-    this.quality = safe ? 'lite' : saved === 'lite' || saved === 'hd' || saved === '4k' ? saved : this.lowEnd ? 'lite' : this.mobile ? 'hd' : '4k'
+    // Телефон (любой, и хороший тоже) всегда открывается в «Лёгком» — владелец
+    // так решил 28.09.2026: на простых телефонах HD подвисал. HD и 4K покупатель
+    // включает сам; на телефоне этот выбор до следующего открытия не помним.
+    // Компьютер (ПК, MacBook — любая видеокарта) без сохранённого выбора — 4K
+    // в полном качестве (решение 24.09.2026); медленные кадры в движении снизит
+    // губернатор, в покое кадр всегда полный.
+    const remembered = saved === 'lite' || saved === 'hd' || saved === '4k' ? saved : null
+    this.quality = safe || this.mobile ? 'lite' : (remembered ?? '4k')
     this.applyQuality()
     this.canvasRatio = Math.min(window.devicePixelRatio || 1, 2)
     r.setPixelRatio(this.mobile ? this.baseRatio : this.canvasRatio)

@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { products } from '@/data/products'
 import { isLang } from '@/lib/i18n/config'
-import { kitchenAppliances } from '@/lib/kitchen/catalog'
+import { applianceInfo, kitchenAppliances } from '@/lib/kitchen/catalog'
 import { STYLES } from '@/lib/kitchen/styles'
 import { canonical } from '@/lib/seo'
 import { KitchenPlanner } from '@/components/kitchen/KitchenPlanner'
@@ -52,5 +52,6 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 export default async function KitchenPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
   if (!isLang(lang)) notFound()
-  return <KitchenPlanner appliances={kitchenAppliances(products)} />
+  const appliances = kitchenAppliances(products)
+  return <KitchenPlanner appliances={appliances} info={applianceInfo(products, appliances.map((a) => a.id), lang)} />
 }

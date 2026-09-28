@@ -3805,6 +3805,16 @@ html.kp-lock body {
   text-underline-offset: 2px;
 }
 
+/* «Подробнее» — кнопка (окно внутри конструктора), выглядит как ссылка */
+button.kp-slot__more,
+button.kp-opt__more {
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
 .kp-slot__more {
   display: inline-block;
   margin: 0 0 10px 14px;
@@ -4646,5 +4656,188 @@ html.kp-lock body {
     max-height: 92dvh;
     border-radius: 16px 16px 0 0;
     padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+}
+
+/* окно «Подробнее» о технике: фото и характеристики листаются, кнопки внизу
+   всегда видны — «Поставить в кухню» не уезжает под длинный список */
+.kp-dialog__box.kp-info {
+  display: flex;
+  width: min(520px, 100%);
+  padding: 0;
+  overflow: hidden;
+}
+
+.kp-info__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.kp-info__close {
+  z-index: 1;
+  background: rgb(255 255 255 / 0.92);
+  box-shadow: 0 1px 4px rgb(15 23 42 / 0.12);
+}
+
+.kp-info__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 20px 20px 16px;
+}
+
+.kp-info__photo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: min(300px, 36dvh);
+  margin: 0 0 10px;
+  padding: 4px;
+  border: 1px solid var(--kp-line);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.kp-info__photo img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.kp-info__thumbs {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.kp-info__thumb {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  padding: 4px;
+  border: 1.5px solid var(--kp-line);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.kp-info__thumb.is-on {
+  border-color: var(--kp-cobalt);
+}
+
+.kp-info__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.kp-info__title {
+  margin-right: 0;
+}
+
+.kp-info__price {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 6px;
+  font: 800 22px/1.2 var(--font);
+  font-variant-numeric: tabular-nums;
+}
+
+.kp-info__price s {
+  font: 600 14px/1.2 var(--font);
+  color: var(--kp-muted);
+}
+
+.kp-info__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font: 500 14px/1.4 var(--font);
+  color: var(--kp-soft);
+}
+
+.kp-info__badge {
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--color-lemon-soft, #f9fbdc);
+  box-shadow: inset 0 0 0 1px #e3e7a0;
+  font: 650 12px/1.4 var(--font);
+  color: var(--kp-soft);
+}
+
+.kp-info__h {
+  margin: 18px 0 6px;
+  font: 750 15px/1.3 var(--font);
+}
+
+.kp-info__desc {
+  margin: 0;
+  font: 500 14px/1.5 var(--font);
+  color: var(--kp-soft);
+}
+
+.kp-info__specs {
+  margin: 0;
+}
+
+.kp-info__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--kp-line);
+  font: 500 13.5px/1.4 var(--font);
+}
+
+.kp-info__row:last-child {
+  border-bottom: 0;
+}
+
+.kp-info__row dt {
+  color: var(--kp-muted);
+}
+
+.kp-info__row dd {
+  margin: 0;
+  color: var(--kp-ink);
+  overflow-wrap: anywhere;
+}
+
+.kp-info__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--kp-line);
+  background: #fff;
+}
+
+.kp-info__in {
+  margin: 0 auto 0 0;
+  font: 650 14px/1.3 var(--font);
+  color: #15803d;
+}
+
+@media (max-width: 520px) {
+  .kp-dialog__box.kp-info {
+    padding-bottom: 0;
+  }
+
+  .kp-info__foot {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+
+  .kp-info__foot .btn--primary {
+    flex: 1;
   }
 }

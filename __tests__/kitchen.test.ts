@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Product } from '@/data/products'
-import { applianceFromProduct, defaultPick, finishOf, parseSize } from '@/lib/kitchen/catalog'
+import { applianceFromProduct, applianceInfo, defaultPick, finishOf, parseSize } from '@/lib/kitchen/catalog'
 import {
   companions,
   DEPTH,
@@ -83,6 +83,36 @@ describe('цвет техники', () => {
     expect(finishOf('Серебристый')).toBe('inox')
     expect(finishOf('Тёмно-серый, чёрный люк')).toBe('black')
     expect(finishOf('Титан')).toBe('gray')
+  })
+})
+
+describe('окно «Подробнее» в конструкторе', () => {
+  const oven = {
+    ...product('Встраиваемая духовка Test', [['Тип', 'Электрический духовой шкаф'], ['Пусто', ' ']]),
+    nameKy: 'Кыналуучу духовка Test',
+    descRu: '  Духовка на 70 литров. ',
+    descKy: '',
+    image: '/a.jpg',
+  }
+  oven.specs[0] = { labelRu: 'Тип', labelKy: 'Түрү', valueRu: 'Электрический', valueKy: 'Электрдик' }
+
+  it('только то, что стоит в конструкторе, на языке страницы; пустые строки 1С не показывает', () => {
+    const other = product('Телефон', [])
+    const ky = applianceInfo([oven, other], [oven.id], 'ky')
+    expect(Object.keys(ky)).toEqual([oven.id])
+    expect(ky[oven.id]).toEqual({
+      name: 'Кыналуучу духовка Test',
+      images: ['/a.jpg'],
+      // кыргызского описания нет — русское, а не пустое место
+      desc: 'Духовка на 70 литров.',
+      specs: [['Түрү', 'Электрдик']],
+    })
+    expect(applianceInfo([oven], [oven.id], 'ru')[oven.id].specs).toEqual([['Тип', 'Электрический']])
+  })
+
+  it('все фото товара по порядку, если их несколько', () => {
+    const many = { ...oven, images: ['/1.jpg', '/2.jpg'] }
+    expect(applianceInfo([many], [oven.id], 'ru')[oven.id].images).toEqual(['/1.jpg', '/2.jpg'])
   })
 })
 

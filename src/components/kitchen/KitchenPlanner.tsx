@@ -6,6 +6,7 @@ import { phones, telHref, whatsappHref } from '@/data/contacts'
 import { useCart } from '@/lib/cart/CartProvider'
 import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
+import { inNativeApp } from '@/lib/native/bonusCard'
 import { checkProject, TRIANGLE, type Check } from '@/lib/kitchen/checks'
 import {
   findColors,
@@ -68,6 +69,7 @@ import {
   isCabinet,
   SIZED_ITEMS,
   SLOTS,
+  type ApplianceInfo,
   type BaseFront,
   type CabinetId,
   type ColumnItem,
@@ -88,6 +90,7 @@ import type { CutMap } from './pdfSheet'
 import { parseVariants, type Variant } from '@/lib/kitchen/variants'
 import { keepOnLink, openQuery } from './ready'
 import { PublishLoader } from './PublishLoader'
+import { ApplianceSheet } from './ApplianceSheet'
 import { ReadyStrip } from './ReadyStrip'
 import type { BuildInput, CabInfo, Dims } from './three/build'
 import type { DragPreview, DragTarget, EngineEvents, KitchenEngine, PhotoState, Pick, Quality, View } from './three/engine'
@@ -281,7 +284,7 @@ function roving(group: Element) {
 const isShort = () => window.matchMedia('(max-height: 520px)').matches
 const smooth = (): ScrollBehavior => (window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth')
 
-export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] }) {
+export function KitchenPlanner({ appliances, info }: { appliances: KitchenAppliance[]; info?: Record<string, ApplianceInfo> }) {
   const { lang } = useI18n()
   const t = kitchenTexts(lang)
   const cart = useCart()
@@ -1764,7 +1767,18 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
     }
     setSaving(false)
     if (!blob) return
-    download(blob, started === 'ok' ? 'smarket-kitchen-photo-4k.jpg' : 'smarket-kitchen-4k.jpg')
+    const name = started === 'ok' ? 'smarket-kitchen-photo-4k.jpg' : 'smarket-kitchen-4k.jpg'
+    // Телефон и наше приложение — окно «Поделиться»: в нём «Сохранить
+    // изображение» (в «Фото»), WhatsApp, Telegram. Скачивание файла в
+    // приложении S Маркет не работает совсем: ссылка молча ничего не делает.
+    if (window.matchMedia('(pointer: coarse)').matches || inAppBrowser() || inNativeApp()) {
+      const file = new File([blob], name, { type: 'image/jpeg' })
+      const res = await shareFile(file, '', name)
+      if (res === 'ok') return
+      // фото рисовалось долго — телефон просит нажать ещё раз
+      if (res === 'late') return setNote({ text: t.photoReady, act: { label: t.photoSaveNow, run: () => void shareFile(file, '', name) } })
+    }
+    download(blob, name)
     // во встроенном браузере Instagram или Telegram файл часто молча не сохраняется
     if (inAppBrowser()) setToast(t.photoInApp)
   }
@@ -3645,7 +3659,7 @@ export function KitchenPlanner({ appliances }: { appliances: KitchenAppliance[] 
                     current={chosen[slot]}
                     pickedNone={chosen[slot] === null && project.find((i) => i.slot === slot)?.status !== 'noStock'}
                     status={project.find((i) => i.slot === slot)?.status}
-                    lang={lang}
+                    info={info}
                     supplyHref={whatsappHref(phones[0], t.askSupplyText(t.slots[slot], shareUrl))}
                     open={open === slot}
                     style={style}
@@ -4421,7 +4435,8 @@ function Dropped({ plan, state, t, onFix }: { plan: Plan; state: KitchenState; t
 
 function SlotRow(props: {
   status?: ItemStatus
-  lang: string
+  /** фото, описание и характеристики для окна «Подробнее» */
+  info?: Record<string, ApplianceInfo>
   supplyHref: string
   slot: SlotKind
   list: KitchenAppliance[]
@@ -4446,6 +4461,8 @@ function SlotRow(props: {
   // Варочная панель и плита — один слот: плиты в списке отдельной группой.
   const panels = list.filter((a) => !a.stove)
   const stoves = list.filter((a) => a.stove)
+  // «Подробнее» — окно внутри конструктора, а не страница товара в новой вкладке
+  const [detail, setDetail] = useState<KitchenAppliance | null>(null)
   return (
     <li className={`kp-slot${open && !inStove ? ' is-open' : ''}${status === 'dropped' ? ' is-dropped' : ''}${inStove ? ' is-fixed' : ''}`} id={`kp-slot-${slot}`}>
       <button
@@ -4468,9 +4485,9 @@ function SlotRow(props: {
         <span className="kp-slot__price">{shown && !none ? formatSom(shown.price) : ''}</span>
       </button>
       {shown && !none && (
-        <a className="kp-slot__more" href={`/${props.lang}/product/${shown.id}`} target="_blank" rel="noopener noreferrer">
+        <button type="button" className="kp-slot__more" aria-haspopup="dialog" onClick={() => setDetail(shown)}>
           {t.details}
-        </a>
+        </button>
       )}
       {!current && !none && !inStove && (
         <a className="kp-slot__more kp-slot__supply" href={props.supplyHref} target="_blank" rel="noopener noreferrer">
@@ -4508,9 +4525,18 @@ function SlotRow(props: {
                 <span className="kp-opt__thumb">{a.image ? <img src={a.image} alt="" loading="lazy" /> : <SlotIcon slot={slot} />}</span>
                 <span className="kp-opt__text">
                   <span className="kp-opt__name">{a.name}</span>
-                  <a className="kp-opt__more" href={`/${props.lang}/product/${a.id}`} target="_blank" rel="noopener noreferrer">
+                  {/* кнопка внутри label: нажатие открывает окно и не выбирает модель */}
+                  <button
+                    type="button"
+                    className="kp-opt__more"
+                    aria-haspopup="dialog"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      setDetail(a)
+                    }}
+                  >
                     {t.details}
-                  </a>
+                  </button>
                   <span className="kp-opt__meta">
                     {size(a)}
                     {slot === 'dishwasher' && a.builtIn && ` · ${t.hidden}`}
@@ -4526,6 +4552,18 @@ function SlotRow(props: {
             </Fragment>
           ))}
         </div>
+      )}
+      {detail && (
+        <ApplianceSheet
+          item={detail}
+          info={props.info?.[detail.id]}
+          size={size(detail)}
+          matches={style.finishes.includes(detail.finish)}
+          chosen={!none && current?.id === detail.id}
+          t={t}
+          onPick={() => props.onPick(detail.id)}
+          onClose={() => setDetail(null)}
+        />
       )}
     </li>
   )
