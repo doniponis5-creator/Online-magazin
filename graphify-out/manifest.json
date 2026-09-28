@@ -666,9 +666,9 @@
     "semantic_hash": ""
   },
   "src/components/Footer.tsx": {
-    "mtime": 1790604699.3160212,
-    "seen": 1790608617.722647,
-    "ast_hash": "220d1a4df0ea22e0af85ae80d514b197",
+    "mtime": 1790618604.7968915,
+    "seen": 1790618784.402818,
+    "ast_hash": "0145703f939c17bb501abda0a0fe2ee4",
     "semantic_hash": ""
   },
   "src/components/Gallery.tsx": {
@@ -3714,9 +3714,9 @@
     "semantic_hash": ""
   },
   "scripts/update-all.sh": {
-    "mtime": 1790604699.283773,
-    "seen": 1790608617.722601,
-    "ast_hash": "bb4ced7f00441bab7f7ba54f3fbd5b7b",
+    "mtime": 1790613999.1768036,
+    "seen": 1790618784.401171,
+    "ast_hash": "6d27b72bbef8857f56c7f2e8d8d41a8e",
     "semantic_hash": ""
   },
   "src/app/[lang]/about/page.tsx": {
