@@ -71,6 +71,36 @@ describe('отправка снимка корзины', () => {
     expect(sent).toHaveLength(1)
   })
 
+  it('приложение свернули раньше 5 секунд — снимок уходит сразу', async () => {
+    app()
+    const page = new EventTarget() as EventTarget & { visibilityState: string }
+    page.visibilityState = 'visible'
+    vi.stubGlobal('document', page)
+    sync.cartChanged(PHONE_CASE)
+    await vi.advanceTimersByTimeAsync(1_000)
+    expect(sent).toEqual([])
+    page.visibilityState = 'hidden'
+    page.dispatchEvent(new Event('visibilitychange'))
+    await vi.advanceTimersByTimeAsync(0)
+    expect(sent).toEqual([{ url: '/api/push/cart', body: PHONE_CASE }])
+    // Таймер отменён — через 5 секунд второго запроса нет.
+    await vi.advanceTimersByTimeAsync(5_000)
+    expect(sent).toHaveLength(1)
+  })
+
+  it('свернули, когда всё уже отправлено, — лишнего запроса нет', async () => {
+    app()
+    const page = new EventTarget() as EventTarget & { visibilityState: string }
+    page.visibilityState = 'visible'
+    vi.stubGlobal('document', page)
+    sync.cartChanged(PHONE_CASE)
+    await vi.advanceTimersByTimeAsync(5_000)
+    page.visibilityState = 'hidden'
+    page.dispatchEvent(new Event('visibilitychange'))
+    await vi.advanceTimersByTimeAsync(0)
+    expect(sent).toHaveLength(1)
+  })
+
   it('пустая корзина — тоже снимок', async () => {
     app()
     sync.cartChanged(PHONE_CASE)

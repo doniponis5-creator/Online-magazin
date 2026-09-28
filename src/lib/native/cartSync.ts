@@ -4,7 +4,9 @@
  * Корзина живёт на самом телефоне, сервер о ней не знает. Поэтому в приложении
  * мы отдаём сайту короткий снимок: первые три названия, число позиций и сумму.
  * Шлём не на каждое нажатие, а через 5 секунд тишины; тот же снимок второй раз
- * не шлём. Пустая корзина — тоже снимок: сервер поймёт, что напоминать не о чем.
+ * не шлём. Приложение свернули или закрыли раньше — шлём сразу: иначе снимок не
+ * дошёл бы, и напоминание о корзине не пришло бы. Пустая корзина — тоже снимок:
+ * сервер поймёт, что напоминать не о чем.
  *
  * В браузере не уходит ничего. Без входа — тоже: сайт отвечает 401, и мы молчим,
  * пока «Кабинет» не скажет, что покупатель вошёл. Любой сбой сети молча
@@ -40,6 +42,7 @@ let signed: 'unknown' | 'in' | 'out' = 'unknown'
 let latest: CartSnapshot | null = null
 let lastSent: string | null = null
 let timer: ReturnType<typeof setTimeout> | null = null
+let hideListening = false
 
 /** Отдельной функцией: TypeScript не видит, что за время запроса покупатель мог выйти. */
 function signedOut(): boolean {
@@ -56,10 +59,12 @@ async function flush(): Promise<void> {
   if (!pushPlatform() || !latest || signed === 'out') return
   const key = JSON.stringify(latest)
   if (key === lastSent) return
+  // keepalive: запрос доходит, даже если приложение в эту секунду уходит в фон.
   const response = await fetch('/api/push/cart', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: key,
+    keepalive: true,
   }).catch(() => null)
   if (!response) return // сети нет — отправим со следующим изменением
   if (response.status === 401) {
@@ -74,11 +79,24 @@ async function flush(): Promise<void> {
   }
 }
 
+/**
+ * Приложение уходит в фон или закрывается, а снимок ещё ждёт своих 5 секунд —
+ * шлём сразу: в фоне телефон может усыпить страницу, и таймер не сработает.
+ */
+function listenHide(): void {
+  if (hideListening || typeof document === 'undefined' || !document.addEventListener) return
+  hideListening = true
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden' && timer) void flush()
+  })
+}
+
 /** Корзина изменилась (и при открытии приложения). Отправим через 5 секунд тишины. */
 export function cartChanged(snapshot: CartSnapshot): void {
   if (!pushPlatform()) return
   latest = snapshot
   if (signed === 'out') return
+  listenHide()
   stopTimer()
   timer = setTimeout(() => void flush(), CART_SYNC_DELAY)
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { AccountReviews, ReviewLoginHint } from '@/components/AccountReviews'
 import { Brand } from '@/components/Brand'
 import { CustomerLogin } from '@/components/CustomerLogin'
@@ -63,13 +63,15 @@ function formatDate(value: string | null, lang: string) {
 
 /**
  * Согласие на рекламные уведомления по адресу сайта (`/api/push/consent` или `/api/push/promo-consent`).
- * consent: undefined — пункт не показываем (грузим или сервер молчит), null — ещё не спрашивали,
+ * consent: undefined — не знаем (грузим или сервер молчит), null — ещё не спрашивали,
  * true/false — ответ покупателя. Без номера (не вошёл или уведомления не разрешены) сервер не спрашиваем.
  */
 function usePushConsent(url: string, phone: string | undefined) {
   const [consent, setConsent] = useState<boolean | null | undefined>(undefined)
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState(false)
+  // Ответ уже дан: чтение, начатое раньше ответа, его не перетирает.
+  const answered = useRef(false)
 
   useEffect(() => {
     if (!phone) return
@@ -77,7 +79,7 @@ function usePushConsent(url: string, phone: string | undefined) {
     fetch(url, { cache: 'no-store' })
       .then((response) => (response.ok ? response.json() : null))
       .then((data) => {
-        if (alive && data?.ok) setConsent(typeof data.consent === 'boolean' ? data.consent : null)
+        if (alive && data?.ok && !answered.current) setConsent(typeof data.consent === 'boolean' ? data.consent : null)
       })
       .catch(() => undefined)
     return () => {
@@ -95,75 +97,13 @@ function usePushConsent(url: string, phone: string | undefined) {
       body: JSON.stringify({ consent: value }),
     }).catch(() => null)
     setBusy(false)
-    if (response?.ok) setConsent(value)
-    else setFailed(true)
+    if (response?.ok) {
+      answered.current = true
+      setConsent(value)
+    } else setFailed(true)
   }, [url])
 
   return { consent, busy, failed, save }
-}
-
-/**
- * Один пункт карточки согласий: сначала вопрос с ответами «Да»/«Нет»,
- * после ответа — переключатель, чтобы передумать в любой момент.
- * id — у каждого пункта свой: по нему переключатель находит свой заголовок.
- */
-function ConsentItem({
-  id,
-  state,
-  ask,
-  title,
-  text,
-  yes,
-}: {
-  id: string
-  state: ReturnType<typeof usePushConsent>
-  ask: string
-  title: string
-  text: string
-  yes: string
-}) {
-  const a = useI18n().t.account
-  const { consent, busy, failed, save } = state
-  return (
-    <div className="account-remind__item" aria-busy={busy}>
-      {consent === null ? (
-        <>
-          <h2>{ask}</h2>
-          <p className="account-remind__note">{text}</p>
-          <div className="account-actions">
-            <button type="button" className="btn btn--primary" disabled={busy} onClick={() => save(true)}>
-              {yes}
-            </button>
-            <button type="button" className="btn btn--ghost" disabled={busy} onClick={() => save(false)}>
-              {a.remindNo}
-            </button>
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="account-remind__row">
-            <div>
-              <h2 id={id}>{title}</h2>
-              <p className={`account-remind__state ${consent ? 'is-on' : 'is-off'}`}>
-                {consent ? a.remindOn : a.remindOff}
-              </p>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={consent === true}
-              aria-labelledby={id}
-              className="account-switch"
-              disabled={busy}
-              onClick={() => save(!consent)}
-            />
-          </div>
-          <p className="account-remind__note">{text}</p>
-        </>
-      )}
-      {failed && <p className="field__error" role="alert">{a.remindFailed}</p>}
-    </div>
-  )
 }
 
 export function AccountView() {
@@ -186,12 +126,34 @@ export function AccountView() {
   const [lockCheck, setLockCheck] = useState<boolean | null>(null)
   // Удаление учётной записи: 'idle' → 'confirm' → 'busy' → 'failed'.
   const [wipe, setWipe] = useState<'idle' | 'confirm' | 'busy' | 'failed'>('idle')
-  // Спрашиваем про напоминания о корзине и «Новинки и скидки», только когда уведомления
-  // уже разрешены: иначе «да» ничего бы не значило — телефон их не покажет.
-  // Это два разных согласия: «да» одному не включает другое.
+  // Скидки, новинки и напоминания о корзине — реклама, поэтому только с явного «да»
+  // в самом приложении (Apple 4.5.4): окно телефона «Разрешить» согласием на рекламу
+  // не считается. На сервере это два согласия, но покупателя спрашиваем один раз:
+  // один ответ пишется в оба. Читаем их, только когда уведомления уже разрешены.
   const consentPhone = push === 'granted' ? customer?.phone : undefined
   const remind = usePushConsent('/api/push/consent', consentPhone)
   const promo = usePushConsent('/api/push/promo-consent', consentPhone)
+  const [notifyBusy, setNotifyBusy] = useState(false)
+  // Вопрос: телефон ещё не спрашивал разрешение, или разрешение есть, а ответа про рекламу нет.
+  const notifyAsk = push === 'ask' || (push === 'granted' && (remind.consent === null || promo.consent === null))
+  const notifyOn = remind.consent === true || promo.consent === true
+  const notifyKnown = remind.consent !== undefined || promo.consent !== undefined
+
+  /**
+   * Один ответ на один вопрос. «Да» и «Только о заказах» оба сначала просят у телефона
+   * разрешение (без него не дойдут и уведомления о заказах), потом записывают ответ про рекламу.
+   * Телефон не разрешил — рекламу не записываем: доставить её всё равно нельзя.
+   */
+  const answerNotify = useCallback(async (yes: boolean) => {
+    setNotifyBusy(true)
+    let state = push
+    if (state === 'ask') {
+      state = (await enablePush()) ? 'granted' : 'denied'
+      setPush(state)
+    }
+    if (state === 'granted') await Promise.all([remind.save(yes), promo.save(yes)])
+    setNotifyBusy(false)
+  }, [push, remind.save, promo.save])
 
   /** Перечитать состояние быстрого входа: умеет ли телефон и есть ли ключ. */
   const refreshLock = useCallback(async () => {
@@ -223,18 +185,15 @@ export function AccountView() {
   }, [])
 
   // Уведомления. Если уже разрешены — тихо обновляем адрес телефона на сервере.
-  // Если ещё не спрашивали — спрашиваем сами, сразу после входа: искать кнопку
-  // покупатель не должен. iPhone показывает это окно один раз за установку,
-  // поэтому повторно мы не пристаём.
+  // Если телефон ещё не спрашивал — сразу после входа показываем наш вопрос вверху
+  // кабинета, а окно телефона «Разрешить» идёт следом за ответом. Искать кнопку
+  // покупатель не должен.
   useEffect(() => {
     if (!customer) return
     resumePush()
     let alive = true
-    pushState().then(async (state) => {
-      if (!alive) return
-      if (state !== 'ask') return setPush(state)
-      const ok = await enablePush()
-      if (alive) setPush(ok ? 'granted' : 'denied')
+    pushState().then((state) => {
+      if (alive) setPush(state)
     })
     return () => {
       alive = false
@@ -358,6 +317,24 @@ export function AccountView() {
 
   return (
     <div className="account-layout">
+      {/* Сразу после входа — один вопрос про уведомления, дальше окно телефона «Разрешить». */}
+      {notifyAsk && (push === 'ask' || notifyKnown) && (
+        <section className="account-remind" aria-busy={notifyBusy}>
+          <h2>{a.notifyAsk}</h2>
+          <p className="account-remind__note">{a.notifyText}</p>
+          {push === 'ask' && <p className="account-remind__note">{a.notifyPhoneNext}</p>}
+          <div className="account-actions">
+            <button type="button" className="btn btn--primary" disabled={notifyBusy} onClick={() => answerNotify(true)}>
+              {a.notifyYes}
+            </button>
+            <button type="button" className="btn btn--ghost" disabled={notifyBusy} onClick={() => answerNotify(false)}>
+              {a.notifyOrdersOnly}
+            </button>
+          </div>
+          {(remind.failed || promo.failed) && <p className="field__error" role="alert">{a.remindFailed}</p>}
+        </section>
+      )}
+
       {/* Первым делом — «Оцените покупку»: внизу кабинета её не находили. */}
       <AccountReviews orders={customer.orders ?? []} />
 
@@ -377,15 +354,6 @@ export function AccountView() {
           {nativeApp && customer.qrCode && (
             <button type="button" className="btn btn--primary" onClick={showBonusCard}>{a.bonusCard}</button>
           )}
-          {push === 'ask' && (
-            <button
-              type="button"
-              className="btn btn--outline"
-              onClick={() => enablePush().then((ok) => setPush(ok ? 'granted' : 'denied'))}
-            >
-              🔔 {a.pushOn}
-            </button>
-          )}
           <a href={CABINET_URL} className="btn btn--outline" target="_blank" rel="noopener noreferrer">{a.cabinetLink}</a>
           <button type="button" className="btn btn--ghost" onClick={leave}>{a.logout}</button>
         </div>
@@ -395,30 +363,28 @@ export function AccountView() {
         )}
       </section>
 
-      {/* Напоминания о корзине и «Новинки и скидки» — реклама, поэтому только с явного согласия
-          (Apple 4.5.4). Два пункта в одной карточке, у каждого свой вопрос и свой переключатель. */}
-      {push === 'granted' && (remind.consent !== undefined || promo.consent !== undefined) && (
-        <section className="account-remind">
-          {remind.consent !== undefined && (
-            <ConsentItem
-              id="account-remind-title"
-              state={remind}
-              ask={a.remindAsk}
-              title={a.remindTitle}
-              text={a.remindText}
-              yes={a.remindYes}
+      {/* После ответа — один переключатель: передумать можно в любой момент (Apple 4.5.4). */}
+      {push === 'granted' && notifyKnown && !notifyAsk && (
+        <section className="account-remind" aria-busy={remind.busy || promo.busy}>
+          <div className="account-remind__row">
+            <div>
+              <h2 id="account-notify-title">{a.notifyTitle}</h2>
+              <p className={`account-remind__state ${notifyOn ? 'is-on' : 'is-off'}`}>
+                {notifyOn ? a.remindOn : a.remindOff}
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={notifyOn}
+              aria-labelledby="account-notify-title"
+              className="account-switch"
+              disabled={remind.busy || promo.busy}
+              onClick={() => Promise.all([remind.save(!notifyOn), promo.save(!notifyOn)])}
             />
-          )}
-          {promo.consent !== undefined && (
-            <ConsentItem
-              id="account-promo-title"
-              state={promo}
-              ask={a.promoAsk}
-              title={a.promoTitle}
-              text={a.promoText}
-              yes={a.promoYes}
-            />
-          )}
+          </div>
+          <p className="account-remind__note">{a.notifyText}</p>
+          {(remind.failed || promo.failed) && <p className="field__error" role="alert">{a.remindFailed}</p>}
         </section>
       )}
 
