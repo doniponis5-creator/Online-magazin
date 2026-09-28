@@ -1,7 +1,7 @@
 # Graph Report - Online-magazin  (2026-09-28)
 
 ## Corpus Check
-- 581 files · ~5,315,542 words
+- 581 files · ~5,315,942 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 61 file(s) not represented in the graph (top: .xml 14, .css 13, (none) 8)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `066cff57`
+- Built from commit: `700b5496`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -1229,11 +1229,11 @@ Nodes (36): Границы, решённые в спецификации, Из �
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `_Response` connect `test_shop_push_send.py` to `.json`?**
-  _High betweenness centrality (0.118) - this node is a cross-community bridge._
+  _High betweenness centrality (0.122) - this node is a cross-community bridge._
 - **Why does `image()` connect `kitchenPage` to `shop_wa_bot.py`, `data.ts`, `gallery-pages.test.ts`, `gallery/store.ts`?**
-  _High betweenness centrality (0.115) - this node is a cross-community bridge._
+  _High betweenness centrality (0.110) - this node is a cross-community bridge._
 - **Why does `Консультант` connect `shop_wa_bot.py` to `kitchenPage`?**
-  _High betweenness centrality (0.115) - this node is a cross-community bridge._
+  _High betweenness centrality (0.110) - this node is a cross-community bridge._
 - **Are the 11 inferred relationships involving `KitchenPlanner()` (e.g. with `Решения по реализации` and `C01 — критично. Мойка, плита и угловые шкафы молча исчезают из кухни`) actually correct?**
   _`KitchenPlanner()` has 11 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `customer`, `phone`, `laptop` to the rest of the system?**

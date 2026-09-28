@@ -23173,7 +23173,7 @@
       "file_type": "code",
       "norm_label": "customerblock()",
       "source_file": "src/lib/assistant/prompt.ts",
-      "source_location": "L241"
+      "source_location": "L255"
     },
     {
       "id": "src_lib_assistant_prompt_installmentblock",
@@ -23185,7 +23185,7 @@
       "file_type": "code",
       "norm_label": "installmentblock()",
       "source_file": "src/lib/assistant/prompt.ts",
-      "source_location": "L274"
+      "source_location": "L288"
     },
     {
       "id": "src_lib_assistant_prompt_notesblock",
@@ -23197,7 +23197,7 @@
       "file_type": "code",
       "norm_label": "notesblock()",
       "source_file": "src/lib/assistant/prompt.ts",
-      "source_location": "L222"
+      "source_location": "L236"
     },
     {
       "id": "src_lib_assistant_prompt_systeminstruction",
@@ -23221,7 +23221,7 @@
       "file_type": "code",
       "norm_label": "viewingblock()",
       "source_file": "src/lib/assistant/prompt.ts",
-      "source_location": "L211"
+      "source_location": "L225"
     },
     {
       "id": "src_lib_assistant_talk_count",
@@ -58870,6 +58870,18 @@
       "type": "external"
     },
     {
+      "id": "datetime",
+      "label": "datetime",
+      "_origin": "semantic",
+      "community": 179,
+      "community_name": "shop_catalog.py",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "datetime",
+      "source_file": "",
+      "type": "external"
+    },
+    {
       "id": "fastapi",
       "label": "fastapi",
       "_origin": "semantic",
@@ -61158,17 +61170,6 @@
       "external": true,
       "file_type": "concept",
       "norm_label": "windowmanager",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "datetime",
-      "label": "datetime",
-      "community": 179,
-      "community_name": "shop_catalog.py",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "datetime",
       "source_file": "",
       "type": "external"
     }
@@ -88723,7 +88724,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/assistant/prompt.ts",
-      "source_location": "L254",
+      "source_location": "L268",
       "weight": 1.0
     },
     {
@@ -88735,7 +88736,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/assistant/prompt.ts",
-      "source_location": "L261",
+      "source_location": "L275",
       "weight": 1.0
     },
     {
@@ -88747,7 +88748,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/assistant/prompt.ts",
-      "source_location": "L190",
+      "source_location": "L204",
       "weight": 1.0
     },
     {
@@ -88759,7 +88760,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/assistant/prompt.ts",
-      "source_location": "L193",
+      "source_location": "L207",
       "weight": 1.0
     },
     {
@@ -88771,7 +88772,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/assistant/prompt.ts",
-      "source_location": "L195",
+      "source_location": "L209",
       "weight": 1.0
     },
     {
@@ -88783,7 +88784,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/assistant/prompt.ts",
-      "source_location": "L197",
+      "source_location": "L211",
       "weight": 1.0
     },
     {
@@ -88795,7 +88796,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/assistant/prompt.ts",
-      "source_location": "L199",
+      "source_location": "L213",
       "weight": 1.0
     },
     {
@@ -88807,7 +88808,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/assistant/prompt.ts",
-      "source_location": "L201",
+      "source_location": "L215",
       "weight": 1.0
     },
     {
@@ -88819,7 +88820,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/assistant/prompt.ts",
-      "source_location": "L204",
+      "source_location": "L218",
       "weight": 1.0
     },
     {
@@ -173650,7 +173651,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/assistant/prompt.ts",
-      "source_location": "L211",
+      "source_location": "L225",
       "weight": 1.0
     },
     {
@@ -173661,7 +173662,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/assistant/prompt.ts",
-      "source_location": "L222",
+      "source_location": "L236",
       "weight": 1.0
     },
     {
@@ -173672,7 +173673,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/assistant/prompt.ts",
-      "source_location": "L241",
+      "source_location": "L255",
       "weight": 1.0
     },
     {
@@ -173683,7 +173684,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/assistant/prompt.ts",
-      "source_location": "L274",
+      "source_location": "L288",
       "weight": 1.0
     },
     {
@@ -201823,5 +201824,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "066cff579c33f6b4308d62e44bad75646e70a26c"
+  "built_at_commit": "700b5496e36afb57be76693a4db8b3b88875ba34"
 }
