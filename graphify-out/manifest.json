@@ -163,31 +163,31 @@
   },
   "integrations/sbonus-server/shop/001_shop_orders_migration.sql": {
     "mtime": 1789746574.7940266,
-    "seen": 1790605765.454473,
+    "seen": 1790606447.650553,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/002_shop_catalog_migration.sql": {
     "mtime": 1789746574.7941577,
-    "seen": 1790605765.454473,
+    "seen": 1790606447.6505542,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/003_shop_bonus_migration.sql": {
     "mtime": 1789746574.7942019,
-    "seen": 1790605765.454474,
+    "seen": 1790606447.650555,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/004_shop_stats_migration.sql": {
     "mtime": 1789746574.7942476,
-    "seen": 1790605765.454475,
+    "seen": 1790606447.6505558,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/005_shop_push_migration.sql": {
     "mtime": 1789751144.4544964,
-    "seen": 1790605765.454476,
+    "seen": 1790606447.650557,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -3942,9 +3942,9 @@
     "semantic_hash": ""
   },
   "__tests__/assistant.test.ts": {
-    "mtime": 1790605721.4383857,
-    "seen": 1790605765.454389,
-    "ast_hash": "ad2a66c2ad8015a9fe0ce08c9612132e",
+    "mtime": 1790606377.8266227,
+    "seen": 1790606447.6503942,
+    "ast_hash": "755f7318db5da4c253cdb719dbe1fe25",
     "semantic_hash": ""
   },
   "src/app/api/assistant/route.ts": {
@@ -3978,15 +3978,15 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/prompt.ts": {
-    "mtime": 1790605659.414332,
-    "seen": 1790605765.454679,
-    "ast_hash": "7e4d307a94bc6bc3fda4f928ae13e40e",
+    "mtime": 1790606226.7567415,
+    "seen": 1790606447.650822,
+    "ast_hash": "c88c1eba474811140b790fffde4cba78",
     "semantic_hash": ""
   },
   "src/lib/assistant/reply.ts": {
-    "mtime": 1790605721.4380848,
-    "seen": 1790605765.454679,
-    "ast_hash": "55ff952784e1afd6798730775283d1fc",
+    "mtime": 1790606377.8261077,
+    "seen": 1790606447.6508229,
+    "ast_hash": "43f7ff5d622ffe149ca21b194d464324",
     "semantic_hash": ""
   },
   "src/lib/assistant/talk.ts": {
@@ -4008,9 +4008,9 @@
     "semantic_hash": ""
   },
   "__tests__/telegram-order.test.ts": {
-    "mtime": 1790078943.34699,
-    "seen": 1790605367.805585,
-    "ast_hash": "c2dc1afadcfae012458adcba56c8def2",
+    "mtime": 1790606295.8502173,
+    "seen": 1790606447.650502,
+    "ast_hash": "99bb09a2564638ae32b5d9715c0ce133",
     "semantic_hash": ""
   },
   "scripts/telegram-bot.mjs": {
@@ -4050,9 +4050,9 @@
     "semantic_hash": ""
   },
   "src/lib/telegram/order.ts": {
-    "mtime": 1790605222.0166216,
-    "seen": 1790605367.805801,
-    "ast_hash": "e230ec1880d11abd1c6e8f6a348c6d51",
+    "mtime": 1790606226.7574959,
+    "seen": 1790606447.650882,
+    "ast_hash": "27bd5b68190df84a4f941143b2a2bdd6",
     "semantic_hash": ""
   },
   "review/appstore-screenshots/02-catalog.png": {
@@ -4285,13 +4285,13 @@
   },
   "integrations/sbonus-server/shop/006_shop_installments_migration.sql": {
     "mtime": 1789980267.1214871,
-    "seen": 1790605765.454477,
+    "seen": 1790606447.650558,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/007_shop_notes_migration.sql": {
     "mtime": 1789980267.1215398,
-    "seen": 1790605765.454477,
+    "seen": 1790606447.650559,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -4314,15 +4314,15 @@
     "semantic_hash": ""
   },
   "__tests__/sales-flow.test.ts": {
-    "mtime": 1790605273.7177346,
-    "seen": 1790605367.805583,
-    "ast_hash": "cbb10cd2325215337a15de0b50ac4b04",
+    "mtime": 1790606295.8500407,
+    "seen": 1790606447.6504982,
+    "ast_hash": "96dc6d29bf0e894a14cf925f0074f145",
     "semantic_hash": ""
   },
   "src/lib/assistant/leads.ts": {
-    "mtime": 1790085656.9043944,
-    "seen": 1790605367.805761,
-    "ast_hash": "2c602fc0c371f950a188360cacd3ef1b",
+    "mtime": 1790606226.7561429,
+    "seen": 1790606447.6508129,
+    "ast_hash": "a2a268ad83867e23615478e933c68b65",
     "semantic_hash": ""
   },
   "__tests__/budget.test.ts": {
@@ -4339,14 +4339,14 @@
   },
   "integrations/sbonus-server/shop/008_shop_chat_extra_migration.sql": {
     "mtime": 1790002975.5050404,
-    "seen": 1790605765.4544792,
+    "seen": 1790606447.65056,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/shop_wa_bot.py": {
-    "mtime": 1790605222.016098,
-    "seen": 1790605367.805633,
-    "ast_hash": "b8d3abc84341d8e3998b91e456378055",
+    "mtime": 1790606226.7551281,
+    "seen": 1790606447.650584,
+    "ast_hash": "87c2418250a5e139b9028a0171f5b0c5",
     "semantic_hash": ""
   },
   "src/app/api/channel/whatsapp/route.ts": {
@@ -4356,9 +4356,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/respond.ts": {
-    "mtime": 1790605235.781969,
-    "seen": 1790605367.805768,
-    "ast_hash": "096d747b4c28dbfb10f87647b9945bba",
+    "mtime": 1790606226.7570543,
+    "seen": 1790606447.6508238,
+    "ast_hash": "014fb704982dd514f9c0bf1282cbc2f3",
     "semantic_hash": ""
   },
   "docs/PC_2026-09-21.md": {
@@ -4494,14 +4494,14 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/policy.ts": {
-    "mtime": 1790605222.0180445,
-    "seen": 1790605367.8057659,
-    "ast_hash": "90311d2d686f2bfa4d42e1c3806e4d47",
+    "mtime": 1790606226.7564268,
+    "seen": 1790606447.6508212,
+    "ast_hash": "a887e59d4537042b7bc621b12e5accbb",
     "semantic_hash": ""
   },
   "scripts/exam/questions.txt": {
-    "mtime": 1790605690.4421508,
-    "seen": 1790605765.455025,
+    "mtime": 1790606359.863533,
+    "seen": 1790606447.651108,
     "ast_hash": "251b56354cd29fddd31a07dc0c26c081",
     "semantic_hash": ""
   },
@@ -4626,9 +4626,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/followup.ts": {
-    "mtime": 1790605222.0169635,
-    "seen": 1790605367.80576,
-    "ast_hash": "4e194e957e6b04e156dda16a971db6e9",
+    "mtime": 1790606226.7557254,
+    "seen": 1790606447.650811,
+    "ast_hash": "dd11dd47fb0c27db21d35df1025af871",
     "semantic_hash": ""
   },
   "docs/MAC_2026-09-21.md": {
@@ -6529,19 +6529,19 @@
   },
   "integrations/sbonus-server/shop/009_shop_push_token_len_migration.sql": {
     "mtime": 1790604951.2586076,
-    "seen": 1790605765.45448,
+    "seen": 1790606447.650561,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/010_shop_cart_reminders_migration.sql": {
     "mtime": 1790604951.2590644,
-    "seen": 1790605765.45448,
+    "seen": 1790606447.650562,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/011_shop_promo_migration.sql": {
     "mtime": 1790604951.2591376,
-    "seen": 1790605765.4544818,
+    "seen": 1790606447.650563,
     "ast_hash": "",
     "semantic_hash": ""
   },
