@@ -3,7 +3,7 @@ vi.mock('server-only', () => ({}))
 process.env.SHOP_PAYMENT_MODE = 'mock'
 
 import { products } from '@/data/products'
-import { AFFIRM, BUY_INTENT, OFFER, looksLikeQuestion, start, step } from '@/lib/telegram/order'
+import { AFFIRM, BUY_INTENT, OFFER, looksLikeQuestion, shortName, start, step } from '@/lib/telegram/order'
 import { detectLang } from '@/lib/assistant/talk'
 import { talkLang } from '@/lib/assistant/reply'
 import { followUp } from '@/lib/assistant/followup'
@@ -18,16 +18,16 @@ describe('заказ в чате на сайте', () => {
       name: 'Азамат',
       phone: '+996555123456',
     })
-    expect(first).toContain(product.nameRu)
-    expect(first).toMatch(/Куда везти/)
+    expect(first).toContain(shortName(product.nameRu))
+    expect(first).toMatch(/Куда привезти/)
     const done = await step('web:test-1', 'заберу сам', 'ru', 'ru')
-    expect(done).toContain('Оплатить:')
+    expect(done).toContain('Оплата:')
   })
 
   it('гостя спрашивает по порядку: имя, телефон, куда', async () => {
     expect(await start('web:test-2', [product.id], 'ru', 'Заказ из чата на сайте')).toMatch(/Как вас зовут/)
-    expect(await step('web:test-2', 'Нурлан', 'ru', 'ru')).toMatch(/номер телефона/)
-    expect(await step('web:test-2', '0700 123 456', 'ru', 'ru')).toMatch(/Куда везти/)
+    expect(await step('web:test-2', 'Нурлан', 'ru', 'ru')).toMatch(/номер телефона/i)
+    expect(await step('web:test-2', '0700 123 456', 'ru', 'ru')).toMatch(/Куда привезти/)
   })
 })
 
@@ -40,13 +40,13 @@ describe('перезвоните мне', () => {
   })
 
   it('вошедшему не задаёт вопрос про номер', async () => {
-    expect(await startLead('web:lead-1', 'ru', 'ctx', { phone: '+996555123456' })).toMatch(/перезвонят/)
+    expect(await startLead('web:lead-1', 'ru', 'ctx', { phone: '+996555123456' })).toMatch(/позвоним/)
   })
 
   it('гостя просит номер и не принимает мусор', async () => {
-    expect(await startLead('web:lead-2', 'uz', 'ctx')).toMatch(/ракамингизни/)
+    expect(await startLead('web:lead-2', 'uz', 'ctx')).toMatch(/ракамингиз/)
     expect(await leadStep('web:lead-2', 'abc', 'uz')).toMatch(/тугри эмас/)
-    expect(await leadStep('web:lead-2', '0555 123 456', 'uz')).toMatch(/Тайёр/)
+    expect(await leadStep('web:lead-2', '0555 123 456', 'uz')).toMatch(/кунгирок киламиз/)
     expect(await leadStep('web:lead-2', '0555 123 456', 'uz')).toBeNull()
   })
 
@@ -111,8 +111,8 @@ describe('напоминание «ещё актуально?»', () => {
     const text = (r as { text: string }).text
     // Имя не ставим: в телефоне владельца оно бывает «Жанатим. Онам», «Ааааааа».
     expect(text).not.toMatch(/^Aziz/)
-    expect(text).toContain(product.nameRu)
-    expect(text).toContain('оламан')
+    expect(text).toContain(shortName(product.nameRu))
+    expect(text).toContain('расмийлаштириб')
   })
   it('без товара — пропуск', async () => {
     expect(await followUp([{ role: 'user', text: 'привет' }], [], 'ru')).toEqual({ skip: 'not-shown' })
@@ -175,10 +175,10 @@ describe('вопрос вместо имени и телефона (случай
   it('«Есть скидка» — не имя; «Есть скидка на товар» — не «номер не похож»', async () => {
     await start('web:test-disc', [product.id], 'ru', 'Заказ из чата на сайте')
     expect(await step('web:test-disc', 'Есть скидка', 'ru', 'ru')).toBeNull()
-    expect(await step('web:test-disc', 'Азамат', 'ru', 'ru')).toMatch(/номер телефона/)
+    expect(await step('web:test-disc', 'Азамат', 'ru', 'ru')).toMatch(/номер телефона/i)
     expect(await step('web:test-disc', 'Есть скидка на товар', 'ru', 'ru')).toBeNull()
-    expect(await step('web:test-disc', '0555 12', 'ru', 'ru')).toMatch(/не похож/)
-    expect(await step('web:test-disc', '0555 123456', 'ru', 'ru')).toMatch(/Куда везти/)
+    expect(await step('web:test-disc', '0555 12', 'ru', 'ru')).toMatch(/не прошёл/)
+    expect(await step('web:test-disc', '0555 123456', 'ru', 'ru')).toMatch(/Куда привезти/)
   })
   it('обычные имена и «канча турат» не путает', () => {
     expect(looksLikeQuestion('Айгүл')).toBe(false)
@@ -265,8 +265,8 @@ describe('«хочу посмотреть на сайте» вместо гор�
     expect(await step('web:test-city', 'Не так понял, хочу посмотреть то что в наличии на сайте', 'ru', 'ru')).toBeNull()
     // Настоящий адрес по-прежнему проходит.
     await start('web:test-city2', [product.id], 'ru', 'Заказ из чата на сайте', { name: 'Азамат', phone: '+996555000010' })
-    expect(await step('web:test-city2', 'Ош', 'ru', 'ru')).toMatch(/Адрес/)
-    expect(await step('web:test-city2', 'улица Ленина 12', 'ru', 'ru')).toContain('Оплатить:')
+    expect(await step('web:test-city2', 'Ош', 'ru', 'ru')).toMatch(/Улица и дом/)
+    expect(await step('web:test-city2', 'улица Ленина 12', 'ru', 'ru')).toContain('Оплата:')
   })
 })
 
@@ -340,21 +340,21 @@ describe('аудит 26–28.09: WhatsApp', () => {
     const { respond } = await import('@/lib/assistant/respond')
     const r = await respond(wa('wa:a5'), [{ role: 'assistant', text: 'UAKEEN ZL-940, 13 900 сом. Буйрутма кылабызбы?' }, { role: 'user', text: '0700441154 синий' }], 'ky', null, undefined, [product.id])
     expect(r.source).toBe('flow')
-    expect(r.text).toContain(product.nameRu)
+    expect(r.text).toContain(shortName(product.nameRu))
   })
 
   it('полный адрес на шаге «куда» — сразу заказ; «озум алам» на шаге «адрес» — самовывоз', async () => {
     await start('wa:a6', [product.id], 'ky', 'Заказ из WhatsApp', { name: 'Айгүл', phone: '+996555000031' })
-    expect(await step('wa:a6', 'Ош шаары Араван району жаны арык айылы.Айтиев жоро кочосу 20 уй', 'ky', 'ky')).toMatch(/Даяр!/)
+    expect(await step('wa:a6', 'Ош шаары Араван району жаны арык айылы.Айтиев жоро кочосу 20 уй', 'ky', 'ky')).toMatch(/Даяр ✅/)
     await start('wa:a7', [product.id], 'ky', 'Заказ из WhatsApp', { name: 'Айгүл', phone: '+996555000032' })
-    expect(await step('wa:a7', 'Ош', 'ky', 'ky')).toMatch(/Дарек/)
+    expect(await step('wa:a7', 'Ош', 'ky', 'ky')).toMatch(/Көчө жана үй/)
     const done = await step('wa:a7', 'Озум алам', 'ky', 'ky')
-    expect(done).toMatch(/Даяр!/)
+    expect(done).toMatch(/Даяр ✅/)
   })
 
   it('«Доставкасын айтып койгулачы Таласка» на шаге «адрес» — не адрес', async () => {
     await start('wa:a8', [product.id], 'ky', 'Заказ из WhatsApp', { name: 'Турдакун', phone: '+996555000033' })
-    expect(await step('wa:a8', 'Талас', 'ky', 'ky')).toMatch(/Дарек/)
+    expect(await step('wa:a8', 'Талас', 'ky', 'ky')).toMatch(/Көчө жана үй/)
     expect(await step('wa:a8', 'Доставкасын айтып койгулачы Таласка', 'ky', 'ky')).toBeNull()
   })
 
@@ -370,5 +370,30 @@ describe('аудит 26–28.09: WhatsApp', () => {
     expect(talkLang([{ role: 'user', text: 'Мына озубузду араванбы же оштобу' }], 'ru')).toBe('ky')
     expect(talkLang([{ role: 'user', text: 'Kara baltada barby flial' }, { role: 'user', text: 'Stralnyi mašina 8 kg' }], 'ru')).toBe('ky')
     expect(talkLang([{ role: 'user', text: 'Где купить грибы и зубы чистить?' }], 'ru')).toBe('ru')
+  })
+})
+
+describe('без кодовых слов: «да» на «Оформляем?» и «Позвонить вам?»', () => {
+  it('«Оформляем?» → «ооба» начинает заказ; «Позвонить вам?» → «да» — заявка на звонок', async () => {
+    const { respond } = await import('@/lib/assistant/respond')
+    const wa = (key: string) => ({ key, orderSource: 'Заказ из WhatsApp', leadChannel: 'whatsapp' as const, known: { phone: '+996555000040' } })
+    const buy = await respond(wa('wa:n1'), [{ role: 'assistant', text: 'Флагман 8 кг, 21 400 сом. Оформляем?' }, { role: 'user', text: 'Ооба' }], 'ky', null, undefined, [product.id])
+    expect(buy.source).toBe('flow')
+    expect(buy.text).toContain(shortName(product.nameRu))
+    const call = await respond({ ...wa('wa:n2'), known: {} }, [{ role: 'assistant', text: 'Точно не скажу. Позвонить вам?' }, { role: 'user', text: 'Да' }], 'ru', null)
+    expect(call.source).toBe('flow')
+    expect(call.text).toMatch(/Ваш номер телефона/)
+  })
+  it('в списке — «второй», «экинчиси»', async () => {
+    const two = products.filter((p) => p.price > 0 && p.variants.some((v) => v.stock > 0)).slice(0, 2)
+    await start('wa:n3', two.map((p) => p.id), 'ru', 'Заказ из WhatsApp')
+    expect(await step('wa:n3', 'второй', 'ru', 'ru')).toMatch(/Как вас зовут/)
+    await start('wa:n4', two.map((p) => p.id), 'ky', 'Заказ из WhatsApp')
+    expect(await step('wa:n4', 'экинчисин', 'ky', 'ky')).toMatch(/Атыңыз ким/)
+  })
+  it('короткое имя: без «Стиральная машина»', () => {
+    expect(shortName('Стиральная машина FLAGMAN AV-80MXLB(BG)')).toBe('FLAGMAN AV-80MXLB(BG)')
+    expect(shortName('Холодильник* TOEAR BCD-220')).toBe('TOEAR BCD-220')
+    expect(shortName('Электро Эндуро мини')).toBe('Электро Эндуро мини')
   })
 })

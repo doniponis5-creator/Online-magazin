@@ -280,7 +280,7 @@ describe('кому адресовано (WhatsApp)', () => {
   })
   it('правило есть в подсказке', () => {
     expect(systemInstruction('ru', null, 'ky', products)).toMatch(/КОМУ АДРЕСОВАНО/)
-    expect(systemInstruction('ru', null, 'ky', products)).toContain('«чалып коюңуз»')
+    expect(systemInstruction('ru', null, 'ky', products)).toContain('НИКОГДА НЕ ГОВОРИ «напишите слово …»')
   })
 })
 
@@ -347,5 +347,12 @@ describe('без похвалы, по которой узнают робота',
     expect(houseStyle('Есть отличные варианты дешевле: Midea за 29 800 сом.', 'ru')).toBe('Есть варианты дешевле: Midea за 29 800 сом.')
     expect(houseStyle('Отличный выбор! FLAGMAN за 21 400 сом.', 'ru')).toBe('FLAGMAN за 21 400 сом.')
     expect(houseStyle('Тазагул, эң сонун тандоо! FLAGMAN бар.', 'ky')).toBe('Тазагул, FLAGMAN бар.')
+  })
+})
+
+describe('«руководствимиз» не бывает', () => {
+  it('склонение по-узбекски убирается', async () => {
+    const { houseStyle } = await import('@/lib/assistant/reply')
+    expect(houseStyle('Туласангиз, руководствимиз сиз билан богланади.', 'uz')).toBe('Туласангиз, руководство сиз билан богланади.')
   })
 })

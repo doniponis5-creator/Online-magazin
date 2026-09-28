@@ -3,18 +3,18 @@ vi.mock('server-only', () => ({}))
 process.env.SHOP_PAYMENT_MODE = 'mock'
 
 import { products } from '@/data/products'
-import { start, step } from '@/lib/telegram/order'
+import { shortName, start, step } from '@/lib/telegram/order'
 
 describe('заказ в Telegram', () => {
   it('доходит до ссылки на оплату', async () => {
     const product = products.find((p) => p.price > 0 && p.variants.some((v) => v.stock > 0))!
     const first = await start(42, [product.id], 'uz')
-    expect(first).toContain(product.nameRu)
+    expect(first).toContain(shortName(product.nameRu))
 
     expect(await step(42, 'Азамат', 'uz', 'ru')).toContain('ракам')
     expect(await step(42, '0555123456', 'uz', 'ru')).toContain('Каерга')
     const done = await step(42, "o'zim olaman", 'uz', 'ru')
-    expect(done).toContain('Тулаш:')
+    expect(done).toContain('Тулов:')
     expect(done).toContain('TEST-')
   })
 
@@ -24,7 +24,7 @@ describe('заказ в Telegram', () => {
     await step(43, 'Азамат', 'ru', 'ru')
     // Слова вместо номера — это разговор, отвечает консультант; цифры не те — переспрашиваем.
     expect(await step(43, 'не скажу', 'ru', 'ru')).toBeNull()
-    expect(await step(43, '123', 'ru', 'ru')).toContain('не похож')
+    expect(await step(43, '123', 'ru', 'ru')).toContain('не прошёл')
   })
 })
 

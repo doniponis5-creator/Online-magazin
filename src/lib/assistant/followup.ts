@@ -14,6 +14,7 @@ import type { Lang } from '@/lib/i18n/config'
 import { lookupIn, salesCatalogNow } from './live'
 import { talkLang } from './reply'
 import { formatSom } from '@/lib/format'
+import { shortName } from '@/lib/telegram/order'
 
 export type FollowUp = { text: string } | { skip: 'ordered' | 'no-product' | 'not-shown' }
 
@@ -32,11 +33,12 @@ export async function followUp(turns: ChatTurn[], shown: string[], lang: Lang, n
   // «Ойбек ака налог», а в профиле WhatsApp — «Dilshadakanvaliyeva». Обращаться так нельзя.
   void name
   const who = ''
-  const item = `${product.nameRu} — ${formatSom(product.price)}`
+  const title = shortName(product.nameRu)
+  const price = formatSom(product.price)
   const say = {
-    ru: `${who}вы смотрели ${item}. Ещё нужно? Если что — пишите, оформлю здесь: «беру».`,
-    ky: `${who}${item} караган элеңиз. Дагы керекпи? Суроо болсо жазыңыз, ушул жерден эле тариздейм: «алам».`,
-    uz: `${who}${item} курган эдингиз. Хали керакми? Савол булса ёзинг, шу ердан расмийлаштираман: «оламан».`,
+    ru: `${who}${title} за ${price} ещё актуальна? Могу оформить сегодня — до центра района привезём бесплатно.`,
+    ky: `${who}${title} ${price} дагы керекпи? Бүгүн эле тариздеп берейин — райондун борборуна чейин акысыз.`,
+    uz: `${who}${title} ${price} хали керакми? Бугун расмийлаштириб берайми — туман марказигача бепул.`,
   }
   const text = say[talk]
   return { text: text.charAt(0).toUpperCase() + text.slice(1) }

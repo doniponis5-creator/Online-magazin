@@ -12,7 +12,7 @@ import 'server-only'
 import type { Lang } from '@/lib/i18n/config'
 import { answer, talkLang } from './reply'
 import { cleanName } from './talk'
-import { AFFIRM, BUY_INTENT, DEFER, OFFER, cancel, hasDraft, looksLikeQuestion, start, step } from '@/lib/telegram/order'
+import { AFFIRM, BUY_INTENT, CALL_OFFER, DEFER, OFFER, cancel, hasDraft, looksLikeQuestion, start, step } from '@/lib/telegram/order'
 import { CALL_INTENT, cancelLead, hasLead, leadContext, leadStep, startLead } from './leads'
 import { lookupIn, salesCatalogNow } from './live'
 import type { ChatTurn } from './gemini'
@@ -124,9 +124,9 @@ function isAcknowledgement(turns: ChatTurn[]): boolean {
 }
 
 const STAFF_ACK = {
-  ru: 'Понял, передам руководству.',
-  ky: 'Түшүндүм, руководствого айтып коём.',
-  uz: 'Тушундим, руководствога айтаман.',
+  ru: 'Понял, уточню у руководства и напишу вам.',
+  ky: 'Түшүндүм, руководстводон тактап, жазам.',
+  uz: 'Тушундим, руководстводан аниклаб, ёзаман.',
 }
 const pick = (say: Record<'ru' | 'ky' | 'uz', string>, lang: 'ru' | 'ky' | 'uz') => say[lang]
 
@@ -176,7 +176,9 @@ async function salesFlow(
     return only(await start(key, [buy], talk, orderSource, who, wantedQty(text)))
   }
 
-  if (CALL_INTENT.test(text)) {
+  // «Позвонить вам?» — «да» / «ооба» / «ха»: заявка на звонок без всяких кодовых слов.
+  const offeredCall = CALL_OFFER.test([...turns].reverse().find((t) => t.role === 'assistant')?.text ?? '')
+  if (CALL_INTENT.test(text) || (offeredCall && AFFIRM.test(text.trim()))) {
     cancel(key)
     const questions = turns.filter((t) => t.role === 'user').map((t) => t.text)
     const reply = await startLead(key, talk, leadContext(questions, shownNames), who, channel.leadChannel)
