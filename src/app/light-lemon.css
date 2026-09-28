@@ -445,7 +445,10 @@ input, textarea { caret-color: var(--color-primary); }
   /* Место под нижнее меню оставляет сам подвал (его нижний отступ). Когда
      подвал идёт сразу за страницей, запас у страницы лишний: между полосой
      «Доставка…» и подвалом стояло 144px пустоты. */
-  main#content:has(+ .footer) { padding-bottom: 24px; }
+  main#content:has(+ .footer:not(.footer--cabinet-only)) { padding-bottom: 24px; }
+  /* Подвал на телефоне и в приложении — только в кабинете (Footer.tsx). Спрятан —
+     место под нижнее меню снова оставляет сама страница (правило выше не сработает). */
+  .footer--cabinet-only { display: none; }
   /* Нижняя строка подвала — столбиком у левого края. Справа висит круглая
      кнопка чата и закрывала «Политику конфиденциальности». */
   .footer__bottom { flex-direction: column; align-items: flex-start; gap: 8px; }

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { address, developer, phones, telHref, telegramHref, whatsappHref } from '@/data/contacts'
 import { paymentMethods } from '@/data/payment-methods'
@@ -10,8 +11,12 @@ import { Brand } from './Brand'
 
 export function Footer() {
   const { t, lang } = useI18n()
+  // Телефон и приложение: подвал (разделы, контакты, адрес) — только в кабинете,
+  // на остальных страницах его заменяет нижнее меню (владелец, 28.09.2026).
+  // Компьютер — подвал везде, как раньше: прячет его только CSS до 900px.
+  const inCabinet = /\/account(\/|$)/.test(usePathname() ?? '')
   return (
-    <footer className="footer">
+    <footer className={`footer${inCabinet ? '' : ' footer--cabinet-only'}`}>
       <div className="container">
         <div className="footer__grid">
           <div>
