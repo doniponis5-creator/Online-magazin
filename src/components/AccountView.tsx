@@ -306,7 +306,16 @@ export function AccountView() {
   // Результат кнопки «Проверить»: null — ещё не нажимали.
   const [lockCheck, setLockCheck] = useState<boolean | null>(null)
   // Удаление учётной записи: 'idle' → 'confirm' → 'busy' → 'failed'.
-  const [wipe, setWipe] = useState<'idle' | 'confirm' | 'busy' | 'failed'>('idle')
+  // Три вопроса подряд (владелец, 28.09.2026): 1 → 2 → 3 → удаление.
+  const [wipe, setWipe] = useState<'idle' | 1 | 2 | 3 | 'busy' | 'failed'>('idle')
+  // «Да» каждого вопроса оживает через мгновение: три быстрых нажатия подряд запись не сотрут
+  const [armed, setArmed] = useState(false)
+  useEffect(() => {
+    if (typeof wipe !== 'number') return
+    setArmed(false)
+    const timer = setTimeout(() => setArmed(true), 900)
+    return () => clearTimeout(timer)
+  }, [wipe])
   // Скидки, новинки и напоминания о корзине — реклама, поэтому только с явного «да»
   // в самом приложении (Apple 4.5.4): окно телефона «Разрешить» согласием на рекламу
   // не считается. На сервере это два согласия, но покупателя спрашиваем один раз:
@@ -455,7 +464,7 @@ export function AccountView() {
 
   if (!customer) {
     return (
-      <div className="account-layout">
+      <div className="account-layout account-layout--guest">
         <section className="account-loyalty">
           <Brand bonus />
           <h2>{a.loyaltyTitle}</h2>
@@ -464,6 +473,15 @@ export function AccountView() {
           <p className="account-welcome__note">{a.welcomeNote}</p>
         </section>
         <section className="account-access">
+          {/* Телефон: вход — первым, подарок за регистрацию — прямо над ним;
+              большая карточка SBonus уходит под форму (владелец: занимала весь экран) */}
+          <p className="account-welcome account-welcome--phone">
+            <IconGift size={22} className="account-welcome__icon" />
+            <span>
+              {a.welcomePromo.replace('{amount}', formatSom(1000))}
+              <small>{a.welcomeNote}</small>
+            </span>
+          </p>
           <ReviewLoginHint />
           <h2>{a.loginTitle}</h2>
           {faceId !== 'none' && (
@@ -755,24 +773,32 @@ export function AccountView() {
                 <h2>{a.deleteTitle}</h2>
                 <p className="account-wipe__text">{a.deleteText}</p>
                 <p className="account-wipe__kept">{a.deleteKept}</p>
-                {wipe === 'confirm' ? (
-                  <>
-                    <p className="account-wipe__ask" role="status">{a.deleteConfirm}</p>
+                {typeof wipe === 'number' ? (
+                  <div className="account-wipe__confirm" role="group" aria-labelledby="account-wipe-ask">
+                    <p className="account-wipe__step">{a.deleteStep.replace('{n}', String(wipe))}</p>
+                    <p className="account-wipe__ask" id="account-wipe-ask" role="status">
+                      {wipe === 1 ? a.deleteAsk1 : wipe === 2 ? a.deleteAsk2 : a.deleteAsk3}
+                    </p>
                     <div className="account-actions">
-                      <button type="button" className="btn btn--danger" onClick={removeAccount}>
-                        {a.deleteYes}
+                      <button
+                        type="button"
+                        className="btn btn--danger"
+                        disabled={!armed}
+                        onClick={() => (wipe < 3 ? setWipe(wipe === 1 ? 2 : 3) : removeAccount())}
+                      >
+                        {wipe < 3 ? a.deleteYes : a.deleteFinal}
                       </button>
                       <button type="button" className="btn btn--ghost" onClick={() => setWipe('idle')}>
                         {a.deleteNo}
                       </button>
                     </div>
-                  </>
+                  </div>
                 ) : (
                   <div className="account-actions">
                     <button
                       type="button"
                       className="btn btn--outline account-wipe__start"
-                      onClick={() => setWipe('confirm')}
+                      onClick={() => setWipe(1)}
                       disabled={wipe === 'busy'}
                     >
                       {a.deleteAction}
