@@ -1,29 +1,29 @@
-# Graph Report - impeccable-polish-415f3f  (2026-09-29)
+# Graph Report - 1c-panel-saytani-okib-chik-ad07ff  (2026-09-29)
 
 ## Corpus Check
-- 590 files · ~5,325,706 words
+- 596 files · ~5,347,456 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 62 file(s) not represented in the graph (top: .xml 14, .css 13, (none) 9)
 
 ## Summary
-- 5026 nodes · 12236 edges · 374 communities (201 shown, 173 thin omitted)
-- Extraction: 94% EXTRACTED · 6% INFERRED · 0% AMBIGUOUS · INFERRED: 673 edges (avg confidence: 0.92)
+- 5154 nodes · 12844 edges · 403 communities (207 shown, 196 thin omitted)
+- Extraction: 94% EXTRACTED · 6% INFERRED · 0% AMBIGUOUS · INFERRED: 747 edges (avg confidence: 0.92)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `fdd5cb5f`
+- Built from commit: `92569e1b`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- .json
+- addresses.ts
 - build_model.py
 - build_extension.py
-- isLang
+- config.ts
 - OfflineCatalogView
 - App Store га топшириш — 8-қадам
-- 01 — Безопасность: рамка, прокси фото, тесты парсера
-- AccountView.tsx
+- share.ts
+- knowledge.ts
 - layout.ts
 - kitchen-build.test.ts
 - shop_customers.py
@@ -37,25 +37,25 @@
 - KitchenPlanner.tsx
 - shop_admin.py
 - pdfSheet.ts
-- telegram/order.ts
+- appliances.ts
 - compilerOptions
 - AppDelegate
 - export_catalog.py
-- bot.ts
-- data.ts
+- respond.ts
+- kitchen/gallery/page.tsx
 - TASK 03A Report — review closure and LG scene
-- kitchen/order.ts
+- data.ts
 - TASK 04 Report — Blender Model of LG F4X5ES5SB
 - Smart Centr Architecture (site, iOS, Android, 1C, SBonus)
-- products.ts
+- formatSom
 - BonusCardPlugin
 - Bonus Hold Mechanism
 - Neutral Localized Photo Placeholder
-- I18nProvider.tsx
+- ProductReels.tsx
 - app/shop Module on the SBonus Server
 - TASK 03 Brief — expressive storefront, photos, motion
 - TODO_NEXT.md — What To Do Next
-- build.ts
+- ref_three_addons_geometries_roundedboxgeometry_js
 - shop_router.py
 - HANDOFF.md — What Is Already Built
 - IOS_APP_UZ.md — App Store Guide
@@ -99,21 +99,21 @@
 - setup-demo-login.sh
 - PhotoTracer
 - smartcentr_site_src_components_kitchen_kitchen_promo
-- respond.ts
+- .constructor
 - .scene
-- Sheet
-- drawing.ts
+- bot.ts
+- .json
 - OfflineCatalogActivity
 - reviews/store.ts
 - capacitor_swift
 - cutting.ts
 - OfflineCatalogActivity.java
 - .tick
-- ref_node_fs
+- @playwright/test
 - reply.ts
-- Form
+- ref_node_path
 - elevationSvg
-- kitchen-cutting.test.ts
+- types.ts
 - gallery/store.ts
 - ref_node_crypto
 - make-app-icons.mjs
@@ -167,7 +167,7 @@
 - build-appstore.sh
 - telegram-webhook.sh
 - smartcentr_site_src_components_home_story
-- test_shop_cart_rules.py
+- cart
 - test_shop_promo_rules.py
 - MainActivity.java
 - 3. Play Console da qadamlar (tartib bilan)
@@ -175,7 +175,7 @@
 - smartcentr_site_src_app_globals
 - ref_data_1c_adapter
 - manage.py
-- formatSom
+- AccountView.tsx
 - gradlew
 - android-keystore.sh
 - deploy_cabinet_client.sh
@@ -184,25 +184,25 @@
 - currentSession
 - package.json
 - 3D-конструктор кухни: удобство покупателя и лишнее
-- shop_catalog.py
+- shop_installments.py
 - 02 — Телефон: виды под 3D, «Ещё» словом, полный экран с панелью
 - 04 — Тест губернатора: рывок заведомо больше капа
 - adapter.ts
 - Изначальная задача
-- vitest
+- governor.ts
 - 2026-09-24-kitchen-3d-mobile-security/manifest.md
 - Capacitor
-- gallery-api.test.ts
-- react
+- ref_node_fs
+- ProductArt.tsx
 - Как читать эту папку
 - com.getcapacitor.PluginCall
-- Что уже построено
+- .focus
 - bs4
 - concurrent_futures
 - html
 - io
 - 07 — Доводка внешнего вида (impeccable polish) и карта кода
-- kitchen-hob-photo.test.ts
+- photo.ts
 - requests
 - urllib3
 - smartcentr_site_src_data_1c_adapter
@@ -219,10 +219,10 @@
 - 2026-09-26-kitchen-3d-audit-pro/manifest.md
 - ref_data_photos
 - 01 — Оболочка, «Нет связи», каталог без интернета и вход — проверить на эмуляторе и починить
-- kitchen/catalog.ts
+- kitchen.test.ts
 - smartcentr_site_src_components_assistant_chat
 - push-promo-routes.test.ts
-- uppers
+- build.ts
 - ref_data_privacy
 - orders/route.ts
 - Спецификация: 3D-конструктор кухни — аудит, исправление расчётов и чертежа, быстрые PRO-шаги
@@ -234,12 +234,12 @@
 - orders/gateway.ts
 - android.content.Context
 - 02 — Бонусная карта, отпечаток и итоговая сборка для Google Play
-- Критерии приёмки
+- check_installments.py
 - ref_data_storefront
 - KitchenEngine
 - SendTest
 - item
-- shop_telegram.py
+- dependencies
 - 3D oshxona konstruktori — audit xulosasi (2026-09-26)
 - shop_push_fcm.py
 - BonusCardPlugin.java
@@ -249,8 +249,8 @@
 - Изначальная задача
 - Манифест требований
 - pathlib
-- Спецификация: галерея кухонь и готовые кухни
-- live.ts
+- (entry)/layout.tsx
+- products.ts
 - smartcentr_site_src_app_light_lemon
 - smartcentr_site_src_components_filter_select
 - smartcentr_site_src_components_home_merchandising
@@ -286,10 +286,10 @@
 - scripts
 - image.ts
 - smartcentr_site_src_data_products_artkind
-- Серьёзно — непонятно, нечитаемо или вводит в заблуждение
+- collectRun
 - smartcentr_site_src_data_products_brands
 - smartcentr_site_src_data_products_combovariant
-- schedule
+- test_shop_cart_rules.py
 - Что построили таски
 - 02 — Ссылка, автосохранение, разбор размеров, кнопка на карточке товара
 - 02 — Excel для пильного центра
@@ -309,24 +309,24 @@
 - 02 — Сайт: адрес телефона с платформой, текст «Кабинета» для Android
 - smartcentr_site_src_data_products_gethits
 - smartcentr_site_src_data_products_getnew
-- AccountReviews.tsx
+- shop_models.py
 - Изначальная задача
 - 2026-09-27-kitchen-colors/manifest.md
 - smartcentr_site_src_data_products_getpopular
 - smartcentr_site_src_data_products_getproduct
 - smartcentr_site_src_data_products_getrecommended
-- push-cart-sync.test.ts
+- devDependencies
 - smartcentr_site_src_data_products_getsale
 - test_shop_push_fcm.py
-- fronts.ts
+- kitchen-free.test.ts
 - smartcentr_site_src_data_products_product
-- panel/reviews/route.ts
-- BuildAssertionTest
+- 3D-конструктор кухни: польза и что сделать, чтобы стал PRO
+- photo/route.ts
 - smartcentr_site_src_data_products_products
-- ref_next_server
-- Спецификация: пакет цвета — любой RAL, декоры ЛДСП с кодом, свой цвет острова
-- cartSync.ts
-- 01 — Хранилище галереи, API и панель владельца
+- device/route.ts
+- 04 — 3D-сборка и спецификация мебельщику: только то, что можно изготовить
+- 06 — Чертёж и PDF для мастера: все размеры, угол, план сверху, контакты
+- BlockedTest
 - 03 — Цены мастера, смета PDF и блок «Мастеру» на экране
 - smartcentr_site_src_data_products_productvariant
 - ТЗ для PC: уведомления «Скидка» и «Новинка» из 1С по шаблонам
@@ -336,78 +336,107 @@
 - 0014-ready-kitchens-triangle-warnings.md
 - 0015-ready-kitchens-catalog-fixture.md
 - 0016-single-row-triangle-rule.md
-- stateFromQuery
+- Спецификация: пакет мастера — раскрой в Excel, кромка, листы, смета
 - Изначальная задача
+- 03 — Раскладка и проверки: ничего не пропадает молча, техника не шире места
 - kitchen-ready-shots.mjs
-- ref_node_path
+- category-icons.mjs
 - local.ts
-- .snapshot
+- 04 — В конструкторе: готовые кухни и «В галерею»
 - smartcentr_site_src_data_storefront_storefront
 - ClassifyTest
+- 02 — Свой цвет острова: состояние, ссылка, 3D, раскрой
 - Спецификация: Android-приложение S Маркет — довести до «без ошибок» и отдать в Google Play
 - Спецификация: уведомления на телефон — iPhone в боевом режиме, Android через Firebase
 - push-cart-tap.test.ts
-- BuildMessageTest
+- 03 — Выбор RAL/декора/цвета острова на экране и код цвета во всех выгрузках
+- 01 — Детали, кромка и раскладка по листам
 - ReminderTextTest
 - 05 — Сервер: напоминания о корзине
+- 0001-layout-single-source-of-truth.md
 - 04 — Владельцу: одна команда для файлов Firebase и инструкция
 - 06 — Сайт: корзина из приложения на сервер, согласие в «Кабинете», нажатие открывает корзину
+- 0007-guillotine-strip-nesting.md
 - turnstile-remote.sh
 - 0017-android-push-only-with-firebase-file.md
 - 0018-fcm-v1-next-to-apns.md
 - 0019-cart-snapshot-on-server.md
 - 0020-cart-reminder-opt-in.md
 - 0021-cart-reminder-host-cron.md
-- ref_node_assert
+- 0013-ready-kitchens-data-in-repo.md
+- 02 — 12 готовых кухонь: проекты и картинки
+- push-promo-tap.test.ts
 - setup-fcm.sh
+- Отдельностоящая плита в конструкторе кухни
+- push-platform.test.ts
 - Изначальная задача
+- ref_next_headers
 - 2026-09-27-push-apns-fcm/manifest.md
 - fcm-remote.sh
+- ref_next_image
+- ref_next_link
+- ref_next_navigation
+- ref_next_server
+- ref_node_assert_strict
+- ref_node_fs_promises
+- ref_react_dom_server
+- ref_three_addons_controls_orbitcontrols_js
+- ref_three_addons_environments_roomenvironment_js
+- ref_three_addons_lights_rectarealightuniformslib_js
+- ref_three_addons_postprocessing_effectcomposer_js
+- ref_three_addons_postprocessing_gtaopass_js
+- ref_three_addons_postprocessing_outputpass_js
+- ref_three_addons_postprocessing_pass_js
+- ref_three_addons_postprocessing_renderpass_js
+- ref_three_addons_postprocessing_shaderpass_js
+- ref_three_addons_postprocessing_unrealbloompass_js
+- ref_three_addons_utils_buffergeometryutils_js
+- ref_vitest_config
 
 ## God Nodes (most connected - your core abstractions)
-1. `KitchenPlanner()` - 141 edges
-2. `useI18n()` - 95 edges
-3. `KitchenEngine` - 94 edges
-4. `three` - 75 edges
-5. `formatSom()` - 61 edges
-6. `planKitchen()` - 58 edges
-7. `vitest` - 57 edges
-8. `stateFromQuery()` - 57 edges
+1. `KitchenPlanner()` - 166 edges
+2. `KitchenEngine` - 96 edges
+3. `useI18n()` - 95 edges
+4. `three` - 77 edges
+5. `next` - 63 edges
+6. `vitest` - 61 edges
+7. `formatSom()` - 61 edges
+8. `stateFromQuery()` - 61 edges
 9. `currentSession()` - 52 edges
-10. `text()` - 48 edges
+10. `react` - 50 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `1С (`integrations/1c-online-shop/`)` --references--> `dashboard()`  [INFERRED]
   docs/TZ_PUSH_PROMO_1C.md → integrations/sbonus-server/shop/shop_admin.py
-- `Разделы спецификации` --references--> `KitchenPlanner()`  [INFERRED]
-  .autopilot/2026-09-26-kitchen-3d-audit-pro/tickets/05-planner-screen.md → src/components/kitchen/KitchenPlanner.tsx
 - `Критерии приёмки` --references--> `KitchenPromo()`  [INFERRED]
   .autopilot/2026-09-26-kitchen-3d-audit-pro/tickets/01-cleanup-texts.md → src/components/kitchen/KitchenPromo.tsx
 - `Из таска 04 — правки ревью и корпус в 3D (на ревью)` --references--> `carcass()`  [INFERRED]
   .autopilot/2026-09-27-kitchen-colors/interfaces.md → src/components/kitchen/three/build.ts
-- `Из таска 04 — 3D-сборка и спецификация` --references--> `buildKitchen()`  [INFERRED]
-  .autopilot/2026-09-26-kitchen-3d-audit-pro/interfaces.md → src/components/kitchen/three/build.ts
+- `Критерии приёмки` --references--> `buildKitchen()`  [INFERRED]
+  .autopilot/2026-09-26-kitchen-3d-audit-pro/tickets/04-build-spec.md → src/components/kitchen/three/build.ts
+- `Из таска 02 — ссылка, автосохранение, размеры, кнопка на карточке` --references--> `parseSize()`  [INFERRED]
+  .autopilot/2026-09-26-kitchen-3d-audit-pro/interfaces.md → src/lib/kitchen/catalog.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (374 total, 173 thin omitted)
+## Communities (403 total, 196 thin omitted)
 
-### Community 0 - ".json"
-Cohesion: 0.11
-Nodes (27): DELETE(), GET(), noStore, PUT(), POST(), ADDRESS_MAX, ADDRESS_MIN, addressLine() (+19 more)
+### Community 0 - "addresses.ts"
+Cohesion: 0.16
+Nodes (18): ref_node_os, DELETE(), GET(), noStore, PUT(), addressLine(), Book, bookFile() (+10 more)
 
 ### Community 1 - "build_model.py"
 Cohesion: 0.12
 Nodes (11): area(), box(), camera(), digit(), look_at(), LG F4X5ES5SB — внешняя модель по официальным фото, не заводской CAD. blender…, weighted(), TASK_05: последовательность поворота LG F4X5ES5SB (¾ → фронт → ¾). Загружает… (+3 more)
 
 ### Community 2 - "build_extension.py"
-Cohesion: 0.14
-Nodes (37): build_adopted(), build_common_module(), build_configuration(), build_module(), build_processor(), build_register(), build_registers(), build_role() (+29 more)
+Cohesion: 0.09
+Nodes (40): build_adopted(), build_common_module(), build_configuration(), build_module(), build_processor(), build_register(), build_registers(), build_role() (+32 more)
 
-### Community 3 - "isLang"
-Cohesion: 0.06
-Nodes (34): nextConfig, SECURITY_HEADERS, next, metadata, src_app_globals, generateMetadata(), generateMetadata(), generateMetadata() (+26 more)
+### Community 3 - "config.ts"
+Cohesion: 0.07
+Nodes (32): generateMetadata(), generateMetadata(), generateMetadata(), generateMetadata(), KitchenPage(), META, generateMetadata(), generateMetadata() (+24 more)
 
 ### Community 4 - "OfflineCatalogView"
 Cohesion: 0.13
@@ -417,45 +446,45 @@ Nodes (25): Codable, Equatable, Identifiable, Int, CatalogBrand, CatalogCategory
 Cohesion: 0.15
 Nodes (12): 1-рад этиш: 4.2.3(i), 23.09.2026 (build 1.0 (3)), 1. Сайт ва сервер чиқарилсин, 2. Демо-кириш ёқилсин, 3. Apple калити жанговар режимга, App Store га топшириш — 8-қадам, Жанговар йиғилишни қандай қилиш, «Маълумотлар ёрлиғи» — App Store Connect даги жавоблар, Рад этилса (+4 more)
 
-### Community 6 - "01 — Безопасность: рамка, прокси фото, тесты парсера"
-Cohesion: 0.40
-Nodes (4): 01 — Безопасность: рамка, прокси фото, тесты парсера, Из брифа, дословно, Разделы спецификации, Что должно заработать
+### Community 6 - "share.ts"
+Cohesion: 0.06
+Nodes (42): Аудит безопасности 3D-конструктора (2026-09-24, читал агент, ничего не менял), Находки, Что реально защищает от копирования (честно), Что уже хорошо, C13 — серьёзно. Колонна с духовкой по ссылке ниже самой духовки, Дозапрос 08-1 — условия после ревью, freeOrder(), SizeField() (+34 more)
 
-### Community 7 - "AccountView.tsx"
-Cohesion: 0.10
-Nodes (32): Манифест требований, 03 — Страницы галереи и кухни, Критерии приёмки, Из таска 06 — сайт, корзина и согласие, src_components_account, AccountView(), formatDate(), Section (+24 more)
+### Community 7 - "knowledge.ts"
+Cohesion: 0.13
+Nodes (23): fromJson(), withoutIds(), budgetFrom(), cheaperThan(), NOT_UNIT, PATTERNS, THOUSAND, catalogForQuestion() (+15 more)
 
 ### Community 8 - "layout.ts"
-Cohesion: 0.03
-Nodes (140): Аудит безопасности 3D-конструктора (2026-09-24, читал агент, ничего не менял), Находки, Что реально защищает от копирования (честно), Что уже хорошо, 3. Что сделано хорошо, C01 — критично. Мойка, плита и угловые шкафы молча исчезают из кухни, C05 — серьёзно. Верхний угловой шкаф: дверца упирается в верхние шкафы боковой стены, C06 — серьёзно. Верхние «шкафы» шириной 1–19 см над узкими планками (+132 more)
+Cohesion: 0.04
+Nodes (95): 3. Что сделано хорошо, C05 — серьёзно. Верхний угловой шкаф: дверца упирается в верхние шкафы боковой стены, C06 — серьёзно. Верхние «шкафы» шириной 1–19 см над узкими планками, 2. Раскладка, Dropped(), TurnControl(), FILL, PlanSketch() (+87 more)
 
 ### Community 9 - "kitchen-build.test.ts"
-Cohesion: 0.03
-Nodes (84): 1. Подтверждённые ошибки, 4. Не покрыто тестами, C02 — критично. Выбранная отдельностоящая микроволновка есть в списке с ценой, но её нет в итоге и в корзине, C03 — серьёзно. Духовка «не поместилась», хотя раскладка сама ставит её под плиту, C04 — серьёзно. Кнопка «Сделать N см» удлиняет не ту стену, C07 — серьёзно. Нестандартные фасады в спецификации мастеру, C08 — серьёзно. Детали раскроя длиннее листа ЛДСП и ХДФ, C09 — серьёзно. Холодильник, пенал и колонна с духовкой встают под окно, проверки молчат (+76 more)
+Cohesion: 0.04
+Nodes (71): 1. Подтверждённые ошибки, C01 — критично. Мойка, плита и угловые шкафы молча исчезают из кухни, C03 — серьёзно. Духовка «не поместилась», хотя раскладка сама ставит её под плиту, C04 — серьёзно. Кнопка «Сделать N см» удлиняет не ту стену, C07 — серьёзно. Нестандартные фасады в спецификации мастеру, C08 — серьёзно. Детали раскроя длиннее листа ЛДСП и ХДФ, C09 — серьёзно. Холодильник, пенал и колонна с духовкой встают под окно, проверки молчат, C10 — серьёзно. Ширина духовки и вытяжки не участвует в раскладке (+63 more)
 
 ### Community 10 - "shop_customers.py"
-Cohesion: 0.10
-Nodes (47): BonusAccount, _account(), branch_id(), _code_hash(), _customer(), get_profile(), _logged_in(), max_spend() (+39 more)
+Cohesion: 0.13
+Nodes (41): app_models, BonusAccount, _account(), branch_id(), _code_hash(), _customer(), get_profile(), _logged_in() (+33 more)
 
 ### Community 11 - "route-helpers.ts"
-Cohesion: 0.17
-Nodes (21): ref_next_headers, DELETE(), GET(), GET(), POST(), POST(), endSession(), errorResponse() (+13 more)
+Cohesion: 0.19
+Nodes (15): GET(), maxBonusSpend(), CustomerSession, decodeNativeKey(), decodeSession(), encodeNativeKey(), encodeSession(), NATIVE_KEY_DAYS (+7 more)
 
 ### Community 12 - "Текшириладиган рўйхат"
 Cohesion: 0.12
 Nodes (16): 1. Илова очилиши, 2. Кириш, 3. Бонус картаси, 4. ⚠ Кассадаги сканер — энг муҳим текширув, 5. Face ID, 6. Push хабарлар, 7. Иловани ёпиб, қайта очиш, 8. Каталог интернетсиз (+8 more)
 
 ### Community 13 - "Icons.tsx"
-Cohesion: 0.10
-Nodes (38): ref_next_link, A09 · P2 — Дизайн ҳужжати ва токенлар амалдаги бош баннердан ортда қолган, frameUrl(), Hero3D(), src_components_home_story, HomeStory(), base(), IconArrowDown() (+30 more)
+Cohesion: 0.06
+Nodes (63): nextConfig, SECURITY_HEADERS, next, react, AccountReviews(), ErrorKey, Photo, ReviewForm() (+55 more)
 
 ### Community 14 - "CatalogView.tsx"
 Cohesion: 0.10
 Nodes (25): metadata, src_components_catalog_filters, Badge, BADGES, CatalogView(), CatalogViewInner(), inStock(), normalize() (+17 more)
 
 ### Community 15 - "shop_push.py"
-Cohesion: 0.12
-Nodes (33): apple_enabled(), _b64(), _bundle(), _devices(), _drop(), enabled(), _fail(), _fcm_access_token() (+25 more)
+Cohesion: 0.07
+Nodes (50): app_payments, httpx, apple_enabled(), _b64(), _bundle(), _devices(), _drop(), enabled() (+42 more)
 
 ### Community 16 - "AppLockPlugin"
 Cohesion: 0.14
@@ -467,19 +496,19 @@ Nodes (19): CoreImage.CIFilterBuiltins, Double, Image, BonusCardData, BonusCardS
 
 ### Community 18 - "KitchenPlanner.tsx"
 Cohesion: 0.03
-Nodes (106): Дозапрос 08-1 — условия после ревью, Из таска 01 — RAL и декоры (на ревью), Из таска 03 — экран и выгрузки (на ревью), Из таска 04 — правки ревью и корпус в 3D (на ревью), Интерфейсы, Правила проекта для исполнителей, 01 — Палитра RAL и декоры ЛДСП в резолвере цвета, Из брифа, дословно (+98 more)
+Nodes (99): 05 — Экран конструктора: честная сумма, связь с магазином, автосохранение, техника третьим шагом, Из брифа, дословно, Разделы спецификации, Что должно заработать, 01 — Палитра RAL и декоры ЛДСП в резолвере цвета, Из брифа, дословно, Критерии приёмки, Разделы спецификации (+91 more)
 
 ### Community 19 - "shop_admin.py"
 Cohesion: 0.05
-Nodes (93): app_models, BackgroundTasks, account_delete(), AccountDelete, _as_list(), _attention(), cart_consent(), CartConsent (+85 more)
+Nodes (90): BackgroundTasks, account_delete(), AccountDelete, _as_list(), _attention(), cart_consent(), CartConsent, _catalog() (+82 more)
 
 ### Community 20 - "pdfSheet.ts"
 Cohesion: 0.10
-Nodes (24): DRAWING_CSS, printedScale(), A4, buildPdf(), decodeURISafe(), enc, num(), PdfLink (+16 more)
+Nodes (32): Дозапрос 06-1 — условия после ревью, paperSize(), printedScale(), A4, buildPdf(), decodeURISafe(), enc, num() (+24 more)
 
-### Community 21 - "telegram/order.ts"
-Cohesion: 0.11
-Nodes (30): dynamic, POST(), followUp, lookupIn(), hits(), ASK_ADDRESS, ASK_NAME, ASK_PHONE (+22 more)
+### Community 21 - "appliances.ts"
+Cohesion: 0.19
+Nodes (23): three, cm(), dishwasherInside(), flatHood(), fridge(), FridgeDoor, fridgeDoors(), hob() (+15 more)
 
 ### Community 22 - "compilerOptions"
 Cohesion: 0.11
@@ -490,24 +519,24 @@ Cohesion: 0.15
 Nodes (11): Error, AppDelegate, Any, Bool, Data, UIScene, UISceneSession, UIWindow (+3 more)
 
 ### Community 24 - "export_catalog.py"
-Cohesion: 0.28
-Nodes (16): csv, main(), Почему товара нет на сайте — только чтение, база 1С не меняется. На сайт уходит…, reason(), connect(), detect_brand(), export_photos(), load_settings() (+8 more)
+Cohesion: 0.31
+Nodes (15): csv, main(), Почему товара нет на сайте — только чтение, база 1С не меняется. На сайт уходит…, reason(), connect(), detect_brand(), export_photos(), load_settings() (+7 more)
 
-### Community 25 - "bot.ts"
-Cohesion: 0.09
-Nodes (44): dynamic, POST(), ASK_PHONE, BAD_PHONE, CALL_INTENT, cancelLead(), Draft, drafts (+36 more)
+### Community 25 - "respond.ts"
+Cohesion: 0.08
+Nodes (61): ASK_PHONE, BAD_PHONE, CALL_INTENT, cancelLead(), Draft, drafts, FAILED, hasLead() (+53 more)
 
-### Community 26 - "data.ts"
-Cohesion: 0.04
-Nodes (90): ref_react_dom_server, dynamic, generateMetadata(), load, Props, dynamic, Filter, GalleryPage() (+82 more)
+### Community 26 - "kitchen/gallery/page.tsx"
+Cohesion: 0.08
+Nodes (45): dynamic, Filter, GalleryPage(), generateMetadata(), hrefOf(), Props, readFilter(), Search (+37 more)
 
 ### Community 27 - "TASK 03A Report — review closure and LG scene"
 Cohesion: 0.27
 Nodes (14): Archived Pexels Category Photo Set, Asset Sources Contract (no active product photos), photo-sources.ts Canonical Machine List, LG F4X5ES5SB 3D Scroll Scene Brief, TASK 03A Brief — close design review, MotionProvider Empty-Deps and Reveal Cascade Defect, Photo Source Reconciliation Audit, ProductImage Always Uses altRu Defect (+6 more)
 
-### Community 28 - "kitchen/order.ts"
-Cohesion: 0.05
-Nodes (70): Разбор отложенных замечаний (Phase 8 §1a), 2026-09-27, 03 — Выбор RAL/декора/цвета острова на экране и код цвета во всех выгрузках, Из брифа, дословно, Критерии приёмки, Разделы спецификации, Что должно заработать, kitchenFacts, BUDGET_CHIPS (+62 more)
+### Community 28 - "data.ts"
+Cohesion: 0.03
+Nodes (140): C14 — серьёзно. Остров шире стены и комнаты, Границы, решённые в спецификации, Из таска 01 — уборка и тексты, Из таска 02 — ссылка, автосохранение, размеры, кнопка на карточке, Из таска 04 — 3D-сборка и спецификация, Из таска 05 — экран конструктора, Общие правила проекта, Что уже построено (+132 more)
 
 ### Community 29 - "TASK 04 Report — Blender Model of LG F4X5ES5SB"
 Cohesion: 0.27
@@ -517,9 +546,9 @@ Nodes (9): TASK 04 Brief — Realistic LG Frames, LG F4X5ES5SB Washing Machine, 
 Cohesion: 0.19
 Nodes (13): Mobile Path Decision (Capacitor shell vs full native), Security, Privacy and Recovery Plan, Smart Centr Architecture (site, iOS, Android, 1C, SBonus), Unified Client API, Product Principles (honest demo vs confirmed data), Smart Centr Product Definition, Demo Boundaries (no real 1C/SBonus/payments), Storefront Prototype README (milestone 01/02) (+5 more)
 
-### Community 31 - "products.ts"
-Cohesion: 0.06
-Nodes (42): dynamic, GET(), SnapshotItem, CartPage(), DailySelection(), ProductDetail(), askText(), ProductPurchase() (+34 more)
+### Community 31 - "formatSom"
+Cohesion: 0.09
+Nodes (29): dynamic, generateMetadata(), load, Props, generateMetadata(), ProductPage(), ProductCard(), ProductDetail() (+21 more)
 
 ### Community 32 - "BonusCardPlugin"
 Cohesion: 0.27
@@ -533,9 +562,9 @@ Nodes (11): Extended Admin Workspace, Bonus Hold Mechanism, Pickup and Staff-Coo
 Cohesion: 0.22
 Nodes (11): Approved Blue + Lime Palette (variant 01), Neutral Localized Photo Placeholder, White-Lemon-Cobalt Color Tokens, The Compact Commerce Rule, The Honest Status Rule, The Lemon Signal Rule, Manrope Typography Scale, The One-Family Rule (Manrope only) (+3 more)
 
-### Community 35 - "I18nProvider.tsx"
-Cohesion: 0.11
-Nodes (28): FavoritesPage(), generateMetadata(), ProductPage(), AddToCartButton(), BottomNav(), CartReminder(), FavoriteButton(), src_components_product_reels (+20 more)
+### Community 35 - "ProductReels.tsx"
+Cohesion: 0.10
+Nodes (22): FavoritesPage(), AddToCartButton(), BottomNav(), CartReminder(), FavoriteButton(), src_components_product_reels, ProductReels(), readSaved() (+14 more)
 
 ### Community 36 - "app/shop Module on the SBonus Server"
 Cohesion: 0.16
@@ -549,13 +578,9 @@ Nodes (10): The Flat-First Rule, Repository Structure Map, P0 Defect List (langu
 Cohesion: 0.14
 Nodes (15): SBonus Bonus Flow on the Site, Apple Guideline 4.2 — Repackaged Website Rejection, Path B — Capacitor Shell Plus Real Native Capabilities, WhatsApp-продавец (новое, проверено вживую), Ждёт завтра (PC, 1С), Прочее, ⚠ Сначала — о чужих файлах, Что работает (выкачено) (+7 more)
 
-### Community 39 - "build.ts"
-Cohesion: 0.08
-Nodes (36): 2. Сомнительно / не доказано, ref_three_addons_geometries_roundedboxgeometry_js, ref_three_addons_utils_buffergeometryutils_js, Anim, assemble(), At, backsplash(), BASE_DIMS (+28 more)
-
 ### Community 40 - "shop_router.py"
-Cohesion: 0.07
-Nodes (59): api_route, app_core_config, Base, decimal, fastapi_responses, clear_after_order(), Заказ этим номером оформлен — корзина на сервере пуста, напоминать не о чем., Сколько клиент платит деньгами (для старых заказов без бонусов — total). (+51 more)
+Cohesion: 0.06
+Nodes (84): api_route, app_core_config, decimal, fastapi_responses, hashlib, hmac, clear_after_order(), Заказ этим номером оформлен — корзина на сервере пуста, напоминать не о чем. (+76 more)
 
 ### Community 41 - "HANDOFF.md — What Is Already Built"
 Cohesion: 0.16
@@ -606,12 +631,12 @@ Cohesion: 0.70
 Nodes (4): fail(), restore_nginx(), install_site.sh script, step()
 
 ### Community 55 - "promo-iso.mjs"
-Cohesion: 0.21
-Nodes (25): baseCab(), body, box(), C, col, disc(), edge(), f1() (+17 more)
+Cohesion: 0.22
+Nodes (24): baseCab(), body, box(), C, col, disc(), edge(), f1() (+16 more)
 
 ### Community 56 - "shop_wa_bot.py"
 Cohesion: 0.07
-Nodes (55): app_core_redis, Бонус виден покупателю, Вход через WhatsApp «наоборот» (главное за вечер), Для PC (1С): 1 000 сом — тратить целиком, Для PC: кабинет SBonus тоже шлёт код через Green API, Кому адресовано (WhatsApp) — 22.09, Консультант, Проверить после выкатки (PC) (+47 more)
+Nodes (54): app_core_redis, Бонус виден покупателю, Вход через WhatsApp «наоборот» (главное за вечер), Для PC (1С): 1 000 сом — тратить целиком, Для PC: кабинет SBonus тоже шлёт код через Green API, Кому адресовано (WhatsApp) — 22.09, Консультант, Проверить после выкатки (PC) (+46 more)
 
 ### Community 58 - "Data Ownership Matrix (source of truth per entity)"
 Cohesion: 0.50
@@ -622,8 +647,8 @@ Cohesion: 0.83
 Nodes (3): fail(), update_site.sh script, step()
 
 ### Community 74 - "engine.ts"
-Cohesion: 0.05
-Nodes (41): three, ref_three_addons_controls_orbitcontrols_js, ref_three_addons_environments_roomenvironment_js, ref_three_addons_lights_rectarealightuniformslib_js, ref_three_addons_postprocessing_effectcomposer_js, ref_three_addons_postprocessing_gtaopass_js, ref_three_addons_postprocessing_outputpass_js, ref_three_addons_postprocessing_renderpass_js (+33 more)
+Cohesion: 0.09
+Nodes (18): CabInfo, CEILING_LAYER, WALL_H, WINDOW, DAY, DragPreview, DragTarget, easeOut() (+10 more)
 
 ### Community 75 - "Смарт Центр — бош саҳифа янгиланиши"
 Cohesion: 0.29
@@ -642,92 +667,92 @@ Cohesion: 0.40
 Nodes (4): Натижа, Смарт Центр — аудит тузатишлари, Текширувлар, Чегаралар
 
 ### Community 83 - "useI18n"
-Cohesion: 0.07
-Nodes (45): ALL_MOSAIC, CategoryMedia(), CategoryTiles(), glue(), HomeRest(), HomeTop(), InfoStrip(), NightBanner() (+37 more)
+Cohesion: 0.06
+Nodes (53): A09 · P2 — Дизайн ҳужжати ва токенлар амалдаги бош баннердан ортда қолган, ALL_MOSAIC, CategoryMedia(), CategoryTiles(), glue(), HomeRest(), HomeTop(), InfoStrip() (+45 more)
 
 ### Community 85 - "SKILL.md"
 Cohesion: 0.25
 Nodes (7): Выключение, Где caveman выключается сам, Правила сжатия, Уровни, Что остаётся обычным текстом, Язык — главное правило, Ясность важнее краткости
 
 ### Community 87 - "PhotoTracer"
-Cohesion: 0.10
-Nodes (9): Диагностика на iPhone 390×844 (агент, читал только; проверено в Chrome-эмуляции), ref_three_addons_postprocessing_pass_js, three-gpu-pathtracer, DAY, Look, NIGHT, PhotoLights, PhotoTracer (+1 more)
+Cohesion: 0.11
+Nodes (8): Диагностика на iPhone 390×844 (агент, читал только; проверено в Chrome-эмуляции), three-gpu-pathtracer, DAY, Look, NIGHT, PhotoLights, PhotoTracer, PrepareOpts
 
-### Community 89 - "respond.ts"
+### Community 89 - ".constructor"
 Cohesion: 0.14
-Nodes (27): dynamic, ipOf(), POST(), readImage(), seen, tooOften(), dynamic, POST() (+19 more)
+Nodes (4): Границы, решённые в спецификации, Границы и швы, 4. Экран (сначала телефон), setBudget()
 
 ### Community 90 - ".scene"
 Cohesion: 0.22
 Nodes (7): CAPBridgeViewController, MainViewController, UIScene, UISceneSession, NSUserActivity, Set, UIOpenURLContext
 
-### Community 91 - "Sheet"
-Cohesion: 0.30
-Nodes (6): box(), estimateSheet(), fontsReady(), Sheet, sheetPdf(), wrap()
+### Community 91 - "bot.ts"
+Cohesion: 0.13
+Nodes (18): dynamic, POST(), backToChat(), call(), hello(), isPhoto(), langs, offered (+10 more)
 
-### Community 92 - "drawing.ts"
-Cohesion: 0.12
-Nodes (23): Из таска 06 — чертёж и PDF, Дозапрос 06-1 — условия после ревью, approxNames(), CARCASS, CornerZone, cornerZones(), DrawingLabels, ElevationOpts (+15 more)
+### Community 92 - ".json"
+Cohesion: 0.27
+Nodes (12): GET(), POST(), DELETE(), GET(), POST(), POST(), endSession(), errorResponse() (+4 more)
 
 ### Community 93 - "OfflineCatalogActivity"
 Cohesion: 0.16
 Nodes (10): BonusCardActivity, Override, Item, OfflineCatalogActivity, Row, Ui, android.view.View, android.widget.LinearLayout (+2 more)
 
 ### Community 94 - "reviews/store.ts"
-Cohesion: 0.08
-Nodes (47): Решения по реализации, Образец в проекте, dynamic, GET(), dynamic, GET(), dynamic, GET() (+39 more)
+Cohesion: 0.06
+Nodes (65): Вне рамок, Задача, Открытые места, Покрытие манифеста, Пользовательские истории, Решение, Решения по реализации, Спецификация: галерея кухонь и готовые кухни (+57 more)
 
 ### Community 96 - "cutting.ts"
 Cohesion: 0.03
-Nodes (83): Из таска 02 — цвет острова (на ревью), Из таска 01b — цвет верха, доборы, «Фасады» из деталей (на ревью), Не меняется, Отдельностоящая плита в конструкторе кухни, Решения, Последствия, Решение, ref_node_zlib (+75 more)
+Nodes (110): Разбор отложенных замечаний (Phase 8 §1a), 2026-09-27, Из таска 01 — RAL и декоры (на ревью), Из таска 02 — цвет острова (на ревью), Из таска 03 — экран и выгрузки (на ревью), Из таска 04 — правки ревью и корпус в 3D (на ревью), Из таска 05 — видимые детали 3D в раскрое (на ревью), Интерфейсы, Правила проекта для исполнителей (+102 more)
 
 ### Community 97 - "OfflineCatalogActivity.java"
 Cohesion: 0.06
 Nodes (32): android.graphics.Bitmap, android.os.Handler, android.util.LruCache, android.widget.ImageView, androidx.appcompat.app.AppCompatActivity, barcodeformat, bitmapfactory, bitmatrix (+24 more)
 
 ### Community 98 - ".tick"
-Cohesion: 0.07
-Nodes (21): Вне рамок, Границы и швы, Задача, Открытые места, Покрытие манифеста, Пользовательские истории, Решение, Решения по реализации (+13 more)
+Cohesion: 0.08
+Nodes (19): Вне рамок, Задача, Открытые места, Покрытие манифеста, Пользовательские истории, Решение, Решения по реализации, Спецификация: 3D-конструктор кухни — безопасность и телефон (+11 more)
 
-### Community 99 - "ref_node_fs"
-Cohesion: 0.07
-Nodes (14): config, hasFirebase, widths, @capacitor/cli, ref_node_assert_strict, ref_node_fs, @playwright/test, { chromium } (+6 more)
+### Community 99 - "@playwright/test"
+Cohesion: 0.12
+Nodes (6): widths, ref_node_assert, @playwright/test, assert, { chromium }, fs
 
 ### Community 100 - "reply.ts"
-Cohesion: 0.08
-Nodes (28): ref_server_only, allowed, cache, Entry, GET(), reply(), TYPES, cheaperThan() (+20 more)
+Cohesion: 0.10
+Nodes (34): ref_server_only, dynamic, GET(), productsFromOneC(), followUp, dailyLimit(), day, dayBudgetLeft() (+26 more)
 
-### Community 101 - "Form"
-Cohesion: 0.22
-Nodes (3): Form, addition(), Вкладки. Каждая вкладка — page().
+### Community 101 - "ref_node_path"
+Cohesion: 0.14
+Nodes (9): config, hasFirebase, @capacitor/cli, ref_node_path, { chromium }, path, { chromium }, fs (+1 more)
 
 ### Community 102 - "elevationSvg"
-Cohesion: 0.35
-Nodes (8): appliance(), elevationSvg(), fmt(), front(), n(), Pen, planSvg(), tw()
+Cohesion: 0.32
+Nodes (9): appliance(), elevationSvg(), fmt(), front(), fsOf(), n(), Pen, planSvg() (+1 more)
 
-### Community 103 - "kitchen-cutting.test.ts"
-Cohesion: 0.03
-Nodes (68): Решения по реализации, 04 — 3D-сборка и спецификация мебельщику: только то, что можно изготовить, Из брифа, дословно, Критерии приёмки, Разделы спецификации, Что должно заработать, 02 — Свой цвет острова: состояние, ссылка, 3D, раскрой, Из брифа, дословно (+60 more)
+### Community 103 - "types.ts"
+Cohesion: 0.04
+Nodes (55): Критерии приёмки, vitest, ApplianceSheet(), FinishLook, RoomLook, SPLASH_GROUPS, SpecExtra, FrontTexture (+47 more)
 
 ### Community 104 - "gallery/store.ts"
 Cohesion: 0.07
-Nodes (64): Границы, решённые в спецификации, Из таска 01 — хранилище и API (на ревью), Из таска 02 — готовые кухни (доработка: техника с живого сайта), Из таска 03 — страницы (на ревью), Из таска 04 — конструктор (на ревью), Интерфейсы, dynamic, GET() (+56 more)
+Nodes (70): Границы, решённые в спецификации, Из таска 01 — хранилище и API (на ревью), Границы и швы, dynamic, GET(), sitemap(), authorIdOf(), authorNameOf() (+62 more)
 
 ### Community 105 - "ref_node_crypto"
-Cohesion: 0.21
-Nodes (13): ref_node_crypto, dynamic, POST(), fromJson(), withoutIds(), askGemini(), ChatTurn, geminiConfigured() (+5 more)
+Cohesion: 0.12
+Nodes (24): ref_node_crypto, dynamic, ipOf(), POST(), readImage(), seen, tooOften(), dynamic (+16 more)
 
 ### Community 106 - "make-app-icons.mjs"
 Cohesion: 0.24
 Nodes (9): androidDir, circle(), DENSITIES, glyph(), iconSet, root, splashSet, square() (+1 more)
 
 ### Community 129 - "native/catalog.ts"
-Cohesion: 0.31
-Nodes (9): OfflineCatalogSync(), CapacitorGlobal, CatalogPlugin, markTried(), offlineCatalogState(), plugin(), showOfflineCatalog(), syncOfflineCatalog() (+1 more)
+Cohesion: 0.36
+Nodes (8): CapacitorGlobal, CatalogPlugin, markTried(), offlineCatalogState(), plugin(), showOfflineCatalog(), syncOfflineCatalog(), triedRecently()
 
 ### Community 130 - "three"
-Cohesion: 0.17
-Nodes (41): three, chimneyHood(), cm(), dishwasherInside(), faucet(), fridge(), FridgeDoor, fridgeDoors() (+33 more)
+Cohesion: 0.13
+Nodes (37): three, chimneyHood(), faucet(), groceries(), sinkBowl(), cornerStrip(), decorShelf(), dishes() (+29 more)
 
 ### Community 131 - "ExampleInstrumentedTest.java"
 Cohesion: 0.24
@@ -742,8 +767,8 @@ Cohesion: 0.13
 Nodes (23): audit(), close_passed(), cmdline(), fail(), free_port(), http_ok(), is_ours(), main() (+15 more)
 
 ### Community 134 - "kitchen-master.test.ts"
-Cohesion: 0.05
-Nodes (54): Границы, решённые в спецификации, Из таска 01 — детали, кромка, листы (на ревью), Из таска 03 — цены мастера, смета, блок «Мастеру», Из таска 04 — смета без пропусков (на ревью), Что уже построено, 01b — Второй цвет верха, доборы и планки в раскрое, Что должно заработать, 04 — Смета без пропусков: вся фурнитура, цветной лист, проверенные строки (+46 more)
+Cohesion: 0.04
+Nodes (59): C02 — критично. Выбранная отдельностоящая микроволновка есть в списке с ценой, но её нет в итоге и в корзине, Границы, решённые в спецификации, Из таска 01 — детали, кромка, листы (на ревью), Из таска 02 — Excel (на ревью), Из таска 03 — цены мастера, смета, блок «Мастеру», Из таска 04 — смета без пропусков (на ревью), Что уже построено, Границы и швы (+51 more)
 
 ### Community 136 - "Adapter"
 Cohesion: 0.27
@@ -754,20 +779,20 @@ Cohesion: 0.83
 Nodes (3): fail(), update-all.sh script, step()
 
 ### Community 139 - "textures.ts"
-Cohesion: 0.22
-Nodes (31): Решения по реализации, brick(), cache, canvas(), clear(), concrete(), Entry, finish() (+23 more)
+Cohesion: 0.15
+Nodes (38): Вне рамок, Задача, Открытые места, Покрытие манифеста, Пользовательские истории, Решение, Решения по реализации, Спецификация: пакет цвета — любой RAL, декоры ЛДСП с кодом, свой цвет острова (+30 more)
 
 ### Community 150 - "text"
 Cohesion: 0.07
-Nodes (47): asyncio, text(), Интернет-магазин Smart Centr: заказы с сайта (O!Деньги → 1С)., clean_snapshot(), forget(), get_consent(), main(), once() (+39 more)
+Nodes (46): asyncio, text(), Интернет-магазин Smart Centr: заказы с сайта (O!Деньги → 1С)., clean_snapshot(), forget(), get_consent(), main(), once() (+38 more)
 
 ### Community 151 - "test_shop_push_send.py"
-Cohesion: 0.11
+Cohesion: 0.10
 Nodes (15): importlib, _cfg(), _Client, _fcm_key(), _keys(), _load_push(), _Net, Проверки отправки push (shop_push.send) — без сервера, без базы и без… (+7 more)
 
 ### Community 152 - "log.ts"
 Cohesion: 0.14
-Nodes (22): dynamic, POST(), dynamic, esc(), GET(), page(), rowsTable(), when() (+14 more)
+Nodes (23): dynamic, POST(), dynamic, esc(), GET(), page(), rowsTable(), when() (+15 more)
 
 ### Community 153 - "process.cjs"
 Cohesion: 0.12
@@ -777,13 +802,13 @@ Nodes (22): ref_fs, ref_path, backgroundColor(), BRANDS, firstBand(), fs, INK, m
 Cohesion: 0.83
 Nodes (3): fail(), build-appstore.sh script, step()
 
-### Community 157 - "test_shop_cart_rules.py"
-Cohesion: 0.15
-Nodes (11): cart(), QuietHoursTest, Тесты правил напоминания о корзине (shop_cart_rules.py). Модуль правил не…, Напоминаем только с 10:00 до 20:00 по Бишкеку; ночь и вечер — тишина., Только с согласия и только если в корзине что-то есть., Строка таблицы shop_cart_reminders: время в базе — UTC без зоны., Вариант 1: через 1 день после изменения, ещё через 3, ещё через 7 — и тишина., ScheduleTest (+3 more)
+### Community 157 - "cart"
+Cohesion: 0.16
+Nodes (9): cart(), QuietHoursTest, Напоминаем только с 10:00 до 20:00 по Бишкеку; ночь и вечер — тишина., Только с согласия и только если в корзине что-то есть., Строка таблицы shop_cart_reminders: время в базе — UTC без зоны., Вариант 1: через 1 день после изменения, ещё через 3, ещё через 7 — и тишина., ScheduleTest, utc() (+1 more)
 
 ### Community 158 - "test_shop_promo_rules.py"
-Cohesion: 0.12
-Nodes (7): importlib_util, BlockedTest, Тесты правил рассылок «Скидка» / «Новинка» (shop_promo_rules.py). Модуль правил…, SlugTest, TargetTest, TextProblemTest, utc()
+Cohesion: 0.13
+Nodes (6): importlib_util, Тесты правил рассылок «Скидка» / «Новинка» (shop_promo_rules.py). Модуль правил…, SlugTest, TargetTest, TextProblemTest, unittest
 
 ### Community 159 - "MainActivity.java"
 Cohesion: 0.06
@@ -797,9 +822,9 @@ Nodes (17): 1.1. Emulyatorda nima tekshirildi (25.09.2026), 1. Hozirgi holat, 2.
 Cohesion: 0.21
 Nodes (16): ask_credentials(), _configure(), configure_extension(), copy_base(), designer(), _detect(), detect_variant(), install() (+8 more)
 
-### Community 165 - "formatSom"
-Cohesion: 0.09
-Nodes (33): CheckoutPage(), FieldErrors, OrderView(), BonusReminder(), Cached, CustomerLogin(), Step, fetchSiteKey() (+25 more)
+### Community 165 - "AccountView.tsx"
+Cohesion: 0.04
+Nodes (70): Манифест требований, 03 — Страницы галереи и кухни, Критерии приёмки, CheckoutPage(), FieldErrors, OrderView(), src_components_account, AccountView() (+62 more)
 
 ### Community 166 - "gradlew"
 Cohesion: 0.83
@@ -810,28 +835,28 @@ Cohesion: 0.83
 Nodes (3): fail(), restore(), deploy_cabinet_client.sh script
 
 ### Community 173 - "kitchen-drawing.test.ts"
-Cohesion: 0.12
-Nodes (23): islandOverhang(), SHEET_BOX, techRows(), windowFor(), SpecRun, appliance(), attrsOf(), cornerDefault (+15 more)
+Cohesion: 0.06
+Nodes (48): Из таска 06 — чертёж и PDF, 3. Кто читает `Plan` и что поправить (только при `plan.free`), 5. Тесты (`__tests__/`, vitest), 6. Этапы, План: «Пустая комната» в PRO (29.09.2026), approxNames(), CARCASS, CornerZone (+40 more)
 
 ### Community 175 - "[lang]/layout.tsx"
-Cohesion: 0.07
-Nodes (47): ref_next_navigation, AboutPage(), metadata, LangLayout(), viewport, src_components_assistant_chat, AssistantChat(), onKeyDown() (+39 more)
+Cohesion: 0.06
+Nodes (49): AboutPage(), metadata, LangLayout(), viewport, ALLOW, ASSISTANTS, PRIVATE, TRAINERS (+41 more)
 
 ### Community 176 - "currentSession"
 Cohesion: 0.18
-Nodes (31): currentSession(), done(), fail(), imageFrom(), ipOf(), NO_STORE, readJson(), STATUS (+23 more)
+Nodes (32): currentSession(), done(), fail(), imageFrom(), ipOf(), NO_STORE, readJson(), STATUS (+24 more)
 
 ### Community 177 - "package.json"
-Cohesion: 0.06
-Nodes (34): dependencies, @capacitor/android, @capacitor/cli, @capacitor/core, @capacitor/ios, @capacitor/push-notifications, next, react (+26 more)
+Cohesion: 0.12
+Nodes (15): description, name, private, version, @capacitor/android, @capacitor/core, @capacitor/ios, @capacitor/push-notifications (+7 more)
 
 ### Community 178 - "3D-конструктор кухни: удобство покупателя и лишнее"
 Cohesion: 0.25
 Nodes (7): 1. Удобство для покупателя: проблемы, 2. Переводы и тексты, 3D-конструктор кухни: удобство покупателя и лишнее, 4. Что сделано хорошо, Критично, Мелочь, Серьёзно
 
-### Community 179 - "shop_catalog.py"
-Cohesion: 0.05
-Nodes (64): app_core_database, collections, datetime, fastapi, getpass, hashlib, _as_jpeg(), chat_extra_items() (+56 more)
+### Community 179 - "shop_installments.py"
+Cohesion: 0.09
+Nodes (30): app_core_database, collections, datetime, fastapi, build_rows(), _day(), _money(), _one_phone() (+22 more)
 
 ### Community 180 - "02 — Телефон: виды под 3D, «Ещё» словом, полный экран с панелью"
 Cohesion: 0.33
@@ -845,65 +870,65 @@ Nodes (4): 04 — Тест губернатора: рывок заведомо �
 Cohesion: 0.16
 Nodes (21): ART_BY_CATEGORY, BRAND_ALIASES, cleanName(), detectBrand(), isPreorder(), KNOWN_BRANDS, OneCCatalog, OneCItem (+13 more)
 
-### Community 184 - "vitest"
-Cohesion: 0.18
-Nodes (13): react-dom, vitest, Modal(), PublishFail, PublishResult, readPublish(), Err, Phase (+5 more)
+### Community 184 - "governor.ts"
+Cohesion: 0.19
+Nodes (11): GOVERNOR_CAP_MS, GOVERNOR_FAST_FRAMES, GOVERNOR_FAST_MS, GOVERNOR_MIN_RATIO, GOVERNOR_SAMPLES, GOVERNOR_SLOW_MS, GOVERNOR_STEP, GovernorState (+3 more)
 
 ### Community 186 - "Capacitor"
 Cohesion: 0.29
 Nodes (6): Capacitor, SceneDelegate, UIWindow, UIKit, UIResponder, UIWindowSceneDelegate
 
-### Community 187 - "gallery-api.test.ts"
-Cohesion: 0.19
-Nodes (10): ref_node_os, file(), json(), login(), publishAs(), publishForm(), session, SVG (+2 more)
+### Community 187 - "ref_node_fs"
+Cohesion: 0.06
+Nodes (25): 01 — Безопасность: рамка, прокси фото, тесты парсера, Из брифа, дословно, Критерии приёмки, Разделы спецификации, Что должно заработать, 01 — Хранилище галереи, API и панель владельца, Критерии приёмки, Разделы спецификации (+17 more)
 
-### Community 188 - "react"
+### Community 188 - "ProductArt.tsx"
 Cohesion: 0.08
-Nodes (8): ref_next_image, react, DevGalleryFixturePage(), Gallery(), PinchZoom(), ProductArt(), ProductPhoto, ArtKind
+Nodes (6): DevGalleryFixturePage(), Gallery(), PinchZoom(), ProductArt(), ProductImage(), ProductPhoto
 
 ### Community 190 - "com.getcapacitor.PluginCall"
 Cohesion: 0.18
 Nodes (7): AppLockPlugin, BonusCardPlugin, OfflineCatalogPlugin, com.getcapacitor.annotation.CapacitorPlugin, com.getcapacitor.Plugin, com.getcapacitor.PluginCall, com.getcapacitor.PluginMethod
 
-### Community 192 - "Что уже построено"
-Cohesion: 0.22
-Nodes (9): Из таска 01 — уборка и тексты, Из таска 02 — ссылка, автосохранение, размеры, кнопка на карточке, Из таска 04 — 3D-сборка и спецификация, Из таска 07 — доводка, Что уже построено, Дозапрос 07-1 — условия после ревью, groupItems(), groupKeys() (+1 more)
+### Community 192 - ".focus"
+Cohesion: 0.43
+Nodes (5): Из таска 07 — доводка, Дозапрос 07-1 — условия после ревью, groupItems(), groupKeys(), roving()
 
 ### Community 197 - "07 — Доводка внешнего вида (impeccable polish) и карта кода"
 Cohesion: 0.33
 Nodes (5): 07 — Доводка внешнего вида (impeccable polish) и карта кода, Из брифа, дословно, Критерии приёмки, Разделы спецификации, Что должно заработать
 
-### Community 198 - "kitchen-hob-photo.test.ts"
-Cohesion: 0.17
-Nodes (15): hob(), cache, decode(), Edge, edges(), fitsTop(), frontTop(), loadPhoto() (+7 more)
+### Community 198 - "photo.ts"
+Cohesion: 0.29
+Nodes (10): cache, decode(), Edge, edges(), frontTop(), loadPhoto(), photoUrl(), SIDE_SHARE (+2 more)
 
 ### Community 204 - "make-ios-icon.mjs"
 Cohesion: 0.20
 Nodes (9): glyph(), ICON_YELLOW, iconSet, iconSource, INK, mark, root, splash() (+1 more)
 
 ### Community 207 - "Интерфейсы прогона"
-Cohesion: 0.20
-Nodes (9): 01 — безопасность, Границы, решённые в спецификации, Из таска 02 — экран, Из таска 03 — движок, Из таска 05 — лёгкая модель, Из таска 06 — шкаф над холодильником, Интерфейсы прогона, Правила проекта (для каждого исполнителя) (+1 more)
+Cohesion: 0.22
+Nodes (8): 01 — безопасность, Из таска 02 — экран, Из таска 03 — движок, Из таска 05 — лёгкая модель, Из таска 06 — шкаф над холодильником, Интерфейсы прогона, Правила проекта (для каждого исполнителя), Что построили таски (дописывают исполнители)
 
 ### Community 209 - "CartProvider.tsx"
-Cohesion: 0.23
-Nodes (18): CartContext, CartContextValue, CartProvider(), RestoreNotice, addItem(), CartLine, cartTotals(), clampQty() (+10 more)
+Cohesion: 0.14
+Nodes (32): Из таска 06 — сайт, корзина и согласие, CartPage(), useCustomer(), CartContext, CartContextValue, CartProvider(), RestoreNotice, useCart() (+24 more)
 
 ### Community 215 - "01 — Оболочка, «Нет связи», каталог без интернета и вход — проверить на эмуляторе и починить"
 Cohesion: 0.33
 Nodes (5): 01 — Оболочка, «Нет связи», каталог без интернета и вход — проверить на эмуляторе и починить, Из брифа, дословно, Критерии приёмки, Разделы спецификации, Что должно заработать
 
-### Community 216 - "kitchen/catalog.ts"
-Cohesion: 0.08
-Nodes (37): C15 — серьёзно. `parseSize` путает порядок и единицы размеров, 1. Польза для людей, 2. Сравнение с лучшими, 3. Что сделать, чтобы стало PRO, 3D-конструктор кухни: польза и что сделать, чтобы стал PRO, Источники, Ключевая мысль, Что уже есть (чтобы не предлагать сделанное) (+29 more)
+### Community 216 - "kitchen.test.ts"
+Cohesion: 0.06
+Nodes (53): 4. Не покрыто тестами, C15 — серьёзно. `parseSize` путает порядок и единицы размеров, Аудит расчётов 3D-конструктора кухни, 3. Что сделать, чтобы стало PRO, 3. Лишнее, toneSwatch(), applianceFromProduct(), burnersOf() (+45 more)
 
 ### Community 218 - "push-promo-routes.test.ts"
 Cohesion: 0.24
 Nodes (7): GET(), POST(), promoConsent(), setPromoConsent(), reply, sent, session
 
-### Community 219 - "uppers"
-Cohesion: 0.20
-Nodes (25): addFront(), anchor(), applianceDims(), baseModule(), blindOf(), carcass(), cm(), columnTopOf() (+17 more)
+### Community 219 - "build.ts"
+Cohesion: 0.11
+Nodes (53): 2. Сомнительно / не доказано, addFront(), anchor(), Anim, applianceDims(), assemble(), At, backsplash() (+45 more)
 
 ### Community 221 - "orders/route.ts"
 Cohesion: 0.11
@@ -914,8 +939,8 @@ Cohesion: 0.17
 Nodes (11): Аудит и ответы (R01–R08, R14i), Вне рамок, Задача, Открытые места, Покрытие манифеста, Пользовательские истории, Решение, Спецификация: 3D-конструктор кухни — аудит, исправление расчётов и чертежа, быстрые PRO-шаги (+3 more)
 
 ### Community 223 - "push.ts"
-Cohesion: 0.17
-Nodes (16): capacitor(), CapacitorGlobal, currentLang(), enablePush(), listen(), listenPushTaps(), PermissionState, plugin() (+8 more)
+Cohesion: 0.29
+Nodes (13): capacitor(), CapacitorGlobal, currentLang(), enablePush(), listen(), listenPushTaps(), PermissionState, plugin() (+5 more)
 
 ### Community 225 - "AppLockPlugin.java"
 Cohesion: 0.10
@@ -926,8 +951,8 @@ Cohesion: 0.33
 Nodes (5): 01 — Уборка и тексты, Из брифа, дословно, Критерии приёмки, Разделы спецификации, Что должно заработать
 
 ### Community 228 - "orders/gateway.ts"
-Cohesion: 0.13
-Nodes (22): POST(), POST(), GET(), mockSpend(), secret(), API_URL, callServer(), cancelOrder() (+14 more)
+Cohesion: 0.12
+Nodes (23): POST(), POST(), GET(), getInstallment(), mockSpend(), secret(), API_URL, callServer() (+15 more)
 
 ### Community 229 - "android.content.Context"
 Cohesion: 0.24
@@ -937,29 +962,29 @@ Nodes (6): Store, Store, Vault, android.content.Context, javax.crypto.SecretKey,
 Cohesion: 0.33
 Nodes (5): 02 — Бонусная карта, отпечаток и итоговая сборка для Google Play, Из брифа, дословно, Критерии приёмки, Разделы спецификации, Что должно заработать
 
-### Community 231 - "Критерии приёмки"
-Cohesion: 0.20
-Nodes (10): 01 — Сервер: отправка на Android через FCM рядом с Apple, Из брифа, дословно, Критерии приёмки, Разделы спецификации, Что должно заработать, 4. Перед выкладкой сервера — исправить (замечания ревью 27.09), classify(), load_account() (+2 more)
+### Community 231 - "check_installments.py"
+Cohesion: 0.21
+Nodes (9): getpass, os, main(), Проверка остатков по рассрочке перед выкатом — ничего не меняет и никуда не…, som(), onec_credentials(), Чтение настроек из .env.local в корне проекта — для программ 1С и сервера. Файл…, Пользователь и пароль 1С: из .env.local (ONEC_USER, ONEC_PASSWORD) или вопросом… (+1 more)
 
 ### Community 233 - "KitchenEngine"
 Cohesion: 0.08
-Nodes (4): 0. Что уже есть (сделано 27.09 на MacBook, в этой ветке), BuildInput, easeInOut(), KitchenEngine
+Nodes (4): Дозапрос 07-2 — лёгкий путь сохранения фото на телефоне, BuildInput, easeInOut(), KitchenEngine
 
 ### Community 235 - "item"
 Cohesion: 0.21
 Nodes (4): CandidatesTest, item(), Товар из каталога сервера — как его прислала 1С., TemplateTest
 
-### Community 236 - "shop_telegram.py"
-Cohesion: 0.16
-Nodes (15): app_payments, httpx, enabled(), _post(), AsyncClient, Интернет-магазин Smart Centr — код входа через Telegram Gateway. Зачем: код в…, Один вызов Gateway API. Возвращает result или None, если не вышло., Отправить код входа в Telegram. True — доставлено в Telegram, False — нет… (+7 more)
+### Community 236 - "dependencies"
+Cohesion: 0.18
+Nodes (11): dependencies, @capacitor/android, @capacitor/cli, @capacitor/core, @capacitor/ios, @capacitor/push-notifications, next, react (+3 more)
 
 ### Community 237 - "3D oshxona konstruktori — audit xulosasi (2026-09-26)"
 Cohesion: 0.29
 Nodes (6): 3D oshxona konstruktori — audit xulosasi (2026-09-26), Kamchiliklar va mijozga qulaylik, Keraksiz narsalar, Odamlarga foydasi, PRO qilish uchun, Xatolar bormi?
 
 ### Community 238 - "shop_push_fcm.py"
-Cohesion: 0.18
-Nodes (14): base64, binascii, _b64url(), build_assertion(), build_message(), _error_info(), _part(), Уведомления на Android через Firebase Cloud Messaging (FCM HTTP v1) — только… (+6 more)
+Cohesion: 0.11
+Nodes (23): 01 — Сервер: отправка на Android через FCM рядом с Apple, Из брифа, дословно, Критерии приёмки, Разделы спецификации, Что должно заработать, binascii, 4. Перед выкладкой сервера — исправить (замечания ревью 27.09), _b64url() (+15 more)
 
 ### Community 239 - "BonusCardPlugin.java"
 Cohesion: 0.13
@@ -981,45 +1006,45 @@ Nodes (7): ref_node_url, apiUrl, CATALOG, fileEnv, log(), main(), ROOT
 Cohesion: 0.12
 Nodes (11): Листы проверки: только кадрирование/одинаковая высота, без ретуши модели., Кабинет SBonus (cabinet.smartcentr.store): вход через WhatsApp «наоборот».…, Кабинет SBonus — страница входа: форма «код по номеру» свёрнута. После…, main(), patch(), Кабинет SBonus — страница входа: кнопка «Войти через WhatsApp». Правит…, Path, pathlib (+3 more)
 
-### Community 248 - "Спецификация: галерея кухонь и готовые кухни"
-Cohesion: 0.25
-Nodes (7): Вне рамок, Задача, Открытые места, Покрытие манифеста, Пользовательские истории, Решение, Спецификация: галерея кухонь и готовые кухни
+### Community 248 - "(entry)/layout.tsx"
+Cohesion: 0.24
+Nodes (4): metadata, src_app_globals, src_app_light_lemon, NotFoundMessage()
 
-### Community 249 - "live.ts"
-Cohesion: 0.13
-Nodes (23): dynamic, GET(), dynamic, GET(), productsFromOneC(), products, Cache, catalogNow() (+15 more)
+### Community 249 - "products.ts"
+Cohesion: 0.08
+Nodes (28): dynamic, SnapshotItem, dynamic, GET(), revalidate, src_data_1c_catalog, categories, Category (+20 more)
 
 ### Community 255 - "03 — Инструкция для Google Play: точность (из разбора замечаний)"
 Cohesion: 0.33
 Nodes (5): 03 — Инструкция для Google Play: точность (из разбора замечаний), Из брифа, дословно, Критерии приёмки, Разделы спецификации, Что должно заработать
 
 ### Community 262 - "customer/gateway.ts"
-Cohesion: 0.08
-Nodes (34): GET(), POST(), POST(), BonusHistoryItem, call(), callShop(), cartConsent(), CartSnapshot (+26 more)
+Cohesion: 0.10
+Nodes (25): POST(), BonusHistoryItem, call(), CartSnapshot, CodeChannel, CustomerApiError, CustomerOrderItem, DEMO_BALANCE (+17 more)
 
 ### Community 271 - "push-cart-routes.test.ts"
-Cohesion: 0.28
-Nodes (7): POST(), saveCartSnapshot(), postCart(), reply, request(), sent, session
+Cohesion: 0.18
+Nodes (12): POST(), GET(), POST(), callShop(), cartConsent(), saveCartSnapshot(), setCartConsent(), postCart() (+4 more)
 
 ### Community 276 - "gallery/rules.ts"
-Cohesion: 0.08
-Nodes (26): encode(), fit(), FULL, THUMB, AnyApplianceId, canonicalQuery(), Checked, checkQuery() (+18 more)
+Cohesion: 0.07
+Nodes (36): Modal(), PublishFail, PublishResult, readPublish(), Err, Phase, PublishDialog(), Props (+28 more)
 
 ### Community 283 - "scripts"
 Cohesion: 0.25
 Nodes (8): scripts, build, dev, exam, start, test, test:e2e, typecheck
 
 ### Community 284 - "image.ts"
-Cohesion: 0.23
-Nodes (19): Из ремонта таска 01, ascii(), imageSize(), isSof(), join(), jpegSize(), MAX_SIDE, PNG_META (+11 more)
+Cohesion: 0.16
+Nodes (23): Из ремонта таска 01, Из таска 02 — готовые кухни (доработка: техника с живого сайта), Из таска 03 — страницы (на ревью), Из таска 04 — конструктор (на ревью), Интерфейсы, ascii(), imageSize(), isSof() (+15 more)
 
-### Community 286 - "Серьёзно — непонятно, нечитаемо или вводит в заблуждение"
-Cohesion: 0.17
-Nodes (11): 1. Подтверждённые ошибки, 2. Сомнительно / не доказано, 3. Чего не хватает, чтобы мебельщик работал без звонка (по важности), 4. Что сделано хорошо, Аудит чертежа и PDF для мастера — 3D-конструктор кухни, Критично — мебельщик получит неверный размер/деталь, Мелочи, Самые показательные картинки (+3 more)
+### Community 286 - "collectRun"
+Cohesion: 0.15
+Nodes (12): 1. Подтверждённые ошибки, 2. Сомнительно / не доказано, 3. Чего не хватает, чтобы мебельщик работал без звонка (по важности), 4. Что сделано хорошо, Аудит чертежа и PDF для мастера — 3D-конструктор кухни, Критично — мебельщик получит неверный размер/деталь, Мелочи, Самые показательные картинки (+4 more)
 
-### Community 289 - "schedule"
-Cohesion: 0.21
-Nodes (7): MaxRemindersTest, Даже «до покупки» больше MAX_REMINDERS напоминаний на одну корзину не шлём., Другая схема или предел — только на время теста, потом всё как было., Вариант 2 — «...» в конце: последнюю паузу повторяем, пока человек не купит., RepeatUntilPurchaseTest, schedule(), TestCase
+### Community 289 - "test_shop_cart_rules.py"
+Cohesion: 0.20
+Nodes (8): MaxRemindersTest, Тесты правил напоминания о корзине (shop_cart_rules.py). Модуль правил не…, Даже «до покупки» больше MAX_REMINDERS напоминаний на одну корзину не шлём., Другая схема или предел — только на время теста, потом всё как было., Вариант 2 — «...» в конце: последнюю паузу повторяем, пока человек не купит., RepeatUntilPurchaseTest, schedule(), TestCase
 
 ### Community 290 - "Что построили таски"
 Cohesion: 0.18
@@ -1066,60 +1091,60 @@ Cohesion: 0.40
 Nodes (4): Контекст, Последствия, Почему, Решение
 
 ### Community 308 - "02 — Сайт: адрес телефона с платформой, текст «Кабинета» для Android"
-Cohesion: 0.40
-Nodes (4): 02 — Сайт: адрес телефона с платформой, текст «Кабинета» для Android, Из брифа, дословно, Разделы спецификации, Что должно заработать
+Cohesion: 0.25
+Nodes (7): Из таска 02 — сайт, 02 — Сайт: адрес телефона с платформой, текст «Кабинета» для Android, Из брифа, дословно, Критерии приёмки, Разделы спецификации, Что должно заработать, sendToken()
 
-### Community 311 - "AccountReviews.tsx"
-Cohesion: 0.17
-Nodes (20): AccountReviews(), ErrorKey, Photo, ReviewForm(), ReviewLoginHint(), CustomerReviews(), photoUrl(), PhotoViewer() (+12 more)
+### Community 311 - "shop_models.py"
+Cohesion: 0.22
+Nodes (9): Base, Интернет-магазин Smart Centr — заказы с сайта (SQLAlchemy). Один заказ сайта =…, Вход покупателя и отправленный код — для счётчиков в «Панели сайта». От…, ShopEvent, ShopOrderEvent, sqlalchemy, sqlalchemy_dialects_postgresql, sqlalchemy_orm (+1 more)
 
-### Community 318 - "push-cart-sync.test.ts"
-Cohesion: 0.40
-Nodes (3): KETTLE, PHONE_CASE, sent
+### Community 318 - "devDependencies"
+Cohesion: 0.22
+Nodes (9): devDependencies, @playwright/test, sharp, @types/node, @types/react, @types/react-dom, @types/three, typescript (+1 more)
 
 ### Community 320 - "test_shop_push_fcm.py"
-Cohesion: 0.31
-Nodes (6): cryptography_hazmat_primitives, cryptography_hazmat_primitives_asymmetric, _account_json(), _b64(), LoadAccountTest, Проверки протокола FCM (уведомления на Android) — без сервера и без интернета.…
+Cohesion: 0.13
+Nodes (11): base64, cryptography_hazmat_primitives, cryptography_hazmat_primitives_asymmetric, _account_json(), _b64(), BuildAssertionTest, BuildMessageTest, LoadAccountTest (+3 more)
 
-### Community 321 - "fronts.ts"
-Cohesion: 0.15
-Nodes (16): allowed(), BASE_FRONTS, baseKey(), BY_CODE, CODE, DRAWER_PARTS, frontsFromQuery(), frontsToQuery() (+8 more)
+### Community 321 - "kitchen-free.test.ts"
+Cohesion: 0.06
+Nodes (80): Расчёты (R02, R12i), 1. Данные (обратная совместимость), DOORS, DRAWERS, FreePalette(), FreeTile, SHELVES, UPPERS (+72 more)
 
-### Community 323 - "panel/reviews/route.ts"
-Cohesion: 0.31
-Nodes (10): allowed(), card(), dynamic, esc(), GET(), page(), POST(), when() (+2 more)
-
-### Community 326 - "ref_next_server"
-Cohesion: 0.22
-Nodes (9): ref_next_server, POST(), TOKEN_SHAPE, PushPlatform, registerPushDevice(), IOS, post(), sent (+1 more)
-
-### Community 327 - "Спецификация: пакет цвета — любой RAL, декоры ЛДСП с кодом, свой цвет острова"
+### Community 323 - "3D-конструктор кухни: польза и что сделать, чтобы стал PRO"
 Cohesion: 0.25
-Nodes (7): Вне рамок, Задача, Открытые места, Покрытие манифеста, Пользовательские истории, Решение, Спецификация: пакет цвета — любой RAL, декоры ЛДСП с кодом, свой цвет острова
+Nodes (7): 1. Польза для людей, 2. Сравнение с лучшими, 3D-конструктор кухни: польза и что сделать, чтобы стал PRO, 4. Чего делать не стоит, Источники, Ключевая мысль, Что уже есть (чтобы не предлагать сделанное)
 
-### Community 328 - "cartSync.ts"
-Cohesion: 0.35
-Nodes (10): Из таска 02 — сайт, Критерии приёмки, CART_SYNC_DELAY, cartChanged(), flush(), listenHide(), signedOut(), stopTimer() (+2 more)
+### Community 324 - "photo/route.ts"
+Cohesion: 0.33
+Nodes (6): allowed, cache, Entry, GET(), reply(), TYPES
 
-### Community 329 - "01 — Хранилище галереи, API и панель владельца"
-Cohesion: 0.50
-Nodes (3): 01 — Хранилище галереи, API и панель владельца, Разделы спецификации, Что должно заработать
+### Community 326 - "device/route.ts"
+Cohesion: 0.24
+Nodes (8): POST(), TOKEN_SHAPE, PushPlatform, registerPushDevice(), IOS, post(), sent, session
+
+### Community 327 - "04 — 3D-сборка и спецификация мебельщику: только то, что можно изготовить"
+Cohesion: 0.33
+Nodes (5): 04 — 3D-сборка и спецификация мебельщику: только то, что можно изготовить, Из брифа, дословно, Критерии приёмки, Разделы спецификации, Что должно заработать
+
+### Community 328 - "06 — Чертёж и PDF для мастера: все размеры, угол, план сверху, контакты"
+Cohesion: 0.33
+Nodes (5): 06 — Чертёж и PDF для мастера: все размеры, угол, план сверху, контакты, Из брифа, дословно, Критерии приёмки, Разделы спецификации, Что должно заработать
 
 ### Community 330 - "03 — Цены мастера, смета PDF и блок «Мастеру» на экране"
-Cohesion: 0.19
-Nodes (7): 02 — 12 готовых кухонь: проекты и картинки, Разделы спецификации, Что должно заработать, 03 — Цены мастера, смета PDF и блок «Мастеру» на экране, Из брифа, дословно, Разделы спецификации, Что должно заработать
+Cohesion: 0.40
+Nodes (4): 03 — Цены мастера, смета PDF и блок «Мастеру» на экране, Из брифа, дословно, Разделы спецификации, Что должно заработать
 
 ### Community 332 - "ТЗ для PC: уведомления «Скидка» и «Новинка» из 1С по шаблонам"
-Cohesion: 0.20
-Nodes (9): 1. Что нужно владельцу (как он это увидит), 1С (`integrations/1c-online-shop/`), 2. Правила (решены, не переспрашивать владельца), 3. Что сделать, 5. Выкладка (внешнее — только с «да» владельца), Сайт (`src/`), Сервер (`integrations/sbonus-server/shop/`), ✅ Статус 28.09.2026 (PC): §3 и §4 сделаны, осталась выкладка §5 (+1 more)
+Cohesion: 0.18
+Nodes (10): 0. Что уже есть (сделано 27.09 на MacBook, в этой ветке), 1. Что нужно владельцу (как он это увидит), 1С (`integrations/1c-online-shop/`), 2. Правила (решены, не переспрашивать владельца), 3. Что сделать, 5. Выкладка (внешнее — только с «да» владельца), Сайт (`src/`), Сервер (`integrations/sbonus-server/shop/`) (+2 more)
 
 ### Community 334 - "0011-gallery-storage-files-not-db.md"
 Cohesion: 0.40
 Nodes (4): Контекст, Последствия, Почему, Решение
 
 ### Community 338 - "panel/gallery/route.ts"
-Cohesion: 0.22
-Nodes (16): allowed(), BISHKEK, commentCard(), dynamic, esc(), GET(), hideButton(), HTML (+8 more)
+Cohesion: 0.24
+Nodes (15): allowed(), BISHKEK, commentCard(), dynamic, esc(), GET(), hideButton(), HTML (+7 more)
 
 ### Community 339 - "0014-ready-kitchens-triangle-warnings.md"
 Cohesion: 0.40
@@ -1133,29 +1158,33 @@ Nodes (4): Контекст, Последствия, Почему, Решени�
 Cohesion: 0.40
 Nodes (4): Контекст, Последствия, Почему, Решение
 
-### Community 342 - "stateFromQuery"
-Cohesion: 0.04
-Nodes (76): Критерии приёмки, Границы, решённые в спецификации, Из таска 05 — экран конструктора, Дозапрос 05-1 — условия после ревью, Границы и швы, 05 — Экран конструктора: честная сумма, связь с магазином, автосохранение, техника третьим шагом, Из брифа, дословно, Критерии приёмки (+68 more)
+### Community 342 - "Спецификация: пакет мастера — раскрой в Excel, кромка, листы, смета"
+Cohesion: 0.25
+Nodes (7): Вне рамок, Задача, Открытые места, Покрытие манифеста, Пользовательские истории, Решение, Спецификация: пакет мастера — раскрой в Excel, кромка, листы, смета
+
+### Community 345 - "03 — Раскладка и проверки: ничего не пропадает молча, техника не шире места"
+Cohesion: 0.40
+Nodes (4): 03 — Раскладка и проверки: ничего не пропадает молча, техника не шире места, Из брифа, дословно, Разделы спецификации, Что должно заработать
 
 ### Community 346 - "kitchen-ready-shots.mjs"
 Cohesion: 0.14
 Nodes (10): ref_playwright, BASE, FIXTURE, launch(), list, liveAppliances(), only, OUT (+2 more)
 
-### Community 347 - "ref_node_path"
-Cohesion: 0.10
-Nodes (16): ref_node_fs_promises, ref_node_path, sharp, ref_vitest_config, files, variants, list, manifest (+8 more)
+### Community 347 - "category-icons.mjs"
+Cohesion: 0.14
+Nodes (10): sharp, files, variants, list, manifest, outDir, PICKS, root (+2 more)
 
 ### Community 348 - "local.ts"
-Cohesion: 0.07
-Nodes (55): budgetFrom(), catalogForQuestion(), CustomerBrief, expand(), InstallmentBrief, isInStock(), normalize(), productLine() (+47 more)
-
-### Community 349 - ".snapshot"
-Cohesion: 0.18
-Nodes (3): Дозапрос 07-2 — лёгкий путь сохранения фото на телефоне, 04 — В конструкторе: готовые кухни и «В галерею», Критерии приёмки
+Cohesion: 0.09
+Nodes (39): CustomerBrief, storeFacts(), allOutSay, Answer, Audience, AUDIENCE_MARKER, bonusText(), dayText() (+31 more)
 
 ### Community 351 - "ClassifyTest"
 Cohesion: 0.36
 Nodes (3): ClassifyTest, _error(), _fcm_code()
+
+### Community 352 - "02 — Свой цвет острова: состояние, ссылка, 3D, раскрой"
+Cohesion: 0.40
+Nodes (4): 02 — Свой цвет острова: состояние, ссылка, 3D, раскрой, Из брифа, дословно, Разделы спецификации, Что должно заработать
 
 ### Community 353 - "Спецификация: Android-приложение S Маркет — довести до «без ошибок» и отдать в Google Play"
 Cohesion: 0.22
@@ -1165,9 +1194,21 @@ Nodes (8): Вне рамок, Задача, Открытые места, Пок�
 Cohesion: 0.22
 Nodes (8): Вне рамок, Границы и швы, Задача, Открытые места, Покрытие манифеста, Пользовательские истории, Решение, Спецификация: уведомления на телефон — iPhone в боевом режиме, Android через Firebase
 
+### Community 356 - "03 — Выбор RAL/декора/цвета острова на экране и код цвета во всех выгрузках"
+Cohesion: 0.40
+Nodes (4): 03 — Выбор RAL/декора/цвета острова на экране и код цвета во всех выгрузках, Из брифа, дословно, Разделы спецификации, Что должно заработать
+
+### Community 357 - "01 — Детали, кромка и раскладка по листам"
+Cohesion: 0.40
+Nodes (4): 01 — Детали, кромка и раскладка по листам, Из брифа, дословно, Разделы спецификации, Что должно заработать
+
 ### Community 359 - "05 — Сервер: напоминания о корзине"
 Cohesion: 0.29
 Nodes (6): 05 — Сервер: напоминания о корзине, Из брифа, дословно, Критерии приёмки, Разделы спецификации, Расписание, Что должно заработать
+
+### Community 360 - "0001-layout-single-source-of-truth.md"
+Cohesion: 0.40
+Nodes (4): Контекст, Последствия, Почему, Решение
 
 ### Community 361 - "04 — Владельцу: одна команда для файлов Firebase и инструкция"
 Cohesion: 0.33
@@ -1176,6 +1217,10 @@ Nodes (5): 04 — Владельцу: одна команда для файло�
 ### Community 362 - "06 — Сайт: корзина из приложения на сервер, согласие в «Кабинете», нажатие открывает корзину"
 Cohesion: 0.33
 Nodes (5): 06 — Сайт: корзина из приложения на сервер, согласие в «Кабинете», нажатие открывает корзину, Из брифа, дословно, Критерии приёмки, Разделы спецификации, Что должно заработать
+
+### Community 365 - "0007-guillotine-strip-nesting.md"
+Cohesion: 0.40
+Nodes (4): Контекст, Последствия, Почему, Решение
 
 ### Community 367 - "0017-android-push-only-with-firebase-file.md"
 Cohesion: 0.40
@@ -1197,25 +1242,33 @@ Nodes (4): Контекст, Последствия, Почему, Решени�
 Cohesion: 0.40
 Nodes (4): Контекст, Последствия, Почему, Решение
 
+### Community 372 - "0013-ready-kitchens-data-in-repo.md"
+Cohesion: 0.40
+Nodes (4): Контекст, Последствия, Почему, Решение
+
+### Community 373 - "02 — 12 готовых кухонь: проекты и картинки"
+Cohesion: 0.50
+Nodes (3): 02 — 12 готовых кухонь: проекты и картинки, Разделы спецификации, Что должно заработать
+
 ## Knowledge Gaps
-- **1065 isolated node(s):** `customer`, `phone`, `laptop`, `catalog`, `session` (+1060 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1866 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **173 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **1090 isolated node(s):** `customer`, `phone`, `laptop`, `catalog`, `session` (+1085 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1900 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **196 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `_Response` connect `test_shop_push_send.py` to `.json`?**
-  _High betweenness centrality (0.108) - this node is a cross-community bridge._
-- **Why does `image()` connect `data.ts` to `shop_wa_bot.py`, `gallery/store.ts`, `stateFromQuery`?**
-  _High betweenness centrality (0.103) - this node is a cross-community bridge._
-- **Why does `Консультант` connect `shop_wa_bot.py` to `data.ts`?**
-  _High betweenness centrality (0.103) - this node is a cross-community bridge._
+  _High betweenness centrality (0.136) - this node is a cross-community bridge._
+- **Why does `image()` connect `ref_node_fs` to `shop_wa_bot.py`, `kitchen/gallery/page.tsx`, `data.ts`, `gallery/store.ts`?**
+  _High betweenness centrality (0.098) - this node is a cross-community bridge._
+- **Why does `Консультант` connect `shop_wa_bot.py` to `ref_node_fs`?**
+  _High betweenness centrality (0.097) - this node is a cross-community bridge._
 - **Are the 11 inferred relationships involving `KitchenPlanner()` (e.g. with `Решения по реализации` and `C01 — критично. Мойка, плита и угловые шкафы молча исчезают из кухни`) actually correct?**
   _`KitchenPlanner()` has 11 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `customer`, `phone`, `laptop` to the rest of the system?**
-  _1065 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `.json` be split into smaller, more focused modules?**
-  _Cohesion score 0.11229946524064172 - nodes in this community are weakly interconnected._
+  _1090 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `build_model.py` be split into smaller, more focused modules?**
   _Cohesion score 0.12380952380952381 - nodes in this community are weakly interconnected._
+- **Should `build_extension.py` be split into smaller, more focused modules?**
+  _Cohesion score 0.08711433756805807 - nodes in this community are weakly interconnected._
