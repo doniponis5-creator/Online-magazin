@@ -284,7 +284,17 @@ function roving(group: Element) {
 const isShort = () => window.matchMedia('(max-height: 520px)').matches
 const smooth = (): ScrollBehavior => (window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth')
 
-export function KitchenPlanner({ appliances, info }: { appliances: KitchenAppliance[]; info?: Record<string, ApplianceInfo> }) {
+export function KitchenPlanner({
+  appliances,
+  info,
+  mode = 'client',
+}: {
+  appliances: KitchenAppliance[]
+  info?: Record<string, ApplianceInfo>
+  /** «master» — лист мастера (/kitchen/master): без шагов покупателя, с чертежами и раскроем */
+  mode?: 'client' | 'master'
+}) {
+  const masterPage = mode === 'master'
   const { lang } = useI18n()
   const t = kitchenTexts(lang)
   const cart = useCart()
@@ -507,7 +517,7 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
     const timer = setTimeout(() => {
       window.history.replaceState(window.history.state, '', `${window.location.pathname}?${queryFromState(state)}`)
       pendingSave.current = null
-      if (!resume) saveLast(state)
+      if (!resume && !masterPage) saveLast(state)
     }, 400)
     return () => clearTimeout(timer)
   }, [state, hydrated, resume])
@@ -2541,10 +2551,15 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
     : toneSwatch(tone.upper ?? tone.facade, undefined, tone.upper ? tone.upperTexture : tone.texture)
 
   return (
-    <div className={`kp${full ? ' kp--full' : ''}${full && fullPanel ? ' is-panel' : ''}`} ref={rootRef} onKeyDown={groupKeys}>
+    <div className={`kp${masterPage ? ' kp--master' : ''}${full ? ' kp--full' : ''}${full && fullPanel ? ' is-panel' : ''}`} ref={rootRef} onKeyDown={groupKeys}>
       <header className="kp-head">
-        <h1 className="kp-head__title">{t.title}</h1>
-        <p className="kp-head__lead">{t.lead}</p>
+        <h1 className="kp-head__title">{masterPage ? t.masterPageTitle : t.title}</h1>
+        <p className="kp-head__lead">{masterPage ? t.masterPageLead : t.lead}</p>
+        {masterPage && (
+          <Link href={`/${lang}/kitchen?${query}`} className="kp-head__back">
+            ← {t.masterBack}
+          </Link>
+        )}
       </header>
 
       <div className="kp-work">
@@ -3095,6 +3110,7 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
           )}
         </div>
 
+        {!masterPage && (
         <aside className="kp-panel" id="kp-panel" aria-label={t.panelLabel} ref={panelRef}>
           {resume && (
             <div className="kp-resume" role="status">
@@ -3722,8 +3738,10 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
             <p className="kp-sum__honest">{t.honestShort}</p>
           </div>
         </aside>
+        )}
       </div>
 
+      {!masterPage && (
       <section className="kp-check" aria-labelledby="kp-check-title">
         <div className="kp-check__head">
           <h2 id="kp-check-title" className="kp-maker__title kp-maker__title--small">
@@ -3743,7 +3761,33 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
           ))}
         </ul>
       </section>
+      )}
 
+      {/* Покупателю: чертежи и раскрой — на отдельной странице мастера. Здесь только
+          ссылка на неё и «Отправить PDF». PDF готовится заранее, когда карточка на экране (specRef). */}
+      {!masterPage && (
+        <section className="kp-spec kp-spec--link" aria-labelledby="kp-spec-title" ref={specRef}>
+          <div className="kp-spec__head">
+            <div>
+              <h2 id="kp-spec-title" className="kp-maker__title">
+                {t.specTitle}
+              </h2>
+              <p className="kp-maker__lead">{t.masterOpenLead}</p>
+            </div>
+            <div className="kp-spec__actions">
+              <Link href={`/${lang}/kitchen/master?${query}`} className="btn btn--primary">
+                <IconFile />
+                {t.masterOpen}
+              </Link>
+              <button type="button" className="btn btn--outline" onClick={sendPdf} disabled={!drawing || pdfBusy} aria-busy={pdfBusy}>
+                {pdfBusy ? t.specPreparing : t.specSend}
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {masterPage && (
       <section className="kp-spec" aria-labelledby="kp-spec-title" ref={specRef}>
         <style>{DRAWING_CSS}</style>
         <div className="kp-spec__head">
@@ -4089,38 +4133,44 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
           </div>
         )}
       </section>
+      )}
 
       <section className="kp-maker" aria-labelledby="kp-maker-title" ref={makerRef}>
         <div className="kp-maker__text">
           <h2 id="kp-maker-title" className="kp-maker__title kp-maker__title--small">
             {t.makerTitle}
           </h2>
-          <pre className="kp-maker__list">{makerText}</pre>
+          {masterPage && <pre className="kp-maker__list">{makerText}</pre>}
           <div className="kp-maker__actions">
-            <button type="button" className="btn btn--outline btn--sm" onClick={copyList}>
-              {t.copy}
-            </button>
+            {masterPage && (
+              <button type="button" className="btn btn--outline btn--sm" onClick={copyList}>
+                {t.copy}
+              </button>
+            )}
             <button type="button" className="btn btn--outline btn--sm" onClick={() => void share()}>
               {t.share}
             </button>
-            <button
-              type="button"
-              className="btn btn--outline btn--sm"
-              onClick={() => setPublishing(true)}
-              disabled={galleryWhy !== null}
-              title={galleryWhy ?? undefined}
-            >
-              {t.gallery.toGallery}
-            </button>
+            {!masterPage && (
+              <button
+                type="button"
+                className="btn btn--outline btn--sm"
+                onClick={() => setPublishing(true)}
+                disabled={galleryWhy !== null}
+                title={galleryWhy ?? undefined}
+              >
+                {t.gallery.toGallery}
+              </button>
+            )}
             <a className="btn btn--ghost btn--sm" href={whatsappHref(phones[0], waText)} target="_blank" rel="noopener noreferrer">
               {t.ask}
             </a>
           </div>
-          {galleryWhy && <p className="kp-note">{galleryWhy}</p>}
+          {!masterPage && galleryWhy && <p className="kp-note">{galleryWhy}</p>}
         </div>
         <PlanSketch plan={plan} labels={wallLabels} showWidths className="kp-maker__sketch" />
       </section>
 
+      {!masterPage && (
       <section className="kp-variants" aria-labelledby="kp-variants-title">
         <div className="kp-check__head">
           <div>
@@ -4171,6 +4221,7 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
           </ul>
         )}
       </section>
+      )}
 
       {publishing && (
         <PublishLoader

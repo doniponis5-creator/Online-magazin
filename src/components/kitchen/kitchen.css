@@ -4841,3 +4841,31 @@ button.kp-opt__more {
     flex: 1;
   }
 }
+
+/* ───────── лист мастера (/kitchen/master) ─────────
+   Та же сцена, но без панели шагов: 3D на всю ширину, ниже — чертежи и раскрой. */
+
+.kp--master .kp-work {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.kp-head__back {
+  flex-basis: 100%;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--kp-cobalt, #2563eb);
+  text-decoration: none;
+}
+
+.kp-head__back:hover {
+  text-decoration: underline;
+}
+
+/* Покупателю вместо чертежей — одна карточка со ссылкой на лист мастера */
+.kp-spec--link .kp-spec__head {
+  margin-bottom: 0;
+  padding: 18px 20px;
+  border: 1px solid var(--kp-line);
+  border-radius: var(--radius-card, 16px);
+  background: #fff;
+}
