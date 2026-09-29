@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import './helpers/canvas'
 import { PlanSketch } from '@/components/kitchen/PlanSketch'
-import { buildKitchen, type BuildInput } from '@/components/kitchen/three/build'
+import { buildKitchen, type BuildInput, type CabInfo } from '@/components/kitchen/three/build'
 import { elevationSvg, islandOverhang, makerList, planSvg, windowFor, type DrawingLabels } from '@/components/kitchen/drawing'
 import { kitchenTexts } from '@/components/kitchen/texts'
 import { products } from '@/data/products'
@@ -112,8 +112,13 @@ function built(state: KitchenState) {
   })
   const spec = b.spec
   const hoodOver = b.hoodOver
+  // что в 3D можно выбрать нажатием (карточка шкафа)
+  const cabs: CabInfo[] = []
+  b.root.traverse((o) => {
+    if (o.userData.cab) cabs.push(o.userData.cab as CabInfo)
+  })
   b.dispose()
-  return { plan, project, items, spec, hoodOver }
+  return { plan, project, items, spec, hoodOver, cabs }
 }
 
 describe('пустая комната: раскладка', () => {
@@ -583,6 +588,32 @@ describe('пустая комната: раскладка', () => {
     expect(turned).not.toMatch(/NaN/)
     expect(turned).toContain('<polygon')
     expect(turned).toMatch(/rotate\(-?\d/)
+  })
+
+  it('свой верх любой ширины выбирается в 3D (убрать, сдвинуть, ширина); у узкого фасад не выбирают', () => {
+    let s = room('straight', { a: 320, noWindow: true })
+    for (const w of [22, 17, 60]) {
+      const r = freeAddUpper(s, planOf(s), 'A', w)
+      if ('fail' in r) throw new Error(`верх ${w}`)
+      s = r.state
+    }
+    const run = planOf(s).runs.find((x) => x.id === 'A')!
+    const own = run.uppers.filter((u) => u.kind === 'doors' || u.kind === 'filler')
+    expect(own.map((u) => [u.kind, u.w])).toEqual([
+      ['doors', 22],
+      ['filler', 17],
+      ['doors', 60],
+    ])
+    const cabs = built(s).cabs.filter((c) => c.row === 'upper')
+    for (const u of own) {
+      const c = cabs.find((x) => x.key === upperKey('A', u.x))
+      expect(c, `${u.kind} ${u.w}`).toBeDefined()
+      expect(Boolean(c!.narrow), `${u.kind} ${u.w}`).toBe(u.w < 30)
+    }
+    // обычная кухня — как раньше: узкий верх не выбирается
+    const rules = built(DEFAULT_STATE)
+    const narrowRules = planOf(DEFAULT_STATE).runs.flatMap((r) => r.uppers.filter((u) => (u.kind === 'doors' || u.kind === 'shelf') && u.w < 30).map((u) => upperKey(r.id, u.x)))
+    for (const k of narrowRules) expect(rules.cabs.some((c) => c.key === k)).toBe(false)
   })
 
   it('зеркальный фасад: верхний шкаф и верх колонны — зеркало, в раскрое — в цех, в ссылке «r»', () => {

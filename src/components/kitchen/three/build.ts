@@ -1121,11 +1121,15 @@ function uppers(ctx: Ctx, run: Run, g: THREE.Group) {
     if (w <= 0.001) return
     const zf = UPPER_D
     const editable = (u.kind === 'doors' || u.kind === 'shelf') && u.w >= MIN_EDIT_W
+    // пустая комната: свой верх (и узкий, и планка уже 20 см) выбирается всегда —
+    // убрать, сдвинуть, поменять ширину; фасад у узкого не выбирают (`narrow`)
+    const own = Boolean(input.plan.free) && (u.kind === 'doors' || u.kind === 'shelf' || u.kind === 'filler')
     const key = upperKey(run.id, u.x)
     const auto: UpperFront = u.kind === 'shelf' ? 'open' : vitrines.has(i) ? 'glass' : 'doors'
     const variant: UpperFront = editable ? ((input.fronts[key] as UpperFront | undefined) ?? auto) : auto
     const mark = (obj: THREE.Object3D) => {
       if (editable) obj.userData.cab = { key, row: 'upper', variant } satisfies CabInfo
+      else if (own) obj.userData.cab = { key, row: 'upper', variant, narrow: true } satisfies CabInfo
     }
 
     // верхний угловой: глухая часть со стороны угла, дверца — на открытой (C05)
@@ -1189,6 +1193,7 @@ function uppers(ctx: Ctx, run: Run, g: THREE.Group) {
         const panel = new THREE.Group()
         panel.add(slab(mats.upper, x + GAP / 2, UB, zf, x + Math.max(w - GAP / 2, GAP / 2 + 0.002), top - GAP / 2, zf + FRONT_T))
         dims(panel, 'filler', u.w, (top - UB) * 100, FRONT_T * 100, { x: u.x, y: UB * 100 })
+        mark(panel)
         g.add(panel)
         ctx.extras.push({ kind: 'filler', run: run.id, w: u.w, h: (top - UB) * 100, upper: true })
         addCornice(x, x + w, zf + FRONT_T)
