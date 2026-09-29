@@ -87,6 +87,11 @@ export type BuildInput = {
    * признак читается из `mats.lite`.
    */
   lite?: boolean
+  /**
+   * Физические материалы (clearcoat, sheen, anisotropy). На телефоне — false:
+   * стандартные материалы вдвое дешевле в шейдере при тех же цветах и картинках.
+   */
+  physical?: boolean
   /** отделка из каталога: фасады, столешница */
   finish?: FinishLook
   /** своя высота пеналов и колонны с духовкой, см */
@@ -95,8 +100,37 @@ export type BuildInput = {
   doorsRight?: string[]
 }
 
+/**
+ * Готовый ряд (стена) с тем, что он внёс в общие списки кухни. Пересборка по
+ * частям: ряд с тем же ключом берётся готовым, а не строится заново.
+ */
+export type RunCache = {
+  key: string
+  group: THREE.Group
+  spec: SpecRun
+  anims: Anim[]
+  objects: Partial<Record<SlotKind, THREE.Object3D>>
+  anchorsLocal: { slot: SlotKind; obj: THREE.Object3D; at: THREE.Vector3 }[]
+  eveningLights: THREE.Object3D[]
+  overhead: THREE.Object3D[]
+  ghosts: THREE.Object3D[]
+  carcasses: SpecCarcass[]
+  nichePanels: { h: number; d: number; count: number }[]
+  extras: SpecExtra[]
+  plinth: number
+  gola: number
+  splash: number
+  wave: number
+  lemons: boolean
+  props: { board: boolean; kettle: boolean }
+}
+
 export type Built = {
   root: THREE.Group
+  /** ряды по id — для пересборки по частям (`buildKitchen(input, built.parts)`) */
+  parts: Map<string, RunCache>
+  /** какие ряды собирались заново в этой сборке (остальные взяты готовыми) */
+  rebuilt: string[]
   /** точки для ценников: верх-перед техники */
   anchors: Partial<Record<SlotKind, THREE.Vector3>>
   /** объекты техники — для подсветки выбора */
@@ -119,7 +153,8 @@ export type Built = {
    * передаёт её в `checkProject(plan, { hoodOver })`.
    */
   hoodOver?: number
-  dispose(): void
+  /** освободить геометрию; keep — ряды, перешедшие в следующую сборку, не трогать */
+  dispose(keep?: Iterable<THREE.Object3D>): void
 }
 
 type Ctx = {
@@ -1597,10 +1632,15 @@ function pendant(ctx: Ctx, g: THREE.Group, x: number, y: number, z: number) {
   g.add(glow)
 }
 
-/** Вечерний свет: в дневном режиме яркость 0 (без пересборки шейдеров). */
+/**
+ * Вечерний свет: днём выключен целиком (`visible = false`) — невидимый
+ * источник шейдер не считает, а источник с яркостью 0 считал бы на каждой
+ * точке кадра. Яркость тоже 0: так трассировщик фото его не берёт.
+ */
 function eveningLight<L extends THREE.Light>(ctx: Ctx, light: L): L {
   light.userData.on = light.intensity
   light.intensity = 0
+  light.visible = false
   ctx.eveningLights.push(light)
   return light
 }
@@ -1778,17 +1818,43 @@ function heights(input: BuildInput) {
   return { wallH, upperBottom, upperTop, mezz, columnTop }
 }
 
-export function buildKitchen(input: BuildInput): Built {
+/**
+ * reuse — ряды прошлой сборки (`built.parts`): ряд с тем же ключом (та же
+ * стена, те же шкафы, техника, фото, фасады при тех же общих настройках)
+ * берётся готовым. Так смена ширины или фото на одной стене пересобирает
+ * только её.
+ */
+export function buildKitchen(input: BuildInput, reuse?: ReadonlyMap<string, RunCache>): Built {
   const prev = T.detail(input.detail ?? 2)
   try {
-    return assemble(input)
+    return assemble(input, reuse)
   } finally {
     T.detail(prev)
   }
 }
 
-function assemble(input: BuildInput): Built {
-  const mats = createMaterials(input.style, input.tone, input.evening, { floor: input.room.floor, wall: input.room.wall }, input.finish, Boolean(input.lite))
+/** Всё, от чего зависит каждый ряд: стиль, цвета, комната, детальность. */
+function globalKey(input: BuildInput): string {
+  const { plan, style, tone, finish, room, evening, detail, lite, physical, columns, doorsRight } = input
+  return JSON.stringify([style.id, style, tone, finish, room, evening, detail ?? 2, Boolean(lite), physical ?? true, columns, doorsRight, plan.shape, plan.room, plan.window, plan.island, plan.stove])
+}
+
+/** Ключ ряда: общий ключ + сам ряд + техника на нём (с фото) + свои фасады его шкафов. */
+function runKey(input: BuildInput, run: Run, global: string): string {
+  const plan = input.plan
+  const items = (Object.keys(input.items) as SlotKind[]).sort().map((s) => {
+    const at = plan.placed[s] ?? (s === 'hood' ? plan.placed.hob : undefined)
+    if (at && at.run !== run.id) return ''
+    const a = input.items[s]
+    const ph = a?.image ? input.photos.get(a.image) : undefined
+    return `${s}=${a ? JSON.stringify(a) : '-'}#${ph ? ph.texture.uuid : ph === null ? 'n' : 'u'}`
+  })
+  const fronts = Object.entries(input.fronts).filter(([k]) => k.startsWith(run.id) || !/^[A-Z]/.test(k))
+  return `${global}|${JSON.stringify(run)}|${items.join(',')}|${JSON.stringify(fronts)}`
+}
+
+function assemble(input: BuildInput, reuse?: ReadonlyMap<string, RunCache>): Built {
+  const mats = createMaterials(input.style, input.tone, input.evening, { floor: input.room.floor, wall: input.room.wall }, input.finish, Boolean(input.lite), input.physical ?? true)
   const counterY = BODY_TOP + cm(input.style.topCm)
   const h = heights(input)
   const ctx: Ctx = {
@@ -1825,12 +1891,58 @@ function assemble(input: BuildInput): Built {
   room(ctx, root)
 
   const specRuns: SpecRun[] = []
+  const parts = new Map<string, RunCache>()
+  const rebuilt: string[] = []
+  const gkey = globalKey(input)
   input.plan.runs.forEach((run, ri) => {
+    const key = runKey(input, run, gkey)
+    const ready = reuse?.get(run.id)
+    if (ready && ready.key === key) {
+      // ряд не менялся — берём готовым вместе со всем, что он вносил в списки
+      parts.set(run.id, ready)
+      root.add(ready.group)
+      specRuns.push(ready.spec)
+      ctx.anims.push(...ready.anims)
+      Object.assign(ctx.objects, ready.objects)
+      ctx.anchorsLocal.push(...ready.anchorsLocal)
+      ctx.eveningLights.push(...ready.eveningLights)
+      ctx.overhead.push(...ready.overhead)
+      ctx.ghosts.push(...ready.ghosts)
+      ctx.carcasses.push(...ready.carcasses)
+      ctx.nichePanels.push(...ready.nichePanels)
+      ctx.extras.push(...ready.extras)
+      ctx.plinth += ready.plinth
+      ctx.gola += ready.gola
+      ctx.splash += ready.splash
+      ctx.wave += ready.wave
+      ctx.lemons ||= ready.lemons
+      ctx.props = { board: ctx.props.board || ready.props.board, kettle: ctx.props.kettle || ready.props.kettle }
+      return
+    }
+    rebuilt.push(run.id)
     const g = new THREE.Group()
     g.position.set(cm(run.ox), 0, cm(run.oz))
     g.rotation.y = run.rot
     ctx.uvRun = ri * 3.7
     ctx.tops = []
+    // что было в списках до ряда — чтобы запомнить, что внёс именно он
+    const before = {
+      anims: ctx.anims.length,
+      objects: new Set(Object.keys(ctx.objects)),
+      anchors: ctx.anchorsLocal.length,
+      lights: ctx.eveningLights.length,
+      overhead: ctx.overhead.length,
+      ghosts: ctx.ghosts.length,
+      carcasses: ctx.carcasses.length,
+      panels: ctx.nichePanels.length,
+      extras: ctx.extras.length,
+      plinth: ctx.plinth,
+      gola: ctx.gola,
+      splash: ctx.splash,
+      wave: ctx.wave,
+      lemons: ctx.lemons,
+      props: { ...ctx.props },
+    }
     // остров своего цвета: весь ряд строится материалом острова вместо низа —
     // фасады, пилястры, задняя панель (как верх берёт `mats.upper`); корпус — общий `mats.body`
     // подмена — только на этот ряд: finally вернёт общие материалы, даже если ряд упал
@@ -1852,7 +1964,30 @@ function assemble(input: BuildInput): Built {
       }
       decorRun(ctx, run, g)
       root.add(g)
-      specRuns.push(collectRun(ctx, run, g))
+      const spec = collectRun(ctx, run, g)
+      specRuns.push(spec)
+      const objects: RunCache['objects'] = {}
+      for (const [k, v] of Object.entries(ctx.objects)) if (!before.objects.has(k)) objects[k as SlotKind] = v
+      parts.set(run.id, {
+        key,
+        group: g,
+        spec,
+        anims: ctx.anims.slice(before.anims),
+        objects,
+        anchorsLocal: ctx.anchorsLocal.slice(before.anchors),
+        eveningLights: ctx.eveningLights.slice(before.lights),
+        overhead: ctx.overhead.slice(before.overhead),
+        ghosts: ctx.ghosts.slice(before.ghosts),
+        carcasses: ctx.carcasses.slice(before.carcasses),
+        nichePanels: ctx.nichePanels.slice(before.panels),
+        extras: ctx.extras.slice(before.extras),
+        plinth: ctx.plinth - before.plinth,
+        gola: ctx.gola - before.gola,
+        splash: ctx.splash - before.splash,
+        wave: ctx.wave - before.wave,
+        lemons: ctx.lemons && !before.lemons,
+        props: { board: ctx.props.board && !before.props.board, kettle: ctx.props.kettle && !before.props.kettle },
+      })
     } finally {
       ctx.mats = mats
       ctx.island = false
@@ -1895,6 +2030,8 @@ function assemble(input: BuildInput): Built {
 
   return {
     root,
+    parts,
+    rebuilt,
     anchors,
     objects: ctx.objects,
     anims: ctx.anims,
@@ -1905,15 +2042,20 @@ function assemble(input: BuildInput): Built {
     wallH: ctx.wallH,
     spec,
     ...hoodOverOf(root, ctx.objects.hood, ctx.cookY),
-    dispose() {
+    dispose(keep) {
       // Геометрию освобождаем, а материалы — нет: у освобождённого материала
       // видеокарта выбрасывает и его шейдер, и следующая кухня собирала бы
       // шейдеры заново (полсекунды на каждую смену цвета). Сами материалы
       // уберёт сборщик мусора, шейдеров же всего несколько десятков видов.
-      root.traverse((o) => {
-        if (o instanceof THREE.Mesh || o instanceof THREE.LineSegments) o.geometry.dispose()
-        if (o instanceof THREE.Light) o.dispose()
-      })
+      // Ряды, перешедшие в следующую сборку (keep), не трогаем.
+      const kept = new Set(keep ?? [])
+      for (const child of [...root.children]) {
+        if (kept.has(child)) continue
+        child.traverse((o) => {
+          if (o instanceof THREE.Mesh || o instanceof THREE.LineSegments) o.geometry.dispose()
+          if (o instanceof THREE.Light) o.dispose()
+        })
+      }
     },
   }
 }

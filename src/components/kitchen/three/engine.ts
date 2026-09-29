@@ -7,15 +7,18 @@ import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js'
+import { FXAAShader } from 'three/addons/shaders/FXAAShader.js'
 import { itemPositions } from '@/lib/kitchen/layout'
 import type { ItemKey, SlotKind, WallId } from '@/lib/kitchen/types'
 import type { SpecData } from '@/lib/kitchen/spec'
-import type { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js'
 import { sharpenPass } from './sharpen'
 import { buildKitchen, CEILING_LAYER, WALL_H, WINDOW, type BuildInput, type Built, type CabInfo, type Dims } from './build'
-import { governStep, newGovernor, type GovernorState } from './governor'
+import { governIdle, governStep, governorPlan, newGovernor, pickTier, readEnv, type DeviceEnv, type GovernorState, type Tier } from './quality'
 import type { PhotoTracer } from './photoreal'
 import { setBudget } from './textures'
+
+export type { Tier, TierName } from './quality'
 
 /**
  * Фото трассировкой лучей: build — собираем сцену, trace — копим кадр
@@ -71,11 +74,10 @@ const PHOTO_MAX_MS = 30000
 export type View = 'angle' | 'front' | 'top' | 'eye'
 
 /**
- * Чёткость 3D. HD — бережёт батарею и слабые видеокарты. 4K — в покое кадр
- * рисуется до 3840 точек в ширину (и в движении не ниже полуторной чёткости),
- * картинки материалов — самые подробные.
+ * Прежний переключатель чёткости. Класс устройства теперь выбирается сам
+ * (quality.ts), `setQuality` ничего не делает, `getQuality` отдаёт подпись
+ * класса — тип оставлен, пока планировщик не уберёт переключатель.
  */
-/** lite — «Лёгкий»: кухня собирается без внутренностей, теней и рельефа (слабый телефон). */
 export type Quality = 'lite' | 'hd' | '4k'
 
 export type Pick = { slot: SlotKind | null; item: ItemKey | null; dims: Dims | null; cab: CabInfo | null }
@@ -105,8 +107,14 @@ type OpenInfo = { kind: 'swing' | 'lift' | 'fold' | 'slide'; dir: number }
 const OPEN_AMOUNT: Record<OpenInfo['kind'], number> = { swing: 1.5, lift: 1.15, fold: 1.42, slide: 0.36 }
 /** Сколько держать палец на предмете, чтобы взять его. */
 const HOLD_MS = 380
-/** Видеокарты недорогих Android-телефонов: Mali-400/T-серии/G31–G52, PowerVR, младшие Adreno. */
-const LOW_END_GPU =/mali-(4\d\d|t\d+|g31|g51|g52)|powervr|adreno \(tm\) (3\d\d|4\d\d|50\d|51\d|60\d|610)|swiftshader|llvmpipe/i
+/** Эскиз стиля рисуем только после такого простоя (жесты и анимации закончились). */
+const THUMB_IDLE_MS = 300
+/** Эскизов стилей за один простой — не больше. */
+const THUMB_BURST = 8
+/** Столько эскизов помним (стиль + форма кухни). */
+const THUMB_CACHE = 24
+/** Сборка эскиза дольше этого на простом телефоне — дальше эскизы без пересборки. */
+const THUMB_SLOW_MS = 200
 
 type Tween = { start: number; duration: number; step: (t: number) => void; done?: () => void }
 
@@ -144,8 +152,13 @@ export class KitchenEngine {
   private probe: { rt: THREE.WebGLCubeRenderTarget; cam: THREE.CubeCamera } | null = null
   private pmrem: THREE.PMREMGenerator
   private probeDirty = false
-  /** на компьютере — мягкие тени в углах и стыках (ambient occlusion) */
-  private composer: EffectComposer | null = null
+  /**
+   * Кадр всегда рисуется в свою цель (`renderRatio × css`) и последним проходом
+   * попадает на холст: на компьютере — уменьшение с резкостью (sharpen.ts),
+   * на телефоне — FXAA. Холст при жесте не пересоздаётся: меняется цель.
+   */
+  private composer: EffectComposer
+  private fxaa: ShaderPass | null = null
   private built: Built | null = null
   private input: BuildInput | null = null
   /** предел приближения до подлёта к технике (focus) — вернуть при снятии выбора; вид ставит свой */
@@ -182,38 +195,50 @@ export class KitchenEngine {
   private marker: THREE.Group | null = null
   /** линии размеров вокруг выбранного предмета */
   private measureLines: THREE.Group | null = null
-  /** чёткость: в движении — обычная, в покое — с запасом (как у фотоаппарата) */
-  private baseRatio = 1
+  /** чёткость: в движении — обычная, в покое — родные точки экрана */
   private refined = false
   private refineTimer = 0
   private hoverFrame = 0
-  /** детальность картинок в сборке кухни */
-  private detail = 2
   /**
-   * На компьютере холст — ровно в точках экрана, а кадр рисуется крупнее
-   * (renderRatio) и честно уменьшается последним проходом (см. sharpen.ts).
+   * Холст — в точках экрана (телефон: полный dpr в бюджете, компьютер: до 2),
+   * кадр рисуется в свою цель (renderRatio) и последним проходом ложится на холст.
    */
   private canvasRatio = 1
   private renderRatio = 1
   private finalPass: ShaderPass | null = null
-  private quality: Quality = 'hd'
+  /** класс устройства: выбран один раз при запуске (quality.ts) */
+  private tier: Tier
+  private env: DeviceEnv
   private raycaster = new THREE.Raycaster()
   /** трассировщик лучей: создаётся по первой кнопке «Фото» и живёт дальше */
   private pt: PhotoTracer | null = null
   private photo: PhotoRun | null = null
-  /** встроенная или мобильная видеокарта: фото заранее не готовим */
-  private weakGpu = false
-  /** простой телефон: 2–3 ГБ памяти, слабая видеокарта или ≤ 4 ядер — рисуем ещё проще */
-  private lowEnd = false
   /**
-   * Губернатор кадров (governor.ts): рабочая чёткость в движении. Начинает с
-   * baseRatio и опускается сама, если кадры в движении тянутся дольше 30 мс, —
-   * на слабом телефоне кухня иначе дёргается. Возвращается вверх, когда кадры
-   * снова быстрые. Покой (fineRatio) не трогает: там дорисовка всегда полная.
+   * Регулятор кадров (quality.ts): если кадры в движении тянутся дольше 30 мс,
+   * ступенями снижает тени → картинки → резкость и через 3 с без медленных
+   * кадров возвращает. Покой не трогает: там дорисовка всегда полная.
    */
-  private governor: GovernorState = newGovernor(1)
+  private governor: GovernorState = newGovernor()
+  /** какая ступень регулятора применена к сцене */
+  private level = 0
+  /** детальность картинок в текущей сборке (K) */
+  private detailNow = 2
+  /** нужна пересборка с другой детальностью — сделаем в покое */
+  private detailDirty = false
+  private recoverTimer = 0
   /** время прошлого кадра в движении; 0 — прошлый кадр был покоем */
   private motionLast = 0
+  /** когда последний раз что-то двигалось (для эскизов после простоя) */
+  private lastMotion = 0
+  /** шейдеры собираются заранее — до первого кадра */
+  private compiling: Promise<void> | null = null
+  /** эскизы стилей: ключ стиль + форма → картинка */
+  private thumbs = new Map<string, string>()
+  /** простой телефон: сборка эскиза оказалась дольше 200 мс — дальше эскизы подменой цвета */
+  private thumbSlow = false
+  private thumbBase: { key: string; el: HTMLCanvasElement } | null = null
+  private thumbQueue: Promise<unknown> = Promise.resolve()
+  private thumbBurst = { at: 0, n: 0 }
   /** вкладку спрятали, а кадр просили — нарисуем, когда вернут */
   private wake = false
   private onVisibility = () => {
@@ -239,58 +264,34 @@ export class KitchenEngine {
      *  запуск падал (мало видеопамяти, капризный драйвер, встроенный браузер). */
     safe = false,
   ) {
+    // Класс устройства (quality.ts) — один раз, без переключателя и хранилища.
     // Телефон — по устройству, а не по ширине окна: палец и нет мыши/тачпада.
-    // Раньше узкое окно на MacBook или ПК (< 768 px) считалось телефоном — и
-    // компьютер терял 4K, сглаживание и эффекты.
-    this.mobile = window.matchMedia('(pointer: coarse)').matches && !window.matchMedia('(any-pointer: fine)').matches
+    // Сглаживание холста (MSAA) решается до его создания и зависит только от
+    // того, телефон ли это: на телефоне вместо MSAA — FXAA последним проходом.
     this.reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    // Сглаживание выключаем только простому Android (память ≤ 3 ГБ — её называет
-    // Chrome): там оно съедает до трети кадра. На iPhone и хороших телефонах
-    // без него кромки шкафов в движении «лесенкой» — 4K выглядел хуже HD.
-    // Решается до создания холста: потом сглаживание не переключить.
-    const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8
+    const env0 = readEnv()
+    const phone = env0.coarse && !env0.fine
     this.renderer = new THREE.WebGLRenderer({
-      antialias: !safe && !(this.mobile && memory <= 3),
+      antialias: !safe && !phone,
       powerPreference: safe ? 'default' : 'high-performance',
     })
     const r = this.renderer
-    // Слабая видеокарта (встроенная) качество больше не снижает — только не
-    // собирает заранее программу фото-трассировки. Выбор покупателя помним.
-    const gpu = this.gpuName()
-    const weak = this.mobile || /intel|uhd|iris|mali|adreno|powervr|swiftshader|llvmpipe|basic render/i.test(gpu)
-    this.weakGpu = weak
-    // Простой телефон — ещё проще: холст в точках экрана и тени мельче.
-    // Видеокарте такого телефона вдвое меньше точек на каждый кадр.
-    // Память называет только Chrome на Android; видеокарту iPhone не называет
-    // (у всех «Apple GPU»). Ядер процессора ≤ 4 — простой Android: столько у
-    // старых и дешёвых моделей. iPhone по ядрам не судим: Safari называет не
-    // настоящее число (защита от слежки), и новый iPhone попадал в «простые» —
-    // с мелкими тенями даже в 4K.
-    const cores = navigator.hardwareConcurrency ?? 8
-    const apple = /apple/i.test(gpu)
-    this.lowEnd = this.mobile && (memory <= 3 || (!apple && cores <= 4) || LOW_END_GPU.test(gpu))
-    let saved: string | null = null
-    try {
-      saved = window.localStorage.getItem('kp-quality')
-    } catch {
-      saved = null
-    }
-    // Телефон (любой, и хороший тоже) всегда открывается в «Лёгком» — владелец
-    // так решил 28.09.2026: на простых телефонах HD подвисал. HD и 4K покупатель
-    // включает сам; на телефоне этот выбор до следующего открытия не помним.
-    // Компьютер (ПК, MacBook — любая видеокарта) без сохранённого выбора — 4K
-    // в полном качестве (решение 24.09.2026); медленные кадры в движении снизит
-    // губернатор, в покое кадр всегда полный.
-    const remembered = saved === 'lite' || saved === 'hd' || saved === '4k' ? saved : null
-    this.quality = safe || this.mobile ? 'lite' : (remembered ?? '4k')
-    this.applyQuality()
-    this.canvasRatio = Math.min(window.devicePixelRatio || 1, 2)
-    r.setPixelRatio(this.mobile ? this.baseRatio : this.canvasRatio)
+    this.env = { ...env0, gpu: this.gpuName() }
+    // запасной запуск на компьютере — бережный класс
+    this.tier = pickTier(this.env, safe && !phone ? 'desktop-weak' : undefined)
+    this.mobile = this.tier.mobile
+    this.detailNow = this.tier.detail
+    setBudget(this.tier.texBudget)
+    this.canvasRatio = this.canvasRatioFor(host.clientWidth || 1, host.clientHeight || 1)
+    r.setPixelRatio(this.canvasRatio)
     r.outputColorSpace = THREE.SRGBColorSpace
     r.toneMapping = THREE.NeutralToneMapping
     r.toneMappingExposure = 1
     r.shadowMap.enabled = true
     r.shadowMap.type = THREE.PCFShadowMap
+    // Тени статичные: свет и шкафы стоят, карту теней рисуем только когда
+    // кухня пересобралась, открылась дверца или сменился свет (needsUpdate).
+    r.shadowMap.autoUpdate = false
     r.domElement.className = 'kp-canvas'
     r.domElement.setAttribute('aria-hidden', 'true')
     host.prepend(r.domElement)
@@ -305,9 +306,8 @@ export class KitchenEngine {
     this.scene.environmentIntensity = DAY.env
     this.scene.background = new THREE.Color('#eef0f3')
 
-    // в «Лёгком» теней нет: без источников с тенью рендерер их и не считает
-    this.sun.castShadow = !this.lite
-    const size = this.shadowSize()
+    this.sun.castShadow = this.tier.shadow > 0
+    const size = this.tier.shadow || 1024
     this.sun.shadow.mapSize.set(size, size)
     this.sun.shadow.bias = -0.0003
     this.sun.shadow.normalBias = 0.015
@@ -317,7 +317,7 @@ export class KitchenEngine {
     // солнца в окне — иначе основной свет сверху не прошёл бы в комнату.
     this.camera.layers.enable(CEILING_LAYER)
     if (!this.mobile) {
-      this.windowSun.castShadow = !this.lite
+      this.windowSun.castShadow = true
       this.windowSun.shadow.mapSize.set(2048, 2048)
       this.windowSun.shadow.bias = -0.0004
       this.windowSun.shadow.normalBias = 0.02
@@ -329,10 +329,11 @@ export class KitchenEngine {
       this.scene.add(this.skyLight)
     }
 
-    if (!this.mobile) {
-      const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 })
-      const composer = new EffectComposer(r, target)
-      composer.addPass(new RenderPass(this.scene, this.camera))
+    // Кадр — в свою цель `renderRatio × css`; на холст его кладёт последний проход.
+    const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: this.tier.msaa ? 4 : 0 })
+    const composer = new EffectComposer(r, target)
+    composer.addPass(new RenderPass(this.scene, this.camera))
+    if (this.tier.composer) {
       const ao = new GTAOPass(this.scene, this.camera, 1, 1)
       ao.updateGtaoMaterial({ radius: 0.28, distanceExponent: 1.2, thickness: 1.0, scale: 1.1, samples: 16, distanceFallOff: 1 })
       // сильнее сглаживаем шум затенения — без «пунктира» по краям шкафов
@@ -344,13 +345,20 @@ export class KitchenEngine {
       bloom.enabled = false
       composer.addPass(bloom)
       this.bloom = bloom
-      composer.addPass(new OutputPass())
-      // последним — честное уменьшение до точек экрана и тонкая резкость
+    }
+    composer.addPass(new OutputPass())
+    if (this.tier.fxaa) {
+      // телефон: дешёвое сглаживание кромок вместо MSAA, заодно кладёт кадр на холст
+      const fxaa = new ShaderPass(FXAAShader)
+      composer.addPass(fxaa)
+      this.fxaa = fxaa
+    } else {
+      // компьютер: честное уменьшение до точек экрана и тонкая резкость
       const finalPass = sharpenPass(0.35)
       composer.addPass(finalPass)
       this.finalPass = finalPass
-      this.composer = composer
     }
+    this.composer = composer
 
     this.controls = new OrbitControls(this.camera, r.domElement)
     const c = this.controls
@@ -401,24 +409,63 @@ export class KitchenEngine {
     const first = !this.built
     const old = this.built
     this.input = input
-    this.built = buildKitchen({ ...input, evening: this.evening, detail: this.detail, lite: this.lite })
+    this.detailDirty = false
+    // Пересборка по частям: ряды с тем же ключом (стена, шкафы, техника, фото)
+    // переходят из прошлой сборки готовыми; заново строятся только изменённые.
+    const tier = this.tier
+    this.built = buildKitchen({ ...input, evening: this.evening, detail: this.detailNow, lite: tier.lite, physical: tier.physical }, old?.parts)
     this.scene.add(this.built.root)
     if (old) {
       this.scene.remove(old.root)
-      old.dispose()
+      old.dispose([...this.built.parts.values()].map((p) => p.group))
+    }
+    if (process.env.NODE_ENV !== 'production') {
+      const b = this.built
+      console.info(`kitchen build: пересобрано стен ${b.rebuilt.length} из ${input.plan.runs.length}${b.rebuilt.length ? ` (${b.rebuilt.join(', ')})` : ''}`)
     }
     this.showMeasure(null)
     this.applyEvening()
     this.applyOverhead()
     this.placeSun()
     this.updateTagPoints()
+    this.thumbBase = null
     // снимок комнаты — когда кухня встанет и анимация закончится
     this.probeDirty = true
+    this.renderer.shadowMap.needsUpdate = true
     if (first || reframe) this.frame(first ? 'instant' : 'glide')
     if (this.selected) this.setSelected(this.selected)
     if (motion && !this.reduced) this.animate(motion)
+    // первый раз: шейдеры собираем заранее, кадры пойдут после (за экраном загрузки)
+    if (first) this.compiling = this.compileFirst()
     this.invalidate()
     if (photoState) void this.startPhoto(photoState)
+  }
+
+  /**
+   * Собрать шейдеры до первого кадра — иначе первый кадр стоит секунду.
+   * Собираем оба варианта теней (с картой и без): регулятор переключает их
+   * в движении, и переключение не должно стоить пересборки.
+   */
+  private async compileFirst() {
+    const r = this.renderer
+    const on = this.sun.castShadow
+    try {
+      if (on) {
+        this.sun.castShadow = false
+        await r.compileAsync(this.scene, this.camera)
+        this.sun.castShadow = true
+      }
+      await r.compileAsync(this.scene, this.camera)
+    } catch {
+      // не вышло — соберутся на первом кадре
+    } finally {
+      if (!this.disposed) {
+        this.sun.castShadow = on
+        this.compiling = null
+        r.shadowMap.needsUpdate = true
+        this.invalidate()
+      }
+    }
   }
 
   private animate(motion: { kind: 'style' } | { kind: 'swap'; slot: SlotKind }) {
@@ -469,16 +516,18 @@ export class KitchenEngine {
     if (this.skyLight) this.skyLight.intensity = win ? k.sky : 0
     this.scene.environmentIntensity = this.scene.environment === this.roomEnv && this.roomEnv ? k.room : k.env
     if (this.bloom) {
-      // «Лёгкий» — без свечения ламп: это второй полный проход по кадру
-      this.bloom.enabled = e && !this.lite
+      this.bloom.enabled = e
       this.bloom.strength = k.bloom
       this.bloom.threshold = k.threshold
     }
     ;(this.scene.background as THREE.Color).set(e ? '#2b3240' : '#eef0f3')
+    // днём вечерние лампы выключены целиком: невидимый источник шейдер не считает
     for (const l of this.built?.eveningLights ?? []) {
       const light = l as THREE.Light
+      light.visible = e
       light.intensity = e ? (light.userData.on as number) : 0
     }
+    this.renderer.shadowMap.needsUpdate = true
   }
 
   /**
@@ -1311,8 +1360,7 @@ export class KitchenEngine {
   private photoTarget(): number {
     // вечером свет от маленьких ламп — проходов нужно больше
     const k = this.evening ? 1.6 : 1
-    if (this.mobile) return Math.round(96 * k)
-    return Math.round((this.quality === '4k' ? 256 : 160) * k)
+    return Math.round((this.tier.name === 'desktop' ? 256 : 160) * k)
   }
 
   /** Что не должно попасть на фото: рамки выбора, размеры, контуры убранных шкафов. */
@@ -1329,6 +1377,8 @@ export class KitchenEngine {
    */
   async startPhoto(onState: (s: PhotoState | null) => void): Promise<'ok' | 'stopped' | 'failed'> {
     if (!this.built || this.disposed) return 'failed'
+    // телефон: трассировки нет — планировщик сразу берёт снимок 4K (snapshot4k)
+    if (!this.tier.pathTrace) return 'failed'
     this.setShift(0, 0, true)
     if (this.photo) {
       this.photo.onState = onState
@@ -1384,7 +1434,7 @@ export class KitchenEngine {
    * На телефоне не готовим — бережём батарею и память.
    */
   async prewarmPhoto() {
-    if (this.mobile || this.weakGpu || this.pt || this.disposed) return
+    if (this.tier.name !== 'desktop' || this.pt || this.disposed) return
     try {
       const { PhotoTracer } = await import('./photoreal')
       if (!this.disposed) this.pt ??= new PhotoTracer(this.renderer)
@@ -1483,8 +1533,8 @@ export class KitchenEngine {
     if (!run || run.building || run.big || !this.pt) return Promise.resolve(null)
     return new Promise((resolve) => {
       const r = this.renderer
-      // простому телефону — 1536: 2048 в ширину он копит минуты и рискует потерять видеокарту
-      const W = this.lowEnd ? 1536 : this.mobile ? 2048 : 3840
+      // трассировка — только компьютер (телефон берёт snapshot4k)
+      const W = 3840
       const H = Math.round(Math.min(W, Math.max(W * 0.42, W / Math.max(0.5, this.camera.aspect))) / 2) * 2
       run.big = { resolve }
       // пока копится большое фото, камеру не трогаем — иначе всё заново
@@ -1544,22 +1594,69 @@ export class KitchenEngine {
   private govern(now: number) {
     const last = this.motionLast
     this.motionLast = now
-    if (last) this.governor = governStep(this.governor, now - last)
+    this.lastMotion = now
+    if (last) this.governor = governStep(this.governor, now - last, now)
+    this.applyLevel()
+  }
+
+  /** Что применить на ступени регулятора сейчас. */
+  private plan() {
+    return governorPlan(this.governor.level, this.tier, window.devicePixelRatio || 1)
   }
 
   /**
-   * Счётчики губернатора — с нуля: после покоя (пауза между жестами — не
-   * кадр) и при смене чёткости (тогда и рабочая чёткость снова базовая).
+   * Ступень регулятора → сцена: карта теней (2048 → 1024 → выкл) сразу,
+   * детальность картинок — пересборкой в покое, резкость — в setRatio.
    */
-  private resetGovernor(ratio = this.governor.ratio) {
+  private applyLevel() {
+    const lvl = this.governor.level
+    if (lvl === this.level) return
+    this.level = lvl
+    const p = this.plan()
+    const sun = this.sun
+    const size = p.shadow || (this.tier.shadow || 1024)
+    if (sun.castShadow !== p.shadow > 0 || sun.shadow.mapSize.x !== size) {
+      sun.castShadow = p.shadow > 0
+      sun.shadow.mapSize.set(size, size)
+      sun.shadow.map?.dispose()
+      sun.shadow.map = null
+      this.renderer.shadowMap.needsUpdate = true
+    }
+    if (p.detail !== this.detailNow) {
+      this.detailNow = p.detail
+      this.detailDirty = true
+    }
+    if (process.env.NODE_ENV !== 'production') console.info(`kitchen quality: ступень ${lvl} — тени ${p.shadow || 'выкл'}, картинки K=${p.detail}, чёткость ${p.ratio.toFixed(2)}`)
+    this.scheduleRecover()
+  }
+
+  /** В покое регулятор восстанавливает ступени по часам — ставим будильник. */
+  private scheduleRecover() {
+    clearTimeout(this.recoverTimer)
+    this.recoverTimer = 0
+    if (this.governor.level === 0 || this.disposed) return
+    this.recoverTimer = window.setTimeout(() => {
+      this.recoverTimer = 0
+      this.governor = governIdle(this.governor, performance.now())
+      this.applyLevel()
+      this.refined = false
+      this.invalidate()
+    }, 3100)
+  }
+
+  /** Пауза между жестами — не кадр: замеры с нуля (ступень остаётся). */
+  private resetGovernor() {
     this.motionLast = 0
-    this.governor = newGovernor(this.baseRatio, ratio)
+    this.governor = { ...this.governor, times: [] }
   }
 
   private tick() {
     this.raf = 0
+    // шейдеры ещё собираются — кадр покажем, когда соберутся
+    if (this.compiling) return
     const now = performance.now()
     let busy = false
+    const animated = this.tweens.length > 0
     this.tweens = this.tweens.filter((tw) => {
       const t = (now - tw.start) / tw.duration
       if (t < 0) {
@@ -1593,9 +1690,11 @@ export class KitchenEngine {
       }
     }
     if (!busy && this.probeDirty) this.captureRoom()
+    // дверца или шкафы двигаются — тени за ними (камера тени не трогает)
+    if (animated) this.renderer.shadowMap.needsUpdate = true
     if (busy || moved) {
       this.govern(now)
-      const ratio = this.governor.ratio
+      const ratio = this.plan().ratio
       if (this.refined || this.renderRatio !== ratio) this.setRatio(ratio)
     } else if (this.motionLast) this.resetGovernor()
     this.draw()
@@ -1605,12 +1704,14 @@ export class KitchenEngine {
       this.refineTimer = 0
       this.invalidate()
     } else if (!this.refined && !this.refineTimer) {
-      // Остановились — через миг перерисуем с запасом чёткости.
+      // Остановились — через миг перерисуем в родных точках экрана.
       this.refineTimer = window.setTimeout(() => {
         this.refineTimer = 0
         // включили фото — холст теперь его
         if (this.photo) return
-        this.setRatio(this.fineRatio())
+        // регулятор просил другие картинки — пересобираем в покое, не в жесте
+        if (this.detailDirty && this.input) this.setKitchen(this.input, null, false)
+        this.setRatio(this.restRatioNow())
         this.draw()
         this.placeTags()
       }, 160)
@@ -1627,10 +1728,9 @@ export class KitchenEngine {
    */
   private captureRoom() {
     this.probeDirty = false
-    // Снимок — шесть лишних кадров после каждой пересборки. Телефону в HD и
-    // «Лёгкому» он не по силам: отражения там из студийной карты. Телефон в 4K
-    // (не простой) снимок делает — 4K выбран ради картинки, а не батареи.
-    if (!this.roomShot) return
+    // Снимок — шесть лишних кадров после каждой пересборки. Телефону он не по
+    // силам: отражения там из студийной карты (кроме класса «фото» для снимка 4K).
+    if (!this.tier.roomProbe) return
     const plan = this.input?.plan
     if (!plan || !this.built) return
     if (!this.probe) {
@@ -1657,17 +1757,16 @@ export class KitchenEngine {
     this.scene.environmentIntensity = (this.evening ? NIGHT : DAY).room
   }
 
-  private fineRatio(): number {
-    const w = this.host.clientWidth
-    const h = this.host.clientHeight
+  /** Чёткость в покое: родные точки экрана в бюджете класса, не ниже чёткости движения. */
+  private restRatioNow(): number {
     const dpr = window.devicePixelRatio || 1
-    const k4 = this.quality === '4k'
-    const budget = k4 ? (this.mobile ? 5e6 : 8.3e6) : this.mobile ? 2.4e6 : 4e6
-    // без своего уменьшения (телефон) — ровно точки экрана: крупнее браузер ужал бы грубо.
-    // В HD — не больше двух точек (бережёт батарею). В 4K — все точки экрана: на
-    // iPhone их 3 на точку CSS, и кадр в 2 точки растягивался — картинка мылилась.
-    const want = !this.composer ? (k4 ? dpr : Math.min(dpr, 2)) : k4 ? Math.min(dpr * 3, 3) : Math.min(dpr * 2, 2)
-    return Math.max(this.baseRatio, Math.min(want, Math.sqrt(budget / Math.max(1, w * h))))
+    return Math.max(this.plan().ratio, this.tier.restRatio(dpr, this.host.clientWidth, this.host.clientHeight))
+  }
+
+  /** Холст: телефон — в родных точках экрана (в бюджете), компьютер — до 2 на точку CSS. */
+  private canvasRatioFor(w: number, h: number): number {
+    const dpr = window.devicePixelRatio || 1
+    return this.mobile ? this.tier.restRatio(dpr, w, h) : Math.min(dpr, 2)
   }
 
   /** Какую часть общего кадра рисуем — чтобы затемнение углов было одно на весь 4K. */
@@ -1687,114 +1786,70 @@ export class KitchenEngine {
     }
   }
 
-  /** Параметры чёткости: в движении, детальность картинок, память под них. */
-  private applyQuality() {
-    const dpr = window.devicePixelRatio || 1
-    if (this.quality === '4k') {
-      // телефон в движении — полторы точки (простой — одна): в 4K и в движении
-      // кромки не должны рассыпаться; медленные кадры губернатор снизит сам
-      this.baseRatio = this.mobile ? (this.lowEnd ? 1 : Math.min(dpr, 1.5)) : Math.min(Math.max(dpr, 1.5), 2)
-      this.detail = 2
-      setBudget(this.mobile ? 200e6 : 480e6)
-    } else {
-      // «Лёгкий» — чёткость и память как у HD, а картинки материалов вчетверо
-      // мельче (0,5, как у превью стилей): экономит не точки, а сборку и видеопамять
-      this.baseRatio = this.mobile ? 1 : Math.min(dpr, 1.5)
-      this.detail = this.lite ? 0.5 : this.mobile ? 1 : 2
-      // память под картинки не урезаем и простому телефону: при меньшей
-      // выбрасывались картинки, на которых стоит сама кухня, — и она чернела
-      setBudget(this.mobile ? 110e6 : 420e6)
-    }
-    // новая база — губернатор начинает с неё заново
-    this.resetGovernor(this.baseRatio)
-  }
-
-  /** Размер карты теней: телефону в HD хватает 1024 — и это вчетверо меньше работы на кадр. */
-  private shadowSize(): number {
-    if (this.lowEnd) return 1024
-    if (this.mobile) return this.quality === '4k' ? 2048 : 1024
-    return 4096
-  }
-
+  /** Подпись класса для прежней кнопки: класс выбирается сам, переключателя нет. */
   getQuality(): Quality {
-    return this.quality
+    return this.tier.composer ? '4k' : 'hd'
   }
 
-  /** «Лёгкий» — единственный признак для всех веток движка. */
-  private get lite(): boolean {
-    return this.quality === 'lite'
+  /** Прежний переключатель чёткости — ничего не делает (класс выбирается сам, хранилище не трогаем). */
+  setQuality(_q: Quality) {}
+
+  /** Класс устройства — для планировщика и проверок. */
+  getTier(): Tier {
+    return this.tier
   }
 
-  /** Делаем ли снимок комнаты для отражений: компьютер (кроме «Лёгкого») и хороший телефон в 4K. */
-  private get roomShot(): boolean {
-    if (this.lite) return false
-    return !this.mobile || (this.quality === '4k' && !this.lowEnd)
-  }
-
-  setQuality(q: Quality) {
-    if (q === this.quality) return
-    const wasLite = this.lite
-    this.quality = q
-    try {
-      window.localStorage.setItem('kp-quality', q)
-    } catch {
-      // приватный режим — выбор просто не запомнится
-    }
-    const prevDetail = this.detail
-    const lite = this.lite
-    this.applyQuality()
-    // тени включаются и выключаются источником: у света без тени рендерер
-    // пересобирает шейдеры сам, чёрных «дыр» от старой карты не остаётся.
-    // Свет окна есть только на компьютере — как в конструкторе.
-    this.sun.castShadow = !lite
-    if (!this.mobile) this.windowSun.castShadow = !lite
-    // без снимка комнаты («Лёгкий», телефон в HD) — отражения из студийной карты
-    // (яркость как в captureRoom); где снимок нужен — сделаем его в покое
-    if (!this.roomShot && this.scene.environment === this.roomEnv) {
-      this.scene.environment = this.studioEnv
-      this.scene.environmentIntensity = (this.evening ? NIGHT : DAY).env
-    } else if (this.roomShot && this.scene.environment !== this.roomEnv) {
-      this.probeDirty = true
-    }
-    // на телефоне с чёткостью меняется и карта теней — старую отдаём, новую
-    // выделит сам рендерер; в «Лёгком» карта не нужна вовсе (на ПК это 4096²)
-    const size = this.shadowSize()
-    if (lite || (this.mobile && this.sun.shadow.mapSize.x !== size)) {
+  /**
+   * Временно другой класс (снимок 4K на телефоне — «фото»): пересобирает
+   * кухню с его материалами и тенями. Обратно — тем же вызовом.
+   */
+  private useTier(t: Tier) {
+    this.tier = t
+    this.detailNow = t.detail
+    this.detailDirty = false
+    setBudget(t.texBudget)
+    const size = t.shadow || 1024
+    this.sun.castShadow = t.shadow > 0
+    if (this.sun.shadow.mapSize.x !== size) {
       this.sun.shadow.mapSize.set(size, size)
       this.sun.shadow.map?.dispose()
       this.sun.shadow.map = null
     }
-    // телефон в 4K берёт картинки материалов подробнее — кухню пересобираем;
-    // «Лёгкий» — другая сборка, пересобираем всегда
-    if ((this.detail !== prevDetail || lite !== wasLite) && this.input) this.setKitchen(this.input, null, false)
-    this.resize()
+    this.level = -1
+    if (this.input) this.setKitchen(this.input, null, false)
+    this.compiling = null
+    if (t.roomProbe) this.captureRoom()
+    else if (this.scene.environment === this.roomEnv) {
+      this.scene.environment = this.studioEnv
+      this.scene.environmentIntensity = (this.evening ? NIGHT : DAY).env
+    }
+    this.renderer.shadowMap.needsUpdate = true
   }
 
   /** Сколько точек в кадре в покое — для подписи на кнопке. */
   restPixels(): { w: number; h: number } {
-    const r = this.fineRatio()
+    const r = this.restRatioNow()
     return { w: Math.round(this.host.clientWidth * r), h: Math.round(this.host.clientHeight * r) }
   }
 
   private setRatio(ratio: number) {
-    this.refined = ratio > this.baseRatio
+    this.refined = ratio > this.plan().ratio
     if (Math.abs(this.renderRatio - ratio) < 0.01) return
     this.applyRatio(ratio, this.host.clientWidth, this.host.clientHeight)
   }
 
-  /** Кадр в ratio раз крупнее точек CSS; холст остаётся в точках экрана. */
+  /**
+   * Кадр в ratio раз крупнее точек CSS — в своей цели; холст не трогаем
+   * (setSize/setPixelRatio холста — только в resize и снимках).
+   */
   private applyRatio(ratio: number, w: number, h: number, samples?: number) {
     this.renderRatio = ratio
-    if (!this.composer) {
-      this.renderer.setPixelRatio(ratio)
-      this.renderer.setSize(w, h, false)
-      return
-    }
     const canvas = this.renderer.getPixelRatio()
-    this.setSamples(samples ?? (ratio >= 1.99 ? 0 : 4))
+    if (this.tier.msaa) this.setSamples(samples ?? (ratio >= 1.99 ? 0 : 4))
     this.composer.setPixelRatio(ratio)
     this.composer.setSize(w, h)
     if (this.finalPass) this.finalPass.uniforms.scale.value = ratio / canvas
+    if (this.fxaa) (this.fxaa.uniforms.resolution.value as THREE.Vector2).set(1 / Math.max(1, w * ratio), 1 / Math.max(1, h * ratio))
   }
 
   /**
@@ -1803,7 +1858,6 @@ export class KitchenEngine {
    */
   private setSamples(samples: number) {
     const c = this.composer
-    if (!c) return
     for (const rt of [c.renderTarget1, c.renderTarget2]) {
       if (rt.samples === samples) continue
       rt.samples = samples
@@ -1812,8 +1866,7 @@ export class KitchenEngine {
   }
 
   private draw() {
-    if (this.composer) this.composer.render()
-    else this.renderer.render(this.scene, this.camera)
+    this.composer.render()
   }
 
   private resize() {
@@ -1827,9 +1880,10 @@ export class KitchenEngine {
       this.photo.shown = false
     }
     this.refined = false
-    this.renderer.setPixelRatio(this.composer ? this.canvasRatio : this.baseRatio)
+    this.canvasRatio = this.canvasRatioFor(w, h)
+    this.renderer.setPixelRatio(this.canvasRatio)
     this.renderer.setSize(w, h, false)
-    this.applyRatio(this.baseRatio, w, h)
+    this.applyRatio(this.plan().ratio, w, h)
     this.camera.aspect = w / h
     this.camera.updateProjectionMatrix()
     this.applyShift()
@@ -1882,7 +1936,7 @@ export class KitchenEngine {
     r.setPixelRatio(1)
     r.setSize(width, height, false)
     // в полтора раза крупнее и честно уменьшить — ровные кромки на картинке
-    this.applyRatio(this.composer ? 1.5 : 1, width, height, 0)
+    this.applyRatio(this.tier.composer ? 1.5 : 1, width, height, 0)
     this.camera.aspect = width / height
     this.camera.updateProjectionMatrix()
     this.draw()
@@ -1904,6 +1958,19 @@ export class KitchenEngine {
    * так хватает памяти даже на ноутбуке, а тени в углах сохраняются.
    */
   async snapshot4k(): Promise<Blob | null> {
+    // Телефон: на время снимка — класс «фото» (полные материалы, тени 2048),
+    // потом обратно. Трассировка на телефоне не запускается.
+    const live = this.tier
+    const swap = this.mobile && Boolean(this.input)
+    if (swap) this.useTier(pickTier(this.env, 'photo'))
+    try {
+      return await this.snapshot4kTiles()
+    } finally {
+      if (swap) this.useTier(live)
+    }
+  }
+
+  private async snapshot4kTiles(): Promise<Blob | null> {
     // 3840 точек в ширину, пропорции — как у окна с 3D: что видно, то и в файле
     const W = 3840
     const H = Math.round(Math.min(3840, Math.max(1600, W / Math.max(0.5, this.camera.aspect))) / 2) * 2
@@ -1927,7 +1994,7 @@ export class KitchenEngine {
     const prevRender = this.renderRatio
     r.setPixelRatio(1)
     r.setSize(tw, th, false)
-    this.applyRatio(this.composer ? 1.5 : 1, tw, th, 0)
+    this.applyRatio(this.tier.composer ? 1.5 : 1, tw, th, 0)
     this.camera.aspect = W / H
     const bloomOn = this.bloom?.enabled ?? false
     if (this.bloom) this.bloom.enabled = false
@@ -1954,12 +2021,125 @@ export class KitchenEngine {
     return new Promise((resolve) => out.toBlob((b) => resolve(b), 'image/jpeg', 0.93))
   }
 
-  /** Превью другого стиля на этой же кухне — для карточек выбора стиля. */
+  /** Ключ эскиза: стиль и форма кухни (размеры, техника, комната) — не камера. */
+  private thumbKey(input: BuildInput): string {
+    const p = input.plan
+    return JSON.stringify([input.style.id, input.tone, p.shape, p.room, p.runs.map((r) => [r.id, r.length, r.modules.length]), p.island, p.window, input.room, Object.values(input.items).map((a) => a?.id ?? '-')])
+  }
+
+  private remember(key: string, url: string) {
+    this.thumbs.delete(key)
+    this.thumbs.set(key, url)
+    if (this.thumbs.size > THUMB_CACHE) this.thumbs.delete(this.thumbs.keys().next().value as string)
+  }
+
+  /**
+   * Эскиз стиля после простоя: ждёт, пока жесты и анимации закончатся
+   * (300 мс тишины), и рисует не больше 8 эскизов за один простой — следующие
+   * ждут следующей тишины. Из кэша — сразу. Для карусели стилей.
+   */
+  thumbnailAsync(input: BuildInput, width = 480, height = 320): Promise<string> {
+    const hit = this.thumbs.get(this.thumbKey(input))
+    if (hit) return Promise.resolve(hit)
+    const job = this.thumbQueue.then(async () => {
+      for (;;) {
+        if (this.disposed) return ''
+        const now = performance.now()
+        const idle = now - this.lastMotion >= THUMB_IDLE_MS && !this.tweens.length && !this.raf
+        if (now - this.thumbBurst.at > THUMB_IDLE_MS * 2) this.thumbBurst = { at: now, n: 0 }
+        if (idle && this.thumbBurst.n < THUMB_BURST) break
+        await new Promise((res) => setTimeout(res, THUMB_IDLE_MS))
+      }
+      this.thumbBurst.n++
+      this.thumbBurst.at = performance.now()
+      return this.thumbnail(input, width, height)
+    })
+    this.thumbQueue = job.catch(() => '')
+    return job
+  }
+
+  /**
+   * Простой телефон, где сборка эскиза дольше 200 мс: эскиз — снимок вашей
+   * кухни в текущем стиле, перекрашенный в цвет фасадов другого стиля
+   * (композиция «color» оставляет свет и тени, меняет только цвет).
+   */
+  private tintedThumb(input: BuildInput, key: string, width: number, height: number): string {
+    if (!this.built || !this.input) return ''
+    const baseKey = this.thumbKey(this.input)
+    if (!this.thumbBase || this.thumbBase.key !== baseKey) {
+      const el = this.renderCorner(this.built.root, width, height)
+      this.thumbBase = { key: baseKey, el }
+    }
+    const out = document.createElement('canvas')
+    out.width = this.thumbBase.el.width
+    out.height = this.thumbBase.el.height
+    const ctx = out.getContext('2d')
+    if (!ctx) return ''
+    ctx.drawImage(this.thumbBase.el, 0, 0)
+    ctx.globalCompositeOperation = 'color'
+    ctx.globalAlpha = 0.6
+    ctx.fillStyle = input.tone.facade
+    ctx.fillRect(0, 0, out.width, out.height)
+    const url = out.toDataURL('image/jpeg', 0.82)
+    this.remember(key, url)
+    return url
+  }
+
+  /**
+   * Нарисовать объект (временную кухню или свою) в уголок холста, не меняя его
+   * размер: пересоздание холста стоило бы полсекунды на каждый эскиз.
+   */
+  private renderCorner(root: THREE.Object3D, width: number, height: number): HTMLCanvasElement {
+    const r = this.renderer
+    const cam = this.camera.clone()
+    const { target, pos } = this.framing('angle')
+    cam.aspect = width / height
+    cam.position.copy(pos).sub(target).multiplyScalar(0.78).add(target)
+    cam.lookAt(target)
+    cam.updateProjectionMatrix()
+    const overlays = [this.outline, this.measureLines, this.marker, ...(this.built?.ghosts ?? [])].filter((o): o is NonNullable<typeof o> => Boolean(o && o.visible))
+    for (const o of overlays) o.visible = false
+    const others = this.built && root !== this.built.root ? this.built.root : null
+    if (others) others.visible = false
+    const el = r.domElement
+    const ratio = r.getPixelRatio()
+    const w = Math.min(width, el.width)
+    const h = Math.min(height, el.height)
+    r.setScissorTest(true)
+    r.setViewport(0, 0, w / ratio, h / ratio)
+    r.setScissor(0, 0, w / ratio, h / ratio)
+    const auto = r.shadowMap.needsUpdate
+    r.shadowMap.needsUpdate = true
+    r.setRenderTarget(null)
+    r.render(this.scene, cam)
+    r.shadowMap.needsUpdate = auto || true
+    const shot = document.createElement('canvas')
+    shot.width = w
+    shot.height = h
+    shot.getContext('2d')?.drawImage(el, 0, el.height - h, w, h, 0, 0, w, h)
+    r.setScissorTest(false)
+    r.setViewport(0, 0, el.width / ratio, el.height / ratio)
+    if (others) others.visible = true
+    for (const o of overlays) o.visible = true
+    return shot
+  }
+
+  /**
+   * Превью другого стиля на этой же кухне — для карточек выбора стиля.
+   * Кэш по стилю и форме кухни; на простом телефоне, где сборка эскиза
+   * дольше 200 мс, — без пересборки (tintedThumb).
+   */
   thumbnail(input: BuildInput, width = 480, height = 320): string {
     if (!this.built || !this.input) return ''
+    const key = this.thumbKey(input)
+    const hit = this.thumbs.get(key)
+    if (hit) return hit
+    if (this.thumbSlow) return this.tintedThumb(input, key, width, height)
     const r = this.renderer
+    const t0 = performance.now()
     // превью маленькое — ему хватает картинок вчетверо мельче
-    const temp = buildKitchen({ ...input, evening: false, detail: 0.5, lite: this.lite })
+    const temp = buildKitchen({ ...input, evening: false, detail: 0.5, lite: true, physical: this.tier.physical })
+    if (this.tier.name === 'phone-low' && performance.now() - t0 > THUMB_SLOW_MS) this.thumbSlow = true
     const prevEvening = this.evening
     this.built.root.visible = false
     if (this.outline) this.outline.visible = false
@@ -1983,12 +2163,17 @@ export class KitchenEngine {
     r.setScissorTest(true)
     r.setViewport(0, 0, w / ratio, h / ratio)
     r.setScissor(0, 0, w / ratio, h / ratio)
+    // тени статичные — для чужой кухни карту рисуем заново, потом снова для своей
+    r.shadowMap.needsUpdate = true
+    r.setRenderTarget(null)
     r.render(this.scene, cam)
+    r.shadowMap.needsUpdate = true
     const shot = document.createElement('canvas')
     shot.width = w
     shot.height = h
     shot.getContext('2d')?.drawImage(el, 0, el.height - h, w, h, 0, 0, w, h)
     const url = shot.toDataURL('image/jpeg', 0.82)
+    this.remember(key, url)
     r.setScissorTest(false)
     r.setViewport(0, 0, el.width / ratio, el.height / ratio)
     this.scene.remove(temp.root)
@@ -2012,7 +2197,10 @@ export class KitchenEngine {
     if (this.skyLight) this.skyLight.intensity = 0
     this.scene.environmentIntensity = DAY.env
     ;(this.scene.background as THREE.Color).set('#eef0f3')
-    for (const l of temp.eveningLights) (l as THREE.Light).intensity = 0
+    for (const l of temp.eveningLights) {
+      ;(l as THREE.Light).intensity = 0
+      l.visible = false
+    }
   }
 
   dispose() {
@@ -2021,13 +2209,14 @@ export class KitchenEngine {
     this.pt?.dispose()
     this.cancelHold()
     clearTimeout(this.refineTimer)
+    clearTimeout(this.recoverTimer)
     cancelAnimationFrame(this.raf)
     cancelAnimationFrame(this.hoverFrame)
     document.removeEventListener('visibilitychange', this.onVisibility)
     this.resizeObserver.disconnect()
     this.controls.dispose()
     this.built?.dispose()
-    this.composer?.dispose()
+    this.composer.dispose()
     this.roomEnv?.dispose()
     this.studioEnv.dispose()
     this.probe?.rt.dispose()

@@ -73,6 +73,16 @@ export function uvPlane(w: number, h: number, u0: number, v0: number, u1: number
   return g
 }
 
+/** Группа, в которой ни одна деталь не бросает тень (ручки, мелочи): проверяется при добавлении. */
+function noShadow<T extends THREE.Object3D>(g: T): T {
+  const add = g.add.bind(g)
+  g.add = (...objs: THREE.Object3D[]) => {
+    for (const o of objs) o.traverse((c) => void ((c as THREE.Mesh).isMesh && ((c as THREE.Mesh).castShadow = false)))
+    return add(...objs)
+  }
+  return g
+}
+
 export function mesh(geom: THREE.BufferGeometry, mat: Mat, x = 0, y = 0, z = 0, shadow = true): THREE.Mesh {
   const m = new THREE.Mesh(geom, mat)
   m.position.set(x, y, z)
@@ -191,9 +201,9 @@ function rodOnPosts(g: THREE.Group, at: HandleAt, mat: THREE.Material, rod: THRE
   }
 }
 
-/** Ручка в точке (x, y) на лицевой стороне фасада. */
+/** Ручка в точке (x, y) на лицевой стороне фасада. Тени от ручек не бросаем: мелочь, а в карту теней попадала каждая. */
 export function handle(kind: HandleKind, at: HandleAt, mat: THREE.Material): THREE.Object3D | null {
-  const g = new THREE.Group()
+  const g = noShadow(new THREE.Group())
   // ручка не длиннее своего фасада минус поля (бутылочница 16, антресоль 20)
   const fit = (len: number) => Math.max(0.04, Math.min(len, at.max ?? len))
   const zf = FRONT_T

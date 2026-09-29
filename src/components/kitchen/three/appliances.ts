@@ -19,6 +19,9 @@ function photoPart(photo: Photo, mats: Mats, w: number, h: number, crop: [number
   const face = new THREE.Mesh(uvPlane(w, h, ...crop), mats.photo(photo.texture))
   face.position.set(x, y, z)
   face.receiveShadow = true
+  face.castShadow = false
+  // плитка с фото: движок меняет ей картинку без пересборки (photoFace = адрес фото)
+  face.userData.photoFace = true
   return face
 }
 
