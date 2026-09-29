@@ -4,11 +4,13 @@ import { applianceFromProduct } from './catalog'
 import { tallMin } from './dims'
 import { HANDLE_METALS, HANDLES, frontColor, splashChoice, topChoice } from './finishes'
 import { frontsFromQuery, frontsToQuery } from './fronts'
-import { CEILING, COLUMN_HEIGHT, LIMITS, minA, sizedWidth, WIDTH_LIMITS, WINDOW_LIMITS, wallsOf } from './layout'
+import { CEILING, COLUMN_HEIGHT, gapWidth, LIMITS, minA, sizedWidth, UPPER_MIN, WIDTH_LIMITS, WINDOW_LIMITS, wallsOf } from './layout'
 import { FLOORS, STYLES, WALL_COLORS } from './styles'
 import {
   COLUMN_ITEMS,
   isCabinet,
+  isGap,
+  isUpperCab,
   SIZED_ITEMS,
   SLOTS,
   type SizedItem,
@@ -17,8 +19,13 @@ import {
   type Cabinet,
   type CabinetId,
   type FixedItem,
+  type Gap,
+  type GapId,
   type ItemKey,
   type KitchenState,
+  type UpperCab,
+  type UpperId,
+  type WallId,
   type Picks,
   type Shape,
   type SlotKind,
@@ -55,18 +62,26 @@ const CODE_FRONT = Object.fromEntries(Object.entries(FRONT_CODE).map(([k, v]) =>
  * (всегда три цифры). Место с половиной сантиметра — в миллиметрах через минус:
  * «s-1325» — середина в 132,5 см. Места двигаются с шагом 0,5 см.
  */
-const TOKEN = /(\d{2,3}[othfmn]|[ftsdwhpqv])(?:_(\d{3})|-(\d{4}))?/g
+const TOKEN = /(\d{2,3}[othfmngx]|[ftsdwhpqv])(?:_(\d{3})|-(\d{4}))?/g
+/**
+ * Пустое место — тоже в порядке стены: «40g_120» — пусто 40 см с серединой в
+ * 120; «40x_120» — то же, закрытое планкой. Так порядок хранится в одном месте;
+ * старые адреса без них открываются как прежде (R23i.1).
+ */
+const GAP_LETTER = /[gx]$/
 /** Своя ширина: «wd=s80h90» — мойка 80 см, шкаф под плитой 90 см. */
 const WIDTH_CODE: Record<SizedItem, string> = { sink: 's', hob: 'h', pantry: 'p', pantry2: 'q', tall: 't' }
 
-type Placed = { arrangement?: Arrangement; cabinets?: Record<CabinetId, Cabinet>; at?: Partial<Record<ItemKey, number>> }
+type Placed = { arrangement?: Arrangement; cabinets?: Record<CabinetId, Cabinet>; gaps?: Record<GapId, Gap>; at?: Partial<Record<ItemKey, number>> }
 
 function arrangementFromQuery(raw: string | null, shape: Shape): Placed {
-  if (!raw || raw.length > 400 || !/^(?:\d{2,3}[othfmn]|[ftsdwhpqv]|_\d{3}|-\d{4}|\.)+$/.test(raw)) return {}
+  if (!raw || raw.length > 400 || !/^(?:\d{2,3}[othfmngx]|[ftsdwhpqv]|_\d{3}|-\d{4}|\.)+$/.test(raw)) return {}
   const arrangement: Arrangement = {}
   const cabinets: Record<CabinetId, Cabinet> = {}
+  const gaps: Record<GapId, Gap> = {}
   const at: Partial<Record<ItemKey, number>> = {}
   let n = 0
+  let ng = 0
   const walls = wallsOf(shape)
   raw.split('.').forEach((part, i) => {
     const wall = walls[i]
@@ -75,7 +90,10 @@ function arrangementFromQuery(raw: string | null, shape: Shape): Placed {
     for (const [, token, cm, mm] of part.matchAll(TOKEN)) {
       let key: ItemKey
       if (token.length === 1) key = CODE_ITEM[token]
-      else {
+      else if (GAP_LETTER.test(token)) {
+        key = `g${++ng}`
+        gaps[key] = { w: gapWidth(Number(token.slice(0, -1))), ...(token.endsWith('x') ? { strip: true } : {}) }
+      } else {
         key = `k${++n}`
         cabinets[key] = { w: clamp(Number(token.slice(0, -1)), WIDTH_LIMITS.cabinet.min, WIDTH_LIMITS.cabinet.max), front: CODE_FRONT[token.slice(-1)] }
       }
@@ -85,7 +103,73 @@ function arrangementFromQuery(raw: string | null, shape: Shape): Placed {
     }
     arrangement[wall] = list
   })
-  return { arrangement, ...(n ? { cabinets } : {}), ...(Object.keys(at).length ? { at } : {}) }
+  return { arrangement, ...(n ? { cabinets } : {}), ...(ng ? { gaps } : {}), ...(Object.keys(at).length ? { at } : {}) }
+}
+
+/**
+ * Ручной верхний ряд: «u=~.600d_1200500s_1800» — стены через точку (в порядке
+ * wallsOf); пустая часть — верх стены следует за низом; «~» — ручной ряд без
+ * своих шкафов; элемент — ширина в мм (2–4 цифры), буква (d — дверцы, s —
+ * полки, g — пусто, x — пусто с планкой) и середина в мм от угла после «_»
+ * (всегда четыре цифры — иначе цифры середины срастаются со следующей шириной).
+ */
+const UPPER_TOKEN = /(\d{2,4})([dsgx])(?:_(\d{4}))?/g
+type ManualUppers = { manualUppers?: KitchenState['manualUppers']; upperCabs?: Record<UpperId, UpperCab>; gaps?: Record<GapId, Gap>; at?: Partial<Record<ItemKey, number>> }
+
+function uppersFromQuery(raw: string | null, shape: Shape, firstGap: number): ManualUppers {
+  if (!raw || raw.length > 400 || !/^(?:\d{2,4}[dsgx]|_\d{4}|~|\.)*$/.test(raw)) return {}
+  const manualUppers: NonNullable<KitchenState['manualUppers']> = {}
+  const upperCabs: Record<UpperId, UpperCab> = {}
+  const gaps: Record<GapId, Gap> = {}
+  const at: Partial<Record<ItemKey, number>> = {}
+  let nu = 0
+  let ng = firstGap
+  const walls = wallsOf(shape)
+  raw.split('.').forEach((part, i) => {
+    const wall = walls[i]
+    if (!wall || !part) return
+    const list: ItemKey[] = []
+    if (part !== '~')
+      for (const [, mm, letter, cmm] of part.matchAll(UPPER_TOKEN)) {
+        const w = Number(mm) / 10
+        let key: ItemKey
+        if (letter === 'd' || letter === 's') {
+          key = `u${++nu}`
+          upperCabs[key] = { w: Math.max(1, Math.min(600, w)), kind: letter === 's' ? 'shelf' : 'doors' }
+        } else {
+          key = `g${++ng}`
+          gaps[key] = { w: gapWidth(w), ...(letter === 'x' ? { strip: true } : {}) }
+        }
+        list.push(key)
+        if (cmm !== undefined) at[key] = clamp(Math.round(Number(cmm) / 5) / 2, 0, 700)
+      }
+    manualUppers[wall] = list
+  })
+  if (!Object.keys(manualUppers).length) return {}
+  return { manualUppers, ...(nu ? { upperCabs } : {}), ...(ng > firstGap ? { gaps } : {}), ...(Object.keys(at).length ? { at } : {}) }
+}
+
+function uppersToQuery(state: KitchenState): string {
+  const rows = state.manualUppers
+  if (!rows) return ''
+  const mm = (v: number) => String(Math.round(Math.min(600, v) * 10))
+  const pos = (k: ItemKey) => (state.at?.[k] === undefined ? '' : `_${mm(clamp(Math.round(state.at[k]! * 2) / 2, 0, 700)).padStart(4, '0')}`)
+  const parts = wallsOf(state.shape).map((w: WallId) => {
+    const list = rows[w]
+    if (!list) return ''
+    const tokens = list
+      .map((k) => {
+        if (isUpperCab(k)) {
+          const c = state.upperCabs?.[k]
+          return c ? `${mm(Math.max(UPPER_MIN / 10, c.w))}${c.kind === 'shelf' ? 's' : 'd'}${pos(k)}` : ''
+        }
+        const g = isGap(k) ? state.gaps?.[k] : undefined
+        return g ? `${mm(g.w)}${g.strip ? 'x' : 'g'}${pos(k)}` : ''
+      })
+      .join('')
+    return tokens || '~'
+  })
+  return parts.some(Boolean) ? parts.join('.') : ''
 }
 
 /**
@@ -116,7 +200,7 @@ function doorsToQuery(state: KitchenState): string[] {
     })
 }
 
-function arrangementToQuery(arr: Arrangement, shape: Shape, cabinets: KitchenState['cabinets'], at: KitchenState['at']): string {
+function arrangementToQuery(arr: Arrangement, shape: Shape, cabinets: KitchenState['cabinets'], at: KitchenState['at'], gaps?: KitchenState['gaps']): string {
   const pos = (k: ItemKey) => {
     if (at?.[k] === undefined) return ''
     const v = clamp(Math.round(at[k]! * 2) / 2, 0, 700)
@@ -126,6 +210,11 @@ function arrangementToQuery(arr: Arrangement, shape: Shape, cabinets: KitchenSta
     .map((w) =>
       (arr[w] ?? [])
         .map((k) => {
+          if (isGap(k)) {
+            const g = gaps?.[k]
+            return g ? `${Math.round(g.w)}${g.strip ? 'x' : 'g'}${pos(k)}` : ''
+          }
+          if (isUpperCab(k)) return ''
           if (!isCabinet(k)) return ITEM_CODE[k] + pos(k)
           const c = cabinets?.[k]
           return c ? `${Math.round(c.w)}${FRONT_CODE[c.front]}${pos(k)}` : ''
@@ -220,7 +309,11 @@ export function stateFromQuery(query: URLSearchParams, known: KnownAppliances): 
     else if (v && known.has(v)) picks[slot] = v
   }
   const a = Math.max(size(query.get('a'), 'a', DEFAULT_STATE.a), minA(shape))
-  const { arrangement, cabinets, at } = arrangementFromQuery(query.get('o'), shape)
+  const placedLow = arrangementFromQuery(query.get('o'), shape)
+  const up = uppersFromQuery(query.get('u'), shape, Object.keys(placedLow.gaps ?? {}).length)
+  const { arrangement, cabinets } = placedLow
+  const gaps = placedLow.gaps || up.gaps ? { ...placedLow.gaps, ...up.gaps } : undefined
+  const at = placedLow.at || up.at ? { ...placedLow.at, ...up.at } : undefined
   const widths = widthsFromQuery(query.get('wd'))
   const heights = heightsFromQuery(query.get('ht'), tallMin(builtInOf(known, picks.microwave)))
   const doorsRight = doorsFromQuery(query.get('dr'))
@@ -270,6 +363,9 @@ export function stateFromQuery(query: URLSearchParams, known: KnownAppliances): 
     ...(fronts ? { fronts } : {}),
     ...(query.get('oa') === '1' ? { ovenApart: true } : {}),
     ...(cabinets ? { cabinets } : {}),
+    ...(gaps ? { gaps } : {}),
+    ...(up.manualUppers ? { manualUppers: up.manualUppers } : {}),
+    ...(up.upperCabs ? { upperCabs: up.upperCabs } : {}),
     ...(at ? { at } : {}),
     ...(widths ? { widths } : {}),
     ...(heights ? { heights } : {}),
@@ -300,7 +396,9 @@ export function queryFromState(state: KitchenState): string {
     if (v === null) q.set(SLOT_KEYS[slot], '-')
     else if (v) q.set(SLOT_KEYS[slot], v)
   }
-  if (state.arrangement) q.set('o', arrangementToQuery(state.arrangement, state.shape, state.cabinets, state.at))
+  if (state.arrangement) q.set('o', arrangementToQuery(state.arrangement, state.shape, state.cabinets, state.at, state.gaps))
+  const u = uppersToQuery(state)
+  if (u) q.set('u', u)
   const wd = widthsToQuery(state.widths)
   if (wd) q.set('wd', wd)
   const ht = heightsToQuery(state.heights)

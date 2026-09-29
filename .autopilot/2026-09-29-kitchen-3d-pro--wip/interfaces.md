@@ -70,3 +70,49 @@ governorPlan(level, tier, dpr) -> { shadow, detail, ratio }  // 1: тени 1024
 
 **`build.ts`:** `BuildInput.physical?: boolean` (по умолчанию true); `buildKitchen(input, reuse?: ReadonlyMap<string, RunCache>) -> Built`; `Built.parts: Map<runId, RunCache>`, `Built.rebuilt: string[]`, `Built.dispose(keep?)`. Вечерние лампы днём `visible=false` и `intensity=0`. **`materials.ts`:** `createMaterials(..., lite, physical)`, `Mats.physical`. **`parts.ts`:** у ручек `castShadow=false`. **`appliances.ts`:** плитка с фото помечена `userData.photoFace`.
 
+
+### Таск 01 — модель расстановки (`layout.ts`, `types.ts`, `share.ts`, новый `drag.ts`)
+
+**Состояние (`KitchenState`, `types.ts`):**
+
+```ts
+type GapId = `g${number}`; type UpperId = `u${number}`
+type ItemKey = FixedItem | CabinetId | GapId | UpperId          // isGap(k), isUpperCab(k) — как isCabinet
+type Gap = { w: number; strip?: boolean }                        // пустое место; strip — закрыто декоративной планкой
+type UpperCab = { w: number; kind: 'doors' | 'shelf' }
+KitchenState.gaps?: Record<GapId, Gap>                           // ключи gN стоят в arrangement (низ) или в manualUppers (верх)
+KitchenState.manualUppers?: Partial<Record<WallId, ItemKey[]>>   // стена в карте → её верх ручной: порядок uN и gN; нет — верх из низа, как раньше
+KitchenState.upperCabs?: Record<UpperId, UpperCab>
+KitchenState.at?: Partial<Record<ItemKey, number>>               // середина, см от угла — и для gN, и для uN (одна карта)
+```
+
+**План (`Plan`, `layout.ts`):** `Run.modules` — без пустых мест (3D-сборка, чертёж, спецификация, раскрой, Excel, PDF их не видят автоматически); `Run.gaps?: { x; w; item: GapId; row: 'base' | 'upper' }[]` — пустые места в координатах ряда (как модули); `Upper.item?: UpperId` — шкаф ручного верха. `itemPositions(plan)` возвращает и gN, и uN: `ItemPlace = { wall; center; w; row?: 'upper' }`. Вытяжка, угловой, шкаф над холодильником, пусто над пеналами и под окном в ручном ряду — фиксированные (из низа). `PlanInput` получил `gaps`, `manualUppers`, `upperCabs` (`order.planInputOf` их передаёт). `resolveArrangement(shape, custom, cabinets, gaps?)` — 4-й аргумент, иначе gN выпадут из порядка. `resolveRun` возвращает `LaidModule[]` (`kind: ModuleKind | 'gap'`).
+
+**Постановка (чистые функции, `layout.ts`):**
+
+```ts
+type Planner = (s: KitchenState, snap?: ItemKey[]) => Plan       // экран: (s, snap) => planKitchen(planInputOf(s, chosen, snap), { shelves })
+type Fit = { ok; center; w; wall; row: 'base'|'upper'; snap: 'wall'|'neighbour'|'opposite'|null; need; narrow: { neighbour: ItemKey; by: number } | null;
+             free: { from; to }; neighbours: { left: ItemKey|null; right: ItemKey|null } }
+fitOn(plan, key, wall, center, opts?: { w?; row?; opposite? }) -> Fit | null      // геометрия: соседи, снап 6 см, столешница 30 см у плиты (HOB_SIDE)
+placeAt(state, key, wall, cm, planner, grab = 0, opts?: { w? }) -> { state; fit }  // центр = cm − grab; не встал → state прежний, fit.ok=false
+addAt(state, wall, cm, kind: 'doors'|'drawers'|'pantry'|'strip'|'fill'|FixedItem, planner) -> { state; key: ItemKey | null }
+detachUppers(state, wall, plan) -> KitchenState                   // верх стены → ручной (uN + gN за дыры); картинка не меняется; повторно — тот же объект
+narrowFor(plan, key, wall, cm, opts?) -> { neighbour; by } | null
+resizeWalls(state, { a?, b?, c?, island? }, plan) -> KitchenState // at и gap сохраняются; за краем — придвинуть/ужать/убрать (вместо KP:1110 `at: undefined`)
+allowedOn(wall, key), minWidthOf(key), gapWidth(w), HOB_SIDE = 30
+```
+
+Правила `placeAt`: все остальные `at` замораживаются (как `frozen` в планировщике); освобождённое место → `gN` той же ширины (если новое положение его не перекрывает); пустые места под новым положением убираются/ужимаются; верхний шкаф на стену с автоматическим верхом — та стена сначала `detachUppers`; проверка пробной раскладкой (ничего нового не выпало). Пустые места не считаются потерей: `place` роняет их первыми и молча (не в `dropped`).
+
+**Предпросмотр (`src/lib/kitchen/drag.ts`):**
+
+```ts
+type Preview = { center; width; wall; fits; snap; labels: { left; right }; narrow; need }
+previewMove(plan, key, wall, cm, grab, opts?: { opposite?: boolean }) -> Preview | null   // 3D: без opposite; план: opposite = true
+grabOf(plan, key, cm) -> number                                    // на 'start': смещение пальца от середины, см; дальше передаётся в previewMove/placeAt
+```
+
+**Адрес (`share.ts`):** пустые места — в `o=` как элементы порядка стены: `40g_080` (пусто 40 см, середина 80), `40x_080` (с планкой); отдельного `g=` нет — порядок хранится в одном месте. Ручной верх — `u=`: стены через точку в порядке `wallsOf`, пустая часть — авто, `~` — ручной без шкафов, элемент `<ширина мм 2–4 цифры><d|s|g|x>[_<середина мм, 4 цифры>]`, например `u=600d_0300900g_2950625s_1315`. Старые ссылки без них открываются как прежде; снимок 12 готовых кухонь и старых адресов — `__tests__/kitchen-layout-snapshot.test.ts`.
+
+**Для таска 03 (`build.ts`, `engine.ts`, `KitchenPlanner.tsx`):** `Run.gaps` рисовать контуром при выборе (модули их не содержат — ничего пропускать не нужно); `gap.strip` — декоративная планка (панель по ширине места, не шкаф; в спецификацию пока не идёт — решить в 03/05); `Upper.item` — выбираемый/перетаскиваемый верх, у `itemPositions` он с `row: 'upper'`; на drop — `placeAt(state, key, wall, cm, trial, grab)` вместо `moveItem`+`frozen`+`apply`; «+» — `addAt`; смена ширины стены — `resizeWalls`; `resolveArrangement(..., state.gaps)` везде, где планировщик строит `order`. **Для таска 04 (`PlanView`):** `previewMove(..., { opposite: true })`, пунктир с «+» по `run.gaps`.

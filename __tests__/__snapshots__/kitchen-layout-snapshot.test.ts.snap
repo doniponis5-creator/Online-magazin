@@ -1,0 +1,711 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`снимок раскладки: готовые кухни и старые адреса > 12 готовых кухонь раскладываются как до эволюции модели > corner-300x240-marble 1`] = `
+[
+  {
+    "dropped": [],
+    "id": "A",
+    "length": 300,
+    "modules": [
+      "corner:0:100:",
+      "filler:100:10:",
+      "sink:110:60:sink",
+      "dishwasher:170:45:dishwasher",
+      "bottle:215:20:",
+      "fridge:235:65:fridge",
+    ],
+    "uppers": [
+      "corner:0:90",
+      "none:90:10",
+      "none:100:10",
+      "none:110:60",
+      "none:170:20",
+      "doors:190:25",
+      "doors:215:20",
+      "fridge:235:65",
+    ],
+  },
+  {
+    "dropped": [],
+    "id": "B",
+    "length": 240,
+    "modules": [
+      "drawers:0:60:",
+      "hob:60:60:hob",
+      "drawers:120:60:",
+    ],
+    "uppers": [
+      "doors:0:60",
+      "hood:60:60",
+      "doors:120:85",
+    ],
+  },
+]
+`;
+
+exports[`снимок раскладки: готовые кухни и старые адреса > 12 готовых кухонь раскладываются как до эволюции модели > corner-310x180-japandi 1`] = `
+[
+  {
+    "dropped": [],
+    "id": "A",
+    "length": 310,
+    "modules": [
+      "corner:0:100:",
+      "doors:100:30:",
+      "sink:130:60:sink",
+      "doors:190:55:",
+      "fridge:245:65:fridge",
+    ],
+    "uppers": [
+      "corner:0:100",
+      "filler:100:10",
+      "none:110:20",
+      "none:130:60",
+      "none:190:20",
+      "shelf:210:35",
+      "fridge:245:65",
+    ],
+  },
+  {
+    "dropped": [],
+    "id": "B",
+    "length": 180,
+    "modules": [
+      "drawers:0:30:",
+      "hob:30:60:hob",
+      "drawers:90:30:",
+    ],
+    "uppers": [
+      "doors:0:30",
+      "hood:30:60",
+      "doors:90:55",
+    ],
+  },
+]
+`;
+
+exports[`снимок раскладки: готовые кухни и старые адреса > 12 готовых кухонь раскладываются как до эволюции модели > corner-360x300-english 1`] = `
+[
+  {
+    "dropped": [],
+    "id": "A",
+    "length": 360,
+    "modules": [
+      "corner:0:100:",
+      "sink:100:60:sink",
+      "dishwasher:160:60:dishwasher",
+      "filler:220:7.5:",
+      "fridge:227.5:65:fridge",
+      "tall:292.5:60:tall",
+      "filler:352.5:7.5:",
+    ],
+    "uppers": [
+      "corner:0:80",
+      "none:80:20",
+      "none:100:60",
+      "none:160:20",
+      "doors:180:40",
+      "filler:220:7.5",
+      "fridge:227.5:65",
+      "none:292.5:60",
+      "filler:352.5:7.5",
+    ],
+  },
+  {
+    "dropped": [],
+    "id": "B",
+    "length": 300,
+    "modules": [
+      "drawers:0:90:",
+      "hob:90:60:hob",
+      "drawers:150:90:",
+    ],
+    "uppers": [
+      "doors:0:90",
+      "hood:90:60",
+      "doors:150:115",
+    ],
+  },
+]
+`;
+
+exports[`снимок раскладки: готовые кухни и старые адреса > 12 готовых кухонь раскладываются как до эволюции модели > island-320-modern 1`] = `
+[
+  {
+    "dropped": [],
+    "id": "A",
+    "length": 320,
+    "modules": [
+      "fridge:0:65:fridge",
+      "filler:65:12:",
+      "sink:77:60:sink",
+      "dishwasher:137:45:dishwasher",
+      "drawers:182:42:",
+      "hob:224:60:hob",
+      "drawers:284:36:",
+    ],
+    "uppers": [
+      "fridge:0:65",
+      "filler:65:12",
+      "doors:77:60",
+      "doors:137:45",
+      "doors:182:42",
+      "hood:224:60",
+      "doors:284:36",
+    ],
+  },
+  {
+    "dropped": [],
+    "id": "I",
+    "length": 180,
+    "modules": [
+      "drawers:0:60:",
+      "doors:60:60:",
+      "doors:120:60:",
+    ],
+    "uppers": [],
+  },
+]
+`;
+
+exports[`снимок раскладки: готовые кухни и старые адреса > 12 готовых кухонь раскладываются как до эволюции модели > island-380-quiet 1`] = `
+[
+  {
+    "dropped": [],
+    "id": "A",
+    "length": 380,
+    "modules": [
+      "fridge:0:67:fridge",
+      "doors:67:31:",
+      "sink:98:60:sink",
+      "dishwasher:158:60:dishwasher",
+      "drawers:218:61:",
+      "hob:279:60:hob",
+      "drawers:339:41:",
+    ],
+    "uppers": [
+      "fridge:0:67",
+      "doors:67:31",
+      "doors:98:60",
+      "doors:158:60",
+      "doors:218:61",
+      "hood:279:60",
+      "doors:339:41",
+    ],
+  },
+  {
+    "dropped": [],
+    "id": "I",
+    "length": 200,
+    "modules": [
+      "drawers:0:68:",
+      "doors:68:66:",
+      "doors:134:66:",
+    ],
+    "uppers": [],
+  },
+]
+`;
+
+exports[`снимок раскладки: готовые кухни и старые адреса > 12 готовых кухонь раскладываются как до эволюции модели > island-450-gold 1`] = `
+[
+  {
+    "dropped": [],
+    "id": "A",
+    "length": 450,
+    "modules": [
+      "fridge:0:95:fridge",
+      "tall:95:60:tall",
+      "bottle:155:23:",
+      "sink:178:60:sink",
+      "dishwasher:238:60:dishwasher",
+      "drawers:298:53:",
+      "hob:351:60:hob",
+      "drawers:411:39:",
+    ],
+    "uppers": [
+      "fridge:0:95",
+      "none:95:60",
+      "doors:155:23",
+      "doors:178:60",
+      "doors:238:60",
+      "doors:298:53",
+      "hood:351:60",
+      "doors:411:39",
+    ],
+  },
+  {
+    "dropped": [],
+    "id": "I",
+    "length": 240,
+    "modules": [
+      "drawers:0:80:",
+      "doors:80:80:",
+      "doors:160:80:",
+    ],
+    "uppers": [],
+  },
+]
+`;
+
+exports[`снимок раскладки: готовые кухни и старые адреса > 12 готовых кухонь раскладываются как до эволюции модели > straight-300-scandi 1`] = `
+[
+  {
+    "dropped": [],
+    "id": "A",
+    "length": 300,
+    "modules": [
+      "fridge:0:65:fridge",
+      "filler:65:4:",
+      "sink:69:60:sink",
+      "dishwasher:129:45:dishwasher",
+      "drawers:174:34:",
+      "hob:208:60:hob",
+      "drawers:268:32:",
+    ],
+    "uppers": [
+      "fridge:0:65",
+      "filler:65:4",
+      "doors:69:60",
+      "doors:129:45",
+      "shelf:174:34",
+      "hood:208:60",
+      "doors:268:32",
+    ],
+  },
+]
+`;
+
+exports[`снимок раскладки: готовые кухни и старые адреса > 12 готовых кухонь раскладываются как до эволюции модели > straight-320-loft 1`] = `
+[
+  {
+    "dropped": [],
+    "id": "A",
+    "length": 320,
+    "modules": [
+      "fridge:0:65:fridge",
+      "filler:65:6:",
+      "sink:71:60:sink",
+      "dishwasher:131:60:dishwasher",
+      "drawers:191:36:",
+      "hob:227:60:hob",
+      "drawers:287:33:",
+    ],
+    "uppers": [
+      "fridge:0:65",
+      "filler:65:6",
+      "doors:71:60",
+      "doors:131:60",
+      "shelf:191:36",
+      "hood:227:60",
+      "doors:287:33",
+    ],
+  },
+]
+`;
+
+exports[`снимок раскладки: готовые кухни и старые адреса > 12 готовых кухонь раскладываются как до эволюции модели > straight-380-hitech 1`] = `
+[
+  {
+    "dropped": [],
+    "id": "A",
+    "length": 380,
+    "modules": [
+      "fridge:0:65:fridge",
+      "tall:65:60:tall",
+      "filler:125:6:",
+      "sink:131:60:sink",
+      "dishwasher:191:60:dishwasher",
+      "drawers:251:36:",
+      "hob:287:60:hob",
+      "drawers:347:33:",
+    ],
+    "uppers": [
+      "fridge:0:65",
+      "none:65:60",
+      "filler:125:6",
+      "doors:131:60",
+      "doors:191:60",
+      "doors:251:36",
+      "hood:287:60",
+      "doors:347:33",
+    ],
+  },
+]
+`;
+
+exports[`снимок раскладки: готовые кухни и старые адреса > 12 готовых кухонь раскладываются как до эволюции модели > u-300x240-minimal 1`] = `
+[
+  {
+    "dropped": [],
+    "id": "A",
+    "length": 300,
+    "modules": [
+      "corner:0:100:",
+      "bottle:100:17.5:",
+      "sink:117.5:60:sink",
+      "bottle:177.5:22.5:",
+      "corner:200:100:",
+    ],
+    "uppers": [
+      "corner:0:92.5",
+      "none:92.5:7.5",
+      "none:100:17.5",
+      "none:117.5:60",
+      "none:177.5:22.5",
+      "none:200:2.5",
+      "corner:202.5:97.5",
+    ],
+  },
+  {
+    "dropped": [],
+    "id": "B",
+    "length": 240,
+    "modules": [
+      "drawers:0:60:",
+      "hob:60:60:hob",
+      "drawers:120:60:",
+    ],
+    "uppers": [
+      "doors:0:60",
+      "hood:60:60",
+      "doors:120:85",
+    ],
+  },
+  {
+    "dropped": [],
+    "id": "C",
+    "length": 240,
+    "modules": [
+      "doors:60:52.5:",
+      "fridge:112.5:65:fridge",
+      "doors:177.5:62.5:",
+    ],
+    "uppers": [
+      "doors:35:77.5",
+      "fridge:112.5:65",
+      "doors:177.5:62.5",
+    ],
+  },
+]
+`;
+
+exports[`снимок раскладки: готовые кухни и старые адреса > 12 готовых кухонь раскладываются как до эволюции модели > u-360x270-artdeco 1`] = `
+[
+  {
+    "dropped": [],
+    "id": "A",
+    "length": 360,
+    "modules": [
+      "corner:0:100:",
+      "bottle:100:20:",
+      "sink:120:60:sink",
+      "dishwasher:180:60:dishwasher",
+      "bottle:240:20:",
+      "corner:260:100:",
+    ],
+    "uppers": [
+      "corner:0:95",
+      "none:95:5",
+      "none:100:20",
+      "none:120:60",
+      "none:180:25",
+      "doors:205:35",
+      "doors:240:20",
+      "corner:260:100",
+    ],
+  },
+  {
+    "dropped": [],
+    "id": "B",
+    "length": 270,
+    "modules": [
+      "drawers:0:75:",
+      "hob:75:60:hob",
+      "drawers:135:75:",
+    ],
+    "uppers": [
+      "doors:0:75",
+      "hood:75:60",
+      "doors:135:100",
+    ],
+  },
+  {
+    "dropped": [],
+    "id": "C",
+    "length": 270,
+    "modules": [
+      "fridge:60:65:fridge",
+      "doors:125:73:",
+      "doors:198:72:",
+    ],
+    "uppers": [
+      "doors:35:25",
+      "fridge:60:65",
+      "doors:125:73",
+      "doors:198:72",
+    ],
+  },
+]
+`;
+
+exports[`снимок раскладки: готовые кухни и старые адреса > 12 готовых кухонь раскладываются как до эволюции модели > u-420x300-classic 1`] = `
+[
+  {
+    "dropped": [],
+    "id": "A",
+    "length": 420,
+    "modules": [
+      "corner:0:100:",
+      "sink:100:60:sink",
+      "dishwasher:160:60:dishwasher",
+      "filler:220:6:",
+      "fridge:226:88:fridge",
+      "filler:314:6:",
+      "corner:320:100:",
+    ],
+    "uppers": [
+      "corner:0:75",
+      "none:75:25",
+      "none:100:60",
+      "none:160:25",
+      "doors:185:35",
+      "filler:220:6",
+      "fridge:226:88",
+      "filler:314:6",
+      "corner:320:100",
+    ],
+  },
+  {
+    "dropped": [],
+    "id": "B",
+    "length": 300,
+    "modules": [
+      "drawers:0:87.5:",
+      "hob:87.5:60:hob",
+      "doors:147.5:45.5:",
+      "drawers:193:47:",
+    ],
+    "uppers": [
+      "doors:0:87.5",
+      "hood:87.5:60",
+      "doors:147.5:45.5",
+      "doors:193:72",
+    ],
+  },
+  {
+    "dropped": [],
+    "id": "C",
+    "length": 300,
+    "modules": [
+      "tall:60:60:tall",
+      "doors:120:60:",
+      "doors:180:60:",
+      "doors:240:60:",
+    ],
+    "uppers": [
+      "doors:35:25",
+      "none:60:60",
+      "doors:120:60",
+      "doors:180:60",
+      "doors:240:60",
+    ],
+  },
+]
+`;
+
+exports[`снимок раскладки: готовые кухни и старые адреса > старые адреса без новых полей раскладываются как прежде > f=corner&a=300&b=240&o=sd.hv&pn=1 1`] = `
+[
+  {
+    "dropped": [
+      "pantry:45",
+    ],
+    "id": "A",
+    "length": 300,
+    "modules": [
+      "corner:0:100:",
+      "filler:100:5:",
+      "sink:105:60:sink",
+      "dishwasher:165:60:dishwasher",
+      "filler:225:10:",
+      "fridge:235:65:fridge",
+    ],
+    "uppers": [
+      "corner:0:85",
+      "none:85:15",
+      "none:100:5",
+      "none:105:60",
+      "none:165:20",
+      "doors:185:40",
+      "filler:225:10",
+      "fridge:235:65",
+    ],
+  },
+  {
+    "dropped": [],
+    "id": "B",
+    "length": 240,
+    "modules": [
+      "drawers:0:60:",
+      "hob:60:60:hob",
+      "drawers:120:60:",
+    ],
+    "uppers": [
+      "doors:0:60",
+      "hood:60:60",
+      "doors:120:85",
+    ],
+  },
+]
+`;
+
+exports[`снимок раскладки: готовые кухни и старые адреса > старые адреса без новых полей раскладываются как прежде > f=island&a=320&i=180&o=fts.h_090d 1`] = `
+[
+  {
+    "dropped": [],
+    "id": "A",
+    "length": 320,
+    "modules": [
+      "fridge:0:65:fridge",
+      "doors:65:72:",
+      "doors:137:72:",
+      "sink:209:60:sink",
+      "doors:269:51:",
+    ],
+    "uppers": [
+      "fridge:0:65",
+      "doors:65:72",
+      "doors:137:72",
+      "doors:209:60",
+      "doors:269:51",
+    ],
+  },
+  {
+    "dropped": [],
+    "id": "I",
+    "length": 180,
+    "modules": [
+      "drawers:0:30:",
+      "hob:30:60:hob",
+      "drawers:90:30:",
+      "dishwasher:120:60:dishwasher",
+    ],
+    "uppers": [],
+  },
+]
+`;
+
+exports[`снимок раскладки: готовые кухни и старые адреса > старые адреса без новых полей раскладываются как прежде > f=straight&a=400&o=60ok_120s-1325dh 1`] = `
+[
+  {
+    "dropped": [],
+    "id": "A",
+    "length": 400,
+    "modules": [
+      "fridge:0:65:fridge",
+      "doors:65:40:",
+      "sink:105:60:sink",
+      "dishwasher:165:60:dishwasher",
+      "drawers:225:70:",
+      "hob:295:60:hob",
+      "drawers:355:45:",
+    ],
+    "uppers": [
+      "fridge:0:65",
+      "doors:65:40",
+      "doors:105:60",
+      "doors:165:60",
+      "doors:225:70",
+      "hood:295:60",
+      "doors:355:45",
+    ],
+  },
+]
+`;
+
+exports[`снимок раскладки: готовые кухни и старые адреса > старые адреса без новых полей раскладываются как прежде > f=straight&a=400&o=s_095d60ok1 1`] = `
+[
+  {
+    "dropped": [],
+    "id": "A",
+    "length": 400,
+    "modules": [
+      "fridge:0:65:fridge",
+      "doors:65:40:",
+      "sink:105:60:sink",
+      "dishwasher:165:60:dishwasher",
+      "drawers:225:70:",
+      "hob:295:60:hob",
+      "drawers:355:45:",
+    ],
+    "uppers": [
+      "fridge:0:65",
+      "doors:65:40",
+      "doors:105:60",
+      "doors:165:60",
+      "doors:225:70",
+      "hood:295:60",
+      "doors:355:45",
+    ],
+  },
+]
+`;
+
+exports[`снимок раскладки: готовые кухни и старые адреса > старые адреса без новых полей раскладываются как прежде > f=u&a=360&b=240&c=240&o=s_150d.h_120v.wtpf&wd=s80h90 1`] = `
+[
+  {
+    "dropped": [],
+    "id": "A",
+    "length": 360,
+    "modules": [
+      "corner:0:100:",
+      "filler:100:10:",
+      "sink:110:80:sink",
+      "dishwasher:190:60:dishwasher",
+      "filler:250:10:",
+      "corner:260:100:",
+    ],
+    "uppers": [
+      "corner:0:95",
+      "none:95:5",
+      "none:100:10",
+      "none:110:80",
+      "none:190:15",
+      "doors:205:45",
+      "filler:250:10",
+      "corner:260:100",
+    ],
+  },
+  {
+    "dropped": [],
+    "id": "B",
+    "length": 240,
+    "modules": [
+      "drawers:0:60:",
+      "hob:60:90:hob",
+      "drawers:150:30:",
+    ],
+    "uppers": [
+      "doors:0:60",
+      "hood:60:90",
+      "doors:150:55",
+    ],
+  },
+  {
+    "dropped": [],
+    "id": "C",
+    "length": 240,
+    "modules": [
+      "fridge:60:65:fridge",
+      "doors:125:58:",
+      "doors:183:57:",
+    ],
+    "uppers": [
+      "doors:35:25",
+      "fridge:60:65",
+      "doors:125:58",
+      "doors:183:57",
+    ],
+  },
+]
+`;

@@ -69,10 +69,25 @@ export type FixedItem = 'fridge' | 'tall' | 'sink' | 'dishwasher' | 'washer' | '
 export const ITEM_KEYS: FixedItem[] = ['fridge', 'tall', 'sink', 'dishwasher', 'washer', 'hob', 'pantry', 'pantry2', 'oven']
 /** Свой шкаф покупателя: его перетащили или поменяли ширину. */
 export type CabinetId = `k${number}`
-export type ItemKey = FixedItem | CabinetId
+/**
+ * Пустое место между шкафами (g1, g2…): тоже модуль — у него есть ширина и
+ * `at`, его двигают и меняют, оно есть в ссылке. В 3D — только контур при
+ * выборе, в плане — пунктир с «+»; в спецификацию, чертёж, раскрой, Excel и
+ * PDF не попадает. Появляется там, откуда модуль унесли.
+ */
+export type GapId = `g${number}`
+/** Верхний шкаф ручного верхнего ряда (u1, u2…): появляется, когда верх стены отвязали от низа. */
+export type UpperId = `u${number}`
+export type ItemKey = FixedItem | CabinetId | GapId | UpperId
 export const isCabinet = (k: string): k is CabinetId => /^k\d{1,3}$/.test(k)
+export const isGap = (k: string): k is GapId => /^g\d{1,3}$/.test(k)
+export const isUpperCab = (k: string): k is UpperId => /^u\d{1,3}$/.test(k)
 /** Свой шкаф: ширина, см, и фасады. */
 export type Cabinet = { w: number; front: BaseFront }
+/** Пустое место: ширина, см; strip — закрыто декоративной планкой (в 3D — панель, не шкаф). */
+export type Gap = { w: number; strip?: boolean }
+/** Верхний шкаф ручного ряда: ширина, см, и что это — дверцы или открытые полки. */
+export type UpperCab = { w: number; kind: 'doors' | 'shelf' }
 /** Предметы, которым покупатель может поменять ширину (кроме своих шкафов). */
 export type SizedItem = 'sink' | 'hob' | 'pantry' | 'pantry2' | 'tall'
 export const SIZED_ITEMS: SizedItem[] = ['sink', 'hob', 'pantry', 'pantry2', 'tall']
@@ -128,10 +143,21 @@ export type KitchenState = {
   ovenApart?: boolean
   /** свои шкафы (перетащенные или с другой шириной) */
   cabinets?: Record<CabinetId, Cabinet>
+  /** пустые места (g1, g2…): ключи стоят в `arrangement` (низ) или в `manualUppers` (верх) */
+  gaps?: Record<GapId, Gap>
+  /**
+   * Ручной верхний ряд по стенам: стена есть в карте — её верх больше не
+   * следует за низом, а раскладывается из этих ключей (uN и пустые gN) с их
+   * `at`. Вытяжка, угловой, шкаф над холодильником и пусто над пеналами
+   * остаются на своих местах. Стены нет — верх выводится из низа, как раньше.
+   */
+  manualUppers?: Partial<Record<WallId, ItemKey[]>>
+  /** верхние шкафы ручного ряда */
+  upperCabs?: Record<UpperId, UpperCab>
   /**
    * Своё место предмета на стене: середина, см от угла (как в itemPositions).
    * Нет — предмет стоит там, куда его ставят правила, а шкафы вокруг делят
-   * остаток стены.
+   * остаток стены. Для пустых мест и верхних шкафов ручного ряда — то же.
    */
   at?: Partial<Record<ItemKey, number>>
   /** своя ширина мойки, шкафа под плитой, пеналов и колонны с духовкой, см */
