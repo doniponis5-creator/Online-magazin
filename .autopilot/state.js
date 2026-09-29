@@ -14,7 +14,7 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-29T22:14:27+06:00",
-  "updatedAt": "2026-09-29T22:50:09+06:00",
+  "updatedAt": "2026-09-29T23:00:54+06:00",
   "finishedAt": null,
   "stages": [
     {
@@ -87,7 +87,7 @@ window.STATE =
         "src/components/kitchen/pdfSheet.ts",
         "__tests__/"
       ],
-      "status": "in-progress",
+      "status": "review",
       "startedAt": "2026-09-29T22:26:02+06:00",
       "retries": 0,
       "repairs": 0,
