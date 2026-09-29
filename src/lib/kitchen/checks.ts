@@ -27,6 +27,8 @@ export type Check =
   | { id: 'stoveHeight'; level: CheckLevel; h: number; top: number }
   /** верхний ряд поднят встроенной вытяжкой: over — его низ над столешницей, см; только пояснение */
   | { id: 'upperRaised'; level: CheckLevel; over: number }
+  /** пустая комната: шкаф стены A в углу закрыт шкафом соседней стены — нужен угловой */
+  | { id: 'cornerBlocked'; level: CheckLevel; wall: 'B' | 'C' }
 
 /**
  * Правило треугольника: каждая сторона 120–270 см, сумма не больше 790 см.
@@ -64,15 +66,39 @@ function front(f: Found): [number, number] {
 
 const dist = (a: [number, number], b: [number, number]) => Math.round(Math.hypot(a[0] - b[0], a[1] - b[1]))
 
-/** Свободная столешница подряд с одной стороны модуля: до конца ряда, высокого шкафа или мойки. */
+/**
+ * Свободная столешница подряд с одной стороны модуля: до конца ряда, высокого
+ * шкафа, мойки или пустого места (в пустой комнате столешница там кончается).
+ */
 function counterBeside(run: Run, i: number, step: 1 | -1): number {
   let sum = 0
+  let prev = run.modules[i]
   for (let j = i + step; j >= 0 && j < run.modules.length; j += step) {
     const m = run.modules[j]
-    if (isTall(m.kind) || m.kind === 'sink') break
+    const edge = step > 0 ? m.x - (prev.x + prev.w) : prev.x - (m.x + m.w)
+    if (isTall(m.kind) || m.kind === 'sink' || m.stove || edge > 0.5) break
     sum += m.w
+    prev = m
   }
   return Math.round(sum)
+}
+
+/**
+ * Пустая комната: в углу у стены A стоит обычный шкаф, а соседняя стена (B или
+ * C) начинается вплотную к нему — его дверцу не открыть. Нужен угловой шкаф или
+ * пустой угол.
+ */
+function cornersBlocked(plan: Plan): ('B' | 'C')[] {
+  const a = plan.runs.find((r) => r.id === 'A')
+  if (!plan.free || !a) return []
+  const out: ('B' | 'C')[] = []
+  const inA = (x0: number, x1: number) => a.modules.some((m) => m.kind !== 'corner' && m.x < x1 - 0.5 && m.x + m.w > x0 + 0.5)
+  const b = plan.runs.find((r) => r.id === 'B')
+  // у B ряд перевёрнут: угол — в конце ряда
+  if (b && inA(0, DEPTH) && b.modules.some((m) => m.x + m.w > b.length - DEPTH - 0.5)) out.push('B')
+  const c = plan.runs.find((r) => r.id === 'C')
+  if (c && inA(a.length - DEPTH, a.length) && c.modules.some((m) => m.x < DEPTH + 0.5)) out.push('C')
+  return out
 }
 
 /**
@@ -160,6 +186,7 @@ export function checkProject(plan: Plan, facts: CheckFacts = {}): Check[] {
   }
   if (sink && plan.window && underWindow(plan, sink)) out.push({ id: 'sinkWindow', level: 'ok' })
   if (tallUnderWindow(plan)) out.push({ id: 'tallUnderWindow', level: 'warn' })
+  for (const wall of cornersBlocked(plan)) out.push({ id: 'cornerBlocked', level: 'warn', wall })
   for (const t of plan.tooWide ?? []) out.push({ id: 'applianceWider', level: 'warn', slot: t.slot, w: t.w, room: Math.round(t.room * 10) / 10 })
   for (const u of plan.underCounter ?? [])
     if (u.h > UNDER_COUNTER + 0.01) out.push({ id: 'underCounterHeight', level: 'warn', slot: u.slot, h: u.h, max: UNDER_COUNTER })

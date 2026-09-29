@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { products } from '@/data/products'
 import { isLang } from '@/lib/i18n/config'
 import { applianceInfo, kitchenAppliances } from '@/lib/kitchen/catalog'
+import { devAppliances } from '@/lib/kitchen/dev-appliances'
 import { STYLES } from '@/lib/kitchen/styles'
 import { canonical } from '@/lib/seo'
 import { KitchenPlanner } from '@/components/kitchen/KitchenPlanner'
@@ -52,6 +53,8 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
 export default async function KitchenPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params
   if (!isLang(lang)) notFound()
-  const appliances = kitchenAppliances(products)
+  const own = kitchenAppliances(products)
+  // только на своём компьютере (next dev): техника живого сайта для проверки — см. dev-appliances.ts
+  const appliances = [...own, ...devAppliances(new Set(own.map((a) => a.id)))]
   return <KitchenPlanner appliances={appliances} info={applianceInfo(products, appliances.map((a) => a.id), lang)} />
 }

@@ -8,17 +8,19 @@ import type { BaseFront, FrontVariant, UpperFront } from './types'
  * не применяется, а не переезжает на чужой шкаф.
  */
 
-export const BASE_FRONTS: BaseFront[] = ['doors', 'drawers3', 'drawers2', 'drawers4', 'mix', 'open']
-export const UPPER_FRONTS: UpperFront[] = ['doors', 'glass', 'lift', 'open', 'none']
+export const BASE_FRONTS: BaseFront[] = ['doors', 'drawers1', 'drawers2', 'drawers3', 'drawers4', 'mix', 'open']
+export const UPPER_FRONTS: UpperFront[] = ['doors', 'glass', 'mirror', 'lift', 'open', 'none']
 /**
  * Шкаф над холодильником (в нише): подъёмная дверца, как всегда было, стекло
  * в рамке, две распашные дверцы или открытая полка. Убрать его нельзя —
  * боковины ниши без него остались бы голыми. Ключ — как у верхнего шкафа.
  */
-export const OVER_FRIDGE_FRONTS: UpperFront[] = ['lift', 'glass', 'doors', 'open']
+export const OVER_FRIDGE_FRONTS: UpperFront[] = ['lift', 'glass', 'mirror', 'doors', 'open']
 
 /** Ящики: доли высоты фасада сверху вниз. */
-export const DRAWER_PARTS: Record<'drawers2' | 'drawers3' | 'drawers4' | 'mix', number[]> = {
+export const DRAWER_PARTS: Record<'drawers1' | 'drawers2' | 'drawers3' | 'drawers4' | 'mix', number[]> = {
+  // один большой ящик на всю высоту (кастрюли, под духовкой)
+  drawers1: [1],
   drawers2: [0.5, 0.5],
   drawers3: [0.24, 0.38, 0.38],
   drawers4: [0.25, 0.25, 0.25, 0.25],
@@ -41,18 +43,23 @@ export const MIN_EDIT_W = 30
 
 const CODE: Record<FrontVariant, string> = {
   doors: 'o',
+  drawers1: 'e',
   drawers2: 't',
   drawers3: 'h',
   drawers4: 'f',
   mix: 'm',
   open: 'n',
   glass: 'g',
+  mirror: 'r',
   lift: 'l',
   none: 'x',
 }
 const BY_CODE = Object.fromEntries(Object.entries(CODE).map(([k, v]) => [v, k])) as Record<string, FrontVariant>
 
-/** В адрес: «A120h.a60g» — через точку, вариант одной буквой. */
+/**
+ * В адрес: «A120h.a60g» — через точку, вариант одной буквой; колонна с духовкой:
+ * нижний шкаф — «tallh», верх над духовкой — «tallupg».
+ */
 export function frontsToQuery(fronts: Record<string, FrontVariant>): string {
   return Object.entries(fronts)
     .filter(([key, v]) => validKey(key) && allowed(key, v))
@@ -65,7 +72,7 @@ export function frontsFromQuery(raw: string | null): Record<string, FrontVariant
   if (!raw || raw.length > 600 || !/^[ABCIabci0-9a-z.]+$/.test(raw)) return undefined
   const out: Record<string, FrontVariant> = {}
   for (const part of raw.split('.')) {
-    const m = /^([ABCIabci]\d{1,3})([a-z])$/.exec(part)
+    const m = /^([ABCIabci]\d{1,3}|tallup|tall)([a-z])$/.exec(part)
     if (!m) continue
     const v = BY_CODE[m[2]]
     if (v && allowed(m[1], v)) out[m[1]] = v
@@ -73,8 +80,10 @@ export function frontsFromQuery(raw: string | null): Record<string, FrontVariant
   return Object.keys(out).length ? out : undefined
 }
 
-const validKey = (key: string) => /^[ABCIabci]\d{1,3}$/.test(key)
+const validKey = (key: string) => /^(?:[ABCIabci]\d{1,3}|tallup|tall)$/.test(key)
 
 function allowed(key: string, v: FrontVariant): boolean {
+  // верх колонны — как шкаф над холодильником: убрать нельзя
+  if (key === 'tallup') return (OVER_FRIDGE_FRONTS as FrontVariant[]).includes(v)
   return isUpperKey(key) ? (UPPER_FRONTS as FrontVariant[]).includes(v) : (BASE_FRONTS as FrontVariant[]).includes(v)
 }

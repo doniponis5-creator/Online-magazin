@@ -1,13 +1,14 @@
 import type { Product } from '@/data/products'
 import type { Lang } from '@/lib/i18n/config'
 import { applianceFromProduct } from './catalog'
-import { tallMin } from './dims'
+import { TALL_BASE, tallMin } from './dims'
 import { HANDLE_METALS, HANDLES, frontColor, splashChoice, topChoice } from './finishes'
 import { frontsFromQuery, frontsToQuery } from './fronts'
-import { CEILING, COLUMN_HEIGHT, LIMITS, minA, sizedWidth, WIDTH_LIMITS, WINDOW_LIMITS, wallsOf } from './layout'
+import { CEILING, COLUMN_HEIGHT, CORNER_W, FREE_CORNER, FREE_UPPER, islandTurnOf, LIMITS, minA, sizedWidth, WIDTH_LIMITS, WINDOW_LIMITS, wallsOf } from './layout'
 import { FLOORS, STYLES, WALL_COLORS } from './styles'
 import {
   COLUMN_ITEMS,
+  DINING_SEATS,
   isCabinet,
   SIZED_ITEMS,
   SLOTS,
@@ -16,7 +17,11 @@ import {
   type BaseFront,
   type Cabinet,
   type CabinetId,
+  type DiningSeats,
   type FixedItem,
+  type FreeRoom,
+  type FreeUpper,
+  type FreeWall,
   type ItemKey,
   type KitchenState,
   type Picks,
@@ -48,21 +53,21 @@ export const SLOT_KEYS: Record<SlotKind, string> = {
  */
 const ITEM_CODE: Record<FixedItem, string> = { fridge: 'f', tall: 't', sink: 's', dishwasher: 'd', washer: 'w', hob: 'h', pantry: 'p', pantry2: 'q', oven: 'v' }
 const CODE_ITEM = Object.fromEntries(Object.entries(ITEM_CODE).map(([k, v]) => [v, k])) as Record<string, FixedItem>
-const FRONT_CODE: Record<BaseFront, string> = { doors: 'o', drawers2: 't', drawers3: 'h', drawers4: 'f', mix: 'm', open: 'n' }
+const FRONT_CODE: Record<BaseFront, string> = { doors: 'o', drawers1: 'e', drawers2: 't', drawers3: 'h', drawers4: 'f', mix: 'm', open: 'n' }
 const CODE_FRONT = Object.fromEntries(Object.entries(FRONT_CODE).map(([k, v]) => [v, k])) as Record<string, BaseFront>
 /**
  * Предмет может стоять на своём месте: «s_095» — мойка, середина в 95 см от угла
  * (всегда три цифры). Место с половиной сантиметра — в миллиметрах через минус:
  * «s-1325» — середина в 132,5 см. Места двигаются с шагом 0,5 см.
  */
-const TOKEN = /(\d{2,3}[othfmn]|[ftsdwhpqv])(?:_(\d{3})|-(\d{4}))?/g
+const TOKEN = /(\d{2,3}[othfmne]|[ftsdwhpqv])(?:_(\d{3})|-(\d{4}))?/g
 /** Своя ширина: «wd=s80h90» — мойка 80 см, шкаф под плитой 90 см. */
 const WIDTH_CODE: Record<SizedItem, string> = { sink: 's', hob: 'h', pantry: 'p', pantry2: 'q', tall: 't' }
 
 type Placed = { arrangement?: Arrangement; cabinets?: Record<CabinetId, Cabinet>; at?: Partial<Record<ItemKey, number>> }
 
 function arrangementFromQuery(raw: string | null, shape: Shape): Placed {
-  if (!raw || raw.length > 400 || !/^(?:\d{2,3}[othfmn]|[ftsdwhpqv]|_\d{3}|-\d{4}|\.)+$/.test(raw)) return {}
+  if (!raw || raw.length > 400 || !/^(?:\d{2,3}[othfmne]|[ftsdwhpqv]|_\d{3}|-\d{4}|\.)+$/.test(raw)) return {}
   const arrangement: Arrangement = {}
   const cabinets: Record<CabinetId, Cabinet> = {}
   const at: Partial<Record<ItemKey, number>> = {}
@@ -180,6 +185,63 @@ function widthsToQuery(widths: KitchenState['widths']): string {
     .join('')
 }
 
+/**
+ * Пустая комната (PRO): «er=1» (старые ссылки «fr=1» тоже читаются: «fr» — это
+ * холодильник, и «fr=1» затирал выбранную модель); угловые шкафы стены A — «fk=s», «fk=e», «fk=se», со своей
+ * шириной — «fk=s110e105»;
+ * свои верхние шкафы — «up=c095w60c-1325w45.c200w80»: стены через точку (в порядке
+ * wallsOf, без острова), шкаф — «c» + середина (как у места в `o=`) + «w» + ширина.
+ */
+const UPPER_TOKEN = /c(?:(\d{3})|-(\d{4}))w(\d{2,3})/g
+
+function freeFromQuery(query: URLSearchParams, shape: Shape): FreeRoom | undefined {
+  if (query.get('er') !== '1' && query.get('fr') !== '1') return undefined
+  const fk = /^(?:s(\d{2,3})?)?(?:e(\d{2,3})?)?$/.exec(query.get('fk') ?? '')
+  const corners = (['start', 'end'] as const).filter((e) => fk && fk[0].includes(e[0]))
+  const cornerW: Partial<Record<'start' | 'end', number>> = {}
+  if (fk?.[1]) cornerW.start = clamp(Number(fk[1]), FREE_CORNER.min, FREE_CORNER.max)
+  if (fk?.[2]) cornerW.end = clamp(Number(fk[2]), FREE_CORNER.min, FREE_CORNER.max)
+  const raw = query.get('up')
+  const uppers: Partial<Record<FreeWall, FreeUpper[]>> = {}
+  if (raw && raw.length <= 400 && /^(?:c(?:\d{3}|-\d{4})w\d{2,3}|\.)+$/.test(raw)) {
+    const walls = wallsOf(shape).filter((w): w is FreeWall => w !== 'I')
+    raw.split('.').forEach((part, i) => {
+      const wall = walls[i]
+      if (!wall) return
+      const list: FreeUpper[] = []
+      for (const [, cm, mm, w] of part.matchAll(UPPER_TOKEN)) {
+        const c = cm !== undefined ? Number(cm) : Math.round(Number(mm) / 5) / 2
+        list.push({ c: clamp(c, 0, 700), w: clamp(Number(w), FREE_UPPER.min, FREE_UPPER.max) })
+      }
+      if (list.length) uppers[wall] = list
+    })
+  }
+  return {
+    ...(corners.length ? { corners } : {}),
+    ...(Object.keys(cornerW).length ? { cornerW } : {}),
+    ...(Object.keys(uppers).length ? { uppers } : {}),
+  }
+}
+
+function freeToQuery(q: URLSearchParams, free: FreeRoom, shape: Shape) {
+  q.set('er', '1')
+  const fk = (['start', 'end'] as const)
+    .filter((e) => free.corners?.includes(e))
+    .map((e) => {
+      const w = free.cornerW?.[e]
+      return w !== undefined && Math.round(w) !== CORNER_W ? `${e[0]}${Math.round(clamp(w, FREE_CORNER.min, FREE_CORNER.max))}` : e[0]
+    })
+    .join('')
+  if (fk) q.set('fk', fk)
+  const walls = wallsOf(shape).filter((w): w is FreeWall => w !== 'I')
+  const pos = (v: number) => {
+    const x = clamp(Math.round(v * 2) / 2, 0, 700)
+    return Number.isInteger(x) ? String(x).padStart(3, '0') : `-${String(x * 10).padStart(4, '0')}`
+  }
+  const parts = walls.map((w) => (free.uppers?.[w] ?? []).map((u) => `c${pos(u.c)}w${Math.round(clamp(u.w, FREE_UPPER.min, FREE_UPPER.max))}`).join(''))
+  if (parts.some(Boolean)) q.set('up', parts.join('.').replace(/\.+$/, ''))
+}
+
 export const DEFAULT_STATE: KitchenState = {
   shape: 'corner',
   a: 300,
@@ -219,11 +281,21 @@ export function stateFromQuery(query: URLSearchParams, known: KnownAppliances): 
     if (v === '-') picks[slot] = null
     else if (v && known.has(v)) picks[slot] = v
   }
-  const a = Math.max(size(query.get('a'), 'a', DEFAULT_STATE.a), minA(shape))
+  const free = freeFromQuery(query, shape)
+  // пустая комната: угловых шкафов по правилам нет — стена A может быть короче
+  const a = free ? size(query.get('a'), 'a', DEFAULT_STATE.a) : Math.max(size(query.get('a'), 'a', DEFAULT_STATE.a), minA(shape))
   const { arrangement, cabinets, at } = arrangementFromQuery(query.get('o'), shape)
   const widths = widthsFromQuery(query.get('wd'))
-  const heights = heightsFromQuery(query.get('ht'), tallMin(builtInOf(known, picks.microwave)))
+  // нижний шкаф колонны с духовкой: «tb=70» — 70 см от пола до духовки
+  const tbRaw = Math.round(Number(query.get('tb')))
+  const tallBase = query.get('tb') && Number.isFinite(tbRaw) ? clamp(tbRaw, TALL_BASE.min, TALL_BASE.max) : undefined
+  const heights = heightsFromQuery(query.get('ht'), tallMin(builtInOf(known, picks.microwave), tallBase))
   const doorsRight = doorsFromQuery(query.get('dr'))
+  // обеденный стол «dn=6» и поворот острова «it=45» (градусы) — только знакомые значения
+  const dn = Number(query.get('dn'))
+  const dining = (DINING_SEATS as number[]).includes(dn) ? (dn as DiningSeats) : undefined
+  const islandTurn = shape === 'island' ? islandTurnOf(Number(query.get('it'))) : 0
+  const diningTurn = dining ? islandTurnOf(Number(query.get('dt'))) : 0
   const pantries = clamp(Math.round(Number(query.get('pn')) || 0), 0, 2)
   const num = (key: string, min: number, max: number) => {
     const raw = query.get(key)
@@ -273,6 +345,7 @@ export function stateFromQuery(query: URLSearchParams, known: KnownAppliances): 
     ...(at ? { at } : {}),
     ...(widths ? { widths } : {}),
     ...(heights ? { heights } : {}),
+    ...(tallBase !== undefined && tallBase !== TALL_BASE.base ? { tallBase } : {}),
     ...(doorsRight ? { doorsRight } : {}),
     ...(facade ? { facade } : {}),
     ...(upperFacade ? { upperFacade } : {}),
@@ -283,6 +356,10 @@ export function stateFromQuery(query: URLSearchParams, known: KnownAppliances): 
     ...(handle ? { handle } : {}),
     ...(handleMetal ? { handleMetal } : {}),
     ...(hl === '1' ? { handleless: true } : hl === '0' ? { handleless: false } : {}),
+    ...(free ? { free } : {}),
+    ...(dining ? { dining } : {}),
+    ...(islandTurn ? { islandTurn } : {}),
+    ...(diningTurn ? { diningTurn } : {}),
   }
 }
 
@@ -328,6 +405,16 @@ export function queryFromState(state: KitchenState): string {
   if (state.handle) q.set('hn', state.handle)
   if (state.handleMetal) q.set('hm', state.handleMetal)
   if (state.handleless !== undefined) q.set('hl', state.handleless ? '1' : '0')
+  // нижний шкаф колонны — тоже в конце: у кухни без него адрес прежний
+  if (state.tallBase !== undefined && Math.round(state.tallBase) !== TALL_BASE.base) q.set('tb', String(Math.round(state.tallBase)))
+  // пустая комната — в конце адреса: у обычной кухни адрес прежний, байт в байт
+  if (state.free) freeToQuery(q, state.free, state.shape)
+  // обеденный стол и поворот острова — ещё дальше: у кухни без них адрес прежний
+  if (state.dining) q.set('dn', String(state.dining))
+  const turn = state.shape === 'island' ? islandTurnOf(state.islandTurn) : 0
+  if (turn) q.set('it', String(turn))
+  const dt = state.dining ? islandTurnOf(state.diningTurn) : 0
+  if (dt) q.set('dt', String(dt))
   return q.toString()
 }
 

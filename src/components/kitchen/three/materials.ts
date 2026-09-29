@@ -349,6 +349,8 @@ export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolea
   const ceramic = keep(new THREE.MeshPhysicalMaterial({ color: '#f5f3ef', roughness: 0.2, clearcoat: 0.8 }))
   const shelfGlass = keep(new THREE.MeshPhysicalMaterial({ color: '#dfeef0', roughness: 0.05, transparent: true, opacity: 0.35, depthWrite: false }))
   const vitrine = keep(new THREE.MeshPhysicalMaterial({ color: '#e7eff2', roughness: 0.03, transparent: true, opacity: 0.16, depthWrite: false, clearcoat: 1 }))
+  // зеркальный фасад: металл без шероховатости — отражает комнату (окружение сцены)
+  const mirror = keep(new THREE.MeshPhysicalMaterial({ color: '#eef2f4', metalness: 1, roughness: 0.03 }))
   const warm = keep(new THREE.MeshBasicMaterial({ color: '#ffcf8a', toneMapped: false }))
   warm.userData.photo = 'lamp'
   const darkGlass = keep(new THREE.MeshPhysicalMaterial({ color: '#07080a', roughness: 0.06, clearcoat: 1, clearcoatRoughness: 0.02 }))
@@ -397,6 +399,7 @@ export function createMaterials(style: KitchenStyle, tone: Tone, evening: boolea
     ceramic,
     shelfGlass,
     vitrine,
+    mirror,
     warm,
     appliance,
     metal,

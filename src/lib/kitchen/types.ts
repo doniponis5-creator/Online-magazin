@@ -16,7 +16,8 @@ export const SLOTS: SlotKind[] = ['fridge', 'oven', 'hob', 'hood', 'dishwasher',
 /** Цвет корпуса техники — от него зависит материал в 3D. */
 export type Finish = 'black' | 'white' | 'inox' | 'gray' | 'beige'
 
-export type HoodKind = 'chimney' | 'telescopic' | 'insert' | 'inclined'
+/** flat — плоская (подвесная): тонкий корпус под верхним шкафом, над ней шкаф короче соседей */
+export type HoodKind = 'chimney' | 'telescopic' | 'insert' | 'inclined' | 'flat'
 export type FridgeKind = 'bottom' | 'top' | 'sbs' | 'french' | 'single'
 export type HobKind = 'electric' | 'induction' | 'gas'
 
@@ -138,6 +139,8 @@ export type KitchenState = {
   widths?: Partial<Record<SizedItem, number>>
   /** своя высота пеналов и колонны с духовкой от пола, см; нет — до верха (потолка) */
   heights?: Partial<Record<ColumnItem, number>>
+  /** нижний шкаф колонны с духовкой — от пола до духовки, см; нет — 83 (`TALL_BASE`) */
+  tallBase?: number
   /**
    * Шкафы, у которых одиночная дверца открывается вправо (петли справа).
    * Ключ — как у фасадов (A120, a60), свой шкаф (k1) или предмет (sink, tall,
@@ -166,7 +169,36 @@ export type KitchenState = {
   handle?: HandleKind
   handleMetal?: Metal
   handleless?: boolean
+  /**
+   * «Пустая комната» (PRO): шкафы и технику ставят сами, пустое место остаётся
+   * пустым — раскладка по правилам не работает. Что стоит — `arrangement`, где —
+   * `at`, свои шкафы — `cabinets`. Нет поля — обычная кухня.
+   */
+  free?: FreeRoom
+  /** обеденный стол со стульями — только для примерки, в сумму не входит (в ссылке `dn=6`) */
+  dining?: DiningSeats
+  /** остров повёрнут на столько градусов (1–359, против часовой, если смотреть сверху); нет — прямо (в ссылке `it=45`) */
+  islandTurn?: number
+  /** обеденный стол повёрнут на столько градусов (1–359) от того, как он встал сам (в ссылке `dt=30`) */
+  diningTurn?: number
 }
+
+/** Обеденная группа: мест за столом. */
+export type DiningSeats = 4 | 6 | 8
+export const DINING_SEATS: DiningSeats[] = [4, 6, 8]
+
+/** Свободная расстановка: угловые шкафы и свои верхние шкафы. */
+export type FreeRoom = {
+  /** угловой шкаф у концов стены A: start — у стены B, end — у стены C */
+  corners?: ('start' | 'end')[]
+  /** своя ширина углового шкафа, см; нет — 100 (`CORNER_W`) */
+  cornerW?: Partial<Record<'start' | 'end', number>>
+  /** свои верхние шкафы по стенам */
+  uppers?: Partial<Record<FreeWall, FreeUpper[]>>
+}
+export type FreeWall = 'A' | 'B' | 'C'
+/** Верхний шкаф пустой комнаты: середина, см от угла (как `at`), и ширина. */
+export type FreeUpper = { c: number; w: number }
 
 /** Пол комнаты. */
 export type FloorKind = 'herringbone' | 'herringboneDark' | 'oak' | 'darkOak' | 'tile' | 'terracotta' | 'concrete' | 'marble'
@@ -175,8 +207,8 @@ export type FloorKind = 'herringbone' | 'herringboneDark' | 'oak' | 'darkOak' | 
  * Как устроен шкаф спереди. Низ: дверцы, 2–4 ящика, ящик над дверцами,
  * открытые полки. Верх: дверцы, стекло, подъёмная дверца, полки, без шкафа.
  */
-export type BaseFront = 'doors' | 'drawers2' | 'drawers3' | 'drawers4' | 'mix' | 'open'
-export type UpperFront = 'doors' | 'glass' | 'lift' | 'open' | 'none'
+export type BaseFront = 'doors' | 'drawers1' | 'drawers2' | 'drawers3' | 'drawers4' | 'mix' | 'open'
+export type UpperFront = 'doors' | 'glass' | 'mirror' | 'lift' | 'open' | 'none'
 export type FrontVariant = BaseFront | UpperFront
 
 export type StyleId =

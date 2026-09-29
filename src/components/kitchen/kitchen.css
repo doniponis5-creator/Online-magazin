@@ -2018,6 +2018,50 @@ html:has(.kp-photo) .assistant {
   margin: 0 0 8px;
 }
 
+/* поворот острова и стола: ↺ ползунок ↻ угол, ниже ↺ 45° ↻ 45° и «Вернуть на место» */
+.kp-turn {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 12px 12px 12px 14px;
+  border: 1px solid var(--kp-line);
+  border-radius: var(--radius-tile);
+  background: #fff;
+}
+
+.kp-turn__row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px 48px;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.kp-turn .kp-size__step {
+  height: 40px;
+  font-size: 20px;
+  touch-action: none;
+}
+
+.kp-turn__range {
+  width: 100%;
+  accent-color: var(--kp-cobalt);
+}
+
+.kp-turn__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.kp-turn__value {
+  font: 800 16px/1 var(--font);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ширина своего шкафа — в карточке размеров */
 .kp-cabw {
   grid-column: 1 / -1;
@@ -2503,6 +2547,45 @@ html.kp-lock body {
 
 .kp-spec__actions .btn {
   gap: 8px;
+}
+
+/* Режим PRO: чертежи, спецификация и «Мастеру» — за одной кнопкой */
+.kp-pro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--kp-line);
+  border-radius: var(--radius-tile);
+  background: var(--color-surface);
+}
+
+.kp-pro.is-on {
+  margin-bottom: 18px;
+}
+
+.kp-pro__badge {
+  flex: none;
+  padding: 5px 8px;
+  border-radius: 7px;
+  background: var(--kp-ink);
+  color: #fff;
+  font: 800 12px/1 var(--font);
+  letter-spacing: 0.06em;
+}
+
+.kp-pro__text {
+  flex: 1 1 240px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--kp-soft);
+}
+
+/* «Все стили» под сеткой стилей */
+.kp-styles__more {
+  margin-top: 12px;
 }
 
 .kp-facts {
@@ -4356,11 +4439,195 @@ button.kp-opt__more {
 
 /* ───────── готовые кухни (шаг «Форма») ───────── */
 
+/* Готовые — первыми (быстрый старт), разделитель — у «Или соберите свою» */
 .kp-ready {
   min-width: 0;
+}
+
+.kp-own {
   margin-top: 18px;
   padding-top: 16px;
   border-top: 1px solid var(--kp-line);
+}
+
+.kp-own__title {
+  margin: 0 0 10px;
+  font: 750 16px/1.25 var(--font);
+  color: var(--kp-ink);
+}
+
+/* ───────── пустая комната (PRO): вход на шаге «Форма» и шаг «Модули» ───────── */
+
+.kp-free-entry {
+  margin-top: 18px;
+  padding: 14px 16px 12px;
+  border: 1px solid var(--kp-line);
+  border-radius: var(--radius-tile);
+  background: var(--color-surface);
+}
+
+/* включена — стоит первой на шаге, без отступа сверху */
+.kp-free-entry.is-on {
+  margin: 0 0 18px;
+  border-color: var(--kp-cobalt);
+  background: var(--kp-ice);
+}
+
+.kp-free-entry__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kp-free-entry__head .kp-own__title {
+  margin: 0;
+}
+
+.kp-free-entry .kp-note {
+  margin: 8px 0 10px;
+}
+
+.kp-free-entry__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.kp-free-entry__row .btn {
+  gap: 6px;
+}
+
+.kp-free-entry .kp-note--tight {
+  margin: 8px 0 0;
+}
+
+.kp-free__walls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.kp-chip[aria-checked='true'] {
+  border-color: var(--kp-ink);
+  background: var(--kp-ink);
+  color: #fff;
+}
+
+.kp-free__room {
+  margin: 10px 0 0;
+  font: 650 13px/1.35 var(--font);
+  color: var(--kp-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.kp-free__room.is-full {
+  color: #a15c07;
+}
+
+.kp-free__title {
+  margin: 20px 0 8px;
+  font: 800 12px/1.3 var(--font);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--kp-muted);
+}
+
+.kp-free__row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.kp-free__row + .kp-free__row {
+  margin-top: 8px;
+}
+
+.kp-free__label {
+  font: 650 13px/1.3 var(--font);
+  color: var(--kp-ink);
+}
+
+.kp-free__sizes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.kp-free__sizes .kp-chip {
+  min-width: 44px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* «Пустое место»: пунктир — это не новый шкаф, а место, которое заполнится */
+.kp-chip--fill {
+  border-style: dashed;
+}
+
+.kp-free__hint {
+  display: block;
+  font: 500 11px/1.3 var(--font);
+  color: var(--kp-muted);
+}
+
+.kp-free__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.kp-free__tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 52px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--kp-line);
+  border-radius: var(--radius-tile);
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--dur-hover) var(--ease-out),
+    background var(--dur-hover) var(--ease-out);
+}
+
+.kp-free__tile:hover:not(:disabled) {
+  border-color: var(--kp-line-strong);
+}
+
+/* уже стоит: нажатие выбирает его в 3D */
+.kp-free__tile[aria-pressed='true'] {
+  border-color: var(--kp-cobalt);
+  background: var(--kp-ice);
+}
+
+.kp-free__tile:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.kp-free__name {
+  font: 700 14px/1.3 var(--font);
+  color: var(--kp-ink);
+}
+
+.kp-free__state {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--kp-muted);
+}
+
+.kp-free__over {
+  margin-top: 10px;
+}
+
+@media (max-width: 420px) {
+  .kp-free__row {
+    grid-template-columns: 1fr;
+  }
 }
 
 .kp-ready__title {

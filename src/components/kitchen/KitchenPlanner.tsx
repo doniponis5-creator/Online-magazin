@@ -35,6 +35,10 @@ import {
   CEILING,
   COLUMN_HEIGHT,
   companions,
+  FREE_CORNER,
+  FREE_UPPER,
+  freeCorners,
+  freeCornerW,
   hobMinWidth,
   itemGaps,
   itemPositions,
@@ -44,6 +48,7 @@ import {
   needByWall,
   moveItem,
   nextWall,
+  islandTurnOf,
   pinCabinet,
   planKitchen,
   resolveArrangement,
@@ -52,6 +57,7 @@ import {
   WIDTH_LIMITS,
   WINDOW_LIMITS,
   wallOf,
+  wallsOf,
   type ItemPlace,
   type Module,
   type Plan,
@@ -60,12 +66,34 @@ import {
 } from '@/lib/kitchen/layout'
 import { cartAdditions, chosenItems, CORE_SLOTS, frontsText, planInputOf, projectItems, projectTotal, wallsText, whatsappText, type ItemStatus } from '@/lib/kitchen/order'
 import { DEFAULT_STATE, loadLast, queryFromState, saveLast, stateFromQuery } from '@/lib/kitchen/share'
+import {
+  carryCornerFronts,
+  emptyRoom,
+  freeAdd,
+  freeAddUpper,
+  freeCorner,
+  freeFill,
+  freeMoveUpper,
+  freePlaceUpper,
+  freeReflow,
+  freeRemove,
+  freeRemoveUpper,
+  freeResizeUpper,
+  freeUpperAt,
+  freeUppersOverLower,
+  leaveRoom,
+  lowerGaps,
+  reshapeRoom,
+  roomFromKitchen,
+  type FreeAdd,
+} from '@/lib/kitchen/free'
 import { cutList, extraList, frontList, hardware, modulesOf, topList, type SpecData } from '@/lib/kitchen/spec'
 import { cutParts, edgeTotals, nest, type CutLook, type NestOpts, type NestResult } from '@/lib/kitchen/cutting'
 import { emptyMaster, estimate, estimateLines, loadMaster, saveMaster, type MasterData } from '@/lib/kitchen/master'
 import { FLOORS, getStyle, getTone, STYLE_GROUPS, STYLES, WALL_COLORS, type KitchenStyle } from '@/lib/kitchen/styles'
 import type { HandleKind } from '@/lib/kitchen/styles'
 import {
+  DINING_SEATS,
   isCabinet,
   SIZED_ITEMS,
   SLOTS,
@@ -73,6 +101,8 @@ import {
   type BaseFront,
   type CabinetId,
   type ColumnItem,
+  type FixedItem,
+  type FreeWall,
   type FrontVariant,
   type ItemKey,
   type KitchenAppliance,
@@ -82,7 +112,7 @@ import {
   type SlotKind,
   type WallId,
 } from '@/lib/kitchen/types'
-import { tallMin, WINDOW } from '@/lib/kitchen/dims'
+import { TALL_BASE, tallMin, WINDOW } from '@/lib/kitchen/dims'
 import { DRAWING_CSS, elevationSvg, islandOverhang, makerList, PLAN_BOX, pickScale, planSvg, techRows, windowFor, type DrawingLabels } from './drawing'
 import { PlanSketch } from './PlanSketch'
 import { kitchenTexts, type KitchenTexts } from './texts'
@@ -92,13 +122,16 @@ import { keepOnLink, openQuery } from './ready'
 import { PublishLoader } from './PublishLoader'
 import { ApplianceSheet } from './ApplianceSheet'
 import { ReadyStrip } from './ReadyStrip'
+import { FreePalette, type FreeTile } from './FreePalette'
 import type { BuildInput, CabInfo, Dims } from './three/build'
 import type { DragPreview, DragTarget, EngineEvents, KitchenEngine, PhotoState, Pick, Quality, View } from './three/engine'
 import type { Photo } from './three/photo'
 import './kitchen.css'
 
-type Step = 'shape' | 'size' | 'style' | 'finish' | 'tech'
+type Step = 'shape' | 'size' | 'modules' | 'style' | 'finish' | 'tech'
 const STEPS: Step[] = ['shape', 'size', 'tech', 'style', 'finish']
+/** Пустая комната (PRO): после размеров — шаг «Модули», где шкафы ставят сами. */
+const STEPS_FREE: Step[] = ['shape', 'size', 'modules', 'tech', 'style', 'finish']
 const SHAPES: Shape[] = ['straight', 'corner', 'u', 'island']
 /** Слоты, которые можно выключить («Не нужно»); без остальных кухня не кухня. */
 const OPTIONAL: SlotKind[] = SLOTS.filter((s) => !CORE_SLOTS.includes(s))
@@ -117,6 +150,16 @@ const SLOT_OF: Record<ItemKey, SlotKind | null> = {
   pantry2: null,
   oven: 'oven',
 }
+
+/** Пустая комната: порядок — только поставленное, по стенам формы. */
+function freeOrder(shape: Shape, arrangement: KitchenState['arrangement']): Record<WallId, ItemKey[]> {
+  const out: Record<WallId, ItemKey[]> = { A: [], B: [], C: [], I: [] }
+  for (const w of wallsOf(shape)) out[w] = [...(arrangement?.[w] ?? [])]
+  return out
+}
+
+/** «Поставить» у техники, которой нет на стене: какой предмет ставить. */
+const PLACE_KEY: Partial<Record<SlotKind, FixedItem>> = { fridge: 'fridge', dishwasher: 'dishwasher', washer: 'washer', hob: 'hob', hood: 'hob', oven: 'oven', microwave: 'tall' }
 
 /** Что сейчас переставляют: предмет (техника, мойка, свой шкаф) или обычный шкаф. */
 type MoveSel = { key: ItemKey } | { cab: CabInfo; w: number; wall: WallId; center: number }
@@ -222,6 +265,25 @@ const sidePanelSaved = () => {
   }
 }
 
+/**
+ * Режим PRO — для мебельщика и мастера: чертежи стен, спецификация, раскрой,
+ * смета, RAL и декоры. Покупатель их не видит, пока не включит; выбор помнит
+ * браузер ('1' — включён). PDF для мастера доступен и без PRO.
+ */
+const PRO_KEY = 'kp-pro'
+const proSaved = () => {
+  try {
+    return window.localStorage.getItem(PRO_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+/** Стили, видные сразу; остальные — по «Все стили». Выбранный показан всегда. */
+const FEATURED_STYLES: KitchenStyle['id'][] = ['marble', 'hitech', 'minimal', 'scandi', 'modern', 'classic']
+/** Превью стилей рисуются по очереди: сначала видные сразу. */
+const THUMB_ORDER = [...STYLES.filter((s) => FEATURED_STYLES.includes(s.id)), ...STYLES.filter((s) => !FEATURED_STYLES.includes(s.id))]
+
 /** «Для чего» красим фасады (вся кухня, низ, верх, остров). */
 type PaintTarget = 'all' | 'lower' | 'upper' | 'island'
 /** Цель → поле состояния. «Вся кухня» пишет в поле низа, а верх и остров снимает — они идут «как низ». */
@@ -314,6 +376,21 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
   /** отделка: что красим (вся кухня, низ, верх, остров) и какой вид цвета открыт — материал, RAL или декоры */
   const [paintFor, setPaintFor] = useState<PaintTarget>('all')
   const [frontMat, setFrontMat] = useState<FrontMaterial | 'ral' | 'decor'>('laminate')
+  /** режим PRO (всё для мебельщика и мастера) — из браузера, после гидратации */
+  const [pro, setPro] = useState(false)
+  useEffect(() => setPro(proSaved()), [])
+  const togglePro = (on: boolean) => {
+    setPro(on)
+    try {
+      window.localStorage.setItem(PRO_KEY, on ? '1' : '0')
+    } catch {
+      // браузер не даёт хранить — PRO просто выключится в следующий раз
+    }
+  }
+  /** RAL и декоры — вкладки PRO: без него открыт ламинат, выбранный цвет виден в строке раздела */
+  const colorTab = !pro && (frontMat === 'ral' || frontMat === 'decor') ? 'laminate' : frontMat
+  /** шаг «Стиль»: все стили или только видные сразу */
+  const [allStyles, setAllStyles] = useState(false)
   const [decorBrand, setDecorBrand] = useState<DecorBrand>('egger')
   const [colorQuery, setColorQuery] = useState('')
   /** выдача поиска цвета — на компьютере докручиваем до неё, чтобы не пряталась под рядом «Дальше» */
@@ -444,12 +521,58 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
       state.cabinets,
       state.at,
       state.widths,
+      state.free,
+      state.dining,
+      state.islandTurn,
+      state.diningTurn,
       chosen,
     ],
   )
   const plan = useMemo(() => planFor(style), [planFor, style])
-  const order = useMemo(() => resolveArrangement(state.shape, state.arrangement, state.cabinets), [state.shape, state.arrangement, state.cabinets])
+  // пустая комната: только то, что поставили сами (правила не добавляют мойку и плиту)
+  const order = useMemo(
+    () => (state.free ? freeOrder(state.shape, state.arrangement) : resolveArrangement(state.shape, state.arrangement, state.cabinets)),
+    [state.shape, state.arrangement, state.cabinets, state.free],
+  )
   const positions = useMemo(() => itemPositions(plan), [plan])
+
+  /* пустая комната (PRO): выбранная стена и выбранный свой верхний шкаф — до карточки выбора */
+  const walls = wallsOf(state.shape)
+  const [freeWallPick, setFreeWall] = useState<WallId>('A')
+  // стены больше нет (сменили форму) — снова A
+  const freeWall: WallId = walls.includes(freeWallPick) ? freeWallPick : 'A'
+  /** после перестройки показать размеры этого предмета (только что поставили с палитры) */
+  const measureAfterRef = useRef<ItemKey | null>(null)
+
+  /** Пустая комната: свой верхний шкаф по ключу из 3D («a120») — стена, номер в списке, ширина, середина. */
+  const freeUpperOf = (key: string) => {
+    if (!state.free) return null
+    const run = plan.runs.find((r) => r.id === key[0].toUpperCase())
+    const x = Number(key.slice(1))
+    const u = run?.uppers.find((up) => Math.round(up.x) === x)
+    if (!run || !u || run.id === 'I') return null
+    const wall = run.id as FreeWall
+    const index = freeUpperAt(state, wall, moduleCenter(run, u))
+    const fu = state.free.uppers?.[wall]?.[index]
+    return fu ? { wall, index, w: fu.w, c: fu.c } : null
+  }
+  /** Выбран угловой шкаф пустой комнаты: какой конец стены A. */
+  const freeCornerSel = useMemo((): 'start' | 'end' | null => {
+    if (!state.free || !editing?.corner) return null
+    const run = plan.runs.find((r) => r.id === editing.key[0])
+    const x = Number(editing.key.slice(1))
+    const m = run?.modules.find((mod) => Math.round(mod.x) === x)
+    return m?.kind === 'corner' ? (m.blindAt ?? null) : null
+  }, [state.free, editing, plan])
+
+  /** Выбран свой верхний шкаф (не над холодильником, не угловой, не вытяжка). */
+  const freeUpper = useMemo(
+    () => (editing?.row === 'upper' && !editing.fridge && !editing.column ? freeUpperOf(editing.key) : null),
+    // freeUpperOf читает только state и plan
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [state, plan, editing],
+  )
+
 
   /** Состав проекта и деньги — только из order.ts: сумма, корзина, WhatsApp. */
   const project = useMemo(() => projectItems(state, plan, appliances), [state, plan, appliances])
@@ -637,8 +760,14 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
   const pickRef = useRef<(pick: Pick) => void>(() => {})
   pickRef.current = ({ slot, item, dims, cab }) => {
     setHint(false)
+    // пустая комната: палитра ставит на ту стену, где выбрали
+    if (state.free) {
+      const wall = item ? positions[item]?.wall : cab ? (cab.key[0].toUpperCase() as WallId) : undefined
+      if (wall && walls.includes(wall)) setFreeWall(wall)
+    }
     setSelected(slot)
-    setMoving(item ? { key: item } : cab?.row === 'base' ? cabSel(cab) : null)
+    // угловой стоит в углу: его не двигают, у него выбирают фасады (и ширину в пустой комнате)
+    setMoving(item ? { key: item } : cab?.row === 'base' && !cab.corner ? cabSel(cab) : null)
     setMeasure(dims)
     setEditing(cab)
     if (slot) {
@@ -655,7 +784,17 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
       if (apply({ arrangement: moveItem(order, key, wall, pos, positions), at: { ...frozen([key, ...companions(plan, key)]), [key]: pos } }, [key])) setMoving({ key })
       return
     }
-    // обычный шкаф становится своим и встаёт туда, куда его отпустили
+    // обычный шкаф становится своим и встаёт туда, куда его отпустили;
+    // в пустой комнате таких нет — угловой шкаф не таскают, свой верх встаёт в ближайшее свободное место
+    if (state.free) {
+      const fu = what.cab.row === 'upper' ? freeUpperOf(what.cab.key) : null
+      if (!fu || wall === 'I') return
+      const res = freePlaceUpper(state, plan, fu.wall, fu.index, wall as FreeWall, pos, (s) => trial(s))
+      if ('fail' in res) return setToast(res.fail === 'noRoom' ? t.free.noRoom(res.free) : t.noRoom)
+      update(res.state)
+      selectUpperAt(res.state, wall as FreeWall, res.state.free?.uppers?.[wall as FreeWall]?.[res.index]?.c)
+      return
+    }
     const sel = cabSel(what.cab)
     if (!sel) return
     commitPinned({ ...sel, wall, center: pos }, { at: pos })
@@ -678,6 +817,14 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
       key = what.item
       next = { ...state, arrangement: moveItem(order, key, wall, pos, positions), at: { ...frozen([key, ...companions(plan, key)]), [key]: pos } }
     } else {
+      if (state.free) {
+        // свой верх: где встанет (ближайшее свободное место) — рамка там
+        const fu = what.cab.row === 'upper' ? freeUpperOf(what.cab.key) : null
+        if (!fu || wall === 'I') return null
+        const res = freePlaceUpper(state, plan, fu.wall, fu.index, wall as FreeWall, pos)
+        if ('fail' in res) return { center: pos, w: fu.w, gaps: [], fits: false }
+        return { center: res.state.free?.uppers?.[wall as FreeWall]?.[res.index]?.c ?? pos, w: fu.w, gaps: [], fits: true }
+      }
       const sel = cabSel(what.cab)
       if (!sel) return null
       const pinned = pinCabinet(order, state.cabinets ?? {}, { w: sel.w, front: 'doors' }, wall, pos, positions)
@@ -820,11 +967,12 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
       fronts: state.fronts ?? {},
       finish,
       columns: state.heights,
+      tallBase: state.tallBase,
       doorsRight: state.doorsRight,
     }),
     // photosVersion — фото пришло, картинку на технике надо обновить
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [plan, lookStyle, tone, items, photosVersion, ceiling, state.lowUppers, state.floor, wallColor, state.fronts, finish, state.heights, state.doorsRight],
+    [plan, lookStyle, tone, items, photosVersion, ceiling, state.lowUppers, state.floor, wallColor, state.fronts, finish, state.heights, state.tallBase, state.doorsRight],
   )
 
   // 3D на этом телефоне нет (старый телефон, браузер без видеокарты) — чертёж
@@ -892,7 +1040,9 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
     const again = cab ? engine.measureCab(cab.key) : null
     // у мойки, плиты и пенала фасадов не выбирают — размеры держим по предмету
     const mv = movingRef.current
-    const byItem = !again && measureRef.current && mv && 'key' in mv ? engine.measureItem(mv.key) : null
+    const placedNow = measureAfterRef.current
+    measureAfterRef.current = null
+    const byItem = !again && mv && 'key' in mv && (measureRef.current || placedNow === mv.key) ? engine.measureItem(mv.key) : null
     setMeasure(again?.dims ?? byItem?.dims ?? null)
     setEditing(again?.cab ?? null)
     // поменяли сторону открывания — дверцы сразу открываются: видно, куда
@@ -1026,11 +1176,11 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
     let i = 0
     const next = () => {
       if (cancelled) return
-      if (i >= STYLES.length) {
+      if (i >= THUMB_ORDER.length) {
         doneThumbs.current = thumbKey
         return
       }
-      const s = STYLES[i++]
+      const s = THUMB_ORDER[i++]
       const url = engine?.thumbnail({ ...buildInput, style: s, tone: s.tones[0], plan: planFor(s, true), fronts: {}, finish: undefined })
       if (url) setThumbs((prevThumbs) => ({ ...prevThumbs, [s.id]: url }))
       timer = window.setTimeout(next, 40)
@@ -1100,7 +1250,23 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
   }
   // Своя расстановка сбрасывается вместе со своими шкафами: иначе они
   // оставались в адресе и в счётчике «Вернуть шкафы как было», но не в кухне.
-  const setShape = (shape: Shape) => update({ shape, a: Math.max(state.a, minA(shape)), arrangement: undefined, cabinets: undefined, at: undefined })
+  const setShape = (shape: Shape) => {
+    // пустая комната: другая форма — поставленное на оставшихся стенах на месте, новая стена пустая (с отменой)
+    if (state.free) {
+      if (shape === state.shape) return
+      const { state: next, dropped } = reshapeRoom(state, shape)
+      update(next)
+      const island = shape === 'island' && state.shape !== 'island'
+      // добавили остров — палитра сразу ставит на него
+      if (island) {
+        setFreeWall('I')
+        setStep('modules')
+      }
+      setNote({ text: dropped ? t.free.shapeDropped : island ? t.free.islandAdded : t.free.shapeKept, act: { label: t.undo, run: undo } })
+      return
+    }
+    update({ shape, a: Math.max(state.a, minA(shape)), arrangement: undefined, cabinets: undefined, at: undefined })
+  }
 
   /**
    * Длину стены поменяли — свои места предметов сбрасываются (порядок
@@ -1110,6 +1276,14 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
   const resize = (patch: Partial<KitchenState>) => {
     // стена A стала короче острова — остров поджимается к ней (C14)
     const island = patch.a !== undefined && state.island > patch.a ? { island: patch.a } : {}
+    // пустая комната: всё стоит в тех же сантиметрах от угла — места не сбрасываем;
+    // угловой у конца стены A сдвинулся вместе с ней — его фасады едут за ним
+    if (state.free) {
+      const next = { ...state, ...patch, ...island }
+      const carried = carryCornerFronts(state, next, plan, trial(next))
+      update({ ...patch, ...island, fronts: carried.fronts, doorsRight: carried.doorsRight })
+      return
+    }
     update({ ...patch, ...island, at: undefined })
   }
 
@@ -1208,6 +1382,7 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
     Object.keys(state.at ?? {}).filter((k) => !isCabinet(k)).length +
     Object.keys(state.widths ?? {}).length +
     Object.keys(state.heights ?? {}).length +
+    (state.tallBase !== undefined ? 1 : 0) +
     (state.doorsRight?.length ?? 0) +
     (state.overFridgeFacade ? 1 : 0)
 
@@ -1264,7 +1439,10 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
    * технику или в другой предмет — перепрыгивает через него.
    */
   const nudge = (dir: 1 | -1) => {
+    if (freeUpper) return nudgeUpper(dir)
     if (!moving) return
+    // пустая комната: угловой шкаф стоит в углу, его не двигают
+    if (state.free) return 'key' in moving ? nudgeFree(moving.key, dir) : undefined
     if (!('key' in moving)) {
       const sign = moving.wall === 'B' || moving.wall === 'I' ? -dir : dir
       commitPinned(moving, { at: moving.center + sign * NUDGE })
@@ -1308,15 +1486,22 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
   useEffect(() => stopRepeat, [])
   // выбор закрыли, пока кнопку держали, — кнопки уже нет, повтор останавливаем
   useEffect(() => {
-    if (!moving) stopRepeat()
-  }, [moving])
+    if (!moving && !freeUpper) stopRepeat()
+  }, [moving, freeUpper])
 
   const toOtherWall = () => {
     if (!moving) return
+    if (state.free && !('key' in moving)) return
     if ('key' in moving) {
       const rest = { ...state.at }
       delete rest[moving.key]
-      apply({ arrangement: nextWall(order, moving.key, state.shape), at: nonEmpty(rest) })
+      const arrangement = nextWall(order, moving.key, state.shape)
+      // пустая комната: где встал на другой стене — там его место (иначе съедет, когда рядом что-то уберут)
+      if (state.free) {
+        const placed = itemPositions(trial({ ...state, arrangement, at: nonEmpty(rest) }))[moving.key]
+        if (placed) rest[moving.key] = Math.round(placed.center * 2) / 2
+      }
+      apply({ arrangement, at: nonEmpty(rest) })
     } else commitPinned(moving, { act: (o, id) => nextWall(o, id, state.shape) })
   }
 
@@ -1350,6 +1535,10 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
    * шкаф (он сперва становится своим). У техники ширина — её собственная.
    */
   const widthCtl = useMemo(() => {
+    // пустая комната: свой верхний шкаф — своя ширина, от низа не зависит
+    if (freeUpper) return { value: Math.round(freeUpper.w), ...FREE_UPPER }
+    // пустая комната: угловой шкаф — своя ширина (глухая часть 60 + дверца)
+    if (freeCornerSel) return { value: freeCornerW(state.free, freeCornerSel), ...FREE_CORNER }
     if (!target) return null
     const { m } = target
     const k = m.item
@@ -1363,20 +1552,63 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
     }
     if (!k && FLEX.includes(m.kind)) return { value: Math.round(m.w), ...WIDTH_LIMITS.cabinet }
     return null
-  }, [target, state.cabinets, items.hob])
+  }, [target, state.cabinets, items.hob, freeUpper, freeCornerSel, state.free])
 
   /** Ширина по 5 см: 78 → 80 → 85, и обратно 78 → 75. Соседние шкафы подстраиваются. */
   const setWidth = (dir: 1 | -1) => {
-    if (!target || !widthCtl) return
+    if (!widthCtl) return
     const cur = widthCtl.value
     const snapped = dir > 0 ? Math.floor(cur / 5) * 5 + 5 : Math.ceil(cur / 5) * 5 - 5
     const next = Math.max(widthCtl.min, Math.min(widthCtl.max, snapped))
     if (next === cur) return
+    if (freeCornerSel) {
+      const end = freeCornerSel
+      const patch: Partial<KitchenState> = { free: { ...state.free, cornerW: { ...state.free?.cornerW, [end]: next } } }
+      // шире — соседи на стене A отодвигаются по порядку; места нет — не меняем
+      const centers = freeReflow({ ...state, ...patch }, plan, 'A')
+      if (!centers) return setToast(t.noRoom)
+      const at = { ...frozen([]), ...centers }
+      const p = trial({ ...state, ...patch, at })
+      // фасады углового едут за ним (ключ — от его места в ряду)
+      const carried = carryCornerFronts(state, { ...state, ...patch, at }, plan, p)
+      if (!apply({ ...patch, at, fronts: carried.fronts, doorsRight: carried.doorsRight })) return
+      // у конца стены угловой начинается левее — ключ выбора другой
+      const a = p.runs.find((r) => r.id === 'A')
+      const m = a?.modules.find((mod) => mod.kind === 'corner' && mod.blindAt === end)
+      if (m && editing) {
+        const cab: CabInfo = { ...editing, key: baseKey('A', m.x) }
+        editingRef.current = cab
+        setEditing(cab)
+      }
+      return
+    }
+    if (freeUpper) {
+      const res = freeResizeUpper(state, plan, freeUpper.wall, freeUpper.index, next, (s) => trial(s))
+      if ('fail' in res) return setToast(res.fail === 'noRoom' ? t.free.noRoom(res.free) : t.noRoom)
+      update(res.state)
+      selectUpperAt(res.state, freeUpper.wall, res.state.free?.uppers?.[freeUpper.wall]?.[freeUpper.index]?.c)
+      return
+    }
+    if (!target) return
     const { run, m } = target
     const k = m.item
     const upper = editing?.row === 'upper'
     // Все стоят на местах, выбранное растёт от своей середины — меняются
     // только шкафы рядом с ним.
+    if (state.free && k) {
+      // Пустая комната: растёт на своём месте, соседи отодвигаются туда, где свободно;
+      // на стене места нет — ширина не меняется (раньше шкаф перескакивал на другое место).
+      const patch: Partial<KitchenState> = isCabinet(k)
+        ? { cabinets: { ...state.cabinets, [k]: { ...state.cabinets![k], w: next } } }
+        : { widths: { ...state.widths, [k]: next } }
+      const wall = positions[k]?.wall
+      // настоящая ширина (мойка, варочная — со своими пределами) — из пробной раскладки
+      const w = trial({ ...state, ...patch, at: frozen([]) }, [k]).runs.flatMap((r) => r.modules).find((m) => m.item === k)?.w ?? next
+      const centers = wall ? freeReflow({ ...state, ...patch }, plan, wall, { key: k, w }) : null
+      if (!centers) return setToast(t.free.noRoom(0))
+      if (apply({ ...patch, at: { ...frozen([]), ...centers } }) && upper) followRef.current = k
+      return
+    }
     if (k && isCabinet(k)) {
       if (apply({ cabinets: { ...state.cabinets, [k]: { ...state.cabinets![k], w: next } }, at: frozen([]) }) && upper) followRef.current = k
       return
@@ -1413,9 +1645,30 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
       if (items.fridge && !state.fridgeOpen) top = Math.min(ceil, Math.max(top, items.fridge.h + 35))
     }
     const max = Math.floor(top)
-    const min = k === 'tall' ? tallMin(Boolean(items.microwave?.builtIn)) : COLUMN_HEIGHT.min
+    const min = k === 'tall' ? tallMin(Boolean(items.microwave?.builtIn), state.tallBase) : COLUMN_HEIGHT.min
     return { key: k as ColumnItem, value: Math.min(max, Math.round(state.heights?.[k as ColumnItem] ?? max)), min, max }
-  }, [target, ceiling, state.lowUppers, state.fridgeOpen, state.heights, style.upperCm, upperBottom, items.fridge, items.microwave])
+  }, [target, ceiling, state.lowUppers, state.fridgeOpen, state.heights, state.tallBase, style.upperCm, upperBottom, items.fridge, items.microwave])
+
+  /**
+   * Нижний шкаф колонны с духовкой — от пола до духовки: ниже — духовка ниже,
+   * а колонна своей высоты. Выше — пока над ним помещаются духовка (и микроволновка).
+   */
+  const baseCtl = useMemo(() => {
+    if (!heightCtl || heightCtl.key !== 'tall') return null
+    const value = Math.round(state.tallBase ?? TALL_BASE.base)
+    // над нижним шкафом: духовка (и микроволновка) и верх колонны — как требует tallMin
+    const room = heightCtl.value - (tallMin(Boolean(items.microwave?.builtIn)) - TALL_BASE.base)
+    return { value, min: TALL_BASE.min, max: Math.max(value, Math.min(TALL_BASE.max, Math.floor(room))) }
+  }, [heightCtl, state.tallBase, items.microwave])
+
+  const setBase = (dir: 1 | -1) => {
+    if (!baseCtl) return
+    const cur = baseCtl.value
+    const snapped = dir > 0 ? Math.floor(cur / 5) * 5 + 5 : Math.ceil(cur / 5) * 5 - 5
+    const next = Math.max(baseCtl.min, Math.min(baseCtl.max, snapped))
+    if (next === cur) return
+    update({ tallBase: next === TALL_BASE.base ? undefined : next })
+  }
 
   const setHeight = (dir: 1 | -1) => {
     if (!heightCtl) return
@@ -1440,7 +1693,7 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
     if (editing?.row === 'upper') {
       // над холодильником дверцы всегда парой — открываются в обе стороны
       if (editing.fridge) return null
-      if (editing.variant !== 'doors' && editing.variant !== 'glass') return null
+      if (editing.variant !== 'doors' && editing.variant !== 'glass' && editing.variant !== 'mirror') return null
       const run = plan.runs.find((r) => r.id === editing.key[0].toUpperCase())
       const x = Number(editing.key.slice(1))
       const u = run?.uppers.find((up) => Math.round(up.x) === x)
@@ -1449,7 +1702,12 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
     if (!target) return null
     const { run, m } = target
     const key = m.item ?? baseKey(run.id, m.x)
-    if (m.kind === 'tall' || m.kind === 'pantry') return key
+    // у колонны с духовкой низ может быть ящиками или полками — тогда сторону открывания не спрашиваем
+    if (m.kind === 'tall') {
+      const v = (state.fronts?.tall as BaseFront | undefined) ?? 'doors'
+      return v === 'doors' || v === 'mix' ? key : null
+    }
+    if (m.kind === 'pantry') return key
     if (m.kind === 'sink') return single(m.w) ? key : null
     if (m.kind === 'doors' || m.kind === 'drawers' || m.kind === 'hob') {
       if (m.kind === 'hob' && m.oven) return null
@@ -1473,6 +1731,18 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
   }
 
   const removeCab = () => {
+    // пустая комната: убрать можно всё — свой шкаф, мойку, технику, свой верх
+    if (freeUpper) {
+      closeSelection()
+      update(freeRemoveUpper(state, freeUpper.wall, freeUpper.index, plan))
+      return
+    }
+    if (state.free && moving && 'key' in moving) {
+      const key = moving.key
+      closeSelection()
+      update(freeRemove(state, key))
+      return
+    }
     if (!moving || !('key' in moving) || !isCabinet(moving.key)) return
     const id = moving.key
     const cabinets = { ...state.cabinets }
@@ -1485,10 +1755,204 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
     update({ arrangement, cabinets: nonEmpty(cabinets), at: nonEmpty(at) })
   }
 
+  /* ───────── пустая комната (PRO) ───────── */
+
+  /** Выбрать верхний шкаф стены там, где середина center: после перестройки карточка останется на нём. */
+  const selectUpperAt = (s: KitchenState, wall: FreeWall, center: number | undefined) => {
+    if (center === undefined) return
+    const run = trial(s).runs.find((r) => r.id === wall)
+    if (!run) return
+    const u = run.uppers.find((up) => Math.abs(moduleCenter(run, up) - center) <= up.w / 2 + 0.5)
+    if (!u) return
+    const key = upperKey(run.id, u.x)
+    const cab: CabInfo = { key, row: 'upper', variant: (s.fronts?.[key] as FrontVariant | undefined) ?? 'doors' }
+    editingRef.current = cab
+    setEditing(cab)
+    setMoving(null)
+  }
+
+  /** Пустая комната, «левее / правее»: на 5 см; упёрся — встаёт по ту сторону соседа. */
+  const nudgeFree = (key: ItemKey, dir: 1 | -1) => {
+    const p = positions[key]
+    if (!p) return
+    const sign = (p.wall === 'B' || p.wall === 'I' ? -dir : dir) as 1 | -1
+    const at = { ...frozen([key]), [key]: p.center + sign * NUDGE }
+    const moved = itemPositions(trial({ ...state, at }, [key]))[key]
+    if (moved && moved.wall === p.wall && Math.abs(moved.center - p.center) >= 1) {
+      apply({ at }, [key])
+      return
+    }
+    const ahead = (Object.entries(positions) as [ItemKey, ItemPlace][])
+      .filter(([k, q]) => k !== key && q.wall === p.wall && (sign > 0 ? q.center > p.center : q.center < p.center))
+      .sort((x, y) => sign * (x[1].center - y[1].center))[0]
+    if (!ahead) return
+    apply({ at: { ...frozen([key]), [key]: ahead[1].center + sign * (ahead[1].w / 2 + p.w / 2) } }, [key])
+  }
+
+  /** Свой верхний шкаф — на 5 см; у стены B ряд идёт справа налево. */
+  const nudgeUpper = (dir: 1 | -1) => {
+    if (!freeUpper) return
+    const sign = freeUpper.wall === 'B' ? -dir : dir
+    const next = freeMoveUpper(state, plan, freeUpper.wall, freeUpper.index, sign * NUDGE, (s) => trial(s))
+    if (!next) return
+    update(next)
+    selectUpperAt(next, freeUpper.wall, next.free?.uppers?.[freeUpper.wall]?.[freeUpper.index]?.c)
+  }
+
+  /**
+   * Войти в пустую комнату — с пустых стен или из этой кухни. Своя кухня
+   * сначала уходит в «Мои варианты»; «Отменить» возвращает её на экран.
+   */
+  const enterFree = (from: 'empty' | 'kitchen') => {
+    const kept = Boolean(ownKitchen) && !ownSaved && addVariant(state, engineRef.current?.snapshot(360, 225) ?? '')
+    track()
+    setCartResult(null)
+    closeSelection()
+    setState(from === 'empty' ? emptyRoom(state) : roomFromKitchen(state, plan))
+    setFreeWall('A')
+    goStep('modules')
+    setNote({ text: kept ? `${t.free.on} ${t.free.saved}` : t.free.on, act: { label: t.undo, run: undo } })
+  }
+  const leaveFree = () => {
+    track()
+    setCartResult(null)
+    closeSelection()
+    setState(leaveRoom(state))
+    setNote({ text: t.free.left, act: { label: t.undo, run: undo } })
+  }
+
+  /** Выбрать поставленное — как нажатие в 3D: карточка с размерами и стрелками. */
+  const selectItem = (key: ItemKey) => {
+    closeMeasure()
+    setSelected(SLOT_OF[key] ?? null)
+    setMoving({ key })
+    // перестройки не будет — размеры показываем сразу
+    const d = engineRef.current?.measureItem(key)
+    if (d) setMeasure(d.dims)
+  }
+
+  /** Поставить с палитры на стену: рядом с выбранным или в первое свободное место. */
+  const freePut = (what: FreeAdd, wall: WallId = freeWall): boolean => {
+    let base = state
+    if (what.kind === 'item') {
+      if (positions[what.key]) {
+        selectItem(what.key)
+        setToast(t.free.exists)
+        return false
+      }
+      // модель выключили («Не нужно») — ставим ту, что по умолчанию
+      const slot = SLOT_OF[what.key]
+      if (slot && state.picks[slot] === null) base = { ...state, picks: { ...state.picks, [slot]: undefined } }
+    }
+    const near = moving && 'key' in moving && positions[moving.key]?.wall === wall ? moving.key : undefined
+    const res = freeAdd(base, base === state ? plan : trial(base), (s) => trial(s), wall, what, near)
+    if ('fail' in res) {
+      if (res.fail === 'exists') selectItem(res.key)
+      setToast(res.fail === 'noRoom' ? t.free.noRoom(res.free) : t.free.exists)
+      return false
+    }
+    update(res.state)
+    if (res.key) {
+      closeMeasure()
+      setSelected(SLOT_OF[res.key] ?? null)
+      setMoving({ key: res.key })
+      measureAfterRef.current = res.key
+    }
+    return true
+  }
+  /** «Поставить» у техники без места: на выбранную стену, нет места — на другую. */
+  const placeSlot = (slot: SlotKind) => {
+    const key = PLACE_KEY[slot]
+    if (!key) return
+    for (const w of [freeWall, ...walls.filter((x) => x !== freeWall)]) {
+      const probe = freeAdd(state, plan, (s) => trial(s), w, { kind: 'item', key })
+      if ('state' in probe) {
+        setFreeWall(w)
+        freePut({ kind: 'item', key }, w)
+        return
+      }
+    }
+    setToast(t.free.noRoom(0))
+  }
+  /** Повесить свой верхний шкаф: над выбранным низом этой стены или в первое свободное место. */
+  const freeUpperPut = (w: number) => {
+    // выбран свой верх — новый рядом с ним; выбран низ — над ним; иначе — стена палитры
+    const lower = moving && 'key' in moving ? positions[moving.key] : undefined
+    const wall = (freeUpper?.wall ?? (lower && lower.wall !== 'I' ? lower.wall : freeWall)) as WallId
+    if (wall === 'I') return
+    const near = freeUpper ? { center: freeUpper.c, w: freeUpper.w } : lower && lower.wall === wall ? lower : undefined
+    const res = freeAddUpper(state, plan, wall as FreeWall, w, near)
+    if ('fail' in res) return setToast(res.fail === 'noRoom' ? t.free.noRoom(res.free) : t.noRoom)
+    update(res.state)
+    const list = res.state.free?.uppers?.[wall as FreeWall] ?? []
+    selectUpperAt(res.state, wall as FreeWall, list[list.length - 1]?.c)
+  }
+  /** Угловой шкаф: поставить или убрать (снятый угол — с отменой). */
+  const toggleCorner = (end: 'start' | 'end', on: boolean) => {
+    if (!on) closeSelection()
+    update(freeCorner(state, end, on))
+  }
+
+  /** Плитки палитры: мойка, техника, колонны, угловые — стоит ли и можно ли поставить. */
+  const freeTiles = useMemo((): FreeTile[] => {
+    if (!state.free) return []
+    const stove = Boolean(chosen.hob?.stove)
+    const names = t.free.items
+    const out: FreeTile[] = []
+    const keys: FixedItem[] = ['sink', 'hob', 'oven', 'dishwasher', 'washer', 'fridge', 'tall', 'pantry', 'pantry2']
+    for (const key of keys) {
+      // на остров высокое не ставят
+      if (freeWall === 'I' && (key === 'fridge' || key === 'tall' || key === 'pantry' || key === 'pantry2')) continue
+      const slot = SLOT_OF[key]
+      const noModel = slot === 'fridge' || slot === 'dishwasher' || slot === 'washer' ? bySlot[slot].length === 0 : false
+      const off = key === 'oven' && stove ? t.stove.ovenInStove : noModel ? t.free.noModel : undefined
+      const on = positions[key]?.wall
+      out.push({ key, name: key === 'hob' && stove ? t.stove.name : names[key], on, off: on ? undefined : off })
+    }
+    if (freeWall === 'A') {
+      const have = freeCorners(state.shape, state.free)
+      for (const end of ['start', 'end'] as const) {
+        if (end === 'start' ? state.shape !== 'corner' && state.shape !== 'u' : state.shape !== 'u') continue
+        out.push({ key: `corner:${end}`, name: `${names.corner} · ${end === 'start' ? 'B' : 'C'}`, on: have.includes(end) ? 'A' : undefined })
+      }
+    }
+    return out
+  }, [state.free, state.shape, chosen.hob, t, freeWall, bySlot, positions])
+  const freeGapsNow = state.free ? lowerGaps(state, plan, freeWall) : []
+  const freeSpace = Math.round(freeGapsNow.reduce((sum, [a, b]) => sum + b - a, 0))
+  /** Пустое место — полками ровно по ширине; сразу выбраны: можно поменять на дверцы или ящики. */
+  const fillGap = (gap: [number, number]) => {
+    const res = freeFill(state, (s) => trial(s), freeWall, gap)
+    if ('fail' in res) return setToast(res.fail === 'noRoom' ? t.free.noRoom(res.free) : t.noRoom)
+    update(res.state)
+    if (res.key) {
+      closeMeasure()
+      setMoving({ key: res.key })
+      measureAfterRef.current = res.key
+      const cab: CabInfo = { key: res.key, row: 'base', variant: 'open' }
+      editingRef.current = cab
+      setEditing(cab)
+    }
+  }
+  const onFreeTile = (tile: FreeTile) => {
+    if (tile.key === 'corner:start' || tile.key === 'corner:end') return toggleCorner(tile.key === 'corner:start' ? 'start' : 'end', !tile.on)
+    const key = tile.key as ItemKey
+    if (positions[key]) return selectItem(key)
+    freePut({ kind: 'item', key: key as FixedItem })
+  }
+
+  // Шаг «Модули» есть только в пустой комнате: вышли из неё — на «Размер».
+  useEffect(() => {
+    if (!state.free && step === 'modules') setStep('size')
+  }, [state.free, step])
+
   // Выбранное пальцем можно сразу тащить — без удержания.
   useEffect(() => {
-    engineRef.current?.setGrab(moving ? ('key' in moving ? moving.key : moving.cab.key) : null)
-  }, [moving, engineState])
+    engineRef.current?.setGrab(moving ? ('key' in moving ? moving.key : moving.cab.key) : freeUpper && editing ? editing.key : null)
+  }, [moving, engineState, freeUpper, editing])
+  useEffect(() => {
+    engineRef.current?.setDragUppers(Boolean(state.free))
+  }, [state.free, engineState])
 
   const hobHasOven = plan.runs.some((r) => r.modules.some((m) => m.kind === 'hob' && m.oven)) && items.oven !== null
   const movingKey = moving && 'key' in moving ? moving.key : null
@@ -1511,10 +1975,10 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
       return
     }
     if (mod || e.altKey) return
-    if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && moving) {
+    if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && (moving || freeUpper)) {
       e.preventDefault()
       nudge(e.key === 'ArrowLeft' ? -1 : 1)
-    } else if ((e.key === 'Delete' || e.key === 'Backspace') && movingKey && isCabinet(movingKey)) {
+    } else if ((e.key === 'Delete' || e.key === 'Backspace') && ((movingKey && (isCabinet(movingKey) || state.free)) || freeUpper)) {
       e.preventDefault()
       removeCab()
     } else if (e.key === 'Escape') {
@@ -1557,6 +2021,71 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
         : t.toIsland
       : t.otherWall
   const canOtherWall = moving ? canChangeWall(state.shape, movingKey ?? 'k1') : false
+
+  // поворот острова и обеденная зона — одни и те же на шагах «Размер» и «Модули»
+  const islandTurnCtl =
+    state.shape === 'island' ? (
+      <TurnControl t={t} title={t.turn.island} turn={islandTurnOf(state.islandTurn)} onTurn={(deg) => update({ islandTurn: deg || undefined })} />
+    ) : null
+  const diningCtl = (
+    <>
+      <div className="kp-oven">
+        <span className="kp-switch__text">
+          {t.dining.title}
+          <small>{t.dining.note}</small>
+        </span>
+        <div className="kp-seg kp-seg--wide" role="radiogroup" aria-label={t.dining.title}>
+          {[undefined, ...DINING_SEATS].map((n) => (
+            <button key={n ?? 0} type="button" role="radio" aria-checked={state.dining === n} className="kp-seg__btn" onClick={() => update({ dining: n })}>
+              {n ? t.dining.seats(n) : t.dining.none}
+            </button>
+          ))}
+        </div>
+      </div>
+      {state.dining && (
+        <TurnControl t={t} title={t.turn.table} turn={islandTurnOf(state.diningTurn)} onTurn={(deg) => update({ diningTurn: deg || undefined })} />
+      )}
+    </>
+  )
+
+  const freeCard = (
+    <>
+            {step === 'shape' && (pro || state.free) && (
+              <section className={`kp-free-entry${state.free ? ' is-on' : ''}`} aria-labelledby="kp-free-title">
+                <div className="kp-free-entry__head">
+                  <span className="kp-pro__badge">{t.pro.badge}</span>
+                  <h3 id="kp-free-title" className="kp-own__title">
+                    {t.free.title}
+                  </h3>
+                </div>
+                <p className="kp-note">{state.free ? t.free.on : t.free.lead}</p>
+                {state.free ? (
+                  <div className="kp-free-entry__row">
+                    <button type="button" className="btn btn--primary btn--sm" onClick={() => goStep('modules')}>
+                      {t.steps.modules}
+                      <IconArrow />
+                    </button>
+                    <button type="button" className="btn btn--ghost btn--sm" onClick={leaveFree}>
+                      {t.free.leave}
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="kp-free-entry__row">
+                      <button type="button" className="btn btn--primary btn--sm" onClick={() => enterFree('empty')}>
+                        {t.free.fromEmpty}
+                      </button>
+                      <button type="button" className="btn btn--outline btn--sm" onClick={() => enterFree('kitchen')}>
+                        {t.free.fromKitchen}
+                      </button>
+                    </div>
+                    <p className="kp-note kp-note--tight">{t.free.fromKitchenNote}</p>
+                  </>
+                )}
+              </section>
+            )}
+    </>
+  )
 
   // Выбрали шкаф или технику. На телефоне его карточка выезжает снизу —
   // кнопка консультанта на это время прячется, чтобы не закрыть её кнопки.
@@ -1876,7 +2405,15 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
     setAskGallery(saved && !galleryWhy)
   }
   /** почему «В галерею» сейчас недоступна; null — можно */
-  const galleryWhy = fail3d ? t.gallery.no3d : engineState === 'lost' ? t.gallery.lost3d : engineState !== 'ready' ? t.gallery.wait3d : null
+  const galleryWhy = fail3d
+    ? t.gallery.no3d
+    : engineState === 'lost'
+      ? t.gallery.lost3d
+      : engineState !== 'ready'
+        ? t.gallery.wait3d
+        : state.free && plan.runs.every((r) => r.modules.length === 0)
+          ? t.free.empty
+          : null
 
   /* ───────── готовые кухни ───────── */
 
@@ -1940,6 +2477,8 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
       }
       case 'tallUnderWindow':
         return t.checks.tallUnderWindow
+      case 'cornerBlocked':
+        return t.checks.cornerBlocked(c.wall)
       case 'applianceWider':
         return t.checks.applianceWider(c.slot, c.w, c.room)
       case 'underCounterHeight':
@@ -2516,16 +3055,17 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
 
   /* ───────── вёрстка ───────── */
 
-  const stepIndex = STEPS.indexOf(step)
+  const steps = state.free ? STEPS_FREE : STEPS
+  const stepIndex = steps.indexOf(step)
   const placedTags = SLOTS.filter((s) => items[s] && built)
   const wallLabels = {
     a: `A · ${state.a} ${t.cm}`,
     b: state.shape === 'corner' || state.shape === 'u' ? `B · ${state.b} ${t.cm}` : undefined,
     c: state.shape === 'u' ? `C · ${state.c} ${t.cm}` : undefined,
   }
-  const editOptions: FrontVariant[] = editing ? (editing.row === 'base' ? BASE_FRONTS : editing.fridge ? OVER_FRIDGE_FRONTS : UPPER_FRONTS) : []
+  const editOptions: FrontVariant[] = editing ? (editing.row === 'base' ? BASE_FRONTS : editing.fridge || editing.column ? OVER_FRIDGE_FRONTS : UPPER_FRONTS) : []
   const frontLabel = (v: FrontVariant) =>
-    editing?.fridge
+    editing?.fridge || editing?.column
       ? (t.overFridgeFronts[v as keyof typeof t.overFridgeFronts] ?? '')
       : editing?.row === 'upper'
         ? t.upperFronts[v as keyof typeof t.upperFronts]
@@ -2847,7 +3387,8 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
                   </button>
                   {editing && !editing.narrow && (
                     <div className="kp-fronts" role="radiogroup" aria-label={t.cabAsk}>
-                      <span className="kp-fronts__ask">{t.cabAsk}</span>
+                      {/* колонна с духовкой: у верха и у нижнего шкафа — свой выбор */}
+                      <span className="kp-fronts__ask">{editing.key === 'tallup' ? t.tallUpAsk : editing.key === 'tall' ? t.tallLowAsk : t.cabAsk}</span>
                       <div className="kp-fronts__list">
                         {editOptions.map((v) => (
                           <button
@@ -2922,7 +3463,7 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
                     <div className="kp-cabw">
                       <span className="kp-cabw__label">
                         {t.widthLabel}
-                        {editing?.row === 'upper' && <small>{t.widthWithLower}</small>}
+                        {editing?.row === 'upper' && !freeUpper && <small>{t.widthWithLower}</small>}
                       </span>
                       <button
                         type="button"
@@ -2979,10 +3520,99 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
                       </button>
                     </div>
                   )}
+                  {/* колонна с духовкой: нижний шкаф — ниже или выше, сама колонна не меняется */}
+                  {baseCtl && (
+                    <div className="kp-cabw">
+                      <span className="kp-cabw__label">
+                        {t.tallBaseLabel}
+                        <small>{t.tallBaseNote}</small>
+                      </span>
+                      <button
+                        type="button"
+                        className="kp-size__step"
+                        aria-label={`${t.less}: ${t.tallBaseLabel}`}
+                        disabled={baseCtl.value <= baseCtl.min}
+                        onClick={() => setBase(-1)}
+                      >
+                        −
+                      </button>
+                      <output className="kp-counter__value" aria-live="polite">
+                        {baseCtl.value} {t.cm}
+                      </output>
+                      <button
+                        type="button"
+                        className="kp-size__step"
+                        aria-label={`${t.more}: ${t.tallBaseLabel}`}
+                        disabled={baseCtl.value >= baseCtl.max}
+                        onClick={() => setBase(1)}
+                      >
+                        +
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
-              {moving && movingShown && (
+              {freeCornerSel && (
+                <div className="kp-move" role="group" aria-label={t.free.items.corner}>
+                  <span className="kp-move__name">{t.free.items.corner}</span>
+                  <button type="button" className="kp-move__wall" onClick={() => toggleCorner(freeCornerSel, false)}>
+                    {t.free.removeCorner}
+                  </button>
+                  <button type="button" className="kp-move__btn kp-move__close" aria-label={t.close} onClick={closeSelection}>
+                    <IconClose />
+                  </button>
+                </div>
+              )}
+              {freeUpper && (
+                <div className="kp-move" role="group" aria-label={t.free.upperName(Math.round(freeUpper.w))}>
+                  <span className="kp-move__name">
+                    {t.free.upperName(Math.round(freeUpper.w))}
+                    <small>{t.moveHint2}</small>
+                  </span>
+                  <button
+                    type="button"
+                    className="kp-move__btn"
+                    aria-label={t.moveLeft}
+                    title={t.moveLeft}
+                    onPointerDown={(e) => {
+                      if (e.button === 0) startRepeat(-1)
+                    }}
+                    onPointerUp={stopRepeat}
+                    onPointerLeave={stopRepeat}
+                    onPointerCancel={stopRepeat}
+                    onClick={(e) => {
+                      if (e.detail === 0) nudge(-1)
+                    }}
+                  >
+                    <IconArrow flip />
+                  </button>
+                  <button
+                    type="button"
+                    className="kp-move__btn"
+                    aria-label={t.moveRight}
+                    title={t.moveRight}
+                    onPointerDown={(e) => {
+                      if (e.button === 0) startRepeat(1)
+                    }}
+                    onPointerUp={stopRepeat}
+                    onPointerLeave={stopRepeat}
+                    onPointerCancel={stopRepeat}
+                    onClick={(e) => {
+                      if (e.detail === 0) nudge(1)
+                    }}
+                  >
+                    <IconArrow />
+                  </button>
+                  <button type="button" className="kp-move__wall" onClick={removeCab}>
+                    {t.free.remove}
+                  </button>
+                  <button type="button" className="kp-move__btn kp-move__close" aria-label={t.close} onClick={closeSelection}>
+                    <IconClose />
+                  </button>
+                </div>
+              )}
+              {moving && movingShown && !freeCornerSel && (
                 <div className="kp-move" role="group" aria-label={movingName}>
                   <span className="kp-move__name">
                     {movingName}
@@ -3027,6 +3657,12 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
                   {canOtherWall && (
                     <button type="button" className="kp-move__wall" onClick={toOtherWall}>
                       {otherWallLabel}
+                    </button>
+                  )}
+                  {/* свой шкаф убирают в карточке ширины («Убрать шкаф»); тут — мойку, технику, колонны */}
+                  {state.free && movingKey && !isCabinet(movingKey) && (
+                    <button type="button" className="kp-move__wall" onClick={removeCab}>
+                      {t.free.remove}
                     </button>
                   )}
                   <button type="button" className="kp-move__btn kp-move__close" aria-label={t.close} onClick={closeSelection}>
@@ -3111,7 +3747,7 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
           )}
           <Dropped plan={plan} state={state} t={t} onFix={resize} />
           <nav className="kp-steps" aria-label={t.stepsLabel} ref={stepsRef}>
-            {STEPS.map((s, i) => (
+            {steps.map((s, i) => (
               <button
                 key={s}
                 type="button"
@@ -3145,18 +3781,55 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
                 </button>
               </div>
             )}
+            {/* пустая комната (PRO): если она включена — первым делом, иначе — под формами */}
+            {state.free && freeCard}
+            {/* быстрый старт: готовые кухни с фильтрами (форма, длина стен, бюджет) — первыми, своя кухня с нуля — под ними */}
+            {step === 'shape' && <ReadyStrip lang={lang} t={t} appliances={appliances} own={ownKitchen} dropName={!ownSaved && variants.length >= 8 ? variants[variants.length - 1].name : null} onOpen={openReady} />}
             {step === 'shape' && (
-              <div className="kp-shapes" role="radiogroup" aria-label={t.steps.shape}>
-                {SHAPES.map((s) => (
-                  <button key={s} type="button" role="radio" aria-checked={state.shape === s} className="kp-shape" onClick={() => setShape(s)}>
-                    <ShapeIcon shape={s} />
-                    <span className="kp-shape__name">{t.shapes[s][0]}</span>
-                    <span className="kp-shape__note">{t.shapes[s][1]}</span>
-                  </button>
-                ))}
+              <div className="kp-own">
+                <h3 className="kp-own__title">{t.ownShape}</h3>
+                <div className="kp-shapes" role="radiogroup" aria-label={t.steps.shape}>
+                  {SHAPES.map((s) => (
+                    <button key={s} type="button" role="radio" aria-checked={state.shape === s} className="kp-shape" onClick={() => setShape(s)}>
+                      <ShapeIcon shape={s} />
+                      <span className="kp-shape__name">{t.shapes[s][0]}</span>
+                      <span className="kp-shape__note">{t.shapes[s][1]}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
-            {step === 'shape' && <ReadyStrip lang={lang} t={t} appliances={appliances} own={ownKitchen} dropName={!ownSaved && variants.length >= 8 ? variants[variants.length - 1].name : null} onOpen={openReady} />}
+            {!state.free && freeCard}
+
+            {step === 'modules' && state.free && (
+              <FreePalette
+                t={t}
+                walls={walls}
+                wall={freeWall}
+                lengths={{ A: state.a, B: state.b, C: state.c, I: Math.round(Math.min(state.island, state.a)) }}
+                free={freeSpace}
+                tiles={freeTiles}
+                gaps={freeGapsNow}
+                onWall={setFreeWall}
+                onAdd={(what) => freePut(what)}
+                onFill={fillGap}
+                onTile={onFreeTile}
+                onUpper={freeUpperPut}
+                onOverLower={() => freeWall !== 'I' && update(freeUppersOverLower(state, plan, freeWall as FreeWall))}
+                extra={
+                  <>
+                    {islandTurnCtl && (
+                      <>
+                        <h3 className="kp-free__title">{t.free.island}</h3>
+                        {islandTurnCtl}
+                      </>
+                    )}
+                    <h3 className="kp-free__title">{t.dining.section}</h3>
+                    {diningCtl}
+                  </>
+                }
+              />
+            )}
 
             {step === 'size' && (
               <div className="kp-sizes">
@@ -3179,6 +3852,7 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
                     onChange={(island) => resize({ island })}
                   />
                 )}
+                {islandTurnCtl}
 
                 <h2 className="kp-sub">{t.roomTitle}</h2>
                 <SizeField
@@ -3207,6 +3881,9 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
                     onChange={(windowW) => update({ windowW })}
                   />
                 )}
+
+                <h2 className="kp-sub">{t.dining.section}</h2>
+                {diningCtl}
               </div>
             )}
 
@@ -3215,11 +3892,11 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
                 <Switch checked={!state.lowUppers} title={t.toCeiling} note={t.toCeilingNote} onChange={(on) => update({ lowUppers: on ? undefined : true })} />
                 <p className="kp-note kp-note--after">{t.styleHint}</p>
                 <div role="radiogroup" aria-label={t.steps.style}>
-                  {STYLE_GROUPS.map((g) => (
+                  {STYLE_GROUPS.filter((g) => allStyles || STYLES.some((s) => s.group === g && (FEATURED_STYLES.includes(s.id) || s.id === state.style))).map((g) => (
                     <section key={g} className="kp-style-group" aria-label={t.styleGroups[g]}>
                       <h3 className="kp-style-group__title">{t.styleGroups[g]}</h3>
                       <div className="kp-style-grid">
-                        {STYLES.filter((s) => s.group === g).map((s) => (
+                        {STYLES.filter((s) => s.group === g && (allStyles || FEATURED_STYLES.includes(s.id) || s.id === state.style)).map((s) => (
                           <button
                             key={s.id}
                             type="button"
@@ -3240,6 +3917,9 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
                     </section>
                   ))}
                 </div>
+                <button type="button" className="btn btn--outline btn--sm kp-styles__more" aria-expanded={allStyles} onClick={() => setAllStyles((v) => !v)}>
+                  {allStyles ? t.fewerStyles : t.moreStyles(STYLES.length)}
+                </button>
                 <h2 className="kp-sub">{t.toneTitle}</h2>
                 <div className="kp-tones" role="radiogroup" aria-label={t.toneTitle}>
                   {style.tones.map((tn, i) => (
@@ -3304,17 +3984,33 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
                       <>
                         <div className="kp-chips" role="tablist" aria-label={t.frontsTitle2}>
                           {FRONT_MATERIALS.map((m) => (
-                            <button key={m.id} type="button" role="tab" aria-selected={frontMat === m.id} className="kp-chip" onClick={() => setFrontMat(m.id)}>
+                            <button key={m.id} type="button" role="tab" aria-selected={colorTab === m.id} className="kp-chip" onClick={() => setFrontMat(m.id)}>
                               {lang === 'ky' ? m.ky : m.ru}
                             </button>
                           ))}
-                          {(['ral', 'decor'] as const).map((k) => (
-                            <button key={k} type="button" role="tab" aria-selected={frontMat === k} className="kp-chip" onClick={() => setFrontMat(k)}>
-                              {tc[k]}
+                          {pro ? (
+                            (['ral', 'decor'] as const).map((k) => (
+                              <button key={k} type="button" role="tab" aria-selected={colorTab === k} className="kp-chip" onClick={() => setFrontMat(k)}>
+                                {tc[k]}
+                              </button>
+                            ))
+                          ) : (
+                            // без PRO — одна вкладка: включает PRO и открывает RAL
+                            <button
+                              type="button"
+                              role="tab"
+                              aria-selected={false}
+                              className="kp-chip"
+                              onClick={() => {
+                                togglePro(true)
+                                setFrontMat('ral')
+                              }}
+                            >
+                              {t.pro.moreColors}
                             </button>
-                          ))}
+                          )}
                         </div>
-                        {frontMat === 'ral' ? (
+                        {colorTab === 'ral' ? (
                           <>
                             <p className="kp-note kp-note--tight">{tc.ralNote}</p>
                             <RalCodeForm tc={tc} onApply={applyRal} />
@@ -3343,7 +4039,7 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
                             </div>
                             <p className="kp-note kp-note--tight kp-approx">{tc.approx}</p>
                           </>
-                        ) : frontMat === 'decor' ? (
+                        ) : colorTab === 'decor' ? (
                           <>
                             <div className="kp-chips" role="tablist" aria-label={tc.decor}>
                               {DECOR_BRANDS.map((b) => (
@@ -3366,13 +4062,13 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
                           <>
                             <p className="kp-note kp-note--tight">
                               {(() => {
-                                const m = FRONT_MATERIALS.find((x) => x.id === frontMat)!
+                                const m = FRONT_MATERIALS.find((x) => x.id === colorTab)!
                                 return lang === 'ky' ? m.noteKy : m.noteRu
                               })()}
                             </p>
                             <div className="kp-colors" role="radiogroup" aria-label={t.frontsTitle2}>
                               {resetTile}
-                              {FRONT_COLORS.filter((c) => c.material === frontMat).map((c) => colorTile(c))}
+                              {FRONT_COLORS.filter((c) => c.material === colorTab).map((c) => colorTile(c))}
                             </div>
                           </>
                         )}
@@ -3555,7 +4251,7 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
                     {t.resetFinish}
                   </button>
                 )}
-                {frontCount > 0 && (
+                {frontCount > 0 && !state.free && (
                   <button
                     type="button"
                     className="btn btn--ghost btn--sm kp-reset"
@@ -3567,6 +4263,7 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
                         at: undefined,
                         widths: undefined,
                         heights: undefined,
+                        tallBase: undefined,
                         doorsRight: undefined,
                         overFridgeFacade: undefined,
                       })
@@ -3589,7 +4286,7 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
                     </span>
                   </div>
                 )}
-                {!stoveOn && items.oven !== null && (
+                {!stoveOn && items.oven !== null && !state.free && (
                   <div className="kp-oven">
                     <span className="kp-switch__text">
                       {t.ovenTitle}
@@ -3612,6 +4309,7 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
                     </div>
                   </div>
                 )}
+                {!state.free && (
                 <div className="kp-counter">
                   <span className="kp-switch__text">
                     {t.pantries}
@@ -3637,6 +4335,7 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
                     +
                   </button>
                 </div>
+                )}
                 {items.fridge && (
                   <Switch
                     className="kp-gap"
@@ -3666,6 +4365,7 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
                     t={t}
                     onToggle={() => openSlot(slot)}
                     onPick={(id) => setPick(slot, id)}
+                    onPlace={state.free && PLACE_KEY[slot] ? () => placeSlot(slot) : undefined}
                   />
                 ))}
               </ul>
@@ -3678,9 +4378,9 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
                   {t.startOver}
                 </button>
               )}
-              {stepIndex < STEPS.length - 1 ? (
-                <button type="button" className="btn btn--outline kp-next" onClick={() => goStep(STEPS[stepIndex + 1])}>
-                  {t.next}: {t.steps[STEPS[stepIndex + 1]]}
+              {stepIndex < steps.length - 1 ? (
+                <button type="button" className="btn btn--outline kp-next" onClick={() => goStep(steps[stepIndex + 1])}>
+                  {t.next}: {t.steps[steps[stepIndex + 1]]}
                   <IconArrow />
                 </button>
               ) : (
@@ -3764,7 +4464,16 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
           </div>
         </div>
 
-        {drawing && (
+        {/* PRO: чертежи, спецификация и «Мастеру» — только по кнопке; PDF выше работает и без него */}
+        <div className={`kp-pro${pro ? ' is-on' : ''}`}>
+          <span className="kp-pro__badge">{t.pro.badge}</span>
+          <p className="kp-pro__text">{pro ? t.pro.onLead : t.pro.offLead}</p>
+          <button type="button" className={`btn btn--sm ${pro ? 'btn--ghost' : 'btn--outline'}`} aria-expanded={pro} onClick={() => togglePro(!pro)}>
+            {pro ? t.pro.hide : t.pro.show}
+          </button>
+        </div>
+
+        {pro && drawing && (
           <>
             <dl className="kp-facts">
               <div>
@@ -3858,7 +4567,7 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
         )}
 
         {/* Мастеру: раскрой в Excel, листы и кромка, смета клиенту — ниже всего, что видит покупатель */}
-        {spec && (
+        {pro && spec && (
           <section className="kp-mstr" aria-labelledby="kp-mstr-title">
             <div className="kp-mstr__head">
               <div>
@@ -4095,11 +4804,14 @@ export function KitchenPlanner({ appliances, info }: { appliances: KitchenApplia
           <h2 id="kp-maker-title" className="kp-maker__title kp-maker__title--small">
             {t.makerTitle}
           </h2>
-          <pre className="kp-maker__list">{makerText}</pre>
+          {/* список «что где стоит» с размерами — для мебельщика (PRO); покупателю — схема сверху */}
+          {pro && <pre className="kp-maker__list">{makerText}</pre>}
           <div className="kp-maker__actions">
-            <button type="button" className="btn btn--outline btn--sm" onClick={copyList}>
-              {t.copy}
-            </button>
+            {pro && (
+              <button type="button" className="btn btn--outline btn--sm" onClick={copyList}>
+                {t.copy}
+              </button>
+            )}
             <button type="button" className="btn btn--outline btn--sm" onClick={() => void share()}>
               {t.share}
             </button>
@@ -4291,6 +5003,100 @@ function Part(props: { title: string; value: string; open?: boolean; onOpen: (el
   )
 }
 
+/**
+ * Поворот острова или стола: ↺/↻ — по 1°, зажатая кнопка крутит дальше
+ * (через 0,4 с, 14 шагов в секунду), ползунок — сразу на любой угол,
+ * ↺ 45° / ↻ 45° — крупным шагом, «Вернуть на место» — 0°.
+ */
+function TurnControl({ t, title, turn, onTurn }: { t: KitchenTexts; title: string; turn: number; onTurn: (deg: number) => void }) {
+  const timer = useRef<number | null>(null)
+  const held = useRef(false)
+  const cur = useRef(turn)
+  cur.current = turn
+  const stop = () => {
+    if (timer.current !== null) window.clearTimeout(timer.current)
+    timer.current = null
+  }
+  useEffect(() => stop, [])
+  const down = (step: 1 | -1) => {
+    stop()
+    held.current = false
+    let v = cur.current
+    const tick = () => {
+      held.current = true
+      v = islandTurnOf(v + step)
+      cur.current = v
+      onTurn(v)
+      timer.current = window.setTimeout(tick, 70)
+    }
+    timer.current = window.setTimeout(tick, 400)
+  }
+  // щелчок — один шаг; после зажатия щелчок не считаем, шаги уже сделаны
+  const click = (step: 1 | -1) => {
+    if (held.current) {
+      held.current = false
+      return
+    }
+    // угол помним сразу: два быстрых щелчка до перерисовки — два шага
+    cur.current = islandTurnOf(cur.current + step)
+    onTurn(cur.current)
+  }
+  const btn = (step: 1 | -1, label: string, sign: string) => (
+    <button
+      type="button"
+      className="kp-size__step"
+      aria-label={label}
+      title={label}
+      onPointerDown={() => down(step)}
+      onPointerUp={stop}
+      onPointerLeave={stop}
+      onPointerCancel={stop}
+      onClick={() => click(step)}
+    >
+      {sign}
+    </button>
+  )
+  const jump = (by: number) => {
+    stop()
+    cur.current = islandTurnOf(cur.current + by)
+    onTurn(cur.current)
+  }
+  return (
+    <div className="kp-turn">
+      <span className="kp-switch__text">
+        {title}
+        <small>{t.turn.note}</small>
+      </span>
+      <div className="kp-turn__row">
+        {btn(1, t.turn.left, '↺')}
+        <input
+          type="range"
+          className="kp-turn__range"
+          min={0}
+          max={359}
+          step={1}
+          value={turn}
+          aria-label={title}
+          onChange={(e) => onTurn(islandTurnOf(Number(e.target.value)))}
+        />
+        {btn(-1, t.turn.right, '↻')}
+        <output className="kp-turn__value">{turn}°</output>
+      </div>
+      <div className="kp-turn__presets">
+        <button type="button" className="kp-chip" onClick={() => jump(45)}>
+          ↺ 45°
+        </button>
+        <button type="button" className="kp-chip" onClick={() => jump(-45)}>
+          ↻ 45°
+        </button>
+        <button type="button" className="kp-chip" disabled={!turn} onClick={() => onTurn(0)}>
+          {t.turn.reset}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function Switch(props: { checked: boolean; disabled?: boolean; title: string; note?: string; className?: string; onChange: (on: boolean) => void }) {
   return (
     <label className={`kp-switch${props.className ? ` ${props.className}` : ''}`}>
@@ -4447,6 +5253,8 @@ function SlotRow(props: {
   t: KitchenTexts
   onToggle: () => void
   onPick: (id: string | null) => void
+  /** пустая комната: поставить на стену (модель выбрана, но на стене её нет) */
+  onPlace?: () => void
 }) {
   const { slot, list, current, pickedNone, status, open, style, t } = props
   const size = (a: KitchenAppliance) =>
@@ -4481,12 +5289,18 @@ function SlotRow(props: {
           {status === 'counter' && <span className="kp-slot__note">{t.counterNote}</span>}
           {status === 'underHob' && <span className="kp-slot__note">{t.ovenPlace.hob}</span>}
           {status === 'typical' && <span className="kp-slot__note">{t.typicalNote}</span>}
+          {status === 'unplaced' && <span className="kp-slot__warn">{t.free.notOnWall}</span>}
         </span>
         <span className="kp-slot__price">{shown && !none ? formatSom(shown.price) : ''}</span>
       </button>
       {shown && !none && (
         <button type="button" className="kp-slot__more" aria-haspopup="dialog" onClick={() => setDetail(shown)}>
           {t.details}
+        </button>
+      )}
+      {status === 'unplaced' && props.onPlace && (
+        <button type="button" className="kp-slot__more kp-slot__place" onClick={props.onPlace}>
+          {t.free.place}
         </button>
       )}
       {!current && !none && !inStove && (
@@ -4656,12 +5470,14 @@ function FrontIcon({ variant, row }: { variant: FrontVariant; row: 'base' | 'upp
   const body = <rect x="3" y="3" width="26" height="22" rx="1.5" {...s} />
   const lines: Record<string, React.ReactNode> = {
     doors: <path d="M16 3v22M13 14h.01M19 14h.01" {...s} />,
+    drawers1: <path d="M13 8h6" {...s} />,
     drawers2: <path d="M3 14h26M13 8.5h6M13 19.5h6" {...s} />,
     drawers3: <path d="M3 9h26M3 17h26M13 6h6M13 13h6M13 21h6" {...s} />,
     drawers4: <path d="M3 8.5h26M3 14h26M3 19.5h26M13 5.8h6M13 11.2h6M13 16.8h6M13 22.3h6" {...s} />,
     mix: <path d="M3 9h26M16 9v16M13 6h6M13.5 17h.01M18.5 17h.01" {...s} />,
     open: <path d="M3 11h26M3 18h26" {...s} />,
     glass: <path d="M16 3v22M6 6h7v16H6zM19 6h7v16h-7z" {...s} />,
+    mirror: <path d="M16 3v22M7 11l4-4M7 16l6-6M20 11l4-4M20 16l6-6" {...s} />,
     lift: <path d="M3 25h26M10 22h12M16 9l-4 4M16 9l4 4" {...s} />,
     none: <path d="M8 8l16 12M24 8L8 20" {...s} strokeDasharray="2 2" />,
   }
@@ -4702,6 +5518,11 @@ const STEP_ICON: Record<Step, React.ReactNode> = {
   size: (
     <svg {...iconProps}>
       <path d="M3 15l12-12 6 6-12 12zM7 11l2 2M10 8l2 2M13 5l2 2" {...stroke} />
+    </svg>
+  ),
+  modules: (
+    <svg {...iconProps}>
+      <path d="M4 4h16v5H4zM4 12h7v8H4zM13 12h7v8h-7zM16 15v2M7 15v2" {...stroke} />
     </svg>
   ),
   style: (

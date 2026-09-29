@@ -79,7 +79,7 @@ function* matrix(): Generator<Case> {
           k++
           const style = STYLES[k % STYLES.length]
           const gas = k % 3 === 0
-          const hoodKind = (['chimney', 'inclined', 'telescopic'] as const)[k % 3]
+          const hoodKind = (['chimney', 'inclined', 'telescopic', 'flat'] as const)[k % 4]
           const items = { fridge, dishwasher: dw(k % 2 ? 45 : 60), hob: hob(gas ? 'gas' : 'electric'), oven, hood: hood(hoodKind) }
           // длина A гуляет — так появляются узкие доборы (C06)
           const a = s.a + ((k * 37) % 90) - 45
@@ -437,6 +437,25 @@ describe('2026-09-27: встроенная вытяжка поднимает в�
       expect(built.hoodOver).toBe(norm)
       const strip = built.spec.runs.flatMap((r) => r.boxes).find((b) => b.slot === 'hood')!
       expect(strip.y - counter).toBeCloseTo(norm, 1)
+    })
+
+  for (const [hobKind, norm] of [
+    ['electric', 65],
+    ['gas', 75],
+  ] as const)
+    it(`плоская над ${hobKind === 'gas' ? 'газовой' : 'электрической'}: ряд прежний, вытяжка на норме под своим шкафом, шкаф над ней короче`, () => {
+      const built = withHood('flat', hobKind)
+      const counter = 82 + STYLES[0].topCm
+      expect(built.spec.heights.upperBottom).toBe(142)
+      expect(built.hoodOver).toBe(norm)
+      const box = built.spec.runs.flatMap((r) => r.boxes).find((b) => b.slot === 'hood')!
+      expect(box.y - counter).toBeCloseTo(norm, 1)
+      expect(box.h).toBe(12)
+      // над вытяжкой — шкаф от её верха; соседи — от низа ряда
+      const run = built.spec.runs.find((r) => r.boxes.includes(box))!
+      const over = modulesOf(run).upper.find((b) => b.x <= box.x + 0.5 && b.x + b.w >= box.x + box.w - 0.5)!
+      expect(over.y).toBeCloseTo(box.y + 12, 1)
+      for (const b of rowBottoms(built.spec).filter((r) => r.run === run.id && r.x !== over.x)) expect(b.y).toBeCloseTo(142, 1)
     })
 
   it('каминная, наклонная, без вытяжки, «камин» классики и вытяжка над островом — ряд прежний: 142 см на всех стенах', () => {

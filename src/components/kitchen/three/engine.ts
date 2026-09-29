@@ -178,6 +178,8 @@ export class KitchenEngine {
   private press: { what: DragTarget; x: number; y: number; id: number } | null = null
   /** выбранный предмет или шкаф (его пальцем можно тащить сразу) */
   private grab: string | null = null
+  /** пустая комната (PRO): свои верхние шкафы тоже таскают — экран включает это сам */
+  private dragUppers = false
   private drag: { what: DragTarget; w: number; target: { wall: WallId; pos: number } | null } | null = null
   private marker: THREE.Group | null = null
   /** линии размеров вокруг выбранного предмета */
@@ -776,8 +778,20 @@ export class KitchenEngine {
       slot: (d?.slot as SlotKind | undefined) ?? null,
       item: (d?.item as ItemKey | undefined) ?? null,
       dims: (owner?.userData.dims as Dims | undefined) ?? null,
-      cab: (this.cabOwner(hit?.object ?? null)?.userData.cab as CabInfo | undefined) ?? null,
+      cab: (this.partOf(hit)?.userData.cab as CabInfo | undefined) ?? null,
     }
+  }
+
+  /**
+   * Шкаф под указателем. У колонны с духовкой выше духовки — её верх: нутро
+   * (дверцу открыли нажатием) и корпус там общие с нижним шкафом, а у
+   * открытого верха фасадов нет вовсе — иначе верх было бы не выбрать.
+   */
+  private partOf(hit: THREE.Intersection | null): THREE.Object3D | null {
+    const owner = this.cabOwner(hit?.object ?? null)
+    const from = owner?.userData.upFrom as number | undefined
+    if (!hit || !owner || from === undefined || owner.worldToLocal(hit.point.clone()).y < from) return owner
+    return owner.children.find((c) => (c.userData.cab as CabInfo | undefined)?.column) ?? owner
   }
 
   private cabOwner(o: THREE.Object3D | null): THREE.Object3D | null {
@@ -797,7 +811,8 @@ export class KitchenEngine {
     if (!found) return null
     const obj = found as THREE.Object3D
     this.showMeasure(obj)
-    return { dims: (obj.userData.dims as Dims | undefined) ?? null, cab: obj.userData.cab as CabInfo }
+    // у части без своих размеров (верх колонны) — размеры всего предмета
+    return { dims: (this.dimsOwner(obj)?.userData.dims as Dims | undefined) ?? null, cab: obj.userData.cab as CabInfo }
   }
 
   /**
@@ -928,6 +943,11 @@ export class KitchenEngine {
     this.grab = key
   }
 
+  /** Пустая комната: верхние шкафы можно тащить, как нижние (куда — решает экран в onPreview/onMove). */
+  setDragUppers(on: boolean) {
+    this.dragUppers = on
+  }
+
   private keyOf(what: DragTarget): string {
     return 'item' in what ? what.item : what.cab.key
   }
@@ -951,7 +971,9 @@ export class KitchenEngine {
     let what: DragTarget | null = null
     if (pick.item) what = { item: pick.item }
     // планку уже 15 см не таскаем: своим шкафом она стала бы шире — только выбрать
-    else if (pick.cab?.row === 'base' && pick.dims && pick.dims.w >= 15) what = { cab: pick.cab, w: pick.dims.w }
+    else if (pick.cab?.row === 'base' && !pick.cab.corner && pick.dims && pick.dims.w >= 15) what = { cab: pick.cab, w: pick.dims.w }
+    // пустая комната: свой верхний шкаф (над холодильником — нет, он при холодильнике)
+    else if (this.dragUppers && pick.cab?.row === 'upper' && !pick.cab.fridge && pick.dims) what = { cab: pick.cab, w: pick.dims.w }
     if (!what) return
     // Сразу тянут только выбранное — и мышью, и пальцем: почти везде под
     // указателем шкаф, и иначе кухню нельзя было бы повернуть — она ломалась
@@ -1020,7 +1042,7 @@ export class KitchenEngine {
       const hit = this.hit(e)
       const pk = this.pickOf(hit)
       // выбранный шкаф и технику можно тащить — «перенести»; остальное — выбрать или открыть; мимо — вращать
-      const key = pk.item ?? (pk.cab?.row === 'base' ? pk.cab.key : null)
+      const key = pk.item ?? ((pk.cab?.row === 'base' && !pk.cab.corner) || (this.dragUppers && pk.cab?.row === 'upper') ? pk.cab.key : null)
       const movable = key !== null && key === this.grab
       this.renderer.domElement.style.cursor = movable ? 'move' : pk.slot || pk.cab || this.openableOf(hit?.object ?? null) ? 'pointer' : 'grab'
     })
@@ -1162,16 +1184,21 @@ export class KitchenEngine {
     const ndc = new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1)
     this.raycaster.setFromCamera(ndc, this.camera)
     const point = new THREE.Vector3()
-    if (!this.raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.9), point)) return
+    // Указатель ищем на высоте того, что тащат: низ — у столешницы, свой верх (пустая
+    // комната) — посередине верхнего ряда. Иначе луч через верхний шкаф уходил за стену.
+    const upper = 'cab' in drag.what && drag.what.cab.row === 'upper'
+    const heights = this.built?.spec.heights
+    const y = upper ? ((heights?.upperBottom ?? 145) + (heights?.upperTop ?? 217)) / 200 : 0.9
+    if (!this.raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -y), point)) return
     let best: { run: (typeof plan.runs)[number]; x: number; score: number } | null = null
     for (const run of plan.runs) {
-      // стены и остров
-      if (!run.wall && run.id !== 'I') continue
+      // стены и остров; верх вешают только на стены
+      if (!run.wall && (upper || run.id !== 'I')) continue
       const L = run.length / 100
       const m = new THREE.Matrix4().makeRotationY(run.rot).setPosition(run.ox / 100, 0, run.oz / 100)
       const local = point.clone().applyMatrix4(m.invert())
       if (local.x < -0.4 || local.x > L + 0.4 || local.z < -0.5 || local.z > 2.2) continue
-      const score = Math.abs(local.z - 0.3)
+      const score = Math.abs(local.z - (upper ? 0.18 : 0.3))
       if (!best || score < best.score) best = { run, x: local.x, score }
     }
     if (!best) {
@@ -1193,7 +1220,7 @@ export class KitchenEngine {
     // стены его не пустят дальше. Сбоку — сколько останется столешницы.
     const pv = this.events.onPreview?.({ what: drag.what, wall, pos }) ?? null
     const toLocal = (c: number) => (run.id === 'B' ? L - c / 100 : c / 100)
-    this.showMarker(run, pv ? toLocal(pv.center) : x, pv ? pv.w / 100 : drag.w, pv?.fits ?? true)
+    this.showMarker(run, pv ? toLocal(pv.center) : x, pv ? pv.w / 100 : drag.w, pv?.fits ?? true, 'cab' in drag.what && drag.what.cab.row === 'upper')
     for (const k of [...this.tagPoints.keys()]) if (k.startsWith('gap:')) this.tagPoints.delete(k)
     pv?.gaps.forEach((g, i) => this.tagPoints.set(`gap:${i}`, this.runPoint(run, toLocal(g.center), 0.95, 0.64)))
   }
@@ -1205,7 +1232,7 @@ export class KitchenEngine {
     return new THREE.Vector3(run.ox / 100 + x * cos + z * sin, y, run.oz / 100 - x * sin + z * cos)
   }
 
-  private showMarker(run: { ox: number; oz: number; rot: number }, x: number, w: number, fits = true) {
+  private showMarker(run: { ox: number; oz: number; rot: number }, x: number, w: number, fits = true, upper = false) {
     if (!this.marker) {
       const g = new THREE.Group()
       const size = new THREE.Vector3(1, 0.9, 0.62)
@@ -1227,7 +1254,11 @@ export class KitchenEngine {
     g.traverse((o) => {
       if (o instanceof THREE.Mesh || o instanceof THREE.LineSegments) (o.material as THREE.MeshBasicMaterial).color.set(color)
     })
-    g.position.copy(this.runPoint(run, x, 0.45, 0.31))
+    // верхний шкаф — рамка на высоте верхнего ряда и его глубины
+    g.scale.z = upper ? 0.36 / 0.62 : 1
+    const hs = this.built?.spec.heights
+    const upperMid = hs ? (hs.upperBottom + hs.upperTop) / 200 : 1.85
+    g.position.copy(upper ? this.runPoint(run, x, upperMid, 0.18) : this.runPoint(run, x, 0.45, 0.31))
     g.rotation.y = run.rot
     this.invalidate()
   }

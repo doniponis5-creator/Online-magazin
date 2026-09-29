@@ -143,6 +143,9 @@ describe('техника из каталога', () => {
   it('вытяжка: вид по типу', () => {
     const a = applianceFromProduct(product('Встраиваемая вытяжка Asco', [['Тип', 'Телескопическая встраиваемая вытяжка'], ['Ширина', '60 см']]))
     expect(a).toMatchObject({ slot: 'hood', hood: 'telescopic', w: 60 })
+    // ARTEL ART-0960 PUNTO на сайте: «Плоская кухонная вытяжка» — висит под шкафом
+    expect(applianceFromProduct(product('Вытяжка ARTEL ART-0960 PUNTO Duble fan (черный)', [['Тип', 'Плоская кухонная вытяжка']]))).toMatchObject({ slot: 'hood', hood: 'flat' })
+    expect(applianceFromProduct(product('Вытяжка ARTEL ART-0860 (Домик)', [['Тип', 'Купольная вытяжка']]))).toMatchObject({ slot: 'hood', hood: 'chimney' })
   })
   it('«Встраиваемая поверхность» из 1С — варочная панель', () => {
     expect(applianceFromProduct(product('Встраиваемая поверхность MIDEA MC-6T3401R216 (черный)', [['Ширина', '59 см']]))).toMatchObject({
@@ -409,9 +412,9 @@ describe('свои фасады', () => {
     // без выбора в адресе ничего нет — ссылка как раньше
     expect(new URLSearchParams(queryFromState(DEFAULT_STATE)).has('ofc')).toBe(false)
   })
-  it('шкаф над холодильником: четыре фасада, каждый живёт в ссылке (fx) по ключу верхнего ряда', () => {
-    // из брифа: подъёмная (как было), стекло, дверцы, открытая полка
-    expect(OVER_FRIDGE_FRONTS).toEqual(['lift', 'glass', 'doors', 'open'])
+  it('шкаф над холодильником: пять фасадов, каждый живёт в ссылке (fx) по ключу верхнего ряда', () => {
+    // из брифа: подъёмная (как было), стекло, дверцы, открытая полка; с 29.09.2026 ещё зеркало
+    expect(OVER_FRIDGE_FRONTS).toEqual(['lift', 'glass', 'mirror', 'doors', 'open'])
     const fridge = appliance({ slot: 'fridge', w: 59.5 })
     const plan = planKitchen({ shape: 'straight', a: 400, b: 0, c: 0, island: 0, fridge }, { shelves: false })
     const over = plan.runs[0].uppers.find((u) => u.kind === 'fridge')!
