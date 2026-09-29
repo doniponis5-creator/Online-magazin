@@ -954,9 +954,9 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1790680598.8631277,
-    "seen": 1790680711.5923438,
-    "ast_hash": "4fad0c2b9506c03009bb61ee4298446b",
+    "mtime": 1790683499.366261,
+    "seen": 1790683528.5680137,
+    "ast_hash": "b6269d4942ceff687908a2ff0952d8fd",
     "semantic_hash": ""
   },
   "DESIGN.md": {
@@ -4830,9 +4830,9 @@
     "semantic_hash": ""
   },
   "src/components/kitchen/three/build.ts": {
-    "mtime": 1790679200.1529508,
-    "seen": 1790680711.5921266,
-    "ast_hash": "046b07e9de2ccc9684b8647cc047c87f",
+    "mtime": 1790683360.5087273,
+    "seen": 1790683528.5205905,
+    "ast_hash": "9282167e0fa5c6932116af083027c88e",
     "semantic_hash": ""
   },
   "src/components/kitchen/three/engine.ts": {
@@ -6696,9 +6696,9 @@
     "semantic_hash": ""
   },
   "__tests__/kitchen-free.test.ts": {
-    "mtime": 1790680545.85067,
-    "seen": 1790680711.5917666,
-    "ast_hash": "6d6c180f26ff7034d46678e6a76b2b8d",
+    "mtime": 1790683408.371902,
+    "seen": 1790683528.4523637,
+    "ast_hash": "10874af000ea59e7a5d87fd6de847239",
     "semantic_hash": ""
   },
   "src/components/kitchen/FreePalette.tsx": {
