@@ -13,6 +13,8 @@ Green API). Отвечают там живые люди. Робот вступа
   • больше 30 ответов робота одному человеку за день — дальше отвечает
     сотрудник (робот предупреждает и замолкает);
   • покупатель попросил живого человека — робот передаёт и замолкает на 12 часов.
+  • номер записан в телефоне магазина (знакомые, постоянные клиенты) — робот
+    не отвечает вовсе, только новым незаписанным номерам (владелец, 29.09.2026);
   • покупатель посмотрел товар и замолчал на 2 часа — робот один раз спрашивает
     «ещё актуально?» (в рабочее время, не чаще раза в 3 дня на чат);
   • каждое утро в 9:05 владелец получает сводку за вчера: где робот сдался и
@@ -59,6 +61,7 @@ TURNS_TTL = 3 * 24 * 3600        # сколько помним разговор
 MAX_TURNS = 12                   # сколько реплик отдаём мозгу
 DAILY_LIMIT = 30                 # ответов робота одному человеку за сутки
 MAX_PHOTOS = 1                   # одно фото, как пришлёт продавец; три подряд — это рассылка
+SAVED_TTL = 30 * 24 * 3600      # «номер записан в телефоне» помним месяц (обновляется с каждым сообщением)
 NUDGE_AFTER = 2 * 3600           # покупатель молчит столько после показа товара — напоминаем
 NUDGE_QUIET = 3 * 24 * 3600      # не чаще раза в столько на один чат
 WORK_HOURS = range(9, 18)        # напоминаем только в рабочее время (Бишкек)
@@ -117,6 +120,14 @@ async def _journal(method: str, minutes: int = JOURNAL_MINUTES) -> list[dict]:
         return []
     data = response.json()
     return data if isinstance(data, list) else []
+
+
+def _saved_contact(message: dict) -> bool:
+    """
+    Номер записан в телефоне магазина: Green API кладёт имя из записной книжки
+    в senderContactName. Нет записи — поле пустое (senderName — имя профиля).
+    """
+    return bool(str(message.get("senderContactName") or "").strip())
 
 
 def _journal_text(message: dict) -> str:
@@ -222,6 +233,13 @@ async def poll_once() -> dict:
         if text and WA_LOGIN_RE.search(text):
             continue
         digits = chat.removesuffix("@c.us")
+        # Номер записан в телефоне магазина — это знакомый: робот ему не пишет
+        # (решение владельца 29.09.2026). Отвечает только новым, незаписанным номерам.
+        if _saved_contact(message):
+            await redis_client.set(f"wa:saved:{digits}", "1", ex=SAVED_TTL)
+            await redis_client.hdel("wa:pending", digits)
+            await redis_client.delete(f"wa:nudge:{digits}")
+            continue
         voice = False
         if kind:
             # Голосовое → текст, фото → описание. Не вышло с голосовым — попросим написать.
@@ -249,6 +267,9 @@ async def poll_once() -> dict:
         try:
             pending = json.loads(raw)
         except Exception:
+            await redis_client.hdel("wa:pending", digits)
+            continue
+        if await redis_client.get(f"wa:saved:{digits}"):
             await redis_client.hdel("wa:pending", digits)
             continue
         if await redis_client.get(f"wa:human:{digits}"):
@@ -442,7 +463,7 @@ async def _nudge_silent() -> int:
         if time.time() - float(pending.get("ts") or 0) < NUDGE_AFTER:
             continue
         await redis_client.delete(key)
-        if await redis_client.get(f"wa:human:{digits}"):
+        if await redis_client.get(f"wa:human:{digits}") or await redis_client.get(f"wa:saved:{digits}"):
             continue
         if not await redis_client.set(f"wa:nudged:{digits}", "1", ex=NUDGE_QUIET, nx=True):
             continue
