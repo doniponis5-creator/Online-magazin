@@ -37,6 +37,8 @@ export async function answer(
   page?: string,
   /** имя, которое уже известно (WhatsApp: из телефона владельца или профиля) */
   knownName?: string,
+  /** номер покупателя известен (WhatsApp, вошёл на сайт) — номер не спрашивать */
+  knownPhone = false,
 ): Promise<AssistantReply> {
   const lastQuestion = [...turns].reverse().find((t) => t.role === 'user')?.text ?? ''
   // Каталог берём сегодняшний: из 1С, если сервер настроен, иначе вшитый.
@@ -54,7 +56,7 @@ export async function answer(
     try {
       const lastAnswer = [...turns].reverse().find((t) => t.role === 'assistant')?.text ?? ''
       const ceiling = cheaperThan(lastQuestion, lastAnswer)
-      const raw = await askGemini(systemInstruction(lang, customer, talkLang(turns, lang), list, recent, notes, ceiling, viewing, knownName), turns)
+      const raw = await askGemini(systemInstruction(lang, customer, talkLang(turns, lang), list, recent, notes, ceiling, viewing, knownName, knownPhone), turns)
       const parsed = parseAnswer(raw)
       const talk = talkLang(turns, lang)
       return { text: houseStyle(parsed.text, talk), products: hits(parsed.productIds, lang, list), source: 'gemini', audience: parsed.audience }
@@ -90,6 +92,7 @@ export function talkLang(turns: ChatTurn[], lang: Lang) {
  * язык не определить; считаются только подпись под фото и голосовое.
  */
 function ownWords(text: string): string {
+  text = text.replace(/^\[Ответ на[^\]]*\]\s*/u, '')
   if (!text.startsWith('[Фото]')) return text.replace(/^\[Голосовое\]\s*/, '')
   const caption = text.split('Подпись покупателя:')[1]
   return caption?.trim() ?? ''

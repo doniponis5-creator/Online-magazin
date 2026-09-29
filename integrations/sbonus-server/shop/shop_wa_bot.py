@@ -248,6 +248,12 @@ async def poll_once() -> dict:
                 text = heard
             elif kind == "audio":
                 voice = True
+        # Ответ на статус магазина или на наше фото: «Нима бу?», «шулар нечпул?» без
+        # картинки непонятны — берём подпись или маленькую картинку из цитаты.
+        if text and message.get("typeMessage") == "quotedMessage":
+            context = await _read_quote(message)
+            if context:
+                text = f"{context}\n{text}"
         if text:
             await _remember(digits, "user", text)
         # Покупатель написал сам — напоминать не о чем.
@@ -301,6 +307,42 @@ def _media_kind(message: dict) -> str | None:
     if kind in IMAGE_TYPES:
         return "image"
     return None
+
+
+async def _read_quote(message: dict) -> str:
+    """
+    На что ответил покупатель: «[Ответ на фото: …]» (подпись или описание маленькой
+    картинки из цитаты) или «[Ответ на сообщение: …]». Не вышло — пустая строка.
+    """
+    quoted = message.get("quotedMessage") or {}
+    if not isinstance(quoted, dict):
+        return ""
+    kind = quoted.get("typeMessage")
+    if kind in ("imageMessage", "videoMessage"):
+        caption = str(quoted.get("caption") or "").strip()
+        if caption:
+            return f"[Ответ на фото: {caption[:200]}]"
+        thumb = str(quoted.get("jpegThumbnail") or "")
+        if not thumb:
+            return ""
+        from .shop_router import _site_base_url, _site_secret
+        payload = json.dumps({"data": thumb, "mime": "image/jpeg", "kind": "image"}, ensure_ascii=False)
+        signature = hmac.new(_site_secret().encode(), payload.encode("utf-8"), hashlib.sha256).hexdigest()
+        try:
+            async with httpx.AsyncClient(timeout=60) as client:
+                response = await client.post(
+                    f"{_site_base_url()}/api/channel/media",
+                    content=payload.encode("utf-8"),
+                    headers={"Content-Type": "application/json", "X-Signature": signature},
+                )
+            data = response.json() if response.status_code == 200 else {}
+        except Exception as error:
+            logger.error(f"wa bot quote: {error}")
+            return ""
+        seen = str(data.get("text") or "").strip() if data.get("ok") else ""
+        return f"[Ответ на фото: {seen[:300]}]" if seen else ""
+    text = str(quoted.get("textMessage") or quoted.get("caption") or "").strip()
+    return f"[Ответ на сообщение: {text[:200]}]" if text else ""
 
 
 async def _read_media(message: dict, kind: str) -> str:

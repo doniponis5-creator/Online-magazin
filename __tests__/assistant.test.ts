@@ -356,3 +356,12 @@ describe('«руководствимиз» не бывает', () => {
     expect(houseStyle('Туласангиз, руководствимиз сиз билан богланади.', 'uz')).toBe('Туласангиз, руководство сиз билан богланади.')
   })
 })
+
+describe('номер известен — не спрашиваем; ответ на статус', () => {
+  it('в подсказке для WhatsApp — «НЕ спрашивай номер», правило о «[Ответ на фото]»', () => {
+    const text = systemInstruction('ru', null, 'ru', products, '', '', null, null, undefined, true)
+    expect(text).toContain('НЕ спрашивай номер')
+    expect(text).toContain('[Ответ на фото: …]')
+    expect(systemInstruction('ru', null, 'ru', products)).not.toContain('НЕ спрашивай номер')
+  })
+})

@@ -64,7 +64,7 @@ export async function respond(
     if (isOtherBot(turns)) return { text: '', products: [], source: 'flow', silent: true, mute: true }
     if (isAcknowledgement(turns) || isJunk(turns)) return { text: '', products: [], source: 'flow', silent: true }
   }
-  const reply = await answer(turns, lang, customer, page, channel.known.name)
+  const reply = await answer(turns, lang, customer, page, channel.known.name, Boolean(channel.known.phone))
   // Сайт — там только покупатели. В WhatsApp модель ещё смотрит, кому адресовано.
   if (channel.leadChannel !== 'whatsapp') return reply
   // Идёт продажа (бот показывал товар) — это покупатель, даже если пишет о своём:
@@ -74,6 +74,15 @@ export async function respond(
     return { text: '', products: [], source: reply.source, silent: true, mute: true }
   }
   if (reply.audience === 'personal') return reply
+  // Модель пообещала звонок («руководство сизге жакын арада чалат») — значит, заявка
+  // владельцу должна уйти на самом деле, иначе покупатель ждёт звонка, которого не будет.
+  if (reply.audience !== 'staff' && promisesCall(reply.text) && channel.known.phone) {
+    const talk = talkLang(turns, lang)
+    const questions = turns.filter((t) => t.role === 'user').map((t) => t.text)
+    const who = { name: cleanName(channel.known.name) ?? customer?.name ?? nameFromTurns(turns), phone: channel.known.phone }
+    await startLead(channel.key, talk, leadContext(questions, []), who, 'whatsapp')
+    return { ...reply, handoff: true }
+  }
   if (reply.audience === 'staff') {
     const talk = talkLang(turns, lang)
     const last = turns[turns.length - 1]?.text ?? ''
@@ -189,7 +198,10 @@ async function salesFlow(
   // Покупатель, которому показали товар, прислал свой номер («0700441154 синий») —
   // он оформляет заказ. Номер — только для заказа: ни бонусов, ни чужих данных он не открывает.
   const typedPhone = phoneIn(text)
-  if (shown.length > 0 && typedPhone && !hasDraft(key)) {
+  // Только если мы предлагали оформить или он сам пишет «беру»: номер «чтобы перезвонили»
+  // (Самара — «номериңизди калтырыңыз») заказом не становится.
+  const lastBot = [...turns].reverse().find((t) => t.role === 'assistant')?.text ?? ''
+  if (shown.length > 0 && typedPhone && !hasDraft(key) && (OFFER.test(lastBot) || BUY_INTENT.test(text))) {
     return only(await start(key, shown, talk, orderSource, { name: who.name, phone: who.phone ?? typedPhone }, wantedQty(text.replace(typedPhone, ''))))
   }
   // «Приеду и возьму сам», «барып алам», «o'zim boraman» — это визит в магазин, не заказ: пусть консультант даст адрес.
@@ -205,6 +217,14 @@ async function salesFlow(
     return only(await start(key, shown, talk, orderSource, who, wantedQty(text)))
   }
   return null
+}
+
+/** Обещание позвонить — утверждение, не вопрос: «руководство чалат», «позвоним», «кунгирок килишади». */
+const CALL_PROMISE = /(чалат|чалып (берет|берешет|коёт|тактайт)|чалабыз|позвоним|перезвоним|позвонят|перезвонят|свяжутся|кунгирок килади|кунгирок килишади|кунгирок киламиз|богланишади|байланышат)/i
+function promisesCall(text: string): boolean {
+  return text
+    .split(/(?<=[.!?])\s+/)
+    .some((sentence) => CALL_PROMISE.test(sentence) && !sentence.trim().endsWith('?'))
 }
 
 /** Номер телефона в тексте: 0700 441 154, +996 700 441154, 996700441154. */
