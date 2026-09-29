@@ -14,7 +14,7 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-29T22:14:27+06:00",
-  "updatedAt": "2026-09-29T23:00:54+06:00",
+  "updatedAt": "2026-09-29T23:06:17+06:00",
   "finishedAt": null,
   "stages": [
     {
@@ -87,7 +87,11 @@ window.STATE =
         "src/components/kitchen/pdfSheet.ts",
         "__tests__/"
       ],
-      "status": "review",
+      "status": "done",
+      "finishedAt": "2026-09-29T23:06:17+06:00",
+      "tests": { "passed": 888, "failed": 0 },
+      "commit": "a10698b",
+      "files": ["lib/kitchen/layout.ts", "lib/kitchen/types.ts", "lib/kitchen/share.ts", "lib/kitchen/order.ts", "lib/kitchen/drag.ts"],
       "startedAt": "2026-09-29T22:26:02+06:00",
       "retries": 0,
       "repairs": 0,
@@ -110,7 +114,7 @@ window.STATE =
       ],
       "status": "done",
       "finishedAt": "2026-09-29T22:50:09+06:00",
-      "tests": { "passed": 862, "failed": 0 },
+      "tests": { "passed": 888, "failed": 0 },
       "commit": "7e77a28",
       "files": ["three/quality.ts", "three/engine.ts", "three/build.ts", "three/materials.ts", "three/parts.ts", "three/appliances.ts"],
       "startedAt": "2026-09-29T22:26:02+06:00",
@@ -142,9 +146,11 @@ window.STATE =
         "src/components/kitchen/three/engine.ts",
         "src/components/kitchen/three/build.ts",
         "src/components/kitchen/KitchenPlanner.tsx",
+        "src/lib/kitchen/layout.ts",
         "e2e/"
       ],
-      "status": "pending",
+      "status": "in-progress",
+      "startedAt": "2026-09-29T23:06:17+06:00",
       "retries": 0,
       "repairs": 0,
       "handoffs": 0
@@ -280,7 +286,13 @@ window.STATE =
     "T02 · engine.ts:329–349 · compileFirst в finally восстанавливает начальное состояние тени, а не текущее",
     "T02 · без теста: вечерние лампы visible=false днём; ручки castShadow=false",
     "T02 · kitchen-quality.test.ts:52 · ожидание 2,886 посчитано формулой кода; лучше проверять бюджет по существу",
-    "T02 · CLAUDE.md:248–254 · «Подводные камни» описывают удалённый governor.ts/lowEnd/kp-quality — обновить в фазе памяти"
+    "T02 · CLAUDE.md:248–254 · «Подводные камни» описывают удалённый governor.ts/lowEnd/kp-quality — обновить в фазе памяти",
+    "T01 · share.ts · пустые места хранятся в o=, отдельного g= (как в спеке §8) нет — записано в interfaces как решение",
+    "T01 · layout.ts · placeAt/narrowFor/detachUppers/resizeWalls требуют planner/plan от экрана — модуль не самодостаточен",
+    "T01 · layout.ts · планка (strip) — флаг пустого места, в спецификацию/раскрой не идёт; решить в T04/T05",
+    "T01 · layout.ts:459 · при нехватке длины пустое место выпадает первым и молча (не в dropped)",
+    "T01 · layout.ts · cutWindow дублирует правило окна из uppersFor; обратный перевод центра для стены B inline; HOB_SIDE=30 записано дважды; placeWith: мёртвые cm/grab",
+    "T01 · kitchen-place.test.ts · gap-невидимость выгрузок проверена одним структурным тестом, не на каждую выгрузку"
 ],
   "reviewers": {
     "manifestSpec": null,
