@@ -14,7 +14,7 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-29T22:14:27+06:00",
-  "updatedAt": "2026-10-01T00:59:15+06:00",
+  "updatedAt": "2026-10-01T04:13:13+06:00",
   "finishedAt": null,
   "stages": [
     {
@@ -570,11 +570,15 @@ window.STATE =
         "src/components/kitchen/PlanView.tsx",
         "src/components/kitchen/planGeom.ts"
       ],
-      "status": "in-progress",
+      "status": "done",
+      "finishedAt": "2026-10-01T04:13:13+06:00",
+      "tests": { "passed": 989, "failed": 0 },
+      "commit": "a6c72e1",
       "startedAt": "2026-10-01T00:59:15+06:00",
       "retries": 0,
-      "repairs": 0,
-      "handoffs": 0
+      "repairs": 1,
+      "repairFindings": ["предпросмотр рисует обмен на −33…−44 см, отпускание ставит уступкой — разные пороги (R04)"],
+      "handoffs": 1
     },
     {
       "id": "P6",
@@ -593,7 +597,8 @@ window.STATE =
         "src/components/kitchen/kitchen.css",
         "src/components/kitchen/three/engine.ts"
       ],
-      "status": "pending",
+      "status": "in-progress",
+      "startedAt": "2026-10-01T04:13:13+06:00",
       "retries": 0,
       "repairs": 0,
       "handoffs": 0
@@ -670,7 +675,8 @@ window.STATE =
     "P4 · has-col · строка инструментов над колонкой плана — план ниже на ~54 px",
     "P4 · KY-сокращение осей «Т × Б × Т» неоднозначно — проверить носителю",
     "P4 · MSAA на реальных iPhone/Android не проверен (запасной путь есть) — проверить владельцем в приложении",
-    "P3 · шкаф 60 перенесён с B на A — варочная на B сдвигается к углу на 30 (нужна столешница у пустого места)"
+    "P3 · шкаф 60 перенесён с B на A — варочная на B сдвигается к углу на 30 (нужна столешница у пустого места)",
+    "P5 · swapFirst · на пороге «четверть» модуль прыгает (−44 → 168, −46 → 130)"
 ],
   "reviewers": {
     "manifestSpec": null,
