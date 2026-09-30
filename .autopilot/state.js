@@ -14,7 +14,7 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-29T22:14:27+06:00",
-  "updatedAt": "2026-09-30T23:33:54+06:00",
+  "updatedAt": "2026-09-30T23:46:39+06:00",
   "finishedAt": null,
   "stages": [
     {
@@ -445,12 +445,17 @@ window.STATE =
       ],
       "status": "done",
       "finishedAt": "2026-09-30T22:59:09+06:00",
-      "tests": { "passed": 968, "failed": 0 },
+      "tests": {
+        "passed": 968,
+        "failed": 0
+      },
       "commit": "7aee880",
       "startedAt": "2026-09-30T21:07:21+06:00",
       "retries": 1,
       "repairs": 1,
-      "repairFindings": ["автошкафы закреплены и на целевой стене — в стартовой кухне модуль никуда не встаёт (R05)"],
+      "repairFindings": [
+        "автошкафы закреплены и на целевой стене — в стартовой кухне модуль никуда не встаёт (R05)"
+      ],
       "handoffs": 1
     },
     {
@@ -474,12 +479,62 @@ window.STATE =
       ],
       "status": "done",
       "finishedAt": "2026-09-30T23:33:54+06:00",
-      "tests": { "passed": 968, "failed": 0 },
+      "tests": {
+        "passed": 968,
+        "failed": 0
+      },
       "commit": "68fc3fe",
       "startedAt": "2026-09-30T22:59:09+06:00",
       "retries": 0,
       "repairs": 0,
       "handoffs": 1
+    },
+    {
+      "id": "P3",
+      "title": "Доводка 2: обмен местами, без обрезков 22 см, подписи мойки",
+      "requirements": [
+        "R05",
+        "R04",
+        "R02"
+      ],
+      "blockedBy": [
+        "P2"
+      ],
+      "wave": 11,
+      "zone": [
+        "src/lib/kitchen/layout.ts",
+        "src/components/kitchen/drawing.ts"
+      ],
+      "status": "in-progress",
+      "startedAt": "2026-09-30T23:46:39+06:00",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0
+    },
+    {
+      "id": "P4",
+      "title": "Доводка 2: карточка, консультант, план «показать всё», чёткость телефона",
+      "requirements": [
+        "R10",
+        "R03",
+        "R20i",
+        "R07",
+        "R16i"
+      ],
+      "blockedBy": [
+        "P3"
+      ],
+      "wave": 12,
+      "zone": [
+        "src/components/kitchen/KitchenPlanner.tsx",
+        "src/components/kitchen/PlanView.tsx",
+        "src/components/kitchen/kitchen.css",
+        "src/components/kitchen/three/"
+      ],
+      "status": "pending",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0
     }
   ],
   "singlePass": null,
