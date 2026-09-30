@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { grabOf, previewMove } from '@/lib/kitchen/drag'
-import { addAt, detachUppers, itemPositions, narrowFor, placeAt, planKitchen, resizeWalls, type Plan, type PlanInput, type Planner } from '@/lib/kitchen/layout'
+import { addAt, detachUppers, itemPositions, narrowFor, placeAt, planKitchen, resizeWalls, UPPER_MIN, type Plan, type PlanInput, type Planner } from '@/lib/kitchen/layout'
 import { planInputOf, projectItems, projectTotal } from '@/lib/kitchen/order'
 import { DEFAULT_STATE, queryFromState, stateFromQuery } from '@/lib/kitchen/share'
-import type { ItemKey, KitchenAppliance, KitchenState } from '@/lib/kitchen/types'
+import type { ItemKey, KitchenAppliance, KitchenState, WallId } from '@/lib/kitchen/types'
 
 /**
  * Модель расстановки — эволюция (спецификация §1, §2): пустое место `gN` —
@@ -302,5 +302,73 @@ describe('share: пустые места и ручной верх в адрес�
     expect(junk.manualUppers).toBeUndefined()
     const empty = stateFromQuery(new URLSearchParams('f=straight&a=400&u=~'), new Set())
     expect(empty.manualUppers).toEqual({ A: [] })
+  })
+})
+
+describe('заметки ревью таска 01', () => {
+  const corner: KitchenState = { ...DEFAULT_STATE, shape: 'corner', a: 300, b: 240 }
+  const rowOf = (p: Plan, wall: WallId) => p.runs.find((r) => r.id === wall)!.uppers.map((u) => [u.kind, Math.round(u.x * 10) / 10, Math.round(u.w * 10) / 10])
+
+  it('detachUppers: добор автоматического ряда остаётся добором, а не шкафом с дверцей', () => {
+    // в ряду A есть 10-см добор (как панель в углу): режем один шкаф автоматического ряда на шкаф и добор
+    const p0 = planner(base)
+    const run = A(p0)
+    const i = run.uppers.findIndex((u) => u.kind === 'doors' && u.w >= 40)
+    expect(i).toBeGreaterThanOrEqual(0)
+    const u = run.uppers[i]
+    const cut: Plan = { ...p0, runs: p0.runs.map((r) => (r.id !== 'A' ? r : { ...r, uppers: [...r.uppers.slice(0, i), { ...u, w: u.w - 10 }, { kind: 'filler', x: u.x + u.w - 10, w: 10 }, ...r.uppers.slice(i + 1)] })) }
+    const next = detachUppers(base, 'A', cut)
+    // ни одного «шкафа» уже минимальной ширины — добор в ряду остаётся добором
+    for (const c of Object.values(next.upperCabs ?? {})) expect(c.w).toBeGreaterThanOrEqual(UPPER_MIN)
+    expect(rowOf(planner(next), 'A')).toEqual(rowOf(cut, 'A'))
+  })
+
+  it('share: верхний шкаф уже 20 см в адресе ужимается до 20, а не до 2', () => {
+    const s: KitchenState = { ...DEFAULT_STATE, shape: 'straight', a: 300, manualUppers: { A: ['u1'] }, upperCabs: { u1: { w: 15, kind: 'doors' } }, at: { u1: 30 } }
+    const back = stateFromQuery(new URLSearchParams(queryFromState(s)), new Set<string>())
+    expect(back.upperCabs?.u1?.w).toBe(UPPER_MIN)
+  })
+
+  it('подпись в движении не врёт: центр previewMove равен центру после placeAt', () => {
+    const plan = planner(base)
+    for (const cm of [33, 45, 70, 100, 128, 150, 255, 300, 340, 370, 395]) {
+      const pv = previewMove(plan, 'k1', 'A', cm, 0)!
+      const { fit } = placeAt(base, 'k1', 'A', cm, planner)
+      expect(fit?.ok, `cm=${cm}`).toBe(pv.fits)
+      if (pv.fits) expect(fit?.center, `cm=${cm}`).toBe(pv.center)
+    }
+  })
+
+  it('ручной верх на стене B: середина от угла, в ряду — от зрителя к углу', () => {
+    const manual: KitchenState = { ...corner, manualUppers: { B: ['u1'] }, upperCabs: { u1: { w: 60, kind: 'doors' } }, at: { u1: 150 } }
+    const { state, fit } = placeAt(manual, 'u1', 'B', 100, planner)
+    expect(fit).toMatchObject({ ok: true, wall: 'B', row: 'upper' })
+    // к углу от 150: середина ≤ 100 (магнит к соседу может подвинуть), ряд B считает x от зрителя
+    expect(fit!.center).toBeLessThanOrEqual(100)
+    expect(fit!.center).toBeGreaterThanOrEqual(80)
+    const p = planner(state)
+    expect(itemPositions(p).u1).toEqual({ wall: 'B', center: fit!.center, w: 60, row: 'upper' })
+    const u = p.runs.find((r) => r.id === 'B')!.uppers.find((x) => x.item === 'u1')!
+    expect(u.x).toBe(240 - fit!.center - 30)
+  })
+
+  it('верхний шкаф на остров не встаёт', () => {
+    const island: KitchenState = { ...DEFAULT_STATE, shape: 'island', a: 300, island: 300, arrangement: { A: ['sink', 'hob'] }, at: { sink: 30, hob: 200 } }
+    const p0 = planner(island)
+    const next = detachUppers(island, 'A', p0)
+    const u = Object.keys(next.upperCabs ?? {})[0] as ItemKey
+    const { state, fit } = placeAt(next, u, 'I', 150, planner)
+    expect(fit?.ok).toBe(false)
+    expect(state).toBe(next)
+  })
+
+  it('resizeWalls: верхний шкаф ручного ряда за краем придвигается к краю', () => {
+    const next = detachUppers(base, 'A', planner(base))
+    // u5 — последний шкаф ряда (340–400); стена 350 → он у края 290–350
+    const p = itemPositions(planner(next))
+    const last = (Object.keys(next.upperCabs ?? {}) as ItemKey[]).sort((a, b) => p[b]!.center - p[a]!.center)[0]
+    const cut = resizeWalls(next, { a: 350 }, planner(next))
+    expect(cut.at?.[last]).toBe(350 - p[last]!.w / 2)
+    expect(cut.manualUppers?.A).toContain(last)
   })
 })

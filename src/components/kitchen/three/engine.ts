@@ -9,7 +9,9 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js'
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js'
-import { itemPositions } from '@/lib/kitchen/layout'
+import type { Preview } from '@/lib/kitchen/drag'
+import { baseKey, upperKey } from '@/lib/kitchen/fronts'
+import { DEPTH, itemPositions, moduleCenter, UPPER_DEPTH, type Run } from '@/lib/kitchen/layout'
 import type { ItemKey, SlotKind, WallId } from '@/lib/kitchen/types'
 import type { SpecData } from '@/lib/kitchen/spec'
 import { sharpenPass } from './sharpen'
@@ -82,31 +84,41 @@ export type Quality = 'lite' | 'hd' | '4k'
 
 export type Pick = { slot: SlotKind | null; item: ItemKey | null; dims: Dims | null; cab: CabInfo | null }
 
-/** Что тащат: предмет (техника, мойка, свой шкаф) или обычный нижний шкаф. */
-export type DragTarget = { item: ItemKey } | { cab: CabInfo; w: number }
-
-/**
- * Куда предмет встанет на самом деле, если отпустить его здесь: середина и
- * ширина (см от угла), свободная столешница по бокам и помещается ли всё.
- */
-export type DragPreview = { center: number; w: number; gaps: { center: number; w: number }[]; fits: boolean }
+export type DragPhase = 'start' | 'move' | 'end' | 'cancel'
 
 export type EngineEvents = {
   /** нажали на технику или мойку (или мимо — тогда всё null) */
   onPick: (pick: Pick) => void
-  /** предмет перетащили: стена и точка вдоль неё, см от угла */
-  onMove: (target: DragTarget, wall: WallId, pos: number) => void
-  /** предмет тащат: где он встанет (null — отпустили или увели со стены) */
-  onPreview?: (q: { what: DragTarget; wall: WallId; pos: number } | null) => DragPreview | null
+  /**
+   * Перетаскивание (контракт interfaces.md). key — ключ модуля как в сцене:
+   * предмет `sink`, свой шкаф `k1`, автошкаф `A120`, верхний `a120`; cm —
+   * палец вдоль стены, см от угла; grab — смещение середины от точки захвата
+   * (считается на 'start' и дальше не меняется). Планировщик на каждый 'move'
+   * отвечает `setPreview(previewMove(...))`, на 'end' — `placeAt`; не встало —
+   * `revertDrag()`.
+   */
+  onDrag: (phase: DragPhase, key: string, wall: WallId, cm: number, grab: number) => void
   onError: () => void
 }
+
+type Home = { parent: THREE.Object3D; position: THREE.Vector3; rotation: THREE.Euler }
+/** Где стоит модуль: стена, середина и ширина (см от угла), ряд. */
+export type Place = { wall: WallId; center: number; w: number; row: 'base' | 'upper' }
+type Press = { key: string; obj: THREE.Object3D; x: number; y: number; id: number; touch: boolean }
+type Drag = { key: string; id: number; obj: THREE.Object3D; home: Home; place: Place; grab: number; target: { wall: WallId; cm: number } | null }
 
 type OpenInfo = { kind: 'swing' | 'lift' | 'fold' | 'slide'; dir: number }
 
 /** Сколько открывается дверца по нажатию. */
 const OPEN_AMOUNT: Record<OpenInfo['kind'], number> = { swing: 1.5, lift: 1.15, fold: 1.42, slide: 0.36 }
-/** Сколько держать палец на предмете, чтобы взять его. */
-const HOLD_MS = 380
+const ROTATE_SPEED = 0.7
+/** Тап: отпустили не дальше и не дольше — это выбор, а не перетаскивание. */
+const TAP_PX = 10
+const TAP_MS = 400
+/** Порог начала перетаскивания выбранного: пальцем и мышью. */
+const DRAG_PX = { touch: 10, mouse: 5 }
+/** Фронт нижнего ряда от стены, м — вертикальная плоскость для луча перетаскивания. */
+const FRONT_Z = DEPTH / 100
 /** Эскиз стиля рисуем только после такого простоя (жесты и анимации закончились). */
 const THUMB_IDLE_MS = 300
 /** Эскизов стилей за один простой — не больше. */
@@ -182,17 +194,18 @@ export class KitchenEngine {
   readonly mobile: boolean
   private view: View = 'angle'
   private disposed = false
-  private down: { x: number; y: number; t: number } | null = null
-  private hold: { timer: number } | null = null
-  /**
-   * Нажали на то, что можно тащить сразу, без удержания: мышью — что угодно,
-   * пальцем — уже выбранное. Тащить начинаем, когда палец сдвинется.
-   */
-  private press: { what: DragTarget; x: number; y: number; id: number } | null = null
-  /** выбранный предмет или шкаф (его пальцем можно тащить сразу) */
+  private down: { x: number; y: number; t: number; id: number } | null = null
+  /** нажали на выбранный модуль: тащим, когда указатель уйдёт за порог */
+  private press: Press | null = null
+  /** выбранный (карточка открыта) — только его можно тащить */
   private grab: string | null = null
-  private drag: { what: DragTarget; w: number; target: { wall: WallId; pos: number } | null } | null = null
+  private drag: Drag | null = null
+  /** после 'end' модуль стоит на новом месте до пересборки; не встал — revertDrag() */
+  private displaced: { obj: THREE.Object3D; home: Home } | null = null
+  /** линия снапа и рамка соседа во время перетаскивания */
   private marker: THREE.Group | null = null
+  /** последнее событие перетаскивания — для проверок (e2e) */
+  lastDrag: { phase: DragPhase; key: string; wall: WallId; cm: number; grab: number } | null = null
   /** линии размеров вокруг выбранного предмета */
   private measureLines: THREE.Group | null = null
   /** чёткость: в движении — обычная, в покое — родные точки экрана */
@@ -369,7 +382,7 @@ export class KitchenEngine {
     c.maxPolarAngle = 1.42
     c.minAzimuthAngle = -1.25
     c.maxAzimuthAngle = 1.25
-    c.rotateSpeed = 0.7
+    c.rotateSpeed = ROTATE_SPEED
     c.zoomSpeed = 0.8
     // Левой кнопкой мыши шкафы переставляют, поэтому вращать можно и правой —
     // она работает всегда, даже если под мышью шкаф.
@@ -386,9 +399,12 @@ export class KitchenEngine {
     el.addEventListener('pointermove', (e) => this.onMove(e))
     el.addEventListener('pointercancel', () => {
       this.press = null
-      this.controls.enabled = true
+      this.controls.rotateSpeed = ROTATE_SPEED
+      this.down = null
       this.stopDrag(false)
+      this.controls.enabled = true
     })
+    window.addEventListener('keydown', this.onKey)
     // долгое нажатие на телефоне не должно открывать меню браузера
     el.addEventListener('contextmenu', (e) => e.preventDefault())
 
@@ -406,6 +422,9 @@ export class KitchenEngine {
     // (Перестройка бывает и сама — пришло фото товара, — фото не выключаем.)
     const photoState = this.photo?.onState ?? null
     this.stopPhoto()
+    // идущее перетаскивание отменяется, унесённый модуль — домой (его группа может переехать в новую сборку готовой)
+    this.stopDrag(false)
+    this.revertDrag()
     const first = !this.built
     const old = this.built
     this.input = input
@@ -972,95 +991,135 @@ export class KitchenEngine {
     else this.camera.setViewOffset(w, h, -this.shift.x, -this.shift.y, w, h)
   }
 
-  /** Выбранное снаружи (карточка шкафа открыта) — его пальцем можно тащить сразу. */
+  /** Выбранное снаружи (карточка открыта) — только его можно тащить. Смена выбора отменяет идущее перетаскивание. */
   setGrab(key: string | null) {
+    if (this.drag && this.drag.key !== key) this.stopDrag(false)
     this.grab = key
   }
 
-  private keyOf(what: DragTarget): string {
-    return 'item' in what ? what.item : what.cab.key
+  /** Ключ выбранного модуля (как в сцене). */
+  selectedKey(): string | null {
+    return this.grab
   }
 
+  private onKey = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') this.cancelDrag()
+  }
+
+  /** Что под указателем можно тащить: предмет, нижний шкаф (не планка уже 15 см), верхний шкаф (не над холодильником). */
+  private keyAt(hit: THREE.Intersection | null): { key: string; obj: THREE.Object3D } | null {
+    if (!hit) return null
+    const item = hit.object.userData.item as ItemKey | undefined
+    const cab = this.cabOwner(hit.object)?.userData.cab as CabInfo | undefined
+    let key: string | null = null
+    if (item) key = item
+    else if (cab && !cab.fridge) {
+      const w = (this.dimsOwner(hit.object)?.userData.dims as Dims | undefined)?.w
+      if (cab.row === 'upper' || w === undefined || w >= 15) key = cab.key
+    }
+    if (!key) return null
+    const obj = this.dragRootOf(hit.object, key)
+    return obj ? { key, obj } : null
+  }
+
+  /** Самая внешняя группа модуля с этим ключом (под группой ряда) — её и двигаем целиком. */
+  private dragRootOf(o: THREE.Object3D, key: string): THREE.Object3D | null {
+    let found: THREE.Object3D | null = null
+    for (let cur: THREE.Object3D | null = o; cur && cur !== this.built?.root; cur = cur.parent)
+      if (cur.userData.item === key || (cur.userData.cab as CabInfo | undefined)?.key === key) found = cur
+    return found
+  }
+
+  /** Объект модуля в группе ряда по ключу сцены. */
+  private objectOf(runId: string, key: string): THREE.Object3D | null {
+    const g = this.built?.parts.get(runId)?.group
+    let found: THREE.Object3D | null = null
+    g?.traverse((o) => {
+      if (!found && (o.userData.item === key || (o.userData.cab as CabInfo | undefined)?.key === key)) found = o
+    })
+    return found
+  }
+
+  /** Где стоит модуль с ключом сцены: предметы и свои шкафы — из раскладки, автошкафы — по ряду и началу. */
+  placeOf(key: string): Place | null {
+    const plan = this.input?.plan
+    if (!plan) return null
+    const p = itemPositions(plan)[key as ItemKey]
+    if (p) return { wall: p.wall, center: p.center, w: p.w, row: p.row ?? 'base' }
+    for (const run of plan.runs) {
+      for (const m of run.modules) if (baseKey(run.id, m.x) === key) return { wall: run.id as WallId, center: moduleCenter(run, m), w: m.w, row: 'base' }
+      for (const u of run.uppers) if (upperKey(run.id, u.x) === key) return { wall: run.id as WallId, center: moduleCenter(run, u), w: u.w, row: 'upper' }
+    }
+    return null
+  }
+
+  /**
+   * Одно правило пальца (спецификация §3): нажать — выбрать; тянуть
+   * выбранный — двигать; тянуть невыбранный или пусто — вращать; два пальца —
+   * приближать. Долгого нажатия нет.
+   */
   private onDown(e: PointerEvent) {
-    this.down = { x: e.clientX, y: e.clientY, t: performance.now() }
     // на фото кухню только разглядывают — вращают и приближают
     if (this.photo) return
     if (!e.isPrimary) {
-      // второй палец — приближают, а не переставляют
-      this.cancelHold()
-      if (this.press) {
-        this.press = null
-        this.controls.enabled = true
-      }
+      // второй палец — всегда OrbitControls (щипок); идущее перетаскивание отменяется, модуль возвращается
+      this.controls.rotateSpeed = ROTATE_SPEED
+      this.press = null
+      this.down = null
+      this.stopDrag(false)
+      this.controls.enabled = true
       return
     }
+    this.controls.rotateSpeed = ROTATE_SPEED
     if (e.button !== 0) return
-    const pick = this.pickOf(this.hit(e))
-    // Взять можно технику, мойку и любой нижний шкаф.
-    let what: DragTarget | null = null
-    if (pick.item) what = { item: pick.item }
-    // планку уже 15 см не таскаем: своим шкафом она стала бы шире — только выбрать
-    else if (pick.cab?.row === 'base' && pick.dims && pick.dims.w >= 15) what = { cab: pick.cab, w: pick.dims.w }
-    if (!what) return
-    // Сразу тянут только выбранное — и мышью, и пальцем: почти везде под
-    // указателем шкаф, и иначе кухню нельзя было бы повернуть — она ломалась
-    // бы при первом движении. Невыбранное мышью — поворот кухни.
-    if (this.grab === this.keyOf(what)) {
-      this.controls.enabled = false
-      this.press = { what, x: e.clientX, y: e.clientY, id: e.pointerId }
-      // отпустят за краем 3D — «отпускание» всё равно придёт сюда, и вращение вернётся
-      try {
-        this.renderer.domElement.setPointerCapture(e.pointerId)
-      } catch {
-        // указатель уже отпущен
-      }
-      return
-    }
-    if (e.pointerType === 'mouse') return
-    const target = what
-    const timer = window.setTimeout(() => this.startDrag(target, e), HOLD_MS)
-    this.hold = { timer }
+    this.down = { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId }
+    const at = this.keyAt(this.hit(e))
+    // Тянуть можно только выбранное — иначе почти любое касание ломало бы поворот кухни.
+    if (!at || at.key !== this.grab) return
+    // OrbitControls не выключаем: до порога это ещё может быть тап или щипок
+    // (второй палец должен достаться им). Но поворот на эти 10 px гасим —
+    // иначе кухня дёргается перед тем, как шкаф поедет.
+    this.controls.rotateSpeed = 0
+    this.press = { ...at, x: e.clientX, y: e.clientY, id: e.pointerId, touch: e.pointerType !== 'mouse' }
   }
 
   private onUp(e: PointerEvent) {
-    this.cancelHold()
-    if (this.press) {
-      this.press = null
-      this.controls.enabled = true
-    }
+    if (!e.isPrimary) return
+    this.press = null
+    this.controls.rotateSpeed = ROTATE_SPEED
     if (this.drag) {
-      this.stopDrag(true)
-      this.down = null
+      if (e.pointerId === this.drag.id) this.stopDrag(true)
       return
     }
     const d = this.down
     this.down = null
-    if (!d || this.photo) return
-    if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 6 || performance.now() - d.t > 600) return
+    if (!d || d.id !== e.pointerId || this.photo) return
+    if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > TAP_PX || performance.now() - d.t > TAP_MS) return
     const hit = this.hit(e)
     const pick = this.pickOf(hit)
     // размеры считаем по закрытым дверцам — до того, как дверца поедет
     this.showMeasure(this.dimsOwner(hit?.object ?? null))
-    const door = this.openableOf(hit?.object ?? null)
-    if (door) this.toggleOpen(door)
+    // дверца открывается только у уже выбранного: первое нажатие — выбор, и она не дёргается
+    const at = this.keyAt(hit)
+    if (at && at.key === this.grab) {
+      const door = this.openableOf(hit?.object ?? null)
+      if (door) this.toggleOpen(door)
+    }
     this.events.onPick(pick)
   }
 
   private onMove(e: PointerEvent) {
-    if (this.hold && this.down && Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > 8) this.cancelHold()
-    const p = this.press
-    if (p && e.pointerId === p.id && Math.hypot(e.clientX - p.x, e.clientY - p.y) > 5) {
-      this.press = null
-      try {
-        this.renderer.domElement.setPointerCapture(e.pointerId)
-      } catch {
-        // указатель уже отпущен — тащить нечего
-      }
-      this.startDrag(p.what, e)
+    const d = this.drag
+    if (d) {
+      if (e.pointerId === d.id) this.moveDrag(e)
       return
     }
-    if (this.drag) {
-      this.moveDrag(e)
+    const p = this.press
+    if (p) {
+      if (e.pointerId === p.id && Math.hypot(e.clientX - p.x, e.clientY - p.y) > (p.touch ? DRAG_PX.touch : DRAG_PX.mouse)) {
+        this.press = null
+        this.startDrag(p, e)
+      }
       return
     }
     if (e.pointerType !== 'mouse' || this.down) return
@@ -1068,9 +1127,9 @@ export class KitchenEngine {
     this.hoverFrame = requestAnimationFrame(() => {
       const hit = this.hit(e)
       const pk = this.pickOf(hit)
-      // выбранный шкаф и технику можно тащить — «перенести»; остальное — выбрать или открыть; мимо — вращать
-      const key = pk.item ?? (pk.cab?.row === 'base' ? pk.cab.key : null)
-      const movable = key !== null && key === this.grab
+      // выбранный модуль можно тащить — «перенести»; остальное — выбрать или открыть; мимо — вращать
+      const at = this.keyAt(hit)
+      const movable = at !== null && at.key === this.grab
       this.renderer.domElement.style.cursor = movable ? 'move' : pk.slot || pk.cab || this.openableOf(hit?.object ?? null) ? 'pointer' : 'grab'
     })
   }
@@ -1181,70 +1240,276 @@ export class KitchenEngine {
     this.invalidate()
   }
 
-  /* ───────── перетащить предмет ───────── */
+  /* ───────── перетащить модуль ───────── */
 
-  private cancelHold() {
-    if (!this.hold) return
-    clearTimeout(this.hold.timer)
-    this.hold = null
-  }
-
-  private startDrag(what: DragTarget, e: PointerEvent) {
-    this.hold = null
-    const plan = this.input?.plan
-    if (!plan) return
-    const w = 'item' in what ? itemPositions(plan)[what.item]?.w : what.w
-    if (!w) return
-    this.drag = { what, w: w / 100, target: null }
-    this.controls.enabled = false
-    this.renderer.domElement.style.cursor = 'grabbing'
-    navigator.vibrate?.(12)
-    this.moveDrag(e)
-  }
-
-  /** Куда встанет предмет: ближайшая стена и точка вдоль неё. */
-  private moveDrag(e: PointerEvent) {
-    const drag = this.drag
-    const plan = this.input?.plan
-    if (!drag || !plan) return
+  private rayOf(e: { clientX: number; clientY: number }): THREE.Ray {
+    // камера могла сдвинуться после последнего кадра (OrbitControls) — луч по актуальной матрице
+    this.camera.updateMatrixWorld()
     const rect = this.renderer.domElement.getBoundingClientRect()
     const ndc = new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1)
     this.raycaster.setFromCamera(ndc, this.camera)
-    const point = new THREE.Vector3()
-    if (!this.raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.9), point)) return
-    let best: { run: (typeof plan.runs)[number]; x: number; score: number } | null = null
+    return this.raycaster.ray
+  }
+
+  private runMatrix(run: { ox: number; oz: number; rot: number }): THREE.Matrix4 {
+    return new THREE.Matrix4().makeRotationY(run.rot).setPosition(run.ox / 100, 0, run.oz / 100)
+  }
+
+  /**
+   * Луч на вертикальную плоскость фронта ряда: x вдоль ряда, y — высота
+   * (метры), dist — от камеры. Так холодильник за верх берётся так же, как
+   * тумба за низ, и в виде «спереди» цель не уходит за стену. null — мимо.
+   */
+  private onFront(ray: THREE.Ray, run: Run): { x: number; y: number; dist: number } | null {
+    const normal = new THREE.Vector3(Math.sin(run.rot), 0, Math.cos(run.rot))
+    const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(normal, this.runPoint(run, 0, 0, FRONT_Z))
+    const pt = new THREE.Vector3()
+    if (!ray.intersectPlane(plane, pt)) return null
+    const local = pt.clone().applyMatrix4(this.runMatrix(run).invert())
+    return { x: local.x, y: local.y, dist: ray.origin.distanceTo(pt) }
+  }
+
+  /** Позиция вдоль ряда (м) → см от угла: у левой стены ряд идёт от зрителя к углу. */
+  private logicalCm(run: Run, x: number): number {
+    const L = run.length / 100
+    return Math.round((run.id === 'B' ? L - x : x) * 200) / 2
+  }
+
+  /** См от угла → позиция вдоль ряда, м. */
+  private localX(run: { id: string; length: number }, cm: number): number {
+    return (run.id === 'B' ? run.length - cm : cm) / 100
+  }
+
+  /** Палец в см от угла на плоскости фронта этой стены; null — луч мимо. */
+  private fingerOn(e: { clientX: number; clientY: number }, wall: WallId): number | null {
+    const run = this.input?.plan.runs.find((r) => r.id === wall)
+    if (!run) return null
+    const h = this.onFront(this.rayOf(e), run)
+    return h ? this.logicalCm(run, h.x) : null
+  }
+
+  private emitDrag(phase: DragPhase, key: string, wall: WallId, cm: number, grab: number) {
+    this.lastDrag = { phase, key, wall, cm, grab }
+    this.events.onDrag(phase, key, wall, cm, grab)
+  }
+
+  private startDrag(p: Press, e: PointerEvent) {
+    const place = this.placeOf(p.key)
+    if (!place || !p.obj.parent) return
+    this.controls.enabled = false
+    this.controls.rotateSpeed = ROTATE_SPEED
+    // точка захвата — где нажали (не где перешли порог): шкаф идёт за пальцем, а не прыгает серединой под палец
+    const finger = this.fingerOn({ clientX: p.x, clientY: p.y }, place.wall)
+    const grab = finger === null ? 0 : Math.round((finger - place.center) * 10) / 10
+    const home: Home = { parent: p.obj.parent, position: p.obj.position.clone(), rotation: p.obj.rotation.clone() }
+    this.drag = { key: p.key, id: e.pointerId, obj: p.obj, home, place, grab, target: null }
+    // отпустят за краем 3D — «отпускание» всё равно придёт сюда
+    try {
+      this.renderer.domElement.setPointerCapture(e.pointerId)
+    } catch {
+      // указатель уже отпущен
+    }
+    this.renderer.domElement.style.cursor = 'grabbing'
+    navigator.vibrate?.(12)
+    this.showMeasure(null)
+    this.emitDrag('start', p.key, place.wall, finger ?? place.center, grab)
+    this.moveDrag(e)
+  }
+
+  /** Цель: стена, чей фронт под пальцем (ближайший по лучу), запасной — пол. Мимо кухни — цели нет. */
+  private moveDrag(e: PointerEvent) {
+    const d = this.drag
+    const plan = this.input?.plan
+    if (!d || !plan) return
+    const ray = this.rayOf(e)
+    const wallH = this.built?.wallH ?? WALL_H
+    let best: { run: Run; x: number; score: number } | null = null
     for (const run of plan.runs) {
-      // стены и остров
       if (!run.wall && run.id !== 'I') continue
+      const h = this.onFront(ray, run)
+      if (!h) continue
       const L = run.length / 100
-      const m = new THREE.Matrix4().makeRotationY(run.rot).setPosition(run.ox / 100, 0, run.oz / 100)
-      const local = point.clone().applyMatrix4(m.invert())
-      if (local.x < -0.4 || local.x > L + 0.4 || local.z < -0.5 || local.z > 2.2) continue
-      const score = Math.abs(local.z - 0.3)
-      if (!best || score < best.score) best = { run, x: local.x, score }
+      // остров невысокий: над ним палец уже на стене за ним
+      const top = run.wall ? wallH + 0.3 : 1.2
+      if (h.x < -0.4 || h.x > L + 0.4 || h.y < -0.3 || h.y > top) continue
+      if (!best || h.dist < best.score) best = { run, x: h.x, score: h.dist }
     }
     if (!best) {
-      drag.target = null
+      const pt = new THREE.Vector3()
+      if (ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), pt)) {
+        for (const run of plan.runs) {
+          if (!run.wall && run.id !== 'I') continue
+          const local = pt.clone().applyMatrix4(this.runMatrix(run).invert())
+          const L = run.length / 100
+          if (local.x < -0.4 || local.x > L + 0.4 || local.z < -0.5 || local.z > 2.2) continue
+          const score = Math.abs(local.z - 0.3)
+          if (!best || score < best.score) best = { run, x: local.x, score }
+        }
+      }
+    }
+    if (!best) {
+      // выше горизонта или мимо кухни: старую цель не держим — модуль на месте, отпустить здесь — отмена
+      d.target = null
+      this.setPreview(null)
+      return
+    }
+    const wall = best.run.id as WallId
+    const cm = this.logicalCm(best.run, best.x)
+    d.target = { wall, cm }
+    this.emitDrag('move', d.key, wall, cm, d.grab)
+  }
+
+  /**
+   * Ответ планировщика на 'move': куда модуль встанет (drag.previewMove).
+   * Сам объект (группа сетки, без пересборки) идёт туда, рамка синяя или
+   * красная (не помещается), подсвечиваются линия снапа и сосед, подписи
+   * «до угла / до соседа» — HTML-метки drag:left, drag:right. null — цели нет.
+   */
+  setPreview(pv: Preview | null) {
+    const d = this.drag
+    const plan = this.input?.plan
+    if (!d || !plan) return
+    const run = pv ? plan.runs.find((r) => r.id === pv.wall) : undefined
+    this.clearDragTags()
+    if (!pv || !run) {
+      this.restore(d.obj, d.home)
       if (this.marker) this.marker.visible = false
+      this.outlineOf(d.obj, '#2563eb')
       this.invalidate()
       return
     }
-    const { run } = best
-    const L = run.length / 100
-    const lo = run.id === 'C' ? 0.6 : 0
-    const hi = run.id === 'B' ? L - 0.6 : L
-    const x = Math.min(hi - drag.w / 2, Math.max(lo + drag.w / 2, best.x))
-    const logical = run.id === 'B' ? L - x : x
-    const wall = run.id as WallId
-    const pos = Math.round(logical * 100)
-    drag.target = { wall, pos }
-    // Рамка стоит там, где предмет встанет на самом деле: соседи и края
-    // стены его не пустят дальше. Сбоку — сколько останется столешницы.
-    const pv = this.events.onPreview?.({ what: drag.what, wall, pos }) ?? null
-    const toLocal = (c: number) => (run.id === 'B' ? L - c / 100 : c / 100)
-    this.showMarker(run, pv ? toLocal(pv.center) : x, pv ? pv.w / 100 : drag.w, pv?.fits ?? true)
-    for (const k of [...this.tagPoints.keys()]) if (k.startsWith('gap:')) this.tagPoints.delete(k)
-    pv?.gaps.forEach((g, i) => this.tagPoints.set(`gap:${i}`, this.runPoint(run, toLocal(g.center), 0.95, 0.64)))
+    const group = this.built?.parts.get(run.id)?.group
+    const run0 = plan.runs.find((r) => r.id === d.place.wall)
+    if (group && d.obj.parent !== group) group.add(d.obj)
+    const off = run0 ? d.home.position.x - this.localX(run0, d.place.center) : 0
+    d.obj.position.set(this.localX(run, pv.center) + off, d.home.position.y, d.home.position.z)
+    d.obj.rotation.copy(d.home.rotation)
+    d.obj.updateWorldMatrix(true, true)
+    this.outlineOf(d.obj, pv.fits ? '#2563eb' : '#dc2626')
+    this.showSnap(run, pv, d.place.row, d.key)
+    const y = d.place.row === 'upper' ? 1.5 : 0.95
+    const left = pv.center - pv.width / 2
+    const right = pv.center + pv.width / 2
+    if (pv.labels.left > 0.05) this.tagPoints.set('drag:left', this.runPoint(run, this.localX(run, left - pv.labels.left / 2), y, 0.64))
+    if (pv.labels.right > 0.05) this.tagPoints.set('drag:right', this.runPoint(run, this.localX(run, right + pv.labels.right / 2), y, 0.64))
+    this.invalidate()
+  }
+
+  private clearDragTags() {
+    this.tagPoints.delete('drag:left')
+    this.tagPoints.delete('drag:right')
+  }
+
+  /** Линия снапа по прилипшему краю и рамка соседа, к которому прилипли. */
+  private showSnap(run: Run, pv: Preview, row: 'base' | 'upper', key: string) {
+    if (!this.marker) {
+      const g = new THREE.Group()
+      const line = new THREE.LineSegments(
+        new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(new Array(6).fill(0), 3)),
+        new THREE.LineBasicMaterial({ color: '#2563eb', depthTest: false, transparent: true }),
+      )
+      line.name = 'snap'
+      line.renderOrder = 12
+      const box = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1, 1, 1)), new THREE.LineBasicMaterial({ color: '#2563eb', transparent: true, opacity: 0.6, depthTest: false }))
+      box.name = 'neighbour'
+      box.renderOrder = 11
+      g.add(line, box)
+      this.marker = g
+      this.scene.add(g)
+    }
+    const line = this.marker.getObjectByName('snap') as THREE.LineSegments
+    const box = this.marker.getObjectByName('neighbour') as THREE.LineSegments
+    this.marker.visible = Boolean(pv.snap)
+    line.visible = false
+    box.visible = false
+    if (!pv.snap) return
+    // прилип тот край, до соседа или угла от которого 0
+    const side: 'left' | 'right' = pv.labels.left <= pv.labels.right ? 'left' : 'right'
+    const edge = side === 'left' ? pv.center - pv.width / 2 : pv.center + pv.width / 2
+    const lx = this.localX(run, edge)
+    const [y0, y1] = row === 'upper' ? [1.3, 2.3] : [0.05, 1.0]
+    const a = this.runPoint(run, lx, y0, 0.63)
+    const b = this.runPoint(run, lx, y1, 0.63)
+    line.geometry.setAttribute('position', new THREE.Float32BufferAttribute([a.x, a.y, a.z, b.x, b.y, b.z], 3))
+    line.visible = true
+    if (pv.snap !== 'neighbour') return
+    const list: { x: number; w: number; item?: ItemKey }[] = row === 'upper' ? run.uppers : run.modules
+    const n = list.find((m) => Math.abs(moduleCenter(run, m) + (side === 'left' ? m.w / 2 : -m.w / 2) - edge) < 0.6)
+    const nKey = n ? n.item ?? (row === 'upper' ? upperKey(run.id, n.x) : baseKey(run.id, n.x)) : null
+    const obj = nKey && nKey !== key ? this.objectOf(run.id, nKey) : null
+    if (!obj) return
+    obj.updateWorldMatrix(true, true)
+    const bb = new THREE.Box3().setFromObject(obj).expandByScalar(0.008)
+    box.position.copy(bb.getCenter(new THREE.Vector3()))
+    box.scale.copy(bb.getSize(new THREE.Vector3()))
+    box.visible = true
+  }
+
+  /** Рамка по габаритам объекта: синяя — встанет, красная — не помещается. */
+  private outlineOf(obj: THREE.Object3D, color: string) {
+    if (this.outline) {
+      this.scene.remove(this.outline)
+      this.outline.geometry.dispose()
+      ;(this.outline.material as THREE.Material).dispose()
+      this.outline = null
+    }
+    const b = new THREE.Box3().setFromObject(obj).expandByScalar(0.012)
+    const geom = new THREE.EdgesGeometry(new THREE.BoxGeometry(...b.getSize(new THREE.Vector3()).toArray()))
+    const line = new THREE.LineSegments(geom, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.95, depthTest: false }))
+    line.position.copy(b.getCenter(new THREE.Vector3()))
+    line.renderOrder = 10
+    this.outline = line
+    this.scene.add(line)
+  }
+
+  private restore(obj: THREE.Object3D, home: Home) {
+    if (obj.parent !== home.parent) home.parent.add(obj)
+    obj.position.copy(home.position)
+    obj.rotation.copy(home.rotation)
+    obj.updateWorldMatrix(true, true)
+  }
+
+  private stopDrag(commit: boolean) {
+    const d = this.drag
+    if (!d) return
+    this.drag = null
+    this.controls.enabled = true
+    this.renderer.domElement.style.cursor = 'grab'
+    try {
+      this.renderer.domElement.releasePointerCapture(d.id)
+    } catch {
+      // указатель уже отпущен
+    }
+    if (this.marker) this.marker.visible = false
+    this.clearDragTags()
+    if (commit && d.target) {
+      // модуль остаётся на новом месте до пересборки; не встал — планировщик вызовет revertDrag()
+      this.displaced = { obj: d.obj, home: d.home }
+      this.invalidate()
+      this.emitDrag('end', d.key, d.target.wall, d.target.cm, d.grab)
+      return
+    }
+    this.restore(d.obj, d.home)
+    this.setSelected(this.selected)
+    this.showMeasure(d.obj)
+    this.invalidate()
+    this.emitDrag('cancel', d.key, d.place.wall, d.place.center + d.grab, d.grab)
+  }
+
+  /** Модуль после 'end' не встал — вернуть его на место. */
+  revertDrag() {
+    const x = this.displaced
+    if (!x) return
+    this.displaced = null
+    this.restore(x.obj, x.home)
+    this.setSelected(this.selected)
+    this.showMeasure(x.obj)
+    this.invalidate()
+  }
+
+  /** Отменить идущее перетаскивание (Esc, сброс выбора): модуль возвращается. */
+  cancelDrag() {
+    this.stopDrag(false)
   }
 
   /** Точка ряда: вдоль стены x, высота y, от стены z (метры) — в мировые координаты. */
@@ -1254,43 +1519,25 @@ export class KitchenEngine {
     return new THREE.Vector3(run.ox / 100 + x * cos + z * sin, y, run.oz / 100 - x * sin + z * cos)
   }
 
-  private showMarker(run: { ox: number; oz: number; rot: number }, x: number, w: number, fits = true) {
-    if (!this.marker) {
-      const g = new THREE.Group()
-      const size = new THREE.Vector3(1, 0.9, 0.62)
-      const fill = new THREE.Mesh(
-        new THREE.BoxGeometry(size.x, size.y, size.z),
-        new THREE.MeshBasicMaterial({ color: '#2563eb', transparent: true, opacity: 0.16, depthWrite: false }),
-      )
-      const edges = new THREE.LineSegments(new THREE.EdgesGeometry(fill.geometry), new THREE.LineBasicMaterial({ color: '#2563eb', depthTest: false, transparent: true }))
-      edges.renderOrder = 11
-      g.add(fill, edges)
-      this.marker = g
-      this.scene.add(g)
-    }
-    const g = this.marker
-    g.visible = true
-    g.scale.set(w, 1, 1)
-    // не помещается — рамка красная: отпустите, и что-то уйдёт из кухни
-    const color = fits ? '#2563eb' : '#dc2626'
-    g.traverse((o) => {
-      if (o instanceof THREE.Mesh || o instanceof THREE.LineSegments) (o.material as THREE.MeshBasicMaterial).color.set(color)
-    })
-    g.position.copy(this.runPoint(run, x, 0.45, 0.31))
-    g.rotation.y = run.rot
-    this.invalidate()
+  private project(p: THREE.Vector3): { x: number; y: number } {
+    const rect = this.renderer.domElement.getBoundingClientRect()
+    const v = p.clone().project(this.camera)
+    return { x: rect.left + ((v.x + 1) / 2) * rect.width, y: rect.top + ((1 - v.y) / 2) * rect.height }
   }
 
-  private stopDrag(commit: boolean) {
-    const drag = this.drag
-    this.drag = null
-    this.controls.enabled = true
-    this.renderer.domElement.style.cursor = 'grab'
-    if (this.marker) this.marker.visible = false
-    for (const k of [...this.tagPoints.keys()]) if (k.startsWith('gap:')) this.tagPoints.delete(k)
-    this.invalidate()
-    if (drag) this.events.onPreview?.(null)
-    if (commit && drag?.target) this.events.onMove(drag.what, drag.target.wall, drag.target.pos)
+  /** Точка экрана над серединой модуля (dx — сдвиг вдоль стены, см) — для проверок жестов. */
+  screenPointOf(key: string, dx = 0): { x: number; y: number } | null {
+    const p = this.placeOf(key)
+    const run = this.input?.plan.runs.find((r) => r.id === p?.wall)
+    if (!p || !run) return null
+    const [y, z] = p.row === 'upper' ? [1.7, UPPER_DEPTH / 100 + 0.01] : [0.5, 0.61]
+    return this.project(this.runPoint(run, this.localX(run, p.center + dx), y, z))
+  }
+
+  /** Точка экрана на фронте стены в `cm` от угла — для проверок жестов. */
+  screenPointOnWall(wall: WallId, cm: number, y = 0.5): { x: number; y: number } | null {
+    const run = this.input?.plan.runs.find((r) => r.id === wall)
+    return run ? this.project(this.runPoint(run, this.localX(run, cm), y, 0.61)) : null
   }
 
   /* ───────── ценники и размеры ───────── */
@@ -2204,10 +2451,10 @@ export class KitchenEngine {
   }
 
   dispose() {
+    window.removeEventListener('keydown', this.onKey)
     this.disposed = true
     this.photo = null
     this.pt?.dispose()
-    this.cancelHold()
     clearTimeout(this.refineTimer)
     clearTimeout(this.recoverTimer)
     cancelAnimationFrame(this.raf)

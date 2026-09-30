@@ -161,7 +161,7 @@ function uppersToQuery(state: KitchenState): string {
       .map((k) => {
         if (isUpperCab(k)) {
           const c = state.upperCabs?.[k]
-          return c ? `${mm(Math.max(UPPER_MIN / 10, c.w))}${c.kind === 'shelf' ? 's' : 'd'}${pos(k)}` : ''
+          return c ? `${mm(Math.max(UPPER_MIN, c.w))}${c.kind === 'shelf' ? 's' : 'd'}${pos(k)}` : ''
         }
         const g = isGap(k) ? state.gaps?.[k] : undefined
         return g ? `${mm(g.w)}${g.strip ? 'x' : 'g'}${pos(k)}` : ''

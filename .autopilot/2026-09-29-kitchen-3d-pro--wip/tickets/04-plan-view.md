@@ -30,3 +30,10 @@
 - [ ] «+» без пустого места → предложение «сузить соседей» (через `narrowFor`) или «на другую стену»
 - [ ] Тексты RU/KY; дизайн по DESIGN.md (цвета плана — из токенов, линии `mist-border`/`steel-border`, выбранное — `cobalt`)
 - [ ] Playwright: переключение вида, перетаскивание в плане, «+» → шкаф; tsc, vitest, build зелёные; коммит; `interfaces.md` дополнен
+
+## Заметки от ревью таска 03 (обязательны)
+
+- `KitchenPlanner.tsx setShape`: при смене формы сбрасываются `arrangement`/`cabinets`/`at`, но не `gaps`, `manualUppers`, `upperCabs` — сироты остаются в состоянии. Сбрасывай и эти три поля; тест.
+- Контур `gap` при выборе в 3D (спека §1 «в 3D не рисуется, только контур при выборе») не сделан в 03 — сделай: выбор `gN` из плана подсвечивает контур в 3D (`build.ts`/`engine.setSelected`).
+- Публичные члены движка `lastDrag`, `screenPointOf`, `screenPointOnWall`, `placeOf`, `selectedKey` добавлены для e2e — PlanView на них рабочую логику не строит; используй `onDrag`/`previewMove`/`placeAt` по контракту.
+- `playwright.config.ts` зашивает порт 3100 — вынеси baseURL в `PW_BASE_URL` (по умолчанию 3100), чтобы e2e гонялись против 3001.

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import './helpers/canvas'
 import { buildKitchen, type BuildInput } from '@/components/kitchen/three/build'
 import { planKitchen, type PlanInput } from '@/lib/kitchen/layout'
+import { baseKey } from '@/lib/kitchen/fronts'
 import { getTone, STYLES } from '@/lib/kitchen/styles'
 import type { KitchenAppliance } from '@/lib/kitchen/types'
 
@@ -72,5 +73,75 @@ describe('пересборка по частям', () => {
     const full = buildKitchen(input(photos))
     expect(partial.spec).toEqual(full.spec)
     expect(Object.keys(partial.objects).sort()).toEqual(Object.keys(full.objects).sort())
+  })
+
+  it('фасад автошкафа на одной стене — пересобирается только она', () => {
+    const first = buildKitchen(input(new Map()))
+    const runs = planKitchen(planInput, { shelves: false }).runs
+    const run = runs.find((r) => r.modules.some((m) => (m.kind === 'doors' || m.kind === 'drawers') && m.w >= 30))!
+    const door = run.modules.find((m) => (m.kind === 'doors' || m.kind === 'drawers') && m.w >= 30)!
+    const next = input(new Map())
+    next.fronts = { [baseKey(run.id, door.x)]: 'drawers3' }
+    const partial = buildKitchen(next, first.parts)
+    expect(partial.rebuilt).toEqual([run.id])
+  })
+
+  it('свой шкаф k1 на A: его фасад — только ряд A, не вся кухня', () => {
+    const withOwn: PlanInput = { ...planInput, a: 420, arrangement: { A: ['k1', 'sink', 'hob'], B: ['fridge', 'oven'] }, cabinets: { k1: { w: 60, front: 'doors' } } }
+    const mk = (fronts: BuildInput['fronts']): BuildInput => ({ ...input(new Map()), plan: planKitchen(withOwn, { shelves: false }), fronts })
+    const first = buildKitchen(mk({}))
+    expect(first.rebuilt.sort()).toEqual(['A', 'B'])
+    const partial = buildKitchen(mk({ k1: 'drawers3' }), first.parts)
+    expect(partial.rebuilt).toEqual(['A'])
+  })
+
+  const count = (root: { traverse: (f: (o: { name: string }) => void) => void }, name: string) => {
+    let n = 0
+    root.traverse((o) => {
+      if (o.name === name) n++
+    })
+    return n
+  }
+
+  it('мелочи: доска у плиты и чайник у мойки — по одному на кухню, и после частичной пересборки тоже', () => {
+    const first = buildKitchen(input(new Map()))
+    expect(count(first.root, 'prop:board')).toBe(1)
+    expect(count(first.root, 'prop:kettle')).toBe(1)
+    const partial = buildKitchen(input(new Map([['fridge.jpg', null]])), first.parts)
+    expect(count(partial.root, 'prop:board')).toBe(1)
+    expect(count(partial.root, 'prop:kettle')).toBe(1)
+  })
+
+  it('доска — у модуля рядом с плитой, чайник — у модуля рядом с мойкой, не на одном месте', () => {
+    const built = buildKitchen(input(new Map()))
+    const at = (name: string) => {
+      let x: number | null = null
+      built.root.traverse((o) => {
+        if (o.name === name) x = o.position.x
+      })
+      return x!
+    }
+    const runs = planKitchen(planInput, { shelves: false }).runs
+    // на каком модуле стоит вещь: ряд с предметом (плита/мойка), соседи по порядку, x — середина модуля (у доски сдвиг 4 см)
+    const spot = (kind: 'hob' | 'sink', x: number, shift: number, around: number[]) => {
+      const run = runs.find((r) => r.modules.some((m) => m.kind === kind))!
+      const i = run.modules.findIndex((m) => m.kind === kind)
+      const j = around.map((d) => i + d).find((k) => run.modules[k] && Math.abs((run.modules[k].x + run.modules[k].w / 2) / 100 - shift - x) < 1e-6)
+      return j === undefined ? null : `${run.id}:${j}`
+    }
+    const board = spot('hob', at('prop:board'), 0.04, [1, -1])
+    const kettle = spot('sink', at('prop:kettle'), 0, [1, -1, 2, -2])
+    expect(board).not.toBeNull()
+    expect(kettle).not.toBeNull()
+    expect(board).not.toBe(kettle)
+  })
+
+  it('кухня без плиты: доски нет, чайник у мойки остаётся', () => {
+    // раскладка всегда держит место под варочную — убираем её из плана: на её месте обычный шкаф
+    const plan = planKitchen(planInput, { shelves: false })
+    const noHob = { ...plan, runs: plan.runs.map((r) => ({ ...r, modules: r.modules.map((m) => (m.kind === 'hob' ? { ...m, kind: 'doors' as const, item: undefined, oven: undefined } : m)) })) }
+    const built = buildKitchen({ ...input(new Map()), plan: noHob })
+    expect(count(built.root, 'prop:board')).toBe(0)
+    expect(count(built.root, 'prop:kettle')).toBe(1)
   })
 })

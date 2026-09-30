@@ -1585,7 +1585,8 @@ export function detachUppers(state: KitchenState, wall: WallId, plan: Plan): Kit
   const at: NonNullable<KitchenState['at']> = { ...state.at }
   const keys: { key: ItemKey; c: number }[] = []
   for (const u of run.uppers) {
-    if (u.kind !== 'doors' && u.kind !== 'shelf' && u.kind !== 'filler') continue
+    // добор (панель уже UPPER_MIN) шкафом не становится: остаток ряда снова заполнится добором той же ширины
+    if (u.kind !== 'doors' && u.kind !== 'shelf') continue
     const id = nextId('u', cabs)
     cabs[id] = { w: Math.round(u.w * 10) / 10, kind: u.kind === 'shelf' ? 'shelf' : 'doors' }
     const c = moduleCenter(run, u)

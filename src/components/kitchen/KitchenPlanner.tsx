@@ -36,13 +36,16 @@ import {
   COLUMN_HEIGHT,
   companions,
   hobMinWidth,
-  itemGaps,
   itemPositions,
   LIMITS,
   minA,
   moduleCenter,
   needByWall,
-  moveItem,
+  detachUppers,
+  narrowFor,
+  placeAt,
+  resizeWalls,
+  type Fit,
   nextWall,
   pinCabinet,
   planKitchen,
@@ -58,6 +61,7 @@ import {
   type RunId,
   type Run,
 } from '@/lib/kitchen/layout'
+import { previewMove } from '@/lib/kitchen/drag'
 import { cartAdditions, chosenItems, CORE_SLOTS, frontsText, planInputOf, projectItems, projectTotal, wallsText, whatsappText, type ItemStatus } from '@/lib/kitchen/order'
 import { DEFAULT_STATE, loadLast, queryFromState, saveLast, stateFromQuery } from '@/lib/kitchen/share'
 import { cutList, extraList, frontList, hardware, modulesOf, topList, type SpecData } from '@/lib/kitchen/spec'
@@ -67,6 +71,8 @@ import { FLOORS, getStyle, getTone, STYLE_GROUPS, STYLES, WALL_COLORS, type Kitc
 import type { HandleKind } from '@/lib/kitchen/styles'
 import {
   isCabinet,
+  isGap,
+  isUpperCab,
   SIZED_ITEMS,
   SLOTS,
   type ApplianceInfo,
@@ -93,7 +99,7 @@ import { PublishLoader } from './PublishLoader'
 import { ApplianceSheet } from './ApplianceSheet'
 import { ReadyStrip } from './ReadyStrip'
 import type { BuildInput, CabInfo, Dims } from './three/build'
-import type { DragPreview, DragTarget, EngineEvents, KitchenEngine, PhotoState, Pick, Quality, View } from './three/engine'
+import type { DragPhase, EngineEvents, KitchenEngine, PhotoState, Pick, Quality, View } from './three/engine'
 import type { Photo } from './three/photo'
 import './kitchen.css'
 
@@ -119,6 +125,9 @@ const SLOT_OF: Record<ItemKey, SlotKind | null> = {
 }
 
 /** Что сейчас переставляют: предмет (техника, мойка, свой шкаф) или обычный шкаф. */
+/** Подсказку по жестам видели: она показывается до первого удачного перемещения, снова — по «?». */
+const HINT_SEEN = 'kp-hint-seen'
+
 type MoveSel = { key: ItemKey } | { cab: CabInfo; w: number; wall: WallId; center: number }
 
 /** Шаг кнопок «левее / правее», см. */
@@ -354,6 +363,21 @@ export function KitchenPlanner({
   const [publishing, setPublishing] = useState(false)
   const [, setHistTick] = useState(0)
   const [hint, setHint] = useState(true)
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(HINT_SEEN) === '1') setHint(false)
+    } catch {
+      // хранилище недоступно — подсказка покажется
+    }
+  }, [])
+  const markHintSeen = () => {
+    setHint(false)
+    try {
+      localStorage.setItem(HINT_SEEN, '1')
+    } catch {
+      // хранилище недоступно
+    }
+  }
   const [origin, setOrigin] = useState('')
   /** телефон: меню «ещё» с вечером, ценами, размерами и чёткостью */
   const [menu, setMenu] = useState(false)
@@ -458,7 +482,7 @@ export function KitchenPlanner({
     ],
   )
   const plan = useMemo(() => planFor(style), [planFor, style])
-  const order = useMemo(() => resolveArrangement(state.shape, state.arrangement, state.cabinets), [state.shape, state.arrangement, state.cabinets])
+  const order = useMemo(() => resolveArrangement(state.shape, state.arrangement, state.cabinets, state.gaps), [state.shape, state.arrangement, state.cabinets, state.gaps])
   const positions = useMemo(() => itemPositions(plan), [plan])
 
   /** Состав проекта и деньги — только из order.ts: сумма, корзина, WhatsApp. */
@@ -646,7 +670,6 @@ export function KitchenPlanner({
 
   const pickRef = useRef<(pick: Pick) => void>(() => {})
   pickRef.current = ({ slot, item, dims, cab }) => {
-    setHint(false)
     setSelected(slot)
     setMoving(item ? { key: item } : cab?.row === 'base' ? cabSel(cab) : null)
     setMeasure(dims)
@@ -656,53 +679,111 @@ export function KitchenPlanner({
       setOpen(slot)
     }
   }
-  const moveRef = useRef<(what: DragTarget, wall: WallId, pos: number) => void>(() => {})
-  moveRef.current = (what, wall, pos) => {
-    setHint(false)
-    if ('item' in what) {
-      // предмет встаёт ровно туда, куда его отпустили; соседние шкафы подстраиваются
-      const key = what.item
-      if (apply({ arrangement: moveItem(order, key, wall, pos, positions), at: { ...frozen([key, ...companions(plan, key)]), [key]: pos } }, [key])) setMoving({ key })
-      return
+  /* ───────── перетаскивание: одна связка для 3D и плана (контракт onDrag в interfaces.md) ───────── */
+
+  /** С чего начали тащить: ключ модели и состояние, где модуль уже можно ставить placeAt (автошкаф — уже свой kN, верх стены — уже ручной). */
+  type DragBase = { key: ItemKey; state: KitchenState; plan: Plan; cab: CabInfo | null }
+  const dragRef = useRef<DragBase | null>(null)
+  /** подписи «до угла / до соседа» в движении, см — HTML-метки drag:left / drag:right */
+  const [dragLabels, setDragLabels] = useState<{ left: number; right: number } | null>(null)
+
+  /** Ключ сцены (sink, k1, A120, a120) → ключ модели и состояние на старте. Картинка от перевода не меняется. */
+  const dragBaseFor = (raw: string): DragBase | null => {
+    if (positions[raw as ItemKey]) return { key: raw as ItemKey, state, plan, cab: null }
+    const run = plan.runs.find((r) => r.id === raw[0]?.toUpperCase())
+    if (!run) return null
+    const x = Number(raw.slice(1))
+    const wall = run.id as WallId
+    if (/^[A-Z]/.test(raw)) {
+      // автошкаф становится своим (kN) на том же месте
+      const m = run.modules.find((mod) => Math.round(mod.x) === x)
+      if (!m) return null
+      const front: BaseFront = (state.fronts?.[raw] as BaseFront | undefined) ?? (m.kind === 'drawers' ? 'drawers3' : 'doors')
+      const center = moduleCenter(run, m)
+      const pinned = pinCabinet(order, state.cabinets ?? {}, { w: m.w, front }, wall, center, positions)
+      const fronts = { ...state.fronts }
+      delete fronts[raw]
+      const next: KitchenState = { ...state, arrangement: pinned.order, cabinets: pinned.cabinets as KitchenState['cabinets'], fronts: nonEmpty(fronts), at: { ...frozen([]), [pinned.id]: center } }
+      return { key: pinned.id, state: next, plan: trial(next), cab: { key: pinned.id, row: 'base', variant: front } }
     }
-    // обычный шкаф становится своим и встаёт туда, куда его отпустили
-    const sel = cabSel(what.cab)
-    if (!sel) return
-    commitPinned({ ...sel, wall, center: pos }, { at: pos })
+    // верхний автошкаф: верх стены становится ручным (detachUppers), шкаф — uN с той же серединой
+    const u = run.uppers.find((up) => Math.round(up.x) === x)
+    if (!u) return null
+    const next = detachUppers(state, wall, plan)
+    const p = trial(next)
+    const c = moduleCenter(run, u)
+    const key = (Object.entries(itemPositions(p)) as [ItemKey, ItemPlace][]).find(([k, pl]) => isUpperCab(k) && pl.wall === wall && pl.row === 'upper' && Math.abs(pl.center - c) < 0.6)?.[0]
+    return key ? { key, state: next, plan: p, cab: { key: raw, row: 'upper', variant: (state.fronts?.[raw] as CabInfo['variant'] | undefined) ?? 'doors' } } : null
   }
 
-  /** Пока тащат: свободная столешница по бокам — подписи прямо в 3D. */
-  const [dragGaps, setDragGaps] = useState<{ center: number; w: number }[]>([])
-  const previewRef = useRef<(q: { what: DragTarget; wall: WallId; pos: number } | null) => DragPreview | null>(() => null)
-  previewRef.current = (q) => {
-    const show = (gaps: { center: number; w: number }[]) =>
-      setDragGaps((prevGaps) => (prevGaps.map((g) => Math.round(g.w)).join() === gaps.map((g) => Math.round(g.w)).join() ? prevGaps : gaps))
-    if (!q) {
-      setDragGaps([])
-      return null
+  /** Сузить соседа на `by` см: свой шкаф, верхний, пустое место или предмет с шириной. */
+  const narrowed = (s: KitchenState, k: ItemKey, by: number, p: Plan): KitchenState => {
+    if (isCabinet(k) && s.cabinets?.[k]) return { ...s, cabinets: { ...s.cabinets, [k]: { ...s.cabinets[k]!, w: s.cabinets[k]!.w - by } } }
+    if (isUpperCab(k) && s.upperCabs?.[k]) return { ...s, upperCabs: { ...s.upperCabs, [k]: { ...s.upperCabs[k]!, w: s.upperCabs[k]!.w - by } } }
+    if (isGap(k) && s.gaps?.[k]) return { ...s, gaps: { ...s.gaps, [k]: { ...s.gaps[k]!, w: s.gaps[k]!.w - by } } }
+    const w = itemPositions(p)[k]?.w
+    if (w !== undefined && (SIZED_ITEMS as readonly string[]).includes(k)) return { ...s, widths: { ...s.widths, [k as SizedItem]: w - by } }
+    return s
+  }
+
+  /** Модуль встал: состояние принято, выбор остаётся на нём (у верхнего ключ сцены — по новому началу в ряду). */
+  const commitPlaced = (d: DragBase, next: KitchenState, fit: Fit, wall: WallId) => {
+    track()
+    setCartResult(null)
+    setState(next)
+    markHintSeen()
+    if (fit.row === 'upper') {
+      const u = trial(next).runs.find((r) => r.id === wall)?.uppers.find((up) => up.item === d.key)
+      const cab: CabInfo = { key: u ? upperKey(wall, u.x) : d.key, row: 'upper', variant: d.cab?.variant ?? 'doors' }
+      editingRef.current = cab
+      setEditing(cab)
+      setMoving(null)
+      return
     }
-    const { what, wall, pos } = q
-    let key: ItemKey
-    let next: KitchenState
-    if ('item' in what) {
-      key = what.item
-      next = { ...state, arrangement: moveItem(order, key, wall, pos, positions), at: { ...frozen([key, ...companions(plan, key)]), [key]: pos } }
-    } else {
-      const sel = cabSel(what.cab)
-      if (!sel) return null
-      const pinned = pinCabinet(order, state.cabinets ?? {}, { w: sel.w, front: 'doors' }, wall, pos, positions)
-      key = pinned.id
-      next = { ...state, arrangement: pinned.order, cabinets: pinned.cabinets as KitchenState['cabinets'], at: { ...frozen([]), [key]: pos } }
+    if (d.cab) {
+      editingRef.current = d.cab
+      setEditing(d.cab)
     }
-    const p = trial(next, [key])
-    const place = itemPositions(p)[key]
-    if (!place || place.wall !== wall) {
-      show([])
-      return null
+    setMoving({ key: d.key })
+  }
+
+  const onDragRef = useRef<(phase: DragPhase, key: string, wall: WallId, cm: number, grab: number) => void>(() => {})
+  onDragRef.current = (phase, raw, wall, cm, grab) => {
+    const engine = engineRef.current
+    if (phase === 'start') {
+      dragRef.current = dragBaseFor(raw)
+      return
     }
-    const gaps = itemGaps(p, key)
-    show(gaps)
-    return { center: place.center, w: place.w, gaps, fits: p.dropped.length <= plan.dropped.length }
+    const d = dragRef.current
+    if (!d) return
+    if (phase === 'move') {
+      // предпросмотр — из drag.previewMove; движок только рисует
+      const pv = previewMove(d.plan, d.key, wall, cm, grab)
+      engine?.setPreview(pv)
+      setDragLabels((prev) => (!pv ? null : prev && prev.left === pv.labels.left && prev.right === pv.labels.right ? prev : pv.labels))
+      return
+    }
+    dragRef.current = null
+    setDragLabels(null)
+    if (phase === 'cancel') return
+    const placed = placeAt(d.state, d.key, wall, cm, trial, grab)
+    if (placed.fit?.ok) {
+      commitPlaced(d, placed.state, placed.fit, wall)
+      return
+    }
+    // не встал: модуль обратно; кнопка «Сузить» — только если после сужения соседа модуль правда встаёт
+    engine?.revertDrag()
+    const narrow = narrowFor(d.plan, d.key, wall, cm - grab) ?? placed.fit?.narrow ?? null
+    const narrowedState = narrow ? narrowed(d.state, narrow.neighbour, narrow.by, d.plan) : null
+    const again = narrow && narrowedState ? placeAt(narrowedState, d.key, wall, cm, trial, grab) : null
+    if (!narrow || !again?.fit?.ok) {
+      setToast(t.noRoom)
+      return
+    }
+    setNote({
+      text: t.noRoomNarrow(nameOfKey(narrow.neighbour), narrow.by),
+      act: { label: t.narrowAct, run: () => commitPlaced(d, again.state, again.fit!, wall) },
+    })
   }
 
   useEffect(() => {
@@ -725,8 +806,7 @@ export function KitchenPlanner({
         if (cancelled || !hostRef.current) return
         const events: EngineEvents = {
           onPick: (pick) => pickRef.current(pick),
-          onMove: (item, wall, pos) => moveRef.current(item, wall, pos),
-          onPreview: (q) => previewRef.current(q),
+          onDrag: (phase, key, wall, cm, grab) => onDragRef.current(phase, key, wall, cm, grab),
           onError: () => {
             // Видеокарту забрали. На телефоне так бывает часто: ушли в WhatsApp
             // отправить ссылку и вернулись, или не хватило памяти. Запускаем 3D
@@ -1053,12 +1133,6 @@ export function KitchenPlanner({
   }, [step, engineState, built, thumbKey, buildInput, planFor])
 
   useEffect(() => {
-    if (!hint) return
-    const timer = setTimeout(() => setHint(false), 9000)
-    return () => clearTimeout(timer)
-  }, [hint])
-
-  useEffect(() => {
     if (!note) return
     // длинное сообщение висит дольше — чтобы успели прочитать; с кнопкой — ещё дольше
     const timer = setTimeout(() => setNote(null), note.act ? 12000 : Math.max(2400, note.text.length * 60))
@@ -1113,14 +1187,14 @@ export function KitchenPlanner({
   const setShape = (shape: Shape) => update({ shape, a: Math.max(state.a, minA(shape)), arrangement: undefined, cabinets: undefined, at: undefined })
 
   /**
-   * Длину стены поменяли — свои места предметов сбрасываются (порядок
-   * остаётся): иначе всё стояло бы в прежних сантиметрах от угла, а весь
-   * прирост стены уходил бы в один крайний шкаф.
+   * Длину стены поменяли — свои и пустые места сохраняются (resizeWalls): за
+   * новым краем предмет придвигается, пустое место ужимается или уходит.
    */
   const resize = (patch: Partial<KitchenState>) => {
     // стена A стала короче острова — остров поджимается к ней (C14)
     const island = patch.a !== undefined && state.island > patch.a ? { island: patch.a } : {}
-    update({ ...patch, ...island, at: undefined })
+    const next = resizeWalls(state, { a: patch.a, b: patch.b, c: patch.c, island: island.island ?? patch.island }, plan)
+    update({ ...next, at: next.at, gaps: next.gaps, manualUppers: next.manualUppers })
   }
 
   /** Продолжить сохранённую кухню (плашка при входе без адреса). */
@@ -1497,8 +1571,8 @@ export function KitchenPlanner({
 
   // Выбранное пальцем можно сразу тащить — без удержания.
   useEffect(() => {
-    engineRef.current?.setGrab(moving ? ('key' in moving ? moving.key : moving.cab.key) : null)
-  }, [moving, engineState])
+    engineRef.current?.setGrab(moving ? ('key' in moving ? moving.key : moving.cab.key) : editing?.row === 'upper' ? editing.key : null)
+  }, [moving, editing, engineState])
 
   const hobHasOven = plan.runs.some((r) => r.modules.some((m) => m.kind === 'hob' && m.oven)) && items.oven !== null
   const movingKey = moving && 'key' in moving ? moving.key : null
@@ -1543,21 +1617,24 @@ export function KitchenPlanner({
     window.addEventListener('keydown', on)
     return () => window.removeEventListener('keydown', on)
   }, [])
-  const movingName = !moving
-    ? ''
-    : !movingKey
-      ? t.cabName(Math.round((moving as { w: number }).w))
-      : isCabinet(movingKey)
-        ? t.cabName(Math.round(state.cabinets?.[movingKey]?.w ?? 60))
-        : movingKey === 'pantry' || movingKey === 'pantry2'
+  /** Имя модуля для подписей и тостов: шкаф с шириной, пустое место, техника. */
+  const nameOfKey = (k: ItemKey): string =>
+    isGap(k)
+      ? t.emptyPlace
+      : isUpperCab(k)
+        ? t.cabName(Math.round(positions[k]?.w ?? state.upperCabs?.[k]?.w ?? 60))
+        : isCabinet(k)
+        ? t.cabName(Math.round(state.cabinets?.[k]?.w ?? 60))
+        : k === 'pantry' || k === 'pantry2'
           ? t.pantryName
-          : movingKey === 'sink'
+          : k === 'sink'
             ? t.sink
-            : movingKey === 'tall'
+            : k === 'tall'
               ? t.tallName
-              : movingKey === 'hob' && hobHasOven
+              : k === 'hob' && hobHasOven
                 ? t.hobOven
-                : t.slots[SLOT_OF[movingKey]!]
+                : t.slots[SLOT_OF[k]!]
+  const movingName = !moving ? '' : !movingKey ? t.cabName(Math.round((moving as { w: number }).w)) : nameOfKey(movingKey)
   const movingShown = Boolean(moving && (movingKey ? present.has(movingKey) : true))
   const otherWallLabel = !moving
     ? ''
@@ -2563,7 +2640,7 @@ export function KitchenPlanner({
       </header>
 
       <div className="kp-work">
-        <div className="kp-stage" ref={stageRef} onPointerDown={() => setHint(false)}>
+        <div className="kp-stage" ref={stageRef}>
           {/* сюда движок кладёт холст; на телефоне под ним остаётся полоса видов */}
           <div className="kp-scene" ref={hostRef} />
           {/*
@@ -2664,13 +2741,14 @@ export function KitchenPlanner({
                   </span>
                 ))}
               {/* пока тащат — сколько столешницы останется слева и справа */}
-              {dragGaps.map((g, i) => (
-                <span key={`gap:${i}`} className="kp-dim kp-dim--gap" ref={(el) => engineRef.current?.setTag(`gap:${i}`, el)}>
-                  <span className="kp-dim__in">
-                    {fmt(Math.round(g.w))} {t.cm}
+              {dragLabels &&
+                (['left', 'right'] as const).map((side) => (
+                  <span key={`drag:${side}`} className="kp-dim kp-dim--gap" ref={(el) => engineRef.current?.setTag(`drag:${side}`, el)}>
+                    <span className="kp-dim__in">
+                      {fmt(dragLabels[side])} {t.cm}
+                    </span>
                   </span>
-                </span>
-              ))}
+                ))}
               {showDims &&
                 !photo &&
                 plan.runs.flatMap((run) =>
@@ -3099,7 +3177,7 @@ export function KitchenPlanner({
               ?
             </button>
           )}
-          {engineState === 'ready' && built && hint && !moving && !measure && !photo && (
+          {engineState === 'ready' && built && hint && !photo && (
             <p className="kp-hint">
               <span className="kp-hint__long">
                 {t.hint}

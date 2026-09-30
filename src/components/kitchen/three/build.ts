@@ -185,6 +185,8 @@ type Ctx = {
   lemons: boolean
   /** доска и чайник уже стоят (по одному на кухню) */
   props: { board: boolean; kettle: boolean }
+  /** кому какая мелочь (лимоны, доска, чайник): по всей раскладке заранее — вклад ряда не зависит от порядка сборки */
+  decor: Map<string, Decor>
   /** сдвиг рисунка фасадов в текущем ряду */
   uvRun: number
   /* для мебельщика */
@@ -1439,18 +1441,60 @@ function lemons(ctx: Ctx, g: THREE.Group, x: number, y: number, z: number) {
 }
 
 function decorRun(ctx: Ctx, run: Run, g: THREE.Group) {
-  if (run.id === 'I') return
-  // «Лёгкий»: ни лимонов, ни доски с чайником — десятки мелких деталей
-  if (ctx.mats.lite) return
-  let spot: Module | undefined
-  if (!ctx.lemons) {
-    spot = run.modules.find((m) => m.role === 'work' && m.w >= 45) ?? run.modules.find((m) => m.role === 'side' && m.w >= 40)
-    if (spot) {
-      lemons(ctx, g, cm(spot.x + spot.w / 2), ctx.counterY, 0.34)
-      ctx.lemons = true
-    }
+  const d = ctx.decor.get(run.id)
+  if (!d) return
+  if (d.lemons !== undefined) {
+    const spot = run.modules[d.lemons]
+    lemons(ctx, g, cm(spot.x + spot.w / 2), ctx.counterY, 0.34)
+    ctx.lemons = true
   }
-  props(ctx, run, g, spot)
+  props(ctx, run, g, d)
+}
+
+/** Индексы модулей ряда, на которые встают лимоны, доска у плиты и чайник у мойки. */
+type Decor = { lemons?: number; board?: number; kettle?: number }
+
+/**
+ * Кому какая мелочь — по всей раскладке заранее: первый ряд со свободной
+ * столешницей получает лимоны, у первой плиты — доска, у первой мойки — чайник.
+ * Решение не зависит от того, какие ряды пересобираются, — иначе при частичной
+ * пересборке лимоны появлялись дважды или пропадали. Остров и «лёгкий» — без мелочей.
+ */
+function decorPlan(plan: Plan, lite: boolean): Map<string, Decor> {
+  const out = new Map<string, Decor>()
+  if (lite) return out
+  const done = { lemons: false, board: false, kettle: false }
+  for (const run of plan.runs) {
+    if (run.id === 'I') continue
+    const mods = run.modules
+    const d: Decor = {}
+    let spot: Module | undefined
+    if (!done.lemons) {
+      spot = mods.find((m) => m.role === 'work' && m.w >= 45) ?? mods.find((m) => m.role === 'side' && m.w >= 40)
+      if (spot) {
+        d.lemons = mods.indexOf(spot)
+        done.lemons = true
+      }
+    }
+    const free = (i: number) => {
+      const m = mods[i]
+      return Boolean(m && m !== spot && COUNTER.includes(m.kind) && m.kind !== 'hob' && m.w >= 30)
+    }
+    const hi = mods.findIndex((m) => m.kind === 'hob')
+    const si = mods.findIndex((m) => m.kind === 'sink')
+    const nearHob = done.board ? undefined : [hi + 1, hi - 1].find((i) => hi >= 0 && free(i))
+    if (nearHob !== undefined) {
+      d.board = nearHob
+      done.board = true
+    }
+    const nearSink = done.kettle ? undefined : [si + 1, si - 1, si + 2, si - 2].find((i) => si >= 0 && free(i) && i !== nearHob)
+    if (nearSink !== undefined) {
+      d.kettle = nearSink
+      done.kettle = true
+    }
+    out.set(run.id, d)
+  }
+  return out
 }
 
 /* ───────────── жизнь на кухне ───────────── */
@@ -1462,15 +1506,9 @@ const COUNTER: Module['kind'][] = ['doors', 'drawers', 'bottle', 'oven', 'hob', 
  * у мойки — чайник. Ставятся только на свободную столешницу, мимо вазы с
  * лимонами. Технику ничем не закрываем: её человек и выбирает.
  */
-function props(ctx: Ctx, run: Run, g: THREE.Group, taken?: Module) {
+function props(ctx: Ctx, run: Run, g: THREE.Group, d: Decor) {
   const { mats, counterY } = ctx
   const mods = run.modules
-  const free = (i: number) => {
-    const m = mods[i]
-    return m && m !== taken && COUNTER.includes(m.kind) && m.kind !== 'hob' && m.w >= 30
-  }
-  const hi = mods.findIndex((m) => m.kind === 'hob')
-  const si = mods.findIndex((m) => m.kind === 'sink')
   const done = ctx.props
   const wood = mats.shelf
   // Розетки на фартуке: белые, на тёмном фартуке — чёрные.
@@ -1488,12 +1526,13 @@ function props(ctx: Ctx, run: Run, g: THREE.Group, taken?: Module) {
     g.add(s2)
   }
   // у плиты: разделочная доска у фартука, бутылки масла и мельницы
-  const nearHob = done.board ? undefined : [hi + 1, hi - 1].find((i) => hi >= 0 && free(i))
+  const nearHob = d.board
   if (nearHob !== undefined) {
     done.board = true
     const m = mods[nearHob]
     const cx = cm(m.x + m.w / 2)
     const board = new THREE.Group()
+    board.name = 'prop:board'
     board.add(mesh(rounded(0.3, 0.42, 0.018, 0.012), wood, 0, 0.21, 0))
     board.add(mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.02, 20).rotateX(Math.PI / 2), mats.plain('#1c1c1c', 0.6), 0, 0.37, 0.001))
     board.position.set(cx - 0.04, counterY, 0.05)
@@ -1513,7 +1552,7 @@ function props(ctx: Ctx, run: Run, g: THREE.Group, taken?: Module) {
     if (m.w >= 45) socket(cx + 0.19, counterY + 0.34)
   }
   // у мойки — чайник
-  const nearSink = done.kettle ? undefined : [si + 1, si - 1, si + 2, si - 2].find((i) => si >= 0 && free(i) && i !== nearHob)
+  const nearSink = d.kettle
   if (nearSink !== undefined) {
     done.kettle = true
     const m = mods[nearSink]
@@ -1524,6 +1563,7 @@ function props(ctx: Ctx, run: Run, g: THREE.Group, taken?: Module) {
     )
     const shell = ctx.style.metal === 'black' || ctx.style.metal === 'gunmetal' ? mats.plain('#1f2022', 0.35, 0.3) : mats.metal('steel')
     const kettle = new THREE.Group()
+    kettle.name = 'prop:kettle'
     kettle.add(mesh(body, shell))
     kettle.add(mesh(new THREE.SphereGeometry(0.018, 16, 10), mats.plain('#1b1b1b', 0.5), 0, 0.2, 0))
     const handle = mesh(new THREE.TorusGeometry(0.075, 0.011, 10, 28, Math.PI), mats.plain('#1b1b1b', 0.5), 0, 0.12, 0)
@@ -1840,8 +1880,12 @@ function globalKey(input: BuildInput): string {
 }
 
 /** Ключ ряда: общий ключ + сам ряд + техника на нём (с фото) + свои фасады его шкафов. */
-function runKey(input: BuildInput, run: Run, global: string): string {
+function runKey(input: BuildInput, run: Run, global: string, decor: Decor | null): string {
   const plan = input.plan
+  // свои шкафы ряда (k1, u1): фасад по ключу без буквы стены — только к тому ряду, где модуль стоит
+  const own = new Set<string>()
+  for (const m of run.modules) if (m.item) own.add(m.item)
+  for (const u of run.uppers) if (u.item) own.add(u.item)
   const items = (Object.keys(input.items) as SlotKind[]).sort().map((s) => {
     const at = plan.placed[s] ?? (s === 'hood' ? plan.placed.hob : undefined)
     if (at && at.run !== run.id) return ''
@@ -1849,8 +1893,8 @@ function runKey(input: BuildInput, run: Run, global: string): string {
     const ph = a?.image ? input.photos.get(a.image) : undefined
     return `${s}=${a ? JSON.stringify(a) : '-'}#${ph ? ph.texture.uuid : ph === null ? 'n' : 'u'}`
   })
-  const fronts = Object.entries(input.fronts).filter(([k]) => k.startsWith(run.id) || !/^[A-Z]/.test(k))
-  return `${global}|${JSON.stringify(run)}|${items.join(',')}|${JSON.stringify(fronts)}`
+  const fronts = Object.entries(input.fronts).filter(([k]) => (/^[A-Z]/.test(k) ? k.startsWith(run.id) : own.has(k)))
+  return `${global}|${JSON.stringify(run)}|${items.join(',')}|${JSON.stringify(fronts)}|${JSON.stringify(decor)}`
 }
 
 function assemble(input: BuildInput, reuse?: ReadonlyMap<string, RunCache>): Built {
@@ -1877,6 +1921,7 @@ function assemble(input: BuildInput, reuse?: ReadonlyMap<string, RunCache>): Bui
     wave: 0,
     lemons: false,
     props: { board: false, kettle: false },
+    decor: decorPlan(input.plan, Boolean(input.lite)),
     uvRun: 0,
     carcasses: [],
     nichePanels: [],
@@ -1895,7 +1940,7 @@ function assemble(input: BuildInput, reuse?: ReadonlyMap<string, RunCache>): Bui
   const rebuilt: string[] = []
   const gkey = globalKey(input)
   input.plan.runs.forEach((run, ri) => {
-    const key = runKey(input, run, gkey)
+    const key = runKey(input, run, gkey, ctx.decor.get(run.id) ?? null)
     const ready = reuse?.get(run.id)
     if (ready && ready.key === key) {
       // ряд не менялся — берём готовым вместе со всем, что он вносил в списки
