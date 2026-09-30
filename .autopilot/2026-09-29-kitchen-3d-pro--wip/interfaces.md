@@ -184,3 +184,10 @@ grabOf(plan, key, cm) -> number                                    // на 'star
 - Тесты по отчёту исполнителя: vitest 914, e2e 19 (simplify + phone + plan + gestures), tsc и build зелёные.
 
 **Следующий шаг при возобновлении:** отправить таск 06 обоим ревьюерам (диффы: KitchenPlanner.tsx, ReadyStrip.tsx, kitchen.css, texts.ts, styles.ts, layout.ts, новые __tests__/kitchen-simplify.test.ts, e2e/kitchen-simplify.spec.ts), прогнать `npx vitest run`, закоммитить, запустить таск 07.
+
+### Таск 07 — сквозная приёмка (`playwright.config.ts`, `e2e/kitchen-acceptance.spec.ts`, `docs/KITCHEN_E2E_UZ.md`)
+
+- Профили Playwright: `iphone` (375 × 812, touch, WebKit; все `e2e/kitchen-*.spec.ts`), `desktop` (1440 × 900, Chrome; только `kitchen-acceptance`), `chrome` (390 × 844, как было; всё, кроме `kitchen-acceptance`). `snapshotPathTemplate` без имени профиля: снимки плана `e2e/__snapshots__/kitchen-acceptance.spec.ts/<ready-id|old-N>.txt` общие для телефона и компьютера (`--update-snapshots` — переснять).
+- Замер кадра: `desktop` + `test.use({ viewport 375×812, hasTouch, isMobile })`, CDP `Emulation.setCPUThrottlingRate {rate: 4}`, кадр = вызов `engine.draw()` (обёртка на `window.__kp`), порог `FRAME_MS = 33`; результат — в аннотации теста и в stdout.
+- Из ревью 06: на шаге «Техника» у каждого слота есть свой WhatsApp «спросить о поставке» (`ApplianceSheet supplyHref` → `a.kp-slot__supply[href*="wa.me"]`) — это другая функция, не «один WhatsApp на Итоге»; e2e считает `a[href*="wa.me"]` только на «Итоге» (`.kp-sum__wa`).
+- Карусель стилей: пока раскрыт `#kp-styles-all`, `.kp-carousel` не рендерится — выбранный стиль отмечен ровно в одной `radiogroup`; `engine.getQuality/setQuality/Quality` удалены; мёртвые `.kp-help`, `.kp-sub--first`, `.kp-style__new` удалены из `kitchen.css`.

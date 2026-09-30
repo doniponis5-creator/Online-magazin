@@ -1106,21 +1106,6 @@ html:has(.kp-photo) .assistant {
   transition: box-shadow var(--dur-hover) var(--ease-out);
 }
 
-/* метка «Новинка» на карточке нового стиля — лимонная, как всё «обратите внимание» */
-.kp-style__new {
-  position: absolute;
-  top: 7px;
-  left: 7px;
-  z-index: 1;
-  padding: 4px 8px;
-  border-radius: 7px;
-  background: var(--color-lemon);
-  color: var(--kp-ink);
-  font: 800 12px/1 var(--font);
-  letter-spacing: 0.01em;
-  box-shadow: 0 1px 3px rgb(38 50 68 / 18%);
-}
-
 .kp-style__img img {
   position: absolute;
   inset: 0;
@@ -1194,10 +1179,6 @@ html:has(.kp-photo) .assistant {
 /* пеналы: переключатель и счётчик */
 .kp-extra {
   margin-bottom: 4px;
-}
-
-.kp-sub--first {
-  margin-top: 0;
 }
 
 .kp-switch,
@@ -3843,27 +3824,6 @@ button.kp-opt__more {
   color: #a15c07;
 }
 
-/* «?» — снова показать подсказку по управлению */
-.kp-help {
-  position: absolute;
-  left: 12px;
-  bottom: 12px;
-  z-index: 3;
-  width: 32px;
-  height: 32px;
-  border: 0;
-  border-radius: 50%;
-  background: rgb(38 50 68 / 72%);
-  color: #fff;
-  font: 800 15px/32px var(--font);
-  cursor: pointer;
-}
-
-.kp-help:focus-visible {
-  outline: 2px solid #2563eb;
-  outline-offset: 2px;
-}
-
 /* место духовки: «Под варочной панелью» / «Бышыруучу панелдин астында» не влезают в треть панели — переносим */
 .kp-seg--wrap .kp-seg__btn {
   height: auto;
@@ -5163,10 +5123,6 @@ button.kp-opt__more {
 .kp-total .kp-spec__actions,
 .kp-total .kp-spec__actions .btn {
   width: 100%;
-}
-
-.kp-sub--first {
-  margin-top: 0;
 }
 
 /* «Ещё параметры» в листе выбранного (телефон): вторичное действие, 44 px */

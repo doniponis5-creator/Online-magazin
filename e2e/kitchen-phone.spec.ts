@@ -113,7 +113,8 @@ test('клавиатура: фокус в числовом поле — сцен
   await page.waitForTimeout(500)
   await expect(page.locator('.kp-size__range').first()).toHaveValue('250')
   expect(await page.evaluate(() => document.activeElement?.tagName)).toBe('INPUT')
-  await page.keyboard.press('Tab')
+  // ушли из поля (Tab в WebKit не уводит фокус с поля — снимаем его как касание мимо)
+  await field.evaluate((el) => el.blur())
   await expect(page.locator('html')).not.toHaveClass(/kp-typing/)
 })
 
@@ -143,7 +144,7 @@ test('не больше трёх касаний: стиль, цвет фасад
   await expect(page.locator('.kp-size__range').first()).toHaveValue('305')
   expect(taps).toBeLessThanOrEqual(3)
   taps = 0
-  // техника (в локальном каталоге нет духовок — берём вытяжку, путь тот же): вкладка «Техника» + строка + модель = 3
+  // техника (духовка — в kitchen-acceptance по фикстуре живого каталога; здесь вытяжка, у неё локально две модели): вкладка «Техника» + строка + модель = 3
   await tap(page.locator('.kp-steps__btn', { hasText: 'Техника' }))
   await tap(page.locator('#kp-slot-hood .kp-slot__head'))
   const model = page.locator('#kp-slot-hood .kp-opt input[type="radio"]').nth(1)

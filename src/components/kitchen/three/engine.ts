@@ -75,13 +75,6 @@ const PHOTO_MAX_MS = 30000
 /** eye — «как в жизни»: с высоты глаз человека, стоящего в комнате */
 export type View = 'angle' | 'front' | 'top' | 'eye'
 
-/**
- * Прежний переключатель чёткости. Класс устройства теперь выбирается сам
- * (quality.ts), `setQuality` ничего не делает, `getQuality` отдаёт подпись
- * класса — тип оставлен, пока планировщик не уберёт переключатель.
- */
-export type Quality = 'lite' | 'hd' | '4k'
-
 export type Pick = { slot: SlotKind | null; item: ItemKey | null; dims: Dims | null; cab: CabInfo | null }
 
 export type DragPhase = 'start' | 'move' | 'end' | 'cancel'
@@ -2082,14 +2075,6 @@ export class KitchenEngine {
       return ''
     }
   }
-
-  /** Подпись класса для прежней кнопки: класс выбирается сам, переключателя нет. */
-  getQuality(): Quality {
-    return this.tier.composer ? '4k' : 'hd'
-  }
-
-  /** Прежний переключатель чёткости — ничего не делает (класс выбирается сам, хранилище не трогаем). */
-  setQuality(_q: Quality) {}
 
   /** Класс устройства — для планировщика и проверок. */
   getTier(): Tier {

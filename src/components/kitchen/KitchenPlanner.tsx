@@ -3602,9 +3602,12 @@ export function KitchenPlanner({
                   )
                   return (
                     <>
-                      <div className="kp-carousel" role="radiogroup" aria-label={t.steps.style}>
-                        {carouselStyles(state.style).map((st) => card(st))}
-                      </div>
+                      {/* полный список раскрыт — карусель спрятана: выбранный стиль отмечен в одной группе */}
+                      {!allStyles && (
+                        <div className="kp-carousel" role="radiogroup" aria-label={t.steps.style}>
+                          {carouselStyles(state.style).map((st) => card(st))}
+                        </div>
+                      )}
                       <button
                         type="button"
                         className="btn btn--outline btn--sm kp-styles__all"

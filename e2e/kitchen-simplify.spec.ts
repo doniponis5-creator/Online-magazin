@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { FRONT_COLORS } from '../src/lib/kitchen/finishes'
 
 /**
  * Таск 06 — меньше лишнего (спецификация, истории 25, 26, 28, 38; Решения §6):
@@ -34,20 +35,35 @@ test('стили: карусель из 8 без заметок, «Все сти
   await expect(all).toHaveAttribute('aria-expanded', 'true')
   const full = page.locator('#kp-styles-all .kp-style')
   expect(await full.count()).toBeGreaterThan(8)
+  // полный список раскрыт — карусель спрятана: выбранный стиль отмечен ровно в одной группе (ревью 06)
+  await expect(page.locator('.kp-carousel')).toHaveCount(0)
+  await expect(page.locator('.kp-style[aria-checked="true"]')).toHaveCount(1)
   // выбираем стиль, которого нет среди 8 — «Прованс»
   await page.locator('#kp-styles-all .kp-style', { hasText: 'Прованс' }).click()
+  await expect(page).toHaveURL(/s=provence/)
+  await expect(page.locator('.kp-style[aria-checked="true"]')).toHaveCount(1)
+  await expect(page.locator('.kp-style[aria-checked="true"]')).toContainText('Прованс')
+  // свернули — карусель снова из 8, выбранный первым
+  await all.click()
+  await expect(all).toHaveAttribute('aria-expanded', 'false')
   await expect(carousel).toHaveCount(8)
   await expect(carousel.first()).toContainText('Прованс')
   await expect(carousel.first()).toHaveAttribute('aria-checked', 'true')
-  await expect(page).toHaveURL(/s=provence/)
 })
 
 test('цвета: 16 сразу, «Точный код» раскрывает RAL и декоры с поиском; выбранный RAL — первым', async ({ page }) => {
   await ready(page)
   await step(page, 'Стиль')
   const grid = page.locator('.kp-parts .kp-part').first().locator('.kp-colors').first()
-  // плитки материала: «как в стиле» + не больше 16
-  expect(await grid.locator('.kp-color').count()).toBeLessThanOrEqual(17)
+  // плитки материала: «как в стиле» + min(16, цветов материала) — ровно (ревью 06)
+  const colorsOf = (mat: string) => FRONT_COLORS.filter((c) => c.material === mat).length
+  const tiles = (mat: string) => Math.min(16, colorsOf(mat)) + 1
+  expect(colorsOf('laminate')).toBeGreaterThan(colorsOf('veneer'))
+  await expect(grid.locator('.kp-color')).toHaveCount(tiles('laminate'))
+  await page.locator('.kp-parts .kp-part').first().locator('.kp-chip[role="tab"]', { hasText: 'Шпон' }).click()
+  await expect(grid.locator('.kp-color')).toHaveCount(tiles('veneer'))
+  await page.locator('.kp-parts .kp-part').first().locator('.kp-chip[role="tab"]', { hasText: 'Ламинат' }).click()
+  await expect(grid.locator('.kp-color')).toHaveCount(tiles('laminate'))
   await expect(page.locator('#kp-exact')).toHaveCount(0)
   await expect(page.locator('.kp-ralgroups')).toHaveCount(0)
   const exact = page.locator('.kp-colors__exact')
@@ -62,13 +78,24 @@ test('цвета: 16 сразу, «Точный код» раскрывает RA
   const first = grid.locator('.kp-color').nth(1)
   await expect(first).toContainText('RAL 7016')
   await expect(first).toHaveAttribute('aria-checked', 'true')
-  // декоры — вкладка внутри «Точного кода»
+  // точный цвет — первым и в счёт 16: «как в стиле» + точный + min(15, цветов материала)
+  const tilesExact = Math.min(15, colorsOf('laminate')) + 2
+  await expect(grid.locator('.kp-color')).toHaveCount(tilesExact)
+  // декоры — вкладка внутри «Точного кода»; выбранный декор — тоже первым при закрытом блоке (ревью 06)
   await page.locator('#kp-exact [role="tab"]', { hasText: 'Декор' }).click()
-  await expect(page.locator('#kp-exact .kp-colors--codes .kp-color').first()).toBeVisible()
+  // группа декоров: первая плитка — «как в стиле» (сброс), берём первый настоящий декор
+  const decor = page.locator('#kp-exact .kp-colors--codes[aria-label="Декоры ЛДСП"] .kp-color').nth(1)
+  await expect(decor).toBeVisible()
+  const decorName = (await decor.textContent())!
+  await decor.click()
+  await expect(page).toHaveURL(/fc=dec-/)
   // свернули — каталог на месте, выбор не потерян
   await exact.click()
   await expect(page.locator('#kp-exact')).toHaveCount(0)
   await expect(first).toHaveAttribute('aria-checked', 'true')
+  // в 16 плитка подписана с брендом («Egger W1000 ST9 …»), в списке декоров бренд — вкладка
+  await expect(first).toContainText(decorName)
+  await expect(grid.locator('.kp-color')).toHaveCount(tilesExact)
 })
 
 test('ручки: 5 сразу и «Ещё N»; раскрытие не теряет выбор', async ({ page }) => {

@@ -6,21 +6,7 @@ import { expect, test, type Page } from '@playwright/test'
  * `screenPointOnWall`, `selectedKey`, `lastDrag`. Пальцы — синтетические
  * PointerEvent на холсте: Playwright не умеет второй палец.
  */
-type Pt = { x: number; y: number }
-type Place = { wall: string; center: number; w: number; row: string }
-type Kp = {
-  placeOf: (key: string) => Place | null
-  screenPointOf: (key: string, dx?: number) => Pt | null
-  screenPointOnWall: (wall: string, cm: number) => Pt | null
-  selectedKey: () => string | null
-  lastDrag: { phase: string; key: string; wall: string; cm: number; grab: number } | null
-  renderer: { domElement: HTMLElement }
-}
-declare global {
-  interface Window {
-    __kp?: Kp
-  }
-}
+import type { Place, Pt } from './kp'
 
 const ready = async (page: Page, query = 'f=corner&a=300&b=240') => {
   await page.goto(`/ru/kitchen?${query}`)
