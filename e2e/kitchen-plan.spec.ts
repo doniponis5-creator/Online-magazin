@@ -136,6 +136,111 @@ test('полная стена: шкаф 82 тянут на мойку в ста�
   expect(moved!.center).toBeGreaterThan(sink1.center)
 })
 
+/** Палец в точке экрана: цель — что там лежит (как у настоящего касания), не выбранный селектор. */
+const at = (page: Page, type: string, p: Pt) =>
+  page.evaluate(
+    ([type, p]) => {
+      const el = document.elementFromPoint(p.x, p.y) ?? document.querySelector('.kp-plan svg')!
+      el.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 1, pointerType: 'touch', isPrimary: true, button: type === 'pointermove' ? -1 : 0, buttons: type === 'pointerup' ? 0 : 1, clientX: p.x, clientY: p.y }))
+    },
+    [type, p] as const,
+  )
+/** Задняя часть ячейки нижнего шкафа стены A — под краем верхнего шкафа (верх 35 из 60 см глубины). */
+const backOf = async (page: Page, key: string): Promise<Pt> => {
+  const b = (await page.locator(`.kp-plan [data-key="${key}"]`).boundingBox())!
+  return { x: b.x + b.width / 2, y: b.y + (b.height * 35) / 60 }
+}
+const marblePlan = async (page: Page, extra = '') => {
+  await ready(page, `f=corner&a=300&b=240&s=marble${extra}`, 'page')
+  await page.waitForFunction(() => Boolean(window.__kp?.placeOf('sink') && window.__kp.placeOf('A100')), null, { timeout: 60000 })
+  // на компьютере план — колонкой рядом с 3D, переключателя нет
+  if (!(await page.locator('.kp-plan svg').isVisible())) await page.locator('.kp-views [data-scene="plan"]').click()
+  await expect(page.locator('.kp-plan [data-key="A100"]')).toHaveCount(1)
+}
+/** Выбранный нижний: задняя часть — его (тап не выбирает верхний, тянуть — двигает нижний), P5. */
+const backPartOwned = async (page: Page) => {
+  await marblePlan(page)
+  await tapPlan(page, '.kp-plan [data-key="A100"]')
+  await expect(page.locator('.kp-plan .is-sel')).toHaveAttribute('data-key', 'A100')
+  const p = await backOf(page, 'A100')
+  await at(page, 'pointerdown', p)
+  await page.waitForTimeout(40)
+  await at(page, 'pointerup', p)
+  await page.waitForTimeout(400)
+  await expect(page.locator('.kp-plan .is-sel')).toHaveCount(1)
+  await expect(page.locator('.kp-plan .is-sel')).toHaveAttribute('data-key', 'A100')
+  // тянуть за заднюю часть — двигается шкаф 82 (на мойку → обмен), а не весь план
+  const cab = (await place(page, 'A100'))!
+  const sink0 = (await place(page, 'sink'))!
+  const px = (await page.locator('.kp-plan [data-key="A100"]').boundingBox())!.width / cab.w
+  const dx = Math.round((sink0.center - cab.center) * px)
+  await at(page, 'pointerdown', p)
+  for (let i = 1; i <= 8; i++) {
+    await page.waitForTimeout(25)
+    await at(page, 'pointermove', { x: p.x + (dx * i) / 8, y: p.y })
+  }
+  await at(page, 'pointerup', { x: p.x + dx, y: p.y })
+  await page.waitForTimeout(800)
+  const sink1 = (await place(page, 'sink'))!
+  expect(Math.abs(sink1.center - (cab.center - cab.w / 2 + 30))).toBeLessThanOrEqual(1)
+}
+
+test('выбранный нижний: задняя часть ячейки — его; тап не выбирает верхний, тянуть оттуда двигает нижний (P5)', async ({ page }) => {
+  await backPartOwned(page)
+})
+
+test('выбранный верхний шкаф на плане — в синей рамке, и свой (uN) тоже (P5)', async ({ page }) => {
+  // верх A ручной (u=): над шкафом 82 — свой верхний u1 62 см, как после переноса
+  await marblePlan(page, '&u=620d_1310')
+  await expect(page.locator('.kp-plan [data-key="u1"][data-row="upper"]')).toHaveCount(1)
+  // тап по краю верхнего (нижний не выбран)
+  const p = await backOf(page, 'A100')
+  await at(page, 'pointerdown', p)
+  await page.waitForTimeout(40)
+  await at(page, 'pointerup', p)
+  await page.waitForTimeout(400)
+  const sel = page.locator('.kp-plan .is-sel')
+  await expect(sel).toHaveCount(1)
+  await expect(sel).toHaveAttribute('data-row', 'upper')
+  await expect(sel).toHaveAttribute('data-key', 'u1')
+})
+
+test('выбранный верхний после переноса на плане — в синей рамке (P5)', async ({ page }) => {
+  // свой верхний u1 40 см (100…140 от угла) — справа свободно, есть куда сдвинуть
+  await marblePlan(page, '&u=400d_1200')
+  const u = page.locator('.kp-plan [data-key="u1"][data-row="upper"]')
+  await expect(u).toHaveCount(1)
+  await tapPlan(page, '.kp-plan [data-key="u1"]')
+  await expect(page.locator('.kp-plan .is-sel')).toHaveAttribute('data-key', 'u1')
+  const b0 = (await u.boundingBox())!
+  const px = b0.width / 40
+  await dragPlan(page, '.kp-plan [data-key="u1"]', Math.round(10 * px))
+  await expect(page.locator('.kp-toast')).toHaveCount(0)
+  // перенесли — выбор остался, и рамка на его ячейке
+  const sel = page.locator('.kp-plan .is-sel')
+  await expect(sel).toHaveCount(1)
+  await expect(sel).toHaveAttribute('data-row', 'upper')
+  const b1 = (await sel.boundingBox())!
+  expect(b1.x).toBeGreaterThan(b0.x + 3 * px)
+})
+
+test('полная стена A: мойку тянут на шкаф 82 → поменялись местами, пустого места нет (P5)', async ({ page }) => {
+  await marblePlan(page)
+  const cab = (await place(page, 'A100'))!
+  const sink0 = (await place(page, 'sink'))!
+  await tapPlan(page, '.kp-plan [data-key="sink"]')
+  const px = (await page.locator('.kp-plan [data-key="sink"]').boundingBox())!.width / sink0.w
+  // палец — левее середины 82
+  await dragPlan(page, '.kp-plan [data-key="sink"]', Math.round((cab.center - 15 - sink0.center) * px))
+  await expect(page.locator('.kp-toast')).toHaveCount(0)
+  const sink1 = (await place(page, 'sink'))!
+  expect(Math.abs(sink1.center - (cab.center - cab.w / 2 + 30))).toBeLessThanOrEqual(1)
+  await expect(page.locator('.kp-plan [data-row="gap"]')).toHaveCount(0)
+  const keys = (await planKeys(page)).filter((k): k is string => Boolean(k))
+  const places = await Promise.all(keys.map((k) => place(page, k)))
+  expect(places.some((q) => q && q.wall === 'A' && q.row === 'base' && q.w === 82 && q.center > sink1.center)).toBe(true)
+})
+
 test.describe('компьютер 1440×900', () => {
   test.use({ viewport: { width: 1440, height: 900 } })
   test('план колонкой рядом с 3D, а ценники и подписи 3D видны (is-plan не стоит)', async ({ page }) => {
@@ -147,5 +252,8 @@ test.describe('компьютер 1440×900', () => {
     // ценники: сама кнопка .kp-tag — точка 0×0 у якоря, видна её плашка .kp-tag__in
     await expect(page.locator('.kp-tags')).toBeVisible()
     await expect(page.locator('.kp-tags .kp-tag .kp-tag__in').first()).toBeVisible({ timeout: 15000 })
+  })
+  test('выбранный нижний: задняя часть ячейки — его (мышь и палец одно правило, P5)', async ({ page }) => {
+    await backPartOwned(page)
   })
 })

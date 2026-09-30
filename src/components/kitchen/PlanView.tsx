@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointer
 import type { Preview } from '@/lib/kitchen/drag'
 import { DEPTH, type Plan, type Run } from '@/lib/kitchen/layout'
 import { isGap, type GapId, type WallId } from '@/lib/kitchen/types'
+import { upperKey } from '@/lib/kitchen/fronts'
 import { cellCm, cellX, chainOf, hitRun, planCells, planFrame, rectOf, runWorld, WALL_T, type PlanCell, type PlanTarget } from './planGeom'
 import type { DragPhase } from './three/engine'
 
@@ -131,6 +132,9 @@ export function PlanView({ plan, selected, preview, onPick, onDrag, onAdd, label
     const t = tfRef.current
     return { x: (u.x - t.tx) / t.k, y: (u.y - t.ty) / t.k }
   }
+  /** выбран ли квадрат: у своего верхнего шкафа (uN) экран хранит ключ сцены — по началу в ряду (`upperKey`), P5 */
+  const isSel = (c: Pick<PlanCell, 'key' | 'row' | 'wall' | 'x'> | null | undefined) =>
+    Boolean(c && selected && (c.key === selected || (c.row === 'upper' && upperKey(c.wall, c.x) === selected)))
   const clampK = (k: number) => Math.min(ZOOM.max, Math.max(ZOOM.min, k))
   /** приблизить вокруг точки экрана */
   const zoomAt = (cx: number, cy: number, k1: number) => {
@@ -188,13 +192,23 @@ export function PlanView({ plan, selected, preview, onPick, onDrag, onAdd, label
     const target = e.target as Element
     const addEl = target.closest('[data-add]')
     const cellEl = target.closest('[data-key]')
-    const key = cellEl?.getAttribute('data-key') ?? null
-    const cell = key ? (cells.find((c) => c.key === key) ?? null) : null
+    let key = cellEl?.getAttribute('data-key') ?? null
+    let cell = key ? (cells.find((c) => c.key === key) ?? null) : null
+    // у выбранного нижнего весь контур — его: задняя часть, над которой висит верхний, берёт и тянет нижний (P5)
+    const own = cells.find((c) => c.row === 'base' && c.pick && isSel(c))
+    if (own && cell !== own) {
+      const w = toWorld(e.clientX, e.clientY)
+      const r = own.rect
+      if (w.x >= r.x && w.x <= r.x + r.w && w.y >= r.y && w.y <= r.y + r.h) {
+        key = own.key
+        cell = own
+      }
+    }
     downRef.current = {
       id: e.pointerId,
       key,
       cell,
-      add: (addEl?.getAttribute('data-add') as GapId | null) ?? null,
+      add: cell && cell.row === 'base' ? null : ((addEl?.getAttribute('data-add') as GapId | null) ?? null),
       x0: e.clientX,
       y0: e.clientY,
       t0: performance.now(),
@@ -225,7 +239,7 @@ export function PlanView({ plan, selected, preview, onPick, onDrag, onAdd, label
     if (d.mode === 'idle') {
       if (Math.hypot(dx, dy) < THRESH(d.type)) return
       // тянуть выбранный — двигать; невыбранный или пусто — панорама
-      if (d.key && d.cell?.pick && d.key === selected && !FIXED_KINDS.has(d.cell.kind)) {
+      if (d.key && d.cell?.pick && isSel(d.cell) && !FIXED_KINDS.has(d.cell.kind)) {
         const w0 = toWorld(d.x0, d.y0)
         const hit0 = hitRun(plan, w0.x, w0.y)
         // всё в см от угла (runCm): на стене B это length − x, как в раскладке и движке
@@ -288,7 +302,7 @@ export function PlanView({ plan, selected, preview, onPick, onDrag, onAdd, label
   // выбранное сняли снаружи — идущее перетаскивание теряет смысл
   useEffect(() => {
     const d = downRef.current
-    if (d && d.mode === 'drag' && d.key !== selected) {
+    if (d && d.mode === 'drag' && !isSel(d.cell)) {
       endDrag(d, 'cancel')
       d.mode = 'done'
     }
@@ -307,7 +321,7 @@ export function PlanView({ plan, selected, preview, onPick, onDrag, onAdd, label
 
   // тянуть можно только выбранный (onPointerMove: d.key === selected), а сняли выбор — перетаскивание отменено; ref в рендере не читаем
   const dragKey = preview ? selected : null
-  const dragCell = dragKey ? cells.find((c) => c.key === dragKey) : undefined
+  const dragCell = dragKey ? cells.find((c) => isSel(c)) : undefined
   const prun = preview ? runOf(preview.wall) : undefined
 
   const vertText = (r: { x: number; y: number; w: number; h: number }, vertical: boolean) =>
@@ -348,8 +362,8 @@ export function PlanView({ plan, selected, preview, onPick, onDrag, onAdd, label
 
   const cellNode = (c: PlanCell) => {
     const r = c.rect
-    const sel = c.key === selected
-    const dragging = c.key === dragKey
+    const sel = isSel(c)
+    const dragging = Boolean(dragKey) && sel
     const cls = `kp-plan__cell kp-plan__cell--${c.row}${sel ? ' is-sel' : ''}${c.pick ? ' is-pick' : ''}${dragging ? ' is-drag' : ''}`
     const sw = sel ? 2.5 * lw : lw
     if (c.row === 'upper') {

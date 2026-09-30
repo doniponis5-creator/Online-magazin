@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { grabOf, previewMove } from '@/lib/kitchen/drag'
 import { addAt, addWidth, detachUppers, fitOn, itemPositions, moduleCenter, narrowNeighbour, pinCabinet, resolveArrangement, swapFit, moveToWall, narrowFor, needByWall, pinnedIds, pinWalls, placeAt, planKitchen, resizeWalls, squeezeGaps, UPPER_MIN, type Plan, type PlanInput, type Planner } from '@/lib/kitchen/layout'
-import { droppedName } from '@/lib/kitchen/checks'
+import { checkProject, droppedName } from '@/lib/kitchen/checks'
 import { makerList } from '@/components/kitchen/drawing'
 import { kitchenTexts } from '@/components/kitchen/texts'
 import { planInputOf, projectItems, projectTotal } from '@/lib/kitchen/order'
@@ -656,9 +656,14 @@ describe('доводка круг 2 (P3): обмен местами и оста�
     if (placed.fit?.ok) expect(pv?.center).toBe(placed.fit.center)
   })
 
-  it('уступка 82 на нехватку 60 → остаток 22 — бутылочница (автозаполнение), не «Шкаф 22» с ящиками; верх — по UPPER_MIN', () => {
-    const { pinned, soft } = gesture(['A'])
-    const { state, fit } = placeAt(pinned, 'sink', 'A', 130, live, 0, { soft })
+  // жестом мойка на 82 теперь меняется с ним местами (P5); остаток 22 даёт «Сузить» 82 на 60
+  const narrowed60 = () => {
+    const { pinned } = gesture(['A'])
+    const p0 = live(pinned, [])
+    return narrowNeighbour(pinned, cabAt(pinned, p0, 'A', 100), 60, p0, 130)
+  }
+  it('«Сузить» 82 на 60 → остаток 22 — бутылочница (автозаполнение), не «Шкаф 22» с ящиками; верх — по UPPER_MIN', () => {
+    const { state, fit } = placeAt(narrowed60(), 'sink', 'A', 130, live)
     expect(fit?.ok).toBe(true)
     const p1 = live(state, [])
     expect(row(p1, 'A')).toEqual(['corner:100@0', 'sink:60@100', 'bottle:22@160', 'doors:58@242'])
@@ -689,8 +694,7 @@ describe('доводка круг 2 (P3): обмен местами и оста�
   })
 
   it('«Коротко» (makerList): мойка, бутылочница и планка — названиями, не голой шириной', () => {
-    const { pinned, soft } = gesture(['A'])
-    const { state } = placeAt(pinned, 'sink', 'A', 130, live, 0, { soft })
+    const { state } = placeAt(narrowed60(), 'sink', 'A', 130, live)
     const text = makerList(live(state, []), {}, kitchenTexts('ru'), [])
     const lines = text.split('\n')
     const lowA = lines[lines.indexOf(kitchenTexts('ru').wall('A', 300)) + 1]
@@ -745,5 +749,117 @@ describe('столешница у варочной — одно правило �
     const { fit } = placeAt(base, 'k1', 'A', 160, planner)
     expect(fit?.ok).toBe(true)
     expect(itemPositions(planner({ ...base, at: { ...base.at, k1: 160 } })).k1?.center).toBe(160)
+  })
+})
+
+/**
+ * P5 (находки критика, круг 3; `corner-300x240-marble`): A — угловой 100, 82, мойка 60, 58;
+ * B — ящики 60, варочная 60 (середина 150 от угла), ящики 60, над варочной вытяжка.
+ */
+describe('доводка круг 3 (P5): вытяжка не уезжает, мойка на 82 — обмен', () => {
+  const catalog = kitchenAppliances(products)
+  const known = new Map(catalog.map((a) => [a.id, a]))
+  const live: Planner = (s, snap) => planKitchen(planInputOf(s, chosenItems(s.picks, catalog), snap), { shelves: getStyle(s.style).shelves })
+  const marble = stateFromQuery(new URLSearchParams(readyKitchen('corner-300x240-marble')!.q), known)
+  const run = (p: Plan, id: WallId) => p.runs.find((r) => r.id === id)!
+  const mid = (r: { x: number; w: number }) => r.x + r.w / 2
+  /** середина вытяжки минус середина варочной на стене B, см (в координатах ряда — у обоих одинаково) */
+  const hoodOff = (p: Plan) => {
+    const B = run(p, 'B')
+    const hood = B.uppers.find((u) => u.kind === 'hood')
+    const hob = B.modules.find((m) => m.kind === 'hob')!
+    return hood ? mid(hood) - mid(hob) : NaN
+  }
+
+  it('верхний шкаф с A на B у угла: вытяжка над варочной (±1 см) или перенос не встаёт', () => {
+    const p0 = live(marble, [])
+    expect(hoodOff(p0)).toBe(0)
+    // как на старте жеста: верх A — ручной, берём каждый его шкаф
+    const s0 = detachUppers(marble, 'A', p0)
+    const ups = (s0.manualUppers?.A ?? []).filter((k) => k.startsWith('u'))
+    expect(ups.length).toBeGreaterThan(0)
+    let tried = 0
+    let placedOk = 0
+    for (const u of ups)
+      for (const cm of [45, 60, 75, 90, 100]) {
+        const { state, fit } = placeAt(s0, u, 'B', cm, live, 0)
+        tried++
+        if (fit?.ok) placedOk++
+        if (!fit?.ok) {
+          expect(state).toBe(s0)
+          continue
+        }
+        expect(Math.abs(hoodOff(live(state, [])))).toBeLessThanOrEqual(1)
+      }
+    expect(tried).toBeGreaterThan(0)
+    // шкафы верха B уступают — перенос в свободную от вытяжки часть встаёт, а не только отказ
+    expect(placedOk).toBeGreaterThan(0)
+  })
+
+  it('проверка проекта: вытяжка не над варочной → замечание, над ней — пункта нет', () => {
+    const p0 = live(marble, [])
+    expect(checkProject(p0).some((c) => c.id === 'hoodOffHob')).toBe(false)
+    const moved: Plan = { ...p0, runs: p0.runs.map((r) => (r.id === 'B' ? { ...r, uppers: r.uppers.map((u) => (u.kind === 'hood' ? { ...u, x: u.x - 38 } : u)) } : r)) }
+    const c = checkProject(moved).find((x) => x.id === 'hoodOffHob')
+    expect(c).toMatchObject({ level: 'warn', off: 38 })
+  })
+
+  it('мойку тянут на шкаф 82 полной стены A (жест: мягкие соседи) → обмен, пустого места нет', () => {
+    const pinned = pinWalls(marble, live(marble, []), ['A'])
+    const soft = pinnedIds(marble, pinned)
+    const row = (p: Plan) => run(p, 'A').modules.map((m) => `${m.item === 'sink' ? 'sink' : m.kind}:${Math.round(m.w)}@${Math.round(m.x)}`)
+    // 82 стоит 100…182: палец левее и правее его середины
+    for (const cm of [120, 130, 150, 165]) {
+      const { state, fit } = placeAt(pinned, 'sink', 'A', cm, live, 0, { soft })
+      expect(fit).toMatchObject({ ok: true, swap: expect.stringMatching(/^k\d+$/) })
+      const p1 = live(state, [])
+      expect(row(p1)).toEqual(['corner:100@0', 'sink:60@100', 'doors:82@160', 'doors:58@242'])
+      expect(run(p1, 'A').gaps ?? []).toEqual([])
+      expect(Object.keys(state.gaps ?? {}).filter((g) => (state.arrangement?.A ?? []).includes(g as ItemKey))).toEqual([])
+      // предпросмотр — тот же вердикт
+      const pv = previewMove(live(pinned, []), 'sink', 'A', cm, 0, { soft, trial: { state: pinned, planner: live } })
+      expect(pv).toMatchObject({ fits: true, swap: fit!.swap, center: fit!.center })
+    }
+  })
+
+  it('мойку тянут влево на 30…55 см: предпросмотр и отпускание — одно решение (обмен или уступка) и один центр', () => {
+    const pinned = pinWalls(marble, live(marble, []), ['A'])
+    const soft = pinnedIds(marble, pinned)
+    const p0 = live(pinned, [])
+    const c0 = itemPositions(p0).sink!.center
+    const kinds = new Set<string>()
+    for (let d = -30; d >= -55; d--) {
+      const pv = previewMove(p0, 'sink', 'A', c0 + d, 0, { soft, trial: { state: pinned, planner: live } })!
+      const { state, fit } = placeAt(pinned, 'sink', 'A', c0 + d, live, 0, { soft })
+      expect({ d, fits: pv.fits, swap: pv.swap !== undefined }).toEqual({ d, fits: Boolean(fit?.ok), swap: fit?.swap !== undefined })
+      if (fit?.ok) expect({ d, center: pv.center }).toEqual({ d, center: itemPositions(live(state, [])).sink!.center })
+      kinds.add(pv.swap !== undefined ? 'swap' : 'yield')
+    }
+    // в диапазоне есть и то и другое — граница правда проверена
+    expect([...kinds].sort()).toEqual(['swap', 'yield'])
+  })
+
+  it('жест: мойку на 40 см вправо — 58 уступает, остаток 18 < 30 не свой шкаф, а автозаполнение (бутылочница)', () => {
+    const pinned = pinWalls(marble, live(marble, []), ['A'])
+    const soft = pinnedIds(marble, pinned)
+    // мойка 182…242 → 222…282: 58 (242…300) задет на 10 см — меньше четверти мойки, это уступка, не обмен
+    const { state, fit } = placeAt(pinned, 'sink', 'A', 252, live, 0, { soft })
+    expect(fit).toMatchObject({ ok: true, center: 252 })
+    expect(fit!.swap).toBeUndefined()
+    const p1 = live(state, [])
+    expect(run(p1, 'A').modules.map((m) => `${m.item === 'sink' ? 'sink' : m.kind}:${Math.round(m.w)}@${Math.round(m.x)}`)).toEqual(['corner:100@0', 'doors:82@100', 'sink:60@222', 'bottle:18@282'])
+    // своего шкафа шириной 18 нет — остаток отдан автозаполнению; освобождённое 182…222 — пустое место
+    expect(Object.values(state.cabinets ?? {}).map((c) => c.w)).toEqual([82])
+    expect((run(p1, 'A').gaps ?? []).map((g) => [Math.round(g.x), Math.round(g.w)])).toEqual([[182, 40]])
+  })
+
+  it('мойку только придвинули к 82 (на 30 см влево) — не обмен: 82 уступает ровно на сдвиг (P1 остаётся)', () => {
+    const pinned = pinWalls(marble, live(marble, []), ['A'])
+    const soft = pinnedIds(marble, pinned)
+    // 181 — палец на сантиметр зашёл на 82 (пиксель пальца на телефоне)
+    const { state, fit } = placeAt(pinned, 'sink', 'A', 181, live, 0, { soft })
+    expect(fit).toMatchObject({ ok: true, center: 181 })
+    expect(fit!.swap).toBeUndefined()
+    expect(run(live(state, []), 'A').modules.map((m) => Math.round(m.w))).toEqual([100, 51, 60, 58])
   })
 })

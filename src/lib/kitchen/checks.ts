@@ -28,6 +28,8 @@ export type Check =
   | { id: 'stoveHeight'; level: CheckLevel; h: number; top: number }
   /** верхний ряд поднят встроенной вытяжкой: over — его низ над столешницей, см; только пояснение */
   | { id: 'upperRaised'; level: CheckLevel; over: number }
+  /** вытяжка не над варочной (P5): off — на сколько см середина вытяжки ушла от середины панели */
+  | { id: 'hoodOffHob'; level: CheckLevel; off: number }
 
 /**
  * Правило треугольника: каждая сторона 120–270 см, сумма не больше 790 см.
@@ -148,6 +150,10 @@ export function checkProject(plan: Plan, facts: CheckFacts = {}): Check[] {
     const right = counterBeside(hob.run, hob.i, 1)
     out.push({ id: 'hobSides', level: left >= HOB_SIDE && right >= HOB_SIDE ? 'ok' : 'warn', left, right })
     if (underWindow(plan, hob)) out.push({ id: 'hobWindow', level: 'warn' })
+    // вытяжка — над варочной, середина в середину (±1 см); пункт только когда ушла
+    const hood = hob.run.uppers.find((u) => u.kind === 'hood')
+    const off = hood ? Math.round(Math.abs(hood.x + hood.w / 2 - (hob.m.x + hob.m.w / 2)) * 10) / 10 : 0
+    if (off > 1) out.push({ id: 'hoodOffHob', level: 'warn', off })
     if (fridge) {
       const gap = gapBetween(hob, fridge)
       if (gap < HOB_SIDE) out.push({ id: 'hobFridge', level: 'warn', gap })

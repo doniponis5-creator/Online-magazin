@@ -1,4 +1,4 @@
-import { fitOn, itemPositions, placeAt, swapFit, type Narrow, type Plan, type Planner, type SnapKind } from './layout'
+import { fitOn, itemPositions, placeAt, swapFirst, swapFit, type Narrow, type Plan, type Planner, type SnapKind } from './layout'
 import type { ItemKey, KitchenState, WallId } from './types'
 
 /**
@@ -43,9 +43,10 @@ export function previewMove(plan: Plan, key: ItemKey, wall: WallId, cm: number, 
   const half = fit.w / 2
   const r1 = (v: number) => Math.round(Math.max(0, v) * 10) / 10
   // не помещается, а палец над соседом той же стены — обмен местами, как в placeAt
-  const sw = fit.ok ? null : swapFit(plan, key, wall, cm - grab)
+  // встать можно, только ужав соседа, и палец глубоко на нём — тоже сначала обмен (P5: `swapFirst`, то же правило, что в placeAt)
+  const sw = fit.ok && !swapFirst(plan, key, wall, cm - grab, opts.soft) ? null : swapFit(plan, key, wall, cm - grab)
   // зелёная рамка обмена — только если placeAt на отпускании правда поменяет (та же пробная раскладка), иначе «рамка, потом тост»
-  if (sw && swapHolds(opts.trial, key, wall, cm, grab, opts.soft, `${wall}|${sw.with}|${sw.center}`)) return { center: sw.center, width: fit.w, wall, fits: true, snap: null, labels: { left: 0, right: 0 }, narrow: null, need: 0, swap: sw.with }
+  if (sw && swapHolds(opts.trial, key, wall, cm, grab, opts.soft, `${wall}|${sw.with}|${sw.center}`, true)) return { center: sw.center, width: fit.w, wall, fits: true, snap: null, labels: { left: 0, right: 0 }, narrow: null, need: 0, swap: sw.with }
   // у варочной свой шкаф ≥ 30 встаёт вплотную (он сам столешница), но освобождённое им место у варочной
   // станет пустым и потребует запаса — рамку проверяет та же пробная раскладка, что и отпускание (P4)
   const nearHob = fit.ok && fit.row === 'base' && (key === 'hob' || fit.neighbours.left === 'hob' || fit.neighbours.right === 'hob')
@@ -62,11 +63,13 @@ export function previewMove(plan: Plan, key: ItemKey, wall: WallId, cm: number, 
   }
 }
 
-function swapHolds(trial: SwapTrial | undefined, key: ItemKey, wall: WallId, cm: number, grab: number, soft: ItemKey[] | undefined, id: string): boolean {
+/** `swap` — вердикт «встанет обменом»: мало, что встанет, — placeAt должен именно поменять местами, а не поставить уступкой */
+function swapHolds(trial: SwapTrial | undefined, key: ItemKey, wall: WallId, cm: number, grab: number, soft: ItemKey[] | undefined, id: string, swap = false): boolean {
   if (!trial) return true
   const known = trial.memo?.get(id)
   if (known !== undefined) return known
-  const ok = Boolean(placeAt(trial.state, key, wall, cm, trial.planner, grab, { soft }).fit?.ok)
+  const fit = placeAt(trial.state, key, wall, cm, trial.planner, grab, { soft }).fit
+  const ok = Boolean(fit?.ok && (!swap || fit.swap !== undefined))
   trial.memo?.set(id, ok)
   return ok
 }

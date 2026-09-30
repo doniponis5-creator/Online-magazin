@@ -2339,6 +2339,8 @@ export function KitchenPlanner({
         return c.level === 'ok' ? t.stove.heightOk(c.h, c.top) : t.stove.heightWarn(c.h, c.top)
       case 'upperRaised':
         return t.checks.upperRaised(c.over)
+      case 'hoodOffHob':
+        return t.checks.hoodOffHob(c.off)
     }
   }
 

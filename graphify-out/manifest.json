@@ -4794,9 +4794,9 @@
     "semantic_hash": ""
   },
   "src/components/kitchen/KitchenPlanner.tsx": {
-    "mtime": 1790793093.6332219,
-    "seen": 1790793658.426791,
-    "ast_hash": "a6fd2eab6381eeacd5ded6c803bb3fdc",
+    "mtime": 1790795041.503968,
+    "seen": 1790796285.865943,
+    "ast_hash": "951e0d89141f9b6bdf3e90e63f8a050a",
     "semantic_hash": ""
   },
   "src/components/kitchen/KitchenPromo.tsx": {
@@ -4818,9 +4818,9 @@
     "semantic_hash": ""
   },
   "src/components/kitchen/texts.ts": {
-    "mtime": 1790793069.9394813,
-    "seen": 1790793658.426979,
-    "ast_hash": "ad599cdc1542fc831fae2507301a69ca",
+    "mtime": 1790795041.5031595,
+    "seen": 1790796285.8661618,
+    "ast_hash": "dc4bee67e26b1eeae435d4548f56cecf",
     "semantic_hash": ""
   },
   "src/components/kitchen/three/appliances.ts": {
@@ -4836,9 +4836,9 @@
     "semantic_hash": ""
   },
   "src/components/kitchen/three/engine.ts": {
-    "mtime": 1790792270.4909847,
-    "seen": 1790793658.427,
-    "ast_hash": "f037916ddc1f5f8a9930c3511a5463bc",
+    "mtime": 1790793826.3880775,
+    "seen": 1790796285.866199,
+    "ast_hash": "7381cf41ed822e3f114009e6673ff1d5",
     "semantic_hash": ""
   },
   "src/components/kitchen/three/materials.ts": {
@@ -4878,9 +4878,9 @@
     "semantic_hash": ""
   },
   "src/lib/kitchen/checks.ts": {
-    "mtime": 1790787732.875135,
-    "seen": 1790789523.910754,
-    "ast_hash": "a0f51ca17961ce3bdb470fa14e343ec3",
+    "mtime": 1790795041.5045464,
+    "seen": 1790796285.8671649,
+    "ast_hash": "79de69c6482fa4106ca3d223888070f3",
     "semantic_hash": ""
   },
   "src/lib/kitchen/finishes.ts": {
@@ -4896,9 +4896,9 @@
     "semantic_hash": ""
   },
   "src/lib/kitchen/layout.ts": {
-    "mtime": 1790792134.811449,
-    "seen": 1790793658.428104,
-    "ast_hash": "5912f8430252019a4e8a4f4c8d392d97",
+    "mtime": 1790799398.7360651,
+    "seen": 1790803297.650244,
+    "ast_hash": "e2a227fda647ff327afb603fb0ab63ae",
     "semantic_hash": ""
   },
   "src/lib/kitchen/share.ts": {
@@ -4974,9 +4974,9 @@
     "semantic_hash": ""
   },
   ".autopilot/state.js": {
-    "mtime": 1790792553.9446027,
-    "seen": 1790793658.4211562,
-    "ast_hash": "ebb702e906ee589e3f2a1a6c82005e7b",
+    "mtime": 1790796455.514425,
+    "seen": 1790803297.626743,
+    "ast_hash": "a3f71d1bd49501cca63f5404b59cc69d",
     "semantic_hash": ""
   },
   ".autopilot/sync.py": {
@@ -4992,15 +4992,15 @@
     "semantic_hash": ""
   },
   ".autopilot/dashboard.html": {
-    "mtime": 1790792553.9913266,
-    "seen": 1790793658.430431,
-    "ast_hash": "0ffc0b4971521849b9e236daa4f58b5f",
+    "mtime": 1790796455.5523343,
+    "seen": 1790803297.6572359,
+    "ast_hash": "e514d3ccc32234054a7bff9c9f9d464a",
     "semantic_hash": ""
   },
   ".autopilot/index.html": {
-    "mtime": 1790792553.9913266,
-    "seen": 1790793658.430432,
-    "ast_hash": "0ffc0b4971521849b9e236daa4f58b5f",
+    "mtime": 1790796455.5523343,
+    "seen": 1790803297.657238,
+    "ast_hash": "e514d3ccc32234054a7bff9c9f9d464a",
     "semantic_hash": ""
   },
   "docs/ANDROID_PLAY_UZ.md": {
@@ -6690,9 +6690,9 @@
     "semantic_hash": ""
   },
   "__tests__/kitchen-place.test.ts": {
-    "mtime": 1790792224.3045835,
-    "seen": 1790793658.4216619,
-    "ast_hash": "5db0d1528d017bff11872aa9cf4fcaec",
+    "mtime": 1790799390.2611568,
+    "seen": 1790803297.6283178,
+    "ast_hash": "f39c56d71449713145840120bcf55687",
     "semantic_hash": ""
   },
   "__tests__/kitchen-plan-view.test.ts": {
@@ -6702,9 +6702,9 @@
     "semantic_hash": ""
   },
   "__tests__/kitchen-quality.test.ts": {
-    "mtime": 1790792281.5029287,
-    "seen": 1790793658.4216928,
-    "ast_hash": "794d58577bf8d6295423cc69e0a1fcee",
+    "mtime": 1790793809.258539,
+    "seen": 1790796285.8613088,
+    "ast_hash": "8e017527877df44d208c6d985088d6c7",
     "semantic_hash": ""
   },
   "__tests__/kitchen-rebuild.test.ts": {
@@ -6720,9 +6720,9 @@
     "semantic_hash": ""
   },
   "e2e/kitchen-plan.spec.ts": {
-    "mtime": 1790791206.181889,
-    "seen": 1790791873.632719,
-    "ast_hash": "0b1c76083a2efc1a7c0a7ba35024ed2b",
+    "mtime": 1790795496.6929483,
+    "seen": 1790796285.862349,
+    "ast_hash": "2bff80bdcc1935caefe46ca8fea06a4d",
     "semantic_hash": ""
   },
   "src/app/[lang]/kitchen/master/page.tsx": {
@@ -6732,9 +6732,9 @@
     "semantic_hash": ""
   },
   "src/components/kitchen/PlanView.tsx": {
-    "mtime": 1790793069.938851,
-    "seen": 1790793658.4268281,
-    "ast_hash": "0439334c498980b4f9d0f9a8e75e12e5",
+    "mtime": 1790795523.2937207,
+    "seen": 1790796285.866,
+    "ast_hash": "f8847eb1b2a193ebd8d7a6834885ded0",
     "semantic_hash": ""
   },
   "src/components/kitchen/planGeom.ts": {
@@ -6744,15 +6744,15 @@
     "semantic_hash": ""
   },
   "src/components/kitchen/three/quality.ts": {
-    "mtime": 1790792262.9255202,
-    "seen": 1790793658.427071,
-    "ast_hash": "0686fee9a0893a47c0b82299b6bd623e",
+    "mtime": 1790793826.3871803,
+    "seen": 1790796285.866276,
+    "ast_hash": "1f67a6c28a43b080cee0fc3efe5ca899",
     "semantic_hash": ""
   },
   "src/lib/kitchen/drag.ts": {
-    "mtime": 1790792216.5960135,
-    "seen": 1790793658.4280698,
-    "ast_hash": "9c77aecb3cf6575eda7c3a411a86ff7c",
+    "mtime": 1790797445.474132,
+    "seen": 1790803297.650128,
+    "ast_hash": "8865d9ea95614e5b8549b40a7d0a7189",
     "semantic_hash": ""
   },
   ".autopilot/2026-09-29-kitchen-3d-mobile-audit/audit-move.md": {
@@ -7017,6 +7017,24 @@
     "mtime": 1790792523.315961,
     "seen": 1790793658.4301498,
     "ast_hash": "0ca85654de4cd02098ccf47ac869bc0d",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro--wip/handoff-P5-1.md": {
+    "mtime": 1790795422.912567,
+    "seen": 1790796285.8692741,
+    "ast_hash": "232169a3a50e6f73e1cade695cbddf6d",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro--wip/tickets/P5-hood-swap-plan.md": {
+    "mtime": 1790794755.5525568,
+    "seen": 1790796285.869617,
+    "ast_hash": "a957b25173982a408d1302c90711883f",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro--wip/tickets/P6-screens-3.md": {
+    "mtime": 1790796349.0816834,
+    "seen": 1790803297.6571908,
+    "ast_hash": "13ab28ddb0496a84f2dcae28ac7f5e93",
     "semantic_hash": ""
   }
 }

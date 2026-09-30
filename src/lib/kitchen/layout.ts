@@ -1425,7 +1425,12 @@ export function fitOn(plan: Plan, key: ItemKey, wall: WallId, center: number, op
   const s = loose.center - loose.w / 2 - pad
   const e = loose.center + loose.w / 2 + pad
   const mods = loose.row === 'base' ? run.modules : run.uppers
-  const yields = mods.filter((m) => m.item && soft.includes(m.item) && Math.min(e, m.x + m.w) - Math.max(s, m.x) > 0.01).map((m) => m.item as ItemKey)
+  // пересечение — в см от угла (на B ряд зеркальный: m.x — не от угла)
+  const cross = (m: { x: number; w: number }) => {
+    const c0 = moduleCenter(run, m)
+    return Math.min(e, c0 + m.w / 2) - Math.max(s, c0 - m.w / 2)
+  }
+  const yields = mods.filter((m) => m.item && soft.includes(m.item) && cross(m) > 0.01).map((m) => m.item as ItemKey)
   return yields.length ? { ...loose, yields } : loose
 }
 
@@ -1463,7 +1468,9 @@ function fitCore(plan: Plan, key: ItemKey, wall: WallId, center: number, opts: F
     }
   } else {
     for (const u of run.uppers) {
-      if (u.item && u.item !== key) obstacles.push({ ...spanOf(u), key: u.item })
+      if (u.item && u.item !== key) {
+        if (!ignore.includes(u.item)) obstacles.push({ ...spanOf(u), key: u.item })
+      }
       else if (!u.item && FIXED_UPPER.includes(u.kind)) obstacles.push({ ...spanOf(u), key: null })
     }
   }
@@ -1571,6 +1578,28 @@ function stateWith(state: KitchenState, rows: Rows, gaps: KitchenState['gaps'], 
 }
 
 /**
+ * Обмен раньше уступки (P5) — одно правило для `placeAt` и предпросмотра `previewMove`.
+ * Встать на `center` можно, только ужав мягкого соседа, и середина предмета зашла на него
+ * глубже четверти ширины предмета: уступка ужала бы соседа до обрезка, а прежнее место
+ * осталось бы пустым посреди полной стены (мойка на 82). Только коснулся соседа — он
+ * уступает ровно на сдвиг (P1: мойка на 30 см влево → 82 → 52). С другой стены — обмен первым всегда.
+ */
+export function swapFirst(plan: Plan, key: ItemKey, wall: WallId, center: number, soft?: ItemKey[]): boolean {
+  if (!soft?.length) return false
+  const yields = fitOn(plan, key, wall, center, { soft })?.yields ?? []
+  if (!yields.length) return false
+  const pos = itemPositions(plan)
+  const cur = pos[key]
+  return yields.some((k) => {
+    const m = pos[k]
+    if (!cur || cur.wall !== wall || !m) return true
+    const dir = Math.sign(m.center - cur.center)
+    // насколько середина предмета зашла за ближний к нему край соседа
+    return dir * (center - (m.center - (dir * m.w) / 2)) > cur.w / 4
+  })
+}
+
+/**
  * Поставить модуль `key` серединой в `cm − grab` см от угла стены `wall`
  * (`cm` — палец, `grab` — смещение середины от точки захвата). Чистая функция:
  * новое состояние и вердикт. Встал — все остальные остаются на своих местах
@@ -1583,6 +1612,10 @@ function stateWith(state: KitchenState, rows: Rows, gaps: KitchenState['gaps'], 
  */
 export function placeAt(state: KitchenState, key: ItemKey, wall: WallId, cm: number, planner: Planner, grab = 0, opts: { w?: number; soft?: ItemKey[] } = {}): Placed {
   const p0 = planner(state, [])
+  if (opts.w === undefined && swapFirst(p0, key, wall, cm - grab, opts.soft)) {
+    const swapped = swapWith(state, p0, key, wall, cm - grab, planner)
+    if (swapped) return swapped
+  }
   const placed = placeWith(state, p0, key, wall, cm - grab, planner, opts)
   if (placed.fit?.ok || opts.w !== undefined) return placed
   return swapWith(state, p0, key, wall, cm - grab, planner) ?? placed
@@ -1650,19 +1683,29 @@ function swapWith(state: KitchenState, p0: Plan, key: ItemKey, wall: WallId, cen
   const p1 = planner(next, [])
   const now = itemPositions(p1)
   const off = (k: ItemKey, c: number) => Math.abs((now[k]?.center ?? -1e3) - c) > 0.6
-  if (p1.dropped.length > p0.dropped.length || off(key, sw.center) || (sw.with && off(sw.with, sw.other))) return null
+  if (p1.dropped.length > p0.dropped.length || off(key, sw.center) || (sw.with && off(sw.with, sw.other)) || hoodShift(p0, p1) > 1) return null
   const fit = fitOn(p0, key, wall, center)!
   return { state: next, fit: { ...fit, ok: true, center: now[key]!.center, snap: null, need: 0, narrow: null, swap: sw.with } }
 }
 
 /** То же, но геометрия и заморозка — по готовому плану `p0` (он может быть от состояния без нового предмета: пенал, новый шкаф). */
-function placeWith(state: KitchenState, p0: Plan, key: ItemKey, wall: WallId, center: number, planner: Planner, opts: { w?: number; fresh?: boolean; soft?: ItemKey[] } = {}): Placed {
-  const pos = itemPositions(p0)
-  const cur = pos[key]
-  const fit = fitOn(p0, key, wall, center, { w: opts.w, soft: opts.soft })
+function placeWith(state: KitchenState, pOld: Plan, key: ItemKey, wall: WallId, center: number, planner: Planner, opts: { w?: number; fresh?: boolean; soft?: ItemKey[] } = {}): Placed {
+  let p0 = pOld
+  let fit = fitOn(p0, key, wall, center, { w: opts.w, soft: opts.soft })
   if (!fit || !fit.ok) return { state, fit }
   const row = fit.row
-  let base = row === 'upper' && !state.manualUppers?.[wall] ? detachUppers(state, wall, p0) : state
+  let base = state
+  if (row === 'upper' && !state.manualUppers?.[wall]) {
+    // верх стены становится ручным до постановки: его шкафы — соседи, они уступают, а не сдвигают
+    // вытяжку — иначе раскладка ряда расталкивала всех, и вытяжка уезжала с варочной (P5)
+    base = detachUppers(state, wall, p0)
+    p0 = planner(base, [])
+    const fresh = (base.manualUppers?.[wall] ?? []).filter((k) => isUpperCab(k) && !state.upperCabs?.[k])
+    fit = fitOn(p0, key, wall, center, { w: opts.w, soft: [...(opts.soft ?? []), ...fresh] })
+    if (!fit || !fit.ok) return { state, fit }
+  }
+  const pos = itemPositions(p0)
+  const cur = pos[key]
   // варочная уходит со стены — шкафы её бывшей зоны столешницы закрепляются, а не перестраиваются молча (P1)
   if (key === 'hob' && row === 'base' && cur && cur.wall !== wall) base = pinWalls(base, p0, [cur.wall], { hobZone: true })
   const rows = rowsOf(base)
@@ -1696,9 +1739,12 @@ function placeWith(state: KitchenState, p0: Plan, key: ItemKey, wall: WallId, ce
   // остаток уже CAB_MIN — не свой шкаф, а автозаполнение (splitFill: планка или бутылочница, верх — по UPPER_MIN) (P3);
   // прочие куски не уже CAB_MIN — пустое место
   const cabinets: NonNullable<KitchenState['cabinets']> = { ...base.cabinets }
+  const upperCabs: NonNullable<KitchenState['upperCabs']> = { ...base.upperCabs }
+  // уступает свой шкаф низа (kN) или ручного верха (uN)
+  const store = (k: ItemKey) => (isUpperCab(k) ? (upperCabs as Record<string, { w: number }>) : (cabinets as Record<string, { w: number }>))
   for (const k of fit.yields ?? []) {
     const m = (row === 'base' ? run.modules : run.uppers).find((mm) => mm.item === k)
-    const cab = cabinets[k as keyof typeof cabinets]
+    const cab = store(k)[k]
     if (!m || !cab) continue
     const c0 = moduleCenter(run, m)
     const a = c0 - m.w / 2
@@ -1706,10 +1752,10 @@ function placeWith(state: KitchenState, p0: Plan, key: ItemKey, wall: WallId, ce
     const pieces = ([[a, Math.min(b, s)], [Math.max(a, e), b]] as [number, number][]).filter(([x, y]) => y - x >= 1).sort((p, q) => q[1] - q[0] - (p[1] - p[0]))
     const keep = pieces[0] && pieces[0][1] - pieces[0][0] >= CAB_MIN ? pieces.shift()! : null
     if (keep) {
-      cabinets[k as keyof typeof cabinets] = { ...cab, w: Math.round((keep[1] - keep[0]) * 10) / 10 }
+      store(k)[k] = { ...cab, w: Math.round((keep[1] - keep[0]) * 10) / 10 }
       at[k] = (keep[0] + keep[1]) / 2
     } else {
-      delete cabinets[k as keyof typeof cabinets]
+      delete store(k)[k]
       delete at[k]
       removeKey(rows, k)
     }
@@ -1725,15 +1771,34 @@ function placeWith(state: KitchenState, p0: Plan, key: ItemKey, wall: WallId, ce
   carveGaps(run, row, list, gaps, at, key, s, e)
   at[key] = fit.center
   insertByCenter(list, key, fit.center, at)
-  const next = stateWith(fit.yields?.length ? { ...base, cabinets } : base, rows, gaps, at)
+  const next = stateWith(fit.yields?.length ? { ...base, cabinets, ...(compact(upperCabs) ? { upperCabs } : {}) } : base, rows, gaps, at)
   const p1 = planner(next, [])
   const now = itemPositions(p1)[key]
-  if (p1.dropped.length > p0.dropped.length || !now) {
+  const shift = hoodShift(p0, p1)
+  if (p1.dropped.length > p0.dropped.length || !now || shift > 1) {
     const fresh = p1.dropped.filter((d) => !p0.dropped.some((o) => o.item === d.item && o.wall === d.wall))
-    const need = Math.max(1, ...fresh.map((d) => d.need))
+    const need = Math.max(1, Math.ceil(shift), ...fresh.map((d) => d.need))
     return { state, fit: { ...fit, ok: false, need, narrow: narrowAmong([fit.neighbours.left, fit.neighbours.right], need, pos) } }
   }
   return { state: next, fit: { ...fit, center: now.center } }
+}
+
+/**
+ * На сколько см уехала вытяжка на какой-нибудь стене после постановки (P5):
+ * вытяжка — фиксированная часть верха над варочной; постановка, которая её
+ * сдвигает, не встаёт. Варочную саму двигали — вытяжка едет с ней, это не сдвиг.
+ */
+function hoodShift(p0: Plan, p1: Plan): number {
+  let most = 0
+  for (const r1 of p1.runs) {
+    const r0 = p0.runs.find((r) => r.id === r1.id)
+    const hood = (r: Run) => r.uppers.find((u) => u.kind === 'hood')
+    const hob = (r: Run) => r.modules.find((m) => m.kind === 'hob')
+    const [h0, h1, b0, b1] = [r0 && hood(r0), hood(r1), r0 && hob(r0), hob(r1)]
+    if (!h0 || !h1 || !b0 || !b1 || Math.abs(b0.x - b1.x) > 0.01 || Math.abs(b0.w - b1.w) > 0.01) continue
+    most = Math.max(most, Math.abs(h1.x + h1.w / 2 - (h0.x + h0.w / 2)))
+  }
+  return most
 }
 
 /**
