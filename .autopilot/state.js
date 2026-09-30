@@ -14,7 +14,7 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-29T22:14:27+06:00",
-  "updatedAt": "2026-09-30T09:34:02+06:00",
+  "updatedAt": "2026-09-30T10:11:49+06:00",
   "finishedAt": null,
   "stages": [
     {
@@ -89,7 +89,7 @@ window.STATE =
       ],
       "status": "done",
       "finishedAt": "2026-09-29T23:06:17+06:00",
-      "tests": { "passed": 899, "failed": 0 },
+      "tests": { "passed": 906, "failed": 0 },
       "commit": "a10698b",
       "files": ["lib/kitchen/layout.ts", "lib/kitchen/types.ts", "lib/kitchen/share.ts", "lib/kitchen/order.ts", "lib/kitchen/drag.ts"],
       "startedAt": "2026-09-29T22:26:02+06:00",
@@ -182,10 +182,15 @@ window.STATE =
         "src/components/kitchen/KitchenPlanner.tsx",
         "src/components/kitchen/kitchen.css"
       ],
-      "status": "in-progress",
+      "status": "done",
+      "finishedAt": "2026-09-30T10:11:49+06:00",
+      "tests": { "passed": 906, "failed": 0 },
+      "commit": "69b0e69",
+      "files": ["PlanView.tsx", "planGeom.ts", "KitchenPlanner.tsx", "three/engine.ts", "three/build.ts", "kitchen.css", "e2e/kitchen-plan.spec.ts"],
       "startedAt": "2026-09-30T09:34:02+06:00",
       "retries": 0,
-      "repairs": 0,
+      "repairs": 1,
+      "repairFindings": ["план: стена B ставит зеркально (cm не от угла) — R16i.1", "is-plan вместе с has-col прячет ценники/подписи в 3D на компьютере — R10/R23i"],
       "handoffs": 0
     },
     {
@@ -212,7 +217,8 @@ window.STATE =
         "src/components/kitchen/kitchen.css",
         "src/components/kitchen/texts.ts"
       ],
-      "status": "pending",
+      "status": "in-progress",
+      "startedAt": "2026-09-30T10:11:49+06:00",
       "retries": 0,
       "repairs": 0,
       "handoffs": 0
@@ -305,7 +311,16 @@ window.STATE =
     "T03 · build.ts · RunCache.lemons/props, ctx.lemons, done.board/kettle — мёртвый учёт после decorPlan; выпавшая техника входит в runKey каждого ряда",
     "T03 · kitchen-place.test.ts:309-321 · тест filler на синтетическом плане, не на угловой кухне из снимка",
     "T03 · KitchenPlanner.tsx resize · три поля продублированы после спреда",
-    "T03 · e2e · положительный путь «Сузить» (кнопка есть и ставит) без e2e после починки"
+    "T03 · e2e · положительный путь «Сузить» (кнопка есть и ставит) без e2e после починки",
+    "T04 · planGeom.ts:14-18 / drawing.ts:440 / PlanSketch.tsx · формула «точка ряда → мир» в трёх местах; PlanView заново рисует стены/окно/цепочки, которые рисует planSvg — одна геометрия на чертёж и план",
+    "T04 · KitchenPlanner.tsx addNarrow · ширина нового шкафа 60 и ключ-заглушка k0; addAt должен сам возвращать fit при неудаче",
+    "T04 · PlanView.tsx:299 · чтение downRef.current во время рендера",
+    "T04 · planGeom.ts:99,109 + engine.ts keyAt · порог «планка < 15 см не берётся» продублирован",
+    "T04 · kitchen-plan-view.test.ts · rectOf для повёрнутых рядов (B, остров) и planFrame не покрыты",
+    "T04 · перетаскивание из плана не двигает объект в 3D во время жеста (только после отпускания)",
+    "T04 · меню «+» → «техника» открывает шаг «Техника» и первый пустой слот, а не ставит в точку",
+    "T04 · addPicked · при всех занятых слотах переносится всегда посудомойка, не выбор пользователя; не влезла — без тоста",
+    "T04 · engine.dangerColor · getComputedStyle на каждый move с fits=false — кэшировать"
 ],
   "reviewers": {
     "manifestSpec": null,
