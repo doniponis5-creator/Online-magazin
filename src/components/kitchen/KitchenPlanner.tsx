@@ -109,8 +109,9 @@ import type { DragPhase, EngineEvents, KitchenEngine, PhotoState, Pick, Quality,
 import type { Photo } from './three/photo'
 import './kitchen.css'
 
-type Step = 'shape' | 'size' | 'style' | 'finish' | 'tech'
-const STEPS: Step[] = ['shape', 'size', 'tech', 'style', 'finish']
+/** Четыре шага (спецификация §6): «Кухня» = форма + размер, «Техника», «Стиль» = стили + цвет + отделка, «Итог» = проверка, сумма, корзина, мастер, варианты. */
+type Step = 'kitchen' | 'tech' | 'style' | 'total'
+const STEPS: Step[] = ['kitchen', 'tech', 'style', 'total']
 const SHAPES: Shape[] = ['straight', 'corner', 'u', 'island']
 /** Слоты, которые можно выключить («Не нужно»); без остальных кухня не кухня. */
 const OPTIONAL: SlotKind[] = SLOTS.filter((s) => !CORE_SLOTS.includes(s))
@@ -321,7 +322,7 @@ export function KitchenPlanner({
 
   const [state, setState] = useState<KitchenState>(DEFAULT_STATE)
   const [hydrated, setHydrated] = useState(false)
-  const [step, setStep] = useState<Step>('shape')
+  const [step, setStep] = useState<Step>('kitchen')
   const [open, setOpen] = useState<SlotKind | null>(null)
   const [selected, setSelected] = useState<SlotKind | null>(null)
   /** что сейчас переставляют кнопками под 3D */
@@ -352,6 +353,20 @@ export function KitchenPlanner({
     mq.addEventListener('change', on)
     return () => mq.removeEventListener('change', on)
   }, [])
+  /** телефон стоя (STACKED): нижняя панель, лист выбранного ≤ 40svh, «Ещё параметры»; ценники в 3D по умолчанию выключены (R20i.4) */
+  const [stacked, setStacked] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia(STACKED)
+    const on = () => setStacked(mq.matches)
+    on()
+    if (mq.matches) setPrices(false)
+    mq.addEventListener('change', on)
+    return () => mq.removeEventListener('change', on)
+  }, [])
+  /** лист выбранного на телефоне: петли, высота, цвет над холодильником раскрыты */
+  const [selMore, setSelMore] = useState(false)
+  /** план на экране — только тогда предпросмотр перемещения идёт в состояние (иначе каждый pointermove перерисовывал бы планировщик) */
+  const planShownRef = useRef(false)
   // меню «+» закрывается нажатием мимо него
   useEffect(() => {
     if (!add) return
@@ -800,7 +815,7 @@ export function KitchenPlanner({
       // предпросмотр — из drag.previewMove; движок и план только рисуют
       const pv = previewMove(d.plan, d.key, wall, cm, grab, { opposite: from === 'plan' })
       engine?.setPreview(pv)
-      setPreview(pv)
+      if (planShownRef.current) setPreview(pv)
       setDragLabels((prev) => (!pv ? null : prev && prev.left === pv.labels.left && prev.right === pv.labels.right ? prev : pv.labels))
       return
     }
@@ -1229,8 +1244,6 @@ export function KitchenPlanner({
   // Новый шаг всегда открывается с начала, а не там, где листали прошлый.
   const goStep = (s: Step) => {
     setStep(s)
-    if (s === 'size' && view !== 'top') changeView('top', true)
-    else if (s !== 'size' && autoView.current && view === 'top') changeView('angle', true)
     requestAnimationFrame(() => {
       bodyRef.current?.scrollTo({ top: 0 })
       // в полном экране страница под 3D заперта — её не двигаем
@@ -1238,10 +1251,8 @@ export function KitchenPlanner({
     })
   }
 
-  /** Последний шаг пройден — к проверке проекта и чертежам для мастера. */
-  const finishSteps = () => {
-    rootRef.current?.querySelector('.kp-check')?.scrollIntoView({ block: 'start', behavior: smooth() })
-  }
+  /** Последний шаг пройден — «Итог»: проверка проекта, сумма, корзина, лист мастера, варианты. */
+  const finishSteps = () => goStep('total')
 
   // Превью стилей — ваша же кухня в каждом стиле.
   const thumbKey = `${state.shape}:${sizeKey}:${SLOTS.map((s) => items[s]?.id ?? '-').join('|')}:${photosVersion}:${state.lowUppers ? 0 : 1}:${state.floor ?? ''}:${state.wallColor ?? 0}:${state.noWindow ? 0 : 1}`
@@ -1339,7 +1350,11 @@ export function KitchenPlanner({
   const resize = (patch: Partial<KitchenState>) => {
     // стена A стала короче острова — остров поджимается к ней (C14)
     const island = patch.a !== undefined && state.island > patch.a ? { island: patch.a } : {}
-    const next = resizeWalls(state, { a: patch.a, b: patch.b, c: patch.c, island: island.island ?? patch.island }, plan)
+    // только заданные стены: `b: undefined` затирал бы длину стены B (страница падала на чертеже)
+    const sizes: Partial<{ a: number; b: number; c: number; island: number }> = {}
+    for (const k of ['a', 'b', 'c'] as const) if (patch[k] !== undefined) sizes[k] = patch[k]
+    if ((island.island ?? patch.island) !== undefined) sizes.island = island.island ?? patch.island
+    const next = resizeWalls(state, sizes, plan)
     update({ ...next, at: next.at, gaps: next.gaps, manualUppers: next.manualUppers })
   }
 
@@ -1796,6 +1811,7 @@ export function KitchenPlanner({
   const sheetOpen = engineState === 'ready' && built && Boolean(measure || (moving && movingShown))
   useEffect(() => {
     document.documentElement.classList.toggle('kp-picking', sheetOpen)
+    if (!sheetOpen) setSelMore(false)
     return () => document.documentElement.classList.remove('kp-picking')
   }, [sheetOpen])
 
@@ -2690,7 +2706,7 @@ export function KitchenPlanner({
     )
     els.forEach((el) => io.observe(el))
     return () => io.disconnect()
-  }, [])
+  }, [step])
   const makePdfRef = useRef(makePdf)
   makePdfRef.current = makePdf
   useEffect(() => {
@@ -2760,6 +2776,7 @@ export function KitchenPlanner({
   const planShown = !photo && !photoFallback && (planCol || scene === 'plan')
   /** план ВМЕСТО 3D (узкий экран): только тогда прячем ценники и подписи 3D; в колонке 3D живёт со всеми метками */
   const planOver = planShown && !planCol
+  planShownRef.current = planShown
   const editOptions: FrontVariant[] = editing ? (editing.row === 'base' ? BASE_FRONTS : editing.fridge ? OVER_FRIDGE_FRONTS : UPPER_FRONTS) : []
   const frontLabel = (v: FrontVariant) =>
     editing?.fridge
@@ -2778,7 +2795,11 @@ export function KitchenPlanner({
     : toneSwatch(tone.upper ?? tone.facade, undefined, tone.upper ? tone.upperTexture : tone.texture)
 
   return (
-    <div className={`kp${masterPage ? ' kp--master' : ''}${full ? ' kp--full' : ''}${full && fullPanel ? ' is-panel' : ''}`} ref={rootRef} onKeyDown={groupKeys}>
+    <div
+      className={`kp${masterPage ? ' kp--master' : ''}${full ? ' kp--full' : ''}${full && fullPanel ? ' is-panel' : ''}${stacked && !masterPage ? ' kp--bar' : ''}${step === 'total' ? ' is-total' : ''}`}
+      ref={rootRef}
+      onKeyDown={groupKeys}
+    >
       <header className="kp-head">
         <h1 className="kp-head__title">{masterPage ? t.masterPageTitle : t.title}</h1>
         <p className="kp-head__lead">{masterPage ? t.masterPageLead : t.lead}</p>
@@ -2807,10 +2828,11 @@ export function KitchenPlanner({
               cm={t.cm}
               addLabel={t.plus.btn}
               ariaLabel={t.planViewTitle}
+              facade={tone.facade}
             />
           )}
           {add && (
-            <div className="kp-add" role="menu" aria-label={t.plus.title} style={{ left: add.x, top: add.y }} ref={addRef}>
+            <div className="kp-add" role="menu" aria-label={t.plus.title} style={{ '--kp-add-x': `${add.x}px`, '--kp-add-y': `${add.y}px` } as React.CSSProperties} ref={addRef}>
               <span className="kp-add__title">{add.failed ? t.plus.noGap : t.plus.title}</span>
               {add.failed ? (
                 <>
@@ -2952,7 +2974,7 @@ export function KitchenPlanner({
                     ) : null,
                   ),
                 )}
-              {(step === 'size' || view === 'top') &&
+              {view === 'top' &&
                 (['a', 'b', 'c', 'i'] as const).map((k) => {
                   const value = k === 'a' ? state.a : k === 'b' ? state.b : k === 'c' ? state.c : state.island
                   const shown = k === 'a' || (k === 'b' && wallLabels.b) || (k === 'c' && wallLabels.c) || (k === 'i' && state.shape === 'island')
@@ -3171,58 +3193,6 @@ export function KitchenPlanner({
                       </div>
                     </div>
                   )}
-                  {/* шкаф над холодильником: свой цвет фасада (у стекла — рамки) из того же каталога, что в «Отделке» */}
-                  {overFridgeColors && (
-                    <div className="kp-fronts" role="group" aria-label={editing?.variant === 'glass' ? t.overFridgeGlassColor : t.overFridgeColor}>
-                      <span className="kp-fronts__ask">{editing?.variant === 'glass' ? t.overFridgeGlassColor : t.overFridgeColor}</span>
-                      <div className="kp-fronts__list" role="tablist" aria-label={t.frontsTitle2}>
-                        {FRONT_MATERIALS.map((m) => (
-                          <button key={m.id} type="button" role="tab" aria-selected={ofMatShown === m.id} className="kp-chip" onClick={() => setOfMat(m.id)}>
-                            {lang === 'ky' ? m.ky : m.ru}
-                          </button>
-                        ))}
-                      </div>
-                      <div className="kp-fronts__list" role="radiogroup" aria-label={t.overFridgeColor}>
-                        <button
-                          type="button"
-                          role="radio"
-                          aria-checked={!state.overFridgeFacade}
-                          className="kp-color"
-                          onClick={() => state.overFridgeFacade && update({ overFridgeFacade: undefined })}
-                        >
-                          <span className="kp-color__chip" style={{ background: kitchenUpperSwatch }} />
-                          <span>{t.asKitchen}</span>
-                        </button>
-                        {FRONT_COLORS.filter((c) => c.material === ofMatShown).map((c) => (
-                          <button
-                            key={c.id}
-                            type="button"
-                            role="radio"
-                            aria-checked={state.overFridgeFacade === c.id}
-                            className="kp-color"
-                            onClick={() => state.overFridgeFacade !== c.id && update({ overFridgeFacade: c.id })}
-                          >
-                            <span className={`kp-color__chip kp-color__chip--${c.material}`} style={{ background: colorSwatch(c.color, c.texture) }} />
-                            <span>{lang === 'ky' ? c.ky : c.ru}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {/* в какую сторону открывается дверца — как удобнее самому */}
-                  {hingeKey && (
-                    <div className="kp-cabw" role="radiogroup" aria-label={t.openLabel}>
-                      <span className="kp-cabw__label">{t.openLabel}</span>
-                      <div className="kp-seg">
-                        <button type="button" role="radio" aria-checked={!doorRight} className="kp-seg__btn" onClick={() => setDoorSide(false)}>
-                          ← {t.openLeft}
-                        </button>
-                        <button type="button" role="radio" aria-checked={doorRight} className="kp-seg__btn" onClick={() => setDoorSide(true)}>
-                          {t.openRight} →
-                        </button>
-                      </div>
-                    </div>
-                  )}
                   {/* ширина — у каждого шкафа, у мойки и пенала; соседние шкафы подстраиваются */}
                   {widthCtl && (
                     <div className="kp-cabw">
@@ -3258,8 +3228,28 @@ export function KitchenPlanner({
                       )}
                     </div>
                   )}
+                  {/* телефон: лист ≤ 40svh — тип, ширина, перемещение; петли, высота и цвет над холодильником — за «Ещё параметры» */}
+                  {stacked && (hingeKey || heightCtl || overFridgeColors) && (
+                    <button type="button" className="kp-sel__more" aria-expanded={selMore} onClick={() => setSelMore((m) => !m)}>
+                      {selMore ? t.lessParams : t.moreParams}
+                    </button>
+                  )}
+                  {/* в какую сторону открывается дверца — как удобнее самому */}
+                  {hingeKey && (!stacked || selMore) && (
+                    <div className="kp-cabw" role="radiogroup" aria-label={t.openLabel}>
+                      <span className="kp-cabw__label">{t.openLabel}</span>
+                      <div className="kp-seg">
+                        <button type="button" role="radio" aria-checked={!doorRight} className="kp-seg__btn" onClick={() => setDoorSide(false)}>
+                          ← {t.openLeft}
+                        </button>
+                        <button type="button" role="radio" aria-checked={doorRight} className="kp-seg__btn" onClick={() => setDoorSide(true)}>
+                          {t.openRight} →
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   {/* высота пенала и колонны с духовкой — можно ниже потолка */}
-                  {heightCtl && (
+                  {heightCtl && (!stacked || selMore) && (
                     <div className="kp-cabw">
                       <span className="kp-cabw__label">{t.heightLabel}</span>
                       <button
@@ -3283,6 +3273,44 @@ export function KitchenPlanner({
                       >
                         +
                       </button>
+                    </div>
+                  )}
+                  {/* шкаф над холодильником: свой цвет фасада (у стекла — рамки) из того же каталога, что в «Отделке» */}
+                  {overFridgeColors && (!stacked || selMore) && (
+                    <div className="kp-fronts" role="group" aria-label={editing?.variant === 'glass' ? t.overFridgeGlassColor : t.overFridgeColor}>
+                      <span className="kp-fronts__ask">{editing?.variant === 'glass' ? t.overFridgeGlassColor : t.overFridgeColor}</span>
+                      <div className="kp-fronts__list" role="tablist" aria-label={t.frontsTitle2}>
+                        {FRONT_MATERIALS.map((m) => (
+                          <button key={m.id} type="button" role="tab" aria-selected={ofMatShown === m.id} className="kp-chip" onClick={() => setOfMat(m.id)}>
+                            {lang === 'ky' ? m.ky : m.ru}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="kp-fronts__list" role="radiogroup" aria-label={t.overFridgeColor}>
+                        <button
+                          type="button"
+                          role="radio"
+                          aria-checked={!state.overFridgeFacade}
+                          className="kp-color"
+                          onClick={() => state.overFridgeFacade && update({ overFridgeFacade: undefined })}
+                        >
+                          <span className="kp-color__chip" style={{ background: kitchenUpperSwatch }} />
+                          <span>{t.asKitchen}</span>
+                        </button>
+                        {FRONT_COLORS.filter((c) => c.material === ofMatShown).map((c) => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            role="radio"
+                            aria-checked={state.overFridgeFacade === c.id}
+                            className="kp-color"
+                            onClick={() => state.overFridgeFacade !== c.id && update({ overFridgeFacade: c.id })}
+                          >
+                            <span className={`kp-color__chip kp-color__chip--${c.material}`} style={{ background: colorSwatch(c.color, c.texture) }} />
+                            <span>{lang === 'ky' ? c.ky : c.ru}</span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -3422,7 +3450,7 @@ export function KitchenPlanner({
             <div className="kp-resume" role="status">
               <p>{t.resumeLead}</p>
               <div className="kp-resume__row">
-                <button type="button" className="btn btn--primary btn--sm" aria-label={t.resume} onClick={resumeLast}>
+                <button type="button" className="btn btn--outline btn--sm" aria-label={t.resume} onClick={resumeLast}>
                   {t.resumeShort}
                 </button>
                 <button type="button" className="btn btn--ghost btn--sm" aria-label={t.startOver} onClick={startOver}>
@@ -3467,8 +3495,9 @@ export function KitchenPlanner({
                 </button>
               </div>
             )}
-            {step === 'shape' && (
-              <div className="kp-shapes" role="radiogroup" aria-label={t.steps.shape}>
+            {step === 'kitchen' && <h2 className="kp-sub kp-sub--first">{t.shapeTitle}</h2>}
+            {step === 'kitchen' && (
+              <div className="kp-shapes" role="radiogroup" aria-label={t.shapeTitle}>
                 {SHAPES.map((s) => (
                   <button key={s} type="button" role="radio" aria-checked={state.shape === s} className="kp-shape" onClick={() => setShape(s)}>
                     <ShapeIcon shape={s} />
@@ -3478,10 +3507,11 @@ export function KitchenPlanner({
                 ))}
               </div>
             )}
-            {step === 'shape' && <ReadyStrip lang={lang} t={t} appliances={appliances} own={ownKitchen} dropName={!ownSaved && variants.length >= 8 ? variants[variants.length - 1].name : null} onOpen={openReady} />}
+            {step === 'kitchen' && <ReadyStrip lang={lang} t={t} appliances={appliances} own={ownKitchen} dropName={!ownSaved && variants.length >= 8 ? variants[variants.length - 1].name : null} onOpen={openReady} />}
 
-            {step === 'size' && (
+            {step === 'kitchen' && (
               <div className="kp-sizes">
+                <h2 className="kp-sub">{t.sizeTitle}</h2>
                 <PlanSketch plan={plan} labels={wallLabels} className="kp-sketch" />
                 <p className="kp-note">{t.measureHint}</p>
                 <SizeField label={`A · ${t.walls.a}`} value={state.a} min={minA(state.shape)} max={LIMITS.a.max} t={t} onChange={(a) => resize({ a })} />
@@ -3574,8 +3604,9 @@ export function KitchenPlanner({
               </div>
             )}
 
-            {step === 'finish' && (
+            {step === 'style' && (
               <div className="kp-finish">
+                <h2 className="kp-sub">{t.finishTitle}</h2>
                 <p className="kp-note">{t.finishLead}</p>
                 {/*
                   Шесть разделов отделки свёрнуты в строки: в каждой — что
@@ -3900,7 +3931,7 @@ export function KitchenPlanner({
               </div>
             )}
 
-            {step === 'size' && (
+            {step === 'kitchen' && (
               <div className="kp-extra">
                 <h2 className="kp-sub">{t.furnitureTitle}</h2>
                 {stoveOn && (
@@ -3993,9 +4024,141 @@ export function KitchenPlanner({
               </ul>
             )}
 
+            {/* «Итог»: проверка проекта, ссылка мастеру и PDF, поделиться, варианты; сумма и корзина — kp-sum ниже (на телефоне — нижняя панель) */}
+            {step === 'total' && !masterPage && (
+              <div className="kp-total">
+      <section className="kp-check" aria-labelledby="kp-check-title">
+        <div className="kp-check__head">
+          <h2 id="kp-check-title" className="kp-maker__title kp-maker__title--small">
+            {t.checkTitle}
+          </h2>
+          <span className={`kp-check__score${checksOk === checks.length ? ' is-ok' : ''}`}>{t.checkScore(checksOk, checks.length)}</span>
+        </div>
+        <p className="kp-note">{t.checkLead}</p>
+        <ul className="kp-check__list">
+          {checks.map((c) => (
+            <li key={c.id} className={`kp-check__item is-${c.level}`}>
+              <span className="kp-check__icon" aria-hidden="true">
+                {c.level === 'ok' ? '✓' : '!'}
+              </span>
+              <span>{checkText(c)}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* Покупателю: чертежи и раскрой — на отдельной странице мастера. Здесь только
+          ссылка на неё и «Отправить PDF». PDF готовится заранее, когда карточка на экране (specRef). */}
+        <section className="kp-spec kp-spec--link" aria-labelledby="kp-spec-title" ref={specRef}>
+          <div className="kp-spec__head">
+            <div>
+              <h2 id="kp-spec-title" className="kp-maker__title">
+                {t.specTitle}
+              </h2>
+              <p className="kp-maker__lead">{t.masterOpenLead}</p>
+            </div>
+            <div className="kp-spec__actions">
+              <Link href={`/${lang}/kitchen/master?${query}`} className="btn btn--outline">
+                <IconFile />
+                {t.masterOpen}
+              </Link>
+              <button type="button" className="btn btn--outline" onClick={sendPdf} disabled={!drawing || pdfBusy} aria-busy={pdfBusy}>
+                {pdfBusy ? t.specPreparing : t.specSend}
+              </button>
+            </div>
+          </div>
+        </section>
+
+      <section className="kp-maker" aria-labelledby="kp-maker-title" ref={makerRef}>
+        <div className="kp-maker__text">
+          <h2 id="kp-maker-title" className="kp-maker__title kp-maker__title--small">
+            {t.makerTitle}
+          </h2>
+          {masterPage && <pre className="kp-maker__list">{makerText}</pre>}
+          <div className="kp-maker__actions">
+            {masterPage && (
+              <button type="button" className="btn btn--outline btn--sm" onClick={copyList}>
+                {t.copy}
+              </button>
+            )}
+            <button type="button" className="btn btn--outline btn--sm" onClick={() => void share()}>
+              {t.share}
+            </button>
+            {!masterPage && (
+              <button
+                type="button"
+                className="btn btn--outline btn--sm"
+                onClick={() => setPublishing(true)}
+                disabled={galleryWhy !== null}
+                title={galleryWhy ?? undefined}
+              >
+                {t.gallery.toGallery}
+              </button>
+            )}
+            <a className="btn btn--ghost btn--sm" href={whatsappHref(phones[0], waText)} target="_blank" rel="noopener noreferrer">
+              {t.ask}
+            </a>
+          </div>
+          {!masterPage && galleryWhy && <p className="kp-note">{galleryWhy}</p>}
+        </div>
+        <PlanSketch plan={plan} labels={wallLabels} showWidths className="kp-maker__sketch" />
+      </section>
+      <section className="kp-variants" aria-labelledby="kp-variants-title">
+        <div className="kp-check__head">
+          <div>
+            <h2 id="kp-variants-title" className="kp-maker__title kp-maker__title--small">
+              {t.variantsTitle}
+            </h2>
+            <p className="kp-note">{t.variantsLead}</p>
+          </div>
+          <button type="button" className="btn btn--outline btn--sm" onClick={saveVariant} disabled={engineState !== 'ready'}>
+            {t.saveVariant}
+          </button>
+        </div>
+        {askGallery && !galleryWhy && (
+          <div className="kp-ask" role="group" aria-label={t.gallery.ask}>
+            <span className="kp-ask__text">{t.gallery.ask}</span>
+            <button
+              type="button"
+              className="btn btn--outline btn--sm"
+              onClick={() => {
+                setAskGallery(false)
+                setPublishing(true)
+              }}
+            >
+              {t.gallery.yes}
+            </button>
+            <button type="button" className="btn btn--ghost btn--sm" onClick={() => setAskGallery(false)}>
+              {t.gallery.no}
+            </button>
+          </div>
+        )}
+        {variants.length > 0 && (
+          <ul className="kp-variants__list">
+            {variants.map((v) => (
+              <li key={v.id} className="kp-variant">
+                {v.img ? <img src={v.img} alt="" className="kp-variant__img" /> : <span className="kp-variant__img" />}
+                <span className="kp-variant__name">{v.name}</span>
+                <span className="kp-variant__label">{v.label}</span>
+                <span className="kp-variant__actions">
+                  <button type="button" className="btn btn--outline btn--sm" onClick={() => openVariant(v)}>
+                    {t.openVariant}
+                  </button>
+                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => storeVariants(variants.filter((x) => x.id !== v.id))}>
+                    {t.removeVariant}
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+              </div>
+            )}
+
             {/* на компьютере ряд прилипает к низу панели — «Начать заново» рядом с «Дальше», а не под ней */}
             <div className="kp-next-row">
-              {step === 'shape' && (
+              {step === 'kitchen' && (
                 <button type="button" className="btn btn--ghost btn--sm kp-restart" onClick={startOver}>
                   {t.startOver}
                 </button>
@@ -4005,12 +4168,7 @@ export function KitchenPlanner({
                   {t.next}: {t.steps[STEPS[stepIndex + 1]]}
                   <IconArrow />
                 </button>
-              ) : (
-                <button type="button" className="btn btn--outline kp-next" onClick={finishSteps}>
-                  {t.done}
-                  <IconArrow down />
-                </button>
-              )}
+              ) : null}
             </div>
           </div>
 
@@ -4047,50 +4205,32 @@ export function KitchenPlanner({
         )}
       </div>
 
-      {!masterPage && (
-      <section className="kp-check" aria-labelledby="kp-check-title">
-        <div className="kp-check__head">
-          <h2 id="kp-check-title" className="kp-maker__title kp-maker__title--small">
-            {t.checkTitle}
-          </h2>
-          <span className={`kp-check__score${checksOk === checks.length ? ' is-ok' : ''}`}>{t.checkScore(checksOk, checks.length)}</span>
+      {/* Телефон стоя: липкая нижняя панель 60 px — сумма техники · «Дальше» / «Всё в корзину» · корзина с числом. Лимонная кнопка одна. */}
+      {stacked && !masterPage && (
+        <div className="kp-bar" role="region" aria-label={t.barLabel}>
+          <button type="button" className="kp-bar__sum" onClick={() => goStep('total')}>
+            <span className="kp-bar__label">{t.totalShort(totals.count)}</span>
+            <span className="kp-bar__price">{formatSom(totals.sum)}</span>
+          </button>
+          {step !== 'total' ? (
+            <button type="button" className="btn btn--primary kp-bar__next" onClick={() => goStep(STEPS[stepIndex + 1])}>
+              {t.next}
+              <IconArrow />
+            </button>
+          ) : cartResult || (totals.count > 0 && missing.length === 0) ? (
+            <Link href={`/${lang}/cart`} className="btn btn--primary kp-bar__next">
+              {t.toCart}
+            </Link>
+          ) : (
+            <button type="button" className="btn btn--primary kp-bar__next" disabled={totals.count === 0} onClick={addAll}>
+              {t.addAllShort}
+            </button>
+          )}
+          <Link href={`/${lang}/cart`} className="kp-bar__cart" aria-label={`${t.barCart}: ${cart.itemsCount}`}>
+            <IconCart />
+            {cart.itemsCount > 0 && <span className="kp-bar__count">{cart.itemsCount}</span>}
+          </Link>
         </div>
-        <p className="kp-note">{t.checkLead}</p>
-        <ul className="kp-check__list">
-          {checks.map((c) => (
-            <li key={c.id} className={`kp-check__item is-${c.level}`}>
-              <span className="kp-check__icon" aria-hidden="true">
-                {c.level === 'ok' ? '✓' : '!'}
-              </span>
-              <span>{checkText(c)}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
-      )}
-
-      {/* Покупателю: чертежи и раскрой — на отдельной странице мастера. Здесь только
-          ссылка на неё и «Отправить PDF». PDF готовится заранее, когда карточка на экране (specRef). */}
-      {!masterPage && (
-        <section className="kp-spec kp-spec--link" aria-labelledby="kp-spec-title" ref={specRef}>
-          <div className="kp-spec__head">
-            <div>
-              <h2 id="kp-spec-title" className="kp-maker__title">
-                {t.specTitle}
-              </h2>
-              <p className="kp-maker__lead">{t.masterOpenLead}</p>
-            </div>
-            <div className="kp-spec__actions">
-              <Link href={`/${lang}/kitchen/master?${query}`} className="btn btn--primary">
-                <IconFile />
-                {t.masterOpen}
-              </Link>
-              <button type="button" className="btn btn--outline" onClick={sendPdf} disabled={!drawing || pdfBusy} aria-busy={pdfBusy}>
-                {pdfBusy ? t.specPreparing : t.specSend}
-              </button>
-            </div>
-          </div>
-        </section>
       )}
 
       {masterPage && (
@@ -4441,6 +4581,9 @@ export function KitchenPlanner({
       </section>
       )}
 
+
+
+      {masterPage && (
       <section className="kp-maker" aria-labelledby="kp-maker-title" ref={makerRef}>
         <div className="kp-maker__text">
           <h2 id="kp-maker-title" className="kp-maker__title kp-maker__title--small">
@@ -4474,58 +4617,6 @@ export function KitchenPlanner({
           {!masterPage && galleryWhy && <p className="kp-note">{galleryWhy}</p>}
         </div>
         <PlanSketch plan={plan} labels={wallLabels} showWidths className="kp-maker__sketch" />
-      </section>
-
-      {!masterPage && (
-      <section className="kp-variants" aria-labelledby="kp-variants-title">
-        <div className="kp-check__head">
-          <div>
-            <h2 id="kp-variants-title" className="kp-maker__title kp-maker__title--small">
-              {t.variantsTitle}
-            </h2>
-            <p className="kp-note">{t.variantsLead}</p>
-          </div>
-          <button type="button" className="btn btn--outline btn--sm" onClick={saveVariant} disabled={engineState !== 'ready'}>
-            {t.saveVariant}
-          </button>
-        </div>
-        {askGallery && !galleryWhy && (
-          <div className="kp-ask" role="group" aria-label={t.gallery.ask}>
-            <span className="kp-ask__text">{t.gallery.ask}</span>
-            <button
-              type="button"
-              className="btn btn--primary btn--sm"
-              onClick={() => {
-                setAskGallery(false)
-                setPublishing(true)
-              }}
-            >
-              {t.gallery.yes}
-            </button>
-            <button type="button" className="btn btn--ghost btn--sm" onClick={() => setAskGallery(false)}>
-              {t.gallery.no}
-            </button>
-          </div>
-        )}
-        {variants.length > 0 && (
-          <ul className="kp-variants__list">
-            {variants.map((v) => (
-              <li key={v.id} className="kp-variant">
-                {v.img ? <img src={v.img} alt="" className="kp-variant__img" /> : <span className="kp-variant__img" />}
-                <span className="kp-variant__name">{v.name}</span>
-                <span className="kp-variant__label">{v.label}</span>
-                <span className="kp-variant__actions">
-                  <button type="button" className="btn btn--primary btn--sm" onClick={() => openVariant(v)}>
-                    {t.openVariant}
-                  </button>
-                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => storeVariants(variants.filter((x) => x.id !== v.id))}>
-                    {t.removeVariant}
-                  </button>
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
       </section>
       )}
 
@@ -4682,15 +4773,63 @@ function SizeField({
   const [draft, setDraft] = useState(String(value))
   /** число вышло за пределы — говорим, до чего поправили; округление до 5 не повод */
   const [fixed, setFixed] = useState<number | null>(null)
-  useEffect(() => setDraft(String(value)), [value])
+  // пока печатают, значение снаружи (то же, что уже применили с задержкой) поле не перезаписывает
+  const focused = useRef(false)
+  const valueRef = useRef(value)
+  valueRef.current = value
+  const live = useRef(0)
+  useEffect(() => {
+    if (!focused.current) setDraft(String(value))
+  }, [value])
   // Своё число — в пределах и кратно 5. Если после поправки оно совпало с
   // прежним, поле всё равно показывает поправленное, а не то, что набрали.
   const commit = () => {
+    window.clearTimeout(live.current)
     const typed = Number(draft)
     const next = clamp(typed || value)
     setFixed(typed && (typed < min || typed > max) ? next : null)
     setDraft(String(next))
     if (next !== value) onChange(next)
+  }
+  // Набрали число в пределах — применяется через 300 мс, не дожидаясь blur (спецификация §5)
+  const onType = (raw: string) => {
+    const v = raw.replace(/\D/g, '').slice(0, 3)
+    setDraft(v)
+    window.clearTimeout(live.current)
+    live.current = window.setTimeout(() => {
+      const n = Number(v)
+      if (!n || n < min || n > max) return
+      const next = clamp(n)
+      if (next !== valueRef.current) onChange(next)
+    }, 300)
+  }
+  // Телефон: пока печатают, сцена 25svh (класс kp-typing) и поле держится в видимой части
+  // над клавиатурой — visualViewport меняется, когда клавиатура выезжает.
+  const fieldRef = useRef<HTMLInputElement>(null)
+  useEffect(() => () => window.clearTimeout(live.current), [])
+  const keepInView = () => {
+    const el = fieldRef.current
+    const vv = window.visualViewport
+    if (!el || !vv || !focused.current) return
+    const r = el.getBoundingClientRect()
+    const stage = document.querySelector('.kp-stage')?.getBoundingClientRect()
+    const top = Math.max(vv.offsetTop, stage ? stage.bottom : 0) + 8
+    const bottom = vv.offsetTop + vv.height - 8
+    if (r.bottom > bottom) window.scrollBy({ top: r.bottom - bottom })
+    else if (r.top < top) window.scrollBy({ top: r.top - top })
+  }
+  const startTyping = () => {
+    focused.current = true
+    document.documentElement.classList.add('kp-typing')
+    window.visualViewport?.addEventListener('resize', keepInView)
+    window.visualViewport?.addEventListener('scroll', keepInView)
+    window.setTimeout(keepInView, 350)
+  }
+  const stopTyping = () => {
+    focused.current = false
+    document.documentElement.classList.remove('kp-typing')
+    window.visualViewport?.removeEventListener('resize', keepInView)
+    window.visualViewport?.removeEventListener('scroll', keepInView)
   }
   // У русских и кыргызских подписей все буквы — «не \w»: прежний id выходил
   // одинаковым у потолка и окна, и нажатие на подпись ставило курсор не туда.
@@ -4710,16 +4849,21 @@ function SizeField({
         <label className="kp-size__field">
           <input
             id={id}
+            ref={fieldRef}
             inputMode="numeric"
             value={draft}
             // нажали — число выделено: новое набирается сразу, без стирания старого.
             // Через кадр: iPhone иначе сбрасывает выделение, ставя курсор под палец.
             onFocus={(e) => {
               const el = e.currentTarget
+              startTyping()
               requestAnimationFrame(() => el.setSelectionRange(0, el.value.length))
             }}
-            onChange={(e) => setDraft(e.target.value.replace(/\D/g, '').slice(0, 3))}
-            onBlur={commit}
+            onChange={(e) => onType(e.target.value)}
+            onBlur={() => {
+              stopTyping()
+              commit()
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') commit()
             }}
@@ -5051,27 +5195,9 @@ const iconProps = { viewBox: '0 0 24 24', className: 'kp-icon', 'aria-hidden': t
 const stroke = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
 
 const STEP_ICON: Record<Step, React.ReactNode> = {
-  shape: (
+  kitchen: (
     <svg {...iconProps}>
-      <path d="M4 20V4h16M4 9h11" {...stroke} />
-    </svg>
-  ),
-  size: (
-    <svg {...iconProps}>
-      <path d="M3 15l12-12 6 6-12 12zM7 11l2 2M10 8l2 2M13 5l2 2" {...stroke} />
-    </svg>
-  ),
-  style: (
-    <svg {...iconProps}>
-      <path d="M4 4h7v16H4zM13 4h7v7h-7zM13 13h7v7h-7z" {...stroke} />
-    </svg>
-  ),
-  finish: (
-    <svg {...iconProps}>
-      <path
-        d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.9 1.2-1.8-.5-1.1.2-2.2 1.4-2.2H17a4 4 0 0 0 4-4c0-5-4-10-9-10zM7.5 11h.01M10 7h.01M14.5 7h.01M17 11h.01"
-        {...stroke}
-      />
+      <path d="M4 20V4h16M4 9h11M3 15l4-4 4 4" {...stroke} />
     </svg>
   ),
   tech: (
@@ -5079,6 +5205,25 @@ const STEP_ICON: Record<Step, React.ReactNode> = {
       <path d="M5 3h14v18H5zM5 8h14M9 5.5h.01M12 14m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0" {...stroke} />
     </svg>
   ),
+  style: (
+    <svg {...iconProps}>
+      <path d="M4 4h7v16H4zM13 4h7v7h-7zM13 13h7v7h-7z" {...stroke} />
+    </svg>
+  ),
+  total: (
+    <svg {...iconProps}>
+      <path d="M5 12l4 4L19 6" {...stroke} />
+    </svg>
+  ),
+}
+
+/** Корзина — в нижней панели телефона. */
+function IconCart() {
+  return (
+    <svg {...iconProps}>
+      <path d="M3 4h2l2.4 11.2a1 1 0 0 0 1 .8h9.4a1 1 0 0 0 1-.8L21 8H7M9 20h.01M17 20h.01" {...stroke} />
+    </svg>
+  )
 }
 
 /** Значок ручки: как она выглядит на дверце. */

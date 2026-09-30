@@ -4794,9 +4794,9 @@
     "semantic_hash": ""
   },
   "src/components/kitchen/KitchenPlanner.tsx": {
-    "mtime": 1790741061.3527536,
-    "seen": 1790741338.414647,
-    "ast_hash": "82f4165df2a393be96c23270e1d02b9a",
+    "mtime": 1790742804.5887895,
+    "seen": 1790742829.928329,
+    "ast_hash": "d8942d2334702c929b1ef6d9c2c70528",
     "semantic_hash": ""
   },
   "src/components/kitchen/KitchenPromo.tsx": {
@@ -4818,9 +4818,9 @@
     "semantic_hash": ""
   },
   "src/components/kitchen/texts.ts": {
-    "mtime": 1790740344.459422,
-    "seen": 1790740650.38731,
-    "ast_hash": "b78c15fe39a3a4d62957f545ebc174a4",
+    "mtime": 1790742071.05232,
+    "seen": 1790742829.928561,
+    "ast_hash": "7f3294b9765954bd17abacc79a75b933",
     "semantic_hash": ""
   },
   "src/components/kitchen/three/appliances.ts": {
@@ -4836,9 +4836,9 @@
     "semantic_hash": ""
   },
   "src/components/kitchen/three/engine.ts": {
-    "mtime": 1790741049.1992826,
-    "seen": 1790741338.414896,
-    "ast_hash": "caacd0ce62118fe0c99e88c4ca74c3df",
+    "mtime": 1790742071.0530946,
+    "seen": 1790742829.928601,
+    "ast_hash": "317f5523f7e466b9dd046b7be858699b",
     "semantic_hash": ""
   },
   "src/components/kitchen/three/materials.ts": {
@@ -4974,9 +4974,9 @@
     "semantic_hash": ""
   },
   ".autopilot/state.js": {
-    "mtime": 1790740877.4885476,
-    "seen": 1790741338.40958,
-    "ast_hash": "2a66e08e9cf5a17a9edc16f9502f3bf8",
+    "mtime": 1790741509.2585835,
+    "seen": 1790742829.92318,
+    "ast_hash": "9286552dde36b70abd7119b6bedc1ebf",
     "semantic_hash": ""
   },
   ".autopilot/sync.py": {
@@ -4992,15 +4992,15 @@
     "semantic_hash": ""
   },
   ".autopilot/dashboard.html": {
-    "mtime": 1790740877.5237412,
-    "seen": 1790741338.4183638,
-    "ast_hash": "b65446a502b7c5fe6c173016598b4f2f",
+    "mtime": 1790741509.3031564,
+    "seen": 1790742829.931848,
+    "ast_hash": "d8d4e85beb1d2632ead3173fc01bacd3",
     "semantic_hash": ""
   },
   ".autopilot/index.html": {
-    "mtime": 1790740877.5237412,
-    "seen": 1790741338.418365,
-    "ast_hash": "b65446a502b7c5fe6c173016598b4f2f",
+    "mtime": 1790741509.3031564,
+    "seen": 1790742829.931849,
+    "ast_hash": "d8d4e85beb1d2632ead3173fc01bacd3",
     "semantic_hash": ""
   },
   "docs/ANDROID_PLAY_UZ.md": {
@@ -6786,15 +6786,15 @@
     "semantic_hash": ""
   },
   ".autopilot/2026-09-29-kitchen-3d-pro--wip/interfaces.md": {
-    "mtime": 1790741338.8330078,
-    "seen": 1790741386.3000169,
-    "ast_hash": "8352d2f38faac8017ffd113edab3be81",
+    "mtime": 1790742795.5100765,
+    "seen": 1790742829.9316852,
+    "ast_hash": "2defa001590077be25e452346f1e5025",
     "semantic_hash": ""
   },
   ".autopilot/2026-09-29-kitchen-3d-pro--wip/manifest.md": {
-    "mtime": 1790739243.017035,
-    "seen": 1790740650.3874319,
-    "ast_hash": "0acd613864cddef1531534668dca4d79",
+    "mtime": 1790741509.2588584,
+    "seen": 1790742829.931686,
+    "ast_hash": "d111a039577185a98d11523c7ba2eb61",
     "semantic_hash": ""
   },
   ".autopilot/2026-09-29-kitchen-3d-pro--wip/reference.md": {
@@ -6849,6 +6849,12 @@
     "mtime": 1790699128.7091792,
     "seen": 1790740650.387437,
     "ast_hash": "f1e7133ac0f10c3a90d7e85074d75ba4",
+    "semantic_hash": ""
+  },
+  "e2e/kitchen-phone.spec.ts": {
+    "mtime": 1790742777.6209292,
+    "seen": 1790742829.9247098,
+    "ast_hash": "e0e133c865ba49f3a4d032718609bb98",
     "semantic_hash": ""
   }
 }

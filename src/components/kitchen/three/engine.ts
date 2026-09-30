@@ -188,6 +188,8 @@ export class KitchenEngine {
   private evening = false
   private selected: SlotKind | null = null
   private outline: THREE.LineSegments | null = null
+  /** рамка выбранного пустого места — своя, чтобы переход «пустое место → шкаф» не снимал рамку выбранного */
+  private gapLine: THREE.LineSegments | null = null
   private tags = new Map<string, HTMLElement>()
   private tagPoints = new Map<string, THREE.Vector3>()
   /** рамка того, чьи размеры сейчас показаны (выбранный шкаф или техника) */
@@ -1015,6 +1017,12 @@ export class KitchenEngine {
    * что-то другое — рамка пустого места уходит.
    */
   private outlineGap() {
+    if (this.gapLine) {
+      this.scene.remove(this.gapLine)
+      this.gapLine.geometry.dispose()
+      ;(this.gapLine.material as THREE.Material).dispose()
+      this.gapLine = null
+    }
     const key = this.grab
     if (key && isGap(key)) {
       const found: THREE.Object3D[] = []
@@ -1022,7 +1030,8 @@ export class KitchenEngine {
         if (!found.length && o.userData.item === key) found.push(o)
       })
       if (found.length) {
-        this.outlineOf(found[0], '#2563eb')
+        this.gapLine = this.edgeLine(found[0], '#2563eb')
+        this.scene.add(this.gapLine)
         this.gapOutlined = true
         this.invalidate()
         return
@@ -1030,12 +1039,6 @@ export class KitchenEngine {
     }
     if (!this.gapOutlined) return
     this.gapOutlined = false
-    if (this.outline) {
-      this.scene.remove(this.outline)
-      this.outline.geometry.dispose()
-      ;(this.outline.material as THREE.Material).dispose()
-      this.outline = null
-    }
     this.invalidate()
   }
 
@@ -1495,13 +1498,18 @@ export class KitchenEngine {
       ;(this.outline.material as THREE.Material).dispose()
       this.outline = null
     }
+    this.outline = this.edgeLine(obj, color)
+    this.scene.add(this.outline)
+  }
+
+  /** Линии по рёбрам габаритной коробки объекта (для рамок выбранного и пустого места). */
+  private edgeLine(obj: THREE.Object3D, color: string) {
     const b = new THREE.Box3().setFromObject(obj).expandByScalar(0.012)
     const geom = new THREE.EdgesGeometry(new THREE.BoxGeometry(...b.getSize(new THREE.Vector3()).toArray()))
     const line = new THREE.LineSegments(geom, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.95, depthTest: false }))
     line.position.copy(b.getCenter(new THREE.Vector3()))
     line.renderOrder = 10
-    this.outline = line
-    this.scene.add(line)
+    return line
   }
 
   private restore(obj: THREE.Object3D, home: Home) {
@@ -1654,7 +1662,7 @@ export class KitchenEngine {
 
   /** Что не должно попасть на фото: рамки выбора, размеры, контуры убранных шкафов. */
   private overlays(): THREE.Object3D[] {
-    return [this.outline, this.measureLines, this.marker, ...(this.built?.ghosts ?? [])].filter((o): o is THREE.Object3D => Boolean(o))
+    return [this.outline, this.gapLine, this.measureLines, this.marker, ...(this.built?.ghosts ?? [])].filter((o): o is THREE.Object3D => Boolean(o))
   }
 
   /**
@@ -2028,7 +2036,7 @@ export class KitchenEngine {
       cam.layers.enable(CEILING_LAYER)
       this.probe = { rt, cam }
     }
-    const hidden = [this.outline, this.measureLines, this.marker, ...this.built.ghosts].filter((o): o is NonNullable<typeof o> => Boolean(o && o.visible))
+    const hidden = [this.outline, this.gapLine, this.measureLines, this.marker, ...this.built.ghosts].filter((o): o is NonNullable<typeof o> => Boolean(o && o.visible))
     for (const o of hidden) o.visible = false
     const r = this.renderer
     const auto = r.shadowMap.autoUpdate
@@ -2219,7 +2227,7 @@ export class KitchenEngine {
     const prev = r.getSize(new THREE.Vector2())
     const prevRatio = r.getPixelRatio()
     const prevAspect = this.camera.aspect
-    const hidden = [this.outline, this.measureLines, this.marker, ...(this.built?.ghosts ?? [])].filter((o): o is NonNullable<typeof o> => Boolean(o && o.visible))
+    const hidden = [this.outline, this.gapLine, this.measureLines, this.marker, ...(this.built?.ghosts ?? [])].filter((o): o is NonNullable<typeof o> => Boolean(o && o.visible))
     for (const o of hidden) o.visible = false
     const prevRender = this.renderRatio
     r.setPixelRatio(1)
@@ -2278,7 +2286,7 @@ export class KitchenEngine {
     const prevRatio = r.getPixelRatio()
     const prevSize = r.getSize(new THREE.Vector2())
     const prevAspect = this.camera.aspect
-    const hidden = [this.outline, this.measureLines, this.marker, ...(this.built?.ghosts ?? [])].filter((o): o is NonNullable<typeof o> => Boolean(o && o.visible))
+    const hidden = [this.outline, this.gapLine, this.measureLines, this.marker, ...(this.built?.ghosts ?? [])].filter((o): o is NonNullable<typeof o> => Boolean(o && o.visible))
     for (const o of hidden) o.visible = false
     const prevRender = this.renderRatio
     r.setPixelRatio(1)
@@ -2386,7 +2394,7 @@ export class KitchenEngine {
     cam.position.copy(pos).sub(target).multiplyScalar(0.78).add(target)
     cam.lookAt(target)
     cam.updateProjectionMatrix()
-    const overlays = [this.outline, this.measureLines, this.marker, ...(this.built?.ghosts ?? [])].filter((o): o is NonNullable<typeof o> => Boolean(o && o.visible))
+    const overlays = [this.outline, this.gapLine, this.measureLines, this.marker, ...(this.built?.ghosts ?? [])].filter((o): o is NonNullable<typeof o> => Boolean(o && o.visible))
     for (const o of overlays) o.visible = false
     const others = this.built && root !== this.built.root ? this.built.root : null
     if (others) others.visible = false
