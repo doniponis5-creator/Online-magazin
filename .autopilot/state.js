@@ -14,7 +14,7 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-29T22:14:27+06:00",
-  "updatedAt": "2026-10-01T00:13:17+06:00",
+  "updatedAt": "2026-10-01T00:50:25+06:00",
   "finishedAt": null,
   "stages": [
     {
@@ -507,7 +507,7 @@ window.STATE =
       ],
       "status": "done",
       "finishedAt": "2026-10-01T00:13:17+06:00",
-      "tests": { "passed": 976, "failed": 0 },
+      "tests": { "passed": 983, "failed": 0 },
       "commit": "c585d94",
       "startedAt": "2026-09-30T23:46:39+06:00",
       "retries": 0,
@@ -534,11 +534,15 @@ window.STATE =
         "src/components/kitchen/kitchen.css",
         "src/components/kitchen/three/"
       ],
-      "status": "in-progress",
+      "status": "done",
+      "finishedAt": "2026-10-01T00:50:25+06:00",
+      "tests": { "passed": 983, "failed": 0 },
+      "commit": "832f2ad",
       "startedAt": "2026-10-01T00:13:17+06:00",
       "retries": 0,
-      "repairs": 0,
-      "handoffs": 0
+      "repairs": 1,
+      "repairFindings": ["MSAA half-float на телефоне без запасного пути — риск чёрного кадра (R07/R24i); кнопки 32 px у телефона боком"],
+      "handoffs": 1
     }
   ],
   "singlePass": null,
@@ -607,7 +611,12 @@ window.STATE =
     "P2 · placeCard · карточка выбора всегда справа сверху; на 1220–1440 px с колонкой плана может закрыть бо́льшую часть 3D",
     "P2 · kitchen.css · на листе мастера на телефоне консультант скрыт целиком (а не сдвинут)",
     "P2 · useLayoutEffect querySelector('header') · может наблюдать .kp-head вместо шапки сайта",
-    "P2 · html:has(.kp-sel) .kp-toast · правило действует и на компьютере"
+    "P2 · html:has(.kp-sel) .kp-toast · правило действует и на компьютере",
+    "P4 · 1280×800 · карточка шкафа с дверцами: строка «Дверца открывается» уходит в прокрутку внутри карточки (~20 px)",
+    "P4 · has-col · строка инструментов над колонкой плана — план ниже на ~54 px",
+    "P4 · KY-сокращение осей «Т × Б × Т» неоднозначно — проверить носителю",
+    "P4 · MSAA на реальных iPhone/Android не проверен (запасной путь есть) — проверить владельцем в приложении",
+    "P3 · шкаф 60 перенесён с B на A — варочная на B сдвигается к углу на 30 (нужна столешница у пустого места)"
 ],
   "reviewers": {
     "manifestSpec": null,
