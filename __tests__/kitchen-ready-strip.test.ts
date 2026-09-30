@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { inBudget, keepOnLink, openQuery, sizeBand, techSum, topOfGallery, wallLength } from '@/components/kitchen/ready'
+import { keepOnLink, openQuery, sizeBand, techSum, topOfGallery, wallLength } from '@/components/kitchen/ready'
 import { DEFAULT_STATE } from '@/lib/kitchen/share'
 import type { KitchenAppliance, SlotKind } from '@/lib/kitchen/types'
 
@@ -40,19 +40,6 @@ describe('полоса «Готовые кухни»: размер — сумм�
     expect(sizeBand(271)).toBe('mid')
     expect(sizeBand(400)).toBe('mid')
     expect(sizeBand(401)).toBe('big')
-  })
-})
-
-describe('бюджет техники: до 100 000 / до 200 000 / больше', () => {
-  it('«до» включает меньшие суммы, «больше» — только выше 200 000', () => {
-    expect(inBudget(80_000, 'b100')).toBe(true)
-    expect(inBudget(100_000, 'b100')).toBe(true)
-    expect(inBudget(100_001, 'b100')).toBe(false)
-    expect(inBudget(80_000, 'b200')).toBe(true)
-    expect(inBudget(200_000, 'b200')).toBe(true)
-    expect(inBudget(200_001, 'b200')).toBe(false)
-    expect(inBudget(200_001, 'more')).toBe(true)
-    expect(inBudget(200_000, 'more')).toBe(false)
   })
 })
 

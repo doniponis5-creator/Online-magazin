@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { grabOf, previewMove } from '@/lib/kitchen/drag'
-import { addAt, detachUppers, itemPositions, narrowFor, placeAt, planKitchen, resizeWalls, UPPER_MIN, type Plan, type PlanInput, type Planner } from '@/lib/kitchen/layout'
+import { addAt, detachUppers, itemPositions, narrowFor, needByWall, placeAt, planKitchen, resizeWalls, squeezeGaps, UPPER_MIN, type Plan, type PlanInput, type Planner } from '@/lib/kitchen/layout'
+import { droppedName } from '@/lib/kitchen/checks'
+import { kitchenTexts } from '@/components/kitchen/texts'
 import { planInputOf, projectItems, projectTotal } from '@/lib/kitchen/order'
 import { DEFAULT_STATE, queryFromState, stateFromQuery } from '@/lib/kitchen/share'
 import type { ItemKey, KitchenAppliance, KitchenState, WallId } from '@/lib/kitchen/types'
@@ -378,5 +380,71 @@ describe('заметки ревью таска 01', () => {
     const cut = resizeWalls(next, { a: 350 }, planner(next))
     expect(cut.at?.[last]).toBe(350 - p[last]!.w / 2)
     expect(cut.manualUppers?.A).toContain(last)
+  })
+})
+
+describe('нехватка длины и неудачная постановка — не молча', () => {
+  it('пустое место, которому не хватило стены, попадает в dropped, а не исчезает (ревью 15)', () => {
+    // стена 300: мойка 60 + плита 60 с полями 30 + пусто 200 — на 20 см длиннее стены
+    const s: KitchenState = { ...DEFAULT_STATE, shape: 'straight', a: 300, arrangement: { A: ['sink', 'g1', 'hob'] }, gaps: { g1: { w: 200 } }, at: { sink: 30, g1: 160, hob: 270 } }
+    const plan = planner(s)
+    expect(plan.dropped.map((d) => d.item)).toContain('g1')
+    const g = plan.dropped.find((d) => d.item === 'g1')!
+    expect(g.wall).toBe('A')
+    expect(g.need).toBeGreaterThanOrEqual(1)
+    // техника при этом на месте
+    expect(itemPositions(plan).sink).toBeDefined()
+    expect(itemPositions(plan).hob).toBeDefined()
+    // пустое место ужимаемо — «удлините стену» из-за него не советуем
+    expect(needByWall(plan)).toEqual({})
+  })
+
+  it('подпись выпавшего: пустое место — «пустое место» RU/KY, не «Пенал»', () => {
+    const s: KitchenState = { ...DEFAULT_STATE, cabinets: { k1: { w: 45, front: 'doors' } } }
+    const ru = kitchenTexts('ru')
+    const ky = kitchenTexts('ky')
+    expect(droppedName({ item: 'g1', need: 20, wall: 'A' }, s, ru)).toBe('пустое место')
+    expect(droppedName({ item: 'g1', need: 20, wall: 'A' }, s, ky)).toBe('бош жер')
+    expect(droppedName({ item: 'g1', need: 20, wall: 'A' }, s, ru)).not.toBe(ru.pantryName)
+    expect(droppedName({ item: 'fridge', slot: 'fridge', need: 20, wall: 'A' }, s, ru)).toBe(ru.slots.fridge)
+    expect(droppedName({ item: 'k1', need: 20, wall: 'A' }, s, ru)).toBe(ru.cabName(45))
+    expect(droppedName({ item: 'pantry', need: 20, wall: 'A' }, s, ru)).toBe(ru.pantryName)
+  })
+
+  it('ширина кнопками: шкаф +5 при соседнем пустом месте 20 — место ужимается до 15, ничего не выпадает', () => {
+    // стена 260 без запаса: мойка 0–60, пусто g1 60–80, свой шкаф k1 80–140, столешница 30, плита 170–230, столешница 30
+    const s: KitchenState = {
+      ...DEFAULT_STATE,
+      shape: 'straight',
+      a: 260,
+      arrangement: { A: ['sink', 'g1', 'k1', 'hob'] },
+      cabinets: { k1: { w: 60, front: 'doors' } },
+      gaps: { g1: { w: 20 } },
+      at: { sink: 30, g1: 70, k1: 110, hob: 200 },
+    }
+    const p0 = planner(s)
+    expect(p0.dropped).toEqual([])
+    expect(itemPositions(p0).g1?.w).toBe(20)
+    const next = squeezeGaps(s, p0, 'k1', 65)
+    const p1 = planner({ ...next, cabinets: { k1: { w: 65, front: 'doors' } } })
+    expect(p1.dropped).toEqual([])
+    expect(itemPositions(p1).g1?.w).toBe(15)
+    expect(itemPositions(p1).k1?.w).toBe(65)
+    // без ужатия то же изменение (экран: все места заморожены, snap = []) роняло бы пустое место
+    const frozen = Object.fromEntries(Object.entries(itemPositions(p0)).map(([k, p]) => [k, p!.center])) as KitchenState['at']
+    expect(planner({ ...s, cabinets: { k1: { w: 65, front: 'doors' } }, at: frozen }, []).dropped.map((d) => d.item)).toContain('g1')
+    // соседей-пустых мест нет — состояние то же
+    expect(squeezeGaps(s, p0, 'hob', 60)).toBe(s)
+  })
+
+  it('addAt: не встало → key=null и fit с need > 0 (ревью 26); fill без пустого места — без fit', () => {
+    // стена 130: мойка 60 + плита 60 — шкафу 60 места нет
+    const tight: KitchenState = { ...DEFAULT_STATE, shape: 'straight', a: 130, arrangement: { A: ['sink', 'hob'] } }
+    const r = addAt(tight, 'A', 65, 'doors', planner)
+    expect(r.key).toBeNull()
+    expect(r.state).toBe(tight)
+    expect(r.fit?.ok).toBe(false)
+    expect(r.fit?.need).toBeGreaterThanOrEqual(1)
+    expect(addAt(tight, 'A', 65, 'fill', planner).fit).toBeUndefined()
   })
 })

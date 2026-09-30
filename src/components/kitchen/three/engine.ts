@@ -11,12 +11,12 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js'
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js'
 import type { Preview } from '@/lib/kitchen/drag'
 import { baseKey, upperKey } from '@/lib/kitchen/fronts'
-import { DEPTH, itemPositions, moduleCenter, runCm, runX, UPPER_DEPTH, type Run } from '@/lib/kitchen/layout'
+import { DEPTH, itemPositions, moduleCenter, runCm, runX, UPPER_DEPTH, type Run, NARROW_W } from '@/lib/kitchen/layout'
 import { isGap, type ItemKey, type SlotKind, type WallId } from '@/lib/kitchen/types'
 import type { SpecData } from '@/lib/kitchen/spec'
 import { sharpenPass } from './sharpen'
 import { buildKitchen, CEILING_LAYER, WALL_H, WINDOW, type BuildInput, type Built, type CabInfo, type Dims } from './build'
-import { governIdle, governStep, governorPlan, newGovernor, pickTier, readEnv, type DeviceEnv, type GovernorState, type Tier } from './quality'
+import { governIdle, governStep, governorPlan, newGovernor, pickTier, readEnv, type DeviceEnv, type GovernorState, type Tier, isPhone } from './quality'
 import type { PhotoTracer } from './photoreal'
 import { setBudget } from './textures'
 
@@ -99,9 +99,11 @@ type Home = { parent: THREE.Object3D; position: THREE.Vector3; rotation: THREE.E
 export type Place = { wall: WallId; center: number; w: number; row: 'base' | 'upper' }
 
 /** Красный «не помещается» — токен DESIGN.md `--color-danger` (в kitchen.css у плана тот же); нет стилей — его значение. */
+let danger: string | null = null
 function dangerColor(): string {
+  if (danger) return danger
   const v = typeof document !== 'undefined' ? getComputedStyle(document.documentElement).getPropertyValue('--color-danger').trim() : ''
-  return v || '#d33b2e'
+  return (danger = v || '#d33b2e')
 }
 type Press = { key: string; obj: THREE.Object3D; x: number; y: number; id: number; touch: boolean }
 type Drag = { key: string; id: number; obj: THREE.Object3D; home: Home; place: Place; grab: number; target: { wall: WallId; cm: number } | null }
@@ -284,7 +286,7 @@ export class KitchenEngine {
     // того, телефон ли это: на телефоне вместо MSAA — FXAA последним проходом.
     this.reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const env0 = readEnv()
-    const phone = env0.coarse && !env0.fine
+    const phone = isPhone(env0)
     this.renderer = new THREE.WebGLRenderer({
       antialias: !safe && !phone,
       powerPreference: safe ? 'default' : 'high-performance',
@@ -423,9 +425,10 @@ export class KitchenEngine {
     // (Перестройка бывает и сама — пришло фото товара, — фото не выключаем.)
     const photoState = this.photo?.onState ?? null
     this.stopPhoto()
-    // идущее перетаскивание отменяется, унесённый модуль — домой (его группа может переехать в новую сборку готовой)
+    // идущее перетаскивание отменяется, унесённый модуль — домой (его группа может переехать в новую сборку готовой);
+    // рамку и размеры на уходящем объекте не рисуем — их поставит сборка ниже
     this.stopDrag(false)
-    this.revertDrag()
+    this.restoreDisplaced()
     const first = !this.built
     const old = this.built
     this.input = input
@@ -482,7 +485,8 @@ export class KitchenEngine {
       // не вышло — соберутся на первом кадре
     } finally {
       if (!this.disposed) {
-        this.sun.castShadow = on
+        // тень — как велит регулятор сейчас, а не как было до сборки: за секунду компиляции ступень могла смениться
+        this.sun.castShadow = this.plan().shadow > 0
         this.compiling = null
         r.shadowMap.needsUpdate = true
         this.invalidate()
@@ -1053,7 +1057,7 @@ export class KitchenEngine {
     if (item) key = item
     else if (cab && !cab.fridge) {
       const w = (this.dimsOwner(hit.object)?.userData.dims as Dims | undefined)?.w
-      if (cab.row === 'upper' || w === undefined || w >= 15) key = cab.key
+      if (cab.row === 'upper' || w === undefined || w >= NARROW_W) key = cab.key
     }
     if (!key) return null
     const obj = this.dragRootOf(hit.object, key)
@@ -1541,13 +1545,20 @@ export class KitchenEngine {
 
   /** Модуль после 'end' не встал — вернуть его на место. */
   revertDrag() {
-    const x = this.displaced
+    const x = this.restoreDisplaced()
     if (!x) return
+    this.setSelected(this.selected)
+    this.showMeasure(x)
+    this.invalidate()
+  }
+
+  /** Унесённый модуль — домой (без рамки и размеров); вернёт объект, если было что возвращать. */
+  private restoreDisplaced(): THREE.Object3D | null {
+    const x = this.displaced
+    if (!x) return null
     this.displaced = null
     this.restore(x.obj, x.home)
-    this.setSelected(this.selected)
-    this.showMeasure(x.obj)
-    this.invalidate()
+    return x.obj
   }
 
   /** Отменить идущее перетаскивание (Esc, сброс выбора): модуль возвращается. */
@@ -2390,11 +2401,10 @@ export class KitchenEngine {
     r.setScissorTest(true)
     r.setViewport(0, 0, w / ratio, h / ratio)
     r.setScissor(0, 0, w / ratio, h / ratio)
-    const auto = r.shadowMap.needsUpdate
     r.shadowMap.needsUpdate = true
     r.setRenderTarget(null)
     r.render(this.scene, cam)
-    r.shadowMap.needsUpdate = auto || true
+    r.shadowMap.needsUpdate = true
     const shot = document.createElement('canvas')
     shot.width = w
     shot.height = h
@@ -2417,52 +2427,19 @@ export class KitchenEngine {
     const hit = this.thumbs.get(key)
     if (hit) return hit
     if (this.thumbSlow) return this.tintedThumb(input, key, width, height)
-    const r = this.renderer
     const t0 = performance.now()
     // превью маленькое — ему хватает картинок вчетверо мельче
     const temp = buildKitchen({ ...input, evening: false, detail: 0.5, lite: true, physical: this.tier.physical })
     if (this.tier.name === 'phone-low' && performance.now() - t0 > THUMB_SLOW_MS) this.thumbSlow = true
     const prevEvening = this.evening
-    this.built.root.visible = false
-    if (this.outline) this.outline.visible = false
     this.scene.add(temp.root)
     this.evening = false
     this.applyDaylightFor(temp)
-    const cam = this.camera.clone()
-    const { target, pos } = this.framing('angle')
-    cam.aspect = width / height
-    cam.position.copy(pos).sub(target).multiplyScalar(0.78).add(target)
-    cam.lookAt(target)
-    cam.updateProjectionMatrix()
-    const overlays = [this.measureLines, this.marker].filter((o): o is NonNullable<typeof o> => Boolean(o && o.visible))
-    for (const o of overlays) o.visible = false
-    // Рисуем в уголок того же холста, не меняя его размер: пересоздание
-    // холста стоило бы полсекунды на каждое превью.
-    const el = r.domElement
-    const ratio = r.getPixelRatio()
-    const w = Math.min(width, el.width)
-    const h = Math.min(height, el.height)
-    r.setScissorTest(true)
-    r.setViewport(0, 0, w / ratio, h / ratio)
-    r.setScissor(0, 0, w / ratio, h / ratio)
-    // тени статичные — для чужой кухни карту рисуем заново, потом снова для своей
-    r.shadowMap.needsUpdate = true
-    r.setRenderTarget(null)
-    r.render(this.scene, cam)
-    r.shadowMap.needsUpdate = true
-    const shot = document.createElement('canvas')
-    shot.width = w
-    shot.height = h
-    shot.getContext('2d')?.drawImage(el, 0, el.height - h, w, h, 0, 0, w, h)
-    const url = shot.toDataURL('image/jpeg', 0.82)
+    // в уголок того же холста, своя кухня и рамки на время спрятаны — renderCorner
+    const url = this.renderCorner(temp.root, width, height).toDataURL('image/jpeg', 0.82)
     this.remember(key, url)
-    r.setScissorTest(false)
-    r.setViewport(0, 0, el.width / ratio, el.height / ratio)
     this.scene.remove(temp.root)
     temp.dispose()
-    this.built.root.visible = true
-    if (this.outline) this.outline.visible = true
-    for (const o of overlays) o.visible = true
     this.evening = prevEvening
     if (this.roomEnv) this.scene.environment = this.roomEnv
     this.applyEvening()

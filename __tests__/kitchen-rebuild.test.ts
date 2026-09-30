@@ -145,3 +145,38 @@ describe('пересборка по частям', () => {
     expect(count(built.root, 'prop:kettle')).toBe(1)
   })
 })
+
+describe('ключ ряда и выпавшая техника (C1, 21)', () => {
+  // прямая стена 200 см: холодильник, посудомойка, варочная с духовкой и стиральная не помещаются — что-то выпадает
+  const washer = appliance({ slot: 'washer', id: 'wm', w: 60, h: 85, d: 60 })
+  const short: PlanInput = { shape: 'straight', a: 200, b: 0, c: 0, island: 0, fridge, dishwasher, hob, oven, washer, hood: { w: 60 } }
+  const build = (items: BuildInput['items'], reuse?: ReturnType<typeof buildKitchen>['parts']) => {
+    const style = STYLES[0]
+    return buildKitchen(
+      { plan: planKitchen(short, { shelves: false }), style, tone: getTone(style, 0), items, photos: new Map(), evening: false, room: { ceiling: 270, toCeiling: false }, fronts: {}, detail: 0.5 },
+      reuse,
+    )
+  }
+
+  it('выпавшая техника не входит в ключ ряда: другая её модель — ни одна стена не пересобирается', () => {
+    const plan = planKitchen(short, { shelves: false })
+    const gone = plan.dropped.map((d) => d.slot).filter((s): s is NonNullable<typeof s> => Boolean(s))
+    expect(gone.length).toBeGreaterThan(0)
+    const slot = gone[0]
+    expect(plan.placed[slot]).toBeUndefined()
+    const items: BuildInput['items'] = { fridge, oven, hob, dishwasher, washer }
+    const first = build(items)
+    const other = { ...items, [slot]: appliance({ ...items[slot]!, id: 'another', w: 45 }) }
+    expect(build(other, first.parts).rebuilt).toEqual([])
+  })
+
+  it('а стоящая на ряду — входит: другая модель посудомойки пересобирает её стену', () => {
+    const plan = planKitchen(short, { shelves: false })
+    const at = plan.placed.dishwasher
+    if (!at) return
+    const items: BuildInput['items'] = { fridge, oven, hob, dishwasher, washer }
+    const first = build(items)
+    const other = { ...items, dishwasher: appliance({ ...dishwasher, id: 'dw2', w: 59.8 }) }
+    expect(build(other, first.parts).rebuilt).toEqual([at.run])
+  })
+})

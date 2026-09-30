@@ -1,4 +1,4 @@
-import { addAt, DEPTH, minA, runCm, runX, UPPER_DEPTH, type ModuleKind, type Plan, type Planner, type Run, type UpperKind } from '@/lib/kitchen/layout'
+import { addAt, DEPTH, minA, runCm, runX, UPPER_DEPTH, type ModuleKind, type Plan, type Planner, type Run, type UpperKind, NARROW_W } from '@/lib/kitchen/layout'
 import { baseKey, upperKey } from '@/lib/kitchen/fronts'
 import type { FixedItem, GapId, KitchenState, Shape, SlotKind, WallId } from '@/lib/kitchen/types'
 
@@ -107,7 +107,7 @@ export function planCells(plan: Pick<Plan, 'runs'>): PlanCell[] {
     const vertical = Math.abs(Math.sin(run.rot)) > 0.5
     for (const m of run.modules) {
       const key = m.item ?? baseKey(run.id, m.x)
-      const pick = m.item ? true : BASE_AUTO_PICK.has(m.kind) && m.w >= 15
+      const pick = m.item ? true : BASE_AUTO_PICK.has(m.kind) && m.w >= NARROW_W
       out.push({ key, wall, row: 'base', x: m.x, w: m.w, depth: DEPTH, kind: m.kind, slot: m.kind === 'hob' ? 'hob' : (SLOT_OF_KIND[m.kind] ?? null), pick, rect: rectOf(run, m.x, m.w, 0, DEPTH), vertical })
     }
     if (run.wall)
@@ -141,11 +141,11 @@ export const SLOT_ITEM: Partial<Record<SlotKind, FixedItem>> = { fridge: 'fridge
  * «+» → «Технику» → выбрали модель в шаге «Техника»: предмет слота встаёт в
  * запомненное место через `addAt`. Не встал или у слота нет предмета — состояние прежнее.
  */
-export function addPicked(state: KitchenState, target: PlanTarget, slot: SlotKind, planner: Planner): KitchenState {
+export function addPicked(state: KitchenState, target: PlanTarget, slot: SlotKind, planner: Planner): { state: KitchenState; placed: boolean } {
   const item = SLOT_ITEM[slot]
-  if (!item) return state
+  if (!item) return { state, placed: false }
   const r = addAt(state, target.wall, target.cm, item, planner)
-  return r.key ? r.state : state
+  return r.key ? { state: r.state, placed: true } : { state, placed: false }
 }
 
 /** Стены толщиной `T` на плане (как у чертежа). */

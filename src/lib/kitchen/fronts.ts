@@ -36,6 +36,17 @@ export function upperKey(run: string, x: number): string {
 
 export const isUpperKey = (key: string) => /^[abci]/.test(key)
 
+/**
+ * Ключ сцены автошкафа обратно: `A120` → низ стены A на 120 см от начала ряда,
+ * `a120` → верх. Предмет, свой шкаф или пустое место (`sink`, `k1`, `u1`, `g1`) — `null`.
+ * Ряд — `plan.runs.find((r) => r.id === wall)`, модуль — по `Math.round(m.x) === x`.
+ */
+export function parseSceneKey(key: string): { wall: string; x: number; row: 'base' | 'upper' } | null {
+  const m = /^([A-Ca-cIi])(\d+)$/.exec(key)
+  if (!m) return null
+  return { wall: m[1].toUpperCase(), x: Number(m[2]), row: /[A-Z]/.test(m[1]) ? 'base' : 'upper' }
+}
+
 /** Шкафы уже 30 см — бутылочницы и планки: у них свой фасад. */
 export const MIN_EDIT_W = 30
 

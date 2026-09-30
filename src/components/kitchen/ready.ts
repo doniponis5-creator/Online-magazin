@@ -12,19 +12,7 @@ import { SLOTS, type KitchenAppliance, type KitchenState, type Shape, type SlotK
 
 // размер — одно правило с галереей (ключи small | mid | big); из rules, не из texts — тексты галереи в бандл конструктора не едут
 export { SIZE_BANDS, sizeBand, wallLength, type SizeBand }
-export type BudgetChip = 'b100' | 'b200' | 'more'
-export type StripFilter = { shape: Shape | null; size: SizeBand | null; budget: BudgetChip | null }
-
-export const BUDGET_CHIPS: readonly BudgetChip[] = ['b100', 'b200', 'more']
-
-
-
-/** «до 100 000» и «до 200 000» включают кухни дешевле; «больше» — дороже 200 000. */
-export function inBudget(sum: number, chip: BudgetChip): boolean {
-  if (chip === 'b100') return sum <= 100_000
-  if (chip === 'b200') return sum <= 200_000
-  return sum > 200_000
-}
+export type StripFilter = { shape: Shape | null; size: SizeBand | null }
 
 /** Лучшие из галереи рядом с готовыми: оценка ≥ 4 и оценок ≥ 3, до шести, в порядке сервера. */
 export function topOfGallery<T extends { avg: number; count: number }>(items: readonly T[]): T[] {

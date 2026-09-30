@@ -120,12 +120,23 @@ describe('addPicked — техника из меню «+» встаёт в за�
       at: { sink: 30, g1: 90, hob: 220 },
     }
     const planner: Planner = (st, snap) => planKitchen(planInputOf(st, { hob: hob(), dishwasher: dw }, snap), opts)
-    const next = addPicked(s, { wall: 'A', cm: 90, gap: 'g1' }, 'dishwasher', planner)
+    const { state: next, placed } = addPicked(s, { wall: 'A', cm: 90, gap: 'g1' }, 'dishwasher', planner)
+    expect(placed).toBe(true)
     const pos = itemPositions(planner(next, []))
     expect(pos.dishwasher).toEqual({ wall: 'A', center: 90, w: 60 })
     // прежнего пустого места на 90 нет (там посудомойка); её старое авто-место стало пустым — это правило placeAt
     expect(pos.g1?.center).not.toBe(90)
     // вытяжке и микроволновке места в ряду нет — состояние не меняется
-    expect(addPicked(s, { wall: 'A', cm: 90, gap: 'g1' }, 'hood', planner)).toBe(s)
+    expect(addPicked(s, { wall: 'A', cm: 90, gap: 'g1' }, 'hood', planner)).toEqual({ state: s, placed: false })
+  })
+
+  it('в запомненное место не влезает → placed=false и прежнее состояние: экран говорит «не помещается», а не молчит (ревью 32)', () => {
+    const dw: KitchenAppliance = { id: 'dw', slot: 'dishwasher', name: 'dw', brand: '', price: 1, w: 60, h: 82, d: 55, sizeKnown: true, builtIn: true, finish: 'white' }
+    // стена 130: мойка 60 + плита 60 — на посудомойку 60 места нет
+    const tight: KitchenState = { ...DEFAULT_STATE, shape: 'straight', a: 130, picks: { dishwasher: 'dw' }, arrangement: { A: ['sink', 'hob'] } }
+    const planner: Planner = (st, snap) => planKitchen(planInputOf(st, { hob: hob(), dishwasher: dw }, snap), opts)
+    const r = addPicked(tight, { wall: 'A', cm: 65, gap: null }, 'dishwasher', planner)
+    expect(r.placed).toBe(false)
+    expect(r.state).toBe(tight)
   })
 })

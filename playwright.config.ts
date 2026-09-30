@@ -8,7 +8,8 @@ import { defineConfig, devices } from '@playwright/test'
  *               Браузер ставится один раз: `npx playwright install webkit`.
  * - `desktop` — компьютер 1440 × 900, установленный Chrome: сквозная приёмка
  *               `e2e/kitchen-acceptance.spec.ts` (в ней же замер кадра с CPU ×4 через CDP).
- * - `chrome`  — телефон 390 × 844 в установленном Chrome (как было): остальные e2e сайта.
+ * - `chrome`  — телефон 390 × 844 в установленном Chrome (как было): остальные e2e сайта;
+ *               `kitchen-*` не гоняет — они уже идут в `iphone` (C1, 50).
  *
  * Запуск против уже поднятого dev-сервера: `PW_BASE_URL=http://localhost:3001 npx playwright test`;
  * без переменной поднимается `npm run start` на 3100. Один профиль: `--project=iphone`.
@@ -40,7 +41,7 @@ export default defineConfig({
     },
     {
       name: 'chrome',
-      testIgnore: acceptance,
+      testIgnore: kitchen,
       use: { channel: 'chrome', viewport: { width: 390, height: 844 } },
     },
   ],

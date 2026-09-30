@@ -2,6 +2,7 @@ import { WINDOW_GAP } from '@/lib/kitchen/dims'
 import { DEPTH, UPPER_DEPTH, type Plan } from '@/lib/kitchen/layout'
 import { modulesOf, type DimsKind, type SpecBox, type SpecData, type SpecFront, type SpecRun } from '@/lib/kitchen/spec'
 import type { KitchenAppliance, SlotKind } from '@/lib/kitchen/types'
+import { rectOf } from './planGeom'
 import type { KitchenTexts } from './texts'
 
 /**
@@ -436,15 +437,6 @@ export function planSvg(plan: Plan, labels: PlanLabels, opts: PlanOpts): string 
   const p = new Pen(fs)
   const T = 10
   const round = (v: number) => Math.round(v * 10) / 10
-  const rectOf = (run: Plan['runs'][number], x: number, w: number, d0: number, d1: number) => {
-    const cos = Math.cos(run.rot)
-    const sin = Math.sin(run.rot)
-    const pt = (x: number, z: number) => [run.ox + x * cos + z * sin, run.oz - x * sin + z * cos]
-    const cs = [pt(x, d0), pt(x + w, d0), pt(x + w, d1), pt(x, d1)]
-    const xs = cs.map((c) => c[0])
-    const zs = cs.map((c) => c[1])
-    return { x: Math.min(...xs), y: Math.min(...zs), w: Math.max(...xs) - Math.min(...xs), h: Math.max(...zs) - Math.min(...zs) }
-  }
   const wallRuns = plan.runs.filter((r) => r.wall)
   const win = plan.window
   const extent = Math.max(

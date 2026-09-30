@@ -901,5 +901,5 @@ export function shortList<T>(all: readonly T[], n: number, on: (x: T) => boolean
 export function carouselStyles(selected: KitchenStyle['id'] | undefined): KitchenStyle[] {
   const sel = STYLES.find((s) => s.id === selected)
   if (!sel || sel.featured) return FEATURED_STYLES
-  return shortList([sel, ...FEATURED_STYLES], FEATURED_STYLES.length, (s) => s === sel)
+  return [sel, ...FEATURED_STYLES.slice(0, -1)]
 }

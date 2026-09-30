@@ -182,8 +182,11 @@ function make(name: TierName, mobile: boolean): Tier {
  * Класс устройства. env — по умолчанию из браузера; force — временный класс
  * (`photo` для снимка 4K на телефоне).
  */
+/** Телефон: палец и нет мыши/тачпада (одно правило для класса устройства и для холста движка). */
+export const isPhone = (env: Pick<DeviceEnv, 'coarse' | 'fine'>): boolean => env.coarse && !env.fine
+
 export function pickTier(env: DeviceEnv = readEnv(), force?: TierName): Tier {
-  const mobile = env.coarse && !env.fine
+  const mobile = isPhone(env)
   if (force) {
     const t = make(force, mobile)
     if (force === 'photo' && isLowPhone(env)) t.detail = 1

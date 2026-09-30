@@ -1,22 +1,13 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
+import { fire, MARBLE, ready, rect, tapPlan } from './kp'
 
 /**
  * Таск 05 — телефон (спецификация §5, §6; R20i, R20i.1–3, R08, R03): 3D на
  * полэкрана, липкая нижняя панель, четыре шага, лист выбранного ≤ 40svh,
  * клавиатура, «не больше трёх касаний». Шов — разметка планировщика:
  * `.kp-bar`, `.kp-steps__btn`, `.kp-sel`, `.kp-size__field input`, класс
- * `kp-typing` на `<html>`. Профиль — телефон стоя (390 × 844 из конфига).
+ * `kp-typing` на `<html>`. Профиль — `iphone` (375 × 812, WebKit); помощники — `e2e/kp.ts`.
  */
-type Pt = { x: number; y: number }
-type Rect = { top: number; bottom: number; height: number }
-
-const rect = (page: Page, sel: string): Promise<Rect | null> =>
-  page.evaluate((s) => {
-    const el = document.querySelector(s)
-    if (!el) return null
-    const b = el.getBoundingClientRect()
-    return { top: b.top, bottom: b.bottom, height: b.height }
-  }, sel)
 const vh = (page: Page) => page.evaluate(() => window.innerHeight)
 /** касание в панели: элемент — в середину экрана (сверху прилипли сцена и вкладки, снизу — панель), потом нажать */
 let taps = 0
@@ -28,33 +19,9 @@ const tap = async (loc: Locator) => {
 /** видимых лимонных кнопок на экране (шапка сайта не в счёт) */
 const lemons = (page: Page) => page.locator('.btn--primary').evaluateAll((els) => els.filter((e) => e.getBoundingClientRect().height > 0 && !e.closest('header')).length)
 
-const ready = async (page: Page, query = 'f=corner&a=300&b=240&s=marble') => {
-  await page.goto(`/ru/kitchen?${query}`)
-  await page.locator('.kp-views [data-scene="plan"]').waitFor({ state: 'attached', timeout: 60000 })
-  // движок собрал кухню — есть подписи размеров/ценники (ready + built)
-  await page.locator('.kp-tags').waitFor({ state: 'attached', timeout: 60000 })
-}
-
-/** синтетический палец (как в kitchen-plan.spec.ts): тап по ячейке плана */
-const fire = (page: Page, sel: string, type: string, p: Pt) =>
-  page.evaluate(
-    ([sel, type, p]) => {
-      const el = document.querySelector(sel)!
-      el.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 1, pointerType: 'touch', isPrimary: true, button: type === 'pointermove' ? -1 : 0, buttons: type === 'pointerup' ? 0 : 1, clientX: p.x, clientY: p.y }))
-    },
-    [sel, type, p] as const,
-  )
-const tapCell = async (page: Page, sel: string) => {
-  const b = (await page.locator(sel).boundingBox())!
-  const p = { x: b.x + b.width / 2, y: b.y + b.height / 2 }
-  await fire(page, sel, 'pointerdown', p)
-  await page.waitForTimeout(40)
-  await fire(page, '.kp-plan svg', 'pointerup', p)
-  await page.waitForTimeout(400)
-}
 
 test('телефон: шапка скрыта, 3D — половина экрана, нижняя панель липкая, четыре шага', async ({ page }) => {
-  await ready(page)
+  await ready(page, MARBLE, 'built')
   const h = await vh(page)
   expect((await rect(page, '.kp-head'))!.height).toBe(0)
   // холст 3D (.kp-scene), не вся сцена с полосой видов
@@ -85,10 +52,10 @@ test('телефон: шапка скрыта, 3D — половина экра�
 })
 
 test('лист выбранного: не выше 40 % экрана и не заходит на сцену', async ({ page }) => {
-  await ready(page)
+  await ready(page, MARBLE, 'built')
   await page.locator('.kp-views [data-scene="plan"]').click()
   await page.locator('.kp-plan [data-key="sink"]').waitFor()
-  await tapCell(page, '.kp-plan [data-key="sink"]')
+  await tapPlan(page, '.kp-plan [data-key="sink"]')
   const sel = (await rect(page, '.kp-sel'))!
   const stage = (await rect(page, '.kp-stage'))!
   const h = await vh(page)
@@ -101,7 +68,7 @@ test('лист выбранного: не выше 40 % экрана и не з�
 })
 
 test('клавиатура: фокус в числовом поле — сцена 25svh, число применяется через 300 мс без blur', async ({ page }) => {
-  await ready(page)
+  await ready(page, MARBLE, 'built')
   const field = page.locator('.kp-size__field input').first()
   // поле — под прилипшей сценой и вкладками: сначала ставим его в середину экрана
   await tap(field)
@@ -119,7 +86,7 @@ test('клавиатура: фокус в числовом поле — сцен
 })
 
 test('не больше трёх касаний: стиль, цвет фасадов, длина стены A, духовка', async ({ page }) => {
-  await ready(page)
+  await ready(page, MARBLE, 'built')
   // стиль: вкладка + плитка = 2
   taps = 0
   await tap(page.locator('.kp-steps__btn', { hasText: 'Стиль' }))
@@ -151,4 +118,26 @@ test('не больше трёх касаний: стиль, цвет фасад
   await tap(page.locator('#kp-slot-hood .kp-opt').nth(1))
   await expect(model).toBeChecked()
   expect(taps).toBeLessThanOrEqual(3)
+})
+
+test('«Ещё» поверх листа выбранного: меню целиком видно и нажимается (слепая приёмка)', async ({ page }) => {
+  await ready(page, MARBLE, 'built')
+  await page.locator('.kp-views [data-scene="plan"]').click()
+  await tapPlan(page, '.kp-plan [data-key="sink"]')
+  await expect(page.locator('.kp-sel')).toBeVisible()
+  await page.locator('.kp-tools__more').click()
+  const menu = page.locator('#kp-tools-extra')
+  await expect(menu).toBeVisible()
+  await page.waitForTimeout(400)
+  // в трёх точках по середине меню под пальцем — само меню, а не лист выбранного или что-то ещё
+  const covered = await page.evaluate(() => {
+    const m = document.querySelector('#kp-tools-extra')!.getBoundingClientRect()
+    return [0.1, 0.5, 0.9]
+      .map((k) => document.elementFromPoint(m.left + m.width * k, m.top + m.height * 0.5))
+      .map((el) => (el?.closest('#kp-tools-extra') ? '' : (el?.className?.toString() ?? el?.tagName ?? '?')))
+      .filter(Boolean)
+  })
+  expect(covered).toEqual([])
+  // «Как управлять» («?») — в меню и его можно нажать
+  await expect(menu.locator('button', { hasText: '?' }).first()).toBeVisible()
 })

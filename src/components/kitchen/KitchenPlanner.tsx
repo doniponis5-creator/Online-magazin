@@ -7,7 +7,7 @@ import { useCart } from '@/lib/cart/CartProvider'
 import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { inNativeApp } from '@/lib/native/bonusCard'
-import { checkProject, TRIANGLE, type Check } from '@/lib/kitchen/checks'
+import { checkProject, droppedName, TRIANGLE, type Check } from '@/lib/kitchen/checks'
 import {
   findColors,
   FRONT_COLORS,
@@ -29,7 +29,7 @@ import {
 } from '@/lib/kitchen/finishes'
 import { DECOR_BRANDS, DECORS, type DecorBrand } from '@/lib/kitchen/decors'
 import { parseRal, RAL } from '@/lib/kitchen/ral'
-import { BASE_FRONTS, baseKey, OVER_FRIDGE_FRONTS, UPPER_FRONTS, upperKey } from '@/lib/kitchen/fronts'
+import { BASE_FRONTS, baseKey, OVER_FRIDGE_FRONTS, parseSceneKey, UPPER_FRONTS, upperKey } from '@/lib/kitchen/fronts'
 import {
   canChangeWall,
   CEILING,
@@ -48,6 +48,7 @@ import {
   wallsOf,
   type AddKind,
   resizeWalls,
+  squeezeGaps,
   type Fit,
   nextWall,
   pinCabinet,
@@ -64,6 +65,7 @@ import {
   type Plan,
   type RunId,
   type Run,
+  type Narrow,
 } from '@/lib/kitchen/layout'
 import { previewMove, type Preview } from '@/lib/kitchen/drag'
 import { PlanView, type PlanTarget } from './PlanView'
@@ -138,7 +140,7 @@ const HINT_SEEN = 'kp-hint-seen'
 type MoveSel = { key: ItemKey } | { cab: CabInfo; w: number; wall: WallId; center: number }
 
 /** Меню «+» на сцене: куда ставить (пустое место или точка ряда), где показать (px от угла сцены); failed — не поместилось, предлагаем сузить соседей или другую стену. */
-type AddMenu = { target: PlanTarget; x: number; y: number; failed?: AddKind }
+type AddMenu = { target: PlanTarget; x: number; y: number; failed?: AddKind; narrow?: Narrow | null }
 /** Ширина ≥ 1220 px: план — колонка слева от 3D, обе живые; уже — переключатель «3D · План». */
 const PLAN_COL = '(min-width: 1220px) and (min-height: 521px)'
 
@@ -400,6 +402,9 @@ export function KitchenPlanner({
   const [ofMat, setOfMat] = useState<FrontMaterial | null>(null)
   const [topMat, setTopMat] = useState<TopMaterial>('quartz')
   const [splashGroup, setSplashGroup] = useState<SplashGroup>('stone')
+  /** столешницы и фартуки открытой вкладки — один фильтр на список и на счётчик «Ещё N» */
+  const topsOfMat = useMemo(() => TOPS.filter((c) => c.material === topMat), [topMat])
+  const splashesOfGroup = useMemo(() => SPLASHES.filter((c) => c.group === splashGroup), [splashGroup])
   /** lost — телефон несколько раз подряд забрал видеокарту: ждём нажатия «Запустить 3D снова» */
   const [engineState, setEngineState] = useState<'loading' | 'ready' | 'error' | 'lost'>('loading')
   const [built, setBuilt] = useState(false)
@@ -748,11 +753,12 @@ export function KitchenPlanner({
   /** Ключ сцены (sink, k1, A120, a120) → ключ модели и состояние на старте. Картинка от перевода не меняется. */
   const dragBaseFor = (raw: string): DragBase | null => {
     if (positions[raw as ItemKey]) return { key: raw as ItemKey, state, plan, cab: null }
-    const run = plan.runs.find((r) => r.id === raw[0]?.toUpperCase())
-    if (!run) return null
-    const x = Number(raw.slice(1))
+    const sk = parseSceneKey(raw)
+    const run = sk && plan.runs.find((r) => r.id === sk.wall)
+    if (!sk || !run) return null
+    const x = sk.x
     const wall = run.id as WallId
-    if (/^[A-Z]/.test(raw)) {
+    if (sk.row === 'base') {
       // автошкаф становится своим (kN) на том же месте
       const m = run.modules.find((mod) => Math.round(mod.x) === x)
       if (!m) return null
@@ -786,9 +792,7 @@ export function KitchenPlanner({
 
   /** Модуль встал: состояние принято, выбор остаётся на нём (у верхнего ключ сцены — по новому началу в ряду). */
   const commitPlaced = (d: DragBase, next: KitchenState, fit: Fit, wall: WallId) => {
-    track()
-    setCartResult(null)
-    setState(next)
+    replace(next)
     markHintSeen()
     if (fit.row === 'upper') {
       const u = trial(next).runs.find((r) => r.id === wall)?.uppers.find((up) => up.item === d.key)
@@ -895,30 +899,26 @@ export function KitchenPlanner({
   const addFrom = (menu: AddMenu, kind: AddKind | 'tech') => {
     if (kind === 'tech') {
       // техника выбирается в шаге «Техника»: открываем первый пустой слот, место запоминаем (setPick → addPicked);
-      // вся техника уже выбрана — переносим посудомойку сюда сразу
+      // вся техника уже выбрана — покупатель сам решает, что перенести: место запоминаем, выбор модели в любом слоте ставит её сюда (ревью 32)
       setAdd(null)
+      addTargetRef.current = menu.target
       const slot = (['dishwasher', 'washer', 'fridge'] as SlotKind[]).find((s) => items[s] === null)
-      if (slot) {
-        addTargetRef.current = menu.target
-        openSlot(slot)
-        return
-      }
-      const moved = addAt(state, menu.target.wall, menu.target.cm, 'dishwasher', trial)
-      if (moved.key) return commitAdd(moved.state, moved.key)
-      setToast(t.plus.failed)
+      if (slot) return openSlot(slot)
+      goStep('tech')
+      setToast(t.plus.allBusy)
       return
     }
     const res = addAt(state, menu.target.wall, menu.target.cm, kind, trial)
     if (res.key || res.state !== state) return commitAdd(res.state, res.key)
     if (kind === 'fill' || kind === 'strip') return setAdd(null)
     // не поместилось — сузить соседей или на другую стену
-    setAdd({ ...menu, failed: kind })
+    setAdd({ ...menu, failed: kind, narrow: res.fit?.narrow ?? null })
   }
 
-  /** Сузить соседей: кого и на сколько — `narrowFor` по пробному ключу шириной нового шкафа. */
+  /** Сузить соседей: кого и на сколько — из `fit` неудачной постановки (addAt), ширину заново не считаем. */
   const addNarrow = (menu: AddMenu) => {
     const kind = menu.failed!
-    const narrow = narrowFor(plan, kind === 'pantry' ? 'pantry' : ('k0' as ItemKey), menu.target.wall, menu.target.cm, { w: 60 })
+    const narrow = menu.narrow
     const again = narrow ? addAt(narrowed(state, narrow.neighbour, narrow.by, plan), menu.target.wall, menu.target.cm, kind, trial) : null
     if (again?.key) return commitAdd(again.state, again.key)
     setAdd(null)
@@ -1316,18 +1316,22 @@ export function KitchenPlanner({
     setCartResult(null)
     setState((s) => ({ ...s, ...patch }))
   }
-  const setPick = (slot: SlotKind, id: string | null) => {
+  /** Готовое состояние целиком (из layout: `stateWith` опускает пустые `gaps`/`at`/`manualUppers` — сливать с прежним нельзя). */
+  const replace = (next: KitchenState) => {
     track()
     setCartResult(null)
+    setState(next)
+  }
+  const setPick = (slot: SlotKind, id: string | null) => {
     // пришли сюда из меню «+» → «Технику»: выбранная модель встаёт в запомненное место
     const tg = addTargetRef.current
     addTargetRef.current = null
-    setState((s) => {
-      const next = { ...s, picks: { ...s.picks, [slot]: id } }
-      if (!tg || !id) return next
-      const planner: Planner = (st, snap) => planKitchen(planInputOf(st, chosenItems(st.picks, appliances), snap), { shelves: style.shelves })
-      return addPicked(next, tg, slot, planner)
-    })
+    if (!tg || !id) return update({ picks: { ...state.picks, [slot]: id } })
+    const planner: Planner = (st, snap) => planKitchen(planInputOf(st, chosenItems(st.picks, appliances), snap), { shelves: style.shelves })
+    const r = addPicked({ ...state, picks: { ...state.picks, [slot]: id } }, tg, slot, planner)
+    // модель выбрана, но в запомненное место не встала — сказать, а не молчать (ревью 32)
+    if (!r.placed) setToast(t.noRoom)
+    replace(r.state)
   }
   // Своя расстановка сбрасывается вместе со своими шкафами: иначе они
   // оставались в адресе и в счётчике «Вернуть шкафы как было», но не в кухне.
@@ -1345,8 +1349,7 @@ export function KitchenPlanner({
     const sizes: Partial<{ a: number; b: number; c: number; island: number }> = {}
     for (const k of ['a', 'b', 'c'] as const) if (patch[k] !== undefined) sizes[k] = patch[k]
     if ((island.island ?? patch.island) !== undefined) sizes.island = island.island ?? patch.island
-    const next = resizeWalls(state, sizes, plan)
-    update({ ...next, at: next.at, gaps: next.gaps, manualUppers: next.manualUppers })
+    replace(resizeWalls(state, sizes, plan))
   }
 
   /** Продолжить сохранённую кухню (плашка при входе без адреса). */
@@ -1444,9 +1447,9 @@ export function KitchenPlanner({
 
   /** Обычный шкаф, на который нажали: где стоит, ширина, фасады. */
   function cabSel(cab: CabInfo): Extract<MoveSel, { cab: CabInfo }> | null {
-    const run = plan.runs.find((r) => r.id === cab.key[0])
-    const x = Number(cab.key.slice(1))
-    const m = run?.modules.find((mod) => Math.round(mod.x) === x)
+    const sk = parseSceneKey(cab.key)
+    const run = sk && plan.runs.find((r) => r.id === sk.wall)
+    const m = run?.modules.find((mod) => Math.round(mod.x) === sk!.x)
     if (!run || !m) return null
     return { cab, w: m.w, wall: run.id as WallId, center: moduleCenter(run, m) }
   }
@@ -1558,13 +1561,13 @@ export function KitchenPlanner({
     }
     if (moving && 'key' in moving) return find((_, m) => m.item === moving.key)
     if (moving) {
-      const x = Number(moving.cab.key.slice(1))
-      return find((run, m) => run.id === moving.cab.key[0] && Math.round(m.x) === x)
+      const sk = parseSceneKey(moving.cab.key)
+      return sk && find((run, m) => run.id === sk.wall && Math.round(m.x) === sk.x)
     }
     if (editing?.row === 'upper') {
-      const run = plan.runs.find((r) => r.id === editing.key[0].toUpperCase())
-      const x = Number(editing.key.slice(1))
-      const u = run?.uppers.find((up) => Math.round(up.x) === x)
+      const sk = parseSceneKey(editing.key)
+      const run = sk && plan.runs.find((r) => r.id === sk.wall)
+      const u = run?.uppers.find((up) => Math.round(up.x) === sk!.x)
       if (!run || !u) return null
       const mid = u.x + u.w / 2
       const m = run.modules.find((mod) => mod.x <= mid && mod.x + mod.w >= mid)
@@ -1604,13 +1607,13 @@ export function KitchenPlanner({
     const k = m.item
     const upper = editing?.row === 'upper'
     // Все стоят на местах, выбранное растёт от своей середины — меняются
-    // только шкафы рядом с ним.
-    if (k && isCabinet(k)) {
-      if (apply({ cabinets: { ...state.cabinets, [k]: { ...state.cabinets![k], w: next } }, at: frozen([]) }) && upper) followRef.current = k
-      return
-    }
+    // только шкафы рядом с ним; соседнее пустое место ужимается (squeezeGaps), а не выпадает.
+    // `sq` — готовое состояние из layout: пустые gaps/at/manualUppers в нём опущены, поэтому в патч — явно.
     if (k) {
-      if (apply({ widths: { ...state.widths, [k]: next }, at: frozen([]) }) && upper) followRef.current = k
+      const sq = squeezeGaps(state, plan, k, next)
+      const size = isCabinet(k) ? { cabinets: { ...sq.cabinets, [k]: { ...sq.cabinets![k], w: next } } } : { widths: { ...sq.widths, [k]: next } }
+      const at = sq === state ? frozen([]) : sq.at
+      if (apply({ ...size, arrangement: sq.arrangement, gaps: sq.gaps, manualUppers: sq.manualUppers, at }) && upper) followRef.current = k
       return
     }
     const key = baseKey(run.id, m.x)
@@ -1669,9 +1672,9 @@ export function KitchenPlanner({
       // над холодильником дверцы всегда парой — открываются в обе стороны
       if (editing.fridge) return null
       if (editing.variant !== 'doors' && editing.variant !== 'glass') return null
-      const run = plan.runs.find((r) => r.id === editing.key[0].toUpperCase())
-      const x = Number(editing.key.slice(1))
-      const u = run?.uppers.find((up) => Math.round(up.x) === x)
+      const sk = parseSceneKey(editing.key)
+      const run = sk && plan.runs.find((r) => r.id === sk.wall)
+      const u = run?.uppers.find((up) => Math.round(up.x) === sk!.x)
       return u && single(u.w) ? editing.key : null
     }
     if (!target) return null
@@ -1942,6 +1945,8 @@ export function KitchenPlanner({
     setCartResult({ ok, failed })
   }
   const waText = whatsappText(project, state, shareUrl, lang)
+  /** одна ссылка WhatsApp с проектом — для «Итога» покупателя и листа мастера */
+  const waHref = whatsappHref(phones[0], waText)
 
   const download = (blob: Blob, name: string) => {
     const url = URL.createObjectURL(blob)
@@ -2765,7 +2770,9 @@ export function KitchenPlanner({
   const planShown = !photo && !photoFallback && (planCol || scene === 'plan')
   /** план ВМЕСТО 3D (узкий экран): только тогда прячем ценники и подписи 3D; в колонке 3D живёт со всеми метками */
   const planOver = planShown && !planCol
-  planShownRef.current = planShown
+  useEffect(() => {
+    planShownRef.current = planShown
+  }, [planShown])
   const editOptions: FrontVariant[] = editing ? (editing.row === 'base' ? BASE_FRONTS : editing.fridge ? OVER_FRIDGE_FRONTS : UPPER_FRONTS) : []
   const frontLabel = (v: FrontVariant) =>
     editing?.fridge
@@ -2813,7 +2820,7 @@ export function KitchenPlanner({
             )}
             {/* покупателю — один WhatsApp (в .kp-sum); мастеру ссылка остаётся */}
             {masterPage && (
-              <a className="btn btn--ghost btn--sm" href={whatsappHref(phones[0], waText)} target="_blank" rel="noopener noreferrer">
+              <a className="btn btn--ghost btn--sm" href={waHref} target="_blank" rel="noopener noreferrer">
                 {t.ask}
               </a>
             )}
@@ -2965,6 +2972,7 @@ export function KitchenPlanner({
                       key={slot}
                       type="button"
                       className={`kp-tag${selected === slot ? ' is-on' : ''}`}
+                      data-slot={slot}
                       ref={(el) => engineRef.current?.setTag(slot, el)}
                       onClick={() => openSlot(slot)}
                       aria-label={`${a.stove ? t.stove.name : t.slots[slot]}: ${a.name}, ${formatSom(a.price)}. ${t.pickHint}`}
@@ -3538,12 +3546,12 @@ export function KitchenPlanner({
                 <h2 className="kp-sub">{t.sizeTitle}</h2>
                 <PlanSketch plan={plan} labels={wallLabels} className="kp-sketch" />
                 <p className="kp-note">{t.measureHint}</p>
-                <SizeField label={`A · ${t.walls.a}`} value={state.a} min={minA(state.shape)} max={LIMITS.a.max} t={t} onChange={(a) => resize({ a })} />
+                <SizeField label={`A · ${t.walls.a}`} value={state.a} min={minA(state.shape)} max={LIMITS.a.max} t={t} stageRef={stageRef} onChange={(a) => resize({ a })} />
                 {(state.shape === 'corner' || state.shape === 'u') && (
-                  <SizeField label={`B · ${t.walls.b}`} value={state.b} min={LIMITS.b.min} max={LIMITS.b.max} t={t} onChange={(b) => resize({ b })} />
+                  <SizeField label={`B · ${t.walls.b}`} value={state.b} min={LIMITS.b.min} max={LIMITS.b.max} t={t} stageRef={stageRef} onChange={(b) => resize({ b })} />
                 )}
                 {state.shape === 'u' && (
-                  <SizeField label={`C · ${t.walls.c}`} value={state.c} min={LIMITS.c.min} max={LIMITS.c.max} t={t} onChange={(c) => resize({ c })} />
+                  <SizeField label={`C · ${t.walls.c}`} value={state.c} min={LIMITS.c.min} max={LIMITS.c.max} t={t} stageRef={stageRef} onChange={(c) => resize({ c })} />
                 )}
                 {state.shape === 'island' && (
                   <SizeField
@@ -3552,6 +3560,7 @@ export function KitchenPlanner({
                     min={LIMITS.island.min}
                     max={Math.min(LIMITS.island.max, state.a)}
                     t={t}
+                    stageRef={stageRef}
                     onChange={(island) => resize({ island })}
                   />
                 )}
@@ -3564,6 +3573,7 @@ export function KitchenPlanner({
                   min={CEILING.min}
                   max={CEILING.max}
                   t={t}
+                  stageRef={stageRef}
                   onChange={(v) => update({ ceiling: v === CEILING.base ? undefined : v })}
                 />
                 <Switch
@@ -3580,6 +3590,7 @@ export function KitchenPlanner({
                     min={WINDOW_LIMITS.min}
                     max={WINDOW_LIMITS.max}
                     t={t}
+                    stageRef={stageRef}
                     onChange={(windowW) => update({ windowW })}
                   />
                 )}
@@ -3800,31 +3811,25 @@ export function KitchenPlanner({
                     />
                     {!handleless && (
                       <>
-                        <div className="kp-handles" role="radiogroup" aria-label={t.handlesTitle}>
-                          {shortList(HANDLES, moreOf.handles ? HANDLES.length : 5, (h) => h.id === handle).map((h) => (
-                            <button
-                              key={h.id}
-                              type="button"
-                              role="radio"
-                              aria-checked={handle === h.id}
-                              className="kp-handle"
-                              onClick={() => update({ handle: h.id === style.handle ? undefined : h.id })}
-                            >
-                              <HandleIcon kind={h.id} />
-                              <span>{lang === 'ky' ? h.ky : h.ru}</span>
-                            </button>
-                          ))}
-                        </div>
-                        {HANDLES.length > 5 && (
-                          <button
-                            type="button"
-                            className="btn btn--outline btn--sm kp-more-btn"
-                            aria-expanded={Boolean(moreOf.handles)}
-                            onClick={() => setMoreOf((m) => ({ ...m, handles: !m.handles }))}
-                          >
-                            {moreOf.handles ? t.showLess : t.showMore(HANDLES.length - 5)}
-                          </button>
-                        )}
+                        <MoreList items={HANDLES} n={5} isOn={(h) => h.id === handle} open={moreOf.handles} onToggle={() => setMoreOf((m) => ({ ...m, handles: !m.handles }))} t={t}>
+                          {(shown) => (
+                            <div className="kp-handles" role="radiogroup" aria-label={t.handlesTitle}>
+                              {shown.map((h) => (
+                                <button
+                                  key={h.id}
+                                  type="button"
+                                  role="radio"
+                                  aria-checked={handle === h.id}
+                                  className="kp-handle"
+                                  onClick={() => update({ handle: h.id === style.handle ? undefined : h.id })}
+                                >
+                                  <HandleIcon kind={h.id} />
+                                  <span>{lang === 'ky' ? h.ky : h.ru}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </MoreList>
                         <div className="kp-metals" role="radiogroup" aria-label={t.handleMetal}>
                           <span className="kp-metals__label">
                             {t.handleMetal}
@@ -3862,31 +3867,25 @@ export function KitchenPlanner({
                         return lang === 'ky' ? m.noteKy : m.noteRu
                       })()}
                     </p>
-                    <div className="kp-colors" role="radiogroup" aria-label={t.topTitle}>
-                      <button type="button" role="radio" aria-checked={!state.top} className="kp-color" onClick={() => update({ top: undefined })}>
-                        <span className="kp-color__chip" style={{ background: style.splashColor }} />
-                        <span>{t.asStyle}</span>
-                      </button>
-                      {shortList(TOPS.filter((c) => c.material === topMat), moreOf.tops ? TOPS.length : 6, (c) => state.top === c.id).map((c) => (
-                        <button key={c.id} type="button" role="radio" aria-checked={state.top === c.id} className="kp-color" onClick={() => update({ top: c.id })}>
-                          <span className="kp-color__chip" style={{ background: topSwatch(c.look) }} />
-                          <span>
-                            {lang === 'ky' ? c.ky : c.ru}
-                            <small>{c.cm * 10} мм</small>
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                    {TOPS.filter((c) => c.material === topMat).length > 6 && (
-                      <button
-                        type="button"
-                        className="btn btn--outline btn--sm kp-more-btn"
-                        aria-expanded={Boolean(moreOf.tops)}
-                        onClick={() => setMoreOf((m) => ({ ...m, tops: !m.tops }))}
-                      >
-                        {moreOf.tops ? t.showLess : t.showMore(TOPS.filter((c) => c.material === topMat).length - 6)}
-                      </button>
-                    )}
+                    <MoreList items={topsOfMat} n={6} isOn={(c) => state.top === c.id} open={moreOf.tops} onToggle={() => setMoreOf((m) => ({ ...m, tops: !m.tops }))} t={t}>
+                      {(shown) => (
+                        <div className="kp-colors" role="radiogroup" aria-label={t.topTitle}>
+                          <button type="button" role="radio" aria-checked={!state.top} className="kp-color" onClick={() => update({ top: undefined })}>
+                            <span className="kp-color__chip" style={{ background: style.splashColor }} />
+                            <span>{t.asStyle}</span>
+                          </button>
+                          {shown.map((c) => (
+                            <button key={c.id} type="button" role="radio" aria-checked={state.top === c.id} className="kp-color" onClick={() => update({ top: c.id })}>
+                              <span className="kp-color__chip" style={{ background: topSwatch(c.look) }} />
+                              <span>
+                                {lang === 'ky' ? c.ky : c.ru}
+                                <small>{c.cm * 10} мм</small>
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </MoreList>
                   </Part>
 
                   <Part title={t.splashTitle} value={finishNow.splash} onOpen={(el) => reveal(el, 'steps')}>
@@ -3903,38 +3902,32 @@ export function KitchenPlanner({
                         return lang === 'ky' ? g.noteKy : g.noteRu
                       })()}
                     </p>
-                    <div className="kp-colors" role="radiogroup" aria-label={t.splashTitle}>
-                      <button type="button" role="radio" aria-checked={!state.splash} className="kp-color" onClick={() => update({ splash: undefined })}>
-                        <span className="kp-color__chip" style={{ background: style.splashColor }} />
-                        <span>{t.asStyle}</span>
-                      </button>
-                      {shortList(SPLASHES.filter((c) => c.group === splashGroup), moreOf.splash ? SPLASHES.length : 8, (c) => state.splash === c.id).map((c) => (
-                        <button
-                          key={c.id}
-                          type="button"
-                          role="radio"
-                          aria-checked={state.splash === c.id}
-                          className="kp-color"
-                          onClick={() => update({ splash: c.id })}
-                        >
-                          <span
-                            className={`kp-color__chip${c.kind === 'glass' ? ' kp-color__chip--acrylic' : ''}`}
-                            style={{ background: splashSwatch(c, topSel?.look.base ?? style.splashColor, wallColor ?? style.wall) }}
-                          />
-                          <span>{lang === 'ky' ? c.ky : c.ru}</span>
-                        </button>
-                      ))}
-                    </div>
-                    {SPLASHES.filter((c) => c.group === splashGroup).length > 8 && (
-                      <button
-                        type="button"
-                        className="btn btn--outline btn--sm kp-more-btn"
-                        aria-expanded={Boolean(moreOf.splash)}
-                        onClick={() => setMoreOf((m) => ({ ...m, splash: !m.splash }))}
-                      >
-                        {moreOf.splash ? t.showLess : t.showMore(SPLASHES.filter((c) => c.group === splashGroup).length - 8)}
-                      </button>
-                    )}
+                    <MoreList items={splashesOfGroup} n={8} isOn={(c) => state.splash === c.id} open={moreOf.splash} onToggle={() => setMoreOf((m) => ({ ...m, splash: !m.splash }))} t={t}>
+                      {(shown) => (
+                        <div className="kp-colors" role="radiogroup" aria-label={t.splashTitle}>
+                          <button type="button" role="radio" aria-checked={!state.splash} className="kp-color" onClick={() => update({ splash: undefined })}>
+                            <span className="kp-color__chip" style={{ background: style.splashColor }} />
+                            <span>{t.asStyle}</span>
+                          </button>
+                          {shown.map((c) => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              role="radio"
+                              aria-checked={state.splash === c.id}
+                              className="kp-color"
+                              onClick={() => update({ splash: c.id })}
+                            >
+                              <span
+                                className={`kp-color__chip${c.kind === 'glass' ? ' kp-color__chip--acrylic' : ''}`}
+                                style={{ background: splashSwatch(c, topSel?.look.base ?? style.splashColor, wallColor ?? style.wall) }}
+                              />
+                              <span>{lang === 'ky' ? c.ky : c.ru}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </MoreList>
                   </Part>
 
                   <Part title={t.floorTitle} value={finishNow.floor} onOpen={(el) => reveal(el, 'steps')}>
@@ -4207,7 +4200,7 @@ export function KitchenPlanner({
               </button>
             )}
             <div className="kp-sum__ask">
-              <a className="btn btn--outline btn--sm kp-sum__wa" href={whatsappHref(phones[0], waText)} target="_blank" rel="noopener noreferrer">
+              <a className="btn btn--outline btn--sm kp-sum__wa" href={waHref} target="_blank" rel="noopener noreferrer">
                 {t.askWa}
               </a>
               <a className="btn btn--ghost btn--sm kp-sum__tel" href={telHref(phones[0])}>
@@ -4694,6 +4687,33 @@ function RalCodeForm({ tc, onApply }: { tc: KitchenTexts['colors']; onApply: (co
   )
 }
 
+/**
+ * Короткий список с кнопкой «Ещё N» (ручки 5, столешницы 6, фартуки 8): одно правило,
+ * какие n показать (`shortList` — выбранный всегда виден) и когда нужна кнопка.
+ * Кнопка — соседка блока, который вернули `children` (`.kp-handles + .kp-more-btn` в e2e).
+ */
+function MoreList<T>(props: {
+  items: readonly T[]
+  n: number
+  isOn: (x: T) => boolean
+  open: boolean | undefined
+  onToggle: () => void
+  t: KitchenTexts
+  children: (shown: T[]) => React.ReactNode
+}) {
+  const { items, n, isOn, open, onToggle, t } = props
+  return (
+    <>
+      {props.children(shortList(items, open ? items.length : n, isOn))}
+      {items.length > n && (
+        <button type="button" className="btn btn--outline btn--sm kp-more-btn" aria-expanded={Boolean(open)} onClick={onToggle}>
+          {open ? t.showLess : t.showMore(items.length - n)}
+        </button>
+      )}
+    </>
+  )
+}
+
 function Part(props: { title: string; value: string; open?: boolean; onOpen: (el: HTMLElement) => void; children: React.ReactNode }) {
   const byHand = useRef(false)
   return (
@@ -4741,6 +4761,7 @@ function SizeField({
   min,
   max,
   t,
+  stageRef,
   onChange,
 }: {
   label: string
@@ -4749,6 +4770,8 @@ function SizeField({
   min: number
   max: number
   t: KitchenTexts
+  /** сцена (липкая над листом): поле держится под её низом, а не под клавиатурой */
+  stageRef: React.RefObject<HTMLElement | null>
   onChange: (v: number) => void
 }) {
   const clamp = (v: number) => Math.min(max, Math.max(min, Math.round(v / 5) * 5))
@@ -4793,7 +4816,7 @@ function SizeField({
     const vv = window.visualViewport
     if (!el || !vv || !focused.current) return
     const r = el.getBoundingClientRect()
-    const stage = document.querySelector('.kp-stage')?.getBoundingClientRect()
+    const stage = stageRef.current?.getBoundingClientRect()
     const top = Math.max(vv.offsetTop, stage ? stage.bottom : 0) + 8
     const bottom = vv.offsetTop + vv.height - 8
     if (r.bottom > bottom) window.scrollBy({ top: r.bottom - bottom })
@@ -4892,8 +4915,7 @@ function Dropped({ plan, state, t, onFix }: { plan: Plan; state: KitchenState; t
   if (plan.dropped.length === 0 && !plan.ovenMovedUnderHob) return null
   const need = needByWall(plan)
   const hood = plan.dropped.some((d) => d.slot === 'hood')
-  const nameOf = (d: Plan['dropped'][number]) =>
-    d.slot ? t.slots[d.slot] : isCabinet(d.item) ? t.cabName(Math.round(state.cabinets?.[d.item]?.w ?? 60)) : d.item === 'tall' ? t.tallName : t.pantryName
+  const nameOf = (d: Plan['dropped'][number]) => droppedName(d, state, t)
   return (
     <div className="kp-warn" role="status">
       {plan.ovenMovedUnderHob && <p>{t.ovenUnderHob}</p>}

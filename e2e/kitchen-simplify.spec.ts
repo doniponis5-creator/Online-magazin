@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test } from '@playwright/test'
+import { goStep as step, MARBLE, ready } from './kp'
 import { FRONT_COLORS } from '../src/lib/kitchen/finishes'
 
 /**
@@ -7,19 +8,11 @@ import { FRONT_COLORS } from '../src/lib/kitchen/finishes'
  * «Ещё N» у ручек, один WhatsApp на «Итоге», «Ещё» без переключателя чёткости.
  * Шов — разметка планировщика: `.kp-carousel .kp-style`, `.kp-styles__all`,
  * `#kp-styles-all .kp-style`, `.kp-colors__exact`, `#kp-exact`, `.kp-more-btn`,
- * `#kp-tools-extra`, `a[href*="wa.me"]`. Профиль — телефон стоя (390 × 844 из конфига).
+ * `#kp-tools-extra`, `a[href*="wa.me"]`. Профиль — `iphone` (375 × 812, WebKit); помощники — `e2e/kp.ts`.
  */
-const ready = async (page: Page, query = 'f=corner&a=300&b=240&s=marble') => {
-  await page.goto(`/ru/kitchen?${query}`)
-  await page.locator('.kp-views [data-scene="plan"]').waitFor({ state: 'attached', timeout: 60000 })
-  await page.locator('.kp-tags').waitFor({ state: 'attached', timeout: 60000 })
-}
-const step = async (page: Page, name: string) => {
-  await page.locator('.kp-steps__btn', { hasText: name }).click()
-}
 
 test('стили: карусель из 8 без заметок, «Все стили» раскрывает полный список, выбор оттуда встаёт первым', async ({ page }) => {
-  await ready(page)
+  await ready(page, MARBLE, 'built')
   await step(page, 'Стиль')
   const carousel = page.locator('.kp-carousel .kp-style')
   await expect(carousel).toHaveCount(8)
@@ -52,7 +45,7 @@ test('стили: карусель из 8 без заметок, «Все сти
 })
 
 test('цвета: 16 сразу, «Точный код» раскрывает RAL и декоры с поиском; выбранный RAL — первым', async ({ page }) => {
-  await ready(page)
+  await ready(page, MARBLE, 'built')
   await step(page, 'Стиль')
   const grid = page.locator('.kp-parts .kp-part').first().locator('.kp-colors').first()
   // плитки материала: «как в стиле» + min(16, цветов материала) — ровно (ревью 06)
@@ -100,7 +93,7 @@ test('цвета: 16 сразу, «Точный код» раскрывает RA
 
 test('ручки: 5 сразу и «Ещё N»; раскрытие не теряет выбор', async ({ page }) => {
   // «classic» — стиль с ручками (у «marble» ручек нет: gola)
-  await ready(page, 'f=corner&a=300&b=240&s=classic')
+  await ready(page, 'f=corner&a=300&b=240&s=classic', 'built')
   await step(page, 'Стиль')
   await page.locator('.kp-part__head', { hasText: 'Ручки' }).click()
   const handles = page.locator('.kp-handles .kp-handle')
@@ -118,7 +111,7 @@ test('ручки: 5 сразу и «Ещё N»; раскрытие не теря
 })
 
 test('«Итог»: одна кнопка WhatsApp, «Поделиться» и «PDF мастеру» отдельно, «Скопировать список» нет', async ({ page }) => {
-  await ready(page)
+  await ready(page, MARBLE, 'built')
   await step(page, 'Итог')
   await expect(page.locator('.kp a[href*="wa.me"]')).toHaveCount(1)
   await expect(page.locator('.kp-sum__wa')).toHaveText('Спросить в WhatsApp')
@@ -129,7 +122,7 @@ test('«Итог»: одна кнопка WhatsApp, «Поделиться» и 
 })
 
 test('«Ещё»: вечер, цены, размеры, камеры, «?» — и никакой чёткости', async ({ page }) => {
-  await ready(page)
+  await ready(page, MARBLE, 'built')
   await page.locator('.kp-tools__more').click()
   const menu = page.locator('#kp-tools-extra')
   await expect(menu).toHaveClass(/is-open/)
@@ -144,7 +137,7 @@ test('«Ещё»: вечер, цены, размеры, камеры, «?» — 
 })
 
 test('«Кухня»: готовые кухни выше форм, одна строка фильтров', async ({ page }) => {
-  await ready(page)
+  await ready(page, MARBLE, 'built')
   await expect(page.locator('.kp-ready__filter')).toHaveCount(1)
   const ready0 = (await page.locator('.kp-ready').boundingBox())!
   const shapes = (await page.locator('.kp-shapes').boundingBox())!

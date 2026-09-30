@@ -299,7 +299,8 @@ export function PlanView({ plan, selected, preview, onPick, onDrag, onAdd, label
   const isl = plan.island
   const runOf = (id: string) => plan.runs.find((r) => r.id === id)
 
-  const dragKey = preview ? (downRef.current?.mode === 'drag' ? downRef.current.key : selected) : null
+  // тянуть можно только выбранный (onPointerMove: d.key === selected), а сняли выбор — перетаскивание отменено; ref в рендере не читаем
+  const dragKey = preview ? selected : null
   const dragCell = dragKey ? cells.find((c) => c.key === dragKey) : undefined
   const prun = preview ? runOf(preview.wall) : undefined
 

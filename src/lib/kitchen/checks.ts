@@ -1,5 +1,6 @@
 import { BASE_H, counterTop, hoodNorm, isTall, STOVE_LEVEL, UPPER_BOTTOM } from './dims'
-import { DEPTH, type Module, type Plan, type Run } from './layout'
+import { DEPTH, type Dropped, type Module, type Plan, type Run } from './layout'
+import { isCabinet, isGap, type KitchenState, type SlotKind } from './types'
 
 /**
  * Проверка проекта по правилам кухонных дизайнеров (NKBA и практика
@@ -184,4 +185,15 @@ export function checkProject(plan: Plan, facts: CheckFacts = {}): Check[] {
   }
   out.push({ id: 'fits', level: plan.dropped.length === 0 ? 'ok' : 'warn', count: plan.dropped.length })
   return out
+}
+
+/** Подписи для «не поместилось» — тот срез `KitchenTexts`, который здесь нужен. */
+export type DroppedNames = { slots: Record<SlotKind, string>; cabName: (w: number) => string; tallName: string; pantryName: string; emptyPlace: string }
+
+/** Как назвать выпавшее покупателю: техника — по слоту, свой шкаф — по ширине, пустое место — «пустое место», пеналы — по виду. */
+export function droppedName(d: Dropped, state: Pick<KitchenState, 'cabinets'>, t: DroppedNames): string {
+  if (d.slot) return t.slots[d.slot]
+  if (isGap(d.item)) return t.emptyPlace
+  if (isCabinet(d.item)) return t.cabName(Math.round(state.cabinets?.[d.item]?.w ?? 60))
+  return d.item === 'tall' ? t.tallName : t.pantryName
 }

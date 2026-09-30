@@ -121,8 +121,6 @@ export type RunCache = {
   gola: number
   splash: number
   wave: number
-  lemons: boolean
-  props: { board: boolean; kettle: boolean }
 }
 
 export type Built = {
@@ -181,10 +179,6 @@ type Ctx = {
   ghosts: THREE.Object3D[]
   /** порядковый номер фасада — для «волны» при смене стиля */
   wave: number
-  /** ваза с лимонами уже стоит — вторую не ставим */
-  lemons: boolean
-  /** доска и чайник уже стоят (по одному на кухню) */
-  props: { board: boolean; kettle: boolean }
   /** кому какая мелочь (лимоны, доска, чайник): по всей раскладке заранее — вклад ряда не зависит от порядка сборки */
   decor: Map<string, Decor>
   /** сдвиг рисунка фасадов в текущем ряду */
@@ -1468,7 +1462,6 @@ function decorRun(ctx: Ctx, run: Run, g: THREE.Group) {
   if (d.lemons !== undefined) {
     const spot = run.modules[d.lemons]
     lemons(ctx, g, cm(spot.x + spot.w / 2), ctx.counterY, 0.34)
-    ctx.lemons = true
   }
   props(ctx, run, g, d)
 }
@@ -1531,7 +1524,6 @@ const COUNTER: Module['kind'][] = ['doors', 'drawers', 'bottle', 'oven', 'hob', 
 function props(ctx: Ctx, run: Run, g: THREE.Group, d: Decor) {
   const { mats, counterY } = ctx
   const mods = run.modules
-  const done = ctx.props
   const wood = mats.shelf
   // Розетки на фартуке: белые, на тёмном фартуке — чёрные.
   const dark = new THREE.Color(ctx.style.splashColor).getHSL({ h: 0, s: 0, l: 0 }).l < 0.35
@@ -1550,7 +1542,6 @@ function props(ctx: Ctx, run: Run, g: THREE.Group, d: Decor) {
   // у плиты: разделочная доска у фартука, бутылки масла и мельницы
   const nearHob = d.board
   if (nearHob !== undefined) {
-    done.board = true
     const m = mods[nearHob]
     const cx = cm(m.x + m.w / 2)
     const board = new THREE.Group()
@@ -1576,7 +1567,6 @@ function props(ctx: Ctx, run: Run, g: THREE.Group, d: Decor) {
   // у мойки — чайник
   const nearSink = d.kettle
   if (nearSink !== undefined) {
-    done.kettle = true
     const m = mods[nearSink]
     const cx = cm(m.x + m.w / 2)
     const body = new THREE.LatheGeometry(
@@ -1901,16 +1891,22 @@ function globalKey(input: BuildInput): string {
   return JSON.stringify([style.id, style, tone, finish, room, evening, detail ?? 2, Boolean(lite), physical ?? true, columns, doorsRight, plan.shape, plan.room, plan.window, plan.island, plan.stove])
 }
 
-/** Ключ ряда: общий ключ + сам ряд + техника на нём (с фото) + свои фасады его шкафов. */
+/**
+ * Ключ ряда: общий ключ + сам ряд + техника на нём (с фото) + свои фасады его шкафов.
+ * Техника без места в `plan.placed` (духовка под варочной, микроволновка в колонне)
+ * входит в ключ каждого ряда — где она стоит, раскладка не говорит; выпавшая
+ * (`plan.dropped` со слотом) не строится нигде и в ключ не входит.
+ */
 function runKey(input: BuildInput, run: Run, global: string, decor: Decor | null): string {
   const plan = input.plan
   // свои шкафы ряда (k1, u1): фасад по ключу без буквы стены — только к тому ряду, где модуль стоит
   const own = new Set<string>()
   for (const m of run.modules) if (m.item) own.add(m.item)
   for (const u of run.uppers) if (u.item) own.add(u.item)
+  const gone = new Set(plan.dropped.map((d) => d.slot))
   const items = (Object.keys(input.items) as SlotKind[]).sort().map((s) => {
     const at = plan.placed[s] ?? (s === 'hood' ? plan.placed.hob : undefined)
-    if (at && at.run !== run.id) return ''
+    if ((at && at.run !== run.id) || (!at && gone.has(s))) return ''
     const a = input.items[s]
     const ph = a?.image ? input.photos.get(a.image) : undefined
     return `${s}=${a ? JSON.stringify(a) : '-'}#${ph ? ph.texture.uuid : ph === null ? 'n' : 'u'}`
@@ -1941,8 +1937,6 @@ function assemble(input: BuildInput, reuse?: ReadonlyMap<string, RunCache>): Bui
     overhead: [],
     ghosts: [],
     wave: 0,
-    lemons: false,
-    props: { board: false, kettle: false },
     decor: decorPlan(input.plan, Boolean(input.lite)),
     uvRun: 0,
     carcasses: [],
@@ -1982,8 +1976,6 @@ function assemble(input: BuildInput, reuse?: ReadonlyMap<string, RunCache>): Bui
       ctx.gola += ready.gola
       ctx.splash += ready.splash
       ctx.wave += ready.wave
-      ctx.lemons ||= ready.lemons
-      ctx.props = { board: ctx.props.board || ready.props.board, kettle: ctx.props.kettle || ready.props.kettle }
       return
     }
     rebuilt.push(run.id)
@@ -2007,8 +1999,6 @@ function assemble(input: BuildInput, reuse?: ReadonlyMap<string, RunCache>): Bui
       gola: ctx.gola,
       splash: ctx.splash,
       wave: ctx.wave,
-      lemons: ctx.lemons,
-      props: { ...ctx.props },
     }
     // остров своего цвета: весь ряд строится материалом острова вместо низа —
     // фасады, пилястры, задняя панель (как верх берёт `mats.upper`); корпус — общий `mats.body`
@@ -2053,8 +2043,6 @@ function assemble(input: BuildInput, reuse?: ReadonlyMap<string, RunCache>): Bui
         gola: ctx.gola - before.gola,
         splash: ctx.splash - before.splash,
         wave: ctx.wave - before.wave,
-        lemons: ctx.lemons && !before.lemons,
-        props: { board: ctx.props.board && !before.props.board, kettle: ctx.props.kettle && !before.props.kettle },
       })
     } finally {
       ctx.mats = mats

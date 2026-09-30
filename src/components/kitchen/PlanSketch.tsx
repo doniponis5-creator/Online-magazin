@@ -1,4 +1,5 @@
 import type { ModuleKind, Plan } from '@/lib/kitchen/layout'
+import { rectOf } from './planGeom'
 
 /**
  * Чертёж кухни сверху: стены, шкафы и техника в масштабе. Тот же план, что и
@@ -38,17 +39,7 @@ export function PlanSketch({ plan, labels, showWidths = false, className }: Prop
   const T = 12
 
   const rects = plan.runs.flatMap((run) =>
-    run.modules.map((m, i) => {
-      const cos = Math.cos(run.rot)
-      const sin = Math.sin(run.rot)
-      const pt = (x: number, z: number) => [run.ox + x * cos + z * sin, run.oz - x * sin + z * cos]
-      const corners = [pt(m.x, 0), pt(m.x + m.w, 0), pt(m.x + m.w, 60), pt(m.x, 60)]
-      const xs = corners.map((c) => c[0])
-      const zs = corners.map((c) => c[1])
-      const x = Math.min(...xs)
-      const y = Math.min(...zs)
-      return { key: `${run.id}${i}`, x, y, w: Math.max(...xs) - x, h: Math.max(...zs) - y, m, vertical: run.rot !== 0 && run.rot !== Math.PI }
-    }),
+    run.modules.map((m, i) => ({ key: `${run.id}${i}`, ...rectOf(run, m.x, m.w, 0, 60), m, vertical: run.rot !== 0 && run.rot !== Math.PI })),
   )
 
   const island = plan.island

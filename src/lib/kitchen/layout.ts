@@ -50,6 +50,8 @@ export const NICHE_EXTRA = 3.2
  * вплотную: щель в 3 см между шкафами никому не нужна.
  */
 export const SNAP = 6
+/** Уже этого (см) — планка-добор: в раскладке не шкаф, в 3D и на плане не берётся пальцем. */
+export const NARROW_W = 15
 
 /** Ширина, которую покупатель может задать сам, см. */
 export const WIDTH_LIMITS: Record<SizedItem | 'cabinet', { min: number; max: number }> = {
@@ -293,7 +295,7 @@ export function sizedWidth(kind: keyof typeof WIDTH_LIMITS, w: number | undefine
 export function splitFill(width: number, prefer: 'doors' | 'drawers', role: 'work' | 'side'): Omit<Module, 'x'>[] {
   const w = Math.round(width)
   if (w < 1) return []
-  if (w < 15) return [{ kind: 'filler', w }]
+  if (w < NARROW_W) return [{ kind: 'filler', w }]
   if (w < 30) return [{ kind: 'bottle', w }]
   if (w <= 90) return [{ kind: w <= 45 && prefer === 'drawers' ? 'drawers' : prefer, w, role }]
   const n = Math.ceil(w / 80)
@@ -455,8 +457,8 @@ function place(length: number, start: number, seq: Sequence, dropped: Dropped[],
   const drop = (victim: ItemKey, measured: Item[] = items) => {
     const fixed = measured.reduce((s, i) => s + sizeOf(i), 0)
     const victimItem = items.find((i) => !isFill(i) && i.item === victim) as Solid
-    // пустое место — не потеря: оно уходит молча, покупателю не о чём сообщать
-    if (!isGap(victim)) dropped.push({ item: victim, slot: victimItem.slot, need: Math.max(1, Math.ceil(fixed - room)), wall: how.wall })
+    // пустое место тоже записывается: иначе оно выпадало молча, и постановка «съедала» его без предупреждения (ревью 15)
+    dropped.push({ item: victim, slot: victimItem.slot, need: Math.max(1, Math.ceil(fixed - room)), wall: how.wall })
     items = mergeFills(items.filter((i) => i !== victimItem))
   }
   for (;;) {
@@ -512,30 +514,22 @@ function indexOfSlot(run: Run, items: Item[], modules: LaidModule[]) {
  * задевает окно краем, становится уже, а не пропадает целиком.
  */
 function uppersFor(modules: Module[], opts: UpperOpts, windowSpan?: { from: number; to: number }): Upper[] {
-  const out: Upper[] = []
-  for (const m of modules) {
-    const u = upperFor(m, opts)
-    if (!windowSpan || m.x >= windowSpan.to || m.x + m.w <= windowSpan.from) {
-      out.push(u)
-      continue
-    }
-    const left = windowSpan.from - m.x
-    const right = m.x + m.w - windowSpan.to
-    // Кусок у окна: шкаф остаётся шкафом (угловой — только со стороны угла),
-    // над плитой вытяжку не повесить — там обычный шкаф; над высоким — пусто.
-    const piece = (x: number, w: number, cornerSide: boolean): Upper => {
-      if (u.kind === 'doors' || u.kind === 'shelf') return { kind: u.kind, x, w }
-      if (u.kind === 'corner') return cornerSide ? { ...u, x, w } : { kind: 'doors', x, w }
-      // над плитой навесного шкафа не бывает: за окном — пусто
-      if (u.kind === 'hood') return { kind: 'none', x, w }
-      return { kind: 'none', x, w }
-    }
-    if (left > 0.01) out.push(piece(m.x, left, u.blindAt === 'start'))
-    out.push({ kind: 'none', x: Math.max(m.x, windowSpan.from), w: Math.min(m.x + m.w, windowSpan.to) - Math.max(m.x, windowSpan.from) })
-    if (right > 0.01) out.push(piece(windowSpan.to, right, u.blindAt === 'end'))
-  }
-  return out
+  const ups = modules.map((m) => upperFor(m, opts))
+  return windowSpan ? cutWindow(ups, windowSpan, autoPiece) : ups
 }
+
+/**
+ * Кусок у окна в авто-ряду: шкаф остаётся шкафом (угловой — только со стороны
+ * угла, иначе дверцы); над плитой навесного шкафа не бывает, над высоким — пусто.
+ */
+const autoPiece: WindowPiece = (u, x, w, side) => {
+  if (u.kind === 'doors' || u.kind === 'shelf') return { kind: u.kind, x, w }
+  if (u.kind === 'corner') return u.blindAt === side ? { ...u, x, w } : { kind: 'doors', x, w }
+  return { kind: 'none', x, w }
+}
+
+/** Кусок у окна в ручном ряду: вид тот же (вытяжка → пусто), ключ `uN` — у большего куска. */
+const manualPiece: WindowPiece = (u, x, w, _side, larger) => ({ kind: u.kind === 'hood' ? 'none' : u.kind, x, w, ...(larger && u.item ? { item: u.item } : {}) })
 
 /** Шкафы, которые можно сузить ради вытяжки. */
 const SHRINKABLE: UpperKind[] = ['doors', 'shelf', 'filler']
@@ -618,7 +612,7 @@ function manualUppersFor(
     movable = movable.slice(0, -1)
     laid = lay()
   }
-  if (!laid) return { uppers: windowSpan ? cutWindow(auto, windowSpan) : auto, gaps: [] }
+  if (!laid) return { uppers: windowSpan ? cutWindow(auto, windowSpan, manualPiece) : auto, gaps: [] }
   const uppers: Upper[] = []
   const gaps: RunGap[] = []
   for (const m of laid) {
@@ -633,11 +627,18 @@ function manualUppersFor(
     // автозаполнение остатка: шкаф с дверцами, уже UPPER_MIN — добор
     uppers.push({ kind: m.w < UPPER_MIN - 0.001 ? 'filler' : 'doors', x: m.x, w: m.w })
   }
-  return { uppers: windowSpan ? cutWindow(uppers, windowSpan) : uppers, gaps }
+  return { uppers: windowSpan ? cutWindow(uppers, windowSpan, manualPiece) : uppers, gaps }
 }
 
-/** Окно вырезается из ручного ряда: под окном пусто, шкаф по краям остаётся (ключ — у большего куска). */
-function cutWindow(ups: Upper[], span: { from: number; to: number }): Upper[] {
+/** Кусок шкафа по краю окна: шкаф, его x и ширина, с какой стороны ряда кусок, больше ли он другого куска. */
+type WindowPiece = (u: Upper, x: number, w: number, side: 'start' | 'end', larger: boolean) => Upper
+
+/**
+ * Окно вырезается из ряда — одно правило для авто-ряда и ручного: под окном
+ * пусто, шкаф, задевший окно краем, становится уже, а не пропадает; каким
+ * остаётся кусок — решает `piece` (`autoPiece` / `manualPiece`).
+ */
+function cutWindow(ups: Upper[], span: { from: number; to: number }, piece: WindowPiece): Upper[] {
   const out: Upper[] = []
   for (const u of ups) {
     if (u.x >= span.to - 0.01 || u.x + u.w <= span.from + 0.01) {
@@ -646,10 +647,9 @@ function cutWindow(ups: Upper[], span: { from: number; to: number }): Upper[] {
     }
     const left = span.from - u.x
     const right = u.x + u.w - span.to
-    const keep = (x: number, w: number, own: boolean): Upper => ({ kind: u.kind === 'hood' ? 'none' : u.kind, x, w, ...(own && u.item ? { item: u.item } : {}) })
-    if (left > 0.01) out.push(keep(u.x, left, left >= right))
+    if (left > 0.01) out.push(piece(u, u.x, left, 'start', left >= right))
     out.push({ kind: 'none', x: Math.max(u.x, span.from), w: Math.min(u.x + u.w, span.to) - Math.max(u.x, span.from) })
-    if (right > 0.01) out.push(keep(span.to, right, right > left))
+    if (right > 0.01) out.push(piece(u, span.to, right, 'end', right > left))
   }
   return out
 }
@@ -784,7 +784,7 @@ type Neighbour = ItemKey | 'corner' | null
 
 /**
  * Ряд стены: предметы в заданном порядке, между ними — столешница со
- * шкафами. У плиты с обеих сторон не меньше 30 см столешницы.
+ * шкафами. У плиты с обеих сторон не меньше `HOB_SIDE` см столешницы.
  */
 function wallItems(
   keys: ItemKey[],
@@ -806,7 +806,7 @@ function wallItems(
     const nearCorner = left === 'corner' || right === 'corner'
     out.push({
       fill: end ? 0.35 : nearCorner ? 0.5 : 1,
-      min: nearHob ? 30 : 0,
+      min: nearHob ? HOB_SIDE : 0,
       prefer: nearHob ? 'drawers' : prefer,
       role: end || nearCorner ? 'side' : 'work',
     })
@@ -1042,7 +1042,8 @@ export function planKitchen(input: PlanInput, options: { shelves: boolean }): Pl
 /** Нехватка по каждой стене: сколько см добавить именно этой стене. Вытяжку под окном удлинением не поправить — её тут нет. */
 export function needByWall(plan: Pick<Plan, 'dropped'>): Partial<Record<RunId, number>> {
   const out: Partial<Record<RunId, number>> = {}
-  for (const d of plan.dropped) if (d.slot !== 'hood') out[d.wall] = Math.max(out[d.wall] ?? 0, d.need)
+  // вытяжку стеной не вылечить, пустое место ужимаемо — «удлините стену» не про них
+  for (const d of plan.dropped) if (d.slot !== 'hood' && !isGap(d.item)) out[d.wall] = Math.max(out[d.wall] ?? 0, d.need)
   return out
 }
 
@@ -1091,7 +1092,7 @@ export function itemPositions(plan: Plan): Partial<Record<ItemKey, ItemPlace>> {
       const key = m.item
       if (!key) continue
       const mid = m.x + m.w / 2
-      out[key] = { wall: run.id, center: run.id === 'B' ? run.length - mid : mid, w: m.w }
+      out[key] = { wall: run.id, center: runCm(run, mid), w: m.w }
     }
     for (const u of run.uppers) if (u.item) out[u.item] = { wall: run.id, center: moduleCenter(run, u), w: u.w, row: 'upper' }
     for (const g of run.gaps ?? []) out[g.item] = { wall: run.id, center: moduleCenter(run, g), w: g.w, ...(g.row === 'upper' ? { row: 'upper' } : {}) }
@@ -1517,11 +1518,9 @@ export function placeAt(state: KitchenState, key: ItemKey, wall: WallId, cm: num
 
 /** То же, но геометрия и заморозка — по готовому плану `p0` (он может быть от состояния без нового предмета: пенал, новый шкаф). */
 function placeWith(state: KitchenState, p0: Plan, key: ItemKey, wall: WallId, center: number, planner: Planner, opts: { w?: number; fresh?: boolean } = {}): Placed {
-  const cm = center
-  const grab = 0
   const pos = itemPositions(p0)
   const cur = pos[key]
-  const fit = fitOn(p0, key, wall, cm - grab, { w: opts.w })
+  const fit = fitOn(p0, key, wall, center, { w: opts.w })
   if (!fit || !fit.ok) return { state, fit }
   const row = fit.row
   const base = row === 'upper' && !state.manualUppers?.[wall] ? detachUppers(state, wall, p0) : state
@@ -1543,13 +1542,33 @@ function placeWith(state: KitchenState, p0: Plan, key: ItemKey, wall: WallId, ce
   }
   const run = p0.runs.find((r) => r.id === wall)!
   const list = listOf(rows, row, wall)
+  carveGaps(run, row, list, gaps, at, key, s, e)
+  at[key] = fit.center
+  insertByCenter(list, key, fit.center, at)
+  const next = stateWith(base, rows, gaps, at)
+  const p1 = planner(next, [])
+  const now = itemPositions(p1)[key]
+  if (p1.dropped.length > p0.dropped.length || !now) {
+    const fresh = p1.dropped.filter((d) => !p0.dropped.some((o) => o.item === d.item && o.wall === d.wall))
+    const need = Math.max(1, ...fresh.map((d) => d.need))
+    return { state, fit: { ...fit, ok: false, need, narrow: narrowAmong([fit.neighbours.left, fit.neighbours.right], need, pos) } }
+  }
+  return { state: next, fit: { ...fit, center: now.center } }
+}
+
+/**
+ * Пустые места ряда, задетые отрезком `s…e` предмета `key`, ужимаются до
+ * остатка (или уходят; планка сохраняется) — одно правило для постановки
+ * (`placeWith`) и правки ширины (`squeezeGaps`). Меняет `list`, `gaps`, `at`.
+ */
+function carveGaps(run: Run, row: 'base' | 'upper', list: ItemKey[], gaps: NonNullable<KitchenState['gaps']>, at: NonNullable<KitchenState['at']>, key: ItemKey, s: number, e: number) {
   for (const g of run.gaps ?? []) {
     if (g.item === key || g.row !== row) continue
     const gc = moduleCenter(run, g)
     const gs = gc - g.w / 2
     const ge = gc + g.w / 2
     if (Math.min(e, ge) - Math.max(s, gs) <= 0.01) continue
-    const strip = Boolean(base.gaps?.[g.item]?.strip)
+    const strip = Boolean(gaps[g.item]?.strip)
     const idx = list.indexOf(g.item)
     if (idx >= 0) list.splice(idx, 1)
     delete gaps[g.item]
@@ -1563,17 +1582,36 @@ function placeWith(state: KitchenState, p0: Plan, key: ItemKey, wall: WallId, ce
       id = nextId('g', gaps)
     }
   }
-  at[key] = fit.center
-  insertByCenter(list, key, fit.center, at)
-  const next = stateWith(base, rows, gaps, at)
-  const p1 = planner(next, [])
-  const now = itemPositions(p1)[key]
-  if (p1.dropped.length > p0.dropped.length || !now) {
-    const fresh = p1.dropped.filter((d) => !p0.dropped.some((o) => o.item === d.item && o.wall === d.wall))
-    const need = Math.max(1, ...fresh.map((d) => d.need))
-    return { state, fit: { ...fit, ok: false, need, narrow: narrowAmong([fit.neighbours.left, fit.neighbours.right], need, pos) } }
-  }
-  return { state: next, fit: { ...fit, center: now.center } }
+}
+
+/**
+ * Ширину `key` меняют на `w` (кнопки ±): соседнее пустое место ужимается,
+ * а не выпадает. Растём в сторону пустого места (край с другой стороны на
+ * месте); пустые места с обеих сторон или ни с одной — от своей середины.
+ * Все остальные места замораживаются по плану. Соседей-пустых мест нет — `state` как есть.
+ */
+export function squeezeGaps(state: KitchenState, plan: Plan, key: ItemKey, w: number): KitchenState {
+  const pos = itemPositions(plan)
+  const cur = pos[key]
+  const run = cur && plan.runs.find((r) => r.id === cur.wall)
+  if (!cur || !run) return state
+  const row = cur.row ?? 'base'
+  const s0 = cur.center - cur.w / 2
+  const e0 = cur.center + cur.w / 2
+  const gapsHere = (run.gaps ?? []).filter((g) => g.row === row && g.item !== key)
+  const left = gapsHere.some((g) => Math.abs(moduleCenter(run, g) + g.w / 2 - s0) < 0.6)
+  const right = gapsHere.some((g) => Math.abs(moduleCenter(run, g) - g.w / 2 - e0) < 0.6)
+  if (!left && !right) return state
+  const s = left && !right ? e0 - w : right && !left ? s0 : cur.center - w / 2
+  const e = s + w
+  const rows = rowsOf(state)
+  const gaps: NonNullable<KitchenState['gaps']> = { ...state.gaps }
+  const at: NonNullable<KitchenState['at']> = {}
+  for (const [k, p] of Object.entries(pos) as [ItemKey, ItemPlace][]) at[k] = p.center
+  for (const [k, v] of Object.entries(state.at ?? {}) as [ItemKey, number][]) if (at[k] === undefined) at[k] = v
+  carveGaps(run, row, listOf(rows, row, cur.wall), gaps, at, key, s, e)
+  at[key] = (s + e) / 2
+  return stateWith(state, rows, gaps, at)
 }
 
 /** Кого сузить и на сколько, чтобы `key` встал в `cm` на стене `wall`; null — встаёт и так или сузить некого. */
@@ -1630,7 +1668,8 @@ export type AddKind = 'doors' | 'drawers' | 'pantry' | 'strip' | 'fill' | FixedI
  * закрывает автозаполнение; `strip` закрывает его декоративной планкой.
  * Возвращает новое состояние и ключ поставленного (null — не встало).
  */
-export function addAt(state: KitchenState, wall: WallId, cm: number, kind: AddKind, planner: Planner): { state: KitchenState; key: ItemKey | null } {
+/** Не встало — `fit` (`ok=false`, `need`, `narrow`) для «сузить соседей»; для `fill`/`strip` без пустого места `fit` нет. */
+export function addAt(state: KitchenState, wall: WallId, cm: number, kind: AddKind, planner: Planner): { state: KitchenState; key: ItemKey | null; fit?: Fit | null } {
   const p0 = planner(state, [])
   const run = p0.runs.find((r) => r.id === wall)
   if (!run) return { state, key: null }
@@ -1654,7 +1693,7 @@ export function addAt(state: KitchenState, wall: WallId, cm: number, kind: AddKi
     const id = nextId('k', state.cabinets)
     const cab: Cabinet = { w: sizedWidth('cabinet', hit ? hit.w : 60), front: kind === 'doors' ? 'doors' : 'drawers3' }
     const placed = placeWith({ ...state, cabinets: { ...state.cabinets, [id]: cab } }, p0, id, wall, target, planner, { w: cab.w, fresh: true })
-    return placed.fit?.ok ? { state: placed.state, key: id } : { state, key: null }
+    return placed.fit?.ok ? { state: placed.state, key: id } : { state, key: null, fit: placed.fit }
   }
   if (kind === 'pantry') {
     const pos = itemPositions(p0)
@@ -1662,10 +1701,10 @@ export function addAt(state: KitchenState, wall: WallId, cm: number, kind: AddKi
     if (pos[key]) return { state, key: null }
     const w = sizedWidth(key, state.widths?.[key] ?? PANTRY_W)
     const placed = placeWith({ ...state, pantries: key === 'pantry' ? 1 : 2 }, p0, key, wall, target, planner, { w, fresh: true })
-    return placed.fit?.ok ? { state: placed.state, key } : { state, key: null }
+    return placed.fit?.ok ? { state: placed.state, key } : { state, key: null, fit: placed.fit }
   }
   const placed = placeAt(state, kind, wall, target, planner)
-  return placed.fit?.ok ? { state: placed.state, key: kind } : { state, key: null }
+  return placed.fit?.ok ? { state: placed.state, key: kind } : { state, key: null, fit: placed.fit }
 }
 
 /**
