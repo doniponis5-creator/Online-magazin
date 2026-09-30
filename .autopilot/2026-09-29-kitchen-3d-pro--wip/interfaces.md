@@ -24,6 +24,10 @@
 | `planner` (`src/components/kitchen/KitchenPlanner.tsx`) | состояние, шаги, адрес, панель | использует всё выше | — |
 | `share` (`src/lib/kitchen/share.ts`) | кодирование состояния | `queryFromState`, `stateFromQuery` (новые поля `g`, `u` необязательны) | формат полей |
 
+Правило (C1, «одно место»): `parseSceneKey(key)` (`fronts.ts`, рядом с `baseKey`/`upperKey`) — единственный разбор ключа сцены автошкафа (`A120`/`a120` → `{wall, x, row}`, иначе `null`); `rectOf` из `planGeom.ts` — одна формула «отрезок ряда → прямоугольник мира» для `PlanView`, `PlanSketch` и `planSvg`; `cutWindow(ups, span, piece)` в `layout.ts` — одно вырезание окна, авто-ряд и ручной отличаются только `piece`; `HOB_SIDE` читается и в `wallItems`; `runKey` (`build.ts`): выпавшая техника (`plan.dropped` со `slot`) в ключ ряда не входит, техника без места в `placed` (духовка под варочной, микроволновка) — в ключ каждого ряда; `MoreList` (`KitchenPlanner.tsx`) — один «Ещё N» для ручек/столешниц/фартуков; `replace(next)` в планировщике — готовое состояние из `layout` ставится целиком (`stateWith` опускает пустые `gaps`/`at`/`manualUppers`); e2e-помощники — только `e2e/kp.ts`, профиль `chrome` `kitchen-*` не гоняет.
+
+Правило (C1, 13): `layout` принимает готовый `planner`/`plan` от экрана (`Planner = (s, snap) => Plan`; `placeAt`/`addAt`/`detachUppers`/`narrowFor`/`resizeWalls`) и сам `planKitchen` с настройками экрана не зовёт — постановка и проверки считают ту же кухню, что показана. `addAt` не встало → `{state, key: null, fit}`; `addPicked` → `{state, placed}`; `NARROW_W` 15 — одна константа для раскладки, 3D и плана; `isPhone(env)` в `quality.ts`.
+
 Швы для тестов: `layout` (уже покрыт), `drag` (чистые функции), `share` (круговой тест). `engine`, `PlanView` — Playwright + глазами в размере телефона.
 
 ### Общий контракт «перетаскивание» (для engine, PlanView, planner)
@@ -191,3 +195,10 @@ grabOf(plan, key, cm) -> number                                    // на 'star
 - Замер кадра: `desktop` + `test.use({ viewport 375×812, hasTouch, isMobile })`, CDP `Emulation.setCPUThrottlingRate {rate: 4}`, кадр = вызов `engine.draw()` (обёртка на `window.__kp`), порог `FRAME_MS = 33`; результат — в аннотации теста и в stdout.
 - Из ревью 06: на шаге «Техника» у каждого слота есть свой WhatsApp «спросить о поставке» (`ApplianceSheet supplyHref` → `a.kp-slot__supply[href*="wa.me"]`) — это другая функция, не «один WhatsApp на Итоге»; e2e считает `a[href*="wa.me"]` только на «Итоге» (`.kp-sum__wa`).
 - Карусель стилей: пока раскрыт `#kp-styles-all`, `.kp-carousel` не рендерится — выбранный стиль отмечен ровно в одной `radiogroup`; `engine.getQuality/setQuality/Quality` удалены; мёртвые `.kp-help`, `.kp-sub--first`, `.kp-style__new` удалены из `kitchen.css`.
+
+### Таск C1 (вернулся DONE_WITH_CONCERNS после эстафеты; НЕ проверен ревью, НЕ закоммичен — код в рабочем дереве)
+
+- Закрыто: оба дефекта слепой приёмки (ценники при колонке плана; «Ещё» над листом), дефекты 15/32/26, дубли 4,5,6,7,8,16,19,20,21,23+37,25,27,28,33,34,35,40,41,42,43,44,50,52; 13 записано. Оставлен 36 (универсальный scroll-margin нужен для касаний, причина в css).
+- Новое: `parseSceneKey` (fronts.ts), `MoreList` (KitchenPlanner), `replace(next)`, `SizeField stageRef`, `addAt -> {state,key,fit?}`, `addPicked -> {state,placed}`, `NARROW_W`, `isPhone()`, e2e-помощники в `e2e/kp.ts`, профиль chrome не гоняет kitchen-*.
+- Кандидат в C2: race в эффекте «открыли по ссылке» (KitchenPlanner ~576, deps [byId]) — тост keepOnLink переигрывается при смене identity byId; из-за него один e2e падает под нагрузкой.
+- **Следующий шаг при возобновлении:** прогнать `npx vitest run` и `npx tsc --noEmit`; отправить C1 ревьюерам (ac3d9ef610228a1aa — манифест/спека, ae0d83a5d322666a1 — craft; диффы по FILES выше); закоммитить; запустить C2 (tickets/C2-missing-tests.md, добавить race из кандидата); затем polish (phases/polish.md): критик с brief + reference.md, до 3 кругов; затем отчёт (phases/8-final.md §3), снять --wip, finishedAt.
