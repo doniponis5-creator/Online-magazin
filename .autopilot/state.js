@@ -14,7 +14,7 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-29T22:14:27+06:00",
-  "updatedAt": "2026-09-30T09:28:54+06:00",
+  "updatedAt": "2026-09-30T09:34:02+06:00",
   "finishedAt": null,
   "stages": [
     {
@@ -89,7 +89,7 @@ window.STATE =
       ],
       "status": "done",
       "finishedAt": "2026-09-29T23:06:17+06:00",
-      "tests": { "passed": 888, "failed": 0 },
+      "tests": { "passed": 899, "failed": 0 },
       "commit": "a10698b",
       "files": ["lib/kitchen/layout.ts", "lib/kitchen/types.ts", "lib/kitchen/share.ts", "lib/kitchen/order.ts", "lib/kitchen/drag.ts"],
       "startedAt": "2026-09-29T22:26:02+06:00",
@@ -149,7 +149,11 @@ window.STATE =
         "src/lib/kitchen/layout.ts",
         "e2e/"
       ],
-      "status": "repair",
+      "status": "done",
+      "finishedAt": "2026-09-30T09:34:02+06:00",
+      "tests": { "passed": 899, "failed": 0 },
+      "commit": "02e5a9c",
+      "files": ["three/engine.ts", "three/build.ts", "KitchenPlanner.tsx", "lib/kitchen/layout.ts", "lib/kitchen/share.ts", "e2e/kitchen-gestures.spec.ts"],
       "startedAt": "2026-09-29T23:06:17+06:00",
       "retries": 0,
       "repairs": 1,
@@ -178,7 +182,8 @@ window.STATE =
         "src/components/kitchen/KitchenPlanner.tsx",
         "src/components/kitchen/kitchen.css"
       ],
-      "status": "pending",
+      "status": "in-progress",
+      "startedAt": "2026-09-30T09:34:02+06:00",
       "retries": 0,
       "repairs": 0,
       "handoffs": 0
@@ -299,7 +304,8 @@ window.STATE =
     "T03 · engine.ts setKitchen · revertDrag перед пересборкой делает лишние setSelected/showMeasure на уходящем объекте",
     "T03 · build.ts · RunCache.lemons/props, ctx.lemons, done.board/kettle — мёртвый учёт после decorPlan; выпавшая техника входит в runKey каждого ряда",
     "T03 · kitchen-place.test.ts:309-321 · тест filler на синтетическом плане, не на угловой кухне из снимка",
-    "T03 · KitchenPlanner.tsx resize · три поля продублированы после спреда"
+    "T03 · KitchenPlanner.tsx resize · три поля продублированы после спреда",
+    "T03 · e2e · положительный путь «Сузить» (кнопка есть и ставит) без e2e после починки"
 ],
   "reviewers": {
     "manifestSpec": null,
