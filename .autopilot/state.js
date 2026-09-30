@@ -14,7 +14,7 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-29T22:14:27+06:00",
-  "updatedAt": "2026-09-30T10:56:52+06:00",
+  "updatedAt": "2026-09-30T14:24:44+06:00",
   "finishedAt": null,
   "stages": [
     {
@@ -89,7 +89,7 @@ window.STATE =
       ],
       "status": "done",
       "finishedAt": "2026-09-29T23:06:17+06:00",
-      "tests": { "passed": 906, "failed": 0 },
+      "tests": { "passed": 914, "failed": 0 },
       "commit": "a10698b",
       "files": ["lib/kitchen/layout.ts", "lib/kitchen/types.ts", "lib/kitchen/share.ts", "lib/kitchen/order.ts", "lib/kitchen/drag.ts"],
       "startedAt": "2026-09-29T22:26:02+06:00",
@@ -249,7 +249,11 @@ window.STATE =
         "src/components/kitchen/ReadyStrip.tsx",
         "src/lib/kitchen/styles.ts"
       ],
-      "status": "review",
+      "status": "done",
+      "finishedAt": "2026-09-30T14:24:44+06:00",
+      "tests": { "passed": 914, "failed": 0 },
+      "commit": "b9f9e97",
+      "files": ["KitchenPlanner.tsx", "ReadyStrip.tsx", "kitchen.css", "texts.ts", "lib/kitchen/styles.ts", "e2e/kitchen-simplify.spec.ts"],
       "startedAt": "2026-09-30T10:40:38+06:00",
       "retries": 0,
       "repairs": 0,
@@ -278,7 +282,8 @@ window.STATE =
         "__tests__/",
         "docs/"
       ],
-      "status": "pending",
+      "status": "in-progress",
+      "startedAt": "2026-09-30T14:24:44+06:00",
       "retries": 0,
       "repairs": 0,
       "handoffs": 0
@@ -333,7 +338,12 @@ window.STATE =
     "T05 · KitchenPlanner.tsx:1358 · дубли полей после спреда в update(next) остались с таска 03",
     "T05 · сцена телефона 50svh включает полосу видов 40 px — холст 50svh − 40",
     "T05 · goStep больше не включает камеру «Сверху» на размерах; вид top — почти мёртвая ветка (решить в T06)",
-    "T05 · kitchen.css:3097 · 40 px полосы видов вписан числом (не var(--kp-strip)) — при смене полосы править два места"
+    "T05 · kitchen.css:3097 · 40 px полосы видов вписан числом (не var(--kp-strip)) — при смене полосы править два места",
+    "T06 · KitchenPlanner.tsx:3798-3932 · блок «shortList + Ещё N/Свернуть» повторён трижды; фильтры TOPS/SPLASHES считаются по три раза",
+    "T06 · ready.ts BUDGET_CHIPS/inBudget · фильтр бюджета живёт только ради своего теста",
+    "T06 · KitchenPlanner.tsx · два whatsappHref с одним текстом (masterPage и .kp-sum__wa)",
+    "T06 · styles.ts:891-905 · carouselStyles через shortList — трюк, читается хуже прямого [sel, ...FEATURED.slice(0,7)]",
+    "T06 · ApplianceSheet supplyHref · второй wa.me («спросить о поставке») на шаге «Техника» — другая функция, записано"
 ],
   "reviewers": {
     "manifestSpec": null,
