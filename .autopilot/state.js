@@ -14,7 +14,7 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-29T22:14:27+06:00",
-  "updatedAt": "2026-10-01T00:50:25+06:00",
+  "updatedAt": "2026-10-01T00:59:15+06:00",
   "finishedAt": null,
   "stages": [
     {
@@ -507,7 +507,10 @@ window.STATE =
       ],
       "status": "done",
       "finishedAt": "2026-10-01T00:13:17+06:00",
-      "tests": { "passed": 983, "failed": 0 },
+      "tests": {
+        "passed": 983,
+        "failed": 0
+      },
       "commit": "c585d94",
       "startedAt": "2026-09-30T23:46:39+06:00",
       "retries": 0,
@@ -536,13 +539,64 @@ window.STATE =
       ],
       "status": "done",
       "finishedAt": "2026-10-01T00:50:25+06:00",
-      "tests": { "passed": 983, "failed": 0 },
+      "tests": {
+        "passed": 983,
+        "failed": 0
+      },
       "commit": "832f2ad",
       "startedAt": "2026-10-01T00:13:17+06:00",
       "retries": 0,
       "repairs": 1,
-      "repairFindings": ["MSAA half-float на телефоне без запасного пути — риск чёрного кадра (R07/R24i); кнопки 32 px у телефона боком"],
+      "repairFindings": [
+        "MSAA half-float на телефоне без запасного пути — риск чёрного кадра (R07/R24i); кнопки 32 px у телефона боком"
+      ],
       "handoffs": 1
+    },
+    {
+      "id": "P5",
+      "title": "Доводка 3: вытяжка над варочной, обмен вместо дыры, выбор на плане",
+      "requirements": [
+        "R04",
+        "R05",
+        "R23i",
+        "R16i"
+      ],
+      "blockedBy": [
+        "P4"
+      ],
+      "wave": 13,
+      "zone": [
+        "src/lib/kitchen/",
+        "src/components/kitchen/PlanView.tsx",
+        "src/components/kitchen/planGeom.ts"
+      ],
+      "status": "in-progress",
+      "startedAt": "2026-10-01T00:59:15+06:00",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0
+    },
+    {
+      "id": "P6",
+      "title": "Доводка 3: одна панель, кухня крупно, пропорции компьютера, одна карточка",
+      "requirements": [
+        "R03",
+        "R20i",
+        "R10"
+      ],
+      "blockedBy": [
+        "P5"
+      ],
+      "wave": 14,
+      "zone": [
+        "src/components/kitchen/KitchenPlanner.tsx",
+        "src/components/kitchen/kitchen.css",
+        "src/components/kitchen/three/engine.ts"
+      ],
+      "status": "pending",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0
     }
   ],
   "singlePass": null,
