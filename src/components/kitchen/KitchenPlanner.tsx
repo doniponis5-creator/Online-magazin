@@ -73,7 +73,7 @@ import { DEFAULT_STATE, loadLast, queryFromState, saveLast, stateFromQuery } fro
 import { cutList, extraList, frontList, hardware, modulesOf, topList, type SpecData } from '@/lib/kitchen/spec'
 import { cutParts, edgeTotals, nest, type CutLook, type NestOpts, type NestResult } from '@/lib/kitchen/cutting'
 import { emptyMaster, estimate, estimateLines, loadMaster, saveMaster, type MasterData } from '@/lib/kitchen/master'
-import { FLOORS, getStyle, getTone, STYLE_GROUPS, STYLES, WALL_COLORS, type KitchenStyle } from '@/lib/kitchen/styles'
+import { carouselStyles, shortList, FLOORS, getStyle, getTone, STYLE_GROUPS, STYLES, WALL_COLORS, type KitchenStyle } from '@/lib/kitchen/styles'
 import type { HandleKind } from '@/lib/kitchen/styles'
 import {
   isCabinet,
@@ -105,7 +105,7 @@ import { PublishLoader } from './PublishLoader'
 import { ApplianceSheet } from './ApplianceSheet'
 import { ReadyStrip } from './ReadyStrip'
 import type { BuildInput, CabInfo, Dims } from './three/build'
-import type { DragPhase, EngineEvents, KitchenEngine, PhotoState, Pick, Quality, View } from './three/engine'
+import type { DragPhase, EngineEvents, KitchenEngine, PhotoState, Pick, View } from './three/engine'
 import type { Photo } from './three/photo'
 import './kitchen.css'
 
@@ -382,11 +382,15 @@ export function KitchenPlanner({
   // экран всегда со спрятанным листом. Компьютер и телефон боком — панель справа
   // от 3D (сцена сужается), открыта или нет — как оставили (localStorage).
   const [fullPanel, setFullPanel] = useState(false)
-  const [quality, setQuality] = useState<Quality>('hd')
-  const [qualityPx, setQualityPx] = useState('')
   /** отделка: что красим (вся кухня, низ, верх, остров) и какой вид цвета открыт — материал, RAL или декоры */
   const [paintFor, setPaintFor] = useState<PaintTarget>('all')
-  const [frontMat, setFrontMat] = useState<FrontMaterial | 'ral' | 'decor'>('laminate')
+  const [frontMat, setFrontMat] = useState<FrontMaterial>('laminate')
+  // «Точный код (RAL / декор)»: раскрыт ли блок и какая вкладка в нём
+  const [exact, setExact] = useState(false)
+  const [exactKind, setExactKind] = useState<'ral' | 'decor'>('ral')
+  // «Все стили» раскрыты; «Ещё N» у ручек / столешниц / фартуков
+  const [allStyles, setAllStyles] = useState(false)
+  const [moreOf, setMoreOf] = useState<{ handles?: boolean; tops?: boolean; splash?: boolean }>({})
   const [decorBrand, setDecorBrand] = useState<DecorBrand>('egger')
   const [colorQuery, setColorQuery] = useState('')
   /** выдача поиска цвета — на компьютере докручиваем до неё, чтобы не пряталась под рядом «Дальше» */
@@ -986,7 +990,6 @@ export function KitchenPlanner({
         engineRef.current = engine
         // только при разработке: доступ к 3D из консоли браузера для проверок
         if (process.env.NODE_ENV !== 'production') (window as unknown as { __kp?: KitchenEngine }).__kp = engine
-        setQuality(engine.getQuality())
         setFail3d(null)
         setEngineState('ready')
       })
@@ -1196,15 +1199,6 @@ export function KitchenPlanner({
     }
   }, [full])
 
-  const changeQuality = (q: Quality) => {
-    setQuality(q)
-    engineRef.current?.setQuality(q)
-  }
-  const qualityTitle = () => {
-    const px = engineRef.current?.restPixels()
-    if (px) setQualityPx(t.qualityPixels(px.w, px.h))
-  }
-
   const changeView = (v: View, auto = false) => {
     autoView.current = auto
     setView(v)
@@ -1259,26 +1253,23 @@ export function KitchenPlanner({
   const doneThumbs = useRef('')
   useEffect(() => {
     const engine = engineRef.current
-    if (step !== 'style' || engineState !== 'ready' || !built || doneThumbs.current === thumbKey) return
+    // эскизы — только у карточек карусели (8 и выбранный), после простоя движка (thumbnailAsync, таск 02)
+    const key = `${thumbKey}:${state.style}`
+    if (step !== 'style' || engineState !== 'ready' || !built || !engine || doneThumbs.current === key) return
     let cancelled = false
-    let i = 0
-    const next = () => {
-      if (cancelled) return
-      if (i >= STYLES.length) {
-        doneThumbs.current = thumbKey
-        return
+    void (async () => {
+      for (const s of carouselStyles(state.style)) {
+        if (cancelled) return
+        const url = await engine.thumbnailAsync({ ...buildInput, style: s, tone: s.tones[0], plan: planFor(s, true), fronts: {}, finish: undefined })
+        if (cancelled) return
+        if (url) setThumbs((prevThumbs) => ({ ...prevThumbs, [s.id]: url }))
       }
-      const s = STYLES[i++]
-      const url = engine?.thumbnail({ ...buildInput, style: s, tone: s.tones[0], plan: planFor(s, true), fronts: {}, finish: undefined })
-      if (url) setThumbs((prevThumbs) => ({ ...prevThumbs, [s.id]: url }))
-      timer = window.setTimeout(next, 40)
-    }
-    let timer = window.setTimeout(next, 260)
+      doneThumbs.current = key
+    })()
     return () => {
       cancelled = true
-      clearTimeout(timer)
     }
-  }, [step, engineState, built, thumbKey, buildInput, planFor])
+  }, [step, engineState, built, thumbKey, buildInput, planFor, state.style])
 
   useEffect(() => {
     if (!note) return
@@ -1447,14 +1438,6 @@ export function KitchenPlanner({
     })
   }
   // свои фасады, свои шкафы, свои места и ширины — всё, что «Вернуть как было» сбросит
-  const frontCount =
-    Object.keys(state.fronts ?? {}).length +
-    Object.keys(state.cabinets ?? {}).length +
-    Object.keys(state.at ?? {}).filter((k) => !isCabinet(k)).length +
-    Object.keys(state.widths ?? {}).length +
-    Object.keys(state.heights ?? {}).length +
-    (state.doorsRight?.length ?? 0) +
-    (state.overFridgeFacade ? 1 : 0)
 
   // Перестановка кнопками. У левой стены и у острова ряд идёт справа налево — поэтому наоборот.
   const present = useMemo(() => new Set(Object.keys(positions) as ItemKey[]), [positions])
@@ -1984,6 +1967,10 @@ export function KitchenPlanner({
       setPhotoFallback(false)
       return
     }
+    // Телефон: трассировки нет (`getTier().pathTrace = false`) — сразу снимок 4K
+    // в «Поделиться», без экрана ожидания. `startPhoto` там вернул бы 'failed'
+    // как сигнал «нет трассировки», а не как ошибку (ревью 02).
+    if (!engine.getTier().pathTrace) return void savePhoto()
     closeSelection()
     setMenu(false)
     setHint(false)
@@ -2004,7 +1991,7 @@ export function KitchenPlanner({
     // Телефон — сразу лёгкий путь: большое фото трассировкой копится там
     // долго и может не поместиться в память. Трассировка уже не пошла —
     // тоже он, без второй попытки.
-    const light = photoFallback || engine.mobile
+    const light = photoFallback || !engine.getTier().pathTrace
     const started = light ? 'failed' : engine.isPhoto() ? 'ok' : await engine.startPhoto(setPhoto)
     if (started === 'ok') blob = await engine.photoBig()
     else if (started === 'failed') {
@@ -2337,6 +2324,8 @@ export function KitchenPlanner({
     </button>
   )
   const found = colorQuery.trim() ? findColors(colorQuery, lang) : []
+  /** выбран «точный» цвет (RAL / декор) — его плитка идёт первой среди 16 */
+  const exactOwn = paintOwn && !FRONT_COLORS.some((c) => c.id === paintOwn) ? (frontColor(paintOwn) ?? null) : null
   // группы RAL: плитки есть только у открытых; пока их не трогали — открыта группа выбранного цвета
   const ralNow = paintOwn ? parseRal(paintOwn) : null
   const ralOpenNow = ralOpen ?? new Set(ralNow ? [ralNow[0]] : [])
@@ -2794,6 +2783,47 @@ export function KitchenPlanner({
     ? colorSwatch(kitchenUpper.color, kitchenUpper.texture)
     : toneSwatch(tone.upper ?? tone.facade, undefined, tone.upper ? tone.upperTexture : tone.texture)
 
+  /** «Коротко: что где стоит» — одна разметка для «Итога» покупателя и листа мастера (ревью 05). */
+  const makerSection = () => (
+      <section className="kp-maker" aria-labelledby="kp-maker-title" ref={makerRef}>
+        <div className="kp-maker__text">
+          <h2 id="kp-maker-title" className="kp-maker__title kp-maker__title--small">
+            {t.makerTitle}
+          </h2>
+          {masterPage && <pre className="kp-maker__list">{makerText}</pre>}
+          <div className="kp-maker__actions">
+            {masterPage && (
+              <button type="button" className="btn btn--outline btn--sm" onClick={copyList}>
+                {t.copy}
+              </button>
+            )}
+            <button type="button" className="btn btn--outline btn--sm" onClick={() => void share()}>
+              {t.share}
+            </button>
+            {!masterPage && (
+              <button
+                type="button"
+                className="btn btn--outline btn--sm"
+                onClick={() => setPublishing(true)}
+                disabled={galleryWhy !== null}
+                title={galleryWhy ?? undefined}
+              >
+                {t.gallery.toGallery}
+              </button>
+            )}
+            {/* покупателю — один WhatsApp (в .kp-sum); мастеру ссылка остаётся */}
+            {masterPage && (
+              <a className="btn btn--ghost btn--sm" href={whatsappHref(phones[0], waText)} target="_blank" rel="noopener noreferrer">
+                {t.ask}
+              </a>
+            )}
+          </div>
+          {!masterPage && galleryWhy && <p className="kp-note">{galleryWhy}</p>}
+        </div>
+        <PlanSketch plan={plan} labels={wallLabels} showWidths className="kp-maker__sketch" />
+      </section>
+  )
+
   return (
     <div
       className={`kp${masterPage ? ' kp--master' : ''}${full ? ' kp--full' : ''}${full && fullPanel ? ' is-panel' : ''}${stacked && !masterPage ? ' kp--bar' : ''}${step === 'total' ? ' is-total' : ''}`}
@@ -3054,7 +3084,7 @@ export function KitchenPlanner({
               </button>
               <div className={`kp-tools__extra${menu ? ' is-open' : ''}`} id="kp-tools-extra" ref={menuRef}>
                 <div className="kp-seg kp-camera" role="radiogroup" aria-label={t.camera}>
-                  <span className="kp-quality__label" aria-hidden="true">
+                  <span className="kp-seg__label" aria-hidden="true">
                     {t.camera}
                   </span>
                   {(['eye', 'front'] as View[]).map((v) => (
@@ -3106,23 +3136,21 @@ export function KitchenPlanner({
                   <IconRuler />
                   <span className="kp-toggle__menu">{t.dimsToggle}</span>
                 </button>
-                <div
-                  className="kp-seg kp-quality"
-                  role="radiogroup"
-                  aria-label={t.qualityLabel}
-                  title={qualityPx || t.qualityLabel}
-                  onPointerEnter={qualityTitle}
-                  onFocus={qualityTitle}
+                {/* «?» — подсказка по жестам снова (история 38); переключателя чёткости нет: качество автоматическое */}
+                <button
+                  type="button"
+                  className="kp-toggle kp-tools__help"
+                  aria-label={t.helpShow}
+                  onClick={() => {
+                    setMenu(false)
+                    setHint(true)
+                  }}
                 >
-                  <span className="kp-quality__label" aria-hidden="true">
-                    {t.qualityLabel}
+                  <span className="kp-tools__help-mark" aria-hidden="true">
+                    ?
                   </span>
-                  {(['lite', 'hd', '4k'] as Quality[]).map((q) => (
-                    <button key={q} type="button" role="radio" aria-checked={quality === q} className="kp-seg__btn" onClick={() => changeQuality(q)}>
-                      {q === 'lite' ? t.qualityLite : q === 'hd' ? 'HD' : '4K'}
-                    </button>
-                  ))}
-                </div>
+                  <span className="kp-toggle__menu">{t.helpShow}</span>
+                </button>
               </div>
               <button
                 type="button"
@@ -3428,11 +3456,6 @@ export function KitchenPlanner({
             </div>
           )}
 
-          {engineState === 'ready' && built && !hint && !photo && (
-            <button type="button" className="kp-help" aria-label={t.helpShow} title={t.helpShow} onClick={() => setHint(true)}>
-              ?
-            </button>
-          )}
           {engineState === 'ready' && built && hint && !photo && (
             <p className="kp-hint">
               <span className="kp-hint__long">
@@ -3495,7 +3518,9 @@ export function KitchenPlanner({
                 </button>
               </div>
             )}
-            {step === 'kitchen' && <h2 className="kp-sub kp-sub--first">{t.shapeTitle}</h2>}
+            {/* готовые кухни — выше карточек форм (аудит §6.11) */}
+            {step === 'kitchen' && <ReadyStrip lang={lang} t={t} appliances={appliances} own={ownKitchen} dropName={!ownSaved && variants.length >= 8 ? variants[variants.length - 1].name : null} onOpen={openReady} />}
+            {step === 'kitchen' && <h2 className="kp-sub">{t.shapeTitle}</h2>}
             {step === 'kitchen' && (
               <div className="kp-shapes" role="radiogroup" aria-label={t.shapeTitle}>
                 {SHAPES.map((s) => (
@@ -3507,7 +3532,6 @@ export function KitchenPlanner({
                 ))}
               </div>
             )}
-            {step === 'kitchen' && <ReadyStrip lang={lang} t={t} appliances={appliances} own={ownKitchen} dropName={!ownSaved && variants.length >= 8 ? variants[variants.length - 1].name : null} onOpen={openReady} />}
 
             {step === 'kitchen' && (
               <div className="kp-sizes">
@@ -3566,32 +3590,45 @@ export function KitchenPlanner({
               <div className="kp-styles">
                 <Switch checked={!state.lowUppers} title={t.toCeiling} note={t.toCeilingNote} onChange={(on) => update({ lowUppers: on ? undefined : true })} />
                 <p className="kp-note kp-note--after">{t.styleHint}</p>
-                <div role="radiogroup" aria-label={t.steps.style}>
-                  {STYLE_GROUPS.map((g) => (
-                    <section key={g} className="kp-style-group" aria-label={t.styleGroups[g]}>
-                      <h3 className="kp-style-group__title">{t.styleGroups[g]}</h3>
-                      <div className="kp-style-grid">
-                        {STYLES.filter((s) => s.group === g).map((s) => (
-                          <button
-                            key={s.id}
-                            type="button"
-                            role="radio"
-                            aria-checked={state.style === s.id}
-                            className="kp-style"
-                            onClick={() => pickStyle(s)}
-                          >
-                            <span className="kp-style__img" style={{ background: styleSwatch(s) }}>
-                              {thumbs[s.id] && <img src={thumbs[s.id]} alt="" />}
-                              {s.isNew && <span className="kp-style__new">{t.styleNew}</span>}
-                            </span>
-                            <span className="kp-style__name">{lang === 'ky' ? s.ky : s.ru}</span>
-                            <span className="kp-style__note">{lang === 'ky' ? s.noteKy : s.noteRu}</span>
-                          </button>
-                        ))}
+                {/* карусель из 8 (флаг featured в каталоге) без заметок; «Все стили» — полный список группами (история 25) */}
+                {(() => {
+                  const card = (st: KitchenStyle) => (
+                    <button key={st.id} type="button" role="radio" aria-checked={state.style === st.id} className="kp-style" onClick={() => pickStyle(st)}>
+                      <span className="kp-style__img" style={{ background: styleSwatch(st) }}>
+                        {thumbs[st.id] && <img src={thumbs[st.id]} alt="" />}
+                      </span>
+                      <span className="kp-style__name">{lang === 'ky' ? st.ky : st.ru}</span>
+                    </button>
+                  )
+                  return (
+                    <>
+                      <div className="kp-carousel" role="radiogroup" aria-label={t.steps.style}>
+                        {carouselStyles(state.style).map((st) => card(st))}
                       </div>
-                    </section>
-                  ))}
-                </div>
+                      <button
+                        type="button"
+                        className="btn btn--outline btn--sm kp-styles__all"
+                        aria-expanded={allStyles}
+                        aria-controls="kp-styles-all"
+                        onClick={() => setAllStyles((v) => !v)}
+                      >
+                        {allStyles ? t.fewerStyles : t.allStyles}
+                      </button>
+                      {allStyles && (
+                        <div id="kp-styles-all" className="kp-styles__list">
+                          {STYLE_GROUPS.map((g) => (
+                            <section key={g} className="kp-style-group" aria-label={t.styleGroups[g]}>
+                              <h3 className="kp-style-group__title">{t.styleGroups[g]}</h3>
+                              <div className="kp-style-grid" role="radiogroup" aria-label={t.styleGroups[g]}>
+                                {STYLES.filter((st) => st.group === g).map((st) => card(st))}
+                              </div>
+                            </section>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )
+                })()}
                 <h2 className="kp-sub">{t.toneTitle}</h2>
                 <div className="kp-tones" role="radiogroup" aria-label={t.toneTitle}>
                   {style.tones.map((tn, i) => (
@@ -3622,7 +3659,41 @@ export function KitchenPlanner({
                         </button>
                       ))}
                     </div>
-                    <label className="kp-csearch">
+                    {/* 16 цветов материала сразу; «точный» цвет (RAL / декор), если выбран, — первым (история 25) */}
+                    <div className="kp-chips" role="tablist" aria-label={t.frontsTitle2}>
+                      {FRONT_MATERIALS.map((m) => (
+                        <button key={m.id} type="button" role="tab" aria-selected={frontMat === m.id} className="kp-chip" onClick={() => setFrontMat(m.id)}>
+                          {lang === 'ky' ? m.ky : m.ru}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="kp-note kp-note--tight">
+                      {(() => {
+                        const m = FRONT_MATERIALS.find((x) => x.id === frontMat)!
+                        return lang === 'ky' ? m.noteKy : m.noteRu
+                      })()}
+                    </p>
+                    <div className="kp-colors" role="radiogroup" aria-label={t.frontsTitle2}>
+                      {resetTile}
+                      {exactOwn && colorTile(exactOwn, exactOwn.code)}
+                      {shortList(
+                        FRONT_COLORS.filter((c) => c.material === frontMat),
+                        exactOwn ? 15 : 16,
+                        (c) => isOn(c.id),
+                      ).map((c) => colorTile(c))}
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn--outline btn--sm kp-colors__exact"
+                      aria-expanded={exact}
+                      aria-controls="kp-exact"
+                      onClick={() => setExact((v) => !v)}
+                    >
+                      {exact ? tc.exactHide : tc.exactCode}
+                    </button>
+                    {exact && (
+                      <div id="kp-exact" className="kp-exact">
+                        <label className="kp-csearch">
                       <span className="visually-hidden">{tc.search}</span>
                       <input
                         type="search"
@@ -3644,32 +3715,27 @@ export function KitchenPlanner({
                         spellCheck={false}
                       />
                     </label>
-                    {colorQuery.trim() ? (
-                      <>
-                        {!found.length && <p className="kp-note kp-note--tight">{tc.notFound(colorQuery.trim())}</p>}
+                        {colorQuery.trim() ? (
+                          <>
+                            {!found.length && <p className="kp-note kp-note--tight">{tc.notFound(colorQuery.trim())}</p>}
                         <div ref={foundRef} className="kp-colors kp-colors--codes kp-found" role="radiogroup" aria-label={tc.search}>
                           {resetTile}
                           {found.map((c) => colorTile(c, c.code))}
                         </div>
                         <p className="kp-note kp-note--tight kp-approx">{tc.approx}</p>
-                      </>
-                    ) : (
-                      <>
-                        <div className="kp-chips" role="tablist" aria-label={t.frontsTitle2}>
-                          {FRONT_MATERIALS.map((m) => (
-                            <button key={m.id} type="button" role="tab" aria-selected={frontMat === m.id} className="kp-chip" onClick={() => setFrontMat(m.id)}>
-                              {lang === 'ky' ? m.ky : m.ru}
-                            </button>
-                          ))}
-                          {(['ral', 'decor'] as const).map((k) => (
-                            <button key={k} type="button" role="tab" aria-selected={frontMat === k} className="kp-chip" onClick={() => setFrontMat(k)}>
-                              {tc[k]}
-                            </button>
-                          ))}
-                        </div>
-                        {frontMat === 'ral' ? (
+                          </>
+                        ) : (
                           <>
-                            <p className="kp-note kp-note--tight">{tc.ralNote}</p>
+                            <div className="kp-chips" role="tablist" aria-label={tc.exactCode}>
+                              {(['ral', 'decor'] as const).map((k) => (
+                                <button key={k} type="button" role="tab" aria-selected={exactKind === k} className="kp-chip" onClick={() => setExactKind(k)}>
+                                  {tc[k]}
+                                </button>
+                              ))}
+                            </div>
+                            {exactKind === 'ral' ? (
+                              <>
+                                <p className="kp-note kp-note--tight">{tc.ralNote}</p>
                             <RalCodeForm tc={tc} onApply={applyRal} />
                             <div className="kp-colors kp-colors--codes" role="radiogroup" aria-label={t.frontsTitle2}>
                               {resetTile}
@@ -3695,10 +3761,10 @@ export function KitchenPlanner({
                               ))}
                             </div>
                             <p className="kp-note kp-note--tight kp-approx">{tc.approx}</p>
-                          </>
-                        ) : frontMat === 'decor' ? (
-                          <>
-                            <div className="kp-chips" role="tablist" aria-label={tc.decor}>
+                              </>
+                            ) : (
+                              <>
+                                <div className="kp-chips" role="tablist" aria-label={tc.decor}>
                               {DECOR_BRANDS.map((b) => (
                                 <button key={b.id} type="button" role="tab" aria-selected={decorBrand === b.id} className="kp-chip" onClick={() => setDecorBrand(b.id)}>
                                   {b.name}
@@ -3714,22 +3780,11 @@ export function KitchenPlanner({
                               })}
                             </div>
                             <p className="kp-note kp-note--tight kp-approx">{tc.approx}</p>
-                          </>
-                        ) : (
-                          <>
-                            <p className="kp-note kp-note--tight">
-                              {(() => {
-                                const m = FRONT_MATERIALS.find((x) => x.id === frontMat)!
-                                return lang === 'ky' ? m.noteKy : m.noteRu
-                              })()}
-                            </p>
-                            <div className="kp-colors" role="radiogroup" aria-label={t.frontsTitle2}>
-                              {resetTile}
-                              {FRONT_COLORS.filter((c) => c.material === frontMat).map((c) => colorTile(c))}
-                            </div>
+                              </>
+                            )}
                           </>
                         )}
-                      </>
+                      </div>
                     )}
                   </Part>
 
@@ -3743,7 +3798,7 @@ export function KitchenPlanner({
                     {!handleless && (
                       <>
                         <div className="kp-handles" role="radiogroup" aria-label={t.handlesTitle}>
-                          {HANDLES.map((h) => (
+                          {shortList(HANDLES, moreOf.handles ? HANDLES.length : 5, (h) => h.id === handle).map((h) => (
                             <button
                               key={h.id}
                               type="button"
@@ -3757,6 +3812,16 @@ export function KitchenPlanner({
                             </button>
                           ))}
                         </div>
+                        {HANDLES.length > 5 && (
+                          <button
+                            type="button"
+                            className="btn btn--outline btn--sm kp-more-btn"
+                            aria-expanded={Boolean(moreOf.handles)}
+                            onClick={() => setMoreOf((m) => ({ ...m, handles: !m.handles }))}
+                          >
+                            {moreOf.handles ? t.showLess : t.showMore(HANDLES.length - 5)}
+                          </button>
+                        )}
                         <div className="kp-metals" role="radiogroup" aria-label={t.handleMetal}>
                           <span className="kp-metals__label">
                             {t.handleMetal}
@@ -3799,7 +3864,7 @@ export function KitchenPlanner({
                         <span className="kp-color__chip" style={{ background: style.splashColor }} />
                         <span>{t.asStyle}</span>
                       </button>
-                      {TOPS.filter((c) => c.material === topMat).map((c) => (
+                      {shortList(TOPS.filter((c) => c.material === topMat), moreOf.tops ? TOPS.length : 6, (c) => state.top === c.id).map((c) => (
                         <button key={c.id} type="button" role="radio" aria-checked={state.top === c.id} className="kp-color" onClick={() => update({ top: c.id })}>
                           <span className="kp-color__chip" style={{ background: topSwatch(c.look) }} />
                           <span>
@@ -3809,6 +3874,16 @@ export function KitchenPlanner({
                         </button>
                       ))}
                     </div>
+                    {TOPS.filter((c) => c.material === topMat).length > 6 && (
+                      <button
+                        type="button"
+                        className="btn btn--outline btn--sm kp-more-btn"
+                        aria-expanded={Boolean(moreOf.tops)}
+                        onClick={() => setMoreOf((m) => ({ ...m, tops: !m.tops }))}
+                      >
+                        {moreOf.tops ? t.showLess : t.showMore(TOPS.filter((c) => c.material === topMat).length - 6)}
+                      </button>
+                    )}
                   </Part>
 
                   <Part title={t.splashTitle} value={finishNow.splash} onOpen={(el) => reveal(el, 'steps')}>
@@ -3830,7 +3905,7 @@ export function KitchenPlanner({
                         <span className="kp-color__chip" style={{ background: style.splashColor }} />
                         <span>{t.asStyle}</span>
                       </button>
-                      {SPLASHES.filter((c) => c.group === splashGroup).map((c) => (
+                      {shortList(SPLASHES.filter((c) => c.group === splashGroup), moreOf.splash ? SPLASHES.length : 8, (c) => state.splash === c.id).map((c) => (
                         <button
                           key={c.id}
                           type="button"
@@ -3847,6 +3922,16 @@ export function KitchenPlanner({
                         </button>
                       ))}
                     </div>
+                    {SPLASHES.filter((c) => c.group === splashGroup).length > 8 && (
+                      <button
+                        type="button"
+                        className="btn btn--outline btn--sm kp-more-btn"
+                        aria-expanded={Boolean(moreOf.splash)}
+                        onClick={() => setMoreOf((m) => ({ ...m, splash: !m.splash }))}
+                      >
+                        {moreOf.splash ? t.showLess : t.showMore(SPLASHES.filter((c) => c.group === splashGroup).length - 8)}
+                      </button>
+                    )}
                   </Part>
 
                   <Part title={t.floorTitle} value={finishNow.floor} onOpen={(el) => reveal(el, 'steps')}>
@@ -3888,46 +3973,6 @@ export function KitchenPlanner({
                     </div>
                   </Part>
                 </div>
-                {(state.facade || state.upperFacade || state.islandFacade || state.top || state.splash || state.handle || state.handleMetal || state.handleless !== undefined) && (
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm kp-reset"
-                    onClick={() =>
-                      update({
-                        facade: undefined,
-                        upperFacade: undefined,
-                        islandFacade: undefined,
-                        top: undefined,
-                        splash: undefined,
-                        handle: undefined,
-                        handleMetal: undefined,
-                        handleless: undefined,
-                      })
-                    }
-                  >
-                    {t.resetFinish}
-                  </button>
-                )}
-                {frontCount > 0 && (
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm kp-reset"
-                    onClick={() =>
-                      update({
-                        fronts: undefined,
-                        cabinets: undefined,
-                        arrangement: undefined,
-                        at: undefined,
-                        widths: undefined,
-                        heights: undefined,
-                        doorsRight: undefined,
-                        overFridgeFacade: undefined,
-                      })
-                    }
-                  >
-                    {t.resetFronts(frontCount)}
-                  </button>
-                )}
               </div>
             )}
 
@@ -4063,46 +4108,13 @@ export function KitchenPlanner({
                 {t.masterOpen}
               </Link>
               <button type="button" className="btn btn--outline" onClick={sendPdf} disabled={!drawing || pdfBusy} aria-busy={pdfBusy}>
-                {pdfBusy ? t.specPreparing : t.specSend}
+                {pdfBusy ? t.specPreparing : t.pdfMaster}
               </button>
             </div>
           </div>
         </section>
 
-      <section className="kp-maker" aria-labelledby="kp-maker-title" ref={makerRef}>
-        <div className="kp-maker__text">
-          <h2 id="kp-maker-title" className="kp-maker__title kp-maker__title--small">
-            {t.makerTitle}
-          </h2>
-          {masterPage && <pre className="kp-maker__list">{makerText}</pre>}
-          <div className="kp-maker__actions">
-            {masterPage && (
-              <button type="button" className="btn btn--outline btn--sm" onClick={copyList}>
-                {t.copy}
-              </button>
-            )}
-            <button type="button" className="btn btn--outline btn--sm" onClick={() => void share()}>
-              {t.share}
-            </button>
-            {!masterPage && (
-              <button
-                type="button"
-                className="btn btn--outline btn--sm"
-                onClick={() => setPublishing(true)}
-                disabled={galleryWhy !== null}
-                title={galleryWhy ?? undefined}
-              >
-                {t.gallery.toGallery}
-              </button>
-            )}
-            <a className="btn btn--ghost btn--sm" href={whatsappHref(phones[0], waText)} target="_blank" rel="noopener noreferrer">
-              {t.ask}
-            </a>
-          </div>
-          {!masterPage && galleryWhy && <p className="kp-note">{galleryWhy}</p>}
-        </div>
-        <PlanSketch plan={plan} labels={wallLabels} showWidths className="kp-maker__sketch" />
-      </section>
+      {makerSection()}
       <section className="kp-variants" aria-labelledby="kp-variants-title">
         <div className="kp-check__head">
           <div>
@@ -4584,40 +4596,7 @@ export function KitchenPlanner({
 
 
       {masterPage && (
-      <section className="kp-maker" aria-labelledby="kp-maker-title" ref={makerRef}>
-        <div className="kp-maker__text">
-          <h2 id="kp-maker-title" className="kp-maker__title kp-maker__title--small">
-            {t.makerTitle}
-          </h2>
-          {masterPage && <pre className="kp-maker__list">{makerText}</pre>}
-          <div className="kp-maker__actions">
-            {masterPage && (
-              <button type="button" className="btn btn--outline btn--sm" onClick={copyList}>
-                {t.copy}
-              </button>
-            )}
-            <button type="button" className="btn btn--outline btn--sm" onClick={() => void share()}>
-              {t.share}
-            </button>
-            {!masterPage && (
-              <button
-                type="button"
-                className="btn btn--outline btn--sm"
-                onClick={() => setPublishing(true)}
-                disabled={galleryWhy !== null}
-                title={galleryWhy ?? undefined}
-              >
-                {t.gallery.toGallery}
-              </button>
-            )}
-            <a className="btn btn--ghost btn--sm" href={whatsappHref(phones[0], waText)} target="_blank" rel="noopener noreferrer">
-              {t.ask}
-            </a>
-          </div>
-          {!masterPage && galleryWhy && <p className="kp-note">{galleryWhy}</p>}
-        </div>
-        <PlanSketch plan={plan} labels={wallLabels} showWidths className="kp-maker__sketch" />
-      </section>
+      makerSection()
       )}
 
       {publishing && (
@@ -4806,7 +4785,6 @@ function SizeField({
   // Телефон: пока печатают, сцена 25svh (класс kp-typing) и поле держится в видимой части
   // над клавиатурой — visualViewport меняется, когда клавиатура выезжает.
   const fieldRef = useRef<HTMLInputElement>(null)
-  useEffect(() => () => window.clearTimeout(live.current), [])
   const keepInView = () => {
     const el = fieldRef.current
     const vv = window.visualViewport
@@ -4831,6 +4809,15 @@ function SizeField({
     window.visualViewport?.removeEventListener('resize', keepInView)
     window.visualViewport?.removeEventListener('scroll', keepInView)
   }
+  // размонтирование поля в фокусе (смена шага, «Начать заново») — снять kp-typing и слушатели (ревью 05)
+  useEffect(
+    () => () => {
+      window.clearTimeout(live.current)
+      if (focused.current) stopTyping()
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  )
   // У русских и кыргызских подписей все буквы — «не \w»: прежний id выходил
   // одинаковым у потолка и окна, и нажатие на подпись ставило курсор не туда.
   const id = useId()

@@ -102,12 +102,14 @@ export type KitchenStyle = {
    */
   mantel?: boolean
   /** новинка — на карточке стиля метка «Новинка», чтобы покупатель её заметил */
-  isNew?: boolean
+  /** место в карусели шага «Стиль» (1–8); без номера стиль виден только в «Все стили» */
+  featured?: number
 }
 
 export const STYLES: KitchenStyle[] = [
   {
     id: 'neoclassic',
+    featured: 7,
     group: 'classic',
     ru: 'Неоклассика',
     ky: 'Неоклассика',
@@ -213,6 +215,7 @@ export const STYLES: KitchenStyle[] = [
   },
   {
     id: 'classic',
+    featured: 8,
     group: 'classic',
     ru: 'Классика',
     ky: 'Классика',
@@ -247,6 +250,7 @@ export const STYLES: KitchenStyle[] = [
   },
   {
     id: 'hitech',
+    featured: 5,
     group: 'hitech',
     ru: 'Хай-тек Глянец',
     ky: 'Хай-тек Жылтырак',
@@ -280,6 +284,7 @@ export const STYLES: KitchenStyle[] = [
   },
   {
     id: 'minimal',
+    featured: 3,
     group: 'modern',
     ru: 'Минимализм',
     ky: 'Минимализм',
@@ -313,6 +318,7 @@ export const STYLES: KitchenStyle[] = [
   },
   {
     id: 'loft',
+    featured: 4,
     group: 'modern',
     ru: 'Лофт',
     ky: 'Лофт',
@@ -346,6 +352,7 @@ export const STYLES: KitchenStyle[] = [
   },
   {
     id: 'scandi',
+    featured: 2,
     group: 'modern',
     ru: 'Сканди',
     ky: 'Сканди',
@@ -379,6 +386,7 @@ export const STYLES: KitchenStyle[] = [
   },
   {
     id: 'modern',
+    featured: 1,
     group: 'modern',
     ru: 'Модерн',
     ky: 'Модерн',
@@ -412,6 +420,7 @@ export const STYLES: KitchenStyle[] = [
   },
   {
     id: 'japandi',
+    featured: 6,
     group: 'modern',
     ru: 'Японди',
     ky: 'Японди',
@@ -677,7 +686,6 @@ export const STYLES: KitchenStyle[] = [
   {
     id: 'gold',
     group: 'hitech',
-    isNew: true,
     ru: 'Хай-тек Золото',
     ky: 'Хай-тек Алтын',
     noteRu: 'Белый с золотом, мрамор Калакатта, пол под мрамор',
@@ -713,7 +721,6 @@ export const STYLES: KitchenStyle[] = [
   {
     id: 'quiet',
     group: 'modern',
-    isNew: true,
     ru: 'Тихая роскошь',
     ky: 'Токтоо люкс',
     noteRu: 'Кашемир, травертин, бронза — дорого без блеска',
@@ -748,7 +755,6 @@ export const STYLES: KitchenStyle[] = [
   {
     id: 'midcentury',
     group: 'modern',
-    isNew: true,
     ru: 'Мид-сенчури',
     ky: 'Мид-сенчури',
     noteRu: 'Орех, горчица и петроль, латунь — ретро 60-х',
@@ -782,7 +788,6 @@ export const STYLES: KitchenStyle[] = [
   {
     id: 'english',
     group: 'classic',
-    isNew: true,
     ru: 'Английская',
     ky: 'Англис',
     noteRu: 'Глубокий цвет, рамочные фасады, латунь, белый мрамор',
@@ -880,4 +885,21 @@ export function getStyle(id: StyleId): KitchenStyle {
 
 export function getTone(style: KitchenStyle, index: number): Tone {
   return style.tones[index] ?? style.tones[0]
+}
+
+/** Стили карусели шага «Стиль» — восемь, по номеру `featured` в каталоге. */
+export const FEATURED_STYLES: KitchenStyle[] = STYLES.filter((s) => s.featured).sort((a, b) => a.featured! - b.featured!)
+
+/** Короткий список отделки: первые `n`; выбранное дальше `n` — первым, всего по-прежнему `n`. */
+export function shortList<T>(all: readonly T[], n: number, on: (x: T) => boolean): T[] {
+  const i = all.findIndex(on)
+  if (i < n) return all.slice(0, n)
+  return [all[i], ...all.slice(0, n - 1)]
+}
+
+/** Карусель: восемь отмеченных; стиль, выбранный из полного списка, — первым вместо последнего. */
+export function carouselStyles(selected: KitchenStyle['id'] | undefined): KitchenStyle[] {
+  const sel = STYLES.find((s) => s.id === selected)
+  if (!sel || sel.featured) return FEATURED_STYLES
+  return shortList([sel, ...FEATURED_STYLES], FEATURED_STYLES.length, (s) => s === sel)
 }

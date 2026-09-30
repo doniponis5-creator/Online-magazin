@@ -4794,9 +4794,9 @@
     "semantic_hash": ""
   },
   "src/components/kitchen/KitchenPlanner.tsx": {
-    "mtime": 1790742804.5887895,
-    "seen": 1790742829.928329,
-    "ast_hash": "d8942d2334702c929b1ef6d9c2c70528",
+    "mtime": 1790744099.0597944,
+    "seen": 1790744150.581952,
+    "ast_hash": "5b20b0e97858ac44b80e2c57442f5aa2",
     "semantic_hash": ""
   },
   "src/components/kitchen/KitchenPromo.tsx": {
@@ -4818,9 +4818,9 @@
     "semantic_hash": ""
   },
   "src/components/kitchen/texts.ts": {
-    "mtime": 1790742071.05232,
-    "seen": 1790742829.928561,
-    "ast_hash": "7f3294b9765954bd17abacc79a75b933",
+    "mtime": 1790743807.1471179,
+    "seen": 1790744150.5821671,
+    "ast_hash": "49c0a463d23ba3b58fe87910758894b9",
     "semantic_hash": ""
   },
   "src/components/kitchen/three/appliances.ts": {
@@ -4896,9 +4896,9 @@
     "semantic_hash": ""
   },
   "src/lib/kitchen/layout.ts": {
-    "mtime": 1790741061.3559766,
-    "seen": 1790741338.415987,
-    "ast_hash": "13c62dec80f0d613683d0d728cc3ce86",
+    "mtime": 1790743807.1451285,
+    "seen": 1790744150.583356,
+    "ast_hash": "bb70337bb0793f91b5cc2b05379ebcf9",
     "semantic_hash": ""
   },
   "src/lib/kitchen/share.ts": {
@@ -4914,9 +4914,9 @@
     "semantic_hash": ""
   },
   "src/lib/kitchen/styles.ts": {
-    "mtime": 1790701466.4587564,
-    "seen": 1790740650.387359,
-    "ast_hash": "1ababc0428ec40f37ef13258db12bb45",
+    "mtime": 1790743807.1446147,
+    "seen": 1790744150.5834398,
+    "ast_hash": "939b80ac51fe2655fe06baed571c9cd7",
     "semantic_hash": ""
   },
   "src/lib/kitchen/types.ts": {
@@ -4974,9 +4974,9 @@
     "semantic_hash": ""
   },
   ".autopilot/state.js": {
-    "mtime": 1790741509.2585835,
-    "seen": 1790742829.92318,
-    "ast_hash": "9286552dde36b70abd7119b6bedc1ebf",
+    "mtime": 1790743238.0223167,
+    "seen": 1790744150.57661,
+    "ast_hash": "972ccca60eee312cf4bb0a489c83df46",
     "semantic_hash": ""
   },
   ".autopilot/sync.py": {
@@ -4992,15 +4992,15 @@
     "semantic_hash": ""
   },
   ".autopilot/dashboard.html": {
-    "mtime": 1790741509.3031564,
-    "seen": 1790742829.931848,
-    "ast_hash": "d8d4e85beb1d2632ead3173fc01bacd3",
+    "mtime": 1790743238.0642624,
+    "seen": 1790744150.585428,
+    "ast_hash": "c8d896642debd59854108bf5df566fd5",
     "semantic_hash": ""
   },
   ".autopilot/index.html": {
-    "mtime": 1790741509.3031564,
-    "seen": 1790742829.931849,
-    "ast_hash": "d8d4e85beb1d2632ead3173fc01bacd3",
+    "mtime": 1790743238.0642624,
+    "seen": 1790744150.585429,
+    "ast_hash": "c8d896642debd59854108bf5df566fd5",
     "semantic_hash": ""
   },
   "docs/ANDROID_PLAY_UZ.md": {
@@ -5868,9 +5868,9 @@
     "semantic_hash": ""
   },
   "src/components/kitchen/ReadyStrip.tsx": {
-    "mtime": 1790696869.7512615,
-    "seen": 1790740650.387306,
-    "ast_hash": "eb37cbcbf5af11f556a6a266495c2e6e",
+    "mtime": 1790743807.1455162,
+    "seen": 1790744150.582052,
+    "ast_hash": "9084f9794503982ae398eb39ad4a76d3",
     "semantic_hash": ""
   },
   "src/components/kitchen/publish.ts": {
@@ -6690,9 +6690,9 @@
     "semantic_hash": ""
   },
   "__tests__/kitchen-place.test.ts": {
-    "mtime": 1790702223.7507753,
-    "seen": 1790740650.387132,
-    "ast_hash": "7eed2357cdae96cf94775fbe17cb59a7",
+    "mtime": 1790743530.1401875,
+    "seen": 1790744150.5771,
+    "ast_hash": "ea3e59001cd61466be5c1551729eb719",
     "semantic_hash": ""
   },
   "__tests__/kitchen-plan-view.test.ts": {
@@ -6792,9 +6792,9 @@
     "semantic_hash": ""
   },
   ".autopilot/2026-09-29-kitchen-3d-pro--wip/manifest.md": {
-    "mtime": 1790741509.2588584,
-    "seen": 1790742829.931686,
-    "ast_hash": "d111a039577185a98d11523c7ba2eb61",
+    "mtime": 1790743238.0226321,
+    "seen": 1790744150.5852952,
+    "ast_hash": "dbd6948e8e034f338f5abfaab987a5d4",
     "semantic_hash": ""
   },
   ".autopilot/2026-09-29-kitchen-3d-pro--wip/reference.md": {
@@ -6840,21 +6840,33 @@
     "semantic_hash": ""
   },
   ".autopilot/2026-09-29-kitchen-3d-pro--wip/tickets/06-simplify.md": {
-    "mtime": 1790700562.6321926,
-    "seen": 1790740650.387437,
-    "ast_hash": "5b77f7d50a8009eff9bd0a92ddc5abd1",
+    "mtime": 1790743015.728193,
+    "seen": 1790744150.585412,
+    "ast_hash": "bee03177d0bdc27dfcfc12b62412ba0b",
     "semantic_hash": ""
   },
   ".autopilot/2026-09-29-kitchen-3d-pro--wip/tickets/07-e2e-acceptance.md": {
-    "mtime": 1790699128.7091792,
-    "seen": 1790740650.387437,
-    "ast_hash": "f1e7133ac0f10c3a90d7e85074d75ba4",
+    "mtime": 1790743036.6285512,
+    "seen": 1790744150.5854132,
+    "ast_hash": "db859b43cb955278c718bff07887ad80",
     "semantic_hash": ""
   },
   "e2e/kitchen-phone.spec.ts": {
-    "mtime": 1790742777.6209292,
-    "seen": 1790742829.9247098,
-    "ast_hash": "e0e133c865ba49f3a4d032718609bb98",
+    "mtime": 1790744008.2360642,
+    "seen": 1790744150.578165,
+    "ast_hash": "f4897d319ae8fb7cb8272a3f4c219ac0",
+    "semantic_hash": ""
+  },
+  "__tests__/kitchen-simplify.test.ts": {
+    "mtime": 1790743521.0271084,
+    "seen": 1790744150.577219,
+    "ast_hash": "df6ad0c47cd37140d91438b53a3de87e",
+    "semantic_hash": ""
+  },
+  "e2e/kitchen-simplify.spec.ts": {
+    "mtime": 1790743944.1036458,
+    "seen": 1790744150.5781791,
+    "ast_hash": "7866bf3e05df520c43cea6fd03222483",
     "semantic_hash": ""
   }
 }

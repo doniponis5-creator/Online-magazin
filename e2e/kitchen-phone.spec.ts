@@ -122,10 +122,12 @@ test('не больше трёх касаний: стиль, цвет фасад
   // стиль: вкладка + плитка = 2
   taps = 0
   await tap(page.locator('.kp-steps__btn', { hasText: 'Стиль' }))
-  const style = page.locator('.kp-style').nth(3)
+  // карусель (таск 06) перестраивается после выбора: выбранный из полного списка уходит с первого места — сверяем по имени, не по номеру
+  const style = page.locator('.kp-carousel .kp-style').nth(3)
   await expect(style).toHaveAttribute('aria-checked', 'false')
+  const styleName = (await style.locator('.kp-style__name').textContent())!
   await tap(style)
-  await expect(style).toHaveAttribute('aria-checked', 'true')
+  await expect(page.locator('.kp-carousel .kp-style[aria-checked="true"] .kp-style__name')).toHaveText(styleName)
   expect(taps).toBeLessThanOrEqual(3)
   // цвет фасадов: (та же вкладка) + тон = 1
   taps = 0

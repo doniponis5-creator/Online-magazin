@@ -1674,6 +1674,8 @@ export function addAt(state: KitchenState, wall: WallId, cm: number, kind: AddKi
  * пустое место за краем ужимается до края или убирается.
  */
 export function resizeWalls(state: KitchenState, sizes: Partial<Pick<KitchenState, 'a' | 'b' | 'c' | 'island'>>, plan: Plan): KitchenState {
+  // неопределённые размеры не трогают стены: `{b: undefined}` стирал бы длину B и ронял чертёж (ревью 05)
+  sizes = Object.fromEntries(Object.entries(sizes).filter(([, v]) => v !== undefined)) as typeof sizes
   const pos = itemPositions(plan)
   const at: NonNullable<KitchenState['at']> = { ...state.at }
   const gaps: NonNullable<KitchenState['gaps']> = { ...state.gaps }

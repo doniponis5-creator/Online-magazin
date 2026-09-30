@@ -253,6 +253,14 @@ describe('ширина стены меняется — места сохраня
     expect(shorter.a).toBe(300)
     expect(shorter.at).toEqual({ sink: 30, g1: 80, k1: 130, hob: 220, k2: 270 })
   })
+  it('неопределённый размер не трогает стену: {a: 300, b: undefined} сохраняет длину B (ревью 05)', () => {
+    const corner = { ...base, shape: 'corner' as const, b: 240 }
+    const plan = planner(corner)
+    const next = resizeWalls(corner, { a: 300, b: undefined }, plan)
+    expect(next.a).toBe(300)
+    expect(next.b).toBe(240)
+    expect('b' in next && next.b !== undefined).toBe(true)
+  })
   it('gap за пределами стены ужимается до края или убирается', () => {
     const plan = planner(base)
     const cut = resizeWalls(base, { a: 95 }, plan)

@@ -346,19 +346,16 @@ div.kp-fallback {
 
 .kp-tools__more,
 .kp-toggle__menu,
-.kp-quality__label {
+.kp-seg__label {
   display: none;
 }
 
-/* «Фото» и HD | 4K — справа в строке инструментов */
+/* «Фото» — справа в строке инструментов (переключателя чёткости нет: качество автоматическое, таск 06) */
 .kp-tools__photo {
   order: 6;
   margin-left: auto;
 }
 
-.kp-quality {
-  order: 7;
-}
 
 /* фото включено — кнопка лимонная, как главные действия сайта */
 .kp-tools__photo[aria-pressed='true'] {
@@ -487,7 +484,7 @@ html:has(.kp-photo) .assistant {
   }
 }
 
-.kp-quality .kp-seg__btn {
+.kp-camera .kp-seg__btn {
   padding: 0 11px;
   font-weight: 800;
   letter-spacing: 0.02em;
@@ -2912,7 +2909,7 @@ html.kp-lock body {
     transform: translateX(16px);
   }
 
-  .kp-tools__extra .kp-quality {
+  .kp-tools__extra .kp-camera {
     display: flex;
     align-items: center;
     gap: 2px;
@@ -2926,14 +2923,14 @@ html.kp-lock body {
     backdrop-filter: none;
   }
 
-  .kp-tools__extra .kp-quality__label {
+  .kp-tools__extra .kp-seg__label {
     display: block;
     flex: 1;
     font: 650 14px/1.2 var(--font);
     color: var(--kp-ink);
   }
 
-  .kp-quality .kp-seg__btn {
+  .kp-camera .kp-seg__btn {
     height: 34px;
     padding: 0 12px;
     font-size: 12.5px;
@@ -3638,7 +3635,7 @@ html.kp-lock body {
   }
 
   .kp .kp-seg__btn,
-  .kp .kp-quality .kp-seg__btn {
+  .kp .kp-camera .kp-seg__btn {
     height: 44px;
     min-width: 44px;
   }
@@ -5318,4 +5315,52 @@ button.kp-opt__more {
   html.kp-typing .kp-steps {
     transition: none;
   }
+}
+
+/* ───────── Таск 06: меньше лишнего ─────────
+   Карусель стилей — 8 карточек в одну строку с прокруткой пальцем; «Все стили»
+   раскрывает группы (та же сетка .kp-style-grid). Кнопки «Все стили», «Точный
+   код», «Ещё N» — обычные контурные кнопки сайта (btn btn--outline btn--sm),
+   лимонная на экране одна. */
+.kp-carousel {
+  display: flex;
+  gap: 10px;
+  margin: 0 -2px;
+  padding: 2px 2px 8px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+.kp-carousel .kp-style {
+  flex: 0 0 136px;
+  scroll-snap-align: start;
+}
+.kp-styles__all,
+.kp-colors__exact,
+.kp-more-btn {
+  margin: 8px 0 2px;
+  min-height: 44px;
+}
+.kp-styles__list {
+  margin-top: 10px;
+}
+.kp-exact {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--kp-line);
+}
+/* «?» в меню «Ещё» — как остальные строки меню, знак вместо значка */
+.kp-tools__help .kp-tools__help-mark {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+/* «?» — действие, не выключатель: без рисованного переключателя строки меню */
+.kp-tools__extra .kp-tools__help::before,
+.kp-tools__extra .kp-tools__help::after {
+  display: none;
 }

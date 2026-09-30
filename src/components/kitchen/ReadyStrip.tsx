@@ -9,7 +9,7 @@ import type { Lang } from '@/lib/i18n/config'
 import { queryFromState } from '@/lib/kitchen/share'
 import type { KitchenAppliance, Shape } from '@/lib/kitchen/types'
 import { Modal } from './Modal'
-import { BUDGET_CHIPS, inBudget, openQuery, SIZE_BANDS, sizeBand, techSum, topOfGallery, wallLength, type BudgetChip, type SizeBand } from './ready'
+import { openQuery, techSum, topOfGallery } from './ready'
 import type { KitchenTexts } from './texts'
 
 const SHAPES: Shape[] = ['straight', 'corner', 'u', 'island']
@@ -22,18 +22,17 @@ type Card = {
   title: string
   thumb: string
   shape: Shape
-  size: SizeBand
   sum: number
   rating?: { avg: number; count: number }
 }
 
 function cardOf(key: string, q: string, title: string, thumb: string, appliances: readonly KitchenAppliance[], rating?: Card['rating']): Card {
   const { state } = openQuery(q, appliances)
-  return { key, q, norm: queryFromState(state), title, thumb, shape: state.shape, size: sizeBand(wallLength(state)), sum: techSum(state, appliances), rating }
+  return { key, q, norm: queryFromState(state), title, thumb, shape: state.shape, sum: techSum(state, appliances), rating }
 }
 
 /**
- * Полоса «Готовые кухни» на шаге «Форма»: 12 готовых, затем до 6 лучших из
+ * Полоса «Готовые кухни» в шаге «Кухня», выше карточек форм: 12 готовых, затем до 6 лучших из
  * галереи. Нажатие открывает кухню в конструкторе; если своя уже собрана —
  * сначала вопрос «Заменить?». Галерея недоступна — полоса просто без неё.
  */
@@ -57,8 +56,6 @@ export function ReadyStrip({
 }) {
   const g = t.gallery
   const [shape, setShape] = useState<Shape | null>(null)
-  const [size, setSize] = useState<SizeBand | null>(null)
-  const [budget, setBudget] = useState<BudgetChip | null>(null)
   const [top, setTop] = useState<GalleryCard[]>([])
   const [asking, setAsking] = useState<Card | null>(null)
   const titleId = useId()
@@ -80,25 +77,12 @@ export function ReadyStrip({
     () => top.map((k) => cardOf(k.id, k.q, k.title, `/api/gallery/image/${k.thumb}`, appliances, { avg: k.avg, count: k.count })),
     [top, appliances],
   )
-  const shown = [...ready, ...best].filter((c) => (!shape || c.shape === shape) && (!size || c.size === size) && (!budget || inBudget(c.sum, budget)))
+  const shown = [...ready, ...best].filter((c) => !shape || c.shape === shape)
 
   // своя кухня = одна из готовых без правок (открыли раньше, в том числе до перезагрузки) — не спрашиваем
   const built = own !== null && ![...ready, ...best].some((c) => c.norm === own)
   const pick = (c: Card) => (built ? setAsking(c) : onOpen(c.q, c.title, false))
 
-  const row = <T extends string>(label: string, all: readonly T[], value: T | null, set: (v: T | null) => void, name: (v: T) => string) => (
-    <div className="kp-ready__filter" role="group" aria-label={label}>
-      <span className="kp-ready__label">{label}</span>
-      <button type="button" className="kp-chip" aria-pressed={value === null} onClick={() => set(null)}>
-        {g.all}
-      </button>
-      {all.map((v) => (
-        <button key={v} type="button" className="kp-chip" aria-pressed={value === v} onClick={() => set(value === v ? null : v)}>
-          {name(v)}
-        </button>
-      ))}
-    </div>
-  )
 
   return (
     <section className="kp-ready" aria-labelledby={titleId}>
@@ -106,9 +90,18 @@ export function ReadyStrip({
         {g.readyTitle}
       </h3>
       <p className="kp-note">{g.readyLead}</p>
-      {row(g.filterShape, SHAPES, shape, setShape, (s) => t.shapes[s][0])}
-      {row(g.filterSize, SIZE_BANDS, size, setSize, (s) => g.sizes[s])}
-      {row(g.filterBudget, BUDGET_CHIPS, budget, setBudget, (b) => g.budgets[b])}
+      {/* одна строка фильтров — только форма (таск 06); длина стен и бюджет убраны с экрана */}
+      <div className="kp-ready__filter" role="group" aria-label={g.filterShape}>
+        <span className="kp-ready__label">{g.filterShape}</span>
+        <button type="button" className="kp-chip" aria-pressed={shape === null} onClick={() => setShape(null)}>
+          {g.all}
+        </button>
+        {SHAPES.map((v) => (
+          <button key={v} type="button" className="kp-chip" aria-pressed={shape === v} onClick={() => setShape(shape === v ? null : v)}>
+            {t.shapes[v][0]}
+          </button>
+        ))}
+      </div>
       <ul className="kp-ready__list">
         {shown.map((c) => (
           <li key={c.key} className="kp-ready__item">
