@@ -179,6 +179,13 @@ export class KitchenEngine {
   /** пределы поворота до подлёта: у острова фасад смотрит к стене, это «сзади» для обычного обзора */
   private focusAz: [number, number] | null = null
   private tweens: Tween[] = []
+  /**
+   * Камера стоит «на всю кухню» (frame), покупатель её не крутил: холст сменил пропорции
+   * (полный экран, лист выбора, клавиатура) — кадр пересчитывается под новый холст (P2, 5).
+   */
+  private framed = false
+  /** reframe() попросили недавно — следующий resize ещё раз вписывает кухню в новый холст */
+  private reframeUntil = 0
   private raf = 0
   private evening = false
   private selected: SlotKind | null = null
@@ -381,6 +388,7 @@ export class KitchenEngine {
     this.controls = new OrbitControls(this.camera, r.domElement)
     const c = this.controls
     c.enableDamping = true
+    c.addEventListener('start', () => (this.framed = false))
     c.dampingFactor = 0.08
     c.enablePan = false
     c.minPolarAngle = 0.02
@@ -677,6 +685,7 @@ export class KitchenEngine {
     this.controls.minDistance = dist * 0.35
     this.controls.maxDistance = dist * 1.6
     this.focusMin = null
+    this.framed = true
     if (this.focusAz) [this.controls.minAzimuthAngle, this.controls.maxAzimuthAngle] = this.focusAz
     this.focusAz = null
     if (mode === 'instant' || this.reduced) {
@@ -721,6 +730,7 @@ export class KitchenEngine {
 
   /** Кухня стала больше или меньше — плавно отъехать, чтобы она влезла в кадр. */
   reframe() {
+    this.reframeUntil = performance.now() + 700
     this.frame('glide')
   }
 
@@ -733,6 +743,7 @@ export class KitchenEngine {
   focus(slot: SlotKind) {
     const p = this.built?.anchors[slot]
     if (!p || this.reduced || !this.input) return
+    this.framed = false
     const target = p.clone()
     if (this.view === 'top') {
       const dir = this.camera.position.clone().sub(this.controls.target).normalize()
@@ -2179,9 +2190,18 @@ export class KitchenEngine {
     this.renderer.setPixelRatio(this.canvasRatio)
     this.renderer.setSize(w, h, false)
     this.applyRatio(this.plan().ratio, w, h)
+    const was = this.camera.aspect
     this.camera.aspect = w / h
     this.camera.updateProjectionMatrix()
     this.applyShift()
+    // холст сменил пропорции — кухня снова целиком в кадре, если камеру не трогали
+    const again = this.framed || performance.now() < this.reframeUntil
+    if (again && this.input && !this.drag && Math.abs(w / h - was) > was * 0.02) {
+      const gliding = this.tweens.some((t) => (t as Tween & { camera?: boolean }).camera)
+      this.frame(gliding ? 'glide' : 'instant')
+    }
+    // новый размер холста очищает его — кадр рисуем сразу, а не на следующем круге
+    if (this.built && !this.photo) this.draw()
     this.invalidate()
   }
 

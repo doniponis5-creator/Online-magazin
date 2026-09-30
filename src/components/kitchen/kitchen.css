@@ -46,7 +46,7 @@
 .kp-head {
   max-width: var(--container);
   margin: 0 auto;
-  padding: 22px 32px 18px;
+  padding: 14px 32px 12px;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -78,7 +78,9 @@
 .kp-work {
   display: grid;
   grid-template-columns: minmax(0, 1fr) var(--kp-panel-w);
-  height: clamp(500px, calc(100svh - var(--kp-header) - 84px), 920px);
+  /* --kp-work-top — где редактор начинается на странице (ставит KitchenPlanner.tsx): он целиком
+     в первом экране под шапкой сайта и заголовком, «Дальше» без прокрутки (P2, 7) */
+  height: clamp(500px, calc(100svh - var(--kp-work-top, calc(var(--kp-header) + 84px)) - 12px), 920px);
   max-width: 1720px;
   margin: 0 auto;
   padding: 0 24px;
@@ -679,9 +681,8 @@ html:has(.kp-photo) .assistant {
   grid-column: 1;
   font: 650 12px/1.35 var(--font);
   color: var(--kp-soft);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* название целиком («Шкаф 60 см», длинная модель техники) — переносом, не многоточием (P2, 8) */
+  overflow-wrap: anywhere;
 }
 
 .kp-size-card__nums {
@@ -3220,10 +3221,26 @@ html.kp-lock body {
     display: none;
   }
 
-  /* числа размеров — в карточке снизу; на маленькой сцене три подписи
-     ложились друг на друга, в 3D остаются только синие размерные линии */
-  .kp-dim--measure {
-    display: none;
+  /* ярлыки размеров у выбранного, как на компьютере (P2, 9): мельче и разведены —
+     ширина над верхом по центру, высота справа посередине, глубина справа выше ширины */
+  .kp-dim--measure .kp-dim__in {
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 11px;
+    bottom: 4px;
+  }
+
+  .kp-dim--m-h .kp-dim__in {
+    left: 6px;
+    top: 0;
+    bottom: auto;
+    transform: translateY(-50%);
+  }
+
+  .kp-dim--m-d .kp-dim__in {
+    left: 6px;
+    bottom: 26px;
+    transform: none;
   }
 
   /* карточка выбранного — снизу экрана, над меню сайта */
@@ -3362,6 +3379,11 @@ html.kp-lock body {
   .kp--full .kp-stage:has(.kp-sel),
   .kp--full .kp-stage:has(.kp-tools__extra.is-open) {
     z-index: 203;
+  }
+
+  /* лист выбранного открыт — сцена кончается над ним: вся кухня и «3D / План» видны (P2, 5) */
+  .kp--full .kp-stage:has(.kp-sel) {
+    inset: 0 0 calc(var(--kp-full-foot) + var(--kp-sel-h, 0px));
   }
 
   .kp--full .kp-tools {
@@ -4824,6 +4846,36 @@ button.kp-opt__more {
   grid-template-columns: minmax(0, 1fr);
 }
 
+/* Лист мастера — чертежи и таблицы первым экраном, 3D ниже; инструментов правки нет (P2, 11) */
+.kp--master {
+  display: flex;
+  flex-direction: column;
+}
+
+.kp--master > .kp-head {
+  order: -2;
+}
+
+.kp--master > .kp-spec {
+  order: -1;
+}
+
+.kp--master .kp-tools__undo,
+.kp--master .kp-tools__redo,
+.kp--master .kp-tools__prices,
+.kp--master .kp-plan__add,
+.kp--master [data-add],
+.kp--master .kp-move__add {
+  display: none;
+}
+
+/* телефон: кнопка консультанта не ложится на размеры развёртки */
+@media (max-width: 900px) {
+  html:has(.kp--master) .assistant {
+    display: none;
+  }
+}
+
 .kp-head__back {
   flex-basis: 100%;
   font-size: 14px;
@@ -5357,4 +5409,10 @@ button.kp-opt__more {
 .kp-tools__extra .kp-tools__help::before,
 .kp-tools__extra .kp-tools__help::after {
   display: none;
+}
+
+/* выбран шкаф — тост сверху: снизу лежит лист/полоска выбранного (P2, 8) */
+html:has(.kp-sel) .kp-toast {
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  bottom: auto;
 }

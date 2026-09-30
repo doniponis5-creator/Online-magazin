@@ -7,7 +7,7 @@ import { useCart } from '@/lib/cart/CartProvider'
 import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { inNativeApp } from '@/lib/native/bonusCard'
-import { checkProject, droppedName, TRIANGLE, type Check } from '@/lib/kitchen/checks'
+import { checkProject, droppedName, droppedNotice, TRIANGLE, type Check } from '@/lib/kitchen/checks'
 import {
   findColors,
   FRONT_COLORS,
@@ -357,8 +357,16 @@ export function KitchenPlanner({
   const addRef = useRef<HTMLDivElement>(null)
   /** «+» → «Технику»: куда поставить выбранную в шаге «Техника» модель; ушли с шага — забыто */
   const addTargetRef = useRef<PlanTarget | null>(null)
+  // Ушли с «Техники» — камера с духовки (focus) обратно на всю кухню, рамка техники снята:
+  // иначе смену стиля и цвета не видно (P2, 6).
+  const stepWas = useRef(step)
   useEffect(() => {
     if (step !== 'tech') addTargetRef.current = null
+    const was = stepWas.current
+    stepWas.current = step
+    if (was !== 'tech' || step === 'tech') return
+    setSelected(null)
+    engineRef.current?.reframe()
   }, [step])
   useEffect(() => {
     const mq = window.matchMedia(PLAN_COL)
@@ -515,6 +523,8 @@ export function KitchenPlanner({
   const followRef = useRef<ItemKey | null>(null)
   /** после перестройки открыть дверцы этого шкафа (выбрали сторону открывания) */
   const openAfterRef = useRef<string | null>(null)
+  /** «+» поставил шкаф — после перестройки выбрать его так же, как нажатием (одна карточка, P2, 8) */
+  const pickAfterRef = useRef<ItemKey | null>(null)
 
   /* ───────── каталог ───────── */
 
@@ -896,7 +906,8 @@ export function KitchenPlanner({
   /* ───────── план сверху: выбор общий с 3D, меню «+» ───────── */
 
   /** Ключ выбранного, как в сцене: его движок берёт под палец, план рисует кобальтом. */
-  const grabKey = moving ? ('key' in moving ? moving.key : moving.cab.key) : editing?.row === 'upper' ? editing.key : null
+  // лист мастера только показывает кухню: тянуть нечего (P2, 11)
+  const grabKey = masterPage ? null : moving ? ('key' in moving ? moving.key : moving.cab.key) : editing?.row === 'upper' ? editing.key : null
 
   /** Нажали на плане — тот же выбор, что даёт 3D; размеры берём у движка, если он готов. */
   const pickFromPlan = (key: string | null) => {
@@ -910,6 +921,7 @@ export function KitchenPlanner({
 
   /** Меню «+»: цель — пустое место или точка ряда; без цели (кнопка в углу) — справа от выбранного или середина стены A. */
   const openAdd = (target: PlanTarget | null, at: { x: number; y: number }) => {
+    if (masterPage) return
     const r = stageRef.current?.getBoundingClientRect()
     const x = r ? Math.max(8, Math.min(at.x - r.left, r.width - 248)) : 8
     const y = r ? Math.max(8, Math.min(at.y - r.top, r.height - 300)) : 8
@@ -931,6 +943,7 @@ export function KitchenPlanner({
     if (key) {
       closeMeasure()
       setMoving({ key })
+      pickAfterRef.current = key
     }
   }
 
@@ -1167,16 +1180,23 @@ export function KitchenPlanner({
     let cab = editingRef.current
     const follow = followRef.current
     followRef.current = null
+    const fresh = pickAfterRef.current
+    pickAfterRef.current = null
     if (follow && cab?.row === 'upper') {
       const key = upperOver(buildInput.plan, follow)
       if (key) cab = { ...cab, key }
     }
-    const again = cab ? engine.measureCab(cab.key) : null
-    // у мойки, плиты и пенала фасадов не выбирают — размеры держим по предмету
-    const mv = movingRef.current
-    const byItem = !again && measureRef.current && mv && 'key' in mv ? engine.measureItem(mv.key) : null
-    setMeasure(again?.dims ?? byItem?.dims ?? null)
-    setEditing(again?.cab ?? null)
+    if (fresh) {
+      // только что поставлен «+» — тот же выбор, что нажатием: размеры, фасады, ширина, перестановка
+      pickFromPlan(fresh)
+    } else {
+      const again = cab ? engine.measureCab(cab.key) : null
+      // у мойки, плиты и пенала фасадов не выбирают — размеры держим по предмету
+      const mv = movingRef.current
+      const byItem = !again && measureRef.current && mv && 'key' in mv ? engine.measureItem(mv.key) : null
+      setMeasure(again?.dims ?? byItem?.dims ?? null)
+      setEditing(again?.cab ?? null)
+    }
     // поменяли сторону открывания — дверцы сразу открываются: видно, куда
     if (openAfterRef.current) {
       engine.openDoors(openAfterRef.current)
@@ -1888,13 +1908,9 @@ export function KitchenPlanner({
     const pad = 14
     const top = pad + (parseFloat(stage.style.getPropertyValue('--kp-tools-h')) || 42) + 10
     const move = stage.querySelector<HTMLElement>('.kp-move')
-    const spots = [
-      { left: pad, top },
-      { left: W - pad - cw, top },
-      // снизу слева — над полоской «переставить», справа — над кнопкой консультанта
-      { left: pad, top: (move ? move.offsetTop - 10 : H - pad) - ch },
-      { left: W - pad - cw, top: H - 76 - ch },
-    ].filter((p) => p.top >= top - 1 && p.left >= pad - 1)
+    // одно место — справа сверху 3D (слева колонка плана), откуда бы ни выбрали (P2, 8);
+    // шкаф не прячется под карточку: сдвигается картинка, а не карточка
+    const spots = [{ left: W - pad - cw, top }].filter((p) => p.left >= pad - 1)
     // Каждый угол пробуем как есть и со сдвигом картинки: шкаф встаёт под
     // карточку, над ней, справа или слева, но не уходит за края 3D. Берём, где
     // карточка закрывает меньше всего; сдвиг стоит «штраф», чтобы картинка
@@ -1974,6 +1990,43 @@ export function KitchenPlanner({
       window.removeEventListener('resize', settle)
     }
   }, [sheetOpen, measure, placeCard])
+
+  // Компьютер: высота редактора — от его места на странице до низа окна (`--kp-work-top`),
+  // шапка сайта и заголовок не выталкивают «Дальше» за край (P2, 7).
+  useLayoutEffect(() => {
+    const root = rootRef.current
+    const work = root?.querySelector<HTMLElement>('.kp-work')
+    if (!root || !work) return
+    const put = () => root.style.setProperty('--kp-work-top', `${Math.round(work.getBoundingClientRect().top + window.scrollY)}px`)
+    put()
+    const head = new ResizeObserver(put)
+    const top = document.querySelector('header')
+    if (top) head.observe(top)
+    window.addEventListener('resize', put)
+    return () => {
+      head.disconnect()
+      window.removeEventListener('resize', put)
+    }
+  }, [])
+
+  // Телефон, полный экран: лист выбранного поднимает низ сцены (`--kp-sel-h`) — кухня
+  // вписывается в видимую часть 3D, «3D / План» остаётся над листом (P2, 5).
+  useLayoutEffect(() => {
+    const root = document.documentElement
+    const sel = full && sheetOpen && stacked ? document.querySelector<HTMLElement>('.kp-sel') : null
+    if (!sel) {
+      root.style.removeProperty('--kp-sel-h')
+      return
+    }
+    const put = () => root.style.setProperty('--kp-sel-h', `${Math.round(sel.offsetHeight)}px`)
+    put()
+    const size = new ResizeObserver(put)
+    size.observe(sel)
+    return () => {
+      size.disconnect()
+      root.style.removeProperty('--kp-sel-h')
+    }
+  }, [full, sheetOpen, stacked])
 
   const openSlot = (slot: SlotKind) => {
     const opening = !(step === 'tech' && open === slot)
@@ -2090,7 +2143,7 @@ export function KitchenPlanner({
 
   const measureTitle = (d: Dims) => {
     if (d.kind === 'appliance' && d.slot) return items[d.slot]?.name ?? t.slots[d.slot]
-    return t.dimsKinds[d.kind]
+    return `${t.dimsKinds[d.kind]} ${fmt(d.w)} ${t.cm}`
   }
   const mwBuiltIn = Boolean(items.microwave?.builtIn)
   /** выбрана отдельностоящая плита: духовка в ней (то же правило, что в order.ts) */
@@ -3046,7 +3099,7 @@ export function KitchenPlanner({
                 })}
               {measure &&
                 (['w', 'h', 'd'] as const).map((k) => (
-                  <span key={k} className="kp-dim kp-dim--measure" ref={(el) => engineRef.current?.setTag(`m:${k}`, el)}>
+                  <span key={k} className={`kp-dim kp-dim--measure kp-dim--m-${k}`} ref={(el) => engineRef.current?.setTag(`m:${k}`, el)}>
                     <span className="kp-dim__in">
                       {fmt(measure[k])} {t.cm}
                     </span>
@@ -3524,7 +3577,7 @@ export function KitchenPlanner({
             </div>
           )}
 
-          {engineState === 'ready' && built && hint && !photo && (
+          {engineState === 'ready' && built && hint && !photo && !sheetOpen && (
             <p className="kp-hint">
               <span className="kp-hint__long">
                 {t.hint}
@@ -4972,7 +5025,7 @@ function SizeField({
  * панелью у окна — не «удлините стену», а «перенесите панель».
  */
 function Dropped({ plan, state, t, onFix }: { plan: Plan; state: KitchenState; t: KitchenTexts; onFix: (p: Partial<KitchenState>) => void }) {
-  if (plan.dropped.length === 0 && !plan.ovenMovedUnderHob) return null
+  if (!droppedNotice(plan)) return null
   const need = needByWall(plan)
   const hood = plan.dropped.some((d) => d.slot === 'hood')
   const nameOf = (d: Plan['dropped'][number]) => droppedName(d, state, t)

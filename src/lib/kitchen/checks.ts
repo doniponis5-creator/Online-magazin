@@ -1,5 +1,5 @@
 import { BASE_H, counterTop, hoodNorm, isTall, STOVE_LEVEL, UPPER_BOTTOM } from './dims'
-import { DEPTH, runWorld, type Dropped, type Module, type Plan, type Run } from './layout'
+import { DEPTH, needByWall, runWorld, type Dropped, type Module, type Plan, type Run } from './layout'
 import { isCabinet, isGap, type KitchenState, type SlotKind } from './types'
 
 /**
@@ -189,6 +189,16 @@ export function checkProject(plan: Plan, facts: CheckFacts = {}): Check[] {
 
 /** Подписи для «не поместилось» — тот срез `KitchenTexts`, который здесь нужен. */
 export type DroppedNames = { slots: Record<SlotKind, string>; cabName: (w: number) => string; tallName: string; pantryName: string; emptyPlace: string }
+
+/**
+ * Есть ли покупателю что сказать о выпавшем: духовка под варочной, вытяжка без места
+ * или нехватка стены. Выпало только пустое место — молчим (иначе пустая рамка `Dropped`, P2).
+ */
+export function droppedNotice(plan: Pick<Plan, 'dropped' | 'ovenMovedUnderHob'>): boolean {
+  if (plan.ovenMovedUnderHob) return true
+  if (plan.dropped.some((d) => d.slot === 'hood')) return true
+  return Object.keys(needByWall(plan)).length > 0
+}
 
 /** Как назвать выпавшее покупателю: техника — по слоту, свой шкаф — по ширине, пустое место — «пустое место», пеналы — по виду. */
 export function droppedName(d: Dropped, state: Pick<KitchenState, 'cabinets'>, t: DroppedNames): string {
