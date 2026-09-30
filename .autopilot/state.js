@@ -14,7 +14,7 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-29T22:14:27+06:00",
-  "updatedAt": "2026-09-29T23:06:17+06:00",
+  "updatedAt": "2026-09-30T09:28:54+06:00",
   "finishedAt": null,
   "stages": [
     {
@@ -149,10 +149,11 @@ window.STATE =
         "src/lib/kitchen/layout.ts",
         "e2e/"
       ],
-      "status": "in-progress",
+      "status": "repair",
       "startedAt": "2026-09-29T23:06:17+06:00",
       "retries": 0,
-      "repairs": 0,
+      "repairs": 1,
+      "repairFindings": ["decorPlan: доска у плиты и чайник у мойки пропали (мёртвое чтение d.board/d.kettle) — R23i"],
       "handoffs": 0
     },
     {
@@ -292,7 +293,13 @@ window.STATE =
     "T01 · layout.ts · планка (strip) — флаг пустого места, в спецификацию/раскрой не идёт; решить в T04/T05",
     "T01 · layout.ts:459 · при нехватке длины пустое место выпадает первым и молча (не в dropped)",
     "T01 · layout.ts · cutWindow дублирует правило окна из uppersFor; обратный перевод центра для стены B inline; HOB_SIDE=30 записано дважды; placeWith: мёртвые cm/grab",
-    "T01 · kitchen-place.test.ts · gap-невидимость выгрузок проверена одним структурным тестом, не на каждую выгрузку"
+    "T01 · kitchen-place.test.ts · gap-невидимость выгрузок проверена одним структурным тестом, не на каждую выгрузку",
+    "T03 · e2e/kitchen-gestures.spec.ts:107-129 · числа сценария «перенос на другую стену» взяты из стартовой раскладки без явного адреса и комментария",
+    "T03 · engine.ts · «ключ сцены»/разбор A120 повторяется в 4 местах движка и в dragBaseFor планировщика — одна parseSceneKey",
+    "T03 · engine.ts setKitchen · revertDrag перед пересборкой делает лишние setSelected/showMeasure на уходящем объекте",
+    "T03 · build.ts · RunCache.lemons/props, ctx.lemons, done.board/kettle — мёртвый учёт после decorPlan; выпавшая техника входит в runKey каждого ряда",
+    "T03 · kitchen-place.test.ts:309-321 · тест filler на синтетическом плане, не на угловой кухне из снимка",
+    "T03 · KitchenPlanner.tsx resize · три поля продублированы после спреда"
 ],
   "reviewers": {
     "manifestSpec": null,
