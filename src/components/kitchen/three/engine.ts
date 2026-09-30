@@ -11,8 +11,8 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js'
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js'
 import type { Preview } from '@/lib/kitchen/drag'
 import { baseKey, upperKey } from '@/lib/kitchen/fronts'
-import { DEPTH, itemPositions, moduleCenter, UPPER_DEPTH, type Run } from '@/lib/kitchen/layout'
-import type { ItemKey, SlotKind, WallId } from '@/lib/kitchen/types'
+import { DEPTH, itemPositions, moduleCenter, runCm, runX, UPPER_DEPTH, type Run } from '@/lib/kitchen/layout'
+import { isGap, type ItemKey, type SlotKind, type WallId } from '@/lib/kitchen/types'
 import type { SpecData } from '@/lib/kitchen/spec'
 import { sharpenPass } from './sharpen'
 import { buildKitchen, CEILING_LAYER, WALL_H, WINDOW, type BuildInput, type Built, type CabInfo, type Dims } from './build'
@@ -104,6 +104,12 @@ export type EngineEvents = {
 type Home = { parent: THREE.Object3D; position: THREE.Vector3; rotation: THREE.Euler }
 /** Где стоит модуль: стена, середина и ширина (см от угла), ряд. */
 export type Place = { wall: WallId; center: number; w: number; row: 'base' | 'upper' }
+
+/** Красный «не помещается» — токен DESIGN.md `--color-danger` (в kitchen.css у плана тот же); нет стилей — его значение. */
+function dangerColor(): string {
+  const v = typeof document !== 'undefined' ? getComputedStyle(document.documentElement).getPropertyValue('--color-danger').trim() : ''
+  return v || '#d33b2e'
+}
 type Press = { key: string; obj: THREE.Object3D; x: number; y: number; id: number; touch: boolean }
 type Drag = { key: string; id: number; obj: THREE.Object3D; home: Home; place: Place; grab: number; target: { wall: WallId; cm: number } | null }
 
@@ -453,6 +459,8 @@ export class KitchenEngine {
     this.renderer.shadowMap.needsUpdate = true
     if (first || reframe) this.frame(first ? 'instant' : 'glide')
     if (this.selected) this.setSelected(this.selected)
+    // выбранное пустое место после перестройки — рамка по новой коробке
+    if (this.gapOutlined || (this.grab && isGap(this.grab))) this.outlineGap()
     if (motion && !this.reduced) this.animate(motion)
     // первый раз: шейдеры собираем заранее, кадры пойдут после (за экраном загрузки)
     if (first) this.compiling = this.compileFirst()
@@ -995,6 +1003,40 @@ export class KitchenEngine {
   setGrab(key: string | null) {
     if (this.drag && this.drag.key !== key) this.stopDrag(false)
     this.grab = key
+    this.outlineGap()
+  }
+
+  /** контур выбранного пустого места сейчас на экране */
+  private gapOutlined = false
+
+  /**
+   * Пустое место (gN) в 3D не строится — только контур при выборе (spec §1):
+   * сборка кладёт невидимую коробку с ключом, по ней и рисуем рамку. Выбрали
+   * что-то другое — рамка пустого места уходит.
+   */
+  private outlineGap() {
+    const key = this.grab
+    if (key && isGap(key)) {
+      const found: THREE.Object3D[] = []
+      this.built?.root.traverse((o) => {
+        if (!found.length && o.userData.item === key) found.push(o)
+      })
+      if (found.length) {
+        this.outlineOf(found[0], '#2563eb')
+        this.gapOutlined = true
+        this.invalidate()
+        return
+      }
+    }
+    if (!this.gapOutlined) return
+    this.gapOutlined = false
+    if (this.outline) {
+      this.scene.remove(this.outline)
+      this.outline.geometry.dispose()
+      ;(this.outline.material as THREE.Material).dispose()
+      this.outline = null
+    }
+    this.invalidate()
   }
 
   /** Ключ выбранного модуля (как в сцене). */
@@ -1271,13 +1313,13 @@ export class KitchenEngine {
 
   /** Позиция вдоль ряда (м) → см от угла: у левой стены ряд идёт от зрителя к углу. */
   private logicalCm(run: Run, x: number): number {
-    const L = run.length / 100
-    return Math.round((run.id === 'B' ? L - x : x) * 200) / 2
+    // одна формула с раскладкой и планом (layout.runCm); x — м, ответ — см с шагом 0,5
+    return Math.round(runCm(run, x * 100) * 2) / 2
   }
 
   /** См от угла → позиция вдоль ряда, м. */
   private localX(run: { id: string; length: number }, cm: number): number {
-    return (run.id === 'B' ? run.length - cm : cm) / 100
+    return runX(run, cm) / 100
   }
 
   /** Палец в см от угла на плоскости фронта этой стены; null — луч мимо. */
@@ -1385,7 +1427,7 @@ export class KitchenEngine {
     d.obj.position.set(this.localX(run, pv.center) + off, d.home.position.y, d.home.position.z)
     d.obj.rotation.copy(d.home.rotation)
     d.obj.updateWorldMatrix(true, true)
-    this.outlineOf(d.obj, pv.fits ? '#2563eb' : '#dc2626')
+    this.outlineOf(d.obj, pv.fits ? '#2563eb' : dangerColor())
     this.showSnap(run, pv, d.place.row, d.key)
     const y = d.place.row === 'upper' ? 1.5 : 0.95
     const left = pv.center - pv.width / 2

@@ -234,6 +234,28 @@ function tag(obj: THREE.Object3D, slot: SlotKind) {
   })
 }
 
+/**
+ * Пустые места (gN) в 3D не строятся (spec §1) — только невидимые коробки с
+ * ключом в группе ряда: по ним движок рисует контур, когда пустое место
+ * выбрали из плана. В спецификацию, раскрой и снимки они не попадают.
+ */
+const GAP_MAT = new THREE.MeshBasicMaterial({ visible: false })
+function gapBoxes(ctx: Ctx, run: Run, g: THREE.Group) {
+  for (const gap of run.gaps ?? []) {
+    const upper = gap.row === 'upper'
+    const bottom = upper ? ctx.upperBottom : 0
+    const h = upper ? Math.max(0.3, ctx.wallH - 0.2 - ctx.upperBottom) : KD.BASE_H / 100
+    const d = (upper ? UPPER_D : CARCASS_D) + KD.FRONT_T / 100
+    const box = new THREE.Mesh(new THREE.BoxGeometry(gap.w / 100, h, d), GAP_MAT)
+    box.position.set((gap.x + gap.w / 2) / 100, bottom + h / 2, d / 2)
+    box.visible = false
+    box.castShadow = false
+    box.receiveShadow = false
+    box.userData.item = gap.item
+    g.add(box)
+  }
+}
+
 /** Помечает предмет, который можно переставить: нажать и держать. */
 function tagItem(obj: THREE.Object3D, item: ItemKey) {
   obj.traverse((o) => {
@@ -1995,6 +2017,7 @@ function assemble(input: BuildInput, reuse?: ReadonlyMap<string, RunCache>): Bui
     ctx.mats = ctx.island ? { ...mats, facade: mats.island, textured: mats.islandTextured } : mats
     try {
       run.modules.forEach((m, i) => g.add(baseModule(ctx, run, m, i)))
+      gapBoxes(ctx, run, g)
       countertop(ctx, run, g)
       if (run.wall) {
         backsplash(ctx, run, g)

@@ -42,13 +42,17 @@ import {
   moduleCenter,
   needByWall,
   detachUppers,
+  addAt,
   narrowFor,
   placeAt,
+  wallsOf,
+  type AddKind,
   resizeWalls,
   type Fit,
   nextWall,
   pinCabinet,
   planKitchen,
+  type Planner,
   resolveArrangement,
   stepItem,
   upperBottomOf,
@@ -61,7 +65,9 @@ import {
   type RunId,
   type Run,
 } from '@/lib/kitchen/layout'
-import { previewMove } from '@/lib/kitchen/drag'
+import { previewMove, type Preview } from '@/lib/kitchen/drag'
+import { PlanView, type PlanTarget } from './PlanView'
+import { addPicked, resetForShape } from './planGeom'
 import { cartAdditions, chosenItems, CORE_SLOTS, frontsText, planInputOf, projectItems, projectTotal, wallsText, whatsappText, type ItemStatus } from '@/lib/kitchen/order'
 import { DEFAULT_STATE, loadLast, queryFromState, saveLast, stateFromQuery } from '@/lib/kitchen/share'
 import { cutList, extraList, frontList, hardware, modulesOf, topList, type SpecData } from '@/lib/kitchen/spec'
@@ -129,6 +135,11 @@ const SLOT_OF: Record<ItemKey, SlotKind | null> = {
 const HINT_SEEN = 'kp-hint-seen'
 
 type MoveSel = { key: ItemKey } | { cab: CabInfo; w: number; wall: WallId; center: number }
+
+/** Меню «+» на сцене: куда ставить (пустое место или точка ряда), где показать (px от угла сцены); failed — не поместилось, предлагаем сузить соседей или другую стену. */
+type AddMenu = { target: PlanTarget; x: number; y: number; failed?: AddKind }
+/** Ширина ≥ 1220 px: план — колонка слева от 3D, обе живые; уже — переключатель «3D · План». */
+const PLAN_COL = '(min-width: 1220px) and (min-height: 521px)'
 
 /** Шаг кнопок «левее / правее», см. */
 const NUDGE = 5
@@ -322,6 +333,34 @@ export function KitchenPlanner({
   const [saving, setSaving] = useState(false)
   const [evening, setEvening] = useState(false)
   const [view, setView] = useState<View>('angle')
+  /** сцена: 3D или план сверху (спецификация §4); на широком экране план — колонка рядом с 3D */
+  const [scene, setScene] = useState<'3d' | 'plan'>('3d')
+  const [planCol, setPlanCol] = useState(false)
+  /** предпросмотр перемещения — общий для 3D и плана (из previewMove) */
+  const [preview, setPreview] = useState<Preview | null>(null)
+  const [add, setAdd] = useState<AddMenu | null>(null)
+  const addRef = useRef<HTMLDivElement>(null)
+  /** «+» → «Технику»: куда поставить выбранную в шаге «Техника» модель; ушли с шага — забыто */
+  const addTargetRef = useRef<PlanTarget | null>(null)
+  useEffect(() => {
+    if (step !== 'tech') addTargetRef.current = null
+  }, [step])
+  useEffect(() => {
+    const mq = window.matchMedia(PLAN_COL)
+    const on = () => setPlanCol(mq.matches)
+    on()
+    mq.addEventListener('change', on)
+    return () => mq.removeEventListener('change', on)
+  }, [])
+  // меню «+» закрывается нажатием мимо него
+  useEffect(() => {
+    if (!add) return
+    const onDown = (e: PointerEvent) => {
+      if (!addRef.current?.contains(e.target as Node)) setAdd(null)
+    }
+    document.addEventListener('pointerdown', onDown)
+    return () => document.removeEventListener('pointerdown', onDown)
+  }, [add])
   const [prices, setPrices] = useState(true)
   const [full, setFull] = useState(false)
   // Полный экран: панель настроек. Телефон стоя — лист поверх 3D, вход в полный
@@ -747,8 +786,9 @@ export function KitchenPlanner({
     setMoving({ key: d.key })
   }
 
-  const onDragRef = useRef<(phase: DragPhase, key: string, wall: WallId, cm: number, grab: number) => void>(() => {})
-  onDragRef.current = (phase, raw, wall, cm, grab) => {
+  /** Одна связка для 3D и плана: `from` — откуда жест; план считает снап ещё и к противоположному ряду (`opposite`). */
+  const onDragRef = useRef<(phase: DragPhase, key: string, wall: WallId, cm: number, grab: number, from?: 'scene' | 'plan') => void>(() => {})
+  onDragRef.current = (phase, raw, wall, cm, grab, from = 'scene') => {
     const engine = engineRef.current
     if (phase === 'start') {
       dragRef.current = dragBaseFor(raw)
@@ -757,14 +797,16 @@ export function KitchenPlanner({
     const d = dragRef.current
     if (!d) return
     if (phase === 'move') {
-      // предпросмотр — из drag.previewMove; движок только рисует
-      const pv = previewMove(d.plan, d.key, wall, cm, grab)
+      // предпросмотр — из drag.previewMove; движок и план только рисуют
+      const pv = previewMove(d.plan, d.key, wall, cm, grab, { opposite: from === 'plan' })
       engine?.setPreview(pv)
+      setPreview(pv)
       setDragLabels((prev) => (!pv ? null : prev && prev.left === pv.labels.left && prev.right === pv.labels.right ? prev : pv.labels))
       return
     }
     dragRef.current = null
     setDragLabels(null)
+    setPreview(null)
     if (phase === 'cancel') return
     const placed = placeAt(d.state, d.key, wall, cm, trial, grab)
     if (placed.fit?.ok) {
@@ -784,6 +826,96 @@ export function KitchenPlanner({
       text: t.noRoomNarrow(nameOfKey(narrow.neighbour), narrow.by),
       act: { label: t.narrowAct, run: () => commitPlaced(d, again.state, again.fit!, wall) },
     })
+  }
+
+  /* ───────── план сверху: выбор общий с 3D, меню «+» ───────── */
+
+  /** Ключ выбранного, как в сцене: его движок берёт под палец, план рисует кобальтом. */
+  const grabKey = moving ? ('key' in moving ? moving.key : moving.cab.key) : editing?.row === 'upper' ? editing.key : null
+
+  /** Нажали на плане — тот же выбор, что даёт 3D; размеры берём у движка, если он готов. */
+  const pickFromPlan = (key: string | null) => {
+    if (!key) return pickRef.current({ slot: null, item: null, dims: null, cab: null })
+    const engine = engineRef.current
+    const isItem = Boolean(positions[key as ItemKey])
+    const byCab = engine?.measureCab(key) ?? null
+    const byItem = !byCab && isItem ? (engine?.measureItem(key as ItemKey) ?? null) : null
+    pickRef.current({ slot: isItem ? (SLOT_OF[key as ItemKey] ?? null) : null, item: isItem ? (key as ItemKey) : null, dims: byCab?.dims ?? byItem?.dims ?? null, cab: byCab?.cab ?? null })
+  }
+
+  /** Меню «+»: цель — пустое место или точка ряда; без цели (кнопка в углу) — справа от выбранного или середина стены A. */
+  const openAdd = (target: PlanTarget | null, at: { x: number; y: number }) => {
+    const r = stageRef.current?.getBoundingClientRect()
+    const x = r ? Math.max(8, Math.min(at.x - r.left, r.width - 248)) : 8
+    const y = r ? Math.max(8, Math.min(at.y - r.top, r.height - 300)) : 8
+    let tg = target
+    if (!tg) {
+      const sel = grabKey ? positions[grabKey as ItemKey] : undefined
+      const wall: WallId = sel?.wall ?? 'A'
+      const run = plan.runs.find((rr) => rr.id === wall)
+      const len = run?.length ?? 0
+      const cm = sel ? Math.min(len, sel.center + sel.w / 2 + 30) : len / 2
+      const gap = run?.gaps?.find((g) => g.row === 'base' && Math.abs(moduleCenter(run, g) - cm) <= g.w / 2)
+      tg = { wall, cm, gap: gap?.item ?? null }
+    }
+    setAdd({ target: tg, x, y })
+  }
+
+  /** Поставлено: история, выбор — на новом. */
+  const commitAdd = (next: KitchenState, key: ItemKey | null) => {
+    track()
+    setCartResult(null)
+    setState(next)
+    setAdd(null)
+    if (key) {
+      closeMeasure()
+      setMoving({ key })
+    }
+  }
+
+  const addFrom = (menu: AddMenu, kind: AddKind | 'tech') => {
+    if (kind === 'tech') {
+      // техника выбирается в шаге «Техника»: открываем первый пустой слот, место запоминаем (setPick → addPicked);
+      // вся техника уже выбрана — переносим посудомойку сюда сразу
+      setAdd(null)
+      const slot = (['dishwasher', 'washer', 'fridge'] as SlotKind[]).find((s) => items[s] === null)
+      if (slot) {
+        addTargetRef.current = menu.target
+        openSlot(slot)
+        return
+      }
+      const moved = addAt(state, menu.target.wall, menu.target.cm, 'dishwasher', trial)
+      if (moved.key) return commitAdd(moved.state, moved.key)
+      setToast(t.plus.failed)
+      return
+    }
+    const res = addAt(state, menu.target.wall, menu.target.cm, kind, trial)
+    if (res.key || res.state !== state) return commitAdd(res.state, res.key)
+    if (kind === 'fill' || kind === 'strip') return setAdd(null)
+    // не поместилось — сузить соседей или на другую стену
+    setAdd({ ...menu, failed: kind })
+  }
+
+  /** Сузить соседей: кого и на сколько — `narrowFor` по пробному ключу шириной нового шкафа. */
+  const addNarrow = (menu: AddMenu) => {
+    const kind = menu.failed!
+    const narrow = narrowFor(plan, kind === 'pantry' ? 'pantry' : ('k0' as ItemKey), menu.target.wall, menu.target.cm, { w: 60 })
+    const again = narrow ? addAt(narrowed(state, narrow.neighbour, narrow.by, plan), menu.target.wall, menu.target.cm, kind, trial) : null
+    if (again?.key) return commitAdd(again.state, again.key)
+    setAdd(null)
+    setToast(t.plus.failed)
+  }
+
+  const addOtherWall = (menu: AddMenu) => {
+    const kind = menu.failed!
+    for (const w of wallsOf(state.shape).filter((x) => x !== menu.target.wall)) {
+      const run = plan.runs.find((r) => r.id === w)
+      if (!run) continue
+      const res = addAt(state, w, run.length / 2, kind, trial)
+      if (res.key) return commitAdd(res.state, res.key)
+    }
+    setAdd(null)
+    setToast(t.plus.failed)
   }
 
   useEffect(() => {
@@ -1063,6 +1195,11 @@ export function KitchenPlanner({
     setView(v)
     engineRef.current?.setView(v)
   }
+  /** «3D · План»: два вида; «С высоты глаз» и «Спереди» — в «Ещё», возврат в «3D» ставит обычную камеру. */
+  const pickScene = (s: '3d' | 'plan') => {
+    setScene(s)
+    if (s === '3d' && (view === 'eye' || view === 'front')) changeView('angle')
+  }
 
   /**
    * Показать часть панели. На компьютере панель листается сама. На телефоне
@@ -1180,11 +1317,20 @@ export function KitchenPlanner({
   const setPick = (slot: SlotKind, id: string | null) => {
     track()
     setCartResult(null)
-    setState((s) => ({ ...s, picks: { ...s.picks, [slot]: id } }))
+    // пришли сюда из меню «+» → «Технику»: выбранная модель встаёт в запомненное место
+    const tg = addTargetRef.current
+    addTargetRef.current = null
+    setState((s) => {
+      const next = { ...s, picks: { ...s.picks, [slot]: id } }
+      if (!tg || !id) return next
+      const planner: Planner = (st, snap) => planKitchen(planInputOf(st, chosenItems(st.picks, appliances), snap), { shelves: style.shelves })
+      return addPicked(next, tg, slot, planner)
+    })
   }
   // Своя расстановка сбрасывается вместе со своими шкафами: иначе они
   // оставались в адресе и в счётчике «Вернуть шкафы как было», но не в кухне.
-  const setShape = (shape: Shape) => update({ shape, a: Math.max(state.a, minA(shape)), arrangement: undefined, cabinets: undefined, at: undefined })
+  // Пустые места, ручной верх и его шкафы — тоже от прежней формы (ревью таска 03): resetForShape сбрасывает всё разом.
+  const setShape = (shape: Shape) => update(resetForShape(state, shape))
 
   /**
    * Длину стены поменяли — свои и пустые места сохраняются (resizeWalls): за
@@ -1571,8 +1717,8 @@ export function KitchenPlanner({
 
   // Выбранное пальцем можно сразу тащить — без удержания.
   useEffect(() => {
-    engineRef.current?.setGrab(moving ? ('key' in moving ? moving.key : moving.cab.key) : editing?.row === 'upper' ? editing.key : null)
-  }, [moving, editing, engineState])
+    engineRef.current?.setGrab(grabKey)
+  }, [grabKey, engineState])
 
   const hobHasOven = plan.runs.some((r) => r.modules.some((m) => m.kind === 'hob' && m.oven)) && items.oven !== null
   const movingKey = moving && 'key' in moving ? moving.key : null
@@ -2610,6 +2756,10 @@ export function KitchenPlanner({
     b: state.shape === 'corner' || state.shape === 'u' ? `B · ${state.b} ${t.cm}` : undefined,
     c: state.shape === 'u' ? `C · ${state.c} ${t.cm}` : undefined,
   }
+  /** план на экране: колонкой (широкий экран) или вместо 3D; на фото — никогда */
+  const planShown = !photo && !photoFallback && (planCol || scene === 'plan')
+  /** план ВМЕСТО 3D (узкий экран): только тогда прячем ценники и подписи 3D; в колонке 3D живёт со всеми метками */
+  const planOver = planShown && !planCol
   const editOptions: FrontVariant[] = editing ? (editing.row === 'base' ? BASE_FRONTS : editing.fridge ? OVER_FRIDGE_FRONTS : UPPER_FRONTS) : []
   const frontLabel = (v: FrontVariant) =>
     editing?.fridge
@@ -2640,9 +2790,51 @@ export function KitchenPlanner({
       </header>
 
       <div className="kp-work">
-        <div className="kp-stage" ref={stageRef}>
+        <div className={`kp-stage${planOver ? ' is-plan' : ''}${planCol ? ' has-col' : ''}`} ref={stageRef}>
           {/* сюда движок кладёт холст; на телефоне под ним остаётся полоса видов */}
           <div className="kp-scene" ref={hostRef} />
+          {/* план сверху: поверх 3D на узком экране, колонкой слева — на широком; выбор и предпросмотр общие */}
+          {planShown && (
+            <PlanView
+              plan={plan}
+              selected={grabKey}
+              preview={preview}
+              onPick={pickFromPlan}
+              onDrag={(phase, key, wall, cm, grab) => onDragRef.current(phase, key, wall, cm, grab, 'plan')}
+              onAdd={openAdd}
+              labels={wallLabels}
+              names={t.planNames}
+              cm={t.cm}
+              addLabel={t.plus.btn}
+              ariaLabel={t.planViewTitle}
+            />
+          )}
+          {add && (
+            <div className="kp-add" role="menu" aria-label={t.plus.title} style={{ left: add.x, top: add.y }} ref={addRef}>
+              <span className="kp-add__title">{add.failed ? t.plus.noGap : t.plus.title}</span>
+              {add.failed ? (
+                <>
+                  <button type="button" role="menuitem" className="kp-add__btn" onClick={() => addNarrow(add)}>
+                    {t.plus.narrowAll}
+                  </button>
+                  <button type="button" role="menuitem" className="kp-add__btn" onClick={() => addOtherWall(add)}>
+                    {t.plus.otherWall}
+                  </button>
+                </>
+              ) : (
+                (['doors', 'drawers', 'pantry', 'tech', 'strip', 'fill'] as const)
+                  .filter((k) => add.target.gap || (k !== 'strip' && k !== 'fill'))
+                  .map((k) => (
+                    <button key={k} type="button" role="menuitem" className="kp-add__btn" data-add-kind={k} onClick={() => addFrom(add, k)}>
+                      {t.plus[k]}
+                    </button>
+                  ))
+              )}
+              <button type="button" className="kp-add__close" aria-label={t.close} onClick={() => setAdd(null)}>
+                <IconClose />
+              </button>
+            </div>
+          )}
           {/*
             Телефон стоя: полоса под 3D — сплошной фон для переключателя видов
             (он остаётся в строке инструментов и встаёт сюда абсолютно) и место
@@ -2785,10 +2977,11 @@ export function KitchenPlanner({
           */}
           {engineState === 'ready' && (
             <div className="kp-tools" role="toolbar" aria-label={t.toolsLabel} ref={toolsRef}>
+              {/* два вида: 3D и план; редкие камеры («С высоты глаз», «Спереди») — в «ещё» */}
               <div className="kp-seg kp-views" role="radiogroup" aria-label={t.viewLabel}>
-                {(['angle', 'eye', 'front', 'top'] as View[]).map((v) => (
-                  <button key={v} type="button" role="radio" aria-checked={view === v} className="kp-seg__btn" onClick={() => changeView(v)}>
-                    {t.view[v]}
+                {(['3d', 'plan'] as const).map((s) => (
+                  <button key={s} type="button" role="radio" aria-checked={scene === s} className="kp-seg__btn" data-scene={s} onClick={() => pickScene(s)}>
+                    {s === '3d' ? t.view.angle : t.view.plan}
                   </button>
                 ))}
               </div>
@@ -2838,6 +3031,26 @@ export function KitchenPlanner({
                 </span>
               </button>
               <div className={`kp-tools__extra${menu ? ' is-open' : ''}`} id="kp-tools-extra" ref={menuRef}>
+                <div className="kp-seg kp-camera" role="radiogroup" aria-label={t.camera}>
+                  <span className="kp-quality__label" aria-hidden="true">
+                    {t.camera}
+                  </span>
+                  {(['eye', 'front'] as View[]).map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      role="radio"
+                      aria-checked={scene === '3d' && view === v}
+                      className="kp-seg__btn"
+                      onClick={() => {
+                        setScene('3d')
+                        changeView(view === v ? 'angle' : v)
+                      }}
+                    >
+                      {t.view[v]}
+                    </button>
+                  ))}
+                </div>
                 <button type="button" className="kp-toggle kp-tools__evening" aria-pressed={evening} onClick={() => setEvening((e) => !e)}>
                   {evening ? <IconMoon /> : <IconSun />}
                   <span className="kp-toggle__text">{evening ? t.evening : t.day}</span>
@@ -3081,6 +3294,21 @@ export function KitchenPlanner({
                     {movingName}
                     <small>{t.moveHint2}</small>
                   </span>
+                  {/* выбрано пустое место: «+» — что сюда поставить */}
+                  {movingKey && isGap(movingKey) && (
+                    <button
+                      type="button"
+                      className="kp-move__btn kp-move__add"
+                      aria-label={t.plus.btn}
+                      title={t.plus.btn}
+                      onClick={(e) => {
+                        const p = positions[movingKey]
+                        if (p) openAdd({ wall: p.wall, cm: p.center, gap: movingKey }, { x: e.clientX, y: e.clientY })
+                      }}
+                    >
+                      +
+                    </button>
+                  )}
                   {/* по 5 см; держите кнопку — едет дальше; упёрлось — перепрыгнет соседа */}
                   <button
                     type="button"

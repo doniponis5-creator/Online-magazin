@@ -1223,8 +1223,19 @@ export function itemGaps(plan: Plan, key: ItemKey): { center: number; w: number 
 
 /** Где на стене стоит модуль (центр, см от угла) — как у itemPositions. */
 export function moduleCenter(run: Pick<Run, 'id' | 'length'>, m: Pick<Module, 'x' | 'w'>): number {
-  const mid = m.x + m.w / 2
-  return run.id === 'B' ? run.length - mid : mid
+  return runCm(run, m.x + m.w / 2)
+}
+
+/**
+ * Одна формула «см от угла» для модели, движка и плана: ряд B идёт от дальнего
+ * конца к углу, поэтому его позиция вдоль ряда `x` — это `length − x` от угла.
+ * `runX` — обратно: см от угла → позиция вдоль ряда.
+ */
+export function runCm(run: { id: string; length: number }, x: number): number {
+  return run.id === 'B' ? run.length - x : x
+}
+export function runX(run: { id: string; length: number }, cm: number): number {
+  return run.id === 'B' ? run.length - cm : cm
 }
 
 /**

@@ -4869,3 +4869,266 @@ button.kp-opt__more {
   border-radius: var(--radius-card, 16px);
   background: #fff;
 }
+
+/* ───────── план сверху (таск 04): SVG в той же сцене, что 3D ───────── */
+
+/*
+  Узкий экран: план ложится поверх холста 3D (движок под ним живёт и ждёт),
+  инструменты и лист выбранного остаются сверху. Широкий (≥ 1220 px, has-col):
+  колонка 320 px слева, холст сдвинут вправо, обе картинки живые.
+*/
+.kp-plan {
+  position: absolute;
+  inset: 0 0 var(--kp-strip);
+  z-index: 2;
+  background: var(--kp-panel-bg);
+  touch-action: none;
+  overscroll-behavior: contain;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.kp-plan svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+
+.kp-plan__wall {
+  fill: var(--kp-sk-wall);
+}
+
+.kp-plan__win {
+  fill: var(--kp-sk-window);
+}
+
+.kp-plan__top {
+  fill: var(--kp-sk-top);
+}
+
+.kp-plan__dim {
+  stroke: var(--kp-line-strong);
+}
+
+.kp-plan__num {
+  font-family: var(--font);
+  font-weight: 650;
+  fill: var(--kp-soft);
+}
+
+.kp-plan__total {
+  font-family: var(--font);
+  font-weight: 750;
+  fill: var(--kp-ink);
+}
+
+.kp-plan__base {
+  stroke: var(--kp-line-strong);
+}
+
+.kp-plan__upper {
+  fill: none;
+  stroke: var(--kp-line-strong);
+}
+
+.kp-plan__gap {
+  fill: var(--kp-stage);
+  stroke: var(--kp-line-strong);
+}
+
+.kp-plan__cell.is-pick {
+  cursor: pointer;
+}
+
+.kp-plan__cell.is-sel .kp-plan__base,
+.kp-plan__cell.is-sel .kp-plan__upper,
+.kp-plan__cell.is-sel .kp-plan__gap {
+  stroke: var(--kp-cobalt);
+}
+
+.kp-plan__cell.is-drag {
+  opacity: 0.3;
+}
+
+.kp-plan__cap,
+.kp-plan__w {
+  font-family: var(--font);
+  font-weight: 650;
+  fill: var(--kp-soft);
+}
+
+.kp-plan__plus {
+  cursor: pointer;
+}
+
+.kp-plan__plus circle {
+  fill: #fff;
+  stroke: var(--kp-cobalt);
+}
+
+.kp-plan__plus line {
+  stroke: var(--kp-cobalt);
+  stroke-linecap: round;
+}
+
+.kp-plan__preview rect {
+  fill: var(--kp-cobalt);
+  fill-opacity: 0.16;
+  stroke: var(--kp-cobalt);
+}
+
+.kp-plan__preview.is-bad rect {
+  fill: var(--color-danger, #d33b2e);
+  stroke: var(--color-danger, #d33b2e);
+}
+
+.kp-plan__snap {
+  stroke: var(--kp-cobalt);
+}
+
+.kp-plan__drag {
+  font-family: var(--font);
+  font-weight: 700;
+  fill: var(--kp-cobalt);
+}
+
+/* «+» в углу плана: белая кнопка с кобальтом (лимонная на экране одна) */
+.kp-plan__add {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--kp-line);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgb(38 50 68 / 8%);
+  font: 700 24px/1 var(--font);
+  color: var(--kp-cobalt);
+  cursor: pointer;
+}
+
+/* поверх плана ценники и размеры 3D не нужны */
+.kp-stage.is-plan .kp-tags {
+  display: none;
+}
+
+.kp-stage.has-col .kp-plan {
+  right: auto;
+  width: 320px;
+  border-right: 1px solid var(--kp-line);
+}
+
+.kp-stage.has-col .kp-scene {
+  left: 320px;
+}
+
+.kp-stage.has-col .kp-tools {
+  left: 334px;
+}
+
+.kp-stage.has-col .kp-views {
+  display: none;
+}
+
+/* меню «+» */
+.kp-add {
+  position: absolute;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 240px;
+  padding: 8px 8px 8px;
+  border: 1px solid var(--kp-line);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgb(38 50 68 / 16%);
+}
+
+.kp-add__title {
+  padding: 6px 10px 8px;
+  padding-right: 36px;
+  font: 650 12px/1.4 var(--font);
+  color: var(--kp-muted);
+}
+
+.kp-add__btn {
+  height: 44px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  font: 650 14px/1 var(--font);
+  color: var(--kp-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .kp-add__btn:hover {
+    background: var(--color-surface, #f7f9fc);
+    color: var(--kp-cobalt);
+  }
+}
+
+.kp-add__close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--kp-soft);
+  cursor: pointer;
+}
+
+.kp-move__add {
+  font: 700 20px/1 var(--font);
+  color: var(--kp-cobalt);
+}
+
+/* строка инструментов лежит поверх плана — под неё отдаём верх (has-col: инструменты правее колонки) */
+.kp-plan {
+  box-sizing: border-box;
+  padding-top: calc(var(--kp-tools-h, 44px) + 12px);
+}
+
+.kp-stage.has-col .kp-plan {
+  padding-top: 0;
+}
+
+/* телефон: меню «+» — листом над полосой видов, в две колонки (сцена невысокая); план — та же область, что 3D */
+@media (max-width: 900px) and (min-height: 521px) {
+  .kp-add {
+    left: 10px !important;
+    right: 10px;
+    top: auto !important;
+    bottom: calc(var(--kp-strip) + 10px);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: auto;
+    max-height: calc(100% - var(--kp-strip) - 20px);
+    overflow: auto;
+  }
+
+  .kp-add__title {
+    grid-column: 1 / -1;
+    padding-top: 2px;
+  }
+
+  .kp-add__btn {
+    height: 40px;
+    font-size: 13px;
+  }
+
+  .kp-plan__add {
+    bottom: calc(var(--kp-strip) + 12px);
+  }
+}
