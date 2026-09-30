@@ -24,7 +24,8 @@ test('переключатель «3D · План»: два вида, план �
 })
 
 test('тап выбирает, тянуть выбранный — двигать с предпросмотром; после отпускания мойка на новом месте, выбор остаётся', async ({ page }) => {
-  await ready(page, 'f=straight&a=300', 'page')
+  // справа от мойки пустое место 60…160 (P1: в закреплённых соседей мойка не въезжает)
+  await ready(page, 'f=straight&a=300&o=s_030100g_110h_220', 'page')
   await page.locator('.kp-views [data-scene="plan"]').click()
   await expect(page.locator('.kp-plan [data-key="sink"]')).toHaveCount(1)
   // невыбранный тянуть нельзя — панорама, адрес не меняется
@@ -58,11 +59,28 @@ test('«+» на пустом месте → меню → «Шкаф с двер
   await expect(page.locator('.kp-plan [data-key="g1"]')).toHaveCount(1)
   await tapPlan(page, '.kp-plan [data-add="g1"] circle')
   await expect(page.locator('.kp-add [role="menuitem"]')).toHaveCount(6)
+  // P1: у каждого пункта значок, у шкафов и планки — ширина, которая встанет (проём 40 см)
+  await expect(page.locator('.kp-add [role="menuitem"] svg')).toHaveCount(6)
+  await expect(page.locator('.kp-add [data-add-kind="doors"]')).toContainText('Шкаф с дверцами40 см')
+  await expect(page.locator('.kp-add [data-add-kind="drawers"]')).toHaveAttribute('data-add-w', '40')
+  await expect(page.locator('.kp-add [data-add-kind="strip"]')).toHaveAttribute('data-add-w', '40')
   await page.locator('.kp-add [data-add-kind="doors"]').click()
   await expect(page.locator('.kp-add')).toHaveCount(0)
   expect(await planKeys(page)).toContain('k1')
   expect(await planKeys(page)).not.toContain('g1')
   await expect(page.locator('.kp-plan .is-sel')).toHaveAttribute('data-key', 'k1')
+})
+
+test('нижняя «+» при проёме на плане ведёт к нему: не «пустого места нет», а шкаф в проём (P1)', async ({ page }) => {
+  await ready(page, 'f=straight&a=300&o=s_03040g_080h_220', 'page')
+  await page.locator('.kp-views [data-scene="plan"]').click()
+  await expect(page.locator('.kp-plan [data-key="g1"]')).toHaveCount(1)
+  await page.locator('.kp-plan__add').click()
+  await expect(page.locator('.kp-add__title')).toHaveText('Поставить сюда · пустое место 40 см')
+  await page.locator('.kp-add [data-add-kind="doors"]').click()
+  await expect(page.locator('.kp-add')).toHaveCount(0)
+  expect(await planKeys(page)).toContain('k1')
+  expect(await planKeys(page)).not.toContain('g1')
 })
 
 test('стена B: см от угла — тянем плиту к углу, после отпускания она там, где палец (не зеркально)', async ({ page }) => {

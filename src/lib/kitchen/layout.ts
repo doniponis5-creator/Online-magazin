@@ -22,6 +22,7 @@ import {
   type UpperId,
   type WallId,
 } from './types'
+import { baseKey } from './fronts'
 import { CARCASS_D, counterTop, FRONT_T, hoodBelow, hoodNorm, isTall, UPPER_BOTTOM, UPPER_CARCASS_D, up5 } from './dims'
 
 /**
@@ -1330,6 +1331,8 @@ export type Fit = {
   narrow: Narrow | null
   free: { from: number; to: number }
   neighbours: { left: ItemKey | null; right: ItemKey | null }
+  /** мягкие соседи (закреплённые автошкафы), которые уступят место постановке — ужмутся или уйдут (P1) */
+  yields?: ItemKey[]
 }
 export type FitOptions = {
   /** ширина, если предмета ещё нет в плане (новый шкаф, пенал) */
@@ -1337,6 +1340,12 @@ export type FitOptions = {
   row?: 'base' | 'upper'
   /** в плане сверху — ещё прилипать к краям противоположного ряда (A ↔ остров, B ↔ C) */
   opposite?: boolean
+  /**
+   * Мягкие соседи (P1): автошкафы, закреплённые на время жеста (`pinWalls` → `pinnedIds`).
+   * Модуль помещается — они не меняются (магнит к их краю тоже); не помещается под пальцем —
+   * уступают ровно на нехватку (`Fit.yields`). Свои шкафы покупателя сюда не входят — им «Сузить».
+   */
+  soft?: ItemKey[]
 }
 
 const rowOf = (key: ItemKey, cur?: ItemPlace): 'base' | 'upper' => (isUpperCab(key) || cur?.row === 'upper' ? 'upper' : 'base')
@@ -1389,6 +1398,30 @@ function oppositeEdges(plan: Plan, wall: WallId): number[] {
  * (предмета нет в плане и `opts.w` не дали) или такой стены нет.
  */
 export function fitOn(plan: Plan, key: ItemKey, wall: WallId, center: number, opts: FitOptions = {}): Fit | null {
+  const hard = fitCore(plan, key, wall, center, opts, [])
+  const soft = opts.soft?.filter((k) => k !== key) ?? []
+  if (!hard || !soft.length) return hard
+  // встал сам или прилип к краю мягкого соседа (≤ SNAP от пальца) — соседи прежние
+  if (hard.ok && Math.abs(hard.center - center) <= SNAP + 0.01) return hard
+  const loose = fitCore(plan, key, wall, center, opts, soft)
+  if (!loose?.ok) return hard
+  if (hard.ok && Math.abs(hard.center - loose.center) < 0.01) return hard
+  const run = plan.runs.find((r) => r.id === wall)!
+  const pad = loose.row === 'base' && key === 'hob' ? HOB_SIDE : 0
+  // уступают — левый край на целом сантиметре: остатки соседей и пустые места целые (пустое место хранится в целых см)
+  const half = loose.w / 2 + pad
+  const left = Math.round(loose.center - loose.w / 2)
+  const c = [left, left + 1, left - 1].map((x) => x + loose.w / 2).find((x) => x - half >= loose.free.from - 0.01 && x + half <= loose.free.to + 0.01) ?? loose.center
+  if (c !== loose.center) loose.center = c
+  const s = loose.center - loose.w / 2 - pad
+  const e = loose.center + loose.w / 2 + pad
+  const mods = loose.row === 'base' ? run.modules : run.uppers
+  const yields = mods.filter((m) => m.item && soft.includes(m.item) && Math.min(e, m.x + m.w) - Math.max(s, m.x) > 0.01).map((m) => m.item as ItemKey)
+  return yields.length ? { ...loose, yields } : loose
+}
+
+/** `fitOn` без мягких соседей: `ignore` — ключи, которых для постановки нет (уступят). */
+function fitCore(plan: Plan, key: ItemKey, wall: WallId, center: number, opts: FitOptions, ignore: ItemKey[]): Fit | null {
   const run = plan.runs.find((r) => r.id === wall)
   const pos = itemPositions(plan)
   const cur = pos[key]
@@ -1407,7 +1440,7 @@ export function fitOn(plan: Plan, key: ItemKey, wall: WallId, center: number, op
   if (row === 'base') {
     for (const m of run.modules) {
       if (m.kind === 'corner') obstacles.push({ ...spanOf(m), key: null })
-      else if (m.item && m.item !== key) obstacles.push({ ...spanOf(m, m.kind === 'hob' ? HOB_SIDE : 0), key: m.item })
+      else if (m.item && m.item !== key && !ignore.includes(m.item)) obstacles.push({ ...spanOf(m, m.kind === 'hob' ? HOB_SIDE : 0), key: m.item })
     }
   } else {
     for (const u of run.uppers) {
@@ -1529,18 +1562,20 @@ function stateWith(state: KitchenState, rows: Rows, gaps: KitchenState['gaps'], 
  * сначала становится ручной. Проверяется пробной раскладкой: ничего нового
  * не должно выпасть.
  */
-export function placeAt(state: KitchenState, key: ItemKey, wall: WallId, cm: number, planner: Planner, grab = 0, opts: { w?: number } = {}): Placed {
+export function placeAt(state: KitchenState, key: ItemKey, wall: WallId, cm: number, planner: Planner, grab = 0, opts: { w?: number; soft?: ItemKey[] } = {}): Placed {
   return placeWith(state, planner(state, []), key, wall, cm - grab, planner, opts)
 }
 
 /** То же, но геометрия и заморозка — по готовому плану `p0` (он может быть от состояния без нового предмета: пенал, новый шкаф). */
-function placeWith(state: KitchenState, p0: Plan, key: ItemKey, wall: WallId, center: number, planner: Planner, opts: { w?: number; fresh?: boolean } = {}): Placed {
+function placeWith(state: KitchenState, p0: Plan, key: ItemKey, wall: WallId, center: number, planner: Planner, opts: { w?: number; fresh?: boolean; soft?: ItemKey[] } = {}): Placed {
   const pos = itemPositions(p0)
   const cur = pos[key]
-  const fit = fitOn(p0, key, wall, center, { w: opts.w })
+  const fit = fitOn(p0, key, wall, center, { w: opts.w, soft: opts.soft })
   if (!fit || !fit.ok) return { state, fit }
   const row = fit.row
-  const base = row === 'upper' && !state.manualUppers?.[wall] ? detachUppers(state, wall, p0) : state
+  let base = row === 'upper' && !state.manualUppers?.[wall] ? detachUppers(state, wall, p0) : state
+  // варочная уходит со стены — шкафы её бывшей зоны столешницы закрепляются, а не перестраиваются молча (P1)
+  if (key === 'hob' && row === 'base' && cur && cur.wall !== wall) base = pinWalls(base, p0, [cur.wall], { hobZone: true })
   const rows = rowsOf(base)
   const gaps: NonNullable<KitchenState['gaps']> = { ...base.gaps }
   const at: NonNullable<KitchenState['at']> = {}
@@ -1548,21 +1583,57 @@ function placeWith(state: KitchenState, p0: Plan, key: ItemKey, wall: WallId, ce
   for (const [k, v] of Object.entries(base.at ?? {}) as [ItemKey, number][]) if (at[k] === undefined && k !== key) at[k] = v
   removeKey(rows, key)
   const half = fit.w / 2
-  const s = fit.center - half
-  const e = fit.center + half
+  // у варочной столешница HOB_SIDE с каждой стороны — пустое место туда не заходит (иначе раскладка его выбросит)
+  const pad = row === 'base' && key === 'hob' ? HOB_SIDE : 0
+  const s = fit.center - half - pad
+  const e = fit.center + half + pad
   const curRow = cur?.row ?? 'base'
-  if (cur && !opts.fresh && !isGap(key) && (cur.wall !== wall || curRow !== row || Math.abs(cur.center - fit.center) >= cur.w - 0.01)) {
-    const g = nextId('g', gaps)
-    gaps[g] = { w: Math.round(cur.w) }
-    at[g] = cur.center
-    insertByCenter(listOf(rows, curRow, cur.wall), g, cur.center, at)
+  if (cur && !opts.fresh && !isGap(key)) {
+    // освобождённое — пустое место: часть прежнего места, не занятая новым (P1: не новый автошкаф)
+    const cs = cur.center - cur.w / 2
+    const ce = cur.center + cur.w / 2
+    const same = cur.wall === wall && curRow === row
+    const pieces: [number, number][] = same ? [[cs, Math.min(ce, s)], [Math.max(cs, e), ce]] : [[cs, ce]]
+    for (const [a, b] of pieces) {
+      if (b - a < 1) continue
+      const g = nextId('g', gaps)
+      gaps[g] = { w: Math.round(b - a) }
+      at[g] = (a + b) / 2
+      insertByCenter(listOf(rows, curRow, cur.wall), g, (a + b) / 2, at)
+    }
   }
   const run = p0.runs.find((r) => r.id === wall)!
+  // мягкие соседи уступают ровно на нехватку: остаётся бо́льшая часть (не уже NARROW_W), прочее — пустое место
+  const cabinets: NonNullable<KitchenState['cabinets']> = { ...base.cabinets }
+  for (const k of fit.yields ?? []) {
+    const m = (row === 'base' ? run.modules : run.uppers).find((mm) => mm.item === k)
+    const cab = cabinets[k as keyof typeof cabinets]
+    if (!m || !cab) continue
+    const c0 = moduleCenter(run, m)
+    const a = c0 - m.w / 2
+    const b = c0 + m.w / 2
+    const pieces = ([[a, Math.min(b, s)], [Math.max(a, e), b]] as [number, number][]).filter(([x, y]) => y - x >= 1).sort((p, q) => q[1] - q[0] - (p[1] - p[0]))
+    const keep = pieces[0] && pieces[0][1] - pieces[0][0] >= NARROW_W ? pieces.shift()! : null
+    if (keep) {
+      cabinets[k as keyof typeof cabinets] = { ...cab, w: Math.round((keep[1] - keep[0]) * 10) / 10 }
+      at[k] = (keep[0] + keep[1]) / 2
+    } else {
+      delete cabinets[k as keyof typeof cabinets]
+      delete at[k]
+      removeKey(rows, k)
+    }
+    for (const [x, y] of pieces) {
+      const g = nextId('g', gaps)
+      gaps[g] = { w: Math.round(y - x) }
+      at[g] = (x + y) / 2
+      insertByCenter(listOf(rows, row, wall), g, (x + y) / 2, at)
+    }
+  }
   const list = listOf(rows, row, wall)
   carveGaps(run, row, list, gaps, at, key, s, e)
   at[key] = fit.center
   insertByCenter(list, key, fit.center, at)
-  const next = stateWith(base, rows, gaps, at)
+  const next = stateWith(fit.yields?.length ? { ...base, cabinets } : base, rows, gaps, at)
   const p1 = planner(next, [])
   const now = itemPositions(p1)[key]
   if (p1.dropped.length > p0.dropped.length || !now) {
@@ -1629,6 +1700,102 @@ export function squeezeGaps(state: KitchenState, plan: Plan, key: ItemKey, w: nu
   carveGaps(run, row, listOf(rows, row, cur.wall), gaps, at, key, s, e)
   at[key] = (s + e) / 2
   return stateWith(state, rows, gaps, at)
+}
+
+/**
+ * Перед перемещением (P1): автошкафы низа (дверцы/ящики без своего ключа) на
+ * стенах `walls` становятся своими `kN` той же ширины и вида на тех же
+ * местах, все места замораживаются по `plan`. Картинка та же, но соседи
+ * больше не перестраиваются от постановки: пересечение — снап или «не
+ * помещается», освобождённое — пустое `gN`. Вариант фасада автошкафа
+ * (`fronts[A120]`) переезжает в `Cabinet.front`. Бутылочница и добор остаются
+ * автоматическими: вида «бутылочница» у своего шкафа нет; шкафы у варочной —
+ * тоже: там столешница HOB_SIDE, свой шкаф вплотную раскладка не пустит.
+ */
+export function pinWalls(state: KitchenState, plan: Plan, walls: WallId[], opts: { hobZone?: boolean } = {}): KitchenState {
+  const runs = plan.runs.filter((r) => walls.includes(r.id as WallId) && r.modules.some((m) => !m.item && (m.kind === 'doors' || m.kind === 'drawers')))
+  if (!runs.length) return state
+  const pos = itemPositions(plan)
+  const rows = rowsOf(state)
+  const cabinets: NonNullable<KitchenState['cabinets']> = { ...state.cabinets }
+  const fronts: NonNullable<KitchenState['fronts']> = { ...state.fronts }
+  const at: NonNullable<KitchenState['at']> = {}
+  for (const [k, p] of Object.entries(pos) as [ItemKey, ItemPlace][]) at[k] = p.center
+  for (const [k, v] of Object.entries(state.at ?? {}) as [ItemKey, number][]) if (at[k] === undefined) at[k] = v
+  for (const run of runs) {
+    // у варочной столешница остаётся автоматической (HOB_SIDE): свой шкаф вплотную раскладка не пустит
+    const hobs = run.modules.filter((m) => m.item === 'hob').map((m) => ({ s: m.x - HOB_SIDE, e: m.x + m.w + HOB_SIDE }))
+    for (const m of run.modules) {
+      if (m.item || (m.kind !== 'doors' && m.kind !== 'drawers')) continue
+      if (!opts.hobZone && hobs.some((h) => Math.min(h.e, m.x + m.w) - Math.max(h.s, m.x) > 0.01)) continue
+      const sk = baseKey(run.id, m.x)
+      const front = (fronts[sk] as BaseFront | undefined) ?? (m.kind === 'drawers' ? 'drawers3' : 'doors')
+      delete fronts[sk]
+      const id = nextId('k', cabinets)
+      cabinets[id] = { w: Math.round(m.w * 10) / 10, front }
+      const c = moduleCenter(run, m)
+      at[id] = c
+      insertByCenter(rows.base[run.id as WallId], id, c, at)
+    }
+  }
+  return stateWith(state, rows, state.gaps, at, { cabinets, fronts: compact(fronts) })
+}
+
+/** Кого закрепил `pinWalls` (новые `kN`): мягкие соседи жеста — `FitOptions.soft`. Свои шкафы покупателя сюда не попадают. */
+export function pinnedIds(before: KitchenState, after: KitchenState): ItemKey[] {
+  return Object.keys(after.cabinets ?? {}).filter((k) => !before.cabinets?.[k as keyof NonNullable<KitchenState['cabinets']>]) as ItemKey[]
+}
+
+/** Следующая стена для «На другую стену» (A → B → C → A, куда предмету можно); null — некуда. */
+export function nextWallId(shape: Shape, from: WallId, key: ItemKey): WallId | null {
+  const walls = wallsOf(shape).filter((w) => allowedOn(w, key))
+  if (walls.length < 2) return null
+  return walls[(walls.indexOf(from) + 1) % walls.length]
+}
+
+/**
+ * «На другую стену» — то же правило, что перетаскивание (P1): автошкафы обеих
+ * стен закрепляются (`pinWalls`), место на стене `wall` ищется через постановку
+ * (`placeWith`, как `placeAt`): сначала пустые места, потом ряд с шагом 5 см
+ * от середины к краям. Соседи молча не сужаются: не встало — состояние
+ * прежнее, `fit` (`ok=false`, `need`, `narrow`) — попытка с наименьшей нехваткой.
+ */
+export function moveToWall(state: KitchenState, key: ItemKey, wall: WallId, planner: Planner): Placed {
+  const p0 = planner(state, [])
+  const cur = itemPositions(p0)[key]
+  const run = p0.runs.find((r) => r.id === wall)
+  if (!cur || !run) return { state, fit: null }
+  const pinned = pinWalls(state, p0, [cur.wall, wall])
+  const soft = pinnedIds(state, pinned)
+  const p1 = pinned === state ? p0 : planner(pinned, [])
+  const row = cur.row ?? 'base'
+  const mid = run.length / 2
+  const scan: number[] = []
+  for (let c = cur.w / 2; c <= run.length - cur.w / 2 + 0.01; c += 5) scan.push(c)
+  scan.sort((a, b) => Math.abs(a - mid) - Math.abs(b - mid))
+  const gaps = (run.gaps ?? []).filter((g) => g.row === row).map((g) => moduleCenter(run, g))
+  let best: Fit | null = null
+  // лучшая неудача — та, где есть кого сузить, и с наименьшей нехваткой
+  const rank = (f: Fit) => (f.narrow ? 0 : 10000) + f.need
+  const worse = (f: Fit | null): f is Fit => Boolean(f && !f.ok && (!best || rank(f) < rank(best)))
+  // сначала свободные места (соседи прежние), потом — где уступят мягкие соседи (P1)
+  for (const pass of [[], soft]) {
+    const tried = new Set<number>()
+    for (const c of [...gaps, ...scan]) {
+      const f = fitOn(p1, key, wall, c, { row, soft: pass })
+      if (!f) continue
+      if (!f.ok) {
+        if (worse(f)) best = f
+        continue
+      }
+      if (tried.has(f.center)) continue
+      tried.add(f.center)
+      const r = placeWith(pinned, p1, key, wall, f.center, planner, { soft: pass })
+      if (r.fit?.ok) return r
+      if (worse(r.fit)) best = r.fit
+    }
+  }
+  return { state, fit: best ?? fitOn(p1, key, wall, mid, { row }) }
 }
 
 /** Кого сузить и на сколько, чтобы `key` встал в `cm` на стене `wall`; null — встаёт и так или сузить некого. */
@@ -1722,6 +1889,34 @@ export function addAt(state: KitchenState, wall: WallId, cm: number, kind: AddKi
   }
   const placed = placeAt(state, kind, wall, target, planner)
   return placed.fit?.ok ? { state: placed.state, key: kind } : { state, key: null, fit: placed.fit }
+}
+
+/**
+ * Меню «+» (P1): ширина, которая встанет от `addAt` в этой точке, см — по готовому плану
+ * (`fitOn`, без постановки); `null` — не встанет или ширины у пункта нет (`fill`).
+ */
+export function addWidth(state: KitchenState, plan: Plan, wall: WallId, cm: number, kind: AddKind): number | null {
+  const run = plan.runs.find((r) => r.id === wall)
+  if (!run || kind === 'fill') return null
+  const hit = (run.gaps ?? []).find((g) => g.row === 'base' && Math.abs(moduleCenter(run, g) - cm) <= g.w / 2)
+  if (kind === 'strip') return hit ? hit.w : null
+  const pos = itemPositions(plan)
+  let key: ItemKey
+  let w: number | undefined
+  if (kind === 'doors' || kind === 'drawers') {
+    key = nextId('k', state.cabinets)
+    w = sizedWidth('cabinet', hit ? hit.w : 60)
+  } else if (kind === 'pantry') {
+    const pk = pos.pantry ? 'pantry2' : 'pantry'
+    if (pos[pk]) return null
+    key = pk
+    w = sizedWidth(pk, state.widths?.[pk] ?? PANTRY_W)
+  } else {
+    key = kind
+    w = pos[kind]?.w
+  }
+  const f = w === undefined ? null : fitOn(plan, key, wall, hit ? moduleCenter(run, hit) : cm, { w, row: 'base' })
+  return f?.ok ? Math.round(f.w * 2) / 2 : null
 }
 
 /**

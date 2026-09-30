@@ -13,7 +13,7 @@ import live from '../__tests__/fixtures/kitchen-live-appliances.json'
  * Запуск: `PW_BASE_URL=http://localhost:3001 npx playwright test e2e/kitchen-acceptance.spec.ts`
  * (памятка — docs/KITCHEN_E2E_UZ.md).
  */
-import { CORNER, centerOf, drag3d, dragPlan, fire, goStep, lastDrag, place, planKeys, pointOf, ready, rect, selected, showPlan, stacked, tap3d, tapPlan, type Place, type Pt } from './kp'
+import { CORNER, MARBLE, centerOf, drag3d, dragPlan, fire, goStep, lastDrag, place, planKeys, pointOf, ready, rect, selected, showPlan, stacked, tap3d, tapPlan, type Place, type Pt } from './kp'
 
 /** Порог среднего кадра при вращении на слабом телефоне (CPU ×4): 33 мс = 30 к/с (спецификация, история 22 / R06). */
 const FRAME_MS = 33
@@ -94,16 +94,17 @@ test('черта 1 — план сверху рядом с 3D: SVG со стен
 })
 
 test('черта 2 — свободная постановка: пустое место живёт в адресе и на плане, после сдвига остаётся', async ({ page }) => {
-  await ready(page, 'f=straight&a=300&o=s_03040g_080h_220')
+  // мойка 0…60, пустое место 60…160, варочная 190…250 (P1: в закреплённые шкафы мойка не въезжает — едет по пустому)
+  await ready(page, 'f=straight&a=300&o=s_030100g_110h_220')
   await showPlan(page)
   await expect(page.locator('.kp-plan [data-key="g1"][data-row="gap"]')).toHaveCount(1)
   await expect(page.locator('.kp-plan [data-add="g1"]')).toHaveCount(1)
   const before = (await place(page, 'sink'))!
   await tapPlan(page, '.kp-plan [data-key="sink"]')
-  // мойка у угла (0…60) — уносим её на 120 см вправо: старое пустое место занято, а освобождённое у угла
+  // мойка у угла (0…60) — уносим её на 100 см вправо (100…160): старое пустое место занято, а освобождённое у угла
   // становится новым пустым местом — свободная постановка, без автозаполнения (спецификация §1)
   const box = (await page.locator('.kp-plan [data-key="sink"]').boundingBox())!
-  await dragPlan(page, '.kp-plan [data-key="sink"]', Math.round((box.width / before.w) * 120))
+  await dragPlan(page, '.kp-plan [data-key="sink"]', Math.round((box.width / before.w) * 100))
   const after = (await place(page, 'sink'))!
   // до 130: правее мойку не пускает столешница 30 см у варочной (HOB_SIDE)
   expect(after.center).toBeGreaterThanOrEqual(before.center + 90)
@@ -138,7 +139,8 @@ test('черта 3 — «+ из каталога»: меню на пустом �
 })
 
 test('черта 4 — шкаф идёт за пальцем: взяли у края, сдвиг равен пути пальца', async ({ page }) => {
-  await ready(page)
+  // справа от мойки пустое место 60…160 — есть куда ехать (P1)
+  await ready(page, 'f=straight&a=300&o=s_030100g_110h_220')
   await tap3d(page, await pointOf(page, 'sink'))
   expect(await selected(page)).toBe('sink')
   const before = (await place(page, 'sink'))!
@@ -149,6 +151,85 @@ test('черта 4 — шкаф идёт за пальцем: взяли у кр
   expect(after.wall).toBe('A')
   expect(Math.abs(after.center - (before.center + 40))).toBeLessThanOrEqual(2)
   expect(Math.abs(after.center - (last.cm - last.grab))).toBeLessThanOrEqual(2)
+})
+
+/**
+ * P1, сценарий критика: в `MARBLE` стена A — угловой 100, шкаф 82, мойка 60, шкаф 58. Мойку тянут
+ * на 30 см влево — в шкаф 82. Раньше 82 превращался в бутылочницу 21 и добор 1. Теперь мойка встаёт
+ * под палец, автошкаф уступает ровно 30 (82 → 52), угловой и 58 прежние, справа — пустое место 30.
+ */
+test('P1 — мойку на 30 см влево: встаёт под палец, сосед 82 → 52, прочие прежние', async ({ page }) => {
+  await ready(page, MARBLE)
+  await showPlan(page)
+  const widths = () =>
+    // первая рамка ячейки — сам модуль, с зазором 0,4 см с каждой стороны
+    page.locator('.kp-plan [data-wall="A"][data-row="base"]').evaluateAll((els) =>
+      els
+        .map((g) => g.querySelector('rect')!)
+        .map((e) => ({ x: Number(e.getAttribute('x')), w: Number(e.getAttribute('width')) }))
+        .sort((a, b) => a.x - b.x)
+        .map((r) => Math.round(r.w + 0.8)),
+    )
+  const before = await widths()
+  expect(before).toEqual([100, 82, 60, 58])
+  const sink = (await place(page, 'sink'))!
+  await tapPlan(page, '.kp-plan [data-key="sink"]')
+  await expect(page.locator('.kp-plan .is-sel')).toHaveAttribute('data-key', 'sink')
+  const px = (await page.locator('.kp-plan [data-key="sink"] rect').first().boundingBox())!.width / sink.w
+  // тянем руками: во время жеста предпросмотр есть, после отпускания — нет
+  const p = await centerOf(page, '.kp-plan [data-key="sink"]')
+  const dx = -Math.round(30 * px)
+  await fire(page, '.kp-plan [data-key="sink"]', 'pointerdown', p)
+  for (let i = 1; i <= 6; i++) {
+    await page.waitForTimeout(25)
+    await fire(page, '.kp-plan svg', 'pointermove', { x: p.x + (dx * i) / 6, y: p.y })
+  }
+  await expect(page.locator('.kp-plan [data-preview]')).toHaveCount(1)
+  await fire(page, '.kp-plan svg', 'pointerup', { x: p.x + dx, y: p.y })
+  await expect(page.locator('.kp-plan [data-preview]')).toHaveCount(0)
+  const after = (await place(page, 'sink'))!
+  expect(after.wall).toBe('A')
+  expect(Math.abs(after.center - (sink.center - 30))).toBeLessThanOrEqual(1)
+  // сосед уступил ровно на сдвиг мойки (82 → ~52, пиксель пальца — ±1 см), угловой и 58 прежние
+  const shift = sink.center - after.center
+  expect(await widths()).toEqual([100, 82 - shift, 60, 58])
+  await expect(page.locator('.kp-plan [data-wall="A"][data-row="gap"]')).toHaveCount(1)
+})
+
+test('P1 — план во время жеста: ярлыки «до соседа» не наезжают на ширины шкафов, числа с запятой', async ({ page }) => {
+  // мойка 0…60, пустое место 60…160: тянем на 40 см вправо — слева 40, справа 60 до столешницы варочной
+  await ready(page, 'f=straight&a=300&o=s_030100g_110h_220')
+  await showPlan(page)
+  const sink = (await place(page, 'sink'))!
+  await tapPlan(page, '.kp-plan [data-key="sink"]')
+  await expect(page.locator('.kp-plan .is-sel')).toHaveAttribute('data-key', 'sink')
+  const px = (await page.locator('.kp-plan [data-key="sink"] rect').first().boundingBox())!.width / sink.w
+  const p = await centerOf(page, '.kp-plan [data-key="sink"]')
+  const dx = Math.round(40 * px)
+  await fire(page, '.kp-plan [data-key="sink"]', 'pointerdown', p)
+  for (let i = 1; i <= 6; i++) {
+    await page.waitForTimeout(25)
+    await fire(page, '.kp-plan svg', 'pointermove', { x: p.x + (dx * i) / 6, y: p.y })
+  }
+  await expect(page.locator('.kp-plan [data-preview="ok"]')).toHaveCount(1)
+  // ярлыки «до соседа» не наезжают на ширины шкафов, числа — с запятой («56,5 см»)
+  const boxes = await page.evaluate(() => {
+    const of = (sel: string) =>
+      [...document.querySelectorAll(sel)].map((e) => {
+        const b = e.getBoundingClientRect()
+        return { x0: b.left, y0: b.top, x1: b.right, y1: b.bottom, text: e.textContent ?? '' }
+      })
+    return { drag: of('.kp-plan .kp-plan__drag'), widths: of('.kp-plan .kp-plan__w') }
+  })
+  expect(boxes.drag.length).toBeGreaterThan(0)
+  for (const d of boxes.drag) {
+    expect(d.text).toMatch(/^\d+(,\d)? см$/)
+    for (const w of boxes.widths) expect(d.x1 <= w.x0 || w.x1 <= d.x0 || d.y1 <= w.y0 || w.y1 <= d.y0).toBe(true)
+  }
+  await fire(page, '.kp-plan svg', 'pointerup', { x: p.x + dx, y: p.y })
+  // жест кончился — ширины шкафов снова на месте
+  await expect(page.locator('.kp-plan [data-preview]')).toHaveCount(0)
+  await expect(page.locator('.kp-plan .kp-plan__w').first()).toBeVisible()
 })
 
 test('черта 5 — одно правило жестов в 3D и на плане: тап выбирает, тянуть невыбранный — крутить/листать, второй палец отменяет', async ({ page }) => {

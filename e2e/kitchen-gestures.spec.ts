@@ -21,6 +21,10 @@ test('тап выбирает; тянуть невыбранный — не пе
   expect(await selected(page)).toBe('sink')
 })
 
+/**
+ * Стартовая кухня (угловая 300 × 240): мойка 182…242, справа автошкаф 58. Палец на 40 см вправо —
+ * мойка встаёт под палец, автошкаф уступает ровно на нехватку (P1, мягкие соседи).
+ */
 test('выбранный идёт за пальцем с точкой захвата: взяли у края — сдвиг равен пути пальца', async ({ page }) => {
   await ready(page)
   await tap3d(page, await pointOf(page, 'sink'))
@@ -46,31 +50,35 @@ test('второй палец отменяет перетаскивание — 
 })
 
 /**
- * Кухня переноса задана адресом явно (C2, 18): угловая, стена A 300 см, стена B 240 см;
- * мойка уже у правого конца A (`s_270` — середина 270, занимает 240…300), варочная на B (`h_150`).
- * На A угол 0…100 занят угловым модулем — свободно 100…240. Варочной 60 см нужна столешница
- * по 30 см с обеих сторон (HOB_SIDE): середина 160 → панель 130…190, столешница 100…130 ровно
- * до углового; середина 170 → панель 140…200, у угла остаётся обрезок 100…110 (10 см) — уже
- * самого узкого шкафа 15 см, туда ничего не встанет. Сузить мойку этот обрезок не уберёт.
+ * Кухня переноса задана адресом явно (C2, 18; P1): угловая, стена A 300 см, стена B 240 см;
+ * мойка у правого конца A (`s_270`, 240…300), варочная на B (`h_150`). На A угол 0…100.
+ * `MOVE` — как со старта: 100…240 заняты автошкафами 70 + 70. Они мягкие (P1): варочная в 160
+ * (панель 130…190, столешница 100…220) встаёт, первый уходит, второй уступает до 20.
+ * `MOVE_FREE` — 100…240 пустое место: встаёт так же, остаток пустого места 220…240.
  */
 const MOVE = 'f=corner&a=300&b=240&o=dwtpqfs_270.h_150v'
+const MOVE_FREE = 'f=corner&a=300&b=240&o=dwtpqf140g_170s_270.h_150v'
 
-test('перенос на другую стену: варочная с B на A; в 170 — обрезок у угла, «не помещается» без «Сузить»; в 160 встаёт', async ({ page }) => {
+test('перенос на другую стену: варочная с B на A из автошкафов (как со старта) — встаёт в 160, мойка на месте', async ({ page }) => {
   await ready(page, MOVE)
   expect(await place(page, 'sink')).toMatchObject({ wall: 'A', center: 270 })
   expect(await place(page, 'hob')).toMatchObject({ wall: 'B', center: 150 })
   await tap3d(page, await pointOf(page, 'hob'))
   expect(await selected(page)).toBe('hob')
-  await drag3d(page, await pointOf(page, 'hob'), await wallPoint(page, 'A', 170))
-  expect((await lastDrag(page))!).toMatchObject({
-    phase: 'end',
-    key: 'hob',
-    wall: 'A',
-  })
-  expect((await place(page, 'hob'))!.wall).toBe('B')
-  const toast = page.locator('.kp-toast')
-  await expect(toast).toContainText('Не помещается: на стене нет места')
-  await expect(toast.getByRole('button')).toHaveCount(0)
+  await drag3d(page, await pointOf(page, 'hob'), await wallPoint(page, 'A', 160))
+  expect((await lastDrag(page))!).toMatchObject({ phase: 'end', key: 'hob', wall: 'A' })
+  const hob = (await place(page, 'hob'))!
+  expect(hob.wall).toBe('A')
+  expect(Math.abs(hob.center - 160)).toBeLessThanOrEqual(1)
+  expect(await place(page, 'sink')).toMatchObject({ wall: 'A', center: 270 })
+  await expect(page.locator('.kp-toast')).toHaveCount(0)
+})
+
+test('перенос на другую стену: варочная с B в пустое место A — встаёт в 160', async ({ page }) => {
+  await ready(page, MOVE_FREE)
+  expect(await place(page, 'hob')).toMatchObject({ wall: 'B', center: 150 })
+  await tap3d(page, await pointOf(page, 'hob'))
+  expect(await selected(page)).toBe('hob')
   await drag3d(page, await pointOf(page, 'hob'), await wallPoint(page, 'A', 160))
   const hob = (await place(page, 'hob'))!
   expect(hob.wall).toBe('A')

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { addPicked, chainOf, hitRun, pickInto, planCells, planFrame, rectOf, resetForShape } from '@/components/kitchen/planGeom'
+import { addPicked, chainOf, plusTarget, hitRun, pickInto, planCells, planFrame, rectOf, resetForShape } from '@/components/kitchen/planGeom'
 import { DEPTH, itemPositions, minA, moduleCenter, planKitchen, runCm, runX, type Plan, type PlanInput, type Planner, type Run } from '@/lib/kitchen/layout'
 import { planInputOf } from '@/lib/kitchen/order'
-import { DEFAULT_STATE } from '@/lib/kitchen/share'
+import { DEFAULT_STATE, stateFromQuery } from '@/lib/kitchen/share'
 import type { KitchenAppliance, KitchenState } from '@/lib/kitchen/types'
 
 /**
@@ -212,3 +212,28 @@ describe('rectOf и planFrame на повёрнутых рядах (концер
     expect(plan.window).not.toBeNull()
   })
 })
+
+/**
+ * P1: нижняя «+» (без цели) не отвечает «пустого места нет», когда на плане виден проём со своим «+»:
+ * цель — сам проём (рядом с выбранным, иначе ближайший); проёмов нет — точка справа от выбранного / середина A.
+ */
+describe('нижняя «+» ведёт к проёму (P1)', () => {
+  const planOf = (q: string) => planKitchen(planInputOf(stateFromQuery(new URLSearchParams(q), new Map()), {}), opts)
+
+  it('проём 60…100 на A, ничего не выбрано — цель проём g1 (середина 80), а не середина стены', () => {
+    const p = planOf('f=straight&a=300&o=s_03040g_080h_220')
+    expect(plusTarget(p, null)).toEqual({ wall: 'A', cm: 80, gap: 'g1' })
+  })
+
+  it('выбран предмет далеко от проёма — всё равно проём той же стены', () => {
+    const p = planOf('f=straight&a=300&o=s_03040g_080h_220')
+    const hobAt = itemPositions(p).hob!
+    expect(plusTarget(p, hobAt)).toEqual({ wall: 'A', cm: 80, gap: 'g1' })
+  })
+
+  it('проёмов нет — середина стены A без цели-проёма', () => {
+    const p = planOf('f=straight&a=300')
+    expect(plusTarget(p, null)).toEqual({ wall: 'A', cm: 150, gap: null })
+  })
+})
+

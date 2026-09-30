@@ -28,8 +28,9 @@ export type Preview = {
  * магнит 6 см к концам стены и краям соседей, в плане (`opposite`) — ещё к
  * краям противоположного ряда. null — модуля нет в раскладке или нет такой стены.
  */
-export function previewMove(plan: Plan, key: ItemKey, wall: WallId, cm: number, grab: number, opts: { opposite?: boolean } = {}): Preview | null {
-  const fit = fitOn(plan, key, wall, cm - grab, { opposite: opts.opposite })
+export function previewMove(plan: Plan, key: ItemKey, wall: WallId, cm: number, grab: number, opts: { opposite?: boolean; soft?: ItemKey[] } = {}): Preview | null {
+  // soft — мягкие соседи жеста (P1): предпросмотр и постановка считают по одному правилу
+  const fit = fitOn(plan, key, wall, cm - grab, { opposite: opts.opposite, soft: opts.soft })
   if (!fit) return null
   const half = fit.w / 2
   const r1 = (v: number) => Math.round(Math.max(0, v) * 10) / 10

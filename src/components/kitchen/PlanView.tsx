@@ -65,7 +65,8 @@ type Down = {
 }
 type Pinch = { d0: number; k0: number; w0: { x: number; y: number } }
 
-const fmt = (v: number) => String(Math.round(v * 10) / 10)
+/** Числа плана — с запятой, как всё на сайте («56,5»). */
+const fmt = (v: number) => String(Math.round(v * 10) / 10).replace('.', ',')
 
 export function PlanView({ plan, selected, preview, onPick, onDrag, onAdd, labels, facade, names, cm, addLabel, ariaLabel, className }: PlanViewProps) {
   const hostRef = useRef<HTMLDivElement>(null)
@@ -375,7 +376,8 @@ export function PlanView({ plan, selected, preview, onPick, onDrag, onAdd, label
     }
     const tech = c.kind === 'fridge' || c.kind === 'dishwasher' || c.kind === 'washer' || c.kind === 'oven' || c.kind === 'tall' || c.kind === 'pantry'
     const fill = tech ? 'var(--kp-sk-tech)' : c.kind === 'sink' ? 'var(--kp-sk-sink)' : c.kind === 'hob' ? 'var(--kp-sk-hob)' : c.kind === 'filler' ? 'var(--kp-sk-filler)' : facade ?? 'var(--kp-sk-cab)'
-    const label = c.kind === 'sink' ? names.sink : c.kind === 'hob' ? names.hob : tech ? names[c.kind as keyof PlanNames] : c.w >= 25 ? fmt(c.w) : ''
+    // ширины шкафов прячутся, пока идёт жест: ярлыки «до соседа» ложатся в тот же ряд (P1)
+    const label = c.kind === 'sink' ? names.sink : c.kind === 'hob' ? names.hob : tech ? names[c.kind as keyof PlanNames] : c.w >= 25 && !preview ? fmt(c.w) : ''
     const cap = label && r.w >= 1.4 * fs && r.h >= 1.4 * fs
     return (
       <g key={`${c.wall}:${c.row}:${c.key}`} data-key={c.pick ? c.key : undefined} data-wall={c.wall} data-row="base" className={cls}>

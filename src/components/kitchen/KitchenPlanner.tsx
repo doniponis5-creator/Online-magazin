@@ -50,8 +50,12 @@ import {
   resizeWalls,
   squeezeGaps,
   type Fit,
-  nextWall,
+  addWidth,
+  moveToWall,
+  nextWallId,
   pinCabinet,
+  pinnedIds,
+  pinWalls,
   planKitchen,
   type Planner,
   resolveArrangement,
@@ -69,7 +73,7 @@ import {
 } from '@/lib/kitchen/layout'
 import { previewMove, type Preview } from '@/lib/kitchen/drag'
 import { PlanView, type PlanTarget } from './PlanView'
-import { pickInto, resetForShape } from './planGeom'
+import { pickInto, plusTarget, resetForShape } from './planGeom'
 import { cartAdditions, chosenItems, CORE_SLOTS, frontsText, planInputOf, projectItems, projectTotal, wallsText, whatsappText, type ItemStatus } from '@/lib/kitchen/order'
 import { DEFAULT_STATE, loadLast, queryFromState, saveLast, stateFromQuery } from '@/lib/kitchen/share'
 import { cutList, extraList, frontList, hardware, modulesOf, topList, type SpecData } from '@/lib/kitchen/spec'
@@ -112,6 +116,9 @@ import type { TierName } from './three/quality'
 import type { Photo } from './three/photo'
 import './kitchen.css'
 
+/** Верх стены не закрепляем: для него «уже закреплены» все стены (P1, pinnedOn). */
+const NO_PIN: WallId[] = ['A', 'B', 'C', 'I']
+
 /** Четыре шага (спецификация §6): «Кухня» = форма + размер, «Техника», «Стиль» = стили + цвет + отделка, «Итог» = проверка, сумма, корзина, мастер, варианты. */
 type Step = 'kitchen' | 'tech' | 'style' | 'total'
 const STEPS: Step[] = ['kitchen', 'tech', 'style', 'total']
@@ -141,7 +148,11 @@ const HINT_SEEN = 'kp-hint-seen'
 type MoveSel = { key: ItemKey } | { cab: CabInfo; w: number; wall: WallId; center: number }
 
 /** Меню «+» на сцене: куда ставить (пустое место или точка ряда), где показать (px от угла сцены); failed — не поместилось, предлагаем сузить соседей или другую стену. */
-type AddMenu = { target: PlanTarget; x: number; y: number; failed?: AddKind; narrow?: Narrow | null }
+/** Пункты меню «+» по порядку; `tech` — шаг «Техника». */
+const ADD_ITEMS = ['doors', 'drawers', 'pantry', 'tech', 'strip', 'fill'] as const
+type AddItem = (typeof ADD_ITEMS)[number]
+/** Меню «+»: `widths` — что встанет в каждом пункте, см (P1); `gapW` — ширина проёма-цели; `need` — нехватка неудачной постановки. */
+type AddMenu = { target: PlanTarget; x: number; y: number; failed?: AddKind; narrow?: Narrow | null; need?: number; widths?: Partial<Record<AddItem, number | null>>; gapW?: number }
 /** Ширина ≥ 1220 px: план — колонка слева от 3D, обе живые; уже — переключатель «3D · План». */
 const PLAN_COL = '(min-width: 1220px) and (min-height: 521px)'
 
@@ -751,14 +762,31 @@ export function KitchenPlanner({
   /* ───────── перетаскивание: одна связка для 3D и плана (контракт onDrag в interfaces.md) ───────── */
 
   /** С чего начали тащить: ключ модели и состояние, где модуль уже можно ставить placeAt (автошкаф — уже свой kN, верх стены — уже ручной). */
-  type DragBase = { key: ItemKey; state: KitchenState; plan: Plan; cab: CabInfo | null }
+  type DragBase = { key: ItemKey; state: KitchenState; plan: Plan; cab: CabInfo | null; walls: WallId[]; soft: ItemKey[] }
   const dragRef = useRef<DragBase | null>(null)
   /** подписи «до угла / до соседа» в движении, см — HTML-метки drag:left / drag:right */
   const [dragLabels, setDragLabels] = useState<{ left: number; right: number } | null>(null)
 
   /** Ключ сцены (sink, k1, A120, a120) → ключ модели и состояние на старте. Картинка от перевода не меняется. */
   const dragBaseFor = (raw: string): DragBase | null => {
-    if (positions[raw as ItemKey]) return { key: raw as ItemKey, state, plan, cab: null }
+    const start = dragStart(raw)
+    return start && pinnedOn(start, positions[start.key]?.wall ?? itemPositions(start.plan)[start.key]?.wall)
+  }
+
+  /**
+   * P1: автошкафы низа стены закрепляются (`pinWalls`) — соседи сохраняют вид и ширину,
+   * меняются только пустые места. Стена откуда — на старте, стена куда — при первом заходе
+   * на неё (предпросмотр и постановка считают по тому же плану). Верх не трогаем.
+   */
+  const pinnedOn = (d: DragBase, wall: WallId | undefined): DragBase => {
+    if (!wall || d.walls.includes(wall)) return d
+    const next = pinWalls(d.state, d.plan, [wall])
+    // закреплённые автошкафы — мягкие: не помещается под пальцем — уступают (свои шкафы покупателя — «Сузить»)
+    return next === d.state ? { ...d, walls: [...d.walls, wall] } : { ...d, state: next, plan: trial(next), walls: [...d.walls, wall], soft: [...d.soft, ...pinnedIds(d.state, next)] }
+  }
+
+  const dragStart = (raw: string): DragBase | null => {
+    if (positions[raw as ItemKey]) return { key: raw as ItemKey, state, plan, cab: null, walls: positions[raw as ItemKey]?.row === 'upper' ? NO_PIN : [], soft: [] }
     const sk = parseSceneKey(raw)
     const run = sk && plan.runs.find((r) => r.id === sk.wall)
     if (!sk || !run) return null
@@ -774,7 +802,7 @@ export function KitchenPlanner({
       const fronts = { ...state.fronts }
       delete fronts[raw]
       const next: KitchenState = { ...state, arrangement: pinned.order, cabinets: pinned.cabinets as KitchenState['cabinets'], fronts: nonEmpty(fronts), at: { ...frozen([]), [pinned.id]: center } }
-      return { key: pinned.id, state: next, plan: trial(next), cab: { key: pinned.id, row: 'base', variant: front } }
+      return { key: pinned.id, state: next, plan: trial(next), cab: { key: pinned.id, row: 'base', variant: front }, walls: [], soft: [] }
     }
     // верхний автошкаф: верх стены становится ручным (detachUppers), шкаф — uN с той же серединой
     const u = run.uppers.find((up) => Math.round(up.x) === x)
@@ -783,7 +811,7 @@ export function KitchenPlanner({
     const p = trial(next)
     const c = moduleCenter(run, u)
     const key = (Object.entries(itemPositions(p)) as [ItemKey, ItemPlace][]).find(([k, pl]) => isUpperCab(k) && pl.wall === wall && pl.row === 'upper' && Math.abs(pl.center - c) < 0.6)?.[0]
-    return key ? { key, state: next, plan: p, cab: { key: raw, row: 'upper', variant: (state.fronts?.[raw] as CabInfo['variant'] | undefined) ?? 'doors' } } : null
+    return key ? { key, state: next, plan: p, cab: { key: raw, row: 'upper', variant: (state.fronts?.[raw] as CabInfo['variant'] | undefined) ?? 'doors' }, walls: NO_PIN, soft: [] } : null
   }
 
   /**
@@ -829,11 +857,13 @@ export function KitchenPlanner({
       dragRef.current = dragBaseFor(raw)
       return
     }
-    const d = dragRef.current
-    if (!d) return
+    const d0 = dragRef.current
+    if (!d0) return
+    const d = phase === 'cancel' ? d0 : pinnedOn(d0, wall)
+    if (d !== d0) dragRef.current = d
     if (phase === 'move') {
       // предпросмотр — из drag.previewMove; движок и план только рисуют
-      const pv = previewMove(d.plan, d.key, wall, cm, grab, { opposite: from === 'plan' })
+      const pv = previewMove(d.plan, d.key, wall, cm, grab, { opposite: from === 'plan', soft: d.soft })
       engine?.setPreview(pv)
       if (planShownRef.current) setPreview(pv)
       setDragLabels((prev) => (!pv ? null : prev && prev.left === pv.labels.left && prev.right === pv.labels.right ? prev : pv.labels))
@@ -843,7 +873,7 @@ export function KitchenPlanner({
     setDragLabels(null)
     setPreview(null)
     if (phase === 'cancel') return
-    const placed = placeAt(d.state, d.key, wall, cm, trial, grab)
+    const placed = placeAt(d.state, d.key, wall, cm, trial, grab, { soft: d.soft })
     if (placed.fit?.ok) {
       commitPlaced(d, placed.state, placed.fit, wall)
       return
@@ -852,7 +882,7 @@ export function KitchenPlanner({
     engine?.revertDrag()
     const narrow = narrowFor(d.plan, d.key, wall, cm - grab) ?? placed.fit?.narrow ?? null
     const narrowedState = narrow ? narrowed(d.state, narrow.neighbour, narrow.by, d.plan, cm - grab) : null
-    const again = narrow && narrowedState ? placeAt(narrowedState, d.key, wall, cm, trial, grab) : null
+    const again = narrow && narrowedState ? placeAt(narrowedState, d.key, wall, cm, trial, grab, { soft: d.soft }) : null
     if (!narrow || !again?.fit?.ok) {
       setToast(t.noRoom)
       return
@@ -883,17 +913,13 @@ export function KitchenPlanner({
     const r = stageRef.current?.getBoundingClientRect()
     const x = r ? Math.max(8, Math.min(at.x - r.left, r.width - 248)) : 8
     const y = r ? Math.max(8, Math.min(at.y - r.top, r.height - 300)) : 8
-    let tg = target
-    if (!tg) {
-      const sel = grabKey ? positions[grabKey as ItemKey] : undefined
-      const wall: WallId = sel?.wall ?? 'A'
-      const run = plan.runs.find((rr) => rr.id === wall)
-      const len = run?.length ?? 0
-      const cm = sel ? Math.min(len, sel.center + sel.w / 2 + 30) : len / 2
-      const gap = run?.gaps?.find((g) => g.row === 'base' && Math.abs(moduleCenter(run, g) - cm) <= g.w / 2)
-      tg = { wall, cm, gap: gap?.item ?? null }
-    }
-    setAdd({ target: tg, x, y })
+    // нижняя «+» без точки: виден проём со своим «+» — ведёт к нему (P1), иначе справа от выбранного / середина A
+    const tg = target ?? plusTarget(plan, grabKey ? positions[grabKey as ItemKey] : null)
+    const run = plan.runs.find((rr) => rr.id === tg.wall)
+    const gapW = tg.gap ? run?.gaps?.find((g) => g.item === tg.gap)?.w : undefined
+    const kinds = ADD_ITEMS.filter((k): k is Exclude<AddItem, 'tech'> => k !== 'tech' && (Boolean(tg.gap) || (k !== 'strip' && k !== 'fill')))
+    const widths = Object.fromEntries(kinds.map((k) => [k, addWidth(state, plan, tg.wall, tg.cm, k)]))
+    setAdd({ target: tg, x, y, widths, gapW })
   }
 
   /** Поставлено: история, выбор — на новом. */
@@ -924,7 +950,7 @@ export function KitchenPlanner({
     if (res.key || res.state !== state) return commitAdd(res.state, res.key)
     if (kind === 'fill' || kind === 'strip') return setAdd(null)
     // не поместилось — сузить соседей или на другую стену
-    setAdd({ ...menu, failed: kind, narrow: res.fit?.narrow ?? null })
+    setAdd({ ...menu, failed: kind, narrow: res.fit?.narrow ?? null, need: res.fit?.need })
   }
 
   /** Сузить соседей: кого и на сколько — из `fit` неудачной постановки (addAt), ширину заново не считаем. */
@@ -1559,13 +1585,21 @@ export function KitchenPlanner({
     if (!moving) stopRepeat()
   }, [moving])
 
+  /** «На другую стену» — то же правило, что перетаскивание (P1): moveToWall ищет место через placeAt; не встало — тот же тост с «Сузить», соседи молча не сужаются. */
   const toOtherWall = () => {
     if (!moving) return
-    if ('key' in moving) {
-      const rest = { ...state.at }
-      delete rest[moving.key]
-      apply({ arrangement: nextWall(order, moving.key, state.shape), at: nonEmpty(rest) })
-    } else commitPinned(moving, { act: (o, id) => nextWall(o, id, state.shape) })
+    const d0 = dragBaseFor('key' in moving ? moving.key : moving.cab.key)
+    const from = d0 && itemPositions(d0.plan)[d0.key]
+    const to = d0 && from ? nextWallId(state.shape, from.wall, d0.key) : null
+    if (!d0 || !to) return
+    const d = pinnedOn(d0, to)
+    const placed = moveToWall(d.state, d.key, to, trial)
+    if (placed.fit?.ok) return commitPlaced(d, placed.state, placed.fit, to)
+    const narrow = placed.fit?.narrow ?? null
+    const narrowedState = narrow && placed.fit ? narrowed(d.state, narrow.neighbour, narrow.by, d.plan, placed.fit.center) : null
+    const again = narrow && narrowedState ? moveToWall(narrowedState, d.key, to, trial) : null
+    if (!narrow || !again?.fit?.ok) return setToast(t.noRoom)
+    setNote({ text: t.noRoomNarrow(nameOfKey(narrow.neighbour), narrow.by), act: { label: t.narrowAct, run: () => commitPlaced(d, again.state, again.fit!, to) } })
   }
 
   /* ───────── ширина ───────── */
@@ -2887,7 +2921,9 @@ export function KitchenPlanner({
           )}
           {add && (
             <div className="kp-add" role="menu" aria-label={t.plus.title} style={{ '--kp-add-x': `${add.x}px`, '--kp-add-y': `${add.y}px` } as React.CSSProperties} ref={addRef}>
-              <span className="kp-add__title">{add.failed ? t.plus.noGap : t.plus.title}</span>
+              <span className="kp-add__title">
+                {add.failed ? (add.target.gap && add.need ? t.plus.noFit(add.need) : t.plus.noGap) : add.gapW ? `${t.plus.title} · ${t.plus.gap(fmt(add.gapW))}` : t.plus.title}
+              </span>
               {add.failed ? (
                 <>
                   <button type="button" role="menuitem" className="kp-add__btn" onClick={() => addNarrow(add)}>
@@ -2898,13 +2934,20 @@ export function KitchenPlanner({
                   </button>
                 </>
               ) : (
-                (['doors', 'drawers', 'pantry', 'tech', 'strip', 'fill'] as const)
-                  .filter((k) => add.target.gap || (k !== 'strip' && k !== 'fill'))
-                  .map((k) => (
-                    <button key={k} type="button" role="menuitem" className="kp-add__btn" data-add-kind={k} onClick={() => addFrom(add, k)}>
-                      {t.plus[k]}
+                ADD_ITEMS.filter((k) => add.target.gap || (k !== 'strip' && k !== 'fill')).map((k) => {
+                  const w = add.widths?.[k]
+                  return (
+                    <button key={k} type="button" role="menuitem" className="kp-add__btn" data-add-kind={k} data-add-w={w ?? undefined} onClick={() => addFrom(add, k)}>
+                      <AddIcon kind={k} />
+                      <span className="kp-add__name">{t.plus[k]}</span>
+                      {w != null && (
+                        <span className="kp-add__w">
+                          {fmt(w)} {t.cm}
+                        </span>
+                      )}
                     </button>
-                  ))
+                  )
+                })
               )}
               <button type="button" className="kp-add__close" aria-label={t.close} onClick={() => setAdd(null)}>
                 <IconClose />
@@ -5380,6 +5423,23 @@ function IconDots() {
   return (
     <svg {...iconProps}>
       <path d="M5.5 12h.01M12 12h.01M18.5 12h.01" {...stroke} strokeWidth={3.2} />
+    </svg>
+  )
+}
+
+/** Значок пункта меню «+» (P1): вид модуля спереди — дверцы, ящики, пенал, техника, планка, автозаполнение. */
+function AddIcon({ kind }: { kind: AddItem }) {
+  const d: Record<AddItem, string> = {
+    doors: 'M5 4h14v16H5zM12 4v16M10 11v2M14 11v2',
+    drawers: 'M5 4h14v16H5zM5 9.5h14M5 15h14M10.5 7h3M10.5 12.2h3M10.5 17.5h3',
+    pantry: 'M8 2.5h8v19H8zM8 10h8M13.5 5.5v2M13.5 13v3',
+    tech: 'M5 3.5h14v17H5zM5 7.5h14M12 14m-3.5 0a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0 -7 0',
+    strip: 'M10.5 3.5h3v17h-3zM4 12h4M16 12h4',
+    fill: 'M4 5h7v14H4zM13 5h7v6.5h-7zM13 13.5h7V19h-7z',
+  }
+  return (
+    <svg {...iconProps} className="kp-icon kp-add__icon">
+      <path d={d[kind]} {...stroke} />
     </svg>
   )
 }

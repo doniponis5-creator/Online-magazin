@@ -5038,6 +5038,9 @@ button.kp-opt__more {
 }
 
 .kp-add__btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   height: 44px;
   padding: 0 10px;
   border: 0;
@@ -5047,6 +5050,26 @@ button.kp-opt__more {
   color: var(--kp-ink);
   text-align: left;
   cursor: pointer;
+}
+
+.kp-add__icon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--kp-muted);
+}
+
+.kp-add__name {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ширина, которая встанет (P1) */
+.kp-add__w {
+  flex: none;
+  font: 600 13px/1 var(--font);
+  font-variant-numeric: tabular-nums;
+  color: var(--kp-muted);
 }
 
 @media (hover: hover) {

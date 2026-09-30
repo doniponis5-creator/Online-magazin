@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import { grabOf, previewMove } from '@/lib/kitchen/drag'
-import { addAt, detachUppers, itemPositions, narrowFor, needByWall, placeAt, planKitchen, resizeWalls, squeezeGaps, UPPER_MIN, type Plan, type PlanInput, type Planner } from '@/lib/kitchen/layout'
+import { addAt, addWidth, detachUppers, itemPositions, moveToWall, narrowFor, needByWall, pinnedIds, pinWalls, placeAt, planKitchen, resizeWalls, squeezeGaps, UPPER_MIN, type Plan, type PlanInput, type Planner } from '@/lib/kitchen/layout'
 import { droppedName } from '@/lib/kitchen/checks'
 import { kitchenTexts } from '@/components/kitchen/texts'
 import { planInputOf, projectItems, projectTotal } from '@/lib/kitchen/order'
 import { DEFAULT_STATE, queryFromState, stateFromQuery } from '@/lib/kitchen/share'
 import type { ItemKey, KitchenAppliance, KitchenState, WallId } from '@/lib/kitchen/types'
+import { readyKitchen } from '@/data/kitchen-ready'
+import { products } from '@/data/products'
+import { kitchenAppliances } from '@/lib/kitchen/catalog'
+import { chosenItems } from '@/lib/kitchen/order'
+import { getStyle } from '@/lib/kitchen/styles'
 
 /**
  * Модель расстановки — эволюция (спецификация §1, §2): пустое место `gN` —
@@ -448,3 +453,161 @@ describe('нехватка длины и неудачная постановка
     expect(addAt(tight, 'A', 65, 'fill', planner).fit).toBeUndefined()
   })
 })
+
+/**
+ * P1 (находка критика, e2e на локальном каталоге): в `corner-300x240-marble` стена A —
+ * угловой 100, автошкаф 82, мойка 60, автошкаф 58. Передвинул мойку — соседи
+ * остаются своего вида и ширины: пересечение → «не помещается» с «Сузить», а
+ * освобождённое место — пустое `gN`, не новый автошкаф.
+ */
+describe('перемещение: соседи не перестраиваются (P1)', () => {
+  const catalog = kitchenAppliances(products)
+  const known = new Map(catalog.map((a) => [a.id, a]))
+  const live: Planner = (s, snap) => planKitchen(planInputOf(s, chosenItems(s.picks, catalog), snap), { shelves: getStyle(s.style).shelves })
+  const marble = stateFromQuery(new URLSearchParams(readyKitchen('corner-300x240-marble')!.q), known)
+  const kinds = (p: Plan, skip: ItemKey[] = ['sink']) => A(p).modules.filter((m) => !m.item || !skip.includes(m.item)).map((m) => `${m.kind}:${Math.round(m.w * 10) / 10}`)
+  const upperCabs = (p: Plan) => A(p).uppers.filter((u) => u.kind === 'doors' || u.kind === 'shelf').length
+
+  it('закрепление автошкафов стены не меняет картинку: те же виды и ширины, те же середины', () => {
+    const p0 = live(marble, [])
+    expect(kinds(p0)).toEqual(['corner:100', 'doors:82', 'doors:58'])
+    const pinned = pinWalls(marble, p0, ['A'])
+    const p1 = live(pinned, [])
+    expect(kinds(p1)).toEqual(kinds(p0))
+    expect(A(p1).modules.filter((m) => m.kind === 'doors').every((m) => m.item?.startsWith('k'))).toBe(true)
+    expect(A(p1).uppers.map((u) => `${u.kind}:${u.x}:${u.w}`)).toEqual(A(p0).uppers.map((u) => `${u.kind}:${u.x}:${u.w}`))
+  })
+
+  it('мойка на 30 см влево или в конец стены: соседи молча не ужимаются — снап к краю соседа (домой), новых шкафов и пустых мест нет', () => {
+    const p0 = live(marble, [])
+    const pinned = pinWalls(marble, p0, ['A'])
+    for (const cm of [182, 270]) {
+      const { state, fit } = placeAt(pinned, 'sink', 'A', cm, live)
+      expect(fit).toMatchObject({ ok: true, center: 212, snap: 'neighbour' })
+      const p1 = live(state, [])
+      expect(kinds(p1)).toEqual(['corner:100', 'doors:82', 'doors:58'])
+      expect(A(p1).gaps ?? []).toEqual([])
+      expect(upperCabs(p1)).toBe(upperCabs(p0))
+    }
+  })
+
+  it('после «Сузить» 82 → 52: мойка встаёт, 58 и угловой те же, на освобождённом — пустое место 30, верх без новых шкафов', () => {
+    const p0 = live(marble, [])
+    const pinned = pinWalls(marble, p0, ['A'])
+    const k82 = (Object.entries(pinned.cabinets ?? {}) as [ItemKey, { w: number }][]).find(([, c]) => c.w === 82)![0]
+    const narrowed: KitchenState = { ...pinned, cabinets: { ...pinned.cabinets, [k82]: { ...pinned.cabinets![k82 as 'k1']!, w: 52 } }, at: { ...pinned.at, [k82]: 126 } }
+    const { state, fit } = placeAt(narrowed, 'sink', 'A', 182, live)
+    expect(fit?.ok).toBe(true)
+    const p1 = live(state, [])
+    expect(itemPositions(p1).sink).toEqual({ wall: 'A', center: 182, w: 60 })
+    expect(kinds(p1)).toEqual(['corner:100', 'doors:52', 'doors:58'])
+    expect(A(p1).gaps).toEqual([expect.objectContaining({ x: 212, w: 30, row: 'base' })])
+    expect(upperCabs(p1)).toBeLessThanOrEqual(upperCabs(p0))
+  })
+
+  it('«На другую стену» — через placeAt: занятая стена → fit.ok=false и «Сузить», состояние прежнее; есть пустое место — встаёт в него', () => {
+    // B 420 занята СВОИМИ шкафами покупателя (закреплены раньше) — они не уступают: мойка не встаёт, «Сузить» называет соседа
+    const long: KitchenState = { ...marble, b: 420 }
+    const own = pinWalls(long, live(long, []), ['B'])
+    const busy = moveToWall(own, 'sink', 'B', live)
+    expect(busy.fit?.ok).toBe(false)
+    expect(busy.fit?.narrow).toMatchObject({ by: expect.any(Number) })
+    expect(busy.state).toBe(own)
+    // B 240: сузить некого (шкафы по 60, у варочной столешница) — тоже не встаёт, без «Сузить»
+    const tight = moveToWall(marble, 'sink', 'B', live)
+    expect(tight.fit).toMatchObject({ ok: false, narrow: null })
+    expect(tight.state).toBe(marble)
+    // на B вместо первых ящиков — пустое место 60
+    const p0 = live(marble, [])
+    const onB = pinWalls(long, live(long, []), ['B'])
+    const B = (p: Plan) => p.runs.find((r) => r.id === 'B')!
+    const first = B(live(onB, [])).modules.find((m) => m.item?.startsWith('k') && m.w >= 60)!.item as ItemKey
+    const at: NonNullable<KitchenState['at']> = { ...onB.at, g1: onB.at![first]! }
+    delete at[first]
+    const cabinets = { ...onB.cabinets }
+    delete cabinets[first as 'k1']
+    const free: KitchenState = { ...onB, cabinets, gaps: { g1: { w: onB.cabinets![first as 'k1']!.w } }, at, arrangement: { ...onB.arrangement, B: onB.arrangement!.B!.map((k) => (k === first ? 'g1' : k)) } }
+    const pf = live(free, [])
+    const bFree = B(pf).gaps![0]
+    const { state, fit } = moveToWall(free, 'sink', 'B', live)
+    expect(fit?.ok).toBe(true)
+    const p1 = live(state, [])
+    expect(itemPositions(p1).sink).toMatchObject({ wall: 'B', w: 60 })
+    // встала в пустое место B, а не поверх соседей
+    const sx = B(p1).modules.find((m) => m.item === 'sink')!.x
+    expect(sx).toBeGreaterThanOrEqual(bFree.x - 0.5)
+    expect(sx + 60).toBeLessThanOrEqual(bFree.x + bFree.w + 0.5)
+    // на A на месте мойки — пустое место 60, соседи прежние
+    expect(kinds(p1)).toEqual(['corner:100', 'doors:82', 'doors:58'])
+    expect(A(p1).gaps).toEqual([expect.objectContaining({ w: 60 })])
+  })
+  it('мягкие соседи (дозапрос): мойка на 30 см влево встаёт под палец, автососед 82 уступает ровно 30 → 52, угловой и 58 прежние', () => {
+    const p0 = live(marble, [])
+    const pinned = pinWalls(marble, p0, ['A'])
+    const soft = pinnedIds(marble, pinned)
+    expect(soft).toHaveLength(2)
+    const { state, fit } = placeAt(pinned, 'sink', 'A', 182, live, 0, { soft })
+    expect(fit?.ok).toBe(true)
+    const p1 = live(state, [])
+    expect(itemPositions(p1).sink).toEqual({ wall: 'A', center: 182, w: 60 })
+    expect(kinds(p1)).toEqual(['corner:100', 'doors:52', 'doors:58'])
+    expect(A(p1).gaps).toEqual([expect.objectContaining({ x: 212, w: 30, row: 'base' })])
+    expect(upperCabs(p1)).toBeLessThanOrEqual(upperCabs(p0))
+  })
+
+  it('мягкие соседи: варочная с B на A стартовой кухни из автошкафов (70 + 70) встаёт в 160; ящики её бывшей зоны на B прежние', () => {
+    const s = stateFromQuery(new URLSearchParams('f=corner&a=300&b=240&o=dwtpqfs_270.h_150v'), known)
+    const p0 = live(s, [])
+    // как на старте жеста: автошкафы обеих стен (зону столешницы варочной закрепит сама постановка)
+    const pinned = pinWalls(s, p0, ['B', 'A'])
+    const soft = pinnedIds(s, pinned)
+    const { state, fit } = placeAt(pinned, 'hob', 'A', 160, live, 0, { soft })
+    expect(fit?.ok).toBe(true)
+    const p1 = live(state, [])
+    expect(itemPositions(p1).hob).toEqual({ wall: 'A', center: 160, w: 60 })
+    expect(p1.dropped).toEqual([])
+    // A: столешница 100…220 (по бокам — автоящики зоны варочной) — первый 70 ушёл целиком, второй уступил 50 → 20
+    expect(kinds(p1)).toEqual(['corner:100', 'drawers:30', 'hob:60', 'drawers:30', 'doors:20'])
+    const B = p1.runs.find((r) => r.id === 'B')!
+    expect(B.modules.map((m) => `${m.kind}:${m.w}`)).toEqual(['drawers:60', 'drawers:60'])
+    // «На другую стену» — то же правило
+    const moved = moveToWall(s, 'hob', 'A', live)
+    expect(moved.fit?.ok).toBe(true)
+    expect(itemPositions(live(moved.state, [])).hob?.wall).toBe('A')
+  })
+
+  it('варочная в пустое место другой стены: пустое место не заходит на её столешницу — встаёт, остаток пустым', () => {
+    // A: угол 0…100, пустое место 100…240, мойка 240…300; варочная с B в 160 → панель 130…190, столешница 100…220
+    const s = stateFromQuery(new URLSearchParams('f=corner&a=300&b=240&o=dwtpqf140g_170s_270.h_150v'), known)
+    const pinned = pinWalls(s, live(s, []), ['B', 'A'])
+    const { state, fit } = placeAt(pinned, 'hob', 'A', 160, live)
+    expect(fit?.ok).toBe(true)
+    const p1 = live(state, [])
+    expect(itemPositions(p1).hob).toEqual({ wall: 'A', center: 160, w: 60 })
+    expect(A(p1).gaps).toEqual([expect.objectContaining({ x: 220, w: 20, row: 'base' })])
+    expect(p1.dropped).toEqual([])
+  })
+})
+
+/**
+ * P1, меню «+»: в каждом пункте — ширина, которая встанет (как у `addAt`, без постановки).
+ * Прямая 300: мойка 0…60, пустое место 60…100 (40 см), варочная 190…250.
+ */
+describe('ширина пункта меню «+» (P1)', () => {
+  const catalog = kitchenAppliances(products)
+  const known = new Map(catalog.map((a) => [a.id, a]))
+  const live: Planner = (s, snap) => planKitchen(planInputOf(s, chosenItems(s.picks, catalog), snap), { shelves: getStyle(s.style).shelves })
+  const gap40 = stateFromQuery(new URLSearchParams('f=straight&a=300&o=s_03040g_080h_220'), known)
+
+  it('пустое место 40: шкаф с дверцами и с ящиками — 40, планка — 40; «заполнить» без ширины', () => {
+    expect(addWidth(gap40, live(gap40, []), 'A', 80, 'doors')).toBe(40)
+    expect(addWidth(gap40, live(gap40, []), 'A', 80, 'drawers')).toBe(40)
+    expect(addWidth(gap40, live(gap40, []), 'A', 80, 'strip')).toBe(40)
+    expect(addWidth(gap40, live(gap40, []), 'A', 80, 'fill')).toBeNull()
+  })
+
+  it('не встанет — ширины нет: «+» на варочной у правого края (190…250 + столешница до 280, до стены 20)', () => {
+    expect(addWidth(gap40, live(gap40, []), 'A', 220, 'doors')).toBeNull()
+  })
+})
+

@@ -1,4 +1,4 @@
-import { addAt, DEPTH, runLocal, runWorld, minA, runCm, runX, UPPER_DEPTH, type ModuleKind, type Plan, type Planner, type Run, type UpperKind, NARROW_W } from '@/lib/kitchen/layout'
+import { addAt, DEPTH, moduleCenter, runLocal, runWorld, minA, type ItemPlace, runCm, runX, UPPER_DEPTH, type ModuleKind, type Plan, type Planner, type Run, type UpperKind, NARROW_W } from '@/lib/kitchen/layout'
 import { baseKey, upperKey } from '@/lib/kitchen/fronts'
 import type { FixedItem, GapId, KitchenState, Shape, SlotKind, WallId } from '@/lib/kitchen/types'
 
@@ -122,6 +122,20 @@ export const cellX = runX
 export type PlanTarget = { wall: WallId; cm: number; gap: GapId | null }
 
 /** Слот техники → предмет раскладки; вытяжка и микроволновка своего места в ряду не занимают. */
+/**
+ * Цель нижней «+» (без точки на плане, P1): справа от выбранного (или середина стены A);
+ * есть видимый проём со своим «+» — он: на той же стене ближайший, иначе ближайший на любой.
+ */
+export function plusTarget(plan: Pick<Plan, 'runs'>, sel: Pick<ItemPlace, 'wall' | 'center' | 'w'> | null | undefined): PlanTarget {
+  const wall: WallId = sel?.wall ?? 'A'
+  const len = plan.runs.find((r) => r.id === wall)?.length ?? 0
+  const cm = sel ? Math.min(len, sel.center + sel.w / 2 + 30) : len / 2
+  const gaps = plan.runs.flatMap((r) => (r.gaps ?? []).filter((g) => g.row === 'base').map((g) => ({ wall: r.id as WallId, c: moduleCenter(r, g), w: g.w, id: g.item })))
+  const cost = (g: (typeof gaps)[number]) => (g.wall === wall ? 0 : 1e6) + Math.max(0, Math.abs(g.c - cm) - g.w / 2)
+  const best = gaps.sort((a, b) => cost(a) - cost(b))[0]
+  return best ? { wall: best.wall, cm: best.c, gap: best.id } : { wall, cm, gap: null }
+}
+
 export const SLOT_ITEM: Partial<Record<SlotKind, FixedItem>> = { fridge: 'fridge', dishwasher: 'dishwasher', washer: 'washer', hob: 'hob', oven: 'oven' }
 
 /**
