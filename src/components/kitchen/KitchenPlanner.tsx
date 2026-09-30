@@ -44,6 +44,7 @@ import {
   detachUppers,
   addAt,
   narrowFor,
+  narrowNeighbour,
   placeAt,
   wallsOf,
   type AddKind,
@@ -829,16 +830,7 @@ export function KitchenPlanner({
    * остаётся прижат к дальнему от `toward` (середина ставимого) краю — иначе сужение вокруг его
    * середины освободит только by/2 и «Сузить» не поставит модуль (C2, 24).
    */
-  const narrowed = (s: KitchenState, k: ItemKey, by: number, p: Plan, toward: number): KitchenState => {
-    const at = s.at?.[k]
-    const t: KitchenState = at === undefined ? s : { ...s, at: { ...s.at, [k]: at + (at > toward ? by / 2 : -by / 2) } }
-    if (isCabinet(k) && t.cabinets?.[k]) return { ...t, cabinets: { ...t.cabinets, [k]: { ...t.cabinets[k]!, w: t.cabinets[k]!.w - by } } }
-    if (isUpperCab(k) && t.upperCabs?.[k]) return { ...t, upperCabs: { ...t.upperCabs, [k]: { ...t.upperCabs[k]!, w: t.upperCabs[k]!.w - by } } }
-    if (isGap(k) && t.gaps?.[k]) return { ...t, gaps: { ...t.gaps, [k]: { ...t.gaps[k]!, w: t.gaps[k]!.w - by } } }
-    const w = itemPositions(p)[k]?.w
-    if (w !== undefined && (SIZED_ITEMS as readonly string[]).includes(k)) return { ...t, widths: { ...t.widths, [k as SizedItem]: w - by } }
-    return s
-  }
+  const narrowed = narrowNeighbour
 
   /** Модуль встал: состояние принято, выбор остаётся на нём (у верхнего ключ сцены — по новому началу в ряду). */
   const commitPlaced = (d: DragBase, next: KitchenState, fit: Fit, wall: WallId) => {
@@ -861,6 +853,8 @@ export function KitchenPlanner({
 
   /** Одна связка для 3D и плана: `from` — откуда жест; план считает снап ещё и к противоположному ряду (`opposite`). */
   const onDragRef = useRef<(phase: DragPhase, key: string, wall: WallId, cm: number, grab: number, from?: 'scene' | 'plan') => void>(() => {})
+  /** вердикты пробного обмена на время жеста (P3): одна раскладка на соседа, а не на каждый шаг пальца */
+  const swapMemoRef = useRef<{ d: DragBase | null; m: Map<string, boolean> }>({ d: null, m: new Map() })
   onDragRef.current = (phase, raw, wall, cm, grab, from = 'scene') => {
     const engine = engineRef.current
     if (phase === 'start') {
@@ -873,7 +867,8 @@ export function KitchenPlanner({
     if (d !== d0) dragRef.current = d
     if (phase === 'move') {
       // предпросмотр — из drag.previewMove; движок и план только рисуют
-      const pv = previewMove(d.plan, d.key, wall, cm, grab, { opposite: from === 'plan', soft: d.soft })
+      if (swapMemoRef.current.d !== d) swapMemoRef.current = { d, m: new Map() }
+      const pv = previewMove(d.plan, d.key, wall, cm, grab, { opposite: from === 'plan', soft: d.soft, trial: { state: d.state, planner: trial, memo: swapMemoRef.current.m } })
       engine?.setPreview(pv)
       if (planShownRef.current) setPreview(pv)
       setDragLabels((prev) => (!pv ? null : prev && prev.left === pv.labels.left && prev.right === pv.labels.right ? prev : pv.labels))
@@ -1852,7 +1847,13 @@ export function KitchenPlanner({
               : k === 'hob' && hobHasOven
                 ? t.hobOven
                 : t.slots[SLOT_OF[k]!]
-  const movingName = !moving ? '' : !movingKey ? t.cabName(Math.round((moving as { w: number }).w)) : nameOfKey(movingKey)
+  /** автомодуль: бутылочница и планка — своим названием, не «Шкаф 22 см» (P3) */
+  const autoName = (sel: Extract<MoveSel, { cab: CabInfo }>) => {
+    const sk = parseSceneKey(sel.cab.key)
+    const kind = sk && plan.runs.find((r) => r.id === sk.wall)?.modules.find((mod) => Math.round(mod.x) === sk.x)?.kind
+    return kind === 'bottle' || kind === 'filler' ? `${t.dimsKinds[kind]} ${Math.round(sel.w)} ${t.cm}` : t.cabName(Math.round(sel.w))
+  }
+  const movingName = !moving ? '' : !movingKey ? autoName(moving as Extract<MoveSel, { cab: CabInfo }>) : nameOfKey(movingKey)
   const movingShown = Boolean(moving && (movingKey ? present.has(movingKey) : true))
   const otherWallLabel = !moving
     ? ''

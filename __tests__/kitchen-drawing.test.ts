@@ -445,3 +445,16 @@ describe('«Коротко: что где стоит»', () => {
     }
   })
 })
+
+describe('подпись мойки на развёртке (P3)', () => {
+  it('стена с мойкой: мойка подписана, как духовка и вытяжка; RU и KY', () => {
+    for (const lang of ['ru', 'ky'] as const) {
+      const k = kitchen({ shape: 'straight', a: 300, b: 0, c: 0, island: 0, hob: appliance({ slot: 'hob', w: 59, h: 5, d: 52, builtIn: true }), oven: { w: 59.5, h: 59.5, d: 56 }, hood: { w: 60 } }, { ceiling: 270, toCeiling: false, lang })
+      const run = k.spec.runs.find((r) => r.id === 'A')!
+      expect(run.boxes.some((b) => b.kind === 'sinkBase')).toBe(true)
+      const svg = elevationSvg(run, k.spec.heights, labelsFor(lang), null, {})
+      expect(svg).toContain('data-label="sink"')
+      expect(svg).toContain(lang === 'ru' ? '>Мойка<' : '>Жуугуч<')
+    }
+  })
+})

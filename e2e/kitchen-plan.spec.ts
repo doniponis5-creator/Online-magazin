@@ -110,6 +110,32 @@ test('стена B: см от угла — тянем плиту к углу, п
   expect(Math.abs(after.center - (before.center - 15))).toBeLessThanOrEqual(8)
 })
 
+test('полная стена: шкаф 82 тянут на мойку в стартовой «мрамор» → поменялись местами, ширины прежние (P3)', async ({ page }) => {
+  await ready(page, 'f=corner&a=300&b=240&s=marble', 'page')
+  await page.waitForFunction(() => Boolean(window.__kp?.placeOf('sink') && window.__kp.placeOf('A100')), null, { timeout: 60000 })
+  await page.locator('.kp-views [data-scene="plan"]').click()
+  const cab = (await place(page, 'A100'))!
+  const sink0 = (await place(page, 'sink'))!
+  expect([cab.wall, cab.w, sink0.wall, sink0.w]).toEqual(['A', 82, 'A', 60])
+  expect(cab.center).toBeLessThan(sink0.center)
+  await tapPlan(page, '.kp-plan [data-key="A100"]')
+  await expect(page.locator('.kp-plan .is-sel')).toHaveAttribute('data-key', 'A100')
+  // ряд A горизонтальный: ширина ячейки в px = ширина шкафа в см; палец — на середину мойки
+  const px = (await page.locator('.kp-plan [data-key="A100"]').boundingBox())!.width / cab.w
+  await dragPlan(page, '.kp-plan [data-key="A100"]', Math.round((sink0.center - cab.center) * px))
+  await expect(page.locator('.kp-toast')).toHaveCount(0)
+  const sink1 = (await place(page, 'sink'))!
+  expect(sink1.wall).toBe('A')
+  expect(sink1.w).toBe(60)
+  // мойка встала на место шкафа (его левый край), шкаф 82 — справа от неё
+  expect(Math.abs(sink1.center - (cab.center - cab.w / 2 + 30))).toBeLessThanOrEqual(1)
+  const keys = (await planKeys(page)).filter((k): k is string => Boolean(k))
+  const places = await Promise.all(keys.map((k) => place(page, k)))
+  const moved = places.find((p) => p && p.wall === 'A' && p.row === 'base' && p.w === 82)
+  expect(moved).toBeTruthy()
+  expect(moved!.center).toBeGreaterThan(sink1.center)
+})
+
 test.describe('компьютер 1440×900', () => {
   test.use({ viewport: { width: 1440, height: 900 } })
   test('план колонкой рядом с 3D, а ценники и подписи 3D видны (is-plan не стоит)', async ({ page }) => {

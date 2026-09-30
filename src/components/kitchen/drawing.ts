@@ -47,6 +47,8 @@ export type DrawingLabels = {
   hoodOver: string
   /** рамка отдельностоящей плиты (`t.stove.name`); нет — как у варочной */
   stove?: string
+  /** подпись шкафа под мойку (P3: мастер видит мойку, как духовку и вытяжку); нет — без подписи */
+  sink?: string
   /** разрез острова со свесом */
   section: string
   /** высоты окна типовые (покупатель их не вводил): подоконник и верх, см */
@@ -212,6 +214,12 @@ export function elevationSvg(
   for (const b of boxes.filter((b) => CARCASS.includes(b.kind))) p.rect(b.x, Y(b.y + b.h), b.w, b.h, 'el-box')
   for (const f of run.fronts) front(p, f, Y)
   for (const b of boxes.filter((b) => b.kind === 'appliance')) appliance(p, b, Y, labels)
+  // шкаф под мойку — подпись в верхней части фасада, вписана в ширину
+  if (labels.sink)
+    for (const b of boxes.filter((b) => b.kind === 'sinkBase')) {
+      const size = Math.min(p.fs, (b.w - Math.min(4, b.w * 0.12)) / (labels.sink.length * CHAR))
+      if (size >= p.fs * 0.5) p.text(b.x + b.w / 2, Y(b.y + b.h * 0.78), labels.sink, 'el-cap', { size: size < p.fs ? size : undefined, data: { label: 'sink' } })
+    }
 
   // низ вдоль пола: каждый модуль и угол; ниже — общая длина
   const round = (v: number) => Math.round(v * 10) / 10

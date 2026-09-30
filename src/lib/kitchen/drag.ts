@@ -1,5 +1,5 @@
-import { fitOn, itemPositions, type Narrow, type Plan, type SnapKind } from './layout'
-import type { ItemKey, WallId } from './types'
+import { fitOn, itemPositions, placeAt, swapFit, type Narrow, type Plan, type Planner, type SnapKind } from './layout'
+import type { ItemKey, KitchenState, WallId } from './types'
 
 /**
  * Предпросмотр перемещения — одна модель для 3D и плана сверху (спецификация
@@ -21,6 +21,8 @@ export type Preview = {
   narrow: Narrow | null
   /** не помещается: сколько см не хватило (помещается — 0) */
   need: number
+  /** встанет обменом местами (P3): с этим соседом, null — с автошкафом; нет поля — обычная постановка */
+  swap?: ItemKey | null
 }
 
 /**
@@ -28,12 +30,22 @@ export type Preview = {
  * магнит 6 см к концам стены и краям соседей, в плане (`opposite`) — ещё к
  * краям противоположного ряда. null — модуля нет в раскладке или нет такой стены.
  */
-export function previewMove(plan: Plan, key: ItemKey, wall: WallId, cm: number, grab: number, opts: { opposite?: boolean; soft?: ItemKey[] } = {}): Preview | null {
+/**
+ * Пробная постановка для обмена: `state` и `planner` — те же, что получит `placeAt` на отпускании;
+ * `memo` — кэш вердиктов на время жеста (ключ — стена, сосед, середина), чтобы не считать раскладку на каждый шаг пальца.
+ */
+export type SwapTrial = { state: KitchenState; planner: Planner; memo?: Map<string, boolean> }
+
+export function previewMove(plan: Plan, key: ItemKey, wall: WallId, cm: number, grab: number, opts: { opposite?: boolean; soft?: ItemKey[]; trial?: SwapTrial } = {}): Preview | null {
   // soft — мягкие соседи жеста (P1): предпросмотр и постановка считают по одному правилу
   const fit = fitOn(plan, key, wall, cm - grab, { opposite: opts.opposite, soft: opts.soft })
   if (!fit) return null
   const half = fit.w / 2
   const r1 = (v: number) => Math.round(Math.max(0, v) * 10) / 10
+  // не помещается, а палец над соседом той же стены — обмен местами, как в placeAt
+  const sw = fit.ok ? null : swapFit(plan, key, wall, cm - grab)
+  // зелёная рамка обмена — только если placeAt на отпускании правда поменяет (та же пробная раскладка), иначе «рамка, потом тост»
+  if (sw && swapHolds(opts.trial, key, wall, cm, grab, opts.soft, `${wall}|${sw.with}|${sw.center}`)) return { center: sw.center, width: fit.w, wall, fits: true, snap: null, labels: { left: 0, right: 0 }, narrow: null, need: 0, swap: sw.with }
   return {
     center: fit.center,
     width: fit.w,
@@ -44,6 +56,15 @@ export function previewMove(plan: Plan, key: ItemKey, wall: WallId, cm: number, 
     narrow: fit.narrow,
     need: fit.need,
   }
+}
+
+function swapHolds(trial: SwapTrial | undefined, key: ItemKey, wall: WallId, cm: number, grab: number, soft: ItemKey[] | undefined, id: string): boolean {
+  if (!trial) return true
+  const known = trial.memo?.get(id)
+  if (known !== undefined) return known
+  const ok = Boolean(placeAt(trial.state, key, wall, cm, trial.planner, grab, { soft }).fit?.ok)
+  trial.memo?.set(id, ok)
+  return ok
 }
 
 /**

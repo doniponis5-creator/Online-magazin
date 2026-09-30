@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { grabOf, previewMove } from '@/lib/kitchen/drag'
-import { addAt, addWidth, detachUppers, itemPositions, moveToWall, narrowFor, needByWall, pinnedIds, pinWalls, placeAt, planKitchen, resizeWalls, squeezeGaps, UPPER_MIN, type Plan, type PlanInput, type Planner } from '@/lib/kitchen/layout'
+import { addAt, addWidth, detachUppers, itemPositions, moduleCenter, narrowNeighbour, pinCabinet, resolveArrangement, swapFit, moveToWall, narrowFor, needByWall, pinnedIds, pinWalls, placeAt, planKitchen, resizeWalls, squeezeGaps, UPPER_MIN, type Plan, type PlanInput, type Planner } from '@/lib/kitchen/layout'
 import { droppedName } from '@/lib/kitchen/checks'
+import { makerList } from '@/components/kitchen/drawing'
 import { kitchenTexts } from '@/components/kitchen/texts'
 import { planInputOf, projectItems, projectTotal } from '@/lib/kitchen/order'
 import { DEFAULT_STATE, queryFromState, stateFromQuery } from '@/lib/kitchen/share'
@@ -435,9 +436,10 @@ describe('нехватка длины и неудачная постановка
     expect(p1.dropped).toEqual([])
     expect(itemPositions(p1).g1?.w).toBe(15)
     expect(itemPositions(p1).k1?.w).toBe(65)
-    // без ужатия то же изменение (экран: все места заморожены, snap = []) роняло бы пустое место
+    // без ужатия рост шкафа (экран: все места заморожены, snap = []) роняет пустое место; с P3 свой шкаф сам — столешница
+    // у варочной и может съесть её запас 30, поэтому рост берём больше запаса: +65 → по 32,5 в каждую сторону
     const frozen = Object.fromEntries(Object.entries(itemPositions(p0)).map(([k, p]) => [k, p!.center])) as KitchenState['at']
-    expect(planner({ ...s, cabinets: { k1: { w: 65, front: 'doors' } }, at: frozen }, []).dropped.map((d) => d.item)).toContain('g1')
+    expect(planner({ ...s, cabinets: { k1: { w: 125, front: 'doors' } }, at: frozen }, []).dropped.map((d) => d.item)).toContain('g1')
     // соседей-пустых мест нет — состояние то же
     expect(squeezeGaps(s, p0, 'hob', 60)).toBe(s)
   })
@@ -566,8 +568,9 @@ describe('перемещение: соседи не перестраиваютс
     const p1 = live(state, [])
     expect(itemPositions(p1).hob).toEqual({ wall: 'A', center: 160, w: 60 })
     expect(p1.dropped).toEqual([])
-    // A: столешница 100…220 (по бокам — автоящики зоны варочной) — первый 70 ушёл целиком, второй уступил 50 → 20
-    expect(kinds(p1)).toEqual(['corner:100', 'drawers:30', 'hob:60', 'drawers:30', 'doors:20'])
+    // A: столешница 100…220 (по бокам — автоящики зоны варочной) — первый 70 ушёл целиком, второй уступил 50 → остаток 20
+    // уже CAB_MIN — не «Шкаф 20», а автозаполнение: вместе со столешницей у варочной это ящики 50 (P3)
+    expect(kinds(p1)).toEqual(['corner:100', 'drawers:30', 'hob:60', 'drawers:50'])
     const B = p1.runs.find((r) => r.id === 'B')!
     expect(B.modules.map((m) => `${m.kind}:${m.w}`)).toEqual(['drawers:60', 'drawers:60'])
     // «На другую стену» — то же правило
@@ -586,6 +589,124 @@ describe('перемещение: соседи не перестраиваютс
     expect(itemPositions(p1).hob).toEqual({ wall: 'A', center: 160, w: 60 })
     expect(A(p1).gaps).toEqual([expect.objectContaining({ x: 220, w: 20, row: 'base' })])
     expect(p1.dropped).toEqual([])
+  })
+})
+
+describe('доводка круг 2 (P3): обмен местами и остатки', () => {
+  const catalog = kitchenAppliances(products)
+  const known = new Map(catalog.map((a) => [a.id, a]))
+  const live: Planner = (s, snap) => planKitchen(planInputOf(s, chosenItems(s.picks, catalog), snap), { shelves: getStyle(s.style).shelves })
+  const marble = stateFromQuery(new URLSearchParams(readyKitchen('corner-300x240-marble')!.q), known)
+  const run = (p: Plan, id: WallId) => p.runs.find((r) => r.id === id)!
+  const row = (p: Plan, id: WallId) => run(p, id).modules.map((m) => `${m.item && !m.item.startsWith('k') ? m.item : m.kind}:${Math.round(m.w * 10) / 10}@${Math.round(m.x)}`)
+  /** как на старте жеста: стены закреплены, мягкие — новые kN */
+  const gesture = (walls: WallId[]) => {
+    const pinned = pinWalls(marble, live(marble, []), walls)
+    return { pinned, soft: pinnedIds(marble, pinned) }
+  }
+  const cabAt = (s: KitchenState, p: Plan, wall: WallId, x: number) => run(p, wall).modules.find((m) => Math.round(m.x) === x && m.item?.startsWith('k'))!.item as ItemKey
+
+  it('A: шкаф 82 тянут на мойку → поменялись местами, ширины прежние', () => {
+    const { pinned, soft } = gesture(['A'])
+    const p0 = live(pinned, [])
+    const k82 = cabAt(pinned, p0, 'A', 100)
+    const { state, fit } = placeAt(pinned, k82, 'A', 212, live, 0, { soft })
+    expect(fit).toMatchObject({ ok: true, swap: 'sink' })
+    const p1 = live(state, [])
+    expect(row(p1, 'A')).toEqual(['corner:100@0', 'sink:60@100', 'doors:82@160', 'doors:58@242'])
+    expect(p1.dropped).toEqual([])
+  })
+
+  it('B: ящики 60 тянут на ящики 60 по ту сторону варочной (автошкаф) → поменялись местами, варочная на месте', () => {
+    // как dragStart: взятый автошкаф становится kN на том же месте
+    const p00 = live(marble, [])
+    const B0 = run(p00, 'B')
+    const m0 = B0.modules[0]
+    const c0 = moduleCenter(B0, m0)
+    const c2 = moduleCenter(B0, B0.modules[2])
+    const pin = pinCabinet(resolveArrangement(marble.shape, marble.arrangement, marble.cabinets, marble.gaps), marble.cabinets ?? {}, { w: m0.w, front: 'drawers3' }, 'B', c0, itemPositions(p00))
+    const at: NonNullable<KitchenState['at']> = { [pin.id]: c0 }
+    for (const [k, p] of Object.entries(itemPositions(p00)) as [ItemKey, { center: number }][]) at[k] = p.center
+    const s0: KitchenState = { ...marble, arrangement: pin.order, cabinets: pin.cabinets as KitchenState['cabinets'], at }
+    const p0 = live(s0, [])
+    expect(itemPositions(p0)[pin.id]).toMatchObject({ wall: 'B', center: c0 })
+    const { state, fit } = placeAt(s0, pin.id, 'B', c2, live, 0)
+    expect(fit).toMatchObject({ ok: true, swap: null })
+    const p1 = live(state, [])
+    expect(itemPositions(p1)[pin.id]).toMatchObject({ wall: 'B', center: c2, w: 60 })
+    expect(itemPositions(p1).hob).toEqual(itemPositions(p0).hob)
+    expect(run(p1, 'B').modules.map((m) => `${m.kind}:${m.w}`)).toEqual(['drawers:60', 'hob:60', 'drawers:60'])
+    expect(p1.dropped).toEqual([])
+  })
+
+  it('предпросмотр обмена = вердикт placeAt: шкаф 60 на варочную B — рамка не зелёная, если постановка откажет', () => {
+    const p00 = live(marble, [])
+    const B0 = run(p00, 'B')
+    const m2 = B0.modules[2]
+    const c2 = moduleCenter(B0, m2)
+    const hob = itemPositions(p00).hob!
+    const pin = pinCabinet(resolveArrangement(marble.shape, marble.arrangement, marble.cabinets, marble.gaps), marble.cabinets ?? {}, { w: m2.w, front: 'drawers3' }, 'B', c2, itemPositions(p00))
+    const at: NonNullable<KitchenState['at']> = { [pin.id]: c2 }
+    for (const [k, p] of Object.entries(itemPositions(p00)) as [ItemKey, { center: number }][]) at[k] = p.center
+    const s0: KitchenState = { ...marble, arrangement: pin.order, cabinets: pin.cabinets as KitchenState['cabinets'], at }
+    const p0 = live(s0, [])
+    const placed = placeAt(s0, pin.id, 'B', hob.center, live, 0)
+    const pv = previewMove(p0, pin.id, 'B', hob.center, 0, { trial: { state: s0, planner: live } })
+    expect(pv?.fits).toBe(Boolean(placed.fit?.ok))
+    if (placed.fit?.ok) expect(pv?.center).toBe(placed.fit.center)
+  })
+
+  it('уступка 82 на нехватку 60 → остаток 22 — бутылочница (автозаполнение), не «Шкаф 22» с ящиками; верх — по UPPER_MIN', () => {
+    const { pinned, soft } = gesture(['A'])
+    const { state, fit } = placeAt(pinned, 'sink', 'A', 130, live, 0, { soft })
+    expect(fit?.ok).toBe(true)
+    const p1 = live(state, [])
+    expect(row(p1, 'A')).toEqual(['corner:100@0', 'sink:60@100', 'bottle:22@160', 'doors:58@242'])
+    // остаток — не свой шкаф: карточки с ящиками у него нет, в состоянии нет шкафа уже CAB_MIN
+    expect(run(p1, 'A').modules.find((m) => m.kind === 'bottle')?.item).toBeUndefined()
+    expect(Object.values(state.cabinets ?? {}).every((c) => c!.w >= 30)).toBe(true)
+    // на прежнем месте мойки — пустое место 60
+    expect(run(p1, 'A').gaps).toEqual([expect.objectContaining({ x: 182, w: 60, row: 'base' })])
+    for (const u of run(p1, 'A').uppers) {
+      if (u.kind === 'doors' || u.kind === 'shelf') expect(u.w).toBeGreaterThanOrEqual(UPPER_MIN)
+      if (u.kind === 'filler') expect(u.w).toBeLessThan(UPPER_MIN)
+    }
+    expect(p1.dropped).toEqual([])
+  })
+
+  it('«Сузить» 82 на 60: остаток 22 уже CAB_MIN — шкаф уходит в автозаполнение, мойка встаёт, рядом бутылочница', () => {
+    const { pinned } = gesture(['A'])
+    const p0 = live(pinned, [])
+    const k82 = cabAt(pinned, p0, 'A', 100)
+    const s1 = narrowNeighbour(pinned, k82, 60, p0, 130)
+    expect(s1.cabinets?.[k82 as 'k1']).toBeUndefined()
+    const { state, fit } = placeAt(s1, 'sink', 'A', 130, live)
+    expect(fit?.ok).toBe(true)
+    expect(row(live(state, []), 'A')).toEqual(['corner:100@0', 'sink:60@100', 'bottle:22@160', 'doors:58@242'])
+    // шире CAB_MIN — остаётся своим шкафом, прижат к дальнему краю
+    const s2 = narrowNeighbour(pinned, k82, 30, p0, 130)
+    expect(s2.cabinets?.[k82 as 'k1']?.w).toBe(52)
+  })
+
+  it('«Коротко» (makerList): мойка, бутылочница и планка — названиями, не голой шириной', () => {
+    const { pinned, soft } = gesture(['A'])
+    const { state } = placeAt(pinned, 'sink', 'A', 130, live, 0, { soft })
+    const text = makerList(live(state, []), {}, kitchenTexts('ru'), [])
+    const lines = text.split('\n')
+    const lowA = lines[lines.indexOf(kitchenTexts('ru').wall('A', 300)) + 1]
+    expect(lowA).toMatch(/Мойка 60/i)
+    expect(lowA).toMatch(/бутылочница 22/)
+    for (const cell of lowA.split(':').slice(1).join(':').split(' · ')) expect(cell.trim()).toMatch(/^\S.*\D.* \d+$/)
+  })
+
+  it('обмен не влезает (82 на 58 через мойку) → отказ, состояние прежнее', () => {
+    const { pinned, soft } = gesture(['A'])
+    const p0 = live(pinned, [])
+    const k82 = cabAt(pinned, p0, 'A', 100)
+    const { state, fit } = placeAt(pinned, k82, 'A', 271, live, 0, { soft })
+    expect(fit?.ok).toBe(false)
+    expect(fit?.swap).toBeUndefined()
+    expect(state).toBe(pinned)
   })
 })
 
