@@ -14,7 +14,7 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-29T22:14:27+06:00",
-  "updatedAt": "2026-09-30T14:24:44+06:00",
+  "updatedAt": "2026-09-30T15:06:43+06:00",
   "finishedAt": null,
   "stages": [
     {
@@ -282,7 +282,11 @@ window.STATE =
         "__tests__/",
         "docs/"
       ],
-      "status": "in-progress",
+      "status": "done",
+      "finishedAt": "2026-09-30T15:06:43+06:00",
+      "tests": { "passed": 914, "failed": 0 },
+      "commit": "09ed760",
+      "files": ["e2e/kitchen-acceptance.spec.ts", "e2e/kp.ts", "playwright.config.ts", "docs/KITCHEN_E2E_UZ.md"],
       "startedAt": "2026-09-30T14:24:44+06:00",
       "retries": 0,
       "repairs": 0,
@@ -343,7 +347,14 @@ window.STATE =
     "T06 · ready.ts BUDGET_CHIPS/inBudget · фильтр бюджета живёт только ради своего теста",
     "T06 · KitchenPlanner.tsx · два whatsappHref с одним текстом (masterPage и .kp-sum__wa)",
     "T06 · styles.ts:891-905 · carouselStyles через shortList — трюк, читается хуже прямого [sel, ...FEATURED.slice(0,7)]",
-    "T06 · ApplianceSheet supplyHref · второй wa.me («спросить о поставке») на шаге «Техника» — другая функция, записано"
+    "T06 · ApplianceSheet supplyHref · второй wa.me («спросить о поставке») на шаге «Техника» — другая функция, записано",
+    "T07 · e2e/__snapshots__ · снимки 12 готовых сняты с локального каталога (без холодильников/посудомоек) — страж регрессий отсюда, не «как до правок»; переснять при первом прогоне против живого каталога",
+    "T07 · kitchen-acceptance:182-200 · черта 2: магнит (snap) в e2e не проверяется — только unit previewMove",
+    "T07 · kitchen-acceptance:382-437 · замер кадра на классе phone (не phone-low), p95 только печатается, порог 33 при среднем 16,7 ловит лишь сильные провалы",
+    "T07 · kitchen-acceptance:314-329 · 17 кухонь в одном test — первая ошибка прячет остальные",
+    "T07 · e2e · помощники ready/fire/tap/drag переписаны в пяти спеках; профиль chrome гоняет kitchen-* повторно",
+    "T07 · старые e2e сайта (cart, catalog, checkout, visual, task0*) рассчитаны на npm run start 3100 — против dev 3001 красные (не регрессия)",
+    "T07 · docs/KITCHEN_E2E_UZ.md · опечатка «савaтга» (латинская a)"
 ],
   "reviewers": {
     "manifestSpec": null,
