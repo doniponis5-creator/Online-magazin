@@ -3,6 +3,7 @@ import './helpers/canvas'
 import { buildKitchen } from '@/components/kitchen/three/build'
 import { WINDOW } from '@/lib/kitchen/dims'
 import {
+  cornerZones,
   elevationSvg,
   islandOverhang,
   makerList,
@@ -391,6 +392,21 @@ describe('«Коротко: что где стоит»', () => {
           expect(Math.abs(sum(up) - run.length), `${where}: верх ${up.join(' · ')}`).toBeLessThanOrEqual(up.length * 0.5)
         }
       }
+    }
+  })
+
+  it('пустое место у конца стены — не угол: в списке «пустое место», на развёртке не заштриховано (P4)', () => {
+    const input: PlanInput = { shape: 'straight', a: 300, b: 0, c: 0, island: 0, arrangement: { A: ['sink', 'g1'] }, gaps: { g1: { w: 60 } }, at: { sink: 30, g1: 270 } }
+    const plan = planKitchen(input, { shelves: false })
+    const run = plan.runs.find((r) => r.id === 'A')!
+    expect(run.gaps?.map((g) => [g.x, g.w])).toEqual([[240, 60]])
+    expect(cornerZones(run.length, run.modules, run.gaps)).toEqual([])
+    for (const lang of ['ru', 'ky'] as const) {
+      const t = kitchenTexts(lang)
+      const low = rowOf(makerList(plan, {}, t, []), t.wall('A', 300), t.lower)
+      expect(low.some((p) => p.startsWith(`${t.drawing.corner} `)), `${lang}: ${low.join(' · ')}`).toBe(false)
+      expect(low[low.length - 1]).toBe(`${t.emptyPlace} 60`)
+      expect(sum(low)).toBe(300)
     }
   })
 

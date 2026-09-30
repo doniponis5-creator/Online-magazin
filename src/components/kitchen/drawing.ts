@@ -202,7 +202,7 @@ export function elevationSvg(
   // угол: торец углового шкафа соседней стены (то же правило, что в списке для мастера)
   const mods = [...run.modules].sort((a, b) => a.x - b.x)
   const { upper } = modulesOf(run)
-  const corners = island ? [] : cornerZones(L, mods)
+  const corners = island ? [] : cornerZones(L, mods, run.gaps)
   for (const z of corners) {
     p.hatch(z.x0, Y(heights.counter), z.x1, Y(0))
     if (upper.length) p.hatch(z.up[0], Y(heights.upperTop), z.up[1], Y(heights.upperBottom))
@@ -395,8 +395,9 @@ export type CornerZone = { x0: number; x1: number; up: [number, number] }
  * конце, у C — в начале). Верхний ряд соседней стены заходит туда на глубину
  * верхнего шкафа (`UPPER_DEPTH`) от стены.
  */
-export function cornerZones(length: number, modules: { x: number; w: number }[]): CornerZone[] {
-  const mods = [...modules].sort((a, b) => a.x - b.x)
+export function cornerZones(length: number, modules: { x: number; w: number }[], empty: { x: number; w: number; row?: string }[] = []): CornerZone[] {
+  // пустое место (run.gaps) — занятая длина стены, а не угол (P4)
+  const mods = [...modules, ...empty.filter((g) => g.row !== 'upper')].sort((a, b) => a.x - b.x)
   const gaps: [number, number][] = []
   let at = 0
   for (const m of mods) {
@@ -575,12 +576,14 @@ export function makerList(plan: Plan, items: MakerItems, t: KitchenTexts, inProj
   for (const run of plan.runs) {
     const mods = [...run.modules].sort((a, b) => a.x - b.x)
     // угол — тем же правилом, что штриховка на развёртке
-    const zones = run.wall ? cornerZones(run.length, mods) : []
+    const zones = run.wall ? cornerZones(run.length, mods, run.gaps) : []
     const cornerAt = (end: boolean, w: (z: CornerZone) => number) =>
       zones.filter((z) => (z.x1 > run.length - 0.5) === end && (end || z.x0 < 0.5)).map((z) => `${t.drawing.corner} ${Math.round(w(z))}`)
     const low = (z: CornerZone) => z.x1 - z.x0
     const up = (z: CornerZone) => z.up[1] - z.up[0]
-    const lower = mods.map((m) => {
+    const empty = (run.gaps ?? []).filter((g) => g.row !== 'upper')
+    const lower = [...mods, ...empty].sort((a, b) => a.x - b.x).map((m) => {
+      if (!('kind' in m)) return `${t.emptyPlace} ${Math.round(m.w)}`
       let name = t.modules[m.kind]
       if (m.kind === 'hob' && m.oven && items.oven !== null) name = t.ovenUnder
       if (m.stove) name = t.stove.name

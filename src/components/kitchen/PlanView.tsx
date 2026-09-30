@@ -36,6 +36,10 @@ export type PlanViewProps = {
   names: PlanNames
   cm: string
   addLabel: string
+  /** меняется — план вписывает кухню целиком (после меню «+») */
+  fit?: number
+  /** подпись кнопки «Показать всё» (видна, пока план сдвинут или приближен) */
+  fitLabel?: string
   ariaLabel: string
   className?: string
 }
@@ -68,7 +72,7 @@ type Pinch = { d0: number; k0: number; w0: { x: number; y: number } }
 /** Числа плана — с запятой, как всё на сайте («56,5»). */
 const fmt = (v: number) => String(Math.round(v * 10) / 10).replace('.', ',')
 
-export function PlanView({ plan, selected, preview, onPick, onDrag, onAdd, labels, facade, names, cm, addLabel, ariaLabel, className }: PlanViewProps) {
+export function PlanView({ plan, selected, preview, onPick, onDrag, onAdd, labels, facade, names, cm, addLabel, fit, fitLabel, ariaLabel, className }: PlanViewProps) {
   const hostRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const [size, setSize] = useState({ w: 320, h: 240 })
@@ -79,6 +83,7 @@ export function PlanView({ plan, selected, preview, onPick, onDrag, onAdd, label
   const ptrs = useRef(new Map<number, { x: number; y: number }>())
   const pinchRef = useRef<Pinch | null>(null)
   const lastTap = useRef(0)
+  useEffect(() => setTf(TF0), [fit])
 
   useEffect(() => {
     const host = hostRef.current
@@ -456,6 +461,11 @@ export function PlanView({ plan, selected, preview, onPick, onDrag, onAdd, label
           {previewNode()}
         </g>
       </svg>
+ {fitLabel && (tf.k !== 1 || tf.tx !== 0 || tf.ty !== 0) && (
+        <button type="button" className="kp-plan__fit" onClick={() => setTf(TF0)}>
+          {fitLabel}
+        </button>
+      )}
       <button type="button" className="kp-plan__add" aria-label={addLabel} title={addLabel} onClick={(e) => onAdd(null, { x: e.clientX, y: e.clientY })}>
         +
       </button>

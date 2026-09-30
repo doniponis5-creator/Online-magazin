@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { governIdle, governStep, governorPlan, newGovernor, pickTier, type DeviceEnv, type GovernorState } from '@/components/kitchen/three/quality'
+import { msaaSamples, msaaFallback, governIdle, governStep, governorPlan, newGovernor, pickTier, type DeviceEnv, type GovernorState } from '@/components/kitchen/three/quality'
 
 /*
   Класс устройства и регулятор кадров (quality.ts) — чистые функции, шов
@@ -28,12 +28,42 @@ describe('класс устройства', () => {
     expect(pickTier({ ...cheapAndroid, memory: 6, gpu: 'Adreno (TM) 640', cores: 4 }).name).toBe('phone-low')
   })
 
-  it('телефон: стандартные материалы, K = 1, без MSAA, с FXAA, тени 2048; простой — 1024', () => {
+  it('телефон: стандартные материалы, K = 1, настоящее сглаживание (MSAA, не FXAA), тени 2048; простой — FXAA и 1024', () => {
     const t = pickTier(iphone)
     expect(t.physical).toBe(false)
     expect(t.detail).toBe(1)
-    expect(t.msaa).toBe(false)
-    expect(t.fxaa).toBe(true)
+    // FXAA при ratio = dpr рвёт швы дверец в пунктир (P4, п. 8): у phone — MSAA
+    expect(t.msaa).toBe(true)
+    expect(t.fxaa).toBe(false)
+    const low = pickTier(cheapAndroid)
+    expect(low.msaa).toBe(false)
+    expect(low.fxaa).toBe(true)
+    // в покое кадр = точки экрана (ratio = холст): сэмплы нужны и при ratio 2–3; память — по числу точек
+    expect(msaaSamples(t, 3, 3, 375, 406)).toBe(4)
+    expect(msaaSamples(t, 2, 2, 390, 420)).toBe(4)
+    expect(msaaSamples(t, 3, 3, 375, 812)).toBe(2)
+    expect(msaaSamples(t, 1.5, 3, 375, 406)).toBe(4)
+    expect(msaaSamples(low, 2, 2, 375, 406)).toBe(0)
+    // компьютер как было: двойная чёткость сама сглаживает
+    const pc = pickTier(macbook)
+    expect(msaaSamples(pc, 2, 2, 1200, 700)).toBe(0)
+    expect(msaaSamples(pc, 1, 1, 1200, 700)).toBe(4)
+  })
+
+  it('MSAA без поддержки половинной точности или с ошибкой GL — 0 сэмплов и FXAA, как у phone-low', () => {
+    const t = pickTier(iphone)
+    const none = msaaFallback(t, { halfFloat: false, glError: false })
+    expect(none.msaa).toBe(false)
+    expect(none.fxaa).toBe(true)
+    expect(msaaSamples(none, 3, 3, 375, 406)).toBe(0)
+    const broken = msaaFallback(t, { halfFloat: true, glError: true })
+    expect(msaaSamples(broken, 3, 3, 375, 406)).toBe(0)
+    expect(broken.fxaa).toBe(true)
+    // всё есть — класс тот же
+    expect(msaaFallback(t, { halfFloat: true, glError: false })).toBe(t)
+    // phone-low и так без MSAA — не трогаем
+    const low = pickTier(cheapAndroid)
+    expect(msaaFallback(low, { halfFloat: false, glError: false })).toBe(low)
     expect(t.shadow).toBe(2048)
     expect(pickTier(cheapAndroid).shadow).toBe(1024)
     const d = pickTier(macbook)

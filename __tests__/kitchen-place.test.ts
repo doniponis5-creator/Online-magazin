@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { grabOf, previewMove } from '@/lib/kitchen/drag'
-import { addAt, addWidth, detachUppers, itemPositions, moduleCenter, narrowNeighbour, pinCabinet, resolveArrangement, swapFit, moveToWall, narrowFor, needByWall, pinnedIds, pinWalls, placeAt, planKitchen, resizeWalls, squeezeGaps, UPPER_MIN, type Plan, type PlanInput, type Planner } from '@/lib/kitchen/layout'
+import { addAt, addWidth, detachUppers, fitOn, itemPositions, moduleCenter, narrowNeighbour, pinCabinet, resolveArrangement, swapFit, moveToWall, narrowFor, needByWall, pinnedIds, pinWalls, placeAt, planKitchen, resizeWalls, squeezeGaps, UPPER_MIN, type Plan, type PlanInput, type Planner } from '@/lib/kitchen/layout'
 import { droppedName } from '@/lib/kitchen/checks'
 import { makerList } from '@/components/kitchen/drawing'
 import { kitchenTexts } from '@/components/kitchen/texts'
@@ -92,9 +92,9 @@ describe('placeAt: постановка с точкой захвата', () => {
     expect(pos.k2?.center).toBe(370)
   })
 
-  it('пересечение с фиксированным соседом → снап к его краю (у плиты — к краю её столешницы)', () => {
+  it('пересечение с фиксированным соседом → снап к его краю (свой шкаф ≥ 30 у плиты — вплотную, он сам столешница)', () => {
     const { fit } = placeAt(base, 'k1', 'A', 255, planner)
-    expect(fit).toMatchObject({ ok: true, center: 310, snap: 'neighbour' })
+    expect(fit).toMatchObject({ ok: true, center: 280, snap: 'neighbour' })
   })
 
   it('не помещается → fit.ok=false с need и narrow, состояние не меняется', () => {
@@ -221,7 +221,7 @@ describe('drag.previewMove: одна модель для 3D и плана', () =
     expect(previewMove(plan, 'sink', 'A', 33, 0)).toEqual({ center: 30, width: 60, wall: 'A', fits: true, snap: 'wall', labels: { left: 0, right: 40 }, narrow: null, need: 0 })
   })
   it('снап к соседу', () => {
-    expect(previewMove(plan, 'k1', 'A', 255, 0)).toMatchObject({ center: 310, snap: 'neighbour', labels: { left: 0, right: 0 } })
+    expect(previewMove(plan, 'k1', 'A', 255, 0)).toMatchObject({ center: 280, snap: 'neighbour', labels: { left: 0, right: 30 } })
   })
   it('не помещается — красный вердикт с подсказкой, кого сузить', () => {
     expect(previewMove(plan, 'k2', 'A', 80, 0)).toMatchObject({ fits: false, need: 20, narrow: { neighbour: 'k1', by: 20 } })
@@ -231,8 +231,8 @@ describe('drag.previewMove: одна модель для 3D и плана', () =
     const grab = grabOf(plan, 'k1', 158)
     expect(grab).toBe(28)
     expect(previewMove(plan, 'k1', 'A', 150, grab)?.center).toBe(122)
-    // без точки захвата шкаф прыгнул бы серединой под палец (и упёрся в столешницу плиты)
-    expect(previewMove(plan, 'k1', 'A', 150, 0)?.center).toBe(130)
+    // без точки захвата шкаф прыгнул бы серединой под палец
+    expect(previewMove(plan, 'k1', 'A', 150, 0)?.center).toBe(150)
   })
   it('в плане — ещё к краям противоположного ряда', () => {
     const island: KitchenState = {
@@ -732,3 +732,18 @@ describe('ширина пункта меню «+» (P1)', () => {
   })
 })
 
+
+describe('столешница у варочной — одно правило для раскладки и fitOn (P4)', () => {
+  // стена 400: k1 100–160, варочная 190–250, k2 340–400 (см. base)
+  it('свой шкаф ≥ 30 — сам столешница: fitOn пускает его вплотную к варочной и варочную вплотную к нему', () => {
+    const p = planner(base)
+    // палец 165: край k1 зашёл бы на варочную (190) — встаёт вплотную, 130–190, а не за 30 см до неё
+    expect(fitOn(p, 'k1', 'A', 165)?.center).toBe(160)
+    // варочная у k2 (340): палец 305 → 275–335, до k2 5 см < SNAP — прилипает вплотную, 280–340
+    expect(fitOn(p, 'hob', 'A', 305)?.center).toBe(310)
+    // правило раскладки то же: такая постановка встаёт на своё место
+    const { fit } = placeAt(base, 'k1', 'A', 160, planner)
+    expect(fit?.ok).toBe(true)
+    expect(itemPositions(planner({ ...base, at: { ...base.at, k1: 160 } })).k1?.center).toBe(160)
+  })
+})

@@ -46,11 +46,15 @@ export function previewMove(plan: Plan, key: ItemKey, wall: WallId, cm: number, 
   const sw = fit.ok ? null : swapFit(plan, key, wall, cm - grab)
   // зелёная рамка обмена — только если placeAt на отпускании правда поменяет (та же пробная раскладка), иначе «рамка, потом тост»
   if (sw && swapHolds(opts.trial, key, wall, cm, grab, opts.soft, `${wall}|${sw.with}|${sw.center}`)) return { center: sw.center, width: fit.w, wall, fits: true, snap: null, labels: { left: 0, right: 0 }, narrow: null, need: 0, swap: sw.with }
+  // у варочной свой шкаф ≥ 30 встаёт вплотную (он сам столешница), но освобождённое им место у варочной
+  // станет пустым и потребует запаса — рамку проверяет та же пробная раскладка, что и отпускание (P4)
+  const nearHob = fit.ok && fit.row === 'base' && (key === 'hob' || fit.neighbours.left === 'hob' || fit.neighbours.right === 'hob')
+  const holds = !nearHob || swapHolds(opts.trial, key, wall, cm, grab, opts.soft, `${wall}|fit|${fit.center}`)
   return {
     center: fit.center,
     width: fit.w,
     wall,
-    fits: fit.ok,
+    fits: fit.ok && holds,
     snap: fit.snap,
     labels: { left: r1(fit.center - half - fit.free.from), right: r1(fit.free.to - (fit.center + half)) },
     narrow: fit.narrow,

@@ -355,6 +355,16 @@ export function KitchenPlanner({
   /** предпросмотр перемещения — общий для 3D и плана (из previewMove) */
   const [preview, setPreview] = useState<Preview | null>(null)
   const [add, setAdd] = useState<AddMenu | null>(null)
+  // меню «+» закрылось (поставили, не влезло, передумали) — план снова вписывает кухню целиком (P4, 7)
+  const [planFit, setPlanFit] = useState(0)
+  const hadAdd = useRef(false)
+  useEffect(() => {
+    if (add) hadAdd.current = true
+    else if (hadAdd.current) {
+      hadAdd.current = false
+      setPlanFit((n) => n + 1)
+    }
+  }, [add])
   const addRef = useRef<HTMLDivElement>(null)
   /** «+» → «Технику»: куда поставить выбранную в шаге «Техника» модель; ушли с шага — забыто */
   const addTargetRef = useRef<PlanTarget | null>(null)
@@ -665,12 +675,15 @@ export function KitchenPlanner({
     if (!root) return
     let header: HTMLElement | null = null
     let last = ''
+    let lastStage = ''
     let frame = 0
     const size = new ResizeObserver(() => update())
     const cls = new MutationObserver(() => update())
     // страница проявилась или выросла — шапка к этому времени уже на месте
     const page = new ResizeObserver(() => update())
     page.observe(document.body)
+    const stageEl = root.querySelector('.kp-stage')
+    if (stageEl) page.observe(stageEl)
     function update() {
       const found = document.querySelector<HTMLElement>('header.header')
       if (found !== header) {
@@ -698,6 +711,15 @@ export function KitchenPlanner({
       // ниже — возвращается в обычный угол, а не висит посреди страницы.
       const edge = window.innerHeight - 90
       document.documentElement.classList.toggle('kp-over', Boolean(work && work.top < edge && work.bottom > edge))
+      // Телефон стоя: кнопка консультанта — в полосе видов под 3D, где бы сцена ни стояла
+      // (под шапкой или у края экрана); иначе она ложилась на «+» плана (P4, 5)
+      const stageBox = root.querySelector('.kp-stage')?.getBoundingClientRect()
+      const sb = stageBox ? `${Math.round(stageBox.bottom)}px` : ''
+      if (sb !== lastStage) {
+        lastStage = sb
+        if (sb) document.documentElement.style.setProperty('--kp-stage-bottom', sb)
+        else document.documentElement.style.removeProperty('--kp-stage-bottom')
+      }
       const top = header.classList.contains('is-hidden') ? 0 : h
       if (`${h}:${top}` === last) return
       last = `${h}:${top}`
@@ -721,6 +743,7 @@ export function KitchenPlanner({
       page.disconnect()
       cancelAnimationFrame(frame)
       document.documentElement.classList.remove('kp-pinned', 'kp-over')
+      document.documentElement.style.removeProperty('--kp-stage-bottom')
       window.removeEventListener('scroll', later)
       window.removeEventListener('resize', later)
       window.removeEventListener('load', later)
@@ -1893,6 +1916,7 @@ export function KitchenPlanner({
     if (isStacked()) {
       card.style.left = ''
       card.style.top = ''
+      card.style.maxHeight = ''
       engine?.setShift(0, 0)
       return
     }
@@ -1902,6 +1926,9 @@ export function KitchenPlanner({
     const now = engine?.selectionRect() ?? null
     const was = engine?.getShift() ?? { x: 0, y: 0 }
     const sel = now && { ...now, x: now.x - was.x, y: now.y - was.y }
+    // карточка ≤ 30 % холста (P4, 4): выше не растёт, лишнее листается внутри
+    const host = hostRef.current
+    if (host) card.style.maxHeight = `${Math.max(160, Math.floor((0.3 * host.clientWidth * host.clientHeight) / Math.max(card.offsetWidth, 1)))}px`
     const W = stage.clientWidth
     const H = stage.clientHeight
     const cw = card.offsetWidth
@@ -2141,6 +2168,21 @@ export function KitchenPlanner({
     setMoving(null)
     setSelected(null)
   }
+  // «Итог» — проверка всей кухни: карточка шкафа поверх 3D там не нужна (P4, 12)
+  useEffect(() => {
+    if (step === 'total') closeSelection()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step])
+  // ряд «Какой сделать этот шкаф?» — к выделенному типу при каждом выборе (P4, 10); страницу не листаем
+  useEffect(() => {
+    const on = cardRef.current?.querySelector<HTMLElement>('.kp-fronts__list [aria-checked="true"]')
+    const list = on?.parentElement
+    if (!on || !list) return
+    const a = on.getBoundingClientRect()
+    const b = list.getBoundingClientRect()
+    if (a.left >= b.left && a.right <= b.right) return
+    list.scrollLeft += a.left - b.left - (b.width - a.width) / 2
+  }, [editing?.key, editing?.variant])
 
   const measureTitle = (d: Dims) => {
     if (d.kind === 'appliance' && d.slot) return items[d.slot]?.name ?? t.slots[d.slot]
@@ -2932,7 +2974,7 @@ export function KitchenPlanner({
           </div>
           {!masterPage && galleryWhy && <p className="kp-note">{galleryWhy}</p>}
         </div>
-        <PlanSketch plan={plan} labels={wallLabels} showWidths className="kp-maker__sketch" />
+        <PlanSketch plan={plan} labels={wallLabels} showWidths names={t.planNames} modules={t.modules} className="kp-maker__sketch" />
       </section>
   )
 
@@ -2969,6 +3011,8 @@ export function KitchenPlanner({
               names={t.planNames}
               cm={t.cm}
               addLabel={t.plus.btn}
+              fit={planFit}
+              fitLabel={t.planFit}
               ariaLabel={t.planViewTitle}
               facade={tone.facade}
             />
@@ -3318,6 +3362,9 @@ export function KitchenPlanner({
                   <span className="kp-size-card__title">{measureTitle(measure)}</span>
                   <span className="kp-size-card__nums">
                     {fmt(measure.w)} × {fmt(measure.h)} × {fmt(measure.d)} {t.cm}
+                    <small className="kp-size-card__abbr" aria-hidden="true">
+                      {t.sizeAxesShort}
+                    </small>
                   </span>
                   <span className="kp-size-card__axes">{t.sizeAxes}</span>
                   <button type="button" className="kp-size-card__close" aria-label={t.close} onClick={closeSelection}>

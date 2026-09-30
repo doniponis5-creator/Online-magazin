@@ -1429,6 +1429,9 @@ export function fitOn(plan: Plan, key: ItemKey, wall: WallId, center: number, op
   return yields.length ? { ...loose, yields } : loose
 }
 
+/** Свой шкаф не уже HOB_SIDE — сам столешница у варочной (как `top` в wallItems). */
+const selfTop = (k: ItemKey, w: number) => isCabinet(k) && w >= HOB_SIDE
+
 /** `fitOn` без мягких соседей: `ignore` — ключи, которых для постановки нет (уступят). */
 function fitCore(plan: Plan, key: ItemKey, wall: WallId, center: number, opts: FitOptions, ignore: ItemKey[]): Fit | null {
   const run = plan.runs.find((r) => r.id === wall)
@@ -1449,7 +1452,14 @@ function fitCore(plan: Plan, key: ItemKey, wall: WallId, center: number, opts: F
   if (row === 'base') {
     for (const m of run.modules) {
       if (m.kind === 'corner') obstacles.push({ ...spanOf(m), key: null })
-      else if (m.item && m.item !== key && !ignore.includes(m.item)) obstacles.push({ ...spanOf(m, m.kind === 'hob' ? HOB_SIDE : 0), key: m.item })
+      else if (m.item && m.item !== key && !ignore.includes(m.item)) {
+        // одно правило с раскладкой (wallItems): свой шкаф ≥ HOB_SIDE сам столешница у варочной — запас между ними не нужен
+        if (m.kind === 'hob') obstacles.push({ ...spanOf(m, selfTop(key, w) ? 0 : HOB_SIDE), key: m.item })
+        else if (pad && selfTop(m.item, m.w)) {
+          const o = spanOf(m)
+          obstacles.push({ s: o.s + pad, e: o.e - pad, key: m.item })
+        } else obstacles.push({ ...spanOf(m), key: m.item })
+      }
     }
   } else {
     for (const u of run.uppers) {

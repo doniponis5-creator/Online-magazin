@@ -16,7 +16,7 @@ import { isGap, type ItemKey, type SlotKind, type WallId } from '@/lib/kitchen/t
 import type { SpecData } from '@/lib/kitchen/spec'
 import { sharpenPass } from './sharpen'
 import { buildKitchen, CEILING_LAYER, WALL_H, WINDOW, type BuildInput, type Built, type CabInfo, type Dims } from './build'
-import { governIdle, governStep, governorPlan, newGovernor, pickTier, readEnv, type DeviceEnv, type GovernorState, type Tier, type TierName, isPhone } from './quality'
+import { governIdle, msaaFallback, msaaSamples, governStep, governorPlan, newGovernor, pickTier, readEnv, type DeviceEnv, type GovernorState, type Tier, type TierName, isPhone } from './quality'
 import type { PhotoTracer } from './photoreal'
 import { setBudget } from './textures'
 
@@ -229,6 +229,10 @@ export class KitchenEngine {
   private canvasRatio = 1
   private renderRatio = 1
   private finalPass: ShaderPass | null = null
+  /** многосэмпловая HalfFloat-цель работает: false — навсегда FXAA (нет расширения или ошибка GL) */
+  private msaaOk = true
+  /** первый кадр с сэмплами проверен на ошибку GL */
+  private msaaChecked = false
   /** класс устройства: выбран один раз при запуске (quality.ts) */
   private tier: Tier
   private env: DeviceEnv
@@ -304,6 +308,10 @@ export class KitchenEngine {
     this.env = { ...env0, gpu: this.gpuName() }
     // запасной запуск на компьютере — бережный класс
     this.tier = pickTier(this.env, force ?? (safe && !phone ? 'desktop-weak' : undefined))
+    // нет половинной точности для цели с сэмплами — сразу FXAA, как у phone-low (P4, ревью)
+    const gl = r.getContext()
+    this.msaaOk = Boolean(gl.getExtension('EXT_color_buffer_half_float') || gl.getExtension('EXT_color_buffer_float'))
+    this.tier = msaaFallback(this.tier, { halfFloat: this.msaaOk, glError: false })
     this.mobile = this.tier.mobile
     this.detailNow = this.tier.detail
     setBudget(this.tier.texBudget)
@@ -2110,7 +2118,7 @@ export class KitchenEngine {
    * кухню с его материалами и тенями. Обратно — тем же вызовом.
    */
   private useTier(t: Tier) {
-    this.tier = t
+    this.tier = this.msaaOk ? t : msaaFallback(t, { halfFloat: false, glError: true })
     this.detailNow = t.detail
     this.detailDirty = false
     setBudget(t.texBudget)
@@ -2151,7 +2159,7 @@ export class KitchenEngine {
   private applyRatio(ratio: number, w: number, h: number, samples?: number) {
     this.renderRatio = ratio
     const canvas = this.renderer.getPixelRatio()
-    if (this.tier.msaa) this.setSamples(samples ?? (ratio >= 1.99 ? 0 : 4))
+    if (this.tier.msaa) this.setSamples(samples ?? msaaSamples(this.tier, ratio, canvas, w, h))
     this.composer.setPixelRatio(ratio)
     this.composer.setSize(w, h)
     if (this.finalPass) this.finalPass.uniforms.scale.value = ratio / canvas
@@ -2172,6 +2180,38 @@ export class KitchenEngine {
   }
 
   private draw() {
+    this.composer.render()
+    if (!this.msaaChecked && this.tier.msaa && this.composer.renderTarget1.samples > 0) this.checkMsaa()
+  }
+
+  /**
+   * Первый кадр с сэмплами: ошибка GL или неполный кадровый буфер — сэмплы 0
+   * и FXAA вместо резкости, без перезапуска страницы (P4, ревью).
+   */
+  private checkMsaa() {
+    this.msaaChecked = true
+    const r = this.renderer
+    const gl = r.getContext()
+    let bad = false
+    while (gl.getError() !== gl.NO_ERROR) bad = true
+    const prev = r.getRenderTarget()
+    r.setRenderTarget(this.composer.renderTarget1)
+    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) bad = true
+    r.setRenderTarget(prev)
+    if (!bad) return
+    this.msaaOk = false
+    this.tier = msaaFallback(this.tier, { halfFloat: this.msaaOk, glError: true })
+    this.setSamples(0)
+    if (this.finalPass) {
+      this.composer.removePass(this.finalPass)
+      this.finalPass.dispose()
+      this.finalPass = null
+    }
+    if (!this.fxaa) {
+      this.fxaa = new ShaderPass(FXAAShader)
+      this.composer.addPass(this.fxaa)
+    }
+    this.applyRatio(this.renderRatio, this.host.clientWidth, this.host.clientHeight, 0)
     this.composer.render()
   }
 
@@ -2201,7 +2241,7 @@ export class KitchenEngine {
       this.frame(gliding ? 'glide' : 'instant')
     }
     // новый размер холста очищает его — кадр рисуем сразу, а не на следующем круге
-    if (this.built && !this.photo) this.draw()
+    if (this.built && !this.photo && !this.compiling) this.draw()
     this.invalidate()
   }
 

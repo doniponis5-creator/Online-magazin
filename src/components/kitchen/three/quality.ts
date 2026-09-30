@@ -127,8 +127,8 @@ function make(name: TierName, mobile: boolean): Tier {
         lite: false,
         detail: 1,
         shadow: 2048,
-        msaa: false,
-        fxaa: true,
+        msaa: true,
+        fxaa: false,
         composer: false,
         roomProbe: false,
         pathTrace: false,
@@ -256,6 +256,38 @@ export function governIdle(s: GovernorState, now: number): GovernorState {
 }
 
 /** Что применить на ступени level: карта теней, детальность картинок, чёткость в движении. */
+/**
+ * Сколько сэмплов MSAA у цели кадра. Компьютер: кадр в 2 раза крупнее холста
+ * уже сглажен — 0. Телефон: в покое кадр = точкам экрана (ratio = холст), и без
+ * сэмплов швы дверец рвутся в пунктир (P4) — 4, а на большом кадре 2: память
+ * цели с сэмплами растёт в разы (полный экран iPhone — 2,7 Мп).
+ */
+export function msaaSamples(tier: Tier, ratio: number, canvas: number, cssW: number, cssH: number): number {
+  if (!tier.msaa) return 0
+  if (!tier.mobile) return ratio >= 1.99 ? 0 : 4
+  if (ratio / Math.max(canvas, 0.01) >= 1.99) return 0
+  const px = ratio * ratio * cssW * cssH
+  return px <= MSAA4_PX ? 4 : px <= MSAA2_PX ? 2 : 0
+}
+/** Что видеокарта сказала про многосэмпловую цель кадра (HalfFloat). */
+export type MsaaSupport = {
+  /** есть `EXT_color_buffer_half_float` или `EXT_color_buffer_float` */
+  halfFloat: boolean
+  /** цель с сэмплами дала ошибку GL или неполный кадровый буфер */
+  glError: boolean
+}
+/**
+ * Запасной путь MSAA (P4, ревью): на части Android и старых iOS многосэмпловый
+ * half-float не поддерживается — чёрный кадр. Тогда 0 сэмплов и FXAA, как у
+ * phone-low; поддержка есть — тот же класс (тот же объект).
+ */
+export function msaaFallback(tier: Tier, s: MsaaSupport): Tier {
+  if (!tier.msaa || (s.halfFloat && !s.glError)) return tier
+  return { ...tier, msaa: false, fxaa: true }
+}
+const MSAA4_PX = 1.6e6
+const MSAA2_PX = 3e6
+
 export function governorPlan(level: number, tier: Tier, dpr: number): { shadow: number; detail: number; ratio: number } {
   const base = tier.moveRatio(dpr)
   const min = dpr >= 2 ? GOVERNOR_MIN_RATIO_HIDPI : GOVERNOR_MIN_RATIO

@@ -84,7 +84,7 @@ export type SpecTop = { x0: number; x1: number; depth: number; thick: number; si
 /** модули ряда по раскладке: начало и ширина, см — для цепочки размеров */
 export type SpecModule = { x: number; w: number }
 
-export type SpecRun = { id: RunId; length: number; modules: SpecModule[]; boxes: SpecBox[]; fronts: SpecFront[]; tops: SpecTop[] }
+export type SpecRun = { id: RunId; length: number; modules: SpecModule[]; boxes: SpecBox[]; fronts: SpecFront[]; tops: SpecTop[]; /** пустые места стены (Run.gaps) — для угла развёртки */ gaps?: { x: number; w: number; row?: string }[] }
 
 /**
  * Проёмы и доборы — то, что не шкаф: проём под встраиваемую посудомойку

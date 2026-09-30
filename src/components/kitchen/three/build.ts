@@ -2140,7 +2140,7 @@ function collectRun(ctx: Ctx, run: Run, g: THREE.Group): SpecRun {
     }
   })
   const modules = run.modules.map((m) => ({ x: m.x, w: m.w }))
-  return { id: run.id, length: run.length, modules, boxes, fronts, tops: ctx.tops }
+  return { id: run.id, length: run.length, modules, boxes, fronts, tops: ctx.tops, gaps: run.gaps }
 }
 
 /** Алюминиевый профиль вместо ручек (хай-тек). */

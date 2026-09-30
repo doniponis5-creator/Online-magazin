@@ -3185,7 +3185,8 @@ html.kp-lock body {
      справа от видов. Внизу экрана она закрывала «+» у размеров и края
      карточек, а на самой картинке мешала крутить кухню. */
   html.kp-pinned .assistant:not(.is-open) {
-    top: calc(var(--kp-stage-h) - 40px + 2px);
+    /* --kp-stage-bottom — низ сцены на экране (KitchenPlanner, P4, 5): сцена бывает и под шапкой */
+    top: calc(var(--kp-stage-bottom, var(--kp-stage-h)) - 40px + 2px);
     right: 10px;
     bottom: auto;
   }
@@ -5058,7 +5059,8 @@ button.kp-opt__more {
 }
 
 .kp-stage.has-col .kp-tools {
-  left: 334px;
+  /* P4, 9: вся строка над сценой и колонкой плана — на 1280 и 1440 одним рядом, «Отменить»/«Повторить» рядом */
+  left: 14px;
 }
 
 .kp-stage.has-col .kp-views {
@@ -5158,7 +5160,110 @@ button.kp-opt__more {
 }
 
 .kp-stage.has-col .kp-plan {
-  padding-top: 0;
+  padding-top: calc(var(--kp-tools-h, 44px) + 12px);
+}
+
+/* P4, 6: полоса перемещения внизу сцены идёт и по колонке плана — план и «+» встают над ней */
+.kp-stage.has-col:has(.kp-move) .kp-plan {
+  padding-bottom: 76px;
+}
+
+.kp-stage.has-col:has(.kp-move) .kp-plan__add,
+.kp-stage.has-col:has(.kp-move) .kp-plan__fit {
+  bottom: 80px;
+}
+
+/* «Показать всё» — слева внизу плана, пока план сдвинут или приближен (P4, 7) */
+.kp-plan__fit {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--kp-line);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgb(38 50 68 / 8%);
+  font: 650 13px/1 var(--font);
+  color: var(--kp-cobalt);
+  cursor: pointer;
+}
+
+/* P4, 4: карточка правки на компьютере — узкая и плотная, ≤ 30 % холста на 1280 × 800;
+   не влезла — листается внутри (max-height ставит placeCard). Плотная — только под мышь:
+   телефон боком (pointer: coarse) идёт той же раскладкой, там кнопки ≥ 44 px */
+@media not all and (max-width: 900px) and (min-height: 521px) {
+  .kp-size-card {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+.kp-size-card__abbr {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) and (not ((max-width: 900px) and (min-height: 521px))) {
+  /* длинная строка осей спрятана — короткие буквы «Ш × В × Г» стоят рядом с числами */
+  .kp-size-card--edit .kp-size-card__abbr {
+    display: inline;
+    margin-left: 6px;
+    font: 600 11px/1 var(--font);
+    letter-spacing: 0;
+    color: var(--kp-muted);
+  }
+
+  .kp-size-card--edit {
+    max-width: min(320px, calc(100% - 28px));
+    padding: 8px 6px 8px 12px;
+  }
+
+  .kp-size-card--edit .kp-size-card__axes {
+    display: none;
+  }
+
+  .kp-size-card--edit .kp-size-card__close {
+    grid-row: 1 / span 2;
+  }
+
+  .kp-size-card--edit .kp-size-card__nums {
+    font-size: 17px;
+  }
+
+  .kp-size-card--edit .kp-fronts {
+    margin-top: 6px;
+    padding-top: 6px;
+  }
+
+  .kp-size-card--edit .kp-fronts__ask {
+    margin-bottom: 4px;
+  }
+
+  .kp-size-card--edit .kp-front-opt {
+    min-width: 60px;
+    padding: 5px 6px 4px;
+    gap: 2px;
+    font-size: 11px;
+  }
+
+  .kp-size-card--edit .kp-front-opt__icon {
+    width: 28px;
+    height: 22px;
+  }
+
+  .kp-size-card--edit .kp-cabw {
+    margin-top: 6px;
+    padding-top: 6px;
+  }
+
+  .kp-size-card--edit .kp-cabw .kp-size__step,
+  .kp-size-card--edit .kp-cabw__remove {
+    height: 32px;
+  }
+
+  .kp-size-card--edit .kp-cabw output {
+    min-width: 44px;
+  }
 }
 
 /* телефон: меню «+» — листом над полосой видов, в две колонки (сцена невысокая); план — та же область, что 3D */
@@ -5185,7 +5290,8 @@ button.kp-opt__more {
     font-size: 13px;
   }
 
-  .kp-plan__add {
+  .kp-plan__add,
+  .kp-plan__fit {
     bottom: calc(var(--kp-strip) + 12px);
   }
 }
@@ -5411,8 +5517,10 @@ button.kp-opt__more {
   display: none;
 }
 
-/* выбран шкаф — тост сверху: снизу лежит лист/полоска выбранного (P2, 8) */
-html:has(.kp-sel) .kp-toast {
-  top: calc(12px + env(safe-area-inset-top, 0px));
-  bottom: auto;
+/* выбран шкаф — тост сверху: снизу лежит лист/полоска выбранного (P2, 8); только телефон стоя */
+@media (max-width: 900px) and (min-height: 521px) {
+  html:has(.kp-sel) .kp-toast {
+    top: calc(12px + env(safe-area-inset-top, 0px));
+    bottom: auto;
+  }
 }

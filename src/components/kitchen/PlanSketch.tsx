@@ -1,4 +1,5 @@
 import type { ModuleKind, Plan } from '@/lib/kitchen/layout'
+import type { PlanNames } from './PlanView'
 import { rectOf } from './planGeom'
 
 /**
@@ -27,10 +28,24 @@ type Props = {
   labels: { a: string; b?: string; c?: string }
   /** подпись под модулем: ширина в см */
   showWidths?: boolean
+  /** мойка, варочная и техника — названием, как в плане (`t.planNames`) */
+  names?: PlanNames
+  /** узкий модуль (< 25 см) — сокращённым названием (`t.modules`) */
+  modules?: Partial<Record<string, string>>
   className?: string
 }
 
-export function PlanSketch({ plan, labels, showWidths = false, className }: Props) {
+/** Подпись модуля на схеме: мойка/варочная/техника — названием, шкаф — шириной, узкий — сокращением. */
+function sketchLabel(m: { kind: string; w: number }, names?: PlanNames, modules?: Partial<Record<string, string>>): string {
+  const named = names && (m.kind in names ? names[m.kind as keyof PlanNames] : undefined)
+  if (named && m.kind !== 'corner') return m.w >= 25 ? named : short(named)
+  if (m.w >= 25) return String(Math.round(m.w))
+  const name = modules?.[m.kind]
+  return name ? short(name) : ''
+}
+const short = (s: string) => (s.length <= 5 ? s : `${s.slice(0, 4)}.`)
+
+export function PlanSketch({ plan, labels, showWidths = false, names, modules, className }: Props) {
   const W = plan.room.w
   // окно на боковой стене (у прямой кухни) должно лечь на стену, а не за её конец
   const winEnd = plan.window?.wall === 'left' ? plan.window.at + plan.window.w / 2 + 20 : 0
@@ -68,16 +83,16 @@ export function PlanSketch({ plan, labels, showWidths = false, className }: Prop
                 <circle key={`${fx}${fy}`} cx={r.x + r.w * fx} cy={r.y + r.h * fy} r={Math.min(r.w, r.h) * 0.13} fill="none" stroke="var(--kp-sk-hob-ring)" strokeWidth={1.5} />
               )),
             )}
-          {showWidths && r.m.w >= 25 && (
+          {showWidths && sketchLabel(r.m, names, modules) && (
             <text
               x={r.x + r.w / 2}
               y={r.y + r.h / 2}
               className="kp-sketch__num"
               textAnchor="middle"
               dominantBaseline="central"
-              transform={r.vertical ? `rotate(-90 ${r.x + r.w / 2} ${r.y + r.h / 2})` : undefined}
+              transform={r.vertical !== r.m.w < 25 ? `rotate(-90 ${r.x + r.w / 2} ${r.y + r.h / 2})` : undefined}
             >
-              {Math.round(r.m.w)}
+              {sketchLabel(r.m, names, modules)}
             </text>
           )}
         </g>
