@@ -84,7 +84,15 @@ export function talkLang(turns: ChatTurn[], lang: Lang) {
   // хотя весь разговор шёл по-кыргызски, и покупатель писал «орусча түшүнбөйм».
   // Неуверенно — берём язык всего разговора.
   const whole = detectLangScored(users.slice(-6).join(' '), lang)
-  return whole.strong ? whole.lang : recent.lang
+  if (whole.strong) return whole.lang
+  // «QR код боса ям болорад» — ни одной приметы, а бот до этого говорил по-кыргызски.
+  // Не меняем язык на русский: берём язык последнего ответа бота, если он ясен.
+  const lastBot = [...turns].reverse().find((t) => t.role === 'assistant' && !/https?:\/\//.test(t.text))
+  if (lastBot) {
+    const said = detectLangScored(lastBot.text, recent.lang)
+    if (said.strong && said.lang !== 'ru') return said.lang
+  }
+  return recent.lang
 }
 
 /**

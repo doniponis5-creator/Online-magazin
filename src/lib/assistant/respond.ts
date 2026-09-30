@@ -64,7 +64,8 @@ export async function respond(
     if (isOtherBot(turns)) return { text: '', products: [], source: 'flow', silent: true, mute: true }
     if (isAcknowledgement(turns) || isJunk(turns)) return { text: '', products: [], source: 'flow', silent: true }
   }
-  const reply = await answer(turns, lang, customer, page, channel.known.name, Boolean(channel.known.phone))
+  const first = await answer(turns, lang, customer, page, channel.known.name, Boolean(channel.known.phone))
+  const reply = declined(turns) ? { ...first, text: withoutCallOffer(first.text) } : first
   // Сайт — там только покупатели. В WhatsApp модель ещё смотрит, кому адресовано.
   if (channel.leadChannel !== 'whatsapp') return reply
   // Идёт продажа (бот показывал товар) — это покупатель, даже если пишет о своём:
@@ -96,9 +97,22 @@ export async function respond(
   return reply
 }
 
+/** «А жок рахмат», «нет, спасибо» — покупатель отказался. */
+const DECLINE = /(^|[\s,.!])(жок|йук|йўқ|нет|не надо|не нужно|не хочу|керек эмес|керакмас|kerak emas|yo.?q)($|[\s,.!])/iu
+function declined(turns: ChatTurn[]): boolean {
+  const last = turns[turns.length - 1]
+  return last?.role === 'user' && last.text.trim().length <= 40 && DECLINE.test(last.text)
+}
+
+/** После отказа второй раз «позвонить вам?» не предлагаем — достаточно короткого прощания. */
+function withoutCallOffer(text: string): string {
+  const kept = text.split(/(?<=[.!?])\s+/).filter((sentence) => !CALL_OFFER.test(sentence))
+  return kept.length > 0 ? kept.join(' ') : text
+}
+
 /** Короткое «понял/спасибо» на трёх языках, эмодзи и знаки — без единого вопроса. */
 const ACK_WORD =
-  '(ок|ok|окей|okay|хорошо|ладно|понял|поняла|понятно|спасибо|благодарю|макул|болду|болот|түшүндүм|тушундум|рахмат|ырахмат|чоң рахмат|катта рахмат|жарайт|хоп|хуп|яхши|тушундим|тушунарли|майли|mayli|xop|rahmat|yaxshi|tushundim|ha|ха|да|ооба|вам|сизге|сизга|👍|👌|🙏|✅|❤️|👍🏻|👍🏼|👍🏽|🤝)'
+  '(родной|радной|укам|ука|ака|дорогой|жаным|досм|братан|ок|ok|окей|okay|хорошо|ладно|понял|поняла|понятно|спасибо|благодарю|макул|болду|болот|түшүндүм|тушундум|рахмат|ырахмат|чоң рахмат|катта рахмат|жарайт|хоп|хуп|яхши|тушундим|тушунарли|майли|mayli|xop|rahmat|yaxshi|tushundim|ha|ха|да|ооба|вам|сизге|сизга|👍|👌|🙏|✅|❤️|👍🏻|👍🏼|👍🏽|🤝)'
 /** До трёх «ок/спасибо/рахмат» подряд, с любыми знаками и эмодзи вокруг. */
 const ACK = new RegExp(`^[\\s\\p{P}\\p{S}]*(?:${ACK_WORD}[\\s\\p{P}\\p{S}]*){0,3}$`, 'iu')
 

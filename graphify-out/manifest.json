@@ -3984,15 +3984,15 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/reply.ts": {
-    "mtime": 1790701293.420054,
-    "seen": 1790701412.8082418,
-    "ast_hash": "535dd1bd2494cee52598e053871c596e",
+    "mtime": 1790789167.0035264,
+    "seen": 1790789296.846577,
+    "ast_hash": "9a734e2862bff40660b38aed9108b2bd",
     "semantic_hash": ""
   },
   "src/lib/assistant/talk.ts": {
-    "mtime": 1790701293.4210768,
-    "seen": 1790701412.808243,
-    "ast_hash": "b1df71f1acc171c86966579a7c3a10df",
+    "mtime": 1790789151.2694397,
+    "seen": 1790789296.846581,
+    "ast_hash": "ea630794a46777c5a76a99da7522f3b4",
     "semantic_hash": ""
   },
   "review/appstore-screenshots/01-home.png": {
@@ -4050,9 +4050,9 @@
     "semantic_hash": ""
   },
   "src/lib/telegram/order.ts": {
-    "mtime": 1790701293.418981,
-    "seen": 1790701412.808279,
-    "ast_hash": "fc80c9a38675530bd5359aa9f0f3c947",
+    "mtime": 1790789167.0029497,
+    "seen": 1790789296.848607,
+    "ast_hash": "340f2402fa97ac870ac60e4cea490c88",
     "semantic_hash": ""
   },
   "review/appstore-screenshots/02-catalog.png": {
@@ -4314,9 +4314,9 @@
     "semantic_hash": ""
   },
   "__tests__/sales-flow.test.ts": {
-    "mtime": 1790701334.8331943,
-    "seen": 1790701412.8080409,
-    "ast_hash": "a7d4dc20129a1dcc2ca762e931db93b4",
+    "mtime": 1790789224.78895,
+    "seen": 1790789296.833859,
+    "ast_hash": "918e84a638e2c727a338e48e15c2b5d7",
     "semantic_hash": ""
   },
   "src/lib/assistant/leads.ts": {
@@ -4356,9 +4356,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/respond.ts": {
-    "mtime": 1790701293.419612,
-    "seen": 1790701412.808243,
-    "ast_hash": "e38ba58e5b38acd63bf8c7812663cdce",
+    "mtime": 1790789192.9713287,
+    "seen": 1790789296.8465788,
+    "ast_hash": "070a7423e9932e8ec51fe034bb34636b",
     "semantic_hash": ""
   },
   "docs/PC_2026-09-21.md": {
@@ -4494,15 +4494,15 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/policy.ts": {
-    "mtime": 1790701293.4207563,
-    "seen": 1790701412.808241,
-    "ast_hash": "11519646232c4b4dfea2e93e4556e654",
+    "mtime": 1790789167.003881,
+    "seen": 1790789296.84654,
+    "ast_hash": "3a3562ada96b445f411fad3d9714a923",
     "semantic_hash": ""
   },
   "scripts/exam/questions.txt": {
-    "mtime": 1790701398.9329388,
-    "seen": 1790701412.8083751,
-    "ast_hash": "06bff533f9a16804e1c6748b4294395c",
+    "mtime": 1790789260.727815,
+    "seen": 1790789296.854217,
+    "ast_hash": "83f4a0645764bd2cd46a552e550c9886",
     "semantic_hash": ""
   },
   "android/app/src/main/res/drawable-nodpi/splash_logo.png": {
