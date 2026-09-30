@@ -14,7 +14,7 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-29T22:14:27+06:00",
-  "updatedAt": "2026-09-30T10:11:49+06:00",
+  "updatedAt": "2026-09-30T10:40:38+06:00",
   "finishedAt": null,
   "stages": [
     {
@@ -217,10 +217,15 @@ window.STATE =
         "src/components/kitchen/kitchen.css",
         "src/components/kitchen/texts.ts"
       ],
-      "status": "in-progress",
+      "status": "done",
+      "finishedAt": "2026-09-30T10:40:38+06:00",
+      "tests": { "passed": 906, "failed": 0 },
+      "commit": "caa8deb",
+      "files": ["KitchenPlanner.tsx", "kitchen.css", "texts.ts", "three/engine.ts", "e2e/kitchen-phone.spec.ts"],
       "startedAt": "2026-09-30T10:11:49+06:00",
       "retries": 0,
-      "repairs": 0,
+      "repairs": 1,
+      "repairFindings": ["холст 3D на телефоне ≈ 45 % вместо ≥ 50 % (полоса видов внутри 50svh) — R20i/R03"],
       "handoffs": 0
     },
     {
@@ -244,7 +249,8 @@ window.STATE =
         "src/components/kitchen/ReadyStrip.tsx",
         "src/lib/kitchen/styles.ts"
       ],
-      "status": "pending",
+      "status": "in-progress",
+      "startedAt": "2026-09-30T10:40:38+06:00",
       "retries": 0,
       "repairs": 0,
       "handoffs": 0
@@ -320,7 +326,14 @@ window.STATE =
     "T04 · перетаскивание из плана не двигает объект в 3D во время жеста (только после отпускания)",
     "T04 · меню «+» → «техника» открывает шаг «Техника» и первый пустой слот, а не ставит в точку",
     "T04 · addPicked · при всех занятых слотах переносится всегда посудомойка, не выбор пользователя; не влезла — без тоста",
-    "T04 · engine.dangerColor · getComputedStyle на каждый move с fits=false — кэшировать"
+    "T04 · engine.dangerColor · getComputedStyle на каждый move с fits=false — кэшировать",
+    "T05 · KitchenPlanner.tsx SizeField keepInView · поле ищет .kp-stage через document.querySelector — знание о раскладке в дочернем поле",
+    "T05 · KitchenPlanner.tsx:2779 · planShownRef.current = planShown во время рендера — перенести в useEffect",
+    "T05 · kitchen.css .kp--bar .kp-body * scroll-margin · универсальный селектор",
+    "T05 · KitchenPlanner.tsx:1358 · дубли полей после спреда в update(next) остались с таска 03",
+    "T05 · сцена телефона 50svh включает полосу видов 40 px — холст 50svh − 40",
+    "T05 · goStep больше не включает камеру «Сверху» на размерах; вид top — почти мёртвая ветка (решить в T06)",
+    "T05 · kitchen.css:3097 · 40 px полосы видов вписан числом (не var(--kp-strip)) — при смене полосы править два места"
 ],
   "reviewers": {
     "manifestSpec": null,
