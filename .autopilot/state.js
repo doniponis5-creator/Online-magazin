@@ -14,7 +14,7 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-29T22:14:27+06:00",
-  "updatedAt": "2026-09-30T15:06:43+06:00",
+  "updatedAt": "2026-09-30T15:17:50+06:00",
   "finishedAt": null,
   "stages": [
     {
@@ -89,9 +89,18 @@ window.STATE =
       ],
       "status": "done",
       "finishedAt": "2026-09-29T23:06:17+06:00",
-      "tests": { "passed": 914, "failed": 0 },
+      "tests": {
+        "passed": 914,
+        "failed": 0
+      },
       "commit": "a10698b",
-      "files": ["lib/kitchen/layout.ts", "lib/kitchen/types.ts", "lib/kitchen/share.ts", "lib/kitchen/order.ts", "lib/kitchen/drag.ts"],
+      "files": [
+        "lib/kitchen/layout.ts",
+        "lib/kitchen/types.ts",
+        "lib/kitchen/share.ts",
+        "lib/kitchen/order.ts",
+        "lib/kitchen/drag.ts"
+      ],
       "startedAt": "2026-09-29T22:26:02+06:00",
       "retries": 0,
       "repairs": 0,
@@ -114,9 +123,19 @@ window.STATE =
       ],
       "status": "done",
       "finishedAt": "2026-09-29T22:50:09+06:00",
-      "tests": { "passed": 888, "failed": 0 },
+      "tests": {
+        "passed": 888,
+        "failed": 0
+      },
       "commit": "7e77a28",
-      "files": ["three/quality.ts", "three/engine.ts", "three/build.ts", "three/materials.ts", "three/parts.ts", "three/appliances.ts"],
+      "files": [
+        "three/quality.ts",
+        "three/engine.ts",
+        "three/build.ts",
+        "three/materials.ts",
+        "three/parts.ts",
+        "three/appliances.ts"
+      ],
       "startedAt": "2026-09-29T22:26:02+06:00",
       "retries": 0,
       "repairs": 0,
@@ -151,13 +170,25 @@ window.STATE =
       ],
       "status": "done",
       "finishedAt": "2026-09-30T09:34:02+06:00",
-      "tests": { "passed": 899, "failed": 0 },
+      "tests": {
+        "passed": 899,
+        "failed": 0
+      },
       "commit": "02e5a9c",
-      "files": ["three/engine.ts", "three/build.ts", "KitchenPlanner.tsx", "lib/kitchen/layout.ts", "lib/kitchen/share.ts", "e2e/kitchen-gestures.spec.ts"],
+      "files": [
+        "three/engine.ts",
+        "three/build.ts",
+        "KitchenPlanner.tsx",
+        "lib/kitchen/layout.ts",
+        "lib/kitchen/share.ts",
+        "e2e/kitchen-gestures.spec.ts"
+      ],
       "startedAt": "2026-09-29T23:06:17+06:00",
       "retries": 0,
       "repairs": 1,
-      "repairFindings": ["decorPlan: доска у плиты и чайник у мойки пропали (мёртвое чтение d.board/d.kettle) — R23i"],
+      "repairFindings": [
+        "decorPlan: доска у плиты и чайник у мойки пропали (мёртвое чтение d.board/d.kettle) — R23i"
+      ],
       "handoffs": 0
     },
     {
@@ -184,13 +215,27 @@ window.STATE =
       ],
       "status": "done",
       "finishedAt": "2026-09-30T10:11:49+06:00",
-      "tests": { "passed": 906, "failed": 0 },
+      "tests": {
+        "passed": 906,
+        "failed": 0
+      },
       "commit": "69b0e69",
-      "files": ["PlanView.tsx", "planGeom.ts", "KitchenPlanner.tsx", "three/engine.ts", "three/build.ts", "kitchen.css", "e2e/kitchen-plan.spec.ts"],
+      "files": [
+        "PlanView.tsx",
+        "planGeom.ts",
+        "KitchenPlanner.tsx",
+        "three/engine.ts",
+        "three/build.ts",
+        "kitchen.css",
+        "e2e/kitchen-plan.spec.ts"
+      ],
       "startedAt": "2026-09-30T09:34:02+06:00",
       "retries": 0,
       "repairs": 1,
-      "repairFindings": ["план: стена B ставит зеркально (cm не от угла) — R16i.1", "is-plan вместе с has-col прячет ценники/подписи в 3D на компьютере — R10/R23i"],
+      "repairFindings": [
+        "план: стена B ставит зеркально (cm не от угла) — R16i.1",
+        "is-plan вместе с has-col прячет ценники/подписи в 3D на компьютере — R10/R23i"
+      ],
       "handoffs": 0
     },
     {
@@ -219,13 +264,24 @@ window.STATE =
       ],
       "status": "done",
       "finishedAt": "2026-09-30T10:40:38+06:00",
-      "tests": { "passed": 906, "failed": 0 },
+      "tests": {
+        "passed": 906,
+        "failed": 0
+      },
       "commit": "caa8deb",
-      "files": ["KitchenPlanner.tsx", "kitchen.css", "texts.ts", "three/engine.ts", "e2e/kitchen-phone.spec.ts"],
+      "files": [
+        "KitchenPlanner.tsx",
+        "kitchen.css",
+        "texts.ts",
+        "three/engine.ts",
+        "e2e/kitchen-phone.spec.ts"
+      ],
       "startedAt": "2026-09-30T10:11:49+06:00",
       "retries": 0,
       "repairs": 1,
-      "repairFindings": ["холст 3D на телефоне ≈ 45 % вместо ≥ 50 % (полоса видов внутри 50svh) — R20i/R03"],
+      "repairFindings": [
+        "холст 3D на телефоне ≈ 45 % вместо ≥ 50 % (полоса видов внутри 50svh) — R20i/R03"
+      ],
       "handoffs": 0
     },
     {
@@ -251,9 +307,19 @@ window.STATE =
       ],
       "status": "done",
       "finishedAt": "2026-09-30T14:24:44+06:00",
-      "tests": { "passed": 914, "failed": 0 },
+      "tests": {
+        "passed": 914,
+        "failed": 0
+      },
       "commit": "b9f9e97",
-      "files": ["KitchenPlanner.tsx", "ReadyStrip.tsx", "kitchen.css", "texts.ts", "lib/kitchen/styles.ts", "e2e/kitchen-simplify.spec.ts"],
+      "files": [
+        "KitchenPlanner.tsx",
+        "ReadyStrip.tsx",
+        "kitchen.css",
+        "texts.ts",
+        "lib/kitchen/styles.ts",
+        "e2e/kitchen-simplify.spec.ts"
+      ],
       "startedAt": "2026-09-30T10:40:38+06:00",
       "retries": 0,
       "repairs": 0,
@@ -284,10 +350,60 @@ window.STATE =
       ],
       "status": "done",
       "finishedAt": "2026-09-30T15:06:43+06:00",
-      "tests": { "passed": 914, "failed": 0 },
+      "tests": {
+        "passed": 914,
+        "failed": 0
+      },
       "commit": "09ed760",
-      "files": ["e2e/kitchen-acceptance.spec.ts", "e2e/kp.ts", "playwright.config.ts", "docs/KITCHEN_E2E_UZ.md"],
+      "files": [
+        "e2e/kitchen-acceptance.spec.ts",
+        "e2e/kp.ts",
+        "playwright.config.ts",
+        "docs/KITCHEN_E2E_UZ.md"
+      ],
       "startedAt": "2026-09-30T14:24:44+06:00",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0
+    },
+    {
+      "id": "C1",
+      "title": "Разбор concerns: дубли, мёртвый код, мелкие дефекты",
+      "requirements": [
+        "R04",
+        "R23i"
+      ],
+      "blockedBy": [
+        "07"
+      ],
+      "wave": 7,
+      "zone": [
+        "src/lib/kitchen/",
+        "src/components/kitchen/",
+        "e2e/kp.ts"
+      ],
+      "status": "in-progress",
+      "startedAt": "2026-09-30T15:17:50+06:00",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0
+    },
+    {
+      "id": "C2",
+      "title": "Разбор concerns: недостающие тесты",
+      "requirements": [
+        "R23i",
+        "R04"
+      ],
+      "blockedBy": [
+        "C1"
+      ],
+      "wave": 8,
+      "zone": [
+        "__tests__/",
+        "e2e/"
+      ],
+      "status": "pending",
       "retries": 0,
       "repairs": 0,
       "handoffs": 0
@@ -360,5 +476,5 @@ window.STATE =
     "manifestSpec": null,
     "craft": null
   },
-  "blind": null
+  "blind": {"ranAt": "2026-09-30T15:17:50+06:00", "launched": true, "commands": ["curl :3001/ru/kitchen → 200", "playwright kitchen-acceptance → 22 passed, 2 skipped", "vitest → 914 passed"], "verdicts": {"аудит/лишнее": "реализовано", "телефон удобно": "реализовано", "шкаф куда хочу": "реализовано", "пустое место и +": "реализовано", "план сверху": "реализовано", "скорость/4K": "частично (4K только файл — как решено)", "как у профи": "частично (нет поворота и постановки вне стены — вне рамок)", "дизайн": "реализовано", "удобно на компе": "частично — ценники съезжают при колонке плана", "лист мастера": "реализовано"}, "drift": ["R10: manifest done, blind частично — .kp-tags сдвинуты на ширину колонки плана на 1440×900 → C1"], "extras": ["Проверка проекта 3 из 3 (было)", "тост про «Мои варианты» при открытии по ссылке (было)", "В галерею (было)", "Закрыть планкой / Заполнить автоматически (A01)", "e2e-профили и замер кадра (T07)"], "minor": ["телефон: «Ещё» под листом выбранного → C1", "«Всё поместилось» зелёная при пустом месте (норма)"]}
 }
