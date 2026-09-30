@@ -13,7 +13,7 @@ import live from '../__tests__/fixtures/kitchen-live-appliances.json'
  * Запуск: `PW_BASE_URL=http://localhost:3001 npx playwright test e2e/kitchen-acceptance.spec.ts`
  * (памятка — docs/KITCHEN_E2E_UZ.md).
  */
-import { centerOf, drag3d, dragPlan, fire, goStep, lastDrag, place, planKeys, pointOf, ready, rect, selected, showPlan, stacked, tap3d, tapPlan, type Place, type Pt } from './kp'
+import { CORNER, centerOf, drag3d, dragPlan, fire, goStep, lastDrag, place, planKeys, pointOf, ready, rect, selected, showPlan, stacked, tap3d, tapPlan, type Place, type Pt } from './kp'
 
 /** Порог среднего кадра при вращении на слабом телефоне (CPU ×4): 33 мс = 30 к/с (спецификация, история 22 / R06). */
 const FRAME_MS = 33
@@ -111,6 +111,11 @@ test('черта 2 — свободная постановка: пустое м�
   // два пустых места: освобождённое у угла (0…60) и остаток старого (60…100) — автозаполнение их не закрыло
   await expect(page.locator('.kp-plan [data-row="gap"][data-wall="A"]')).toHaveCount(2)
   expect(await page.locator('.kp-plan [data-row="gap"] rect').evaluateAll((els) => els.map((e) => Number(e.getAttribute('x'))))).toContain(0)
+  // магнит (C2, 47): отпустили мойку 60 см так, что её левый край в 4 см от конца стены (середина 34), —
+  // она прилипает к стене: середина 30 = w/2, а не 34
+  const px = (await page.locator('.kp-plan [data-key="sink"]').boundingBox())!.width / after.w
+  await dragPlan(page, '.kp-plan [data-key="sink"]', Math.round((after.w / 2 + 4 - after.center) * px))
+  expect((await place(page, 'sink'))!).toMatchObject({ wall: 'A', center: after.w / 2 })
 })
 
 test('черта 3 — «+ из каталога»: меню на пустом месте ведёт в технику и ставит шкаф', async ({ page }) => {
@@ -225,22 +230,21 @@ const planText = (page: Page) =>
       .join('\n'),
   )
 
-test('12 готовых кухонь и 5 старых адресов открываются той же раскладкой', async ({ page }) => {
-  test.setTimeout(240000)
-  const links = [...READY.map((k) => ({ id: `ready-${k.id}`, q: k.q })), ...OLD_LINKS.map((q, i) => ({ id: `old-${i + 1}`, q }))]
-  for (const { id, q } of links) {
-    await test.step(id, async () => {
-      await ready(page, q)
-      await showPlan(page)
-      // мойка и варочная — всегда на месте; ячейки плана — как в снимке (общем для телефона и компьютера)
-      expect(await place(page, 'sink')).not.toBeNull()
-      expect(await place(page, 'hob')).not.toBeNull()
-      const text = await planText(page)
-      expect(text.split('\n').length).toBeGreaterThan(3)
-      expect(text).toMatchSnapshot(`${id}.txt`)
-    })
-  }
-})
+/** 12 готовых кухонь и 5 старых адресов — по тесту на кухню (C2, 49): упавшая называет себя, остальные идут дальше */
+const LINKS = [...READY.map((k) => ({ id: `ready-${k.id}`, q: k.q })), ...OLD_LINKS.map((q, i) => ({ id: `old-${i + 1}`, q }))]
+for (const { id, q } of LINKS) {
+  test(`раскладка как в снимке: ${id}`, async ({ page }) => {
+    test.setTimeout(90000)
+    await ready(page, q)
+    await showPlan(page)
+    // мойка и варочная — всегда на месте; ячейки плана — как в снимке (общем для телефона и компьютера)
+    expect(await place(page, 'sink')).not.toBeNull()
+    expect(await place(page, 'hob')).not.toBeNull()
+    const text = await planText(page)
+    expect(text.split('\n').length).toBeGreaterThan(3)
+    expect(text).toMatchSnapshot(`${id}.txt`)
+  })
+}
 
 /* ───────── техника за три касания (по фикстуре живого каталога — там духовки есть) ───────── */
 
@@ -318,62 +322,95 @@ test('компьютер: ценник техники висит над свое
   if (p) expect(Math.abs(box.x + box.width / 2 - p.x)).toBeLessThan(60)
 })
 
-/* ───────── скорость: средний кадр при вращении, слабый телефон (CPU ×4) ───────── */
+/* ───────── скорость: кадр при вращении, слабый телефон (CPU ×4) ───────── */
+
+/** Порог p95 кадра: 50 мс — редкие кадры не дольше трёх обычных при 60 Гц (C2, 48). */
+const FRAME_P95_MS = 50
 
 test.describe('скорость на слабом телефоне', () => {
-  test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true })
-  test(`среднее время кадра при вращении с CPU ×4 — не больше ${FRAME_MS} мс`, async ({ page, browserName }, info) => {
-    test.skip(browserName !== 'chromium', 'замедление процессора — только через CDP в Chrome')
-    test.setTimeout(90000)
-    await ready(page)
-    const cdp = await page.context().newCDPSession(page)
-    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 })
-    try {
-      const m = await page.evaluate(async (ms) => {
-        const c = window.__kp!.renderer.domElement
-        const r = c.getBoundingClientRect()
-        const p = { x: r.left + r.width * 0.5, y: r.top + r.height * 0.45 }
-        const ev = (type: string, x: number, y: number) =>
-          c.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 1, pointerType: 'touch', isPrimary: true, button: type === 'pointermove' ? -1 : 0, buttons: type === 'pointerup' ? 0 : 1, clientX: x, clientY: y }))
-        const sink0 = window.__kp!.screenPointOf('sink')!
-        // кадр = вызов draw() движка: меряем интервалы между соседними кадрами, пока палец крутит кухню
-        const eng = window.__kp as unknown as { draw: () => void }
-        const draw0 = eng.draw
-        const times: number[] = []
-        let lastDraw = 0
-        eng.draw = function () {
-          const now = performance.now()
-          if (lastDraw) times.push(now - lastDraw)
-          lastDraw = now
-          return draw0.call(this)
-        }
-        ev('pointerdown', p.x, p.y)
-        const t0 = performance.now()
-        let i = 0
-        await new Promise<void>((res) => {
-          const step = (now: number) => {
-            i++
-            ev('pointermove', p.x + Math.sin(i / 25) * 140, p.y + Math.cos(i / 40) * 30)
-            if (now - t0 < ms) requestAnimationFrame(step)
-            else res()
-          }
-          requestAnimationFrame(step)
-        })
-        ev('pointerup', p.x, p.y)
-        eng.draw = draw0
-        const sink1 = window.__kp!.screenPointOf('sink')!
-        const mean = times.reduce((a, b) => a + b, 0) / times.length
-        const sorted = [...times].sort((a, b) => a - b)
-        return { mean, p95: sorted[Math.floor(sorted.length * 0.95)], frames: times.length, tier: window.__kp!.getTier().name, turned: Math.hypot(sink1.x - sink0.x, sink1.y - sink0.y) }
-      }, 3000)
-      info.annotations.push({ type: 'frame', description: `среднее ${m.mean.toFixed(1)} мс, p95 ${m.p95.toFixed(1)} мс, кадров ${m.frames}, класс ${m.tier}` })
-      console.log(`кадр при вращении (CPU ×4, ${m.tier}): среднее ${m.mean.toFixed(1)} мс, p95 ${m.p95.toFixed(1)} мс, кадров ${m.frames}`)
-      // кухня действительно вращалась
-      expect(m.turned).toBeGreaterThan(5)
-      expect(m.frames).toBeGreaterThan(30)
-      expect(m.mean).toBeLessThanOrEqual(FRAME_MS)
-    } finally {
-      await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 })
-    }
+  test.use({
+    viewport: { width: 375, height: 812 },
+    hasTouch: true,
+    isMobile: true,
   })
+  // phone — класс, который телефон-эмулятор получает сам; phone-low — принудительно (dev-параметр `kp-tier`)
+  for (const tier of ['phone', 'phone-low'] as const) {
+    test(`кадр при вращении с CPU ×4, класс ${tier}: среднее ≤ ${FRAME_MS} мс, p95 ≤ ${FRAME_P95_MS} мс`, async ({ page, browserName }, info) => {
+      test.skip(browserName !== 'chromium', 'замедление процессора — только через CDP в Chrome')
+      test.setTimeout(90000)
+      await ready(page, tier === 'phone' ? CORNER : `${CORNER}&kp-tier=${tier}`)
+      expect(await page.evaluate(() => window.__kp!.getTier().name)).toBe(tier)
+      const cdp = await page.context().newCDPSession(page)
+      await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 })
+      try {
+        const m = await page.evaluate(async (ms) => {
+          const c = window.__kp!.renderer.domElement
+          const r = c.getBoundingClientRect()
+          const p = { x: r.left + r.width * 0.5, y: r.top + r.height * 0.45 }
+          const ev = (type: string, x: number, y: number) =>
+            c.dispatchEvent(
+              new PointerEvent(type, {
+                bubbles: true,
+                cancelable: true,
+                pointerId: 1,
+                pointerType: 'touch',
+                isPrimary: true,
+                button: type === 'pointermove' ? -1 : 0,
+                buttons: type === 'pointerup' ? 0 : 1,
+                clientX: x,
+                clientY: y,
+              }),
+            )
+          const sink0 = window.__kp!.screenPointOf('sink')!
+          // кадр = вызов draw() движка: меряем интервалы между соседними кадрами, пока палец крутит кухню
+          const eng = window.__kp as unknown as { draw: () => void }
+          const draw0 = eng.draw
+          const times: number[] = []
+          let lastDraw = 0
+          eng.draw = function () {
+            const now = performance.now()
+            if (lastDraw) times.push(now - lastDraw)
+            lastDraw = now
+            return draw0.call(this)
+          }
+          ev('pointerdown', p.x, p.y)
+          const t0 = performance.now()
+          let i = 0
+          await new Promise<void>((res) => {
+            const step = (now: number) => {
+              i++
+              ev('pointermove', p.x + Math.sin(i / 25) * 140, p.y + Math.cos(i / 40) * 30)
+              if (now - t0 < ms) requestAnimationFrame(step)
+              else res()
+            }
+            requestAnimationFrame(step)
+          })
+          ev('pointerup', p.x, p.y)
+          eng.draw = draw0
+          const sink1 = window.__kp!.screenPointOf('sink')!
+          const mean = times.reduce((a, b) => a + b, 0) / times.length
+          const sorted = [...times].sort((a, b) => a - b)
+          return {
+            mean,
+            p95: sorted[Math.floor(sorted.length * 0.95)],
+            frames: times.length,
+            tier: window.__kp!.getTier().name,
+            turned: Math.hypot(sink1.x - sink0.x, sink1.y - sink0.y),
+          }
+        }, 3000)
+        info.annotations.push({
+          type: 'frame',
+          description: `среднее ${m.mean.toFixed(1)} мс, p95 ${m.p95.toFixed(1)} мс, кадров ${m.frames}, класс ${m.tier}`,
+        })
+        console.log(`кадр при вращении (CPU ×4, ${m.tier}): среднее ${m.mean.toFixed(1)} мс, p95 ${m.p95.toFixed(1)} мс, кадров ${m.frames}`)
+        // кухня действительно вращалась
+        expect(m.turned).toBeGreaterThan(5)
+        expect(m.frames).toBeGreaterThan(30)
+        expect(m.mean).toBeLessThanOrEqual(FRAME_MS)
+        expect(m.p95).toBeLessThanOrEqual(FRAME_P95_MS)
+      } finally {
+        await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 })
+      }
+    })
+  }
 })

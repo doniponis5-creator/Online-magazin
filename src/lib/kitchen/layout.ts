@@ -61,7 +61,7 @@ export const WIDTH_LIMITS: Record<SizedItem | 'cabinet', { min: number; max: num
   pantry2: { min: 30, max: 90 },
   // колонна с духовкой: сама духовка 60 см, шире — по бокам панели
   tall: { min: TALL_W, max: 90 },
-  cabinet: { min: 15, max: 120 },
+  cabinet: { min: NARROW_W, max: 120 },
 }
 
 export type ModuleKind =
@@ -592,7 +592,8 @@ function manualUppersFor(
     const c = row.at[k]
     // середина в см от угла → начало в координатах ряда (у B ряд идёт от зрителя к углу)
     const at = c === undefined ? undefined : run.id === 'B' ? L - c - w / 2 : c - w / 2
-    movable.push({ kind: isGap(k) ? 'gap' : 'filler', w: gapWidth(w), item: k, at, up: cab?.kind })
+    // ширина шкафа — как задана (адрес хранит мм): округление до см сдвигало ряд на 0,5 после detachUppers (концерн 22)
+    movable.push({ kind: isGap(k) ? 'gap' : 'filler', w: isGap(k) ? gapWidth(w) : Math.max(1, Math.min(600, w)), item: k, at, up: cab?.kind })
   }
   // прилипает только то, что поставили рукой: фиксированное стоит, где стоит
   const snapOwn = (key?: ItemKey) => key !== undefined && canSnap(key)
@@ -1225,6 +1226,22 @@ export function itemGaps(plan: Plan, key: ItemKey): { center: number; w: number 
 /** Где на стене стоит модуль (центр, см от угла) — как у itemPositions. */
 export function moduleCenter(run: Pick<Run, 'id' | 'length'>, m: Pick<Module, 'x' | 'w'>): number {
   return runCm(run, m.x + m.w / 2)
+}
+
+/** Точка ряда → мир (см). Одна формула для плана, чертежа, проверок и движка (метры = см/100). */
+export function runWorld(run: Pick<Run, 'ox' | 'oz' | 'rot'>, x: number, z: number): { x: number; z: number } {
+  const cos = Math.cos(run.rot)
+  const sin = Math.sin(run.rot)
+  return { x: run.ox + x * cos + z * sin, z: run.oz - x * sin + z * cos }
+}
+
+/** Мир → точка ряда (см): x — вдоль стены от начала ряда, z — от стены к лицу. */
+export function runLocal(run: Pick<Run, 'ox' | 'oz' | 'rot'>, wx: number, wz: number): { x: number; z: number } {
+  const cos = Math.cos(run.rot)
+  const sin = Math.sin(run.rot)
+  const dx = wx - run.ox
+  const dz = wz - run.oz
+  return { x: dx * cos - dz * sin, z: dx * sin + dz * cos }
 }
 
 /**

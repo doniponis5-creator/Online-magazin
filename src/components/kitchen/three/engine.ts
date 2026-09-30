@@ -11,12 +11,12 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js'
 import { FXAAShader } from 'three/addons/shaders/FXAAShader.js'
 import type { Preview } from '@/lib/kitchen/drag'
 import { baseKey, upperKey } from '@/lib/kitchen/fronts'
-import { DEPTH, itemPositions, moduleCenter, runCm, runX, UPPER_DEPTH, type Run, NARROW_W } from '@/lib/kitchen/layout'
+import { DEPTH, itemPositions, moduleCenter, runCm, runWorld, runX, UPPER_DEPTH, type Run, NARROW_W } from '@/lib/kitchen/layout'
 import { isGap, type ItemKey, type SlotKind, type WallId } from '@/lib/kitchen/types'
 import type { SpecData } from '@/lib/kitchen/spec'
 import { sharpenPass } from './sharpen'
 import { buildKitchen, CEILING_LAYER, WALL_H, WINDOW, type BuildInput, type Built, type CabInfo, type Dims } from './build'
-import { governIdle, governStep, governorPlan, newGovernor, pickTier, readEnv, type DeviceEnv, type GovernorState, type Tier, isPhone } from './quality'
+import { governIdle, governStep, governorPlan, newGovernor, pickTier, readEnv, type DeviceEnv, type GovernorState, type Tier, type TierName, isPhone } from './quality'
 import type { PhotoTracer } from './photoreal'
 import { setBudget } from './textures'
 
@@ -279,6 +279,8 @@ export class KitchenEngine {
      *  видеокарты, в «Лёгком». Так 3D поднимается на телефонах, где обычный
      *  запуск падал (мало видеопамяти, капризный драйвер, встроенный браузер). */
     safe = false,
+    /** Класс качества принудительно (dev-параметр адреса `kp-tier`, только не в production). */
+    force?: TierName,
   ) {
     // Класс устройства (quality.ts) — один раз, без переключателя и хранилища.
     // Телефон — по устройству, а не по ширине окна: палец и нет мыши/тачпада.
@@ -294,7 +296,7 @@ export class KitchenEngine {
     const r = this.renderer
     this.env = { ...env0, gpu: this.gpuName() }
     // запасной запуск на компьютере — бережный класс
-    this.tier = pickTier(this.env, safe && !phone ? 'desktop-weak' : undefined)
+    this.tier = pickTier(this.env, force ?? (safe && !phone ? 'desktop-weak' : undefined))
     this.mobile = this.tier.mobile
     this.detailNow = this.tier.detail
     setBudget(this.tier.texBudget)
@@ -1568,9 +1570,9 @@ export class KitchenEngine {
 
   /** Точка ряда: вдоль стены x, высота y, от стены z (метры) — в мировые координаты. */
   private runPoint(run: { ox: number; oz: number; rot: number }, x: number, y: number, z: number) {
-    const cos = Math.cos(run.rot)
-    const sin = Math.sin(run.rot)
-    return new THREE.Vector3(run.ox / 100 + x * cos + z * sin, y, run.oz / 100 - x * sin + z * cos)
+    // одна формула с планом и проверками (layout.runWorld, см); здесь метры
+    const p = runWorld(run, x * 100, z * 100)
+    return new THREE.Vector3(p.x / 100, y, p.z / 100)
   }
 
   private project(p: THREE.Vector3): { x: number; y: number } {

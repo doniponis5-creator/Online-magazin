@@ -580,3 +580,24 @@ describe('2026-09-27: треугольник на разных рядах — к
     expect(byId(checks, 'workLine')).toEqual([])
   })
 })
+
+describe('выпавшее пустое место gN — не потеря техники (ревью C1)', () => {
+  // живой план прямой кухни 300 без потерь; в dropped руками кладём только пустое место g1 (без slot)
+  const plan0 = planKitchen({ shape: 'straight', a: 300, ...base, fridge, hob: hob() }, opts)
+  const withGap: Plan = { ...plan0, dropped: [{ item: 'g1', need: 40, wall: 'A' }] }
+
+  it('needByWall: «удлините стену» из-за пустого места не советуем', () => {
+    expect(plan0.dropped).toEqual([])
+    expect(needByWall(withGap)).toEqual({})
+  })
+
+  it('checkProject: «всё поместилось» остаётся ok, счётчик потерь 0', () => {
+    expect(byId(checkProject(withGap), 'fits')).toEqual([{ id: 'fits', level: 'ok', count: 0 }])
+  })
+
+  it('а выпавшая техника рядом с ним — потеря: warn и count 1, нужда по стене — её', () => {
+    const both: Plan = { ...plan0, dropped: [{ item: 'g1', need: 40, wall: 'A' }, { item: 'dishwasher', slot: 'dishwasher', need: 25, wall: 'A' }] }
+    expect(byId(checkProject(both), 'fits')).toEqual([{ id: 'fits', level: 'warn', count: 1 }])
+    expect(needByWall(both)).toEqual({ A: 25 })
+  })
+})

@@ -6,7 +6,7 @@ import { expect, test, type Page } from '@playwright/test'
  * `screenPointOnWall`, `selectedKey`, `lastDrag`. Пальцы — синтетические
  * PointerEvent на холсте: Playwright не умеет второй палец.
  */
-import { drag3d, fire, lastDrag, place, pointOf, ready, selected, tap3d, wallPoint, type Place, type Pt } from './kp'
+import { drag3d, dragPlan, fire, lastDrag, place, pointOf, ready, selected, showPlan, tap3d, tapPlan, wallPoint, type Place, type Pt } from './kp'
 
 
 test('тап выбирает; тянуть невыбранный — не перетаскивание', async ({ page }) => {
@@ -45,27 +45,75 @@ test('второй палец отменяет перетаскивание — 
   expect(await place(page, 'sink')).toEqual(before)
 })
 
-test('перенос на другую стену: плита с B на A; впритык — «не помещается» без кнопки «Сузить», когда сужение не поможет', async ({ page }) => {
-  await ready(page)
-  // освободить место на A: мойку к правому краю
-  await tap3d(page, await pointOf(page, 'sink'))
-  await drag3d(page, await pointOf(page, 'sink'), await wallPoint(page, 'A', 300))
-  expect((await place(page, 'sink'))!.center).toBeGreaterThan(250)
-  expect((await place(page, 'hob'))!.wall).toBe('B')
+/**
+ * Кухня переноса задана адресом явно (C2, 18): угловая, стена A 300 см, стена B 240 см;
+ * мойка уже у правого конца A (`s_270` — середина 270, занимает 240…300), варочная на B (`h_150`).
+ * На A угол 0…100 занят угловым модулем — свободно 100…240. Варочной 60 см нужна столешница
+ * по 30 см с обеих сторон (HOB_SIDE): середина 160 → панель 130…190, столешница 100…130 ровно
+ * до углового; середина 170 → панель 140…200, у угла остаётся обрезок 100…110 (10 см) — уже
+ * самого узкого шкафа 15 см, туда ничего не встанет. Сузить мойку этот обрезок не уберёт.
+ */
+const MOVE = 'f=corner&a=300&b=240&o=dwtpqfs_270.h_150v'
+
+test('перенос на другую стену: варочная с B на A; в 170 — обрезок у угла, «не помещается» без «Сузить»; в 160 встаёт', async ({ page }) => {
+  await ready(page, MOVE)
+  expect(await place(page, 'sink')).toMatchObject({ wall: 'A', center: 270 })
+  expect(await place(page, 'hob')).toMatchObject({ wall: 'B', center: 150 })
   await tap3d(page, await pointOf(page, 'hob'))
   expect(await selected(page)).toBe('hob')
-  // плите нужна столешница по 30 см с боков: в 170 остаётся 10-см обрезок у угла — не встаёт, конструктор предлагает сузить мойку
   await drag3d(page, await pointOf(page, 'hob'), await wallPoint(page, 'A', 170))
-  expect((await lastDrag(page))!).toMatchObject({ phase: 'end', key: 'hob', wall: 'A' })
+  expect((await lastDrag(page))!).toMatchObject({
+    phase: 'end',
+    key: 'hob',
+    wall: 'A',
+  })
   expect((await place(page, 'hob'))!.wall).toBe('B')
-  // сузить мойку не поможет (обрезок у угла останется) — тост без кнопки «Сузить»
   const toast = page.locator('.kp-toast')
   await expect(toast).toContainText('Не помещается: на стене нет места')
   await expect(toast.getByRole('button')).toHaveCount(0)
-  // ближе к углу обрезка нет — плита переезжает на A
   await drag3d(page, await pointOf(page, 'hob'), await wallPoint(page, 'A', 160))
   const hob = (await place(page, 'hob'))!
   expect(hob.wall).toBe('A')
-  expect(Math.abs(hob.center - 160)).toBeLessThanOrEqual(8)
+  expect(Math.abs(hob.center - 160)).toBeLessThanOrEqual(1)
   expect(await selected(page)).toBe('hob')
+})
+
+/**
+ * Положительный путь «Сузить» (C2, 24). Прямая стена 400: мойка 0…60, пусто g1 60…100,
+ * свой шкаф k1 100…160 (60 см), варочная 190…250, свой шкаф k2 340…400 (60 см).
+ * k2 кладём в пустое место (палец в 80): там 40 см, шкафу 60 — не хватает 20, сузить можно
+ * соседа справа k1 на 20 → 40 см. После «Сузить» k1 прижат к своему правому краю (120…160),
+ * а k2 встаёт вплотную к мойке: 60…120.
+ */
+const NARROW = 'f=straight&a=400&s=marble&o=s_03040g_08060o_130h_22060o_370'
+
+test('«Сузить»: шкаф не влез в пустое место — кнопка есть, сужает соседа и ставит шкаф', async ({ page }) => {
+  await ready(page, NARROW)
+  await showPlan(page)
+  // ячейка плана — в сантиметрах, с зазором 0,4 см с каждой стороны: берём края, округлённые до см
+  const box = (sel: string) =>
+    page
+      .locator(`.kp-plan [data-key="${sel}"] rect`)
+      .first()
+      .evaluate((r) => {
+        const x = Number(r.getAttribute('x'))
+        return {
+          from: Math.round(x),
+          to: Math.round(x + Number(r.getAttribute('width'))),
+        }
+      })
+  expect(await box('k1')).toEqual({ from: 100, to: 160 })
+  expect(await box('k2')).toEqual({ from: 340, to: 400 })
+  await tapPlan(page, '.kp-plan [data-key="k2"]')
+  await expect(page.locator('.kp-plan .is-sel')).toHaveAttribute('data-key', 'k2')
+  // пикселей на сантиметр плана — по самому шкафу
+  const px = (await page.locator('.kp-plan [data-key="k2"] rect').first().boundingBox())!.width / 60
+  await dragPlan(page, '.kp-plan [data-key="k2"]', Math.round((80 - 370) * px))
+  const toast = page.locator('.kp-toast')
+  await expect(toast).toContainText('на 20 см')
+  const act = toast.getByRole('button', { name: 'Сузить' })
+  await expect(act).toHaveCount(1)
+  await act.click()
+  await expect.poll(() => box('k1')).toEqual({ from: 120, to: 160 })
+  expect(await box('k2')).toEqual({ from: 60, to: 120 })
 })

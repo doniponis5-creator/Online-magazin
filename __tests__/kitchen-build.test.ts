@@ -698,3 +698,39 @@ describe('таск 05: всё, что в 3D цвета фасада, — в сп
     for (const m of found) expect(colorOf(m)).toBe(hex('lam-white'))
   })
 })
+
+describe('свет и тени днём (концерн 9)', () => {
+  const kitchen = (style: KitchenStyle) =>
+    build({ input: { shape: 'island', a: 330, b: 0, c: 0, island: 160, fridge, hob: hob(), oven, hood: hood() }, style, ceiling: 270, toCeiling: false, items: { fridge, hob: hob(), oven, hood: hood() } })
+
+  it('вечерние лампы днём выключены целиком: visible=false и яркость 0; других невидимых ламп нет', () => {
+    const b = kitchen(getStyle('modern'))
+    expect(b.eveningLights.length).toBeGreaterThan(0)
+    for (const l of b.eveningLights) {
+      expect(l.visible).toBe(false)
+      expect((l as THREE.Light).intensity).toBe(0)
+    }
+    // каждая лампа сцены с нулевой яркостью — вечерняя (иначе её шейдер считал бы зря)
+    b.root.traverse((o) => {
+      if ((o as THREE.Light).isLight && (o as THREE.Light).intensity === 0) expect(b.eveningLights).toContain(o)
+    })
+  })
+
+  for (const style of STYLES.filter((s) => s.handle !== 'gola')) {
+    it(`${style.id}: ручки (${style.handle}) не бросают тень — castShadow=false у каждой детали`, () => {
+      const b = kitchen(style)
+      const handles: THREE.Object3D[] = []
+      b.root.traverse((o) => void (o.userData.handle && handles.push(o)))
+      expect(handles.length).toBeGreaterThan(0)
+      for (const h of handles) {
+        let meshes = 0
+        h.traverse((c) => {
+          if (!(c as THREE.Mesh).isMesh) return
+          meshes++
+          expect(c.castShadow, `${style.id} ${c.name}`).toBe(false)
+        })
+        expect(meshes).toBeGreaterThan(0)
+      }
+    })
+  }
+})

@@ -1,5 +1,5 @@
 import { BASE_H, counterTop, hoodNorm, isTall, STOVE_LEVEL, UPPER_BOTTOM } from './dims'
-import { DEPTH, type Dropped, type Module, type Plan, type Run } from './layout'
+import { DEPTH, runWorld, type Dropped, type Module, type Plan, type Run } from './layout'
 import { isCabinet, isGap, type KitchenState, type SlotKind } from './types'
 
 /**
@@ -57,10 +57,8 @@ function find(plan: Plan, kind: Module['kind']): Found | null {
 function front(f: Found): [number, number] {
   const { run, m } = f
   const x = m.x + m.w / 2
-  const z = 60
-  const cos = Math.cos(run.rot)
-  const sin = Math.sin(run.rot)
-  return [run.ox + x * cos + z * sin, run.oz - x * sin + z * cos]
+  const p = runWorld(run, x, 60)
+  return [p.x, p.z]
 }
 
 const dist = (a: [number, number], b: [number, number]) => Math.round(Math.hypot(a[0] - b[0], a[1] - b[1]))
@@ -183,7 +181,9 @@ export function checkProject(plan: Plan, facts: CheckFacts = {}): Check[] {
   if (facts.upperBottom !== undefined && facts.topCm !== undefined && Number.isFinite(facts.upperBottom) && facts.upperBottom > UPPER_BOTTOM + 0.05) {
     out.push({ id: 'upperRaised', level: 'ok', over: Math.round(facts.upperBottom - counterTop(facts.topCm)) })
   }
-  out.push({ id: 'fits', level: plan.dropped.length === 0 ? 'ok' : 'warn', count: plan.dropped.length })
+  // выпавшее пустое место gN — не потеря: его ужимает сама раскладка (ревью C1)
+  const lost = plan.dropped.filter((d) => !isGap(d.item)).length
+  out.push({ id: 'fits', level: lost === 0 ? 'ok' : 'warn', count: lost })
   return out
 }
 

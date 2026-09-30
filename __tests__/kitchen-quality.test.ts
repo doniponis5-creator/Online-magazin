@@ -48,8 +48,17 @@ describe('класс устройства', () => {
     expect(t.moveRatio(1)).toBe(1)
     // 390 × 300 css × 3 = 1,05 Мп — в бюджет входит целиком
     expect(t.restRatio(3, 390, 300)).toBe(3)
-    // 800 × 600 css: sqrt(4e6 / 480000) = 2,886…
-    expect(t.restRatio(3, 800, 600)).toBeCloseTo(2.886, 2)
+    // бюджет по существу (концерн 10): точек в покое ≤ 4 Мп и не больше 3 на css-точку —
+    // на любом экране телефона стоя и боком; экран больше бюджета — ratio < 3 и бюджет выбран (≥ 99 %)
+    for (const [w, h] of [[375, 812], [390, 844], [430, 932], [812, 375], [800, 600], [1024, 1366], [2000, 1200]]) {
+      const r = t.restRatio(3, w, h)
+      expect(r * r * w * h, `${w}×${h}`).toBeLessThanOrEqual(4e6 * (1 + 1e-9))
+      expect(r, `${w}×${h}`).toBeLessThanOrEqual(3)
+      if (9 * w * h > 4e6) {
+        expect(r, `${w}×${h}`).toBeLessThan(3)
+        if (r > 1) expect(r * r * w * h, `${w}×${h}`).toBeGreaterThanOrEqual(0.99 * 4e6)
+      }
+    }
   })
 
   it('класс «фото»: полные материалы и тени 2048 — для снимка 4K на телефоне', () => {

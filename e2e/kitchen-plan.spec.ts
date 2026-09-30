@@ -67,7 +67,7 @@ test('«+» на пустом месте → меню → «Шкаф с двер
 
 test('стена B: см от угла — тянем плиту к углу, после отпускания она там, где палец (не зеркально)', async ({ page }) => {
   await ready(page, 'f=corner&a=300&b=240', 'page')
-  await page.waitForFunction(() => Boolean((window as unknown as { __kp?: { placeOf: (k: string) => unknown } }).__kp?.placeOf('hob')), null, { timeout: 60000 })
+  await page.waitForFunction(() => Boolean(window.__kp?.placeOf('hob')), null, { timeout: 60000 })
   await page.locator('.kp-views [data-scene="plan"]').click()
   const before = (await place(page, 'hob'))!
   expect(before.wall).toBe('B')
@@ -96,7 +96,7 @@ test.describe('компьютер 1440×900', () => {
   test.use({ viewport: { width: 1440, height: 900 } })
   test('план колонкой рядом с 3D, а ценники и подписи 3D видны (is-plan не стоит)', async ({ page }) => {
     await ready(page, 'f=corner&a=300&b=240', 'page')
-    await page.waitForFunction(() => Boolean((window as unknown as { __kp?: { placeOf: (k: string) => unknown } }).__kp?.placeOf('sink')), null, { timeout: 60000 })
+    await page.waitForFunction(() => Boolean(window.__kp?.placeOf('sink')), null, { timeout: 60000 })
     await expect(page.locator('.kp-stage')).toHaveClass(/has-col/)
     await expect(page.locator('.kp-stage')).not.toHaveClass(/is-plan/)
     await expect(page.locator('.kp-plan svg')).toBeVisible()

@@ -69,7 +69,7 @@ import {
 } from '@/lib/kitchen/layout'
 import { previewMove, type Preview } from '@/lib/kitchen/drag'
 import { PlanView, type PlanTarget } from './PlanView'
-import { addPicked, resetForShape } from './planGeom'
+import { pickInto, resetForShape } from './planGeom'
 import { cartAdditions, chosenItems, CORE_SLOTS, frontsText, planInputOf, projectItems, projectTotal, wallsText, whatsappText, type ItemStatus } from '@/lib/kitchen/order'
 import { DEFAULT_STATE, loadLast, queryFromState, saveLast, stateFromQuery } from '@/lib/kitchen/share'
 import { cutList, extraList, frontList, hardware, modulesOf, topList, type SpecData } from '@/lib/kitchen/spec'
@@ -108,6 +108,7 @@ import { ApplianceSheet } from './ApplianceSheet'
 import { ReadyStrip } from './ReadyStrip'
 import type { BuildInput, CabInfo, Dims } from './three/build'
 import type { DragPhase, EngineEvents, KitchenEngine, PhotoState, Pick, View } from './three/engine'
+import type { TierName } from './three/quality'
 import type { Photo } from './three/photo'
 import './kitchen.css'
 
@@ -574,7 +575,12 @@ export function KitchenPlanner({
   const [resume, setResume] = useState<KitchenState | null>(null)
   /** кухня из автосохранения, которую ссылка заменила: положить в «Мои варианты» */
   const [linkKeep, setLinkKeep] = useState<KitchenState | null>(null)
+  // адрес читается один раз на монтирование: новая identity `byId` (каталог
+  // пришёл заново) не должна переигрывать stateFromQuery и тост keepOnLink (ревью C1)
+  const linkRead = useRef(false)
   useEffect(() => {
+    if (linkRead.current) return
+    linkRead.current = true
     setOrigin(window.location.origin)
     const q = new URLSearchParams(window.location.search)
     const last = loadLast(byId)
@@ -780,13 +786,19 @@ export function KitchenPlanner({
     return key ? { key, state: next, plan: p, cab: { key: raw, row: 'upper', variant: (state.fronts?.[raw] as CabInfo['variant'] | undefined) ?? 'doors' } } : null
   }
 
-  /** Сузить соседа на `by` см: свой шкаф, верхний, пустое место или предмет с шириной. */
-  const narrowed = (s: KitchenState, k: ItemKey, by: number, p: Plan): KitchenState => {
-    if (isCabinet(k) && s.cabinets?.[k]) return { ...s, cabinets: { ...s.cabinets, [k]: { ...s.cabinets[k]!, w: s.cabinets[k]!.w - by } } }
-    if (isUpperCab(k) && s.upperCabs?.[k]) return { ...s, upperCabs: { ...s.upperCabs, [k]: { ...s.upperCabs[k]!, w: s.upperCabs[k]!.w - by } } }
-    if (isGap(k) && s.gaps?.[k]) return { ...s, gaps: { ...s.gaps, [k]: { ...s.gaps[k]!, w: s.gaps[k]!.w - by } } }
+  /**
+   * Сузить соседа на `by` см: свой шкаф, верхний, пустое место или предмет с шириной. Сосед
+   * остаётся прижат к дальнему от `toward` (середина ставимого) краю — иначе сужение вокруг его
+   * середины освободит только by/2 и «Сузить» не поставит модуль (C2, 24).
+   */
+  const narrowed = (s: KitchenState, k: ItemKey, by: number, p: Plan, toward: number): KitchenState => {
+    const at = s.at?.[k]
+    const t: KitchenState = at === undefined ? s : { ...s, at: { ...s.at, [k]: at + (at > toward ? by / 2 : -by / 2) } }
+    if (isCabinet(k) && t.cabinets?.[k]) return { ...t, cabinets: { ...t.cabinets, [k]: { ...t.cabinets[k]!, w: t.cabinets[k]!.w - by } } }
+    if (isUpperCab(k) && t.upperCabs?.[k]) return { ...t, upperCabs: { ...t.upperCabs, [k]: { ...t.upperCabs[k]!, w: t.upperCabs[k]!.w - by } } }
+    if (isGap(k) && t.gaps?.[k]) return { ...t, gaps: { ...t.gaps, [k]: { ...t.gaps[k]!, w: t.gaps[k]!.w - by } } }
     const w = itemPositions(p)[k]?.w
-    if (w !== undefined && (SIZED_ITEMS as readonly string[]).includes(k)) return { ...s, widths: { ...s.widths, [k as SizedItem]: w - by } }
+    if (w !== undefined && (SIZED_ITEMS as readonly string[]).includes(k)) return { ...t, widths: { ...t.widths, [k as SizedItem]: w - by } }
     return s
   }
 
@@ -839,7 +851,7 @@ export function KitchenPlanner({
     // не встал: модуль обратно; кнопка «Сузить» — только если после сужения соседа модуль правда встаёт
     engine?.revertDrag()
     const narrow = narrowFor(d.plan, d.key, wall, cm - grab) ?? placed.fit?.narrow ?? null
-    const narrowedState = narrow ? narrowed(d.state, narrow.neighbour, narrow.by, d.plan) : null
+    const narrowedState = narrow ? narrowed(d.state, narrow.neighbour, narrow.by, d.plan, cm - grab) : null
     const again = narrow && narrowedState ? placeAt(narrowedState, d.key, wall, cm, trial, grab) : null
     if (!narrow || !again?.fit?.ok) {
       setToast(t.noRoom)
@@ -919,7 +931,7 @@ export function KitchenPlanner({
   const addNarrow = (menu: AddMenu) => {
     const kind = menu.failed!
     const narrow = menu.narrow
-    const again = narrow ? addAt(narrowed(state, narrow.neighbour, narrow.by, plan), menu.target.wall, menu.target.cm, kind, trial) : null
+    const again = narrow ? addAt(narrowed(state, narrow.neighbour, narrow.by, plan, menu.target.cm), menu.target.wall, menu.target.cm, kind, trial) : null
     if (again?.key) return commitAdd(again.state, again.key)
     setAdd(null)
     setToast(t.plus.failed)
@@ -945,6 +957,10 @@ export function KitchenPlanner({
     }
     let engine: KitchenEngine | null = null
     let cancelled = false
+    // dev: класс качества из адреса `kp-tier=phone-low` — e2e меряет кадр слабого телефона (C2, 48).
+    // В production не читается никогда; читаем до import(), пока автосохранение не переписало адрес.
+    const kpTier = process.env.NODE_ENV !== 'production' ? new URLSearchParams(window.location.search).get('kp-tier') : null
+    const force = (['phone', 'phone-low', 'desktop', 'desktop-weak'] as const).find((n: TierName) => n === kpTier)
     // Файл 3D на медленном интернете иногда не приходит с первого раза —
     // пробуем ещё дважды, а не пишем сразу «не работает».
     const load = (tries: number): Promise<typeof import('./three/engine')> =>
@@ -978,7 +994,7 @@ export function KitchenPlanner({
         // Обычный запуск упал (капризная видеокарта, мало памяти) — второй раз
         // запускаем бережно: без сглаживания, без мощного режима, в «Лёгком».
         try {
-          engine = new KitchenEngine(hostRef.current, events)
+          engine = new KitchenEngine(hostRef.current, events, false, force)
         } catch {
           hostRef.current.querySelector('canvas')?.remove()
           try {
@@ -1326,12 +1342,13 @@ export function KitchenPlanner({
     // пришли сюда из меню «+» → «Технику»: выбранная модель встаёт в запомненное место
     const tg = addTargetRef.current
     addTargetRef.current = null
-    if (!tg || !id) return update({ picks: { ...state.picks, [slot]: id } })
     const planner: Planner = (st, snap) => planKitchen(planInputOf(st, chosenItems(st.picks, appliances), snap), { shelves: style.shelves })
-    const r = addPicked({ ...state, picks: { ...state.picks, [slot]: id } }, tg, slot, planner)
     // модель выбрана, но в запомненное место не встала — сказать, а не молчать (ревью 32)
-    if (!r.placed) setToast(t.noRoom)
-    replace(r.state)
+    if (tg && id && !pickInto(state, slot, id, tg, planner).placed) setToast(t.noRoom)
+    // функциональная форма: два быстрых выбора не затирают друг друга (ревью C1)
+    track()
+    setCartResult(null)
+    setState((s) => pickInto(s, slot, id, tg, planner).state)
   }
   // Своя расстановка сбрасывается вместе со своими шкафами: иначе они
   // оставались в адресе и в счётчике «Вернуть шкафы как было», но не в кухне.

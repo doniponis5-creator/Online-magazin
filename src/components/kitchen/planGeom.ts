@@ -1,4 +1,4 @@
-import { addAt, DEPTH, minA, runCm, runX, UPPER_DEPTH, type ModuleKind, type Plan, type Planner, type Run, type UpperKind, NARROW_W } from '@/lib/kitchen/layout'
+import { addAt, DEPTH, runLocal, runWorld, minA, runCm, runX, UPPER_DEPTH, type ModuleKind, type Plan, type Planner, type Run, type UpperKind, NARROW_W } from '@/lib/kitchen/layout'
 import { baseKey, upperKey } from '@/lib/kitchen/fronts'
 import type { FixedItem, GapId, KitchenState, Shape, SlotKind, WallId } from '@/lib/kitchen/types'
 
@@ -10,21 +10,8 @@ import type { FixedItem, GapId, KitchenState, Shape, SlotKind, WallId } from '@/
  * переводит палец в «стена + см» через `hitRun`.
  */
 
-/** Точка ряда → мир (см). Формула — как в `PlanSketch`/`planSvg`. */
-export function runWorld(run: Pick<Run, 'ox' | 'oz' | 'rot'>, x: number, z: number): { x: number; z: number } {
-  const cos = Math.cos(run.rot)
-  const sin = Math.sin(run.rot)
-  return { x: run.ox + x * cos + z * sin, z: run.oz - x * sin + z * cos }
-}
-
-/** Мир → точка ряда (см): x — вдоль стены от начала ряда, z — от стены к лицу. */
-export function runLocal(run: Pick<Run, 'ox' | 'oz' | 'rot'>, wx: number, wz: number): { x: number; z: number } {
-  const cos = Math.cos(run.rot)
-  const sin = Math.sin(run.rot)
-  const dx = wx - run.ox
-  const dz = wz - run.oz
-  return { x: dx * cos - dz * sin, z: dx * sin + dz * cos }
-}
+/** Точка ряда ↔ мир (см) — одна формула в `layout.ts` (её же берут движок в метрах и `checks.ts`). */
+export { runLocal, runWorld }
 
 export type Rect = { x: number; y: number; w: number; h: number }
 
@@ -146,6 +133,18 @@ export function addPicked(state: KitchenState, target: PlanTarget, slot: SlotKin
   if (!item) return { state, placed: false }
   const r = addAt(state, target.wall, target.cm, item, planner)
   return r.key ? { state: r.state, placed: true } : { state, placed: false }
+}
+
+/**
+ * Выбор модели в слоте как функция состояния — экран зовёт её внутри
+ * `setState((s) => …)`: два быстрых выбора не затирают друг друга (ревью C1).
+ * Пришли из «+» (`target`) — модель встаёт в запомненное место; не встала —
+ * выбор всё равно остаётся (`placed: false`, экран говорит «не помещается»).
+ */
+export function pickInto(state: KitchenState, slot: SlotKind, id: string | null, target: PlanTarget | null, planner: Planner): { state: KitchenState; placed: boolean } {
+  const picked: KitchenState = { ...state, picks: { ...state.picks, [slot]: id } }
+  if (!target || !id) return { state: picked, placed: false }
+  return addPicked(picked, target, slot, planner)
 }
 
 /** Стены толщиной `T` на плане (как у чертежа). */

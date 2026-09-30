@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addPicked, chainOf, hitRun, planCells, resetForShape } from '@/components/kitchen/planGeom'
+import { addPicked, chainOf, hitRun, pickInto, planCells, planFrame, rectOf, resetForShape } from '@/components/kitchen/planGeom'
 import { DEPTH, itemPositions, minA, moduleCenter, planKitchen, runCm, runX, type Plan, type PlanInput, type Planner, type Run } from '@/lib/kitchen/layout'
 import { planInputOf } from '@/lib/kitchen/order'
 import { DEFAULT_STATE } from '@/lib/kitchen/share'
@@ -138,5 +138,77 @@ describe('addPicked — техника из меню «+» встаёт в за�
     const r = addPicked(tight, { wall: 'A', cm: 65, gap: null }, 'dishwasher', planner)
     expect(r.placed).toBe(false)
     expect(r.state).toBe(tight)
+  })
+})
+
+describe('pickInto — выбор модели как функция состояния (setPick, ревью C1)', () => {
+  const dw: KitchenAppliance = { id: 'dw', slot: 'dishwasher', name: 'dw', brand: '', price: 1, w: 60, h: 82, d: 55, sizeKnown: true, builtIn: true, finish: 'white' }
+  const planner: Planner = (st, snap) => planKitchen(planInputOf(st, { hob: hob(), dishwasher: dw }, snap), opts)
+
+  it('два быстрых выбора подряд (setState(s => …) дважды) — оба в кухне, второй не затирает первый', () => {
+    // так React применяет две очереди обновлений: второе видит результат первого
+    const first = (s: KitchenState) => pickInto(s, 'fridge', 'fr-1', null, planner).state
+    const second = (s: KitchenState) => pickInto(s, 'oven', 'ov-1', null, planner).state
+    const out = second(first({ ...DEFAULT_STATE, picks: { hob: 'hb' } }))
+    expect(out.picks).toEqual({ hob: 'hb', fridge: 'fr-1', oven: 'ov-1' })
+  })
+
+  it('с запомненным местом «+» — модель встаёт туда; не встала — выбор всё равно сохранён', () => {
+    const s: KitchenState = { ...DEFAULT_STATE, shape: 'straight', a: 400, arrangement: { A: ['sink', 'g1', 'hob'] }, gaps: { g1: { w: 60 } }, at: { sink: 30, g1: 90, hob: 220 } }
+    const r = pickInto(s, 'dishwasher', 'dw', { wall: 'A', cm: 90, gap: 'g1' }, planner)
+    expect(r.placed).toBe(true)
+    expect(itemPositions(planner(r.state, [])).dishwasher).toEqual({ wall: 'A', center: 90, w: 60 })
+    const tight: KitchenState = { ...DEFAULT_STATE, shape: 'straight', a: 130, arrangement: { A: ['sink', 'hob'] } }
+    const miss = pickInto(tight, 'dishwasher', 'dw', { wall: 'A', cm: 65, gap: null }, planner)
+    expect(miss.placed).toBe(false)
+    expect(miss.state.picks.dishwasher).toBe('dw')
+    expect(miss.state.arrangement).toEqual({ A: ['sink', 'hob'] })
+  })
+
+  it('снять выбор (id = null) — слот пуст, место «+» не трогается', () => {
+    const r = pickInto({ ...DEFAULT_STATE, picks: { fridge: 'fr-1' } }, 'fridge', null, { wall: 'A', cm: 90, gap: null }, planner)
+    expect(r.state.picks.fridge).toBeNull()
+    expect(r.placed).toBe(false)
+  })
+})
+
+describe('rectOf и planFrame на повёрнутых рядах (концерн 29)', () => {
+  const inside = (r: { x: number; y: number; w: number; h: number }, f: { x0: number; y0: number; x1: number; y1: number }) =>
+    r.x >= f.x0 - 1e-6 && r.y >= f.y0 - 1e-6 && r.x + r.w <= f.x1 + 1e-6 && r.y + r.h <= f.y1 + 1e-6
+
+  it('угловая 300×240: ряд B лежит у левой стены — x 0…DEPTH, вдоль стены ровно длина ряда', () => {
+    const plan = planKitchen(straight({ shape: 'corner', a: 300, b: 240 }), opts)
+    const B = plan.runs.find((r) => r.id === 'B')!
+    const r = rectOf(B, 0, B.length, 0, DEPTH)
+    expect(r.x).toBeCloseTo(0, 6)
+    expect(r.w).toBeCloseTo(DEPTH, 6)
+    expect(r.h).toBeCloseTo(B.length, 6)
+    // отрезок 10…70 ряда — 60 см вдоль стены, глубина та же
+    const part = rectOf(B, 10, 60, 0, DEPTH)
+    expect([part.w, part.h].map((v) => Math.round(v))).toEqual([DEPTH, 60])
+  })
+
+  it('остров: прямоугольник ряда I — длина × глубина острова, внутри рамки плана', () => {
+    const plan = planKitchen(straight({ shape: 'island', a: 330, island: 160 }), opts)
+    const I = plan.runs.find((r) => r.id === 'I')!
+    const r = rectOf(I, 0, I.length, 0, DEPTH)
+    expect(Math.round(r.w)).toBe(160)
+    expect(Math.round(r.h)).toBe(DEPTH)
+    expect(r.y).toBeGreaterThanOrEqual(DEPTH)
+    expect(inside(r, planFrame(plan))).toBe(true)
+  })
+
+  it('U-кухня с окном: рамка вмещает все три ряда и окно', () => {
+    const plan = planKitchen(straight({ shape: 'u', a: 360, b: 240, c: 240 }), opts)
+    const f = planFrame(plan)
+    expect(plan.runs.map((r) => r.id).sort()).toEqual(['A', 'B', 'C'])
+    for (const run of plan.runs) expect(inside(rectOf(run, 0, run.length, 0, DEPTH), f), run.id).toBe(true)
+    expect(f.x0).toBe(-12)
+    expect(f.x1).toBe(360 + 12)
+    // боковые ряды по 240 — рамка по глубине не меньше самого длинного из них
+    expect(f.y1).toBeGreaterThanOrEqual(240)
+    if (plan.window?.wall === 'left') expect(f.y1).toBeGreaterThanOrEqual(plan.window.at + plan.window.w / 2)
+    if (plan.window?.wall === 'back') expect(plan.window.at + plan.window.w / 2).toBeLessThanOrEqual(f.x1)
+    expect(plan.window).not.toBeNull()
   })
 })
