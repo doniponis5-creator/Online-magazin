@@ -14,7 +14,7 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-29T22:14:27+06:00",
-  "updatedAt": "2026-09-30T22:59:09+06:00",
+  "updatedAt": "2026-09-30T23:33:54+06:00",
   "finishedAt": null,
   "stages": [
     {
@@ -445,7 +445,7 @@ window.STATE =
       ],
       "status": "done",
       "finishedAt": "2026-09-30T22:59:09+06:00",
-      "tests": { "passed": 963, "failed": 0 },
+      "tests": { "passed": 968, "failed": 0 },
       "commit": "7aee880",
       "startedAt": "2026-09-30T21:07:21+06:00",
       "retries": 1,
@@ -472,11 +472,14 @@ window.STATE =
         "src/components/kitchen/KitchenPlanner.tsx",
         "src/components/kitchen/kitchen.css"
       ],
-      "status": "in-progress",
+      "status": "done",
+      "finishedAt": "2026-09-30T23:33:54+06:00",
+      "tests": { "passed": 968, "failed": 0 },
+      "commit": "68fc3fe",
       "startedAt": "2026-09-30T22:59:09+06:00",
       "retries": 0,
       "repairs": 0,
-      "handoffs": 0
+      "handoffs": 1
     }
   ],
   "singlePass": null,
@@ -540,7 +543,12 @@ window.STATE =
     "T07 · kitchen-acceptance:314-329 · 17 кухонь в одном test — первая ошибка прячет остальные",
     "T07 · e2e · помощники ready/fire/tap/drag переписаны в пяти спеках; профиль chrome гоняет kitchen-* повторно",
     "T07 · старые e2e сайта (cart, catalog, checkout, visual, task0*) рассчитаны на npm run start 3100 — против dev 3001 красные (не регрессия)",
-    "T07 · docs/KITCHEN_E2E_UZ.md · опечатка «савaтга» (латинская a)"
+    "T07 · docs/KITCHEN_E2E_UZ.md · опечатка «савaтга» (латинская a)",
+    "P2 · engine.ts resize() · draw() мимо охраны compiling — resize во время первой compileAsync соберёт шейдеры синхронно",
+    "P2 · placeCard · карточка выбора всегда справа сверху; на 1220–1440 px с колонкой плана может закрыть бо́льшую часть 3D",
+    "P2 · kitchen.css · на листе мастера на телефоне консультант скрыт целиком (а не сдвинут)",
+    "P2 · useLayoutEffect querySelector('header') · может наблюдать .kp-head вместо шапки сайта",
+    "P2 · html:has(.kp-sel) .kp-toast · правило действует и на компьютере"
 ],
   "reviewers": {
     "manifestSpec": null,
