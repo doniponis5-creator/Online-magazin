@@ -14,7 +14,7 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-29T22:14:27+06:00",
-  "updatedAt": "2026-09-30T20:57:04+06:00",
+  "updatedAt": "2026-09-30T21:07:21+06:00",
   "finishedAt": null,
   "stages": [
     {
@@ -384,12 +384,17 @@ window.STATE =
       ],
       "status": "done",
       "finishedAt": "2026-09-30T20:28:42+06:00",
-      "tests": { "passed": 951, "failed": 0 },
+      "tests": {
+        "passed": 951,
+        "failed": 0
+      },
       "commit": "3bfd3bf",
       "startedAt": "2026-09-30T15:17:50+06:00",
       "retries": 0,
       "repairs": 1,
-      "repairFindings": ["выпавшее пустое место подписано «Пенал» в предупреждении; apply не ужимает соседний gap — R23i"],
+      "repairFindings": [
+        "выпавшее пустое место подписано «Пенал» в предупреждении; apply не ужимает соседний gap — R23i"
+      ],
       "handoffs": 1
     },
     {
@@ -409,12 +414,64 @@ window.STATE =
       ],
       "status": "done",
       "finishedAt": "2026-09-30T20:57:04+06:00",
-      "tests": { "passed": 951, "failed": 0 },
+      "tests": {
+        "passed": 951,
+        "failed": 0
+      },
       "commit": "d84dc8f",
       "startedAt": "2026-09-30T20:28:42+06:00",
       "retries": 0,
       "repairs": 0,
       "handoffs": 1
+    },
+    {
+      "id": "P1",
+      "title": "Доводка 1: соседи не меняются, одно правило переноса, «+» и подписи плана",
+      "requirements": [
+        "R05",
+        "R05.1",
+        "R04",
+        "R18i",
+        "R16i.1"
+      ],
+      "blockedBy": [
+        "C2"
+      ],
+      "wave": 9,
+      "zone": [
+        "src/lib/kitchen/layout.ts",
+        "src/components/kitchen/PlanView.tsx",
+        "src/components/kitchen/KitchenPlanner.tsx"
+      ],
+      "status": "in-progress",
+      "startedAt": "2026-09-30T21:07:21+06:00",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0
+    },
+    {
+      "id": "P2",
+      "title": "Доводка 1: камера и выбор на телефоне, компьютер в одно окно, лист мастера",
+      "requirements": [
+        "R20i",
+        "R03",
+        "R10",
+        "R02",
+        "R09"
+      ],
+      "blockedBy": [
+        "P1"
+      ],
+      "wave": 10,
+      "zone": [
+        "src/components/kitchen/three/engine.ts",
+        "src/components/kitchen/KitchenPlanner.tsx",
+        "src/components/kitchen/kitchen.css"
+      ],
+      "status": "pending",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0
     }
   ],
   "singlePass": null,
