@@ -70,7 +70,9 @@ export async function respond(
     if (isAcknowledgement(turns) || isJunk(turns)) return { text: '', products: [], source: 'flow', silent: true }
   }
   const intent = hint.intent ?? null
-  const first = await answer(turns, lang, customer, page, channel.known.name, Boolean(channel.known.phone), objectionNote(intent))
+  const talked = Array.isArray(shown) ? shown.filter((x): x is string => typeof x === 'string').slice(0, 5) : []
+  const raw = await answer(turns, lang, customer, page, channel.known.name, Boolean(channel.known.phone), objectionNote(intent), talked)
+  const first = { ...raw, text: withoutRepeatOffer(raw.text, turns) }
   const said = declined(turns) || intent?.kind === 'decline' ? { ...first, text: withoutCallOffer(first.text) } : first
   const later = followAfter(intent)
   const reply = later ? { ...said, followAfter: later } : { ...said, followAfter: undefined }
@@ -138,6 +140,18 @@ function isOtherBot(turns: ChatTurn[]): boolean {
 }
 
 /** «{{SWE001}}», один знак, e-mail — сообщение не человеку, отвечать нечего. */
+/**
+ * «Тариздейлиби?» в каждом ответе — так не продаёт ни один живой менеджер: покупатель
+ * чувствует, что его торопят (владелец, 01.10). Предлагали оформить в одном из двух
+ * последних ответов — в этом не предлагаем: отвечаем и спрашиваем о деле.
+ */
+function withoutRepeatOffer(text: string, turns: ChatTurn[]): string {
+  const recent = turns.filter((t) => t.role === 'assistant').slice(-2)
+  if (!recent.some((t) => OFFER.test(t.text))) return text
+  const kept = text.split(/(?<=[.!?])\s+/).filter((sentence) => !OFFER.test(sentence))
+  return kept.length > 0 ? kept.join(' ') : text
+}
+
 /** Наличные: «наличка», «накталай», «нахт» — про оплату, не про покупку. */
 const CASH = /(наличк|наличн|накталай|накд|нахт|naqd|nalichk)/i
 

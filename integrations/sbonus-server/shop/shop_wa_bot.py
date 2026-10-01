@@ -589,9 +589,61 @@ async def send_digest(day: str = "") -> bool:
     text = str(data.get("text") or "")
     if not data.get("ok") or not text:
         return False
+    waiting = await _waiting_chats()
+    if waiting:
+        text += "\n\n" + "\n".join(waiting)
     await _send_text(_admin_phone(), text)
-    logger.info(f"wa digest: отправлена за {data.get('day')} ({data.get('count')} вопросов)")
+    logger.info(f"wa digest: отправлена за {data.get('day')} ({data.get('count')} вопросов, ждут ответа: {max(len(waiting) - 1, 0)})")
     return True
+
+
+# Бот сказал «уточню у руководства» / «позвоним» — дальше ход за владельцем.
+PROMISED = re.compile(r"(руководств\w*\s+(тактап|аниклаб|етказ|айт|уточн|передам|свяж|чал|позвон)|уточню у руководства|чалабыз|позвоним|кунгирок киламиз)", re.I)
+
+
+def waiting_lines(chats: list[tuple[str, list[dict]]], limit: int = 12) -> list[str]:
+    """
+    «Ждут ответа» для утренней сводки: последнее слово в чате за покупателем, или бот
+    пообещал ответ руководства, а владелец так и не написал. 01.10 так молча ждали
+    стиралка под гарантию, Умар с эндуро, мама со скутером — никто не видел.
+    """
+    rows = []
+    for digits, turns in chats:
+        if not turns:
+            continue
+        last = turns[-1]
+        asked = [t["text"] for t in turns if t.get("role") == "user"]
+        if not asked:
+            continue
+        if last.get("role") == "user" or PROMISED.search(str(last.get("text") or "")):
+            said = re.sub(r"^\[[^\]]*\]\s*", "", asked[-1]).replace("\n", " ").strip()
+            said = said[:80] + ("…" if len(said) > 80 else "")
+            rows.append(f"• +{digits} — «{said}»")
+    if not rows:
+        return []
+    more = f"\n…и ещё {len(rows) - limit}" if len(rows) > limit else ""
+    return [f"⏳ Ждут ответа — {len(rows)} (бот не смог ответить или обещал руководство):"] + rows[:limit] + ([more] if more else [])
+
+
+async def _waiting_chats() -> list[str]:
+    """Чаты вчера и сегодня (по Бишкеку), где покупатель ждёт человека. Записанные в телефоне — не наши."""
+    days = {_today(), (_bishkek_now() - timedelta(days=1)).strftime("%Y%m%d")}
+    chats = []
+    try:
+        seen = set()
+        async for key in redis_client.scan_iter(match="wa:count:*", count=500):
+            parts = str(key).split(":")
+            if len(parts) != 4 or parts[3] not in days or parts[2] in seen:
+                continue
+            digits = parts[2]
+            seen.add(digits)
+            if await redis_client.get(f"wa:saved:{digits}"):
+                continue
+            chats.append((digits, await _turns(digits)))
+    except Exception as error:
+        logger.warning(f"wa digest: список ждущих не собран: {error}")
+        return []
+    return waiting_lines(chats)
 
 
 DIGEST_HOUR = 9

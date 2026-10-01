@@ -658,3 +658,31 @@ describe('аудит 01.10 ночь: адрес вместо «да»', () => {
     vi.unstubAllGlobals()
   })
 })
+
+describe('продавец, а не «Тариздейлиби?» в каждом ответе; характеристики товара из разговора', () => {
+  it('оформить предлагали в прошлом ответе — в новом «Тариздейлиби?» вырезается', async () => {
+    vi.resetModules()
+    vi.doMock('@/lib/assistant/reply', async (orig) => ({
+      ...(await orig<typeof import('@/lib/assistant/reply')>()),
+      answer: async () => ({ text: 'Ооба, 8 кг. Тариздейлиби?', products: [], source: 'gemini' as const, audience: 'customer' as const }),
+    }))
+    const { respond } = await import('@/lib/assistant/respond')
+    const wa = { key: 'wa:k1', orderSource: 'Заказ из WhatsApp', leadChannel: 'whatsapp' as const, known: { phone: '+996555000099' } }
+    const r = await respond(wa, [
+      { role: 'assistant', text: 'Бар, 21 400 сом. Тариздейлиби?' },
+      { role: 'user', text: 'Канча кг кирет' },
+    ], 'ky', null)
+    expect(r.text).toBe('Ооба, 8 кг.')
+    vi.doUnmock('@/lib/assistant/reply')
+    vi.resetModules()
+  })
+
+  it('показанный в чате товар — в подробном списке с характеристиками, даже если вопрос без названия', async () => {
+    const { catalogForQuestion } = await import('@/lib/assistant/knowledge')
+    const withSpecs = products.find((p) => p.specs.length > 0)!
+    const text = catalogForQuestion(products, 'канча кг кирет', 'ru', null, [withSpecs.id])
+    const detailed = text.split('ВЕСЬ КАТАЛОГ')[0]
+    expect(detailed).toContain(`id=${withSpecs.id}`)
+    expect(detailed).toContain(withSpecs.specs[0].valueRu)
+  })
+})

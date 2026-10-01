@@ -197,8 +197,13 @@ const DESC_CHARS = 400
  *   2) ВЕСЬ КАТАЛОГ — каждый товар одной короткой строкой: цена и наличие.
  *      Этого хватает, чтобы ответить «а есть ли у вас…» про что угодно.
  */
-export function catalogForQuestion(list: Product[], question: string, lang: Lang, ceiling: number | null = null): string {
-  const found = searchProducts(question, lang, FOCUS_LIMIT, list)
+export function catalogForQuestion(list: Product[], question: string, lang: Lang, ceiling: number | null = null, pinned: string[] = []): string {
+  // Товары, о которых уже идёт разговор (показанные в чате), — всегда подробно: «канча кг?»,
+  // «машинага батабы?» после фото без названия иначе не находили карточку, и бот отвечал
+  // «уточню», хотя характеристики в каталоге были.
+  const byId = new Map(list.map((p) => [p.id, p]))
+  const talked = pinned.map((id) => byId.get(id)).filter((p): p is Product => Boolean(p))
+  const found = [...talked, ...searchProducts(question, lang, FOCUS_LIMIT, list).filter((p) => !pinned.includes(p.id))].slice(0, FOCUS_LIMIT)
 
   // Бюджет назван — дороже не показываем вовсе: слабая модель иначе первой
   // предлагала то, что не по карману. Ничего не влезло — показываем три
@@ -213,6 +218,7 @@ export function catalogForQuestion(list: Product[], question: string, lang: Lang
     budgetNote = `Покупатель назвал бюджет: до ${budget} сом. В него ничего не укладывается — ниже самые дешёвые варианты; честно скажи, на сколько они дороже.\n`
   }
   if (!budget) focus = found
+  else focus = [...talked, ...focus.filter((p) => !pinned.includes(p.id))]
   const focusIds = new Set(focus.map((p) => p.id))
 
   const detailed = focus.map((product) => {

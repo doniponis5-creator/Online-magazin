@@ -41,6 +41,8 @@ export async function answer(
   knownPhone = false,
   /** подсказка продавцу: почему покупатель тянет (из Jev, `objectionNote`) */
   note = '',
+  /** id товаров, показанных в этом разговоре */
+  talked: string[] = [],
 ): Promise<AssistantReply> {
   const lastQuestion = [...turns].reverse().find((t) => t.role === 'user')?.text ?? ''
   // Каталог берём сегодняшний: из 1С, если сервер настроен, иначе вшитый.
@@ -58,7 +60,7 @@ export async function answer(
     try {
       const lastAnswer = [...turns].reverse().find((t) => t.role === 'assistant')?.text ?? ''
       const ceiling = cheaperThan(lastQuestion, lastAnswer)
-      const raw = await askGemini(systemInstruction(lang, customer, talkLang(turns, lang), list, recent, notes, ceiling, viewing, knownName, knownPhone) + note, turns)
+      const raw = await askGemini(systemInstruction(lang, customer, talkLang(turns, lang), list, recent, notes, ceiling, viewing, knownName, knownPhone, talked) + note, turns)
       const parsed = parseAnswer(raw)
       const talk = talkLang(turns, lang)
       return { text: houseStyle(parsed.text, talk), products: hits(parsed.productIds, lang, list), source: 'gemini', audience: parsed.audience }
