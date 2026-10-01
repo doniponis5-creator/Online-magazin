@@ -11,6 +11,7 @@ import { categories } from '@/data/categories'
 import categoryIcons from '@/data/category-icons.json'
 import { categoryCover, getNew, getPopular, type ArtKind } from '@/data/products'
 import { useI18n } from '@/lib/i18n/I18nProvider'
+import { useShuffle } from '@/lib/useShuffle'
 import { DailySelection, CampaignBanner, HitMosaic, ReelsEntry, BrandStrip, SaleSection, SocialAndAccount } from '@/components/HomeMerchandising'
 import { StorefrontHero } from '@/components/StorefrontHero'
 import { Brand } from '@/components/Brand'
@@ -197,6 +198,7 @@ export function HomeTop() {
 
 /** Всё, что ниже «Готовых кухонь в 3D». */
 export function HomeRest() {
+  const shuffle = useShuffle()
   return (
     <>
       <DailySelection />
@@ -207,7 +209,7 @@ export function HomeRest() {
       <SaleSection />
       <BonusPromo />
       <NightBanner />
-      <ProductSection titleKey="newList" ctaKey="newCta" products={getNew()} />
+      <ProductSection titleKey="newList" ctaKey="newCta" products={getNew(shuffle)} />
       <CustomerReviews />
       <SocialAndAccount />
       <InfoStrip />
