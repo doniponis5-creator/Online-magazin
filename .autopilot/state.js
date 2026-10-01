@@ -14,7 +14,7 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-29T22:14:27+06:00",
-  "updatedAt": "2026-10-01T04:13:13+06:00",
+  "updatedAt": "2026-10-01T10:42:39+06:00",
   "finishedAt": null,
   "stages": [
     {
@@ -572,7 +572,7 @@ window.STATE =
       ],
       "status": "done",
       "finishedAt": "2026-10-01T04:13:13+06:00",
-      "tests": { "passed": 989, "failed": 0 },
+      "tests": { "passed": 990, "failed": 0 },
       "commit": "a6c72e1",
       "startedAt": "2026-10-01T00:59:15+06:00",
       "retries": 0,
@@ -597,11 +597,14 @@ window.STATE =
         "src/components/kitchen/kitchen.css",
         "src/components/kitchen/three/engine.ts"
       ],
-      "status": "in-progress",
+      "status": "done",
+      "finishedAt": "2026-10-01T10:42:39+06:00",
+      "tests": { "passed": 990, "failed": 0 },
+      "commit": "80c6919",
       "startedAt": "2026-10-01T04:13:13+06:00",
-      "retries": 0,
+      "retries": 1,
       "repairs": 0,
-      "handoffs": 0
+      "handoffs": 1
     }
   ],
   "singlePass": null,
@@ -676,7 +679,12 @@ window.STATE =
     "P4 · KY-сокращение осей «Т × Б × Т» неоднозначно — проверить носителю",
     "P4 · MSAA на реальных iPhone/Android не проверен (запасной путь есть) — проверить владельцем в приложении",
     "P3 · шкаф 60 перенесён с B на A — варочная на B сдвигается к углу на 30 (нужна столешница у пустого места)",
-    "P5 · swapFirst · на пороге «четверть» модуль прыгает (−44 → 168, −46 → 130)"
+    "P5 · swapFirst · на пороге «четверть» модуль прыгает (−44 → 168, −46 → 130)",
+    "P6 · компьютер 1440 · колонка плана 320, 3D 44 % — сузить мешает прилипание в px (перевести в см — отдельный таск)",
+    "P6 · kitchen.css · панель полноэкранного режима на 1101–1366 px — 360 вместо 440 (ради 3D ≥ 50 %) — отступление от спеки, решает владелец",
+    "P6 · 1280×800 · карточке под планом ~170 px — часть кнопок листается внутри",
+    "P6 · engine framing по углам кухни — кадр плотнее и на компьютере тоже",
+    "P6 · телефон · «≥ 70 % высоты» для угловой кухни недостижимо без обрезки боков — держится по ширине (72 %)"
 ],
   "reviewers": {
     "manifestSpec": null,
