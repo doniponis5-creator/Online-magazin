@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { formatSom } from '@/lib/format'
 import { discountPct, type SaleCard } from '@/lib/hero-sale'
-import { Words } from './HomeStoryReveal'
 import { useFanDeck } from './HomeStoryKitchens'
 import './home-story-reveal.css'
 import './home-story-kitchens.css'
@@ -42,6 +41,39 @@ function Ticker({ from, to, run }: { from: number; to: number; run: boolean }) {
   return <>{formatSom(value)}</>
 }
 
+/** Число в заголовке («34%») набирается от нуля, когда фраза появляется. */
+function CountUp({ value }: { value: number }) {
+  const [n, setN] = useState(value)
+  useLayoutEffect(() => {
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) setN(0)
+  }, [value])
+  useEffect(() => {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { setN(value); return }
+    let raf = 0
+    const t0 = performance.now() + 250
+    const tick = (now: number) => {
+      const t = Math.max(0, Math.min(1, (now - t0) / 700))
+      setN(Math.round(value * (1 - (1 - t) ** 3)))
+      if (t < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [value])
+  return <>{n}</>
+}
+
+/**
+ * Заголовок по словам: слова всплывают по очереди, ключевое слово (mark) подчёркивает белый маркер,
+ * число в нём (count) набирается от нуля. key на фазе перезапускает анимацию.
+ */
+function SaleTitle({ text, mark, count }: { text: string; mark: number; count?: number }) {
+  return <>{text.split(' ').map((w, i) => {
+    const num = count !== undefined && i === mark ? /^(\D*)(\d+)(.*)$/.exec(w) : null
+    const body = num ? <>{num[1]}<CountUp value={count!} />{num[3]}</> : w
+    return <span key={i} className={i === mark ? 'hr__word hs__mark' : 'hr__word'} style={{ animationDelay: `${i * 70}ms` }}>{body}{' '}</span>
+  })}</>
+}
+
 export function HomeStorySale({ cards }: { cards: SaleCard[] }) {
   const { lang } = useI18n()
   const root = useRef<HTMLElement>(null)
@@ -70,6 +102,8 @@ export function HomeStorySale({ cards }: { cards: SaleCard[] }) {
   const titles = ky
     ? ['Техникага арзандатуулар.', `${max}% чейин үнөмдөңүз.`, 'Кампада бар кезде үлгүрүңүз.']
     : ['Скидки на технику.', `Экономия до ${max}%.`, 'Успейте, пока есть на складе.']
+  // какое слово фразы выделить маркером (в нём же число скидки во второй фразе)
+  const marks = ky ? [1, 0, 0] : [0, 2, 4]
   const notes = ky
     ? ['Дүкөндө бар техниканын баасы түштү.', 'Эң чоң арзандатуу — биринчи.', 'Карточканы басыңыз — товар ачылат.']
     : ['Цены снижены на технику, которая есть в магазине.', 'Самая большая скидка — первой.', 'Нажмите на карточку — откроется товар.']
@@ -97,7 +131,7 @@ export function HomeStorySale({ cards }: { cards: SaleCard[] }) {
         })}
       </div>
       <div className="hr__copy">
-        <h1 key={`t${phase}`}><Words text={titles[phase]} /></h1>
+        <h1 key={`t${phase}`}><SaleTitle text={titles[phase]} mark={marks[phase]} count={phase === 1 ? max : undefined} /></h1>
         <p key={`n${phase}`} className="hr__note">{notes[phase]}</p>
         <Link className="btn btn--primary hr__cta" href={`/${lang}/catalog?sale=1`}>{ky ? 'Бардык арзандатуулар' : 'Все скидки'}<IconArrowUpRight size={18} /></Link>
         <span className="hr__hint">{ky ? 'Сыдырыңыз — карточкалар алмашат' : 'Листайте — карточки сменятся'}<IconArrowDown size={16} /></span>
