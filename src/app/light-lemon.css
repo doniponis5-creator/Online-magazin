@@ -99,47 +99,37 @@ input, textarea { caret-color: var(--color-primary); }
 .lang-switch__item[aria-current] { background: transparent; color: var(--color-ink); font-weight: 800; box-shadow: none; }
 .lang-switch__item:not([aria-current]):hover { color: var(--color-ink); }
 
-/* Разделы — всегда одной строкой. Раньше при нехватке места каждое название
-   ломалось на две строки («Стиральные / машины»). Теперь на широком экране
-   разделы расходятся по всей ширине, а где не влезают — строка листается
-   вбок, и край, за которым есть ещё разделы, мягко растворяется.
-   Поля −14px/4px: текст первого раздела стоит ровно под логотипом, а рамке
-   фокуса есть место внутри прокрутки. */
-.header__subnav { min-height: 40px; gap: 4px; border-top: 0; justify-content: space-between; margin-inline: -14px; padding: 2px 4px 8px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
-.header__subnav::-webkit-scrollbar { display: none; }
+/* Разделы — одной строкой, без прокрутки вбок: мышью её не пролистать, и
+   «Галерея кухонь» пряталась за краем (владелец, 01.10.2026). Строка
+   переносится, видна только первая линия; что ушло ниже, HeaderSubnav.tsx
+   показывает в меню «Ещё». Кухня всегда справа, за тонкой чертой.
+   На широком экране разделы расходятся по всей ширине, как раньше.
+   Поле −10px: текст первого раздела стоит ровно под логотипом. */
+.header__subnav { position: relative; min-height: 40px; gap: 2px; border-top: 0; margin-left: -10px; padding: 0 0 6px; }
+.subnav__row { flex: 1 1 auto; min-width: 0; height: 36px; padding-top: 2px; display: flex; flex-wrap: wrap; justify-content: space-between; overflow: hidden; }
 .subnav__link { position: relative; flex: none; white-space: nowrap; padding: 8px 10px; font-size: 12px; color: var(--color-ink); font-weight: 600; }
-.subnav__link:focus-visible { outline-offset: 0; }
+.subnav__link:focus-visible { outline-offset: -2px; }
 .subnav__link--kitchen { color: var(--color-primary); font-weight: 700; }
-/* Открытый раздел — лимонный штрих под названием, как в нижней навигации. */
-.subnav__link[aria-current='page'] { font-weight: 750; }
-.subnav__link[aria-current='page']::after { content: ''; position: absolute; left: 10px; right: 10px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--color-lemon); }
-/* С «Галереей кухонь» пунктов десять: на KY при 1440 строка листалась на 110px.
-   На широком экране пункты чуть плотнее — влезают без прокрутки; на RU лишнее
-   место всё равно раздаёт space-between, вид прежний. */
+/* Открытый раздел — лимонный штрих под названием, как в нижней навигации.
+   Открытый раздел спрятан в «Ещё» — штрих под «Ещё». */
+.subnav__link[aria-current='page'], .subnav__more-btn[data-current] { font-weight: 750; }
+.subnav__link[aria-current='page']::after, .subnav__more-btn[data-current]::after { content: ''; position: absolute; left: 10px; right: 10px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--color-lemon); }
 @media (min-width: 1200px) {
-  .header__subnav { gap: 0; }
   .subnav__link { padding-inline: 6px; }
-  .subnav__link[aria-current='page']::after { left: 6px; right: 6px; }
+  .subnav__link[aria-current='page']::after, .subnav__more-btn[data-current]::after { left: 6px; right: 6px; }
 }
-@property --subnav-fade-start { syntax: '<length>'; inherits: false; initial-value: 0px; }
-@property --subnav-fade-end { syntax: '<length>'; inherits: false; initial-value: 0px; }
-@keyframes subnav-fade {
-  0% { --subnav-fade-start: 0px; --subnav-fade-end: 48px; }
-  6%, 94% { --subnav-fade-start: 48px; --subnav-fade-end: 48px; }
-  100% { --subnav-fade-start: 48px; --subnav-fade-end: 0px; }
-}
-/* Растворение края работает от прокрутки самой строки. Если строке нечего
-   листать, анимация не действует и края остаются чёткими. Браузер без этой
-   возможности просто листает строку без растворения. */
-@supports (animation-timeline: scroll()) {
-  .header__subnav {
-    -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--subnav-fade-start), #000 calc(100% - var(--subnav-fade-end)), transparent);
-    mask-image: linear-gradient(to right, transparent, #000 var(--subnav-fade-start), #000 calc(100% - var(--subnav-fade-end)), transparent);
-    animation: subnav-fade linear both;
-    animation-timeline: scroll(self inline);
-  }
-}
-.header__city { display: none; }
+.subnav__more { position: relative; flex: none; display: flex; }
+.subnav__more-btn { display: inline-flex; align-items: center; gap: 3px; border: 0; background: none; font-family: inherit; cursor: pointer; }
+.subnav__more-btn svg { color: var(--color-muted); transition: transform 220ms var(--ease-out); }
+.subnav__more-btn[aria-expanded='true'] { background: var(--color-surface); color: var(--color-primary); }
+.subnav__more-btn[aria-expanded='true'] svg { color: currentColor; transform: rotate(180deg); }
+.subnav__menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 40; min-width: 210px; display: grid; gap: 2px; padding: 6px; background: #fff; border: 1px solid var(--color-border); border-radius: var(--radius-tile); box-shadow: var(--shadow-pop); transform-origin: top right; animation: subnav-menu-in 200ms var(--ease-out); }
+.subnav__menu-link { padding: 10px 12px; border-radius: 10px; font-size: 14px; font-weight: 600; color: var(--color-ink); white-space: nowrap; transition: background-color 140ms, color 140ms; }
+.subnav__menu-link:hover { background: var(--color-surface); color: var(--color-primary); }
+.subnav__menu-link[aria-current='page'] { background: var(--color-lime-soft); font-weight: 750; }
+@keyframes subnav-menu-in { from { opacity: 0; transform: translateY(-4px) scale(.98); } }
+@media (prefers-reduced-motion: reduce) { .subnav__menu { animation: none; } }
+.subnav__divider { flex: none; width: 1px; height: 16px; margin-inline: 6px; background: var(--color-border-strong); }
 
 /* Объём товара остаётся главным визуальным акцентом. */
 .hero3d { --scene-h: 568px; --scroll-range: 470px; margin-top: 20px; }

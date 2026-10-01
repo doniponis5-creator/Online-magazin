@@ -2,8 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useEffect, useRef, useState, type FormEvent, type MouseEvent } from 'react'
-import { categories } from '@/data/categories'
+import { Suspense, useEffect, useState, type FormEvent, type MouseEvent } from 'react'
 import { useCart } from '@/lib/cart/CartProvider'
 import { useFavorites } from '@/lib/favorites/FavoritesProvider'
 import { buildCatalogHref, buildLangHref } from '@/lib/links'
@@ -11,6 +10,7 @@ import { otherLang, type Lang } from '@/lib/i18n/config'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { IconCart, IconClose, IconGrid, IconHeart, IconMapPin, IconSearch, IconUser } from './Icons'
 import { Brand } from './Brand'
+import { HeaderSubnav } from './HeaderSubnav'
 
 function HeaderInner() {
   const { t, lang } = useI18n()
@@ -97,18 +97,6 @@ function HeaderInner() {
   // человек сейчас, а не то, что в корзине что-то лежит (это видно по числу).
   const here = (path: string) => (pathname.startsWith(`/${lang}/${path}`) ? 'page' : undefined)
   const activeCat = pathname === `/${lang}/catalog` ? searchParams.get('cat') : null
-
-  // На узком экране строка разделов листается вбок. Открытый раздел
-  // подвозим в середину строки, чтобы он не прятался за краем.
-  const subnavRef = useRef<HTMLElement>(null)
-  useEffect(() => {
-    const nav = subnavRef.current
-    const cur = nav?.querySelector<HTMLElement>('[aria-current="page"]')
-    if (!nav || !cur) return
-    const n = nav.getBoundingClientRect()
-    const c = cur.getBoundingClientRect()
-    if (c.left < n.left || c.right > n.right) nav.scrollLeft += c.left - n.left - (n.width - c.width) / 2
-  }, [pathname, activeCat])
 
   return (
     <>
@@ -230,33 +218,11 @@ function HeaderInner() {
           </div>
         </div>
 
-        <nav className="header__subnav" aria-label={t.categories.title} ref={subnavRef}>
-          {categories.map((c) => (
-            <Link
-              key={c.id}
-              href={buildCatalogHref(lang, { cat: c.id })}
-              className="subnav__link"
-              aria-current={activeCat === c.id ? 'page' : undefined}
-            >
-              {lang === 'ky' ? c.nameKy : c.nameRu}
-            </Link>
-          ))}
-          {/* «3D-кухня» не подсвечивается в галерее: там подсвечена «Галерея кухонь» */}
-          <Link
-            href={`/${lang}/kitchen`}
-            className="subnav__link subnav__link--kitchen"
-            aria-current={here('kitchen/gallery') ? undefined : here('kitchen')}
-          >
-            {lang === 'ky' ? '3D-ашкана' : '3D-кухня'}
-          </Link>
-          <Link href={`/${lang}/kitchen/gallery`} className="subnav__link subnav__link--kitchen" aria-current={here('kitchen/gallery')}>
-            {t.nav.kitchenGallery}
-          </Link>
-          <span className="header__city">
-            <IconMapPin size={16} />
-            {t.city}
-          </span>
-        </nav>
+        <HeaderSubnav
+          activeCat={activeCat}
+          kitchenCurrent={here('kitchen/gallery') ? undefined : here('kitchen')}
+          galleryCurrent={here('kitchen/gallery')}
+        />
       </div>
       </header>
     </>
