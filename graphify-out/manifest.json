@@ -163,31 +163,31 @@
   },
   "integrations/sbonus-server/shop/001_shop_orders_migration.sql": {
     "mtime": 1789746574.7940266,
-    "seen": 1790870563.030186,
+    "seen": 1790871377.108385,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/002_shop_catalog_migration.sql": {
     "mtime": 1789746574.7941577,
-    "seen": 1790870563.030187,
+    "seen": 1790871377.108386,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/003_shop_bonus_migration.sql": {
     "mtime": 1789746574.7942019,
-    "seen": 1790870563.030188,
+    "seen": 1790871377.108387,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/004_shop_stats_migration.sql": {
     "mtime": 1789746574.7942476,
-    "seen": 1790870563.030188,
+    "seen": 1790871377.108387,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/005_shop_push_migration.sql": {
     "mtime": 1789751144.4544964,
-    "seen": 1790870563.030189,
+    "seen": 1790871377.1083882,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -4285,13 +4285,13 @@
   },
   "integrations/sbonus-server/shop/006_shop_installments_migration.sql": {
     "mtime": 1789980267.1214871,
-    "seen": 1790870563.030189,
+    "seen": 1790871377.1083882,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/007_shop_notes_migration.sql": {
     "mtime": 1789980267.1215398,
-    "seen": 1790870563.03019,
+    "seen": 1790871377.1083891,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -4339,7 +4339,7 @@
   },
   "integrations/sbonus-server/shop/008_shop_chat_extra_migration.sql": {
     "mtime": 1790002975.5050404,
-    "seen": 1790870563.0301912,
+    "seen": 1790871377.1083899,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -6517,19 +6517,19 @@
   },
   "integrations/sbonus-server/shop/009_shop_push_token_len_migration.sql": {
     "mtime": 1790604951.2586076,
-    "seen": 1790870563.0301912,
+    "seen": 1790871377.1083899,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/010_shop_cart_reminders_migration.sql": {
     "mtime": 1790604951.2590644,
-    "seen": 1790870563.0301921,
+    "seen": 1790871377.1083908,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/011_shop_promo_migration.sql": {
     "mtime": 1790604951.2591376,
-    "seen": 1790870563.0301929,
+    "seen": 1790871377.108392,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -7176,9 +7176,9 @@
     "semantic_hash": ""
   },
   "src/data/product-facts.ts": {
-    "mtime": 1790871318.1508539,
-    "seen": 1790871373.2309382,
-    "ast_hash": "eaa948bfdaae4b75cf7341c325aba392",
+    "mtime": 1790871564.2160044,
+    "seen": 1790871589.713069,
+    "ast_hash": "b9c9e9489bd067f26b667c316d031c1b",
     "semantic_hash": ""
   }
 }
