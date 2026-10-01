@@ -1,20 +1,31 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { asHeroVariant, HERO_FALLBACK, HERO_VARIANTS } from '@/lib/hero'
+import { asHeroSetting, HERO_FALLBACK, HERO_SETTINGS, HERO_VARIANTS, HERO_WEEK, heroForDay, resolveHero } from '@/lib/hero'
 
 describe('анимация баннера из 1С', () => {
-  it('знакомый код проходит как есть', () => {
-    for (const v of HERO_VARIANTS) expect(asHeroVariant(v)).toBe(v)
+  it('знакомый вариант проходит как есть', () => {
+    for (const v of HERO_VARIANTS) expect(resolveHero(v)).toBe(v)
   })
-  it('пусто, мусор или старый сервер — прежняя сцена', () => {
-    expect(HERO_FALLBACK).toBe('classic')
-    for (const v of [undefined, null, '', 'Утро → вечер', 'REVEAL', 1]) expect(asHeroVariant(v)).toBe('classic')
+  it('пусто, мусор или старый сервер — по дням недели', () => {
+    expect(HERO_FALLBACK).toBe('auto')
+    for (const v of [undefined, null, '', 'glow', 'Жалюзи', 'REVEAL', 1]) expect(asHeroSetting(v)).toBe('auto')
   })
-  it('коды сервера совпадают с сайтом', async () => {
-    const { readFileSync } = await import('node:fs')
+  it('семь дней — семь разных вариантов, каждый ровно раз', () => {
+    expect(new Set(HERO_WEEK).size).toBe(7)
+    expect([...HERO_WEEK].sort()).toEqual([...HERO_VARIANTS].sort())
+  })
+  it('день считается по Бишкеку, а не по времени сервера', () => {
+    // 01.10.2026 — четверг. В 20:00 UTC в Бишкеке (UTC+6) уже пятница, 02:00.
+    expect(heroForDay(new Date('2026-10-01T12:00:00Z'))).toBe(HERO_WEEK[3])
+    expect(heroForDay(new Date('2026-10-01T20:00:00Z'))).toBe(HERO_WEEK[4])
+    // 04.10.2026 — воскресенье
+    expect(resolveHero('auto', new Date('2026-10-04T08:00:00Z'))).toBe(HERO_WEEK[6])
+  })
+  it('коды сервера совпадают с сайтом', () => {
     const py = readFileSync('integrations/sbonus-server/shop/shop_admin.py', 'utf8')
     const m = /"key": "SITE_HERO_VARIANT"[\s\S]*?"choices": \[([^\]]*)\][\s\S]*?"default": "(\w+)"/.exec(py)
     expect(m).not.toBeNull()
-    expect(m![1].split(',').map((s) => s.trim().replace(/"/g, ''))).toEqual([...HERO_VARIANTS])
+    expect(m![1].split(',').map((s) => s.trim().replace(/"/g, ''))).toEqual([...HERO_SETTINGS])
     expect(m![2]).toBe(HERO_FALLBACK)
   })
 })

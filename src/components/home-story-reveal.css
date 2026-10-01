@@ -1,35 +1,58 @@
-/* Вариант 2 сцены «Дом просыпается». Внешний вид и финальный кадр — как в home-story.css. */
-.hr { --story-top: 158px; --story-progress: 0; --r: 1; --s: 1; --tx: 0%; --ty: 0%; --morning: 0; --evening: 1;
-  /* стартовое окно: отступы от краёв сцены до раскрытия */
+/* Новые варианты сцены «Дом просыпается» (HomeStoryReveal). Внешний вид и финальный кадр — как в home-story.css.
+   По умолчанию (без JS) переменные дают финальный кадр: --r: 1 — кадр уже во весь блок. */
+.hr { --story-top: 158px; --story-progress: 0; --r: 1; --s: 1; --tx: 0%; --ty: 0%; --k: 7; --row: 1;
+  /* кадр как object-fit: cover с object-position --fx --fy */
+  --fx: .6; --fy: .5;
+  /* reveal: стартовое окно — отступы от краёв сцены до раскрытия */
   --ct: 14%; --cr: 6%; --cb: 14%; --cl: 48%; margin-top: 16px; }
 .hr[data-enhanced] { height: calc(min(720px, 100svh - var(--story-top) - 16px) + 1100px); }
 .hr__stage { position: relative; height: min(720px, calc(100svh - var(--story-top) - 16px)); min-height: 340px; overflow: hidden; isolation: isolate; border-radius: 18px; background: var(--color-story-surface); }
 .hr[data-enhanced] .hr__stage { position: sticky; top: var(--story-top); }
 
-.hr__scene { position: absolute; inset: 0; overflow: hidden; container-type: size;
-  clip-path: inset(calc(var(--ct) * (1 - var(--r))) calc(var(--cr) * (1 - var(--r))) calc(var(--cb) * (1 - var(--r))) calc(var(--cl) * (1 - var(--r))) round calc(18px + 10px * (1 - var(--r)))); }
+.hr__scene { position: absolute; inset: 0; container-type: size; }
+/* Размер кадра считается в единицах сцены (cq) — там, где его используют. */
+.hr__clip { position: absolute; inset: 0; overflow: hidden;
+  --fw: max(100cqw, 100cqh * 1672 / 941); --fh: calc(var(--fw) * 941 / 1672);
+ }
 .hr__cam { position: absolute; inset: 0; transform: translate(var(--tx), var(--ty)) scale(var(--s)); transform-origin: 58% 45%; will-change: transform; }
 .hr__cam:last-child { pointer-events: none; }
-/* Кадр повторяет object-fit: cover с object-position 60% 50%, чтобы точки держались за технику. */
-.hr__frame { --fw: max(100cqw, 100cqh * 1672 / 941); --fh: calc(var(--fw) * 941 / 1672); position: absolute; width: var(--fw); height: var(--fh); left: calc((100cqw - var(--fw)) * .6); top: calc((100cqh - var(--fh)) * .5); }
+.hr__frame { position: absolute; width: var(--fw); height: var(--fh); left: calc((100cqw - var(--fw)) * var(--fx)); top: calc((100cqh - var(--fh)) * var(--fy)); }
 .hr__image { display: block; width: 100%; height: 100%; }
 .hr__wash { position: absolute; inset: 0; opacity: min(1, var(--r) * 2.5); background: linear-gradient(90deg, rgba(255,255,255,.97), rgba(255,255,255,.9) 22%, rgba(255,255,255,.32) 48%, transparent 66%); }
 
-/* «Утро → вечер»: свет поверх кадра. Координаты — проценты исходного кадра 1672×941. */
-.hr--glow[data-enhanced] { height: calc(min(720px, 100svh - var(--story-top) - 16px) + 900px); }
-.hr__light { position: absolute; pointer-events: none; }
-/* утро: прохладная дымка и солнечная полоса по полу */
-.hr__light--morning { inset: 0; background: linear-gradient(180deg, rgb(226 238 255 / 28%), rgb(255 255 255 / 0%)); mix-blend-mode: screen; opacity: var(--morning); }
-.hr__light--sun { left: -10%; top: 45%; width: 70%; height: 60%; background: linear-gradient(105deg, transparent 20%, rgb(255 250 235 / 55%) 45%, transparent 70%); mix-blend-mode: screen; filter: blur(18px); opacity: var(--morning); transform: translateX(calc((1 - var(--morning)) * 30%)); }
-/* вечер: тёплый тон и сумерки по краям */
-.hr__light--evening { inset: 0; mix-blend-mode: multiply; opacity: var(--evening);
-  background: radial-gradient(ellipse 70% 60% at 45% 40%, rgb(255 222 180), rgb(232 176 128) 70%, rgb(170 120 110)); }
-.hr__light--lamp { top: 17%; width: 16%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; mix-blend-mode: screen; opacity: var(--evening);
-  background: radial-gradient(circle, rgb(255 236 190) 0 6%, rgb(255 196 120 / 70%) 16%, rgb(255 170 90 / 22%) 40%, transparent 68%); }
-.hr__light--strip { left: 27.6%; top: 25.5%; width: 39.5%; height: 14%; mix-blend-mode: screen; opacity: var(--evening);
-  background: radial-gradient(ellipse 55% 50% at 50% 30%, rgb(255 205 130 / 85%), rgb(255 180 100 / 25%) 55%, transparent 75%); }
-.hr__light--oven { left: 36%; top: 42%; width: 8%; height: 13%; border-radius: 30%; mix-blend-mode: screen; opacity: var(--evening);
-  background: radial-gradient(ellipse at 50% 55%, rgb(255 170 70 / 75%), transparent 70%); }
+/* reveal: окно раскрывается во весь блок */
+.hr--reveal .hr__clip { clip-path: inset(calc(var(--ct) * (1 - var(--r))) calc(var(--cr) * (1 - var(--r))) calc(var(--cb) * (1 - var(--r))) calc(var(--cl) * (1 - var(--r))) round calc(18px + 10px * (1 - var(--r)))); }
+
+/* collage: снимки техники в белой рамке слетаются на свои места, потом проявляется вся комната */
+.hr--collage { --room: 1; }
+.hr--collage .hr__room { opacity: var(--room); }
+.hr--collage[data-enhanced] { height: calc(min(720px, 100svh - var(--story-top) - 16px) + 1100px); }
+.hr__piece { --paper: 0; position: absolute; overflow: hidden; will-change: transform;
+  border-radius: calc(var(--paper) * 10px); outline: calc(var(--paper) * 6px) solid #fff;
+  box-shadow: 0 calc(var(--paper) * 18px) calc(var(--paper) * 40px) rgb(38 50 68 / calc(var(--paper) * 28%)); }
+.hr__piece img { position: absolute; max-width: none; }
+
+/* shutter: шесть полос приходят сверху и снизу и складываются в кадр */
+.hr--shutter[data-enhanced] { height: calc(min(720px, 100svh - var(--story-top) - 16px) + 1000px); }
+.hr__strip { position: absolute; top: 0; bottom: 0; width: calc(100% / 6 + 1px); overflow: hidden; will-change: transform; }
+.hr__strip-in { position: absolute; top: 0; height: 100%; width: 600%; }
+
+/* word: «ДОМ» вырезано в листе цвета сцены, кадр виден сквозь буквы; лист улетает на зрителя */
+.hr__knock { position: absolute; inset: 0; display: grid; align-items: center; justify-items: end; padding-right: 5cqw; pointer-events: none;
+  background: var(--color-story-surface); mix-blend-mode: screen; opacity: calc(1 - var(--r));
+  transform: scale(var(--k)); transform-origin: 74% 54%; will-change: transform, opacity; }
+.hr__knock span { font-family: var(--font); font-weight: 800; font-size: 27cqw; line-height: .8; letter-spacing: -.06em; color: #000; }
+.hr--word .hr__cam { transform-origin: 74% 54%; }
+
+/* marquee: бегущие названия разделов позади, карточка кадра растёт до полного блока */
+.hr__rows { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 1.2vw; overflow: hidden; pointer-events: none; opacity: calc(1 - var(--r) * .5); }
+.hr__row { white-space: nowrap; font-family: var(--font); font-weight: 800; font-size: clamp(44px, 7.4vw, 112px); line-height: 1.02; letter-spacing: -.045em;
+  color: transparent; -webkit-text-stroke: 1.5px rgb(38 50 68 / 16%); transform: translate3d(calc(var(--row) * -28%), 0, 0); will-change: transform; }
+.hr__row:nth-child(2) { color: rgb(234 245 0 / 55%); -webkit-text-stroke: 0; transform: translate3d(calc(-36% + var(--row) * 28%), 0, 0); }
+.hr--marquee .hr__clip { border-radius: calc(18px + 10px * (1 - var(--r))); will-change: transform;
+  transform: translate3d(calc((1 - var(--r)) * 19%), calc((1 - var(--r)) * 3%), 0) rotate(calc((1 - var(--r)) * -5deg)) scale(calc(.42 + .58 * var(--r)));
+  box-shadow: 0 30px 70px rgb(38 50 68 / calc((1 - var(--r)) * 25%)); }
+.hr--marquee .hr__stage { background: var(--color-story-surface); }
 
 /* Точки на технике */
 .hr__spot { position: absolute; display: flex; align-items: center; gap: 10px; translate: -11px -11px; scale: calc(1 / var(--s)); transform-origin: 11px 11px; color: var(--color-ink); text-decoration: none; pointer-events: auto; }
@@ -68,7 +91,7 @@
 @media (max-width: 900px) {
   .hr { --story-top: 148px; --ct: 6%; --cr: 8%; --cb: 10%; --cl: 8%; margin-top: 10px; }
   .hr[data-enhanced] { height: calc(100svh - var(--story-top) - 76px + 760px); }
-  .hr--glow[data-enhanced] { height: calc(100svh - var(--story-top) - 76px + 600px); }
+  .hr--shutter[data-enhanced] { height: calc(100svh - var(--story-top) - 76px + 700px); }
   .hr__stage { height: calc(100svh - var(--story-top) - 76px); min-height: 380px; max-height: 700px; border-radius: 14px; background: var(--color-story-mobile); }
   .hr__copy { left: 22px; top: 22px; width: calc(100% - 44px); }
   .hr__copy h1 { font-size: clamp(28px, 6.8vw, 40px); min-height: 2.2em; max-width: 18ch; }
@@ -76,7 +99,14 @@
   .hr__cta { min-height: 44px; font-size: 12px; padding: 10px 18px; }
   .hr__hint { display: none; }
   .hr__scene { top: 215px; }
-  .hr__frame { left: calc((100cqw - var(--fw)) * .62); top: calc((100cqh - var(--fh)) * .55); }
+  .hr { --fx: .62; --fy: .55; }
+  .hr__knock { justify-items: center; padding-right: 0; transform-origin: 50% 50%; }
+  .hr__knock { background: var(--color-story-mobile); }
+  .hr__knock span { font-size: 40cqw; }
+  .hr--word .hr__cam { transform-origin: 50% 50%; }
+  .hr__rows { top: 200px; gap: 8px; }
+  .hr__row { font-size: 15vw; }
+  .hr--marquee .hr__clip { transform: translate3d(0, calc((1 - var(--r)) * 4%), 0) rotate(calc((1 - var(--r)) * -5deg)) scale(calc(.62 + .38 * var(--r))); }
   .hr__wash { background: none; }
   .hr__spot { translate: -9px -9px; transform-origin: 9px 9px; gap: 8px; }
   .hr__dot { width: 18px; height: 18px; }
@@ -89,7 +119,8 @@
   .hr[data-enhanced] .hr__stage { position: relative; top: auto; }
   .hr__cam { transform: none; will-change: auto; }
   .hr__word, .hr__note, .hr__dot::after, .hr__hint svg { animation: none; }
-  .hr__light--sun { transform: none; }
+  .hr__knock { display: none; }
+  .hr__row { transform: none; }
   .hr__progress { display: none; }
 }
 @media (max-height: 600px) and (max-width: 900px) {

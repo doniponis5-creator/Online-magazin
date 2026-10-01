@@ -9,7 +9,7 @@
  */
 import 'server-only'
 import { callServer, mockOrdersOf, paymentMode } from '@/lib/orders/gateway'
-import { asHeroVariant, HERO_FALLBACK, type HeroVariant } from '@/lib/hero'
+import { resolveHero, type HeroVariant } from '@/lib/hero'
 
 export type BonusHistoryItem = { type: string; amount: number; note: string; date: string | null }
 export type CustomerOrderItem = {
@@ -207,18 +207,18 @@ export async function getSiteSettings(): Promise<SiteSettings> {
 }
 
 /**
- * Анимация баннера на главной — владелец выбирает в 1С («Панель сайта»).
- * Ответ живёт минуту: главная остаётся быстрой, а выбор доходит до сайта за минуту.
+ * Анимация баннера на главной — владелец выбирает в 1С («Панель сайта»): один вариант или «auto» (по дням недели).
+ * Ответ живёт минуту: главная остаётся быстрой, а выбор и смена дня доходят до сайта за минуту.
  * В тестовом режиме — из SITE_HERO_VARIANT в .env.local.
  */
 export async function getHeroVariant(): Promise<HeroVariant> {
-  if (paymentMode() === 'mock') return asHeroVariant(process.env.SITE_HERO_VARIANT)
+  if (paymentMode() === 'mock') return resolveHero(process.env.SITE_HERO_VARIANT)
   try {
     const data = await callServer<{ heroVariant?: unknown }>('/api/v1/webhook/site/settings', { method: 'GET', revalidate: 60 })
-    return asHeroVariant(data.heroVariant)
+    return resolveHero(data.heroVariant)
   } catch (error) {
     console.error('[settings] не удалось узнать анимацию баннера:', error)
-    return HERO_FALLBACK
+    return resolveHero(undefined)
   }
 }
 

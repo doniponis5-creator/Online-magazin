@@ -7,15 +7,14 @@ import { HomeStoryKitchens } from './HomeStoryKitchens'
 import { HERO_VARIANTS, type HeroVariant } from '@/lib/hero'
 
 /**
- * Главная витрина: сцена «Дом просыпается». Какую анимацию показать, владелец
- * выбирает в 1С («Панель сайта» → «Анимация баннера»), страница передаёт выбор сюда.
- * 'classic' — прежняя, запасная; 'reveal' — окно и точки на технике; 'glow' — утро → вечер;
- * 'kitchens' — готовые 3D-кухни раскрываются веером.
+ * Главная витрина. Какую анимацию показать, решает сервер по выбору владельца в 1С
+ * («Панель сайта» → «Анимация баннера»: один вариант или по дням недели); страница передаёт ответ сюда.
+ * 'classic' — прежняя сцена; 'kitchens' — готовые 3D-кухни; остальные — HomeStoryReveal.
  */
 export function StorefrontHero({ variant }: { variant: HeroVariant }) {
   const [shown, setShown] = useState(variant)
   useEffect(() => {
-    // Только на компьютере разработчика: ?hero=glow — посмотреть вариант, не трогая 1С.
+    // Только на компьютере разработчика: ?hero=shutter — посмотреть вариант, не трогая 1С.
     if (process.env.NODE_ENV !== 'development') return
     const asked = new URLSearchParams(location.search).get('hero')
     if (asked && (HERO_VARIANTS as readonly string[]).includes(asked)) setShown(asked as HeroVariant)
