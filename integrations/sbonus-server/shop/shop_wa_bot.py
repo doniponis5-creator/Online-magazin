@@ -601,6 +601,10 @@ async def send_digest(day: str = "") -> bool:
 PROMISED = re.compile(r"(руководств\w*\s+(тактап|аниклаб|етказ|айт|уточн|передам|свяж|чал|позвон)|уточню у руководства|чалабыз|позвоним|кунгирок киламиз)", re.I)
 
 
+# «Ок», «рахмат», «хоп» в конце — покупатель закончил разговор (если бот ничего не обещал).
+THANKS = re.compile(r"((^|\W)(ок|ok|окей|хоп|хуп|макул|жарайт|майли|болду|xop|mayli)\W*$|(рахмат|рахмет|рахмад|раҳмат|rahmat|спасибо|благодарю)\W*$)", re.I)
+
+
 def waiting_lines(chats: list[tuple[str, list[dict]]], limit: int = 12) -> list[str]:
     """
     «Ждут ответа» для утренней сводки: последнее слово в чате за покупателем, или бот
@@ -615,6 +619,9 @@ def waiting_lines(chats: list[tuple[str, list[dict]]], limit: int = 12) -> list[
         asked = [t["text"] for t in turns if t.get("role") == "user"]
         if not asked:
             continue
+        bot_said = next((str(t.get("text") or "") for t in reversed(turns) if t.get("role") != "user"), "")
+        if last.get("role") == "user" and THANKS.search(str(last.get("text") or "")) and not PROMISED.search(bot_said):
+            continue  # «А ок рахмат», «Хоп рахмад» — разговор закончен, никто не ждёт
         if last.get("role") == "user" or PROMISED.search(str(last.get("text") or "")):
             said = re.sub(r"^\[[^\]]*\]\s*", "", asked[-1]).replace("\n", " ").strip()
             said = said[:80] + ("…" if len(said) > 80 else "")
