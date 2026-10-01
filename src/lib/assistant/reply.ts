@@ -140,7 +140,8 @@ function keepCase(sample: string, word: string): string {
 export function houseStyle(text: string, talk: TalkLang): string {
   // Ссылки и адрес сайта — вон: человек пишет нам, а не читает рассылку.
   let out = text
-    .replace(/https?:\/\/\S+/gi, '')
+    // Ссылки модели не даём — кроме карты склада в Бишкеке (её дал владелец, policy.ts).
+    .replace(/https?:\/\/(?!2gis\.kg\/bishkek\/geo\/15763234351159304\/)\S+/gi, '')
     .replace(/\(?\bsmarket\.kg\b\)?/gi, '')
     .replace(/[ \t]+([.,;:!?])/g, '$1')
     .replace(/[ \t]{2,}/g, ' ')

@@ -21,7 +21,8 @@ export type FollowUp = { text: string } | { skip: 'ordered' | 'no-product' | 'no
 export async function followUp(turns: ChatTurn[], shown: string[], lang: Lang, name?: string): Promise<FollowUp> {
   const lastAnswer = [...turns].reverse().find((t) => t.role === 'assistant')?.text ?? ''
   // Ссылка на оплату в последнем ответе — заказ уже оформлен, напоминать не о чем.
-  if (/https?:\/\//.test(lastAnswer)) return { skip: 'ordered' }
+  // Карта склада в Бишкеке (2gis) — не оплата: напоминать можно.
+  if (/https?:\/\/(?!2gis\.kg)/.test(lastAnswer)) return { skip: 'ordered' }
   if (shown.length === 0) return { skip: 'not-shown' }
 
   const find = lookupIn(await salesCatalogNow())

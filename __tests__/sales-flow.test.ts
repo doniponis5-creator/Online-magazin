@@ -510,3 +510,20 @@ describe('аудит 01.10: вопрос после «макул» — не зв
     vi.resetModules()
   })
 })
+
+describe('склад в Бишкеке (01.10)', () => {
+  it('в правилах: адрес, номер и только FLAGMAN, HANTAJI, KLEO, IDEAL', async () => {
+    const { storePolicy } = await import('@/lib/assistant/policy')
+    const p = storePolicy()
+    expect(p).toContain('Советский тупик, 1')
+    expect(p).toContain('0557100505')
+    expect(p).toMatch(/FLAGMAN, HANTAJI, KLEO, IDEAL/)
+  })
+
+  it('карта склада проходит фильтр ссылок, остальные ссылки — нет', async () => {
+    const { houseStyle } = await import('@/lib/assistant/reply')
+    const map = 'https://2gis.kg/bishkek/geo/15763234351159304/74.609173,42.935803'
+    expect(houseStyle(`Карта: ${map}`, 'ru')).toContain(map)
+    expect(houseStyle('Смотрите https://smarket.kg/ru/product/cb-1', 'ru')).not.toMatch(/https?:/)
+  })
+})
