@@ -631,12 +631,20 @@ function pick(flagged: Product[], count: number, exclude: Product[] = []): Produ
   return result
 }
 
+/**
+ * Порядок отмеченных товаров витрины. На главной — перемешивание на каждое
+ * открытие (`useShuffle`): товаров с отметкой бывает больше, чем мест, и без
+ * него всегда показывались одни и те же первые по каталогу.
+ */
+type Order = (items: Product[]) => Product[]
+const keepOrder: Order = (items) => items
+
 export function getPopular(): Product[] {
   return catalogSource === '1c' ? pick(products.filter((p) => p.badge === 'hit'), 4) : byIds(popularProductIds)
 }
 
-export function getNew(): Product[] {
-  return catalogSource === '1c' ? products.filter((p) => p.badge === 'new').slice(0, 8) : byIds(newProductIds)
+export function getNew(order: Order = keepOrder): Product[] {
+  return catalogSource === '1c' ? order(products.filter((p) => p.badge === 'new')).slice(0, 8) : byIds(newProductIds)
 }
 
 /** «Товар дня»: отметка из 1С, иначе товар со скидкой, иначе первый товар с ценой. */
@@ -649,8 +657,10 @@ export function getDailyProduct(demoId: string): Product | undefined {
   )
 }
 
-export function getHits(demoIds: string[]): Product[] {
-  return catalogSource === '1c' ? pick(products.filter((p) => p.badge === 'hit'), 7) : byIds(demoIds)
+export function getHits(demoIds: string[], order: Order = keepOrder): Product[] {
+  // Второй раз — уже по семи выбранным: отмеченных бывает меньше семи, и
+  // добранные из каталога иначе всегда стояли бы на одних и тех же местах.
+  return catalogSource === '1c' ? order(pick(order(products.filter((p) => p.badge === 'hit')), 7)) : byIds(demoIds)
 }
 
 /**
@@ -658,10 +668,11 @@ export function getHits(demoIds: string[]): Product[] {
  * остальными. Раньше блок набирался сам, и владелец не мог положить в него
  * нужный товар — единственная витрина сайта без ручки в 1С.
  */
-export function getRecommended(demoIds: string[], exclude: Product[] = []): Product[] {
+export function getRecommended(demoIds: string[], exclude: Product[] = [], order: Order = keepOrder): Product[] {
   if (catalogSource === 'demo') return byIds(demoIds)
-  const chosen = products.filter((p) => p.forYou && purchasable(p))
-  const rest = products.filter((p) => !p.forYou && p.image && purchasable(p))
+  // Отмеченных в 1С бывает 10, а мест 3: порядок решает, какие три выйдут.
+  const chosen = order(products.filter((p) => p.forYou && purchasable(p)))
+  const rest = order(products.filter((p) => !p.forYou && p.image && purchasable(p)))
   return pick([...chosen, ...rest], 3, exclude)
 }
 

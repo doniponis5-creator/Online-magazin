@@ -26,6 +26,8 @@ export const ru = {
     home: 'Главная',
     catalog: 'Каталог',
     kitchenGallery: 'Галерея кухонь',
+    // Разделы, которые не влезли в строку шапки
+    more: 'Ещё',
     cart: 'Корзина',
     favorites: 'Избранное',
     // Подсказка с примерами: по пустому «Поиск товаров» не понятно, что
@@ -600,6 +602,7 @@ export const ky: Dict = {
     home: 'Башкы бет',
     catalog: 'Каталог',
     kitchenGallery: 'Ашканалар галереясы',
+    more: 'Дагы',
     cart: 'Себет',
     favorites: 'Сүйүктүүлөр',
     searchPlaceholder: 'Издөө: LG, муздаткыч…',

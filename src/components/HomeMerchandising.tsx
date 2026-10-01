@@ -9,6 +9,7 @@ import { useI18n } from '@/lib/i18n/I18nProvider'
 import { countWithNoun, formatSom } from '@/lib/format'
 import { InstagramPhone } from './InstagramLink'
 import { REELS_FROM_SITE_KEY, REELS_INDEX_KEY, REELS_ORDER_KEY } from '@/lib/reelsSession'
+import { useShuffle } from '@/lib/useShuffle'
 import { ProductCard } from './ProductCard'
 import { ProductArt } from './ProductArt'
 import { ProductImage } from './ProductImage'
@@ -30,9 +31,10 @@ function Heading({ title, href, id, extra }: { title: string; href?: string; id:
 export function DailySelection() {
   const { lang } = useI18n()
   const ky = lang === 'ky'
+  const shuffle = useShuffle()
   const daily = getDailyProduct(storefront.dailyProduct)
   if (!daily) return null
-  const recommended = getRecommended(storefront.recommended, [daily])
+  const recommended = getRecommended(storefront.recommended, [daily], shuffle)
   return <div className="daily-selection section">
     <section aria-labelledby="daily-title" className="daily-selection__day">
       <Heading id="daily-title" title={ky ? 'Күндүн товары' : 'Товар дня'} />
@@ -174,7 +176,8 @@ export function ReelsEntry() {
 export function HitMosaic() {
   const { lang } = useI18n()
   const ky = lang === 'ky'
-  const hits = getHits(storefront.hits)
+  const shuffle = useShuffle()
+  const hits = getHits(storefront.hits, shuffle)
   const rails = categories.slice(0, 4)
   if (hits.length === 0) return null
   return <section className="section hits-section" aria-labelledby="hits-title">
@@ -263,7 +266,8 @@ export function BrandStrip() {
 
 export function SaleSection() {
   const { lang } = useI18n()
-  const sale = getSale()
+  const shuffle = useShuffle()
+  const sale = shuffle(getSale())
   if (sale.length === 0) return null
   return <section className="section sale-section" aria-labelledby="sale-title">
     <Heading id="sale-title" title={lang === 'ky' ? 'Арзандатылган товарлар' : 'Распродажа'} />

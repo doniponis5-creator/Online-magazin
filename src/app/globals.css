@@ -385,15 +385,6 @@ main#content {
   padding-bottom: 10px;
 }
 
-.header__city {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--color-muted);
-  font-size: 14px;
-}
-
 @media (min-width: 900px) {
   .header__subnav {
     display: flex;
