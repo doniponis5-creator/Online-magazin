@@ -954,9 +954,9 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1790836573.493792,
-    "seen": 1790836601.191114,
-    "ast_hash": "f94636029d7d545c99a6a719b9e58321",
+    "mtime": 1790843682.2749512,
+    "seen": 1790843723.1584158,
+    "ast_hash": "0fa341c20f0ec5fbcd9c6f082e1d487a",
     "semantic_hash": ""
   },
   "DESIGN.md": {
@@ -4794,9 +4794,9 @@
     "semantic_hash": ""
   },
   "src/components/kitchen/KitchenPlanner.tsx": {
-    "mtime": 1790834322.0113966,
-    "seen": 1790836601.1909811,
-    "ast_hash": "6d665dd3a4587c0878b4a307018124c1",
+    "mtime": 1790843247.396812,
+    "seen": 1790843723.15488,
+    "ast_hash": "39142a31a3074a9fbecc9e8a27ad053d",
     "semantic_hash": ""
   },
   "src/components/kitchen/KitchenPromo.tsx": {
@@ -4836,9 +4836,9 @@
     "semantic_hash": ""
   },
   "src/components/kitchen/three/engine.ts": {
-    "mtime": 1790833438.5046453,
-    "seen": 1790836601.1909912,
-    "ast_hash": "2d864e35ca72948dac0884ffa306e350",
+    "mtime": 1790843300.1665065,
+    "seen": 1790843723.155168,
+    "ast_hash": "ccf55597ded55bdb97f65367c724d752",
     "semantic_hash": ""
   },
   "src/components/kitchen/three/materials.ts": {
@@ -4974,9 +4974,9 @@
     "semantic_hash": ""
   },
   ".autopilot/state.js": {
-    "mtime": 1790835486.8776839,
-    "seen": 1790836601.19079,
-    "ast_hash": "fb56c40fae65cabdd2fca457d107b4d4",
+    "mtime": 1790836630.5471857,
+    "seen": 1790843723.14915,
+    "ast_hash": "d4ccf3e4cbf12bbe8b5560b12e28c921",
     "semantic_hash": ""
   },
   ".autopilot/sync.py": {
@@ -4986,21 +4986,21 @@
     "semantic_hash": ""
   },
   ".autopilot/README.md": {
-    "mtime": 1790833301.2594419,
-    "seen": 1790836601.1911092,
-    "ast_hash": "de50f1168249f2d3ede3a1317e29a399",
+    "mtime": 1790839179.0521328,
+    "seen": 1790843723.15834,
+    "ast_hash": "178ba89041d556e7af69e8954bb91fad",
     "semantic_hash": ""
   },
   ".autopilot/dashboard.html": {
-    "mtime": 1790835486.9252262,
-    "seen": 1790836601.19111,
-    "ast_hash": "5608ad0099925093f5222601e0cc0c5b",
+    "mtime": 1790836630.5897639,
+    "seen": 1790843723.1583412,
+    "ast_hash": "d012996ed95b16b29c2e66e0968067a6",
     "semantic_hash": ""
   },
   ".autopilot/index.html": {
-    "mtime": 1790835486.9252262,
-    "seen": 1790836601.19111,
-    "ast_hash": "5608ad0099925093f5222601e0cc0c5b",
+    "mtime": 1790836630.5897639,
+    "seen": 1790843723.158342,
+    "ast_hash": "d012996ed95b16b29c2e66e0968067a6",
     "semantic_hash": ""
   },
   "docs/ANDROID_PLAY_UZ.md": {
@@ -6804,15 +6804,15 @@
     "semantic_hash": ""
   },
   "e2e/kitchen-gestures.spec.ts": {
-    "mtime": 1790786918.5029342,
-    "seen": 1790836601.19086,
-    "ast_hash": "42affbb769b118ada2f66a78d35765f6",
+    "mtime": 1790843308.4388316,
+    "seen": 1790843723.150889,
+    "ast_hash": "e9aed1f0bf2598f8c9b37cc21dfa9e6b",
     "semantic_hash": ""
   },
   "e2e/kitchen-phone.spec.ts": {
-    "mtime": 1790761225.2865076,
-    "seen": 1790836601.19086,
-    "ast_hash": "b4b1918d724e17e20c8d174420562e9d",
+    "mtime": 1790842821.935845,
+    "seen": 1790843723.1508899,
+    "ast_hash": "f7a37280ec2b6877a0c69e90cd7e82e2",
     "semantic_hash": ""
   },
   "e2e/kitchen-plan.spec.ts": {
@@ -6828,9 +6828,9 @@
     "semantic_hash": ""
   },
   "e2e/kitchen-screens.spec.ts": {
-    "mtime": 1790826910.5519044,
-    "seen": 1790836601.1908622,
-    "ast_hash": "9efc76f493bfb09e86e11ee4b7bb7f57",
+    "mtime": 1790843019.7400994,
+    "seen": 1790843723.1509209,
+    "ast_hash": "c8d7549fbe0ecc2b97d04654c4cb6574",
     "semantic_hash": ""
   },
   "e2e/kitchen-simplify.spec.ts": {
@@ -6840,9 +6840,9 @@
     "semantic_hash": ""
   },
   "e2e/kp.ts": {
-    "mtime": 1790761225.2861373,
-    "seen": 1790836601.1908631,
-    "ast_hash": "14ed85e91f5cc2f3ef76d2421f613e65",
+    "mtime": 1790843151.5544107,
+    "seen": 1790843723.150938,
+    "ast_hash": "797999071093c0afa113f1295b5cb67d",
     "semantic_hash": ""
   },
   "src/app/[lang]/kitchen/master/page.tsx": {
@@ -6899,186 +6899,6 @@
     "ast_hash": "7dcbd6c449cf3ccde6ac28ef82c9b917",
     "semantic_hash": ""
   },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/2026-09-29-brief.md": {
-    "mtime": 1790833301.2307532,
-    "seen": 1790836601.191095,
-    "ast_hash": "f5032441de5844467371a0c1b361cd3e",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/handoff-C1-1.md": {
-    "mtime": 1790760754.746416,
-    "seen": 1790836601.191096,
-    "ast_hash": "2c97967b60275fe886b5582864074620",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/handoff-C2-1.md": {
-    "mtime": 1790778994.6860151,
-    "seen": 1790836601.191096,
-    "ast_hash": "0f31e150de9c9203e4ea0122311d3646",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/handoff-M1-1.md": {
-    "mtime": 1790833817.8333287,
-    "seen": 1790836601.191096,
-    "ast_hash": "94c6d2fe2917ed2aa1e1735766540263",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/handoff-P1-1.md": {
-    "mtime": 1790785353.5314145,
-    "seen": 1790836601.191097,
-    "ast_hash": "c6ad6943c35379fb299d5e94ad7cbdfe",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/handoff-P2-1.md": {
-    "mtime": 1790788405.583083,
-    "seen": 1790836601.1910982,
-    "ast_hash": "27cd71525bd46ffeacb434b06d29360a",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/handoff-P3-1.md": {
-    "mtime": 1790791107.2840884,
-    "seen": 1790836601.1910982,
-    "ast_hash": "2b9dd6d395c27a3c1c8a0a19251df7ef",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/handoff-P4-1.md": {
-    "mtime": 1790792523.315961,
-    "seen": 1790836601.1910982,
-    "ast_hash": "0ca85654de4cd02098ccf47ac869bc0d",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/handoff-P5-1.md": {
-    "mtime": 1790795422.912567,
-    "seen": 1790836601.191099,
-    "ast_hash": "232169a3a50e6f73e1cade695cbddf6d",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/handoff-P6-1.md": {
-    "mtime": 1790827314.0993834,
-    "seen": 1790836601.191099,
-    "ast_hash": "2bd187ed36c1213e83ff1e04a2a01d0a",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/interfaces.md": {
-    "mtime": 1790778165.0248191,
-    "seen": 1790836601.1911,
-    "ast_hash": "20b02477b188fb3e0b33c3b00384643a",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/manifest.md": {
-    "mtime": 1790833301.232781,
-    "seen": 1790836601.1911,
-    "ast_hash": "f71752f37cbee98faa05747c8c7e40dd",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/reference.md": {
-    "mtime": 1790698600.9164624,
-    "seen": 1790836601.1911008,
-    "ast_hash": "1c7a60bb51e65fc51c408c4b63d6893f",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/spec.md": {
-    "mtime": 1790835486.8542626,
-    "seen": 1790836601.1911008,
-    "ast_hash": "78766b6e7373e1225a8b7db7921ca8a1",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/tickets/01-layout-model.md": {
-    "mtime": 1790699048.9615088,
-    "seen": 1790836601.191102,
-    "ast_hash": "b321e9a1cbfe6455cc9ad6cdcfbc9c95",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/tickets/02-quality-render.md": {
-    "mtime": 1790699048.9633908,
-    "seen": 1790836601.191102,
-    "ast_hash": "4fc97b0020ba25f388f9389f2fd5baa5",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/tickets/03-gestures-3d.md": {
-    "mtime": 1790701555.7628107,
-    "seen": 1790836601.191103,
-    "ast_hash": "ddce7c765c1013243dddfc3aa4ce9e1c",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/tickets/04-plan-view.md": {
-    "mtime": 1790738934.397207,
-    "seen": 1790836601.191103,
-    "ast_hash": "8aecc2a12a1839314a7939cf68b24005",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/tickets/05-phone-layout.md": {
-    "mtime": 1790740842.5987444,
-    "seen": 1790836601.191104,
-    "ast_hash": "fde84c9b530b15b0c5600b17e23b7250",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/tickets/06-simplify.md": {
-    "mtime": 1790743015.728193,
-    "seen": 1790836601.191104,
-    "ast_hash": "bee03177d0bdc27dfcfc12b62412ba0b",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/tickets/07-e2e-acceptance.md": {
-    "mtime": 1790756684.3754053,
-    "seen": 1790836601.1911051,
-    "ast_hash": "a7f437563da61597e6987d11202e6e7e",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/tickets/C1-dedupe-and-defects.md": {
-    "mtime": 1790759870.7516384,
-    "seen": 1790836601.1911051,
-    "ast_hash": "457aa05a4f0899835340f4a673af3ea1",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/tickets/C2-missing-tests.md": {
-    "mtime": 1790777980.221662,
-    "seen": 1790836601.1911051,
-    "ast_hash": "19a2b4e71408565ba4542e19e40ba23a",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/tickets/M1-merge-free-room.md": {
-    "mtime": 1790833301.2377357,
-    "seen": 1790836601.191106,
-    "ast_hash": "cb69c6fca461a86eb0e6ddf8086b0b4c",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/tickets/P1-move-rules.md": {
-    "mtime": 1790780841.3260295,
-    "seen": 1790836601.191106,
-    "ast_hash": "22d37632c9c3563a13d800c56e5adbd5",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/tickets/P2-screens.md": {
-    "mtime": 1790780841.327853,
-    "seen": 1790836601.191107,
-    "ast_hash": "e58f88eeb2315d9d4bccc866bdc30e2b",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/tickets/P3-swap-and-remainders.md": {
-    "mtime": 1790790399.8888328,
-    "seen": 1790836601.191107,
-    "ast_hash": "9b08a2f343601c8b997d500d90574ae5",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/tickets/P4-screens-2.md": {
-    "mtime": 1790791997.6795018,
-    "seen": 1790836601.191108,
-    "ast_hash": "3c2d0d7e85fdac1b3911b67b1de33915",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/tickets/P5-hood-swap-plan.md": {
-    "mtime": 1790794755.5525568,
-    "seen": 1790836601.191108,
-    "ast_hash": "a957b25173982a408d1302c90711883f",
-    "semantic_hash": ""
-  },
-  ".autopilot/2026-09-29-kitchen-3d-pro--wip/tickets/P6-screens-3.md": {
-    "mtime": 1790796349.0816834,
-    "seen": 1790836601.1911092,
-    "ast_hash": "13ab28ddb0496a84f2dcae28ac7f5e93",
-    "semantic_hash": ""
-  },
   "docs/KITCHEN_E2E_UZ.md": {
     "mtime": 1790836143.6895077,
     "seen": 1790836601.191126,
@@ -7125,6 +6945,186 @@
     "mtime": 1790830082.3486898,
     "seen": 1790836601.191144,
     "ast_hash": "f4473e2e3f7509ec0523c03e923bf194",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/2026-09-29-brief.md": {
+    "mtime": 1790833301.2307532,
+    "seen": 1790843723.1583219,
+    "ast_hash": "f5032441de5844467371a0c1b361cd3e",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/handoff-C1-1.md": {
+    "mtime": 1790760754.746416,
+    "seen": 1790843723.158323,
+    "ast_hash": "2c97967b60275fe886b5582864074620",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/handoff-C2-1.md": {
+    "mtime": 1790778994.6860151,
+    "seen": 1790843723.158324,
+    "ast_hash": "0f31e150de9c9203e4ea0122311d3646",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/handoff-M1-1.md": {
+    "mtime": 1790833817.8333287,
+    "seen": 1790843723.158325,
+    "ast_hash": "94c6d2fe2917ed2aa1e1735766540263",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/handoff-P1-1.md": {
+    "mtime": 1790785353.5314145,
+    "seen": 1790843723.158325,
+    "ast_hash": "c6ad6943c35379fb299d5e94ad7cbdfe",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/handoff-P2-1.md": {
+    "mtime": 1790788405.583083,
+    "seen": 1790843723.158326,
+    "ast_hash": "27cd71525bd46ffeacb434b06d29360a",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/handoff-P3-1.md": {
+    "mtime": 1790791107.2840884,
+    "seen": 1790843723.158326,
+    "ast_hash": "2b9dd6d395c27a3c1c8a0a19251df7ef",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/handoff-P4-1.md": {
+    "mtime": 1790792523.315961,
+    "seen": 1790843723.158327,
+    "ast_hash": "0ca85654de4cd02098ccf47ac869bc0d",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/handoff-P5-1.md": {
+    "mtime": 1790795422.912567,
+    "seen": 1790843723.158328,
+    "ast_hash": "232169a3a50e6f73e1cade695cbddf6d",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/handoff-P6-1.md": {
+    "mtime": 1790827314.0993834,
+    "seen": 1790843723.158328,
+    "ast_hash": "2bd187ed36c1213e83ff1e04a2a01d0a",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/interfaces.md": {
+    "mtime": 1790778165.0248191,
+    "seen": 1790843723.158329,
+    "ast_hash": "20b02477b188fb3e0b33c3b00384643a",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/manifest.md": {
+    "mtime": 1790836630.5478253,
+    "seen": 1790843723.158329,
+    "ast_hash": "30cfbc0720b1d355d34a27cd33f69a7b",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/reference.md": {
+    "mtime": 1790698600.9164624,
+    "seen": 1790843723.1583302,
+    "ast_hash": "1c7a60bb51e65fc51c408c4b63d6893f",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/spec.md": {
+    "mtime": 1790835486.8542626,
+    "seen": 1790843723.158331,
+    "ast_hash": "78766b6e7373e1225a8b7db7921ca8a1",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/tickets/01-layout-model.md": {
+    "mtime": 1790699048.9615088,
+    "seen": 1790843723.158331,
+    "ast_hash": "b321e9a1cbfe6455cc9ad6cdcfbc9c95",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/tickets/02-quality-render.md": {
+    "mtime": 1790699048.9633908,
+    "seen": 1790843723.1583319,
+    "ast_hash": "4fc97b0020ba25f388f9389f2fd5baa5",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/tickets/03-gestures-3d.md": {
+    "mtime": 1790701555.7628107,
+    "seen": 1790843723.1583319,
+    "ast_hash": "ddce7c765c1013243dddfc3aa4ce9e1c",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/tickets/04-plan-view.md": {
+    "mtime": 1790738934.397207,
+    "seen": 1790843723.1583328,
+    "ast_hash": "8aecc2a12a1839314a7939cf68b24005",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/tickets/05-phone-layout.md": {
+    "mtime": 1790740842.5987444,
+    "seen": 1790843723.1583328,
+    "ast_hash": "fde84c9b530b15b0c5600b17e23b7250",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/tickets/06-simplify.md": {
+    "mtime": 1790743015.728193,
+    "seen": 1790843723.158334,
+    "ast_hash": "bee03177d0bdc27dfcfc12b62412ba0b",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/tickets/07-e2e-acceptance.md": {
+    "mtime": 1790756684.3754053,
+    "seen": 1790843723.158335,
+    "ast_hash": "a7f437563da61597e6987d11202e6e7e",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/tickets/C1-dedupe-and-defects.md": {
+    "mtime": 1790759870.7516384,
+    "seen": 1790843723.158335,
+    "ast_hash": "457aa05a4f0899835340f4a673af3ea1",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/tickets/C2-missing-tests.md": {
+    "mtime": 1790777980.221662,
+    "seen": 1790843723.158336,
+    "ast_hash": "19a2b4e71408565ba4542e19e40ba23a",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/tickets/M1-merge-free-room.md": {
+    "mtime": 1790833301.2377357,
+    "seen": 1790843723.158336,
+    "ast_hash": "cb69c6fca461a86eb0e6ddf8086b0b4c",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/tickets/P1-move-rules.md": {
+    "mtime": 1790780841.3260295,
+    "seen": 1790843723.158337,
+    "ast_hash": "22d37632c9c3563a13d800c56e5adbd5",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/tickets/P2-screens.md": {
+    "mtime": 1790780841.327853,
+    "seen": 1790843723.158337,
+    "ast_hash": "e58f88eeb2315d9d4bccc866bdc30e2b",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/tickets/P3-swap-and-remainders.md": {
+    "mtime": 1790790399.8888328,
+    "seen": 1790843723.158338,
+    "ast_hash": "9b08a2f343601c8b997d500d90574ae5",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/tickets/P4-screens-2.md": {
+    "mtime": 1790791997.6795018,
+    "seen": 1790843723.158338,
+    "ast_hash": "3c2d0d7e85fdac1b3911b67b1de33915",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/tickets/P5-hood-swap-plan.md": {
+    "mtime": 1790794755.5525568,
+    "seen": 1790843723.158339,
+    "ast_hash": "a957b25173982a408d1302c90711883f",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro/tickets/P6-screens-3.md": {
+    "mtime": 1790796349.0816834,
+    "seen": 1790843723.158339,
+    "ast_hash": "13ab28ddb0496a84f2dcae28ac7f5e93",
     "semantic_hash": ""
   }
 }

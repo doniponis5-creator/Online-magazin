@@ -241,12 +241,18 @@ for (const vp of [
   })
 }
 
-test('телефон: «Итог» закрывает лист выбранного', async ({ page }) => {
+// 01.10.2026: пока лист выбранного открыт, нижней панели нет (она ложилась на ряд ← →) — к «Итогу»
+// идут после × листа; сам переход на «Итог» лист закрывает (компьютер — тест выше)
+test('телефон: лист выбранного прячет панель, × — панель и «Итог» на месте', async ({ page }) => {
   await ready(page, MARBLE)
   test.skip(!(await stacked(page)), 'только телефон стоя')
   await tap3d(page, await pointOf(page, 'sink'))
   await expect(page.locator('.kp-sel')).toBeVisible()
+  await expect(page.locator('.kp-bar')).toBeHidden()
+  await page.locator('.kp-sel .kp-size-card__close').click()
+  await expect(page.locator('.kp-sel')).toHaveCount(0)
   await page.locator('.kp-bar__sum').click()
+  await expect(page.locator('.kp-steps__btn[aria-current="step"]')).toHaveText('Итог')
   await expect(page.locator('.kp-sel')).toHaveCount(0)
 })
 

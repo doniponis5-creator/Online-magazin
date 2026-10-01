@@ -416,6 +416,8 @@ export function KitchenPlanner({
   /** предпросмотр перемещения — общий для 3D и плана (из previewMove) */
   const [preview, setPreview] = useState<Preview | null>(null)
   const [add, setAdd] = useState<AddMenu | null>(null)
+  /** камера 3D на исходном кадре всей кухни; увели — видна «Показать всё» (engine.onHome) */
+  const [camHome, setCamHome] = useState(true)
   // меню «+» закрылось (поставили, не влезло, передумали) — план снова вписывает кухню целиком (P4, 7)
   const [planFit, setPlanFit] = useState(0)
   const hadAdd = useRef(false)
@@ -1236,6 +1238,7 @@ export function KitchenPlanner({
         const events: EngineEvents = {
           onPick: (pick) => pickRef.current(pick),
           onDrag: (phase, key, wall, cm, grab) => onDragRef.current(phase, key, wall, cm, grab),
+          onHome: (home) => setCamHome(home),
           onError: () => {
             // Видеокарту забрали. На телефоне так бывает часто: ушли в WhatsApp
             // отправить ссылку и вернулись, или не хватило памяти. Запускаем 3D
@@ -3661,7 +3664,7 @@ export function KitchenPlanner({
 
   return (
     <div
-      className={`kp${masterPage ? ' kp--master' : ''}${full ? ' kp--full' : ''}${full && fullPanel ? ' is-panel' : ''}${stacked && !masterPage ? ' kp--bar' : ''}${step === 'total' ? ' is-total' : ''}`}
+      className={`kp${masterPage ? ' kp--master' : ''}${full ? ' kp--full' : ''}${full && fullPanel ? ' is-panel' : ''}${stacked && !masterPage ? ' kp--bar' : ''}${step === 'total' ? ' is-total' : ''}${sheetOpen || add ? ' is-picking' : ''}`}
       ref={rootRef}
       onKeyDown={groupKeys}
     >
@@ -3740,6 +3743,12 @@ export function KitchenPlanner({
             кухню крутят, не задевая их. На компьютере полосы нет.
           */}
           <div className="kp-stage__bar" aria-hidden="true" />
+          {/* камеру увели далеко, вверх или за кухню — один нажим возвращает исходный кадр (двойной тап по пустому — то же) */}
+          {built && !camHome && !planOver && !photo && (
+            <button type="button" className="kp-fit3d" onClick={() => engineRef.current?.showAll()}>
+              {t.planFit}
+            </button>
+          )}
           {engineState !== 'error' && engineState !== 'lost' && !built && (
             <div className="kp-loading" role="status">
               <span className="kp-loading__bar" />

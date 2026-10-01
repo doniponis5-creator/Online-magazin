@@ -19,6 +19,10 @@ export type Kp = {
   selectedKey: () => string | null
   lastDrag: { phase: string; key: string; wall: string; cm: number; grab: number } | null
   getTier: () => { name: string }
+  /** углы кухни на экране (как у кадра при загрузке) — для проверки «кухня в кадре» */
+  screenCorners: () => Pt[]
+  /** камера: расстояние до точки вращения, то же у исходного кадра, на исходном ли кадре */
+  cameraInfo: () => { dist: number; homeDist: number; home: boolean }
   renderer: { domElement: HTMLElement }
 }
 declare global {

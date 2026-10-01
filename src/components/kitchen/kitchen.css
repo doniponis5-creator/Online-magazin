@@ -3207,6 +3207,8 @@ html.kp-lock body {
     --kp-nav: calc(var(--bottomnav-h) + 15px + env(safe-area-inset-bottom, 0px));
     --kp-strip: 40px;
     --kp-bar-h: 60px;
+    /* «полоска» iPhone внутри листа выбранного: только когда лист у самого края (kp-pinned) */
+    --kp-sel-safe: 0px;
     /* вкладки шагов: высота их кнопок здесь; в полном экране они внизу экрана */
     --kp-steps-h: 56px;
     --kp-full-foot: calc(var(--kp-steps-h) + env(safe-area-inset-bottom, 0px));
@@ -3363,21 +3365,23 @@ html.kp-lock body {
     transform: none;
   }
 
-  /* карточка выбранного — снизу экрана, над меню сайта */
+  /* Карточка выбранного — снизу экрана, над меню сайта. Пока она открыта, нижней
+     панели (.kp-bar) нет — класс is-picking на корне, лист прилегает к низу экрана:
+     раньше панель ложилась на лист и срезала ряд ← → (скриншот владельца, 01.10.2026). */
   .kp-sel {
     position: fixed;
     left: 0;
     right: 0;
-    bottom: calc(var(--kp-nav) + var(--kp-bar-h));
+    bottom: var(--kp-nav);
     z-index: 6;
     display: flex;
     flex-direction: column;
     gap: 12px;
     max-width: 620px;
     /* не выше 40 % экрана и никогда не заходит на сцену: выбранный шкаф виден над листом (R20i.2) */
-    max-height: max(150px, min(40svh, calc(100svh - var(--kp-top) - var(--kp-stage-h) - var(--kp-bar-h) - var(--kp-nav))));
+    max-height: max(150px, min(40svh, calc(100svh - var(--kp-top) - var(--kp-stage-h) - var(--kp-nav))));
     margin: 0 auto;
-    padding: 14px 16px 16px;
+    padding: 14px 16px calc(16px + var(--kp-sel-safe));
     overflow-y: auto;
     overscroll-behavior: contain;
     background: #fff;
@@ -3390,6 +3394,25 @@ html.kp-lock body {
 
   .kp--full .kp-sel {
     bottom: var(--kp-full-foot);
+  }
+
+  /* меню сайта уехало (kp-pinned): лист — до самого края, «полоска» iPhone — внутри листа */
+  html.kp-pinned .kp:not(.kp--full) {
+    --kp-sel-safe: env(safe-area-inset-bottom, 0px);
+  }
+
+  html.kp-pinned .kp:not(.kp--full) .kp-sel {
+    bottom: 0;
+  }
+
+  /* лист «Ещё» поверх листа выбранного — тоже без панели под ним */
+  .kp.is-picking:not(.kp--full) .kp-tools__extra.is-open {
+    bottom: var(--kp-nav);
+  }
+
+  html.kp-pinned .kp.is-picking:not(.kp--full) .kp-tools__extra.is-open {
+    bottom: 0;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   }
 
   /* Меню «ещё» — листом снизу экрана, как карточка шкафа. В невысоком 3D
@@ -3472,6 +3495,17 @@ html.kp-lock body {
 
   .kp-sel .kp-size-card + .kp-move .kp-move__close {
     display: none;
+  }
+
+  /* ряд ← → прилип к низу листа: карточка длинная — она листается под ним, а ← → всегда под пальцем.
+     Отрицательные отступы съедают нижний отступ листа: ряд стоит вплотную к краю, без щели */
+  .kp-sel > .kp-move {
+    position: sticky;
+    bottom: calc(-16px - var(--kp-sel-safe));
+    z-index: 1;
+    margin-bottom: calc(-16px - var(--kp-sel-safe));
+    padding-bottom: calc(12px + var(--kp-sel-safe));
+    background: #fff;
   }
 
   .kp-move__name {
@@ -5503,8 +5537,10 @@ button.kp-opt__more {
   padding-top: 0;
 }
 
-/* «Показать всё» — слева внизу плана, пока план сдвинут или приближен (P4, 7) */
-.kp-plan__fit {
+/* «Показать всё» — слева внизу плана, пока план сдвинут или приближен (P4, 7);
+   в 3D — так же слева внизу холста, пока камеру увели с исходного кадра (.kp-fit3d, 01.10.2026) */
+.kp-plan__fit,
+.kp-fit3d {
   position: absolute;
   left: 12px;
   bottom: 12px;
@@ -5517,6 +5553,17 @@ button.kp-opt__more {
   font: 650 13px/1 var(--font);
   color: var(--kp-cobalt);
   cursor: pointer;
+}
+
+/* над холстом и ценниками; с колонкой плана — от края 3D, не над планом */
+.kp-fit3d {
+  z-index: 5;
+  left: 14px;
+  bottom: 14px;
+}
+
+.kp-stage.has-col .kp-fit3d {
+  left: calc(var(--kp-col) + 14px);
 }
 
 /* P4, 4: карточка правки на компьютере — узкая и плотная, ≤ 30 % холста на 1280 × 800;
@@ -5621,8 +5668,15 @@ button.kp-opt__more {
   }
 
   .kp-plan__add,
-  .kp-plan__fit {
+  .kp-plan__fit,
+  .kp-fit3d {
     bottom: calc(var(--kp-strip) + 12px);
+  }
+
+  /* телефон: под большим пальцем слева внизу 3D, над полосой видов (консультант — в полосе справа) */
+  .kp-fit3d {
+    left: 12px;
+    height: 44px;
   }
 }
 
@@ -5694,12 +5748,20 @@ button.kp-opt__more {
     transition: bottom 260ms cubic-bezier(0.22, 0.61, 0.36, 1);
   }
 
+  /* меню сайта уехало: панель у самого края, «полоска» iPhone — её нижний отступ (раньше ещё и
+     bottom: --kp-nav = та же полоска — под панелью оставалась щель, а лист заходил под панель) */
   html.kp-pinned .kp-bar {
+    bottom: 0;
     padding-bottom: env(safe-area-inset-bottom, 0px);
     height: calc(var(--kp-bar-h) + env(safe-area-inset-bottom, 0px));
   }
 
   .kp--full .kp-bar {
+    display: none;
+  }
+
+  /* открыт лист выбранного или меню «+» — панели нет, на её месте лист (is-picking ставит KitchenPlanner) */
+  .kp--bar.is-picking .kp-bar {
     display: none;
   }
 

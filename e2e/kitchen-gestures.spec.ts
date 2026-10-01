@@ -125,3 +125,84 @@ test('«Сузить»: шкаф не влез в пустое место — к
   await expect.poll(() => box('k1')).toEqual({ from: 120, to: 160 })
   expect(await box('k2')).toEqual({ from: 60, to: 120 })
 })
+
+/**
+ * Правка 01.10.2026 (владелец: «3D уехало далеко вверх — в центр не вернуть»): как у
+ * планировщиков — кнопка «Показать всё» в 3D, пока камера не на исходном кадре, и двойной
+ * тап по пустому месту возвращают кадр всей кухни; дальше предела камера не отъезжает.
+ */
+const canvasBox = (page: Page) =>
+  page.evaluate(() => {
+    const b = window.__kp!.renderer.domElement.getBoundingClientRect()
+    return { left: b.left, top: b.top, right: b.right, bottom: b.bottom, width: b.width, height: b.height }
+  })
+/** колесо от холста: 20 шагов отдаления */
+const zoomOut = (page: Page, steps = 20) =>
+  page.evaluate(async (n) => {
+    const el = window.__kp!.renderer.domElement
+    const b = el.getBoundingClientRect()
+    for (let i = 0; i < n; i++) {
+      el.dispatchEvent(new WheelEvent('wheel', { deltaY: 400, deltaMode: 0, clientX: b.left + b.width / 2, clientY: b.top + b.height / 2, bubbles: true, cancelable: true }))
+      await new Promise((r) => setTimeout(r, 30))
+    }
+  }, steps)
+/** увести камеру: отдалить до упора, повернуть вверх и вбок */
+const lose = async (page: Page) => {
+  await zoomOut(page)
+  const b = await canvasBox(page)
+  const c = { x: b.left + b.width / 2, y: b.top + b.height * 0.3 }
+  await drag3d(page, c, { x: c.x + 120, y: c.y + 160 })
+  await page.waitForTimeout(800)
+}
+/** углы кухни, что не в холсте (пусто — вся кухня в кадре) */
+const outside = (page: Page) =>
+  page.evaluate(() => {
+    const b = window.__kp!.renderer.domElement.getBoundingClientRect()
+    return window.__kp!.screenCorners().filter((p) => p.x < b.left - 1 || p.x > b.right + 1 || p.y < b.top - 1 || p.y > b.bottom + 1)
+  })
+
+test('3D: увели камеру — «Показать всё» и двойной тап по пустому возвращают кухню; дальше предела не отъехать', async ({ page }) => {
+  await ready(page)
+  const fit = page.locator('.kp-fit3d')
+  // на исходном кадре кнопки нет
+  await expect(fit).toHaveCount(0)
+  // одно колесо (без поворота) — уже не исходный кадр: OrbitControls двигает камеру сам, без кадра с moved
+  await zoomOut(page, 3)
+  await expect(fit).toBeVisible()
+  await lose(page)
+  const far = await page.evaluate(() => window.__kp!.cameraInfo())
+  expect(far.home).toBe(false)
+  // 20 шагов колеса — не дальше двух исходных расстояний
+  expect(far.dist).toBeLessThanOrEqual(far.homeDist * 2 + 0.01)
+  // кнопка видна, под пальцем — она сама (не консультант, не лист), текст как у плана
+  await expect(fit).toBeVisible()
+  await expect(fit).toHaveText('Показать всё')
+  const blocked = await fit.evaluate((el) => {
+    const r = el.getBoundingClientRect()
+    const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)
+    return top && el.contains(top) ? '' : (top?.className?.toString() ?? 'ничего')
+  })
+  expect(blocked).toBe('')
+  await fit.click()
+  await page.waitForTimeout(1300)
+  expect(await outside(page)).toEqual([])
+  expect((await page.evaluate(() => window.__kp!.cameraInfo())).home).toBe(true)
+  await expect(fit).toHaveCount(0)
+
+  // двойной тап по пустому месту (пол у края холста) — то же
+  await lose(page)
+  await expect(fit).toBeVisible()
+  const b = await canvasBox(page)
+  const empty = { x: b.left + 12, y: b.bottom - 12 }
+  await fire(page, null, 'pointerdown', empty)
+  await page.waitForTimeout(30)
+  await fire(page, null, 'pointerup', empty)
+  await page.waitForTimeout(120)
+  await fire(page, null, 'pointerdown', empty)
+  await page.waitForTimeout(30)
+  await fire(page, null, 'pointerup', empty)
+  await page.waitForTimeout(1300)
+  expect(await outside(page)).toEqual([])
+  expect((await page.evaluate(() => window.__kp!.cameraInfo())).home).toBe(true)
+  await expect(fit).toHaveCount(0)
+})

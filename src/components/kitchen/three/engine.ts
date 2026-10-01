@@ -92,6 +92,8 @@ export type EngineEvents = {
    */
   onDrag: (phase: DragPhase, key: string, wall: WallId, cm: number, grab: number) => void
   onError: () => void
+  /** камера на исходном кадре всей кухни (true) или её увели (false) — для кнопки «Показать всё»; зовётся только при смене */
+  onHome?: (home: boolean) => void
 }
 
 type Home = { parent: THREE.Object3D; position: THREE.Vector3; rotation: THREE.Euler }
@@ -116,6 +118,11 @@ const ROTATE_SPEED = 0.7
 /** Тап: отпустили не дальше и не дольше — это выбор, а не перетаскивание. */
 const TAP_PX = 10
 const TAP_MS = 400
+/** Двойной тап по пустому месту — «Показать всё»: второй не позже и не дальше первого. */
+const DOUBLE_TAP_MS = 350
+const DOUBLE_TAP_PX = 30
+/** Камера «на исходном кадре», пока она и точка вращения не дальше этой доли расстояния кадра. */
+const HOME_TOL = 0.04
 /** Порог начала перетаскивания выбранного: пальцем и мышью. */
 const DRAG_PX = { touch: 10, mouse: 5 }
 /** Фронт нижнего ряда от стены, м — вертикальная плоскость для луча перетаскивания. */
@@ -176,6 +183,12 @@ export class KitchenEngine {
   private input: BuildInput | null = null
   /** предел приближения до подлёта к технике (focus) — вернуть при снятии выбора; вид ставит свой */
   private focusMin: number | null = null
+  /** исходный кадр всей кухни (как при загрузке) для текущего вида и холста; null — пересчитать */
+  private home: { pos: THREE.Vector3; target: THREE.Vector3; dist: number } | null = null
+  /** что последним сообщили в onHome */
+  private homeSent: boolean | null = null
+  /** прошлый тап по пустому месту — для двойного */
+  private emptyTap: { x: number; y: number; t: number } | null = null
   /** пределы поворота до подлёта: у острова фасад смотрит к стене, это «сзади» для обычного обзора */
   private focusAz: [number, number] | null = null
   private tweens: Tween[] = []
@@ -475,6 +488,7 @@ export class KitchenEngine {
     // снимок комнаты — когда кухня встанет и анимация закончится
     this.probeDirty = true
     this.renderer.shadowMap.needsUpdate = true
+    this.home = null
     if (first || reframe) this.frame(first ? 'instant' : 'glide')
     if (this.selected) this.setSelected(this.selected)
     // выбранное пустое место после перестройки — рамка по новой коробке
@@ -773,7 +787,9 @@ export class KitchenEngine {
       this.camera.updateProjectionMatrix()
     }
     this.controls.minDistance = dist * 0.35
+    // дальше 1,6 исходного расстояния не отъехать — кухню не потерять (правка 01.10.2026: ≤ 2×)
     this.controls.maxDistance = dist * 1.6
+    this.home = { pos: pos.clone(), target: target.clone(), dist }
     this.focusMin = null
     this.framed = true
     if (this.focusAz) [this.controls.minAzimuthAngle, this.controls.maxAzimuthAngle] = this.focusAz
@@ -822,6 +838,68 @@ export class KitchenEngine {
   reframe() {
     this.reframeUntil = performance.now() + 700
     this.frame('glide')
+  }
+
+  /**
+   * «Показать всё» (кнопка в 3D и двойной тап по пустому месту): плавно вернуть исходный
+   * кадр всей кухни — тот же расчёт, что при загрузке (`framing` с учётом листа, `setInset`).
+   * Подлёт к технике и его пределы снимаются (`frame`).
+   */
+  showAll() {
+    if (!this.input) return
+    // остаток инерции OrbitControls тратим сразу — иначе он докрутил бы камеру поверх подлёта
+    this.controls.enableDamping = false
+    this.controls.update()
+    this.controls.enableDamping = true
+    this.frame('glide')
+  }
+
+  /** Исходный кадр текущего вида; кухня или холст сменились без подлёта — считается заново. */
+  private homeFrame() {
+    if (!this.home && this.input) {
+      const f = this.framing(this.view)
+      this.home = { pos: f.pos.clone(), target: f.target.clone(), dist: f.dist }
+    }
+    return this.home
+  }
+
+  private atHome(): boolean {
+    const h = this.homeFrame()
+    if (!h) return true
+    const tol = h.dist * HOME_TOL
+    return this.camera.position.distanceTo(h.pos) <= tol && this.controls.target.distanceTo(h.target) <= tol
+  }
+
+  /** Камера и точка вращения — для проверок (e2e): расстояние сейчас и у исходного кадра. */
+  cameraInfo(): { dist: number; homeDist: number; home: boolean } {
+    const h = this.homeFrame()
+    return { dist: this.camera.position.distanceTo(this.controls.target), homeDist: h?.dist ?? 0, home: this.atHome() }
+  }
+
+  /** Углы кухни на экране (точки страницы) — для проверки «вся кухня в кадре». */
+  screenCorners(): { x: number; y: number }[] {
+    if (!this.input) return []
+    return this.kitchenCorners().map((p) => this.project(p))
+  }
+
+  /** Точка вращения — внутри комнаты (с запасом 0,5 м): камеру нельзя увести от кухни. */
+  private keepTarget() {
+    const room = this.input?.plan.room
+    if (!room) return
+    const t = this.controls.target
+    const pad = 0.5
+    t.set(
+      Math.min(Math.max(t.x, -pad), room.w / 100 + pad),
+      Math.min(Math.max(t.y, 0), 2.6),
+      Math.min(Math.max(t.z, -pad), room.d / 100 + pad),
+    )
+  }
+
+  private sendHome() {
+    const home = this.atHome()
+    if (home === this.homeSent) return
+    this.homeSent = home
+    this.events.onHome?.(home)
   }
 
   /**
@@ -1126,6 +1204,7 @@ export class KitchenEngine {
     const b = Math.min(Math.max(0, Math.round(bottom)), Math.max(0, h - 80))
     if (b === this.insetBottom) return
     this.insetBottom = b
+    this.home = null
     if (!w || !h) return
     this.camera.aspect = w / Math.max(1, h - b)
     this.camera.updateProjectionMatrix()
@@ -1276,6 +1355,16 @@ export class KitchenEngine {
     if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > TAP_PX || performance.now() - d.t > TAP_MS) return
     const hit = this.hit(e)
     const pick = this.pickOf(hit)
+    // двойной тап по пустому месту — «Показать всё» (кухню увели далеко или вверх — вернуть одним жестом)
+    if (!pick.slot && !pick.item && !pick.cab && !this.keyAt(hit)) {
+      const prev = this.emptyTap
+      const now = performance.now()
+      this.emptyTap = { x: e.clientX, y: e.clientY, t: now }
+      if (prev && now - prev.t <= DOUBLE_TAP_MS && Math.hypot(e.clientX - prev.x, e.clientY - prev.y) <= DOUBLE_TAP_PX) {
+        this.emptyTap = null
+        this.showAll()
+      }
+    } else this.emptyTap = null
     // размеры считаем по закрытым дверцам — до того, как дверца поедет
     this.showMeasure(this.dimsOwner(hit?.object ?? null))
     // дверца открывается только у уже выбранного: первое нажатие — выбор, и она не дёргается
@@ -2109,7 +2198,10 @@ export class KitchenEngine {
       busy = true
       return true
     })
+    this.keepTarget()
     const moved = this.controls.update()
+    // колесо и щипок OrbitControls двигают камеру сами (moved тут уже false) — сверяем на каждом кадре, это дёшево
+    this.sendHome()
     const ph = this.photo
     if (ph) {
       // пока сцена собирается для фото, холст не трогаем — там последний кадр
@@ -2348,6 +2440,7 @@ export class KitchenEngine {
     this.applyRatio(this.plan().ratio, w, h)
     const was = this.camera.aspect
     this.camera.aspect = w / Math.max(1, h - Math.max(0, Math.min(this.insetBottom, h - 80)))
+    if (Math.abs(this.camera.aspect - was) > 1e-6) this.home = null
     this.camera.updateProjectionMatrix()
     this.applyShift()
     // холст сменил пропорции — кухня снова целиком в кадре, если камеру не трогали

@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
-import { fire, MARBLE, ready, rect, tapPlan } from './kp'
+import { MARBLE, pointOf, ready, rect, tap3d, tapPlan } from './kp'
 
 /**
  * Таск 05 — телефон (спецификация §5, §6; R20i, R20i.1–3, R08, R03): 3D на
@@ -64,6 +64,12 @@ test('лист выбранного: не выше 40 % экрана и не з�
   // три строки: размеры/тип · ширина · перемещение
   await expect(page.locator('.kp-sel .kp-cabw')).toHaveCount(1)
   await expect(page.locator('.kp-sel .kp-move')).toBeVisible()
+  // пока лист открыт, нижней панели с лимонной «Дальше» нет (лист на её месте, правка 01.10.2026);
+  // своей лимонной у листа тоже нет — закрыли, и лимонная снова одна
+  await expect(page.locator('.kp-bar')).toBeHidden()
+  expect(await lemons(page)).toBe(0)
+  await page.locator('.kp-sel .kp-size-card__close').click()
+  await expect(page.locator('.kp-bar')).toBeVisible()
   expect(await lemons(page)).toBe(1)
 })
 
@@ -141,3 +147,69 @@ test('«Ещё» поверх листа выбранного: меню цели
   // «Как управлять» («?») — в меню и его можно нажать
   await expect(menu.locator('button', { hasText: '?' }).first()).toBeVisible()
 })
+
+/**
+ * Срочная правка 01.10.2026 (скриншот владельца с живого сайта): выбран шкаф — нижняя панель
+ * `.kp-bar` ложилась поверх листа выбранного, ряд «Шкаф 60 см · ← →» срезан посередине.
+ * Как у планировщиков: пока лист выбора открыт, панели нет, лист прилегает к низу экрана,
+ * ← → под пальцем — сами кнопки (не панель, не консультант, не край экрана); закрыли — панель вернулась.
+ */
+const SIZES = [
+  { width: 375, height: 812 },
+  { width: 390, height: 844 },
+  { width: 360, height: 740 },
+  { width: 414, height: 896 },
+]
+/** под центром каждой кнопки ← → — сама кнопка (пусто — всё нажимается) */
+const blockedArrows = (page: Page) =>
+  page.evaluate(() => {
+    const btns = [...document.querySelectorAll<HTMLElement>('.kp-sel > .kp-move .kp-move__btn:not(.kp-move__add):not(.kp-move__close)')]
+    if (btns.length !== 2) return [`кнопок ← →: ${btns.length}`]
+    return btns.flatMap((b, i) => {
+      const r = b.getBoundingClientRect()
+      const x = r.left + r.width / 2
+      const y = r.top + r.height / 2
+      if (y < 0 || y > window.innerHeight || x < 0 || x > window.innerWidth) return [`кнопка ${i}: центр за экраном (${Math.round(x)}, ${Math.round(y)})`]
+      const el = document.elementFromPoint(x, y)
+      return el && b.contains(el) ? [] : [`кнопка ${i}: сверху ${el ? (el.className?.toString() || el.tagName) : 'ничего'}`]
+    })
+  })
+const overlap = (a: { left: number; right: number; top: number; bottom: number }, b: { left: number; right: number; top: number; bottom: number }) =>
+  Math.min(a.right, b.right) - Math.max(a.left, b.left) > 0.5 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 0.5
+
+/** лист выбора открыт: панели нет (или она не задевает лист), лист в экране и у его низа, ← → нажимаются; закрыли — панель на месте */
+const checkSheet = async (page: Page, how: string) => {
+  await expect(page.locator('.kp-sel'), how).toBeVisible()
+  await page.waitForTimeout(400)
+  const h = await vh(page)
+  const sel = (await rect(page, '.kp-sel'))!
+  const bar = await rect(page, '.kp-bar')
+  if (bar && bar.height > 0) expect(overlap(bar, sel), `${how}: панель на листе`).toBe(false)
+  expect(sel.bottom, `${how}: лист за краем`).toBeLessThanOrEqual(h + 0.5)
+  // лист прилегает к низу экрана (меню сайта при выборе уехало — kp-pinned)
+  expect(Math.round(sel.bottom), `${how}: лист не у низа`).toBe(h)
+  expect(await blockedArrows(page), how).toEqual([])
+  // лимонной «Дальше» при открытом листе нет — она в спрятанной панели; лимонных не больше одной
+  expect(await lemons(page), how).toBe(0)
+  await page.locator('.kp-sel .kp-size-card__close').click()
+  await expect(page.locator('.kp-sel')).toHaveCount(0)
+  const back = (await rect(page, '.kp-bar'))!
+  expect(back.height, `${how}: панель не вернулась`).toBe(60)
+  expect(Math.round(back.bottom)).toBe(h)
+  expect(await lemons(page)).toBe(1)
+}
+
+for (const size of SIZES) {
+  test(`выбор шкафа ${size.width}×${size.height}: нижняя панель не ложится на лист, ← → нажимаются`, async ({ page }) => {
+    await page.setViewportSize(size)
+    await ready(page, MARBLE)
+    // тап в 3D по шкафу под мойкой
+    await tap3d(page, await pointOf(page, 'sink'))
+    await checkSheet(page, '3D')
+    // тот же шкаф на плане
+    await page.locator('.kp-views [data-scene="plan"]').click()
+    await page.locator('.kp-plan [data-key="sink"]').waitFor()
+    await tapPlan(page, '.kp-plan [data-key="sink"]')
+    await checkSheet(page, 'план')
+  })
+}
