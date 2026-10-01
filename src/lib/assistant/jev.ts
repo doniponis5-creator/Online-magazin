@@ -66,26 +66,32 @@ function baseUrl(key: string): string {
   return key.startsWith('sk-or-') ? 'https://openrouter.ai/api' : 'https://api.typesafe.ai'
 }
 
-/** Ответ покупателя на вопрос бота — или null, если Jev не настроен или не ответил. */
-export async function readAnswer(bot: string, client: string): Promise<Intent | null> {
+/** Один запрос к Jev: ответ API как есть или null (нет ключа, ошибка, дольше `timeout`). */
+export async function askJev(state: Record<string, string>, questions: object, timeout = JEV_TIMEOUT): Promise<unknown | null> {
   const key = process.env.JEV_API_KEY
   if (!key) return null
   try {
     const response = await fetch(`${baseUrl(key)}/v1/systemone`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'jev-latest', state: { bot: bot.slice(-400), client: client.slice(0, 400) }, questions: QUESTIONS }),
-      signal: AbortSignal.timeout(JEV_TIMEOUT),
+      body: JSON.stringify({ model: 'jev-latest', state, questions }),
+      signal: AbortSignal.timeout(timeout),
     })
     if (!response.ok) {
       console.error('[assistant] jev: HTTP', response.status)
       return null
     }
-    return parseIntent(await response.json())
+    return await response.json()
   } catch (error) {
     console.error('[assistant] jev:', error instanceof Error ? error.message : error)
     return null
   }
+}
+
+/** Ответ покупателя на вопрос бота — или null, если Jev не настроен или не ответил. */
+export async function readAnswer(bot: string, client: string): Promise<Intent | null> {
+  const data = await askJev({ bot: bot.slice(-400), client: client.slice(0, 400) }, QUESTIONS)
+  return data ? parseIntent(data) : null
 }
 
 type Answer = { choice?: unknown; confidence?: unknown }

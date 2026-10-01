@@ -62,6 +62,7 @@ HUMAN_QUIET = 12 * 3600          # сотрудник ответил — роб�
 # (аудит 01.10: Умар 13 часов писал в пустоту). Написал владелец сам — снова 12 часов.
 HANDOFF_QUIET = 3600
 TURNS_TTL = 3 * 24 * 3600        # сколько помним разговор
+WEEK_TTL = 8 * 24 * 3600         # копия разговора для недельной оценки качества
 MAX_TURNS = 12                   # сколько реплик отдаём мозгу
 DAILY_LIMIT = 30                 # ответов робота одному человеку за сутки
 MAX_PHOTOS = 1                   # одно фото, как пришлёт продавец; три подряд — это рассылка
@@ -90,6 +91,8 @@ async def _turns(digits: str) -> list[dict]:
 async def _remember(digits: str, role: str, text: str) -> None:
     turns = (await _turns(digits)) + [{"role": role, "text": text[:800]}]
     await redis_client.set(f"wa:turns:{digits}", json.dumps(turns[-MAX_TURNS:], ensure_ascii=False), ex=TURNS_TTL)
+    # Копия на неделю — для понедельничной оценки качества: сам разговор бот помнит 3 дня.
+    await redis_client.set(f"wa:week:{digits}", json.dumps(turns[-MAX_TURNS:], ensure_ascii=False), ex=WEEK_TTL)
 
 
 async def _settings() -> tuple[bool, int]:
@@ -659,6 +662,54 @@ DIGEST_HOUR = 9
 WAITING_HOURS = (13, 17)
 
 
+async def send_quality() -> bool:
+    """
+    Понедельник: разговоры WhatsApp за 7 дней → сайт (Jev оценивает каждый) → итог владельцу.
+    Записанные в телефоне (знакомые) не отправляем. Номера в Jev не уходят: сайт шлёт только текст.
+    """
+    from .shop_router import _admin_phone, _site_base_url, _site_secret
+    now = _bishkek_now()
+    days = {(now - timedelta(days=i)).strftime("%Y%m%d") for i in range(1, 8)}
+    chats, seen = [], set()
+    async for key in redis_client.scan_iter(match="wa:count:*", count=500):
+        parts = str(key).split(":")
+        if len(parts) != 4 or parts[3] not in days or parts[2] in seen:
+            continue
+        digits = parts[2]
+        seen.add(digits)
+        if await redis_client.get(f"wa:saved:{digits}"):
+            continue
+        raw = await redis_client.get(f"wa:week:{digits}") or await redis_client.get(f"wa:turns:{digits}")
+        try:
+            turns = json.loads(raw) if raw else []
+        except Exception:
+            turns = []
+        if turns:
+            chats.append({"phone": digits, "messages": turns})
+    if not chats:
+        return False
+    payload = json.dumps({
+        "from": (now - timedelta(days=7)).strftime("%d.%m"),
+        "to": (now - timedelta(days=1)).strftime("%d.%m"),
+        "chats": chats,
+    }, ensure_ascii=False)
+    signature = hmac.new(_site_secret().encode(), payload.encode("utf-8"), hashlib.sha256).hexdigest()
+    async with httpx.AsyncClient(timeout=180) as client:
+        response = await client.post(
+            f"{_site_base_url()}/api/assistant/quality",
+            content=payload.encode("utf-8"),
+            headers={"Content-Type": "application/json", "X-Signature": signature},
+        )
+    data = response.json() if response.status_code == 200 else {}
+    text = str(data.get("text") or "")
+    if not text:
+        logger.info(f"wa quality: отчёта нет ({response.status_code}, {data.get('skip') or data.get('error')})")
+        return False
+    await _send_text(_admin_phone(), text)
+    logger.info(f"wa quality: отправлен ({data.get('count')} разговоров)")
+    return True
+
+
 async def send_waiting() -> bool:
     """
     Днём — только «Ждут ответа», без сводки: как в колл-центре, покупатель не должен ждать
@@ -702,6 +753,12 @@ def run_digest() -> None:
             if not await redis_client.set(f"wa:digest:{day}", "1", ex=2 * 24 * 3600, nx=True):
                 return
             await send_digest()
+            # Понедельник — ещё и оценка качества за неделю (отдельно: сводка не должна от неё зависеть).
+            if _bishkek_now().weekday() == 0:
+                try:
+                    await send_quality()
+                except Exception as error:
+                    logger.error(f"wa quality: {error}")
         finally:
             await _close_redis()
 
