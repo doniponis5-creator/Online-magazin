@@ -137,11 +137,27 @@ function keepCase(sample: string, word: string): string {
   return /^[А-ЯЁ]/.test(sample) ? word.charAt(0).toUpperCase() + word.slice(1) : word
 }
 
+/** Карты, которые дал владелец: магазин в Араване и склад в Бишкеке. Других ссылок бот не шлёт. */
+export const STORE_MAP = 'https://maps.app.goo.gl/NZpZwSMUTjig3M69A'
+export const BISHKEK_MAP = 'https://2gis.kg/bishkek/geo/15763234351159304/74.609173,42.935803'
+export const MAP_LINK = /https?:\/\/(maps\.app\.goo\.gl\/NZpZwSMUTjig3M69A|2gis\.kg\/bishkek\/geo\/15763234351159304\/)/
+
+/**
+ * Назвал адрес — к нему карта. Модель её то даёт, то нет; покупатель просит
+ * «локация ташлаңыз» и ищет магазин в Араване наугад.
+ */
+function withMaps(text: string): string {
+  let out = text
+  if (/Ош-3000/i.test(out) && !out.includes(STORE_MAP)) out += `\n📍 ${STORE_MAP}`
+  if (/Советский тупик/i.test(out) && !out.includes(BISHKEK_MAP)) out += `\n📍 ${BISHKEK_MAP}`
+  return out
+}
+
 export function houseStyle(text: string, talk: TalkLang): string {
   // Ссылки и адрес сайта — вон: человек пишет нам, а не читает рассылку.
   let out = text
-    // Ссылки модели не даём — кроме карты склада в Бишкеке (её дал владелец, policy.ts).
-    .replace(/https?:\/\/(?!2gis\.kg\/bishkek\/geo\/15763234351159304\/)\S+/gi, '')
+    // Ссылки модели не даём — кроме двух карт владельца (магазин и склад в Бишкеке).
+    .replace(/https?:\/\/\S+/gi, (url) => (MAP_LINK.test(url) ? url : ''))
     .replace(/\(?\bsmarket\.kg\b\)?/gi, '')
     .replace(/[ \t]+([.,;:!?])/g, '$1')
     .replace(/[ \t]{2,}/g, ' ')
@@ -175,5 +191,5 @@ export function houseStyle(text: string, talk: TalkLang): string {
   out = out.replace(/(?<![\p{L}])руководств[а-яё]*миз(?![\p{L}])/giu, (m) => keepCase(m, 'руководство'))
   // «наш сотрудник» → «наш руководство» — так не говорят.
   out = out.replace(/(?<![\p{L}])(наш[аеиу]?|ваш[аеиу]?|бизнинг|биздин)\s+(руководств)/giu, (_m, _p, w: string) => w)
-  return out
+  return withMaps(out)
 }

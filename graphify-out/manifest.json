@@ -163,31 +163,31 @@
   },
   "integrations/sbonus-server/shop/001_shop_orders_migration.sql": {
     "mtime": 1789746574.7940266,
-    "seen": 1790834266.8827012,
+    "seen": 1790846842.315294,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/002_shop_catalog_migration.sql": {
     "mtime": 1789746574.7941577,
-    "seen": 1790834266.882703,
+    "seen": 1790846842.315295,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/003_shop_bonus_migration.sql": {
     "mtime": 1789746574.7942019,
-    "seen": 1790834266.8827038,
+    "seen": 1790846842.315295,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/004_shop_stats_migration.sql": {
     "mtime": 1789746574.7942476,
-    "seen": 1790834266.882706,
+    "seen": 1790846842.315296,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/005_shop_push_migration.sql": {
     "mtime": 1789751144.4544964,
-    "seen": 1790834266.8827069,
+    "seen": 1790846842.315296,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -3984,9 +3984,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/reply.ts": {
-    "mtime": 1790846800.2592022,
-    "seen": 1790846838.706552,
-    "ast_hash": "7251a2389cbc57b1078c1dc85daa0714",
+    "mtime": 1790847213.4179468,
+    "seen": 1790847244.447924,
+    "ast_hash": "8f1df53fab31b0c916ffb6c8d9d31534",
     "semantic_hash": ""
   },
   "src/lib/assistant/talk.ts": {
@@ -4285,13 +4285,13 @@
   },
   "integrations/sbonus-server/shop/006_shop_installments_migration.sql": {
     "mtime": 1789980267.1214871,
-    "seen": 1790834266.882709,
+    "seen": 1790846842.3152971,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/007_shop_notes_migration.sql": {
     "mtime": 1789980267.1215398,
-    "seen": 1790834266.882711,
+    "seen": 1790846842.315298,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -4314,9 +4314,9 @@
     "semantic_hash": ""
   },
   "__tests__/sales-flow.test.ts": {
-    "mtime": 1790846800.2652855,
-    "seen": 1790846838.702732,
-    "ast_hash": "bc7f000ab6c25ffefd91a16334aef270",
+    "mtime": 1790847213.4368794,
+    "seen": 1790847244.4440022,
+    "ast_hash": "7dfd81cb644cac74c247095253fcac67",
     "semantic_hash": ""
   },
   "src/lib/assistant/leads.ts": {
@@ -4339,7 +4339,7 @@
   },
   "integrations/sbonus-server/shop/008_shop_chat_extra_migration.sql": {
     "mtime": 1790002975.5050404,
-    "seen": 1790834266.882713,
+    "seen": 1790846842.315299,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -4494,9 +4494,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/policy.ts": {
-    "mtime": 1790846800.2589307,
-    "seen": 1790846838.706539,
-    "ast_hash": "d24d0b052fc62d48010f2c434ed9c5b5",
+    "mtime": 1790847213.4183285,
+    "seen": 1790847244.447911,
+    "ast_hash": "95890ed3d080e799766b22cb4221be8d",
     "semantic_hash": ""
   },
   "scripts/exam/questions.txt": {
@@ -4626,9 +4626,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/followup.ts": {
-    "mtime": 1790846821.1813056,
-    "seen": 1790846838.706418,
-    "ast_hash": "4033c2a91ce6a7bb87d427cc740e6bec",
+    "mtime": 1790847213.4182072,
+    "seen": 1790847244.447786,
+    "ast_hash": "f1c826d56ce6ff731d2554a112844703",
     "semantic_hash": ""
   },
   "docs/MAC_2026-09-21.md": {
@@ -6529,19 +6529,19 @@
   },
   "integrations/sbonus-server/shop/009_shop_push_token_len_migration.sql": {
     "mtime": 1790604951.2586076,
-    "seen": 1790834266.882716,
+    "seen": 1790846842.315299,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/010_shop_cart_reminders_migration.sql": {
     "mtime": 1790604951.2590644,
-    "seen": 1790834266.882717,
+    "seen": 1790846842.3153,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/011_shop_promo_migration.sql": {
     "mtime": 1790604951.2591376,
-    "seen": 1790834266.882719,
+    "seen": 1790846842.3153012,
     "ast_hash": "",
     "semantic_hash": ""
   },

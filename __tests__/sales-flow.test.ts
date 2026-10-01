@@ -520,10 +520,13 @@ describe('склад в Бишкеке (01.10)', () => {
     expect(p).toMatch(/FLAGMAN, HANTAJI, KLEO, IDEAL/)
   })
 
-  it('карта склада проходит фильтр ссылок, остальные ссылки — нет', async () => {
-    const { houseStyle } = await import('@/lib/assistant/reply')
-    const map = 'https://2gis.kg/bishkek/geo/15763234351159304/74.609173,42.935803'
-    expect(houseStyle(`Карта: ${map}`, 'ru')).toContain(map)
+  it('адрес магазина или склада — с картой; чужие ссылки вырезаются', async () => {
+    const { houseStyle, STORE_MAP, BISHKEK_MAP } = await import('@/lib/assistant/reply')
+    expect(houseStyle('Дареги: Араван району, Ош-3000 көчөсү, 86.', 'ky')).toContain(STORE_MAP)
+    expect(houseStyle('Дареги: Советский тупик, 1 — Б1 склад.', 'ky')).toContain(BISHKEK_MAP)
+    const twice = houseStyle(`Ош-3000 көчөсү, 86. ${STORE_MAP}`, 'ky')
+    expect(twice.split(STORE_MAP).length - 1).toBe(1)
     expect(houseStyle('Смотрите https://smarket.kg/ru/product/cb-1', 'ru')).not.toMatch(/https?:/)
+    expect(houseStyle('Холодильник есть, 16 900 сом.', 'ru')).not.toMatch(/https?:/)
   })
 })
