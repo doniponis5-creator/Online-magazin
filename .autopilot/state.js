@@ -1,7 +1,7 @@
 window.STATE =
 {
   "slug": "kitchen-3d-pro",
-  "dir": "2026-09-29-kitchen-3d-pro",
+  "dir": "2026-09-29-kitchen-3d-pro--wip",
   "title": "3D-конструктор кухни — как у профессионалов: свободная расстановка, план сверху, телефон",
   "mode": "full",
   "depth": "normal",
@@ -14,8 +14,8 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-29T22:14:27+06:00",
-  "updatedAt": "2026-10-01T10:49:04+06:00",
-  "finishedAt": "2026-10-01T10:49:04+06:00",
+  "updatedAt": "2026-10-01T11:41:41+06:00",
+  "finishedAt": null,
   "stages": [
     {
       "id": "preflight",
@@ -54,7 +54,7 @@ window.STATE =
     }
   ],
   "requirements": {
-    "total": 24,
+    "total": 25,
     "done": 1,
     "inTicket": 0,
     "inSpec": 0,
@@ -572,12 +572,17 @@ window.STATE =
       ],
       "status": "done",
       "finishedAt": "2026-10-01T04:13:13+06:00",
-      "tests": { "passed": 990, "failed": 0 },
+      "tests": {
+        "passed": 990,
+        "failed": 0
+      },
       "commit": "a6c72e1",
       "startedAt": "2026-10-01T00:59:15+06:00",
       "retries": 0,
       "repairs": 1,
-      "repairFindings": ["предпросмотр рисует обмен на −33…−44 см, отпускание ставит уступкой — разные пороги (R04)"],
+      "repairFindings": [
+        "предпросмотр рисует обмен на −33…−44 см, отпускание ставит уступкой — разные пороги (R04)"
+      ],
       "handoffs": 1
     },
     {
@@ -599,12 +604,39 @@ window.STATE =
       ],
       "status": "done",
       "finishedAt": "2026-10-01T10:42:39+06:00",
-      "tests": { "passed": 990, "failed": 0 },
+      "tests": {
+        "passed": 990,
+        "failed": 0
+      },
       "commit": "80c6919",
       "startedAt": "2026-10-01T04:13:13+06:00",
       "retries": 1,
       "repairs": 0,
       "handoffs": 1
+    },
+    {
+      "id": "M1",
+      "title": "Слияние: этот прогон + «Пустая комната»/PRO",
+      "requirements": [
+        "G01",
+        "R23i",
+        "R04"
+      ],
+      "blockedBy": [
+        "P6"
+      ],
+      "wave": 15,
+      "zone": [
+        "src/components/kitchen/",
+        "src/lib/kitchen/",
+        "__tests__/",
+        "e2e/"
+      ],
+      "status": "in-progress",
+      "startedAt": "2026-10-01T11:41:41+06:00",
+      "retries": 0,
+      "repairs": 0,
+      "handoffs": 0
     }
   ],
   "singlePass": null,
