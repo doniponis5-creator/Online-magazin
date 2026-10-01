@@ -6,13 +6,14 @@ describe('анимация баннера из 1С', () => {
   it('знакомый вариант проходит как есть', () => {
     for (const v of HERO_VARIANTS) expect(resolveHero(v)).toBe(v)
   })
-  it('пусто, мусор или старый сервер — по дням недели', () => {
-    expect(HERO_FALLBACK).toBe('auto')
-    for (const v of [undefined, null, '', 'glow', 'Жалюзи', 'REVEAL', 1]) expect(asHeroSetting(v)).toBe('auto')
+  it('пусто, мусор или старый сервер — «Скидки»', () => {
+    expect(HERO_FALLBACK).toBe('sale')
+    for (const v of [undefined, null, '', 'glow', 'Жалюзи', 'REVEAL', 1]) expect(asHeroSetting(v)).toBe('sale')
   })
-  it('семь дней — семь разных вариантов, каждый ровно раз', () => {
+  it('семь дней — семь разных знакомых вариантов', () => {
+    expect(HERO_WEEK).toHaveLength(7)
     expect(new Set(HERO_WEEK).size).toBe(7)
-    expect([...HERO_WEEK].sort()).toEqual([...HERO_VARIANTS].sort())
+    for (const v of HERO_WEEK) expect(HERO_VARIANTS).toContain(v)
   })
   it('день считается по Бишкеку, а не по времени сервера', () => {
     // 01.10.2026 — четверг. В 20:00 UTC в Бишкеке (UTC+6) уже пятница, 02:00.

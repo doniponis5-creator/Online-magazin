@@ -136,12 +136,12 @@ SETTINGS: list[dict] = [
     {
         "key": "SITE_HERO_VARIANT",
         "title": "Анимация баннера на главной",
-        "hint": "auto — каждый день недели свой вариант; classic — прежняя; reveal — окно и точки на технике; "
+        "hint": "sale — товары со скидкой из 1С (по умолчанию; скидок меньше трёх — готовые 3D-кухни); auto — каждый день недели свой вариант; classic — прежняя; reveal — окно и точки на технике; "
                 "kitchens — готовые 3D-кухни; word — слово «ДОМ»; shutter — жалюзи; marquee — бегущие слова; "
                 "collage — фото техники слетаются в кадр.",
         "type": "choice",
-        "choices": ["auto", "classic", "reveal", "kitchens", "word", "shutter", "marquee", "collage"],
-        "default": "auto",
+        "choices": ["auto", "classic", "reveal", "kitchens", "word", "shutter", "marquee", "collage", "sale"],
+        "default": "sale",
     },
 ]
 

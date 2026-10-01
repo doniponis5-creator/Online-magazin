@@ -15,6 +15,7 @@ import { useShuffle } from '@/lib/useShuffle'
 import { DailySelection, CampaignBanner, HitMosaic, ReelsEntry, BrandStrip, SaleSection, SocialAndAccount } from '@/components/HomeMerchandising'
 import { StorefrontHero } from '@/components/StorefrontHero'
 import type { HeroVariant } from '@/lib/hero'
+import type { SaleCard } from '@/lib/hero-sale'
 import { Brand } from '@/components/Brand'
 import { ProductArt } from '@/components/ProductArt'
 import { ProductCard } from '@/components/ProductCard'
@@ -187,10 +188,10 @@ function InfoStrip() {
 }
 
 /** Верх главной: витрина, категории и промо 3D-кухни. */
-export function HomeTop({ hero }: { hero: HeroVariant }) {
+export function HomeTop({ hero, sale }: { hero: HeroVariant; sale: SaleCard[] }) {
   return (
     <>
-      <StorefrontHero variant={hero} />
+      <StorefrontHero variant={hero} sale={sale} />
       <CategoryTiles />
       {/* баннер «Готовые кухни в 3D» уже зовёт в конструктор — второй раз не повторяем */}
       {hero !== 'kitchens' && <KitchenPromo />}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import Link from 'next/link'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { READY } from '@/data/kitchen-ready'
@@ -23,19 +23,14 @@ const DECK = ['straight-300-scandi', 'island-380-quiet', 'corner-310x180-japandi
 const clamp = (v: number) => Math.max(0, Math.min(1, v))
 const smooth = (t: number) => t * t * (3 - 2 * t)
 
-export function HomeStoryKitchens() {
-  const { lang } = useI18n()
-  const root = useRef<HTMLElement>(null)
+/**
+ * Колода карточек на прокрутке (общая для «Готовых кухонь» и «Скидок»).
+ * 0–0.3 хода колода раскрывается в веер; 0.3–0.95 веер проходит с карточки start до end.
+ * spread — шаг веера в долях ширины карточки. Двигаются только transform и opacity.
+ */
+export function useFanDeck(root: RefObject<HTMLElement | null>, { start, end, spread }: { start: number; end: number; spread: number }) {
   const [phase, setPhase] = useState(0)
-  const [focus, setFocus] = useState(1)
-  const ky = lang === 'ky'
-  const titles = ky
-    ? ['Ашканаңызды 3D форматта чогултуңуз.', 'Өз стилиңизди тандаңыз.', 'Ыңгайлуулук үйдөн башталат.']
-    : ['Соберите кухню в 3D.', 'Выберите свой стиль.', 'Комфорт начинается дома.']
-  const notes = ky
-    ? ['Дүкөндөгү техника менен даяр долбоорлор.', 'Сканди, лофт, классика, арт-деко жана башкалар.', 'Долбоорду ачып, дубалдарыңызга ылайыкташтырыңыз.']
-    : ['Готовые проекты с техникой из нашего магазина.', 'Сканди, лофт, классика, арт-деко и другие.', 'Откройте проект и подгоните под свои стены.']
-
+  const [focus, setFocus] = useState(start)
   useEffect(() => {
     const el = root.current
     if (!el) return
@@ -51,15 +46,14 @@ export function HomeStoryKitchens() {
       const p = media.matches ? 1 : clamp((header + 8 - el.getBoundingClientRect().top) / Math.max(1, travel))
       el.style.setProperty('--story-progress', p.toFixed(4))
       el.dataset.progress = p.toFixed(3)
-      // 0–0.3 колода раскрывается в веер; 0.3–0.95 веер проходит с кухни 1 до кухни 5
       const fan = smooth(clamp(p / .3))
-      const k = 1 + 4 * smooth(clamp((p - .3) / .65))
+      const k = start + (end - start) * smooth(clamp((p - .3) / .65))
       const w = cards[0]?.offsetWidth ?? 400
       cards.forEach((card, i) => {
         const d = i - k
         const a = Math.abs(d)
         const stack = { x: d * 7, y: -Math.min(a, 3) * 7, r: d * 1.6, s: 1 - Math.min(a, 3) * .03, o: a > 3 ? 0 : 1 }
-        const open = { x: d * w * .46, y: d * d * w * .035, r: d * 7, s: 1 - Math.min(a, 3) * .09, o: clamp(3.1 - a) }
+        const open = { x: d * w * spread, y: d * d * w * .035, r: d * 7, s: 1 - Math.min(a, 3) * .09, o: clamp(3.1 - a) }
         const mix = (from: number, to: number) => from + (to - from) * fan
         card.style.setProperty('--x', `${mix(stack.x, open.x).toFixed(1)}px`)
         card.style.setProperty('--y', `${mix(stack.y, open.y).toFixed(1)}px`)
@@ -92,7 +86,22 @@ export function HomeStoryKitchens() {
       media.removeEventListener('change', schedule)
       delete el.dataset.enhanced
     }
-  }, [])
+  }, [root, start, end, spread])
+  return { phase, focus }
+}
+
+export function HomeStoryKitchens() {
+  const { lang } = useI18n()
+  const root = useRef<HTMLElement>(null)
+  const ky = lang === 'ky'
+  const titles = ky
+    ? ['Ашканаңызды 3D форматта чогултуңуз.', 'Өз стилиңизди тандаңыз.', 'Ыңгайлуулук үйдөн башталат.']
+    : ['Соберите кухню в 3D.', 'Выберите свой стиль.', 'Комфорт начинается дома.']
+  const notes = ky
+    ? ['Дүкөндөгү техника менен даяр долбоорлор.', 'Сканди, лофт, классика, арт-деко жана башкалар.', 'Долбоорду ачып, дубалдарыңызга ылайыкташтырыңыз.']
+    : ['Готовые проекты с техникой из нашего магазина.', 'Сканди, лофт, классика, арт-деко и другие.', 'Откройте проект и подгоните под свои стены.']
+
+  const { phase, focus } = useFanDeck(root, { start: 1, end: 5, spread: .46 })
 
   const front = DECK[focus]
   return <section ref={root} className="hr hr--kitchens" aria-label={ky ? '3D форматтагы даяр ашканалар' : 'Готовые кухни в 3D'}>

@@ -1,0 +1,61 @@
+{
+ "source": "https://smarket.kg/ru — блок «Скидки», 01.10.2026",
+ "cards": [
+  {
+   "id": "cb-00002467",
+   "nameRu": "Куллер Hantaji H-112",
+   "nameKy": "Куллер Hantaji H-112",
+   "image": "https://api.smartcentr.store/api/v1/shop/photos/dc358d49-956a-11f1-acef-6834219981ae-1-3d8003d1c3.jpg",
+   "price": 10900,
+   "oldPrice": 16400
+  },
+  {
+   "id": "cb-00002468",
+   "nameRu": "Стиральная машина FLAGMAN AV-80MXLB(BG)",
+   "nameKy": "Стиральная машина FLAGMAN AV-80MXLB(BG)",
+   "image": "https://api.smartcentr.store/api/v1/shop/photos/dc358d4a-956a-11f1-acef-6834219981ae-1-dae5f0bf33.jpg",
+   "price": 21400,
+   "oldPrice": 28500
+  },
+  {
+   "id": "cb-00002355",
+   "nameRu": "Пылесос UAKEEN ZL-940 (Моющий)",
+   "nameKy": "Пылесос UAKEEN ZL-940 (Моющий)",
+   "image": "https://api.smartcentr.store/api/v1/shop/photos/4ae494b5-5e7c-11f1-ac91-6834219981ae-1-abd719bd1b.jpg",
+   "price": 13900,
+   "oldPrice": 18400
+  },
+  {
+   "id": "cb-00002545",
+   "nameRu": "Электро Эндуро WN-A10",
+   "nameKy": "Электро Эндуро WN-A10",
+   "image": "https://api.smartcentr.store/api/v1/shop/photos/a11412d7-bc7e-11f1-ad36-6834219981ae-1-8835bf156f.jpg",
+   "price": 15900,
+   "oldPrice": 18800
+  },
+  {
+   "id": "cb-00002325",
+   "nameRu": "Стиральная машина LEVO LV-70DG2T",
+   "nameKy": "Стиральная машина LEVO LV-70DG2T",
+   "image": "https://api.smartcentr.store/api/v1/shop/photos/a85cdfcb-5d66-11f1-ac90-6834219981ae-1-dff15450d3.jpg",
+   "price": 24800,
+   "oldPrice": 27900
+  },
+  {
+   "id": "cb-00001912",
+   "nameRu": "Морозилька LEVO 278",
+   "nameKy": "Морозилька LEVO 278",
+   "image": "https://api.smartcentr.store/api/v1/shop/photos/0a8442d2-2d4f-11f0-b2f7-6834219981ae-1-29d718b098.jpg",
+   "price": 19900,
+   "oldPrice": 22000
+  },
+  {
+   "id": "cb-00002040",
+   "nameRu": "Стиральная машина LEVO LV-80LUX-T DD Motor (черный)",
+   "nameKy": "Стиральная машина LEVO LV-80LUX-T DD Motor (черный)",
+   "image": "https://api.smartcentr.store/api/v1/shop/photos/659ec701-a4c6-11f0-b352-6834219981ae-1-15396e7a06.jpg",
+   "price": 31900,
+   "oldPrice": 35500
+  }
+ ]
+}
