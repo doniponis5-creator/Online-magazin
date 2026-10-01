@@ -63,14 +63,14 @@ function CountUp({ value }: { value: number }) {
 }
 
 /**
- * Заголовок по словам: слова всплывают по очереди, ключевое слово (mark) подчёркивает белый маркер,
- * число в нём (count) набирается от нуля. key на фазе перезапускает анимацию.
+ * Заголовок по словам: слова всплывают по очереди; в слове с номером mark число (count)
+ * набирается от нуля. key на фазе перезапускает анимацию.
  */
 function SaleTitle({ text, mark, count }: { text: string; mark: number; count?: number }) {
   return <>{text.split(' ').map((w, i) => {
     const num = count !== undefined && i === mark ? /^(\D*)(\d+)(.*)$/.exec(w) : null
     const body = num ? <>{num[1]}<CountUp value={count!} />{num[3]}</> : w
-    return <span key={i} className={i === mark ? 'hr__word hs__mark' : 'hr__word'} style={{ animationDelay: `${i * 70}ms` }}>{body}{' '}</span>
+    return <span key={i} className="hr__word" style={{ animationDelay: `${i * 70}ms` }}>{body}{' '}</span>
   })}</>
 }
 
@@ -102,8 +102,8 @@ export function HomeStorySale({ cards }: { cards: SaleCard[] }) {
   const titles = ky
     ? ['Техникага арзандатуулар.', `${max}% чейин үнөмдөңүз.`, 'Кампада бар кезде үлгүрүңүз.']
     : ['Скидки на технику.', `Экономия до ${max}%.`, 'Успейте, пока есть на складе.']
-  // какое слово фразы выделить маркером (в нём же число скидки во второй фразе)
-  const marks = ky ? [1, 0, 0] : [0, 2, 4]
+  // в каком слове второй фразы число скидки — оно набирается от нуля
+  const marks = ky ? [0, 0, 0] : [0, 2, 0]
   const notes = ky
     ? ['Дүкөндө бар техниканын баасы түштү.', 'Эң чоң арзандатуу — биринчи.', 'Карточканы басыңыз — товар ачылат.']
     : ['Цены снижены на технику, которая есть в магазине.', 'Самая большая скидка — первой.', 'Нажмите на карточку — откроется товар.']
