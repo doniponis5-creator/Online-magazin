@@ -276,13 +276,14 @@ const PAY_LATER = {
 /** «Заберу сам», «өзүм алам» (и «озум алам» без ө), «узим оламан». */
 const PICKUP = /(заберу|сам заберу|самовывоз|приеду|сами|өзүм|озум|озим|o.?zim|узим|узимиз|pickup|дүкөндөн|дукондон|do.?kondan|дукондан|из магазина|в магазине|келип алам|келиб оламан|барып алам)/i
 /** Похоже на полный адрес: улица / дом / микрорайон. */
-const FULL_ADDRESS = /(көчө|кочо|кучаси|кўчаси|улица|ул\.|үй|(?<![\p{L}])уй(?![\p{L}])|дом|мкр|микрорайон|переул|проспект|пр\.)/iu
+export const FULL_ADDRESS = /(көчө|кочо|кучаси|кўчаси|улица|ул\.|үй|(?<![\p{L}])уй(?![\p{L}])|дом|мкр|микрорайон|переул|проспект|пр\.)/iu
 
 export async function step(chatId: ChatKey, text: string, lang: TalkLang, siteLang: Lang): Promise<string | null> {
   const draft = drafts.get(chatId)
   if (!draft) return null
 
-  const value = text.trim()
+  // Ссылка на карту («yandex.ru/navi?…») — не вопрос: её «?» сбрасывал заказ. Адрес — слова рядом.
+  const value = text.replace(/https?:\/\/\S+/gi, ' ').replace(/\s+/g, ' ').trim()
 
   if (DEFER.test(value)) {
     drafts.delete(chatId)

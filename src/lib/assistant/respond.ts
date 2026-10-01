@@ -12,7 +12,7 @@ import 'server-only'
 import type { Lang } from '@/lib/i18n/config'
 import { answer, talkLang } from './reply'
 import { cleanName } from './talk'
-import { AFFIRM, BUY_INTENT, CALL_OFFER, DEFER, OFFER, PAY_ASIDE, cancel, hasDraft, looksLikeQuestion, start, step } from '@/lib/telegram/order'
+import { AFFIRM, BUY_INTENT, CALL_OFFER, DEFER, FULL_ADDRESS, OFFER, PAY_ASIDE, cancel, hasDraft, looksLikeQuestion, start, step } from '@/lib/telegram/order'
 import { CALL_INTENT, cancelLead, hasLead, leadContext, leadStep, startLead } from './leads'
 import { lookupIn, salesCatalogNow } from './live'
 import { type Intent, followAfter, isSureYes, jevConfigured, objectionNote, readAnswer } from './jev'
@@ -280,7 +280,13 @@ async function salesFlow(
   // «Ооба, но денег пока нет, через 5 дней» — это не «да».
   const agreed = OFFER.test(lastAnswer) && ((AFFIRM.test(text) && !looksLikeQuestion(text) && !DEFER.test(text) && !jevNo) || jevYes) && !askedToo
   if (shown.length > 0 && (wantsToBuy || agreed)) {
-    return only(await start(key, shown, talk, orderSource, who, wantedQty(text)))
+    const first = await start(key, shown, talk, orderSource, who, wantedQty(text))
+    // «улица Эркин-Эл, 20 Бишкек» вместо «да» — адрес уже есть, второй раз «Кайда жеткирели?» не спрашиваем.
+    if (FULL_ADDRESS.test(text) && /\d/.test(text.replace(/https?:\/\/\S+/gi, ''))) {
+      const done = await step(key, text, talk, lang)
+      if (done) return only(done)
+    }
+    return only(first)
   }
   return null
 }

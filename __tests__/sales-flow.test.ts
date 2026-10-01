@@ -641,3 +641,20 @@ describe('аудит 01.10 вечер (…8989): цитата, вопрос в �
     vi.resetModules()
   })
 })
+
+describe('аудит 01.10 ночь: адрес вместо «да»', () => {
+  it('на «Тариздейлиби?» прислал адрес со ссылкой на карту — заказ сразу с этим адресом', async () => {
+    process.env.JEV_API_KEY = 'sk-or-test'
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ answers: { kind: { choice: 'agree', confidence: 0.95 }, reason: { choice: 'other' }, when: { choice: 'unknown' } } }), { status: 200 })))
+    const { respond } = await import('@/lib/assistant/respond')
+    const wa = { key: 'wa:h1', orderSource: 'Заказ из WhatsApp', leadChannel: 'whatsapp' as const, known: { phone: '+996555000095', name: 'Юсуф' } }
+    const r = await respond(wa, [
+      { role: 'assistant', text: `${product.nameRu}. Тариздейлиби?` },
+      { role: 'user', text: 'улица Эркин-Эл, 20 Бишкек https://yandex.ru/navi?whatshere%5Bzoom%5D=12&ll=74.6%2C42.8' },
+    ], 'ky', null, undefined, [product.id])
+    expect(r.text).not.toMatch(/Кайда жеткирели/)
+    expect(r.text).toMatch(/SC-|Даяр|Готово/)
+    delete process.env.JEV_API_KEY
+    vi.unstubAllGlobals()
+  })
+})
