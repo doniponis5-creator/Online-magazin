@@ -201,7 +201,8 @@ async function salesFlow(
 
   // «Позвонить вам?» — «да» / «ооба» / «ха»: заявка на звонок без всяких кодовых слов.
   const offeredCall = CALL_OFFER.test([...turns].reverse().find((t) => t.role === 'assistant')?.text ?? '')
-  if (CALL_INTENT.test(text) || (offeredCall && AFFIRM.test(text.trim()))) {
+  // «Макул, мен 9 жаштамын, чоңдору барбы?» — не согласие на звонок, а новый вопрос: на него отвечает модель.
+  if (CALL_INTENT.test(text) || (offeredCall && AFFIRM.test(text.trim()) && !looksLikeQuestion(text))) {
     cancel(key)
     const questions = turns.filter((t) => t.role === 'user').map((t) => t.text)
     const reply = await startLead(key, talk, leadContext(questions, shownNames), who, channel.leadChannel)
@@ -234,7 +235,9 @@ async function salesFlow(
 }
 
 /** Обещание позвонить — утверждение, не вопрос: «руководство чалат», «позвоним», «кунгирок килишади». */
-const CALL_PROMISE = /(чалат|чалып (берет|берешет|коёт|тактайт)|чалабыз|позвоним|перезвоним|позвонят|перезвонят|свяжутся|кунгирок килади|кунгирок килишади|кунгирок киламиз|богланишади|байланышат)/i
+// «Хозир руководствога етказаман, сизга хабар беришади» — тоже обещание: без заявки жалоба
+// на сломанную стиралку не дошла до владельца (аудит 01.10).
+const CALL_PROMISE = /(етказаман|етказамиз|передам руководств|руководствого айтып|руководствога айтаман|хабар беришади|сообщу руководств|чалат|чалып (берет|берешет|коёт|тактайт)|чалабыз|позвоним|перезвоним|позвонят|перезвонят|свяжутся|кунгирок килади|кунгирок килишади|кунгирок киламиз|богланишади|байланышат)/i
 function promisesCall(text: string): boolean {
   return text
     .split(/(?<=[.!?])\s+/)

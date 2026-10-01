@@ -1,7 +1,7 @@
-# Graph Report - Online-magazin  (2026-09-30)
+# Graph Report - Online-magazin  (2026-10-01)
 
 ## Corpus Check
-- 596 files · ~5,355,579 words
+- 596 files · ~5,355,887 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 61 file(s) not represented in the graph (top: .xml 14, .css 13, (none) 8)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `7d5c553a`
+- Built from commit: `fe93ce1b`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -55,10 +55,10 @@
 - app/shop Module on the SBonus Server
 - TASK 03 Brief — expressive storefront, photos, motion
 - TODO_NEXT.md — What To Do Next
-- AccountReviews.tsx
+- [lang]/layout.tsx
 - shop_router.py
 - HANDOFF.md — What Is Already Built
-- [lang]/layout.tsx
+- AccountReviews.tsx
 - TASK 03 Report — Storefront Photos and Motion
 - fetch-photos.mjs
 - smartcentr_site_src_components_kitchen_kitchen
@@ -379,19 +379,19 @@
 - Отдельностоящая плита в конструкторе кухни
 - ProductReels.tsx
 - make-app-icons.mjs
+- privacy.ts
 - Критерии приёмки
 - make-ios-icon.mjs
-- privacy.ts
-- push-cart-routes.test.ts
 - kitchen/page.tsx
+- push-cart-routes.test.ts
 - Спецификация: пакет цвета — любой RAL, декоры ЛДСП с кодом, свой цвет острова
 - render-svg.cjs
-- BuildAssertionTest
 - photo/route.ts
+- BuildAssertionTest
 - robots.ts
+- next.config.ts
 - shrink.ts
 - BuildMessageTest
-- next.config.ts
 
 ## God Nodes (most connected - your core abstractions)
 1. `KitchenPlanner()` - 166 edges
@@ -578,9 +578,9 @@ Nodes (10): The Flat-First Rule, Repository Structure Map, P0 Defect List (langu
 Cohesion: 0.14
 Nodes (15): SBonus Bonus Flow on the Site, Apple Guideline 4.2 — Repackaged Website Rejection, Path B — Capacitor Shell Plus Real Native Capabilities, WhatsApp-продавец (новое, проверено вживую), Ждёт завтра (PC, 1С), Прочее, ⚠ Сначала — о чужих файлах, Что работает (выкачено) (+7 more)
 
-### Community 39 - "AccountReviews.tsx"
-Cohesion: 0.16
-Nodes (21): AccountReviews(), ErrorKey, Photo, ReviewForm(), addPhotos(), ReviewLoginHint(), CustomerReviews(), photoUrl() (+13 more)
+### Community 39 - "[lang]/layout.tsx"
+Cohesion: 0.12
+Nodes (18): ref_next_navigation, LangLayout(), viewport, generateMetadata(), ProductPage(), revalidate, HtmlLang(), MotionProvider() (+10 more)
 
 ### Community 40 - "shop_router.py"
 Cohesion: 0.07
@@ -590,9 +590,9 @@ Nodes (63): api_route, app_core_config, Base, decimal, fastapi_responses, clear_
 Cohesion: 0.16
 Nodes (16): HANDOFF.md — What Is Already Built, 1C Extension ИМ_ОнлайнМагазин, Known Issue — Only 1-2 Products Reach the Server Catalog, HMAC-SHA256 Signing Between Site, Server and 1C, Order Import Idempotency via САЙТ:<order_id> Marker, paymentMode() live vs mock Fallback, Assistant Never Types the Owner's Secrets, 1C Prod Still on 1.4 — Must Install 1.5 Before First Bonus Order (+8 more)
 
-### Community 42 - "[lang]/layout.tsx"
-Cohesion: 0.12
-Nodes (18): ref_next_navigation, LangLayout(), viewport, generateMetadata(), ProductPage(), revalidate, HtmlLang(), MotionProvider() (+10 more)
+### Community 42 - "AccountReviews.tsx"
+Cohesion: 0.16
+Nodes (21): AccountReviews(), ErrorKey, Photo, ReviewForm(), addPhotos(), ReviewLoginHint(), CustomerReviews(), photoUrl() (+13 more)
 
 ### Community 43 - "TASK 03 Report — Storefront Photos and Motion"
 Cohesion: 0.18
@@ -1274,13 +1274,17 @@ Nodes (4): Контекст, Последствия, Почему, Решени�
 Cohesion: 0.40
 Nodes (4): Контекст, Последствия, Почему, Решение
 
-### Community 388 - "ProductReels.tsx"
+### Community 387 - "ProductReels.tsx"
 Cohesion: 0.20
 Nodes (10): src_components_product_reels, ProductReels(), readSaved(), ReelsSlide(), saveOrder(), shuffle(), ShareButton(), REELS_FROM_SITE_KEY (+2 more)
 
-### Community 389 - "make-app-icons.mjs"
+### Community 388 - "make-app-icons.mjs"
 Cohesion: 0.16
 Nodes (12): sharp, files, variants, androidDir, circle(), DENSITIES, glyph(), iconSet (+4 more)
+
+### Community 389 - "privacy.ts"
+Cohesion: 0.25
+Nodes (9): metadata, PrivacyPage(), getPrivacy(), PRIVACY_UPDATED, PrivacyContent, privacyKy, privacyRu, PrivacySection (+1 more)
 
 ### Community 390 - "Критерии приёмки"
 Cohesion: 0.20
@@ -1290,31 +1294,27 @@ Nodes (10): 01 — Сервер: отправка на Android через FCM р
 Cohesion: 0.20
 Nodes (9): glyph(), ICON_YELLOW, iconSet, iconSource, INK, mark, root, splash() (+1 more)
 
-### Community 392 - "privacy.ts"
-Cohesion: 0.25
-Nodes (9): metadata, PrivacyPage(), getPrivacy(), PRIVACY_UPDATED, PrivacyContent, privacyKy, privacyRu, PrivacySection (+1 more)
+### Community 392 - "kitchen/page.tsx"
+Cohesion: 0.33
+Nodes (6): generateMetadata(), KitchenPage(), META, applianceInfo(), devAppliances(), canonical()
 
 ### Community 393 - "push-cart-routes.test.ts"
 Cohesion: 0.28
 Nodes (7): POST(), saveCartSnapshot(), postCart(), reply, request(), sent, session
 
-### Community 394 - "kitchen/page.tsx"
-Cohesion: 0.33
-Nodes (6): generateMetadata(), KitchenPage(), META, applianceInfo(), devAppliances(), canonical()
-
-### Community 395 - "Спецификация: пакет цвета — любой RAL, декоры ЛДСП с кодом, свой цвет острова"
+### Community 394 - "Спецификация: пакет цвета — любой RAL, декоры ЛДСП с кодом, свой цвет острова"
 Cohesion: 0.25
 Nodes (7): Вне рамок, Задача, Открытые места, Покрытие манифеста, Пользовательские истории, Решение, Спецификация: пакет цвета — любой RAL, декоры ЛДСП с кодом, свой цвет острова
 
-### Community 396 - "render-svg.cjs"
+### Community 395 - "render-svg.cjs"
 Cohesion: 0.25
 Nodes (7): ref_fs, ref_path, { chromium }, DIR, fs, path, file()
 
-### Community 398 - "photo/route.ts"
+### Community 396 - "photo/route.ts"
 Cohesion: 0.33
 Nodes (6): allowed, cache, Entry, GET(), reply(), TYPES
 
-### Community 399 - "robots.ts"
+### Community 398 - "robots.ts"
 Cohesion: 0.33
 Nodes (4): ALLOW, ASSISTANTS, PRIVATE, TRAINERS
 
@@ -1331,11 +1331,11 @@ Nodes (4): encode(), fit(), FULL, THUMB
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `_Response` connect `test_shop_push_send.py` to `currentSession`?**
-  _High betweenness centrality (0.118) - this node is a cross-community bridge._
+  _High betweenness centrality (0.129) - this node is a cross-community bridge._
 - **Why does `image()` connect `image` to `share.ts`, `gallery-api.test.ts`, `gallery/store.ts`, `shop_wa_bot.py`, `social.tsx`?**
   _High betweenness centrality (0.101) - this node is a cross-community bridge._
 - **Why does `Консультант` connect `shop_wa_bot.py` to `image`?**
-  _High betweenness centrality (0.101) - this node is a cross-community bridge._
+  _High betweenness centrality (0.100) - this node is a cross-community bridge._
 - **Are the 11 inferred relationships involving `KitchenPlanner()` (e.g. with `Решения по реализации` and `C01 — критично. Мойка, плита и угловые шкафы молча исчезают из кухни`) actually correct?**
   _`KitchenPlanner()` has 11 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `customer`, `phone`, `laptop` to the rest of the system?**

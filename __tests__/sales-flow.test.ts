@@ -479,3 +479,34 @@ describe('аудит 30.09: «макул, но сначала спрошу» —
     }
   })
 })
+
+describe('аудит 01.10: вопрос после «макул» — не звонок; жалоба доходит до руководства', () => {
+  const wa = (key: string) => ({ key, orderSource: 'Заказ из WhatsApp', leadChannel: 'whatsapp' as const, known: { phone: '+996555000060' } })
+
+  it('«Макул мен 9 жаштамын чоңдору барбы» на «Сизге чалып берейинби?» — заявки нет, отвечает модель', async () => {
+    vi.resetModules()
+    vi.doMock('@/lib/assistant/reply', async (orig) => ({
+      ...(await orig<typeof import('@/lib/assistant/reply')>()),
+      answer: async () => ({ text: 'Чоңураагы бар: Мотоцикл спорт 22 100 сом. Тариздейлиби?', products: [], source: 'gemini' as const }),
+    }))
+    const { respond } = await import('@/lib/assistant/respond')
+    const r = await respond(wa('wa:e1'), [{ role: 'assistant', text: 'Чоң моделдер тууралуу руководство тактап берет. Сизге чалып берейинби?' }, { role: 'user', text: 'Макул мен 9 жаштамын чоңдору барбы' }], 'ky', null)
+    expect(r.source).toBe('gemini')
+    expect(r.handoff).toBeFalsy()
+    vi.doUnmock('@/lib/assistant/reply')
+    vi.resetModules()
+  })
+
+  it('«Хозир руководствога етказаман…» — заявка уходит (handoff)', async () => {
+    vi.resetModules()
+    vi.doMock('@/lib/assistant/reply', async (orig) => ({
+      ...(await orig<typeof import('@/lib/assistant/reply')>()),
+      answer: async () => ({ text: 'Тушундим. Хозир руководствога етказаман, сизга хабар беришади.', products: [], source: 'gemini' as const, audience: 'customer' as const }),
+    }))
+    const { respond } = await import('@/lib/assistant/respond')
+    const r = await respond(wa('wa:e2'), [{ role: 'user', text: 'Стиралкани 3 кундан бери карамеди, нима килелик' }], 'ru', null)
+    expect(r.handoff).toBe(true)
+    vi.doUnmock('@/lib/assistant/reply')
+    vi.resetModules()
+  })
+})

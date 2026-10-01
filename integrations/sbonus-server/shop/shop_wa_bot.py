@@ -57,6 +57,10 @@ logger = logging.getLogger("sbonus.shop.wa_bot")
 router_wa_bot = APIRouter(prefix="/webhook/greenapi", tags=["WhatsApp: продавец"])
 
 HUMAN_QUIET = 12 * 3600          # сотрудник ответил — робот молчит в чате столько
+# Робот сам передал чат руководству (заявка на звонок, жалоба) — молчит только час. Дальше
+# покупатель спрашивает «чоңу барбы?», «Бишкекте би?» и ждать ответа до утра не должен
+# (аудит 01.10: Умар 13 часов писал в пустоту). Написал владелец сам — снова 12 часов.
+HANDOFF_QUIET = 3600
 TURNS_TTL = 3 * 24 * 3600        # сколько помним разговор
 MAX_TURNS = 12                   # сколько реплик отдаём мозгу
 DAILY_LIMIT = 30                 # ответов робота одному человеку за сутки
@@ -428,8 +432,10 @@ async def _answer(digits: str, name: str) -> bool:
             await redis_client.set(f"wa:shown:{digits}", json.dumps(ids), ex=TURNS_TTL)
             # Показали товар — если покупатель замолчит, через 2 часа спросим «ещё актуально?».
             await redis_client.set(f"wa:nudge:{digits}", json.dumps({"ts": time.time(), "name": name}), ex=24 * 3600)
-        if reply.get("handoff") or count + 1 >= DAILY_LIMIT:
+        if count + 1 >= DAILY_LIMIT:
             await redis_client.set(f"wa:human:{digits}", "1", ex=HUMAN_QUIET)
+        elif reply.get("handoff"):
+            await redis_client.set(f"wa:human:{digits}", "1", ex=HANDOFF_QUIET)
         return True
     except Exception as error:
         logger.error(f"wa bot {digits[-4:]}: {error}")
