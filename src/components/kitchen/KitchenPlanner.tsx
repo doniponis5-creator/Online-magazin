@@ -72,7 +72,7 @@ import {
   type Run,
   type Narrow,
 } from '@/lib/kitchen/layout'
-import { previewMove, type Preview } from '@/lib/kitchen/drag'
+import { nudgeMove, previewMove, type Preview } from '@/lib/kitchen/drag'
 import { PlanView, type PlanTarget } from './PlanView'
 import { pickInto, plusTarget, resetForShape } from './planGeom'
 import { cartAdditions, chosenItems, CORE_SLOTS, frontsText, planInputOf, projectItems, projectTotal, wallsText, whatsappText, type ItemStatus } from '@/lib/kitchen/order'
@@ -620,7 +620,8 @@ export function KitchenPlanner({
       // по ссылке («Хочу такую же», «Поделиться») — своя несохранённая кухня уходит в «Мои варианты»
       const next = stateFromQuery(q, byId)
       setState(next)
-      if (keepOnLink(last, next)) setLinkKeep(last)
+      // лист мастера только показывает кухню и не пишет kp-last — своя кухня цела, плашка не нужна (P6)
+      if (!masterPage && keepOnLink(last, next)) setLinkKeep(last)
     } else {
       // адрес с одной моделью (кнопка «Примерить в кухне» на карточке товара) —
       // ставим её в сохранённую кухню, а нет сохранённой — в кухню по умолчанию
@@ -949,6 +950,8 @@ export function KitchenPlanner({
     const gapW = tg.gap ? run?.gaps?.find((g) => g.item === tg.gap)?.w : undefined
     const kinds = ADD_ITEMS.filter((k): k is Exclude<AddItem, 'tech'> => k !== 'tech' && (Boolean(tg.gap) || (k !== 'strip' && k !== 'fill')))
     const widths = Object.fromEntries(kinds.map((k) => [k, addWidth(state, plan, tg.wall, tg.cm, k)]))
+    // меню заменяет карточку прежнего выбора: вместе они закрывали почти весь экран телефона (P6, 5)
+    closeSelection()
     setAdd({ target: tg, x, y, widths, gapW })
   }
 
@@ -1582,24 +1585,8 @@ export function KitchenPlanner({
       commitPinned(moving, { at: moving.center + sign * NUDGE })
       return
     }
-    const key = moving.key
-    const p = positions[key]
-    if (!p) return
-    // У левой стены и у острова ряд идёт справа налево — поэтому наоборот.
-    const sign = (p.wall === 'B' || p.wall === 'I' ? -dir : dir) as 1 | -1
-    const at = { ...frozen([key, ...companions(plan, key)]), [key]: p.center + sign * NUDGE }
-    const moved = itemPositions(trial({ ...state, arrangement: order, at }, [key]))[key]
-    if (moved && moved.wall === p.wall && Math.abs(moved.center - p.center) >= 1) {
-      apply({ arrangement: order, at }, [key])
-      return
-    }
-    // Упёрся: встаёт вплотную по ту сторону соседа.
-    const list = order[p.wall]
-    let j = list.indexOf(key) + sign
-    while (j >= 0 && j < list.length && !present.has(list[j])) j += sign
-    const n = list[j] ? positions[list[j]] : undefined
-    if (!n) return
-    apply({ arrangement: stepItem(order, key, sign, present), at: { ...frozen([key]), [key]: n.center + sign * (n.w / 2 + p.w / 2) } }, [key])
+    const step = nudgeMove(state, plan, moving.key, dir, trial, NUDGE)
+    if (step) apply(step.patch, step.snap)
   }
   // кнопку держат — сдвигается дальше, как клавиша на клавиатуре
   const nudgeRef = useRef(nudge)
@@ -1921,6 +1908,18 @@ export function KitchenPlanner({
       return
     }
     const first = !card.dataset.placed
+    // компьютер с колонкой плана: карточка — в колонке под планом, над 3D её нет —
+    // выбранный шкаф ею не закрыт, картинку не сдвигаем (P6, 8–10)
+    const planBox = stage.classList.contains('has-col') ? stage.querySelector<HTMLElement>('.kp-plan') : null
+    if (planBox) {
+      const top = planBox.offsetTop + planBox.offsetHeight + 8
+      card.style.left = '8px'
+      card.style.top = `${top}px`
+      card.style.maxHeight = `${Math.max(120, stage.clientHeight - top - 8)}px`
+      card.dataset.placed = '1'
+      engine?.setShift(0, 0)
+      return
+    }
     if (!first && !force && performance.now() < cardBusyUntil.current) return
     // где выбранное стояло бы без сдвига картинки: сдвиг — ровный перенос на экране
     const now = engine?.selectionRect() ?? null
@@ -1935,7 +1934,8 @@ export function KitchenPlanner({
     const ch = card.offsetHeight
     const pad = 14
     const top = pad + (parseFloat(stage.style.getPropertyValue('--kp-tools-h')) || 42) + 10
-    const move = stage.querySelector<HTMLElement>('.kp-move')
+    // полоса отдельно от карточки (пустое место); внутри карточки она не пол сцены
+    const move = stage.querySelector<HTMLElement>('.kp-sel > .kp-move')
     // одно место — справа сверху 3D (слева колонка плана), откуда бы ни выбрали (P2, 8);
     // шкаф не прячется под карточку: сдвигается картинка, а не карточка
     const spots = [{ left: W - pad - cw, top }].filter((p) => p.left >= pad - 1)
@@ -2055,6 +2055,29 @@ export function KitchenPlanner({
       root.style.removeProperty('--kp-sel-h')
     }
   }, [full, sheetOpen, stacked])
+
+  // Телефон, полный экран: лист шага (is-panel) лежит поверх 3D — камера вписывает кухню
+  // в часть холста над листом (P6, 6); лист закрыли — снова весь холст.
+  useLayoutEffect(() => {
+    const body = full && fullPanel && stacked ? rootRef.current?.querySelector<HTMLElement>('.kp-body') : null
+    const host = hostRef.current
+    if (!body || !host) {
+      engineRef.current?.setInset(0)
+      return
+    }
+    const put = () => engineRef.current?.setInset(host.getBoundingClientRect().bottom - body.getBoundingClientRect().top)
+    put()
+    // лист выезжает анимацией — меряем ещё раз, когда встал
+    const settled = window.setTimeout(put, 420)
+    const size = new ResizeObserver(put)
+    size.observe(body)
+    size.observe(host)
+    return () => {
+      window.clearTimeout(settled)
+      size.disconnect()
+      engineRef.current?.setInset(0)
+    }
+  }, [full, fullPanel, stacked])
 
   const openSlot = (slot: SlotKind) => {
     const opening = !(step === 'tech' && open === slot)
@@ -2917,6 +2940,74 @@ export function KitchenPlanner({
   }
   /** план на экране: колонкой (широкий экран) или вместо 3D; на фото — никогда */
   const planShown = !photo && !photoFallback && (planCol || scene === 'plan')
+  /** ряд перестановки выбранного: ← → · на другую стену · ×; «+» у пустого места */
+  const moveBar = (
+    <div className="kp-move" role="group" aria-label={movingName}>
+      <span className="kp-move__name">
+        {movingName}
+        <small>{t.moveHint2}</small>
+      </span>
+      {/* выбрано пустое место: «+» — что сюда поставить */}
+      {movingKey && isGap(movingKey) && (
+        <button
+          type="button"
+          className="kp-move__btn kp-move__add"
+          aria-label={t.plus.btn}
+          title={t.plus.btn}
+          onClick={(e) => {
+            const p = positions[movingKey]
+            if (p) openAdd({ wall: p.wall, cm: p.center, gap: movingKey }, { x: e.clientX, y: e.clientY })
+          }}
+        >
+          +
+        </button>
+      )}
+      {/* по 5 см; держите кнопку — едет дальше; упёрлось — перепрыгнет соседа */}
+      <button
+        type="button"
+        className="kp-move__btn"
+        aria-label={t.moveLeft}
+        title={t.moveLeft}
+        onPointerDown={(e) => {
+          if (e.button === 0) startRepeat(-1)
+        }}
+        onPointerUp={stopRepeat}
+        onPointerLeave={stopRepeat}
+        onPointerCancel={stopRepeat}
+        onClick={(e) => {
+          // клавиатура и программы чтения экрана нажимают без пальца (detail = 0)
+          if (e.detail === 0) nudge(-1)
+        }}
+      >
+        <IconArrow flip />
+      </button>
+      <button
+        type="button"
+        className="kp-move__btn"
+        aria-label={t.moveRight}
+        title={t.moveRight}
+        onPointerDown={(e) => {
+          if (e.button === 0) startRepeat(1)
+        }}
+        onPointerUp={stopRepeat}
+        onPointerLeave={stopRepeat}
+        onPointerCancel={stopRepeat}
+        onClick={(e) => {
+          if (e.detail === 0) nudge(1)
+        }}
+      >
+        <IconArrow />
+      </button>
+      {canOtherWall && (
+        <button type="button" className="kp-move__wall" onClick={toOtherWall}>
+          {otherWallLabel}
+        </button>
+      )}
+      <button type="button" className="kp-move__btn kp-move__close" aria-label={t.close} onClick={closeSelection}>
+        <IconClose />
+      </button>
+    </div>
+  )
   /** план ВМЕСТО 3D (узкий экран): только тогда прячем ценники и подписи 3D; в колонке 3D живёт со всеми метками */
   const planOver = planShown && !planCol
   useEffect(() => {
@@ -3512,76 +3603,12 @@ export function KitchenPlanner({
                       </div>
                     </div>
                   )}
+                  {moving && movingShown && !stacked && moveBar}
                 </div>
               )}
 
-              {moving && movingShown && (
-                <div className="kp-move" role="group" aria-label={movingName}>
-                  <span className="kp-move__name">
-                    {movingName}
-                    <small>{t.moveHint2}</small>
-                  </span>
-                  {/* выбрано пустое место: «+» — что сюда поставить */}
-                  {movingKey && isGap(movingKey) && (
-                    <button
-                      type="button"
-                      className="kp-move__btn kp-move__add"
-                      aria-label={t.plus.btn}
-                      title={t.plus.btn}
-                      onClick={(e) => {
-                        const p = positions[movingKey]
-                        if (p) openAdd({ wall: p.wall, cm: p.center, gap: movingKey }, { x: e.clientX, y: e.clientY })
-                      }}
-                    >
-                      +
-                    </button>
-                  )}
-                  {/* по 5 см; держите кнопку — едет дальше; упёрлось — перепрыгнет соседа */}
-                  <button
-                    type="button"
-                    className="kp-move__btn"
-                    aria-label={t.moveLeft}
-                    title={t.moveLeft}
-                    onPointerDown={(e) => {
-                      if (e.button === 0) startRepeat(-1)
-                    }}
-                    onPointerUp={stopRepeat}
-                    onPointerLeave={stopRepeat}
-                    onPointerCancel={stopRepeat}
-                    onClick={(e) => {
-                      // клавиатура и программы чтения экрана нажимают без пальца (detail = 0)
-                      if (e.detail === 0) nudge(-1)
-                    }}
-                  >
-                    <IconArrow flip />
-                  </button>
-                  <button
-                    type="button"
-                    className="kp-move__btn"
-                    aria-label={t.moveRight}
-                    title={t.moveRight}
-                    onPointerDown={(e) => {
-                      if (e.button === 0) startRepeat(1)
-                    }}
-                    onPointerUp={stopRepeat}
-                    onPointerLeave={stopRepeat}
-                    onPointerCancel={stopRepeat}
-                    onClick={(e) => {
-                      if (e.detail === 0) nudge(1)
-                    }}
-                  >
-                    <IconArrow />
-                  </button>
-                  {canOtherWall && (
-                    <button type="button" className="kp-move__wall" onClick={toOtherWall}>
-                      {otherWallLabel}
-                    </button>
-                  )}
-                  <button type="button" className="kp-move__btn kp-move__close" aria-label={t.close} onClick={closeSelection}>
-                    <IconClose />
-                  </button>
-                </div>
-              )}
+              {/* телефон стоя: перестановка — своим рядом под карточкой листа; компьютер — внутри карточки (P6, 10) */}
+              {moving && movingShown && (stacked || !measure) && moveBar}
             </div>
           )}
 

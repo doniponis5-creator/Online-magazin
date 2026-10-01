@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { grabOf, previewMove } from '@/lib/kitchen/drag'
+import { grabOf, nudgeMove, previewMove } from '@/lib/kitchen/drag'
 import { addAt, addWidth, detachUppers, fitOn, itemPositions, moduleCenter, narrowNeighbour, pinCabinet, resolveArrangement, swapFit, moveToWall, narrowFor, needByWall, pinnedIds, pinWalls, placeAt, planKitchen, resizeWalls, squeezeGaps, UPPER_MIN, type Plan, type PlanInput, type Planner } from '@/lib/kitchen/layout'
 import { checkProject, droppedName } from '@/lib/kitchen/checks'
 import { makerList } from '@/components/kitchen/drawing'
@@ -861,5 +861,30 @@ describe('доводка круг 3 (P5): вытяжка не уезжает, м
     expect(fit).toMatchObject({ ok: true, center: 181 })
     expect(fit!.swap).toBeUndefined()
     expect(run(live(state, []), 'A').modules.map((m) => Math.round(m.w))).toEqual([100, 51, 60, 58])
+  })
+})
+
+describe('доводка круг 3 (P6): «левее / правее» у своего верхнего', () => {
+  const catalog = kitchenAppliances(products)
+  const known = new Map(catalog.map((a) => [a.id, a]))
+  const live: Planner = (s, snap) => planKitchen(planInputOf(s, chosenItems(s.picks, catalog), snap), { shelves: getStyle(s.style).shelves })
+  const own = stateFromQuery(new URLSearchParams(readyKitchen('corner-300x240-marble')!.q + '&u=400d_1200'), known)
+  /** как экран: nudgeMove → apply (пробная раскладка с тем же snap) */
+  const press = (s: KitchenState, key: ItemKey, dir: 1 | -1) => {
+    const step = nudgeMove(s, live(s, []), key, dir, live, 5)
+    if (!step) return null
+    const next = { ...s, ...step.patch }
+    return { state: next, pos: itemPositions(live(next, step.snap)) }
+  }
+
+  it('u1 40 см на 120 (вплотную к углу 0…100): «правее» → 125 и обратно 120, ширина 40, ряд верхний; «левее» у угла — не двигается', () => {
+    const p0 = itemPositions(live(own, []))
+    expect(p0.u1).toEqual({ wall: 'A', center: 120, w: 40, row: 'upper' })
+    const right = press(own, 'u1', 1)!
+    expect(right.pos.u1).toEqual({ wall: 'A', center: 125, w: 40, row: 'upper' })
+    expect(press(right.state, 'u1', -1)?.pos.u1).toEqual({ wall: 'A', center: 120, w: 40, row: 'upper' })
+    // слева угловой верхний: дальше некуда, шкаф не прыгает и не сужается
+    const left = press(own, 'u1', -1)
+    expect(left === null || left.pos.u1?.center === 120).toBe(true)
   })
 })

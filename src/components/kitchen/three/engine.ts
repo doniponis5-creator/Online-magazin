@@ -198,6 +198,8 @@ export class KitchenEngine {
   private selBox: THREE.Box3 | null = null
   /** сдвиг картинки в точках экрана — чтобы выбранное выехало из-под карточки */
   private shift = { x: 0, y: 0 }
+  /** низ холста закрыт листом, px (телефон, полный экран): кадр — в части над ним (P6, 6) */
+  private insetBottom = 0
   private resizeObserver: ResizeObserver
   private reduced: boolean
   /** телефон: палец и нет мыши/тачпада — один флаг для движка и фото экрана */
@@ -644,7 +646,8 @@ export class KitchenEngine {
   /* ───────── камера ───────── */
 
   /** Камера смотрит на саму кухню (а не на пустой пол) и держит её целиком в кадре. */
-  private framing(view: View) {
+  /** `loose` — по описанной сфере, как раньше (эскизы в уголке приближают её сами). */
+  private framing(view: View, loose = false) {
     const plan = this.input!.plan
     const W = plan.room.w / 100
     if (view === 'eye') return this.eyeFraming()
@@ -658,8 +661,87 @@ export class KitchenEngine {
     const fit = (radius / Math.sin(Math.min(vfov, hfov) / 2)) * (view === 'top' ? 1.3 : 1)
     const azimuth = view === 'angle' ? (plan.shape === 'u' ? 0.3 : plan.shape === 'straight' ? 0.42 : 0.55) : 0
     const polar = view === 'top' ? 0.02 : view === 'front' ? 1.3 : 1.05
+    // обзор и спереди: вписываем сами углы кухни, а не описанную сферу — кухня крупнее (P6, 7)
+    if (view !== 'top' && !loose) {
+      const tight = this.tightFraming(target, new THREE.Vector3().setFromSphericalCoords(1, polar, azimuth))
+      if (tight) return tight
+    }
     const pos = new THREE.Vector3().setFromSphericalCoords(fit, polar, azimuth).add(target)
     return { target, pos, dist: fit }
+  }
+
+  /** Углы кухни, м: ряды от пола до 2,3 м по всей длине и глубине столешницы, остров — до столешницы. */
+  private kitchenCorners(): THREE.Vector3[] {
+    const plan = this.input!.plan
+    const pts: THREE.Vector3[] = []
+    for (const run of plan.runs)
+      for (const cm of [0, run.length]) for (const z of [0, 0.62]) for (const y of [0, 2.3]) pts.push(this.runPoint(run, this.localX(run, cm), y, z))
+    const isl = plan.island
+    if (isl)
+      for (const x of [isl.x, isl.x + isl.w]) for (const z of [isl.z - 62, isl.z + 30]) for (const y of [0, 0.92]) pts.push(new THREE.Vector3(x / 100, y, z / 100))
+    return pts
+  }
+
+  /**
+   * Камера по направлению `dir` от центра кухни: ближайшее расстояние, с которого все углы
+   * кухни в кадре с полями 10 %, и центр кадра — посередине их проекции. Аспект — видимой
+   * части холста (над листом, `insetBottom`). null — углов нет или не вписать.
+   */
+  private tightFraming(target0: THREE.Vector3, dir: THREE.Vector3) {
+    const pts = this.kitchenCorners()
+    if (!pts.length) return null
+    const FOV = 36
+    const M = 0.9
+    const cam = new THREE.PerspectiveCamera(FOV, this.camera.aspect, 0.05, 200)
+    const target = target0.clone()
+    const v = new THREE.Vector3()
+    const place = (d: number) => {
+      cam.position.copy(target).addScaledVector(dir, d)
+      cam.lookAt(target)
+      cam.updateMatrixWorld()
+    }
+    const fits = (d: number) => {
+      place(d)
+      return pts.every((p) => {
+        v.copy(p).project(cam)
+        return v.z < 1 && Math.abs(v.x) <= M && Math.abs(v.y) <= M
+      })
+    }
+    const distance = () => {
+      let lo = 0.3
+      let hi = 60
+      if (!fits(hi)) return null
+      for (let i = 0; i < 28; i++) {
+        const mid = (lo + hi) / 2
+        if (fits(mid)) hi = mid
+        else lo = mid
+      }
+      return hi
+    }
+    let d = distance()
+    if (d === null) return null
+    // проекция кухни не по центру (перспектива, угол обзора) — сдвигаем центр кадра и вписываем снова
+    for (let k = 0; k < 3; k++) {
+      place(d)
+      let x0 = Infinity
+      let x1 = -Infinity
+      let y0 = Infinity
+      let y1 = -Infinity
+      for (const p of pts) {
+        v.copy(p).project(cam)
+        x0 = Math.min(x0, v.x)
+        x1 = Math.max(x1, v.x)
+        y0 = Math.min(y0, v.y)
+        y1 = Math.max(y1, v.y)
+      }
+      const hh = d * Math.tan((FOV * Math.PI) / 360)
+      const right = new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 0)
+      const up = new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 1)
+      target.addScaledVector(right, ((x0 + x1) / 2) * hh * cam.aspect).addScaledVector(up, ((y0 + y1) / 2) * hh)
+      d = distance() ?? d
+    }
+    place(d)
+    return { target, pos: cam.position.clone(), dist: d }
   }
 
   /**
@@ -1015,8 +1097,28 @@ export class KitchenEngine {
     const w = this.host.clientWidth
     const h = this.host.clientHeight
     if (!w || !h) return
-    if (Math.abs(this.shift.x) < 0.5 && Math.abs(this.shift.y) < 0.5) this.camera.clearViewOffset()
-    else this.camera.setViewOffset(w, h, -this.shift.x, -this.shift.y, w, h)
+    // лист закрыл низ: проекция как у холста w × (h − низ), прижатого к верху; ниже — продолжение кадра
+    const H = Math.max(1, h - this.insetBottom)
+    if (!this.insetBottom && Math.abs(this.shift.x) < 0.5 && Math.abs(this.shift.y) < 0.5) this.camera.clearViewOffset()
+    else this.camera.setViewOffset(w, H, -this.shift.x, -this.shift.y, w, h)
+  }
+
+  /**
+   * Низ холста закрыт листом настроек (px): кухня вписывается в часть над ним (P6, 6).
+   * 0 — весь холст. Камеру, которую человек не трогал, переводит плавно.
+   */
+  setInset(bottom: number) {
+    const w = this.host.clientWidth
+    const h = this.host.clientHeight
+    const b = Math.min(Math.max(0, Math.round(bottom)), Math.max(0, h - 80))
+    if (b === this.insetBottom) return
+    this.insetBottom = b
+    if (!w || !h) return
+    this.camera.aspect = w / Math.max(1, h - b)
+    this.camera.updateProjectionMatrix()
+    this.applyShift()
+    if (this.framed && this.input && !this.drag) this.frame('glide')
+    this.invalidate()
   }
 
   /** Выбранное снаружи (карточка открыта) — только его можно тащить. Смена выбора отменяет идущее перетаскивание. */
@@ -2231,7 +2333,7 @@ export class KitchenEngine {
     this.renderer.setSize(w, h, false)
     this.applyRatio(this.plan().ratio, w, h)
     const was = this.camera.aspect
-    this.camera.aspect = w / h
+    this.camera.aspect = w / Math.max(1, h - Math.max(0, Math.min(this.insetBottom, h - 80)))
     this.camera.updateProjectionMatrix()
     this.applyShift()
     // холст сменил пропорции — кухня снова целиком в кадре, если камеру не трогали
@@ -2447,7 +2549,7 @@ export class KitchenEngine {
   private renderCorner(root: THREE.Object3D, width: number, height: number): HTMLCanvasElement {
     const r = this.renderer
     const cam = this.camera.clone()
-    const { target, pos } = this.framing('angle')
+    const { target, pos } = this.framing('angle', true)
     cam.aspect = width / height
     cam.position.copy(pos).sub(target).multiplyScalar(0.78).add(target)
     cam.lookAt(target)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import type { Preview } from '@/lib/kitchen/drag'
 import { DEPTH, type Plan, type Run } from '@/lib/kitchen/layout'
 import { isGap, type GapId, type WallId } from '@/lib/kitchen/types'
@@ -447,7 +447,13 @@ export function PlanView({ plan, selected, preview, onPick, onDrag, onAdd, label
   const wallLabelOf = (id: string) => (id === 'A' ? labels.a : id === 'B' ? labels.b : id === 'C' ? labels.c : undefined)
 
   return (
-    <div ref={hostRef} className={`kp-plan${className ? ` ${className}` : ''}`} data-plan-view="">
+    // соотношение сторон чертежа: колонка плана на компьютере берёт высоту по нему (aspect-ratio), чертёж вписан по высоте (P6, 9)
+    <div
+      ref={hostRef}
+      className={`kp-plan${className ? ` ${className}` : ''}`}
+      data-plan-view=""
+      style={{ '--kp-plan-ar': (Math.round((vb.w / vb.h) * 100) / 100).toString() } as CSSProperties}
+    >
       <svg
         ref={svgRef}
         viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`}

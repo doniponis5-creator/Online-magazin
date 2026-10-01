@@ -1,4 +1,4 @@
-import { fitOn, itemPositions, placeAt, swapFirst, swapFit, type Narrow, type Plan, type Planner, type SnapKind } from './layout'
+import { companions, fitOn, itemPositions, placeAt, resolveArrangement, stepItem, swapFirst, swapFit, type Narrow, type Plan, type Planner, type SnapKind } from './layout'
 import type { ItemKey, KitchenState, WallId } from './types'
 
 /**
@@ -82,4 +82,56 @@ function swapHolds(trial: SwapTrial | undefined, key: ItemKey, wall: WallId, cm:
 export function grabOf(plan: Plan, key: ItemKey, cm: number): number {
   const p = itemPositions(plan)[key]
   return p ? Math.round((cm - p.center) * 10) / 10 : 0
+}
+
+/** Что принять после «левее / правее»: заплатка состояния и кто прилипает к соседям. */
+export type Nudge = { patch: Partial<KitchenState>; snap: ItemKey[] }
+
+/**
+ * «Левее / правее» на `step` см (кнопки ← → и клавиши): соседи
+ * подстраиваются; упёрся в технику или другой предмет — встаёт вплотную по
+ * ту сторону соседа. `dir` — направление на экране: у левой стены и у
+ * острова ряд идёт справа налево, поэтому наоборот. `null` — двигать некуда.
+ * Чистая функция: экран передаёт заплатку в `apply(patch, snap)`.
+ */
+export function nudgeMove(state: KitchenState, plan: Plan, key: ItemKey, dir: 1 | -1, planner: Planner, step = 5): Nudge | null {
+  const positions = itemPositions(plan)
+  const p = positions[key]
+  if (!p) return null
+  const sign = (p.wall === 'B' || p.wall === 'I' ? -dir : dir) as 1 | -1
+  // Свой верхний: двигается в своём ряду (manualUppers), ширина прежняя.
+  // Порядок низа его не знает — по нему шкаф прыгал через всю стену.
+  if (p.row === 'upper') {
+    const put = (cm: number) => {
+      const { state: next, fit } = placeAt(state, key, p.wall, cm, planner, 0, { w: p.w })
+      return fit?.ok && next !== state ? { patch: next, snap: [] } : null
+    }
+    // На 5 см — без прилипания: placeAt тянет к соседу ближе 5 см обратно.
+    const at = { ...state.at, [key]: p.center + sign * step }
+    const moved = itemPositions(planner({ ...state, at }, []))[key]
+    if (moved && moved.wall === p.wall && moved.w === p.w && Math.abs(moved.center - p.center) >= 1) return { patch: { at }, snap: [] }
+    // Упёрся: встаёт вплотную по ту сторону соседа по верхнему ряду.
+    const ups = Object.entries(positions)
+      .filter(([k, q]) => k !== key && q?.row === 'upper' && q.wall === p.wall && sign * (q.center - p.center) > 0)
+      .map(([, q]) => q!)
+      .sort((a, b) => sign * (a.center - b.center))
+    return ups[0] ? put(ups[0].center + sign * (ups[0].w / 2 + p.w / 2)) : null
+  }
+  const order = resolveArrangement(state.shape, state.arrangement, state.cabinets, state.gaps)
+  const present = new Set(Object.keys(positions) as ItemKey[])
+  const frozen = (except: ItemKey[]) => {
+    const at: NonNullable<KitchenState['at']> = {}
+    for (const [k, q] of Object.entries(positions) as [ItemKey, { center: number }][]) if (!except.includes(k)) at[k] = q.center
+    return at
+  }
+  const at = { ...frozen([key, ...companions(plan, key)]), [key]: p.center + sign * step }
+  const moved = itemPositions(planner({ ...state, arrangement: order, at }, [key]))[key]
+  if (moved && moved.wall === p.wall && Math.abs(moved.center - p.center) >= 1) return { patch: { arrangement: order, at }, snap: [key] }
+  // Упёрся: встаёт вплотную по ту сторону соседа.
+  const list = order[p.wall]
+  let j = list.indexOf(key) + sign
+  while (j >= 0 && j < list.length && !present.has(list[j])) j += sign
+  const n = list[j] ? positions[list[j]] : undefined
+  if (!n) return null
+  return { patch: { arrangement: stepItem(order, key, sign, present), at: { ...frozen([key]), [key]: n.center + sign * (n.w / 2 + p.w / 2) } }, snap: [key] }
 }

@@ -4794,9 +4794,9 @@
     "semantic_hash": ""
   },
   "src/components/kitchen/KitchenPlanner.tsx": {
-    "mtime": 1790795041.503968,
-    "seen": 1790796285.865943,
-    "ast_hash": "951e0d89141f9b6bdf3e90e63f8a050a",
+    "mtime": 1790827869.1159804,
+    "seen": 1790829547.50123,
+    "ast_hash": "51ed522fb8b0de92a0fa7f808d38822f",
     "semantic_hash": ""
   },
   "src/components/kitchen/KitchenPromo.tsx": {
@@ -4836,9 +4836,9 @@
     "semantic_hash": ""
   },
   "src/components/kitchen/three/engine.ts": {
-    "mtime": 1790793826.3880775,
-    "seen": 1790796285.866199,
-    "ast_hash": "7381cf41ed822e3f114009e6673ff1d5",
+    "mtime": 1790827958.75635,
+    "seen": 1790829547.501526,
+    "ast_hash": "fcc09e6a9bd55444595fac248290c0e7",
     "semantic_hash": ""
   },
   "src/components/kitchen/three/materials.ts": {
@@ -4974,9 +4974,9 @@
     "semantic_hash": ""
   },
   ".autopilot/state.js": {
-    "mtime": 1790796455.514425,
-    "seen": 1790803297.626743,
-    "ast_hash": "a3f71d1bd49501cca63f5404b59cc69d",
+    "mtime": 1790827342.8483474,
+    "seen": 1790829547.494412,
+    "ast_hash": "9c61a5ee5819ac2b1064d6729afbe135",
     "semantic_hash": ""
   },
   ".autopilot/sync.py": {
@@ -4992,15 +4992,15 @@
     "semantic_hash": ""
   },
   ".autopilot/dashboard.html": {
-    "mtime": 1790796455.5523343,
-    "seen": 1790803297.6572359,
-    "ast_hash": "e514d3ccc32234054a7bff9c9f9d464a",
+    "mtime": 1790827342.898367,
+    "seen": 1790829547.506071,
+    "ast_hash": "68cc9c17e4bbbd37f9644e256933a2f1",
     "semantic_hash": ""
   },
   ".autopilot/index.html": {
-    "mtime": 1790796455.5523343,
-    "seen": 1790803297.657238,
-    "ast_hash": "e514d3ccc32234054a7bff9c9f9d464a",
+    "mtime": 1790827342.898367,
+    "seen": 1790829547.506072,
+    "ast_hash": "68cc9c17e4bbbd37f9644e256933a2f1",
     "semantic_hash": ""
   },
   "docs/ANDROID_PLAY_UZ.md": {
@@ -6690,9 +6690,9 @@
     "semantic_hash": ""
   },
   "__tests__/kitchen-place.test.ts": {
-    "mtime": 1790799390.2611568,
-    "seen": 1790803297.6283178,
-    "ast_hash": "f39c56d71449713145840120bcf55687",
+    "mtime": 1790826736.2728176,
+    "seen": 1790829547.4950862,
+    "ast_hash": "3470776cec6e2f65142674cf847b856f",
     "semantic_hash": ""
   },
   "__tests__/kitchen-plan-view.test.ts": {
@@ -6732,9 +6732,9 @@
     "semantic_hash": ""
   },
   "src/components/kitchen/PlanView.tsx": {
-    "mtime": 1790795523.2937207,
-    "seen": 1790796285.866,
-    "ast_hash": "f8847eb1b2a193ebd8d7a6834885ded0",
+    "mtime": 1790827572.0928817,
+    "seen": 1790829547.5012858,
+    "ast_hash": "a637880539e743064685d8dd1665a301",
     "semantic_hash": ""
   },
   "src/components/kitchen/planGeom.ts": {
@@ -6750,9 +6750,9 @@
     "semantic_hash": ""
   },
   "src/lib/kitchen/drag.ts": {
-    "mtime": 1790797445.474132,
-    "seen": 1790803297.650128,
-    "ast_hash": "8865d9ea95614e5b8549b40a7d0a7189",
+    "mtime": 1790826725.0827,
+    "seen": 1790829547.502731,
+    "ast_hash": "b76c366188b9cd3ce9f196970ab2ef79",
     "semantic_hash": ""
   },
   ".autopilot/2026-09-29-kitchen-3d-mobile-audit/audit-move.md": {
@@ -6894,9 +6894,9 @@
     "semantic_hash": ""
   },
   "docs/KITCHEN_E2E_UZ.md": {
-    "mtime": 1790780057.84651,
-    "seen": 1790789523.913472,
-    "ast_hash": "fe4935d76b3b96c7b87d2ba75ae99d85",
+    "mtime": 1790827049.5195494,
+    "seen": 1790829547.50687,
+    "ast_hash": "7cfaa77cb7e53cfda4c9dfa92e3340a3",
     "semantic_hash": ""
   },
   "docs/adr/0022-gap-as-module-in-wall-order.md": {
@@ -6954,8 +6954,8 @@
     "semantic_hash": ""
   },
   "e2e/kitchen-screens.spec.ts": {
-    "mtime": 1790792860.641096,
-    "seen": 1790793658.422754,
+    "mtime": 1790826910.5519044,
+    "seen": 1790829547.496989,
     "ast_hash": "9efc76f493bfb09e86e11ee4b7bb7f57",
     "semantic_hash": ""
   },
@@ -7035,6 +7035,18 @@
     "mtime": 1790796349.0816834,
     "seen": 1790803297.6571908,
     "ast_hash": "13ab28ddb0496a84f2dcae28ac7f5e93",
+    "semantic_hash": ""
+  },
+  "e2e/kitchen-round3.spec.ts": {
+    "mtime": 1790828018.2144482,
+    "seen": 1790829547.4969869,
+    "ast_hash": "afd728ee6bfec5ecc7d675dfc222ceb3",
+    "semantic_hash": ""
+  },
+  ".autopilot/2026-09-29-kitchen-3d-pro--wip/handoff-P6-1.md": {
+    "mtime": 1790827314.0993834,
+    "seen": 1790829547.5053,
+    "ast_hash": "2bd187ed36c1213e83ff1e04a2a01d0a",
     "semantic_hash": ""
   }
 }

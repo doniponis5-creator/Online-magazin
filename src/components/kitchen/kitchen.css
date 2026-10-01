@@ -742,6 +742,33 @@ html:has(.kp-photo) .assistant {
   animation: kp-lift 260ms var(--ease-out) both;
 }
 
+/* компьютер: перестановка — нижний ряд той же карточки (P6, 10): всё о выбранном в одном месте */
+.kp-size-card > .kp-move {
+  grid-column: 1 / -1;
+  position: static;
+  flex-wrap: wrap;
+  max-width: none;
+  margin-top: 8px;
+  padding: 8px 0 0;
+  border: 0;
+  border-top: 1px solid var(--kp-line);
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  animation: none;
+}
+
+.kp-size-card > .kp-move .kp-move__name {
+  flex: 1 1 100%;
+  margin-right: 0;
+}
+
+/* закрыть — общий крестик карточки */
+.kp-size-card > .kp-move .kp-move__close {
+  display: none;
+}
+
 @keyframes kp-lift {
   from {
     opacity: 0;
@@ -760,12 +787,14 @@ html:has(.kp-photo) .assistant {
   margin-right: 4px;
   overflow: hidden;
   font: 700 13px/1.25 var(--font);
-  white-space: nowrap;
+  /* название целиком, переносом: «Бутылочница 22 с…» не обрезать (P6) */
+  overflow-wrap: anywhere;
 }
 
 .kp-move__name small {
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .kp-move__name small {
@@ -2737,6 +2766,13 @@ html.kp-lock body {
 /* ───────── планшет и телефон ───────── */
 
 @media (max-width: 1100px) {
+  .kp {
+    --kp-panel-w: 360px;
+  }
+}
+
+/* ноутбук 1220…1366: панель 360 — 3D с колонкой плана не уже половины конструктора (P6, 9) */
+@media (min-width: 1101px) and (max-width: 1366px) {
   .kp {
     --kp-panel-w: 360px;
   }
@@ -5043,19 +5079,55 @@ button.kp-opt__more {
   display: none;
 }
 
+.kp-stage.has-col {
+  /* ширина колонки плана; --kp-col только для горизонтальных свойств (width, left), не для высоты */
+  --kp-col: 320px;
+}
+
+/* P6, 9 — ноутбук 1220…1366 (панель 360): 3D — главный вид, не уже половины конструктора
+   (сцена + панель + поля .kp-work 2 × 24): колонка ≤ (сцена − панель − 60) / 2, 100 % — ширина сцены.
+   На 1440 колонка прежняя 320: уже — план мельче, и «мойка на 30 см под палец» (приёмка P1) уходит на 3 см */
+@media (min-width: 1101px) and (max-width: 1366px) {
+  .kp-stage.has-col {
+    --kp-col: min(320px, calc((100% - var(--kp-panel-w) - 60px) / 2));
+  }
+}
+
+/* план — сверху колонки под строкой инструментов, высота — по чертежу (aspect-ratio из PlanView):
+   чертёж вписан по высоте, ниже в той же колонке — карточка выбранного (P6, 9–10) */
 .kp-stage.has-col .kp-plan {
+  top: calc(var(--kp-tools-h, 44px) + 12px);
   right: auto;
-  width: 320px;
-  border-right: 1px solid var(--kp-line);
+  bottom: auto;
+  width: var(--kp-col);
+  aspect-ratio: var(--kp-plan-ar, 1.2);
+  max-height: calc(100% - var(--kp-tools-h, 44px) - 12px - 170px);
+  border: solid var(--kp-line);
+  border-width: 1px 1px 1px 0;
+  border-radius: 0 12px 12px 0;
 }
 
 .kp-stage.has-col .kp-scene {
-  left: 320px;
+  left: var(--kp-col);
 }
 
 /* ценники и размеры привязаны к холсту, не к сцене: иначе с колонкой плана они висели над планом (слепая приёмка) */
 .kp-stage.has-col .kp-tags {
-  left: 320px;
+  left: var(--kp-col);
+}
+
+/* карточка выбранного — в колонке под планом, не над 3D: выбранный шкаф ею не закрыт (P6, 8); место ставит placeCard */
+.kp-stage.has-col .kp-size-card {
+  width: calc(var(--kp-col) - 16px);
+  max-width: none;
+}
+
+/* пустое место без карточки: полоса «+ ← →» — тоже в колонке */
+.kp-stage.has-col .kp-sel > .kp-move {
+  left: 8px;
+  bottom: 8px;
+  max-width: calc(var(--kp-col) - 16px);
+  flex-wrap: wrap;
 }
 
 .kp-stage.has-col .kp-tools {
@@ -5160,17 +5232,8 @@ button.kp-opt__more {
 }
 
 .kp-stage.has-col .kp-plan {
-  padding-top: calc(var(--kp-tools-h, 44px) + 12px);
-}
-
-/* P4, 6: полоса перемещения внизу сцены идёт и по колонке плана — план и «+» встают над ней */
-.kp-stage.has-col:has(.kp-move) .kp-plan {
-  padding-bottom: 76px;
-}
-
-.kp-stage.has-col:has(.kp-move) .kp-plan__add,
-.kp-stage.has-col:has(.kp-move) .kp-plan__fit {
-  bottom: 80px;
+  /* колонка начинается под строкой инструментов (top), отступ сверху не нужен */
+  padding-top: 0;
 }
 
 /* «Показать всё» — слева внизу плана, пока план сдвинут или приближен (P4, 7) */
