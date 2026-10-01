@@ -1,5 +1,5 @@
 import { WINDOW_GAP } from '@/lib/kitchen/dims'
-import { DEPTH, UPPER_DEPTH, type Plan } from '@/lib/kitchen/layout'
+import { DEPTH, neighbourCorners, UPPER_DEPTH, type Plan } from '@/lib/kitchen/layout'
 import { modulesOf, type DimsKind, type SpecBox, type SpecData, type SpecFront, type SpecRun } from '@/lib/kitchen/spec'
 import type { KitchenAppliance, SlotKind } from '@/lib/kitchen/types'
 import { rectOf } from './planGeom'
@@ -95,6 +95,11 @@ class Pen {
   rect(x: number, y: number, w: number, h: number, cls: string) {
     this.out.push(`<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" class="${cls}"/>`)
     this.grow(x, y, x + w, y + h)
+  }
+  /** Многоугольник (повёрнутый остров): точки [x, y]. */
+  poly(pts: number[][], cls: string) {
+    this.out.push(`<polygon points="${pts.map(([x, y]) => `${n(x)},${n(y)}`).join(' ')}" class="${cls}"/>`)
+    for (const [x, y] of pts) this.grow(x, y, x, y)
   }
   line(x1: number, y1: number, x2: number, y2: number, cls: string) {
     this.out.push(`<line x1="${n(x1)}" y1="${n(y1)}" x2="${n(x2)}" y2="${n(y2)}" class="${cls}"/>`)
@@ -202,7 +207,7 @@ export function elevationSvg(
   // угол: торец углового шкафа соседней стены (то же правило, что в списке для мастера)
   const mods = [...run.modules].sort((a, b) => a.x - b.x)
   const { upper } = modulesOf(run)
-  const corners = island ? [] : cornerZones(L, mods, run.gaps)
+  const corners = island ? [] : cornerZones(L, mods, run.gaps, run.corners)
   for (const z of corners) {
     p.hatch(z.x0, Y(heights.counter), z.x1, Y(0))
     if (upper.length) p.hatch(z.up[0], Y(heights.upperTop), z.up[1], Y(heights.upperBottom))
@@ -223,7 +228,8 @@ export function elevationSvg(
 
   // низ вдоль пола: каждый модуль и угол; ниже — общая длина
   const round = (v: number) => Math.round(v * 10) / 10
-  const lowCuts = [...new Set([0, L, ...mods.flatMap((m) => [round(m.x), round(m.x + m.w)])])].sort((a, b) => a - b)
+  // края угла — тоже отметки (в пустой комнате угол не всегда кончается у модуля)
+  const lowCuts = [...new Set([0, L, ...mods.flatMap((m) => [round(m.x), round(m.x + m.w)]), ...corners.flatMap((z) => [round(z.x0), round(z.x1)])])].sort((a, b) => a - b)
   const chainY = Y(0) + fs * 1.9
   p.chainX(lowCuts, chainY, 'low')
   for (const z of corners) p.text((z.x0 + z.x1) / 2, chainY + fs * 0.75, labels.corner, 'el-cap', { size: fs * 0.72 })
@@ -395,7 +401,18 @@ export type CornerZone = { x0: number; x1: number; up: [number, number] }
  * конце, у C — в начале). Верхний ряд соседней стены заходит туда на глубину
  * верхнего шкафа (`UPPER_DEPTH`) от стены.
  */
-export function cornerZones(length: number, modules: { x: number; w: number }[], empty: { x: number; w: number; row?: string }[] = []): CornerZone[] {
+export function cornerZones(
+  length: number,
+  modules: { x: number; w: number }[],
+  empty: { x: number; w: number; row?: string }[] = [],
+  ends?: ('start' | 'end')[],
+): CornerZone[] {
+  // пустая комната: угол — только там, где у стены A есть шкаф (`neighbourCorners`), а не любой пустой конец
+  if (ends) {
+    return ends.map((e) =>
+      e === 'end' ? { x0: length - DEPTH, x1: length, up: [length - UPPER_DEPTH, length] } : { x0: 0, x1: DEPTH, up: [0, UPPER_DEPTH] },
+    )
+  }
   // пустое место (run.gaps) — занятая длина стены, а не угол (P4)
   const mods = [...modules, ...empty.filter((g) => g.row !== 'upper')].sort((a, b) => a.x - b.x)
   const gaps: [number, number][] = []
@@ -424,6 +441,8 @@ export type PlanLabels = {
   passage: string
   island: string
   depths: (d: PlanDepths) => string
+  /** остров повёрнут на deg градусов — вместо привязок острова */
+  turned?: (deg: number) => string
 }
 
 export type PlanOpts = {
@@ -446,6 +465,13 @@ export function planSvg(plan: Plan, labels: PlanLabels, opts: PlanOpts): string 
   const p = new Pen(fs)
   const T = 10
   const round = (v: number) => Math.round(v * 10) / 10
+  // углы прямоугольника ряда (вдоль ряда x…x+w, вглубь d0…d1) на плане — для повёрнутого острова
+  const cornersOf = (run: Plan['runs'][number], x: number, w: number, d0: number, d1: number) => {
+    const cos = Math.cos(run.rot)
+    const sin = Math.sin(run.rot)
+    const pt = (x: number, z: number) => [run.ox + x * cos + z * sin, run.oz - x * sin + z * cos]
+    return [pt(x, d0), pt(x + w, d0), pt(x + w, d1), pt(x, d1)]
+  }
   const wallRuns = plan.runs.filter((r) => r.wall)
   const win = plan.window
   const extent = Math.max(
@@ -453,7 +479,11 @@ export function planSvg(plan: Plan, labels: PlanLabels, opts: PlanOpts): string 
     ...wallRuns.filter((r) => r.id !== 'A').map((r) => r.length),
     win?.wall === 'left' ? win.at + win.w / 2 + 20 : 0,
   )
-  const D = plan.island ? Math.max(extent, plan.island.z + ov + 20) : extent
+  // повёрнутый остров: столешница — многоугольником, привязки острова не ставим
+  const turned = plan.island?.turn ?? 0
+  const islRun = plan.runs.find((r) => !r.wall)
+  const islTopPts = turned && plan.island && islRun && islTop ? cornersOf(islRun, 0, plan.island.w, -ov, islTop - ov) : null
+  const D = plan.island ? Math.max(extent, islTopPts ? Math.max(...islTopPts.map((c) => c[1])) + 20 : plan.island.z + ov + 20) : extent
 
   // стены
   const u = plan.shape === 'u'
@@ -466,12 +496,18 @@ export function planSvg(plan: Plan, labels: PlanLabels, opts: PlanOpts): string 
   // остров со столешницей и свесом
   const isl = plan.island
   // столешница острова: к кухне — как у стены, к стульям — свес
-  if (isl && islTop) p.rect(isl.x, isl.z - (islTop - ov), isl.w, islTop, 'pl-top')
+  if (islTopPts) p.poly(islTopPts, 'pl-top')
+  else if (isl && islTop) p.rect(isl.x, isl.z - (islTop - ov), isl.w, islTop, 'pl-top')
   const TECH = new Set(['dishwasher', 'washer', 'fridge', 'oven', 'tall'])
   for (const run of plan.runs) {
     for (const m of run.modules) {
+      const cls = TECH.has(m.kind) ? 'pl-tech' : 'pl-box'
+      if (!run.wall && turned) {
+        p.poly(cornersOf(run, m.x, m.w, 0, DEPTH), cls)
+        continue
+      }
       const r = rectOf(run, m.x, m.w, 0, DEPTH)
-      p.rect(r.x, r.y, r.w, r.h, TECH.has(m.kind) ? 'pl-tech' : 'pl-box')
+      p.rect(r.x, r.y, r.w, r.h, cls)
     }
     if (!run.wall) continue
     for (const up of run.uppers.filter((u) => u.kind !== 'none')) {
@@ -513,8 +549,15 @@ export function planSvg(plan: Plan, labels: PlanLabels, opts: PlanOpts): string 
     p.text(x + fs * 0.75, DEPTH / 2, fmt(DEPTH), 'el-num', { rotate: true, data: { dim: 'depth' } })
   }
 
+  // повёрнутый остров: вместо привязок — подпись с углом посередине
+  if (isl && turned) {
+    const cx = isl.x + isl.w / 2
+    const cz = isl.z - DEPTH + isl.d / 2
+    p.text(cx, cz, labels.island, 'el-cap', { size: fs * 0.9 })
+    p.text(cx, cz + fs * 1.3, labels.turned ? labels.turned(turned) : `${turned}°`, 'el-cap', { size: fs * 0.8 })
+  }
   // остров: привязка от левой стены, длина, глубина, проход
-  if (isl) {
+  if (isl && !turned) {
     const y = isl.z + ov + fs * 1.9
     p.chainX([0, round(isl.x), round(isl.x + isl.w)], y, 'island', false)
     p.text(isl.x + isl.w / 2, isl.z - DEPTH / 4, labels.island, 'el-cap', { size: fs * 0.9 })
@@ -557,6 +600,58 @@ export function islandOverhang(runs: SpecRun[]): number | undefined {
   return isl && wall ? isl.depth - wall.depth : undefined
 }
 
+/**
+ * Пустая комната: те же строки «Низ» и «Верх», но с пустыми местами — «пусто N»,
+ * чтобы сумма по-прежнему сходилась с длиной стены. Пустое место верха под
+ * окном — «окно N».
+ */
+function freeMakerLines(lines: string[], plan: Plan, run: Plan['runs'][number], mods: Plan['runs'][number]['modules'], zones: CornerZone[], items: MakerItems, t: KitchenTexts) {
+  const L = run.length
+  const start = zones.find((z) => z.x0 < 0.5)
+  const end = zones.find((z) => z.x1 > L - 0.5 && z !== start)
+  const nameOf = (m: Plan['runs'][number]['modules'][number]) => {
+    let name = t.modules[m.kind]
+    if (m.kind === 'hob' && m.oven && items.oven !== null) name = t.ovenUnder
+    if (m.stove) name = t.stove.name
+    if (m.kind === 'fridge' && items.fridge) name = `${name} (${items.fridge.brand || items.fridge.name})`
+    return name
+  }
+  /** Ряд слева направо: угол, предметы, пустые места между ними — сумма = длина стены. */
+  const row = (spans: { x: number; w: number; name: string }[], from: number, to: number, empty: (x0: number, x1: number) => string) => {
+    const out: string[] = []
+    let at = from
+    for (const s of spans) {
+      if (s.x - at > 0.5) out.push(`${empty(at, s.x)} ${Math.round(s.x - at)}`)
+      out.push(`${s.name} ${Math.round(s.w)}`)
+      at = Math.max(at, s.x + s.w)
+    }
+    if (to - at > 0.5) out.push(`${empty(at, to)} ${Math.round(to - at)}`)
+    return out
+  }
+  lines.push(t.wall(run.id, Math.round(L)))
+  const low = row(
+    mods.map((m) => ({ x: m.x, w: m.w, name: nameOf(m) })),
+    start ? start.x1 : 0,
+    end ? end.x0 : L,
+    () => t.upperEmpty,
+  )
+  lines.push(`  ${t.lower}: ${[...(start ? [`${t.drawing.corner} ${Math.round(start.x1 - start.x0)}`] : []), ...low, ...(end ? [`${t.drawing.corner} ${Math.round(end.x1 - end.x0)}`] : [])].join(' · ')}`)
+  const ups = [...run.uppers].filter((u) => u.kind !== 'none').sort((a, b) => a.x - b.x)
+  if (run.wall && ups.length) {
+    const win = run.id === 'A' && plan.window?.wall === 'back' ? [plan.window.at - plan.window.w / 2, plan.window.at + plan.window.w / 2] : null
+    const upFrom = start ? start.up[1] : 0
+    const upTo = end ? end.up[0] : L
+    const up = row(
+      ups.map((u) => ({ x: u.x, w: u.w, name: t.uppers[u.kind] })),
+      upFrom,
+      upTo,
+      (x0, x1) => (win && x0 >= win[0] - 0.5 && x1 <= win[1] + 0.5 ? t.uppers.none : t.upperEmpty),
+    )
+    lines.push(`  ${t.upper}: ${[...(start ? [`${t.drawing.corner} ${Math.round(start.up[1] - start.up[0])}`] : []), ...up, ...(end ? [`${t.drawing.corner} ${Math.round(end.up[1] - end.up[0])}`] : [])].join(' · ')}`)
+  }
+  lines.push('')
+}
+
 /** Техника без размеров в каталоге (U11): названия мест. */
 export const approxNames = (list: KitchenAppliance[], t: KitchenTexts) => list.filter((a) => !a.sizeKnown).map((a) => t.slots[a.slot])
 
@@ -576,7 +671,11 @@ export function makerList(plan: Plan, items: MakerItems, t: KitchenTexts, inProj
   for (const run of plan.runs) {
     const mods = [...run.modules].sort((a, b) => a.x - b.x)
     // угол — тем же правилом, что штриховка на развёртке
-    const zones = run.wall ? cornerZones(run.length, mods, run.gaps) : []
+    const zones = run.wall ? cornerZones(run.length, mods, run.gaps, neighbourCorners(plan, run)) : []
+    if (plan.free) {
+      freeMakerLines(lines, plan, run, mods, zones, items, t)
+      continue
+    }
     const cornerAt = (end: boolean, w: (z: CornerZone) => number) =>
       zones.filter((z) => (z.x1 > run.length - 0.5) === end && (end || z.x0 < 0.5)).map((z) => `${t.drawing.corner} ${Math.round(w(z))}`)
     const low = (z: CornerZone) => z.x1 - z.x0

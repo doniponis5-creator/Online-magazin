@@ -3,7 +3,7 @@
  * чертежа и экрана. Без three.js: экран и чертёж берут числа отсюда напрямую,
  * без загрузки 3D. Поменял число здесь — поменялось везде; рядом его не переписывать.
  */
-import type { HoodKind } from './types'
+import type { DiningSeats, HoodKind } from './types'
 
 /** Цоколь (ножки с планкой). */
 export const PLINTH = 10
@@ -32,9 +32,16 @@ export const STOVE_LEVEL = 1.5
 /** Проём встраиваемой ПММ: от пола до низа столешницы; ножки машины добирают ещё до 5 см. */
 export const DW_OPENING = { h: BASE_H, hMax: BASE_H + 5 }
 
-/** Колонна с духовкой не ниже 160 см, а со встраиваемой микроволновкой над духовкой — 200. */
+/**
+ * Нижний шкаф колонны с духовкой — от пола до духовки, см: по умолчанию 83
+ * (духовка на уровне глаз), покупатель может сделать его ниже или выше.
+ */
+export const TALL_BASE = { min: 40, max: 110, base: 83 }
+/** Колонна с духовкой не ниже 160 см, а со встраиваемой микроволновкой над духовкой — 200 (при нижнем шкафе 83 см). */
 export const TALL_MIN = { oven: 160, withMicrowave: 200 }
-export const tallMin = (builtInMicrowave: boolean): number => (builtInMicrowave ? TALL_MIN.withMicrowave : TALL_MIN.oven)
+/** Не ниже: духовка (и микроволновка) должны влезть над нижним шкафом `base`, см. */
+export const tallMin = (builtInMicrowave: boolean, base: number = TALL_BASE.base): number =>
+  (builtInMicrowave ? TALL_MIN.withMicrowave : TALL_MIN.oven) + (base - TALL_BASE.base)
 
 /** Высокие модули: под окно не встают, столешницу прерывают. */
 const TALL_KINDS: ReadonlySet<string> = new Set(['fridge', 'tall', 'pantry'])
@@ -54,7 +61,28 @@ export const hoodNorm = (gas: boolean): number => (gas ? HOOD_OVER.gas : HOOD_OV
  */
 export const HOOD_BELOW = { telescopic: 5, insert: 0.5 }
 export const hoodBelow = (kind: HoodKind | undefined): number | null =>
-  kind === 'chimney' || kind === 'inclined' ? null : kind === 'telescopic' ? HOOD_BELOW.telescopic : HOOD_BELOW.insert
+  kind === 'chimney' || kind === 'inclined' || kind === 'flat' ? null : kind === 'telescopic' ? HOOD_BELOW.telescopic : HOOD_BELOW.insert
+
+/**
+ * Плоская (подвесная) вытяжка, см: корпус висит под своим верхним шкафом, низ —
+ * на норме над панелью; шкаф над ней короче соседей, ряд не поднимается.
+ * Размеры типовые (у моделей высота 8–15, глубина 45–50): в карточке их нет.
+ */
+export const HOOD_FLAT = { h: 12, d: 47 }
+
+/**
+ * Обеденная группа (только для примерки, в сумму не входит), см: стол Ш×Г,
+ * стульев вдоль каждой длинной стороны (`long`) и в каждом торце (`ends`).
+ */
+export const DINING: Record<DiningSeats, { w: number; d: number; long: number; ends: number }> = {
+  4: { w: 120, d: 80, long: 2, ends: 0 },
+  6: { w: 180, d: 90, long: 3, ends: 0 },
+  8: { w: 200, d: 100, long: 3, ends: 1 },
+}
+/** Стул: от края стола до спинки отодвинутого стула, см. */
+export const DINING_CHAIR = 55
+/** Проход от кухни (фасадов, стульев острова) до обеденной группы, см. */
+export const DINING_AISLE = 90
 
 /** Планка у глухой части углового шкафа (низ и верх). */
 export const CORNER_STRIP = 3

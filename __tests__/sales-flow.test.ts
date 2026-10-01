@@ -397,3 +397,116 @@ describe('без кодовых слов: «да» на «Оформляем?» 
     expect(shortName('Электро Эндуро мини')).toBe('Электро Эндуро мини')
   })
 })
+
+describe('аудит 28–29.09: звонок обещан — заявка ушла; номер не спрашиваем; язык', () => {
+  const wa = (key: string) => ({ key, orderSource: 'Заказ из WhatsApp', leadChannel: 'whatsapp' as const, known: { phone: '+996555000050' } })
+
+  it('«Сизге чалып түшүндүрүп берелиби?» → «Обаа» / «Оа» — заявка на звонок (flow)', async () => {
+    const { respond } = await import('@/lib/assistant/respond')
+    for (const [q, a, key] of [
+      ['Бул боюнча так маалымат жок. Сизге чалып түшүндүрүп берелиби?', 'Обаа', 'wa:c1'],
+      ['Так күнүн айта албайм. Сизге чалып берейинби?', 'Оа', 'wa:c2'],
+      ['Экран алмаштыруу боюнча тактайм. Сизге чалып беришин сурайынбы?', 'Макул', 'wa:c3'],
+    ] as const) {
+      const r = await respond(wa(key), [{ role: 'assistant', text: q }, { role: 'user', text: a }], 'ky', null)
+      expect(r.source, a).toBe('flow')
+      expect(r.handoff, a).toBe(true)
+    }
+  })
+
+  it('номер «чтобы позвонили» — не заказ', async () => {
+    const { respond } = await import('@/lib/assistant/respond')
+    const r = await respond(wa('wa:c4'), [{ role: 'assistant', text: 'Руководство сизге байланышуусу үчүн номериңизди калтырып коюңуз.' }, { role: 'user', text: '0220015314' }], 'ky', null, undefined, [product.id])
+    expect(r.text).not.toContain(shortName(product.nameRu))
+  })
+
+  it('язык: «Пул тушдими», «нечпул шулар», «Nimaligiga qiziqdim» — узбекский; «Айлык тушпой атат» — кыргызский', () => {
+    expect(detectLang('Пул тушдими', 'ru')).toBe('uz')
+    expect(detectLang('Ассалом алейкум ука нечпул шулар?', 'ru')).toBe('uz')
+    expect(detectLang('Nimaligiga qiziqdim', 'ru')).toBe('uz')
+    expect(talkLang([{ role: 'user', text: 'Айлык тушпой атат тушсоле котором' }], 'ru')).toBe('ky')
+    expect(talkLang([{ role: 'user', text: 'Холодильник' }], 'ru')).toBe('ru')
+    expect(talkLang([{ role: 'user', text: 'Стиральный машина нужна' }], 'ru')).toBe('ru')
+  })
+
+  it('«[Ответ на фото: …]» не сбивает язык', () => {
+    expect(talkLang([{ role: 'user', text: '[Ответ на фото: Посудомоечная машина, белая]\nНима бу?' }], 'ru')).toBe('uz')
+  })
+})
+
+describe('аудит 30.09: «макул, но сначала спрошу» — не заявка; язык; отказ', () => {
+  it('«Макул эжемен сурап көрөйүн» — не согласие на звонок', () => {
+    for (const q of ['Макул эжемен сурап көрөйүн', 'Хорошо, посоветуюсь с женой', 'Да, спрошу у мамы', 'Макул, апам менен кеңешейин']) {
+      expect(AFFIRM.test(q), q).toBe(false)
+    }
+    for (const q of ['Макул', 'Ооба', 'Да', 'хоп']) expect(AFFIRM.test(q), q).toBe(true)
+  })
+
+  it('«Кыскасы в наличии бар ээ? …» — кыргызский, одно русское «в наличии» не решает', () => {
+    const q = 'Кыскасы в наличии бар ээ? Мен размерлерин билейин. Адресинер кандай?'
+    expect(talkLang([{ role: 'user', text: q }], 'ru')).toBe('ky')
+  })
+
+  it('«QR код боса ям болорад» без примет — язык последнего ответа бота (кыргызский), не русский', () => {
+    const turns = [
+      { role: 'user' as const, text: 'Карта номериларди ташапкойин' },
+      { role: 'assistant' as const, text: 'Төлөм сайтта буйрутма бергенден кийин QR-код же банк тиркемеси аркылуу жүргүзүлөт. Кайсы товарды карайын дедиңиз эле?' },
+      { role: 'user' as const, text: 'QR код боса ям болорад' },
+    ]
+    expect(talkLang(turns, 'ru')).toBe('ky')
+  })
+
+  it('«А жок рахмат» — повторно «чалып берейинби?» не предлагаем', async () => {
+    vi.resetModules()
+    vi.doMock('@/lib/assistant/reply', async (orig) => ({
+      ...(await orig<typeof import('@/lib/assistant/reply')>()),
+      answer: async () => ({ text: 'Макул, ыңгайлуу болгондо жазыңыз. Бир суроо болсо, чалып берейинби?', products: [], source: 'gemini' as const }),
+    }))
+    const { respond } = await import('@/lib/assistant/respond')
+    const wa = { key: 'wa:d1', orderSource: 'Заказ из WhatsApp', leadChannel: 'whatsapp' as const, known: { phone: '+996555000051' } }
+    const r = await respond(wa, [{ role: 'assistant', text: 'Тариздейлиби?' }, { role: 'user', text: 'А жок рахмат' }], 'ky', null)
+    expect(r.text).toBe('Макул, ыңгайлуу болгондо жазыңыз.')
+    vi.doUnmock('@/lib/assistant/reply')
+    vi.resetModules()
+  })
+
+  it('«Родной», «укам» без вопроса — бот молчит', async () => {
+    const { respond } = await import('@/lib/assistant/respond')
+    const wa = { key: 'wa:d2', orderSource: 'Заказ из WhatsApp', leadChannel: 'whatsapp' as const, known: { phone: '+996555000052' } }
+    for (const q of ['Радной', 'Родной', 'Укам']) {
+      const r = await respond(wa, [{ role: 'user', text: q }], 'ru', null)
+      expect(r.silent, q).toBe(true)
+    }
+  })
+})
+
+describe('аудит 01.10: вопрос после «макул» — не звонок; жалоба доходит до руководства', () => {
+  const wa = (key: string) => ({ key, orderSource: 'Заказ из WhatsApp', leadChannel: 'whatsapp' as const, known: { phone: '+996555000060' } })
+
+  it('«Макул мен 9 жаштамын чоңдору барбы» на «Сизге чалып берейинби?» — заявки нет, отвечает модель', async () => {
+    vi.resetModules()
+    vi.doMock('@/lib/assistant/reply', async (orig) => ({
+      ...(await orig<typeof import('@/lib/assistant/reply')>()),
+      answer: async () => ({ text: 'Чоңураагы бар: Мотоцикл спорт 22 100 сом. Тариздейлиби?', products: [], source: 'gemini' as const }),
+    }))
+    const { respond } = await import('@/lib/assistant/respond')
+    const r = await respond(wa('wa:e1'), [{ role: 'assistant', text: 'Чоң моделдер тууралуу руководство тактап берет. Сизге чалып берейинби?' }, { role: 'user', text: 'Макул мен 9 жаштамын чоңдору барбы' }], 'ky', null)
+    expect(r.source).toBe('gemini')
+    expect(r.handoff).toBeFalsy()
+    vi.doUnmock('@/lib/assistant/reply')
+    vi.resetModules()
+  })
+
+  it('«Хозир руководствога етказаман…» — заявка уходит (handoff)', async () => {
+    vi.resetModules()
+    vi.doMock('@/lib/assistant/reply', async (orig) => ({
+      ...(await orig<typeof import('@/lib/assistant/reply')>()),
+      answer: async () => ({ text: 'Тушундим. Хозир руководствога етказаман, сизга хабар беришади.', products: [], source: 'gemini' as const, audience: 'customer' as const }),
+    }))
+    const { respond } = await import('@/lib/assistant/respond')
+    const r = await respond(wa('wa:e2'), [{ role: 'user', text: 'Стиралкани 3 кундан бери карамеди, нима килелик' }], 'ru', null)
+    expect(r.handoff).toBe(true)
+    vi.doUnmock('@/lib/assistant/reply')
+    vi.resetModules()
+  })
+})

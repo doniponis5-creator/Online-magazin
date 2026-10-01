@@ -32,11 +32,12 @@ export type Chosen = Partial<Record<SlotKind, KitchenAppliance | null>>
  * столешницу; underHob — духовка уехала под варочную панель; inStove — выбрана
  * плита, духовка в ней: своей строки с ценой нет, не в сумме; dropped — не
  * поместилась; typical — товара нет, в 3D типовая модель; noStock — слот
- * нужен (покупатель его не выключал), но в каталоге пусто, в 3D его нет.
+ * нужен (покупатель его не выключал), но в каталоге пусто, в 3D его нет;
+ * unplaced — пустая комната: выбрана, но на стену её не поставили.
  */
-export type ItemStatus = 'placed' | 'counter' | 'underHob' | 'inStove' | 'dropped' | 'typical' | 'noStock'
+export type ItemStatus = 'placed' | 'counter' | 'underHob' | 'inStove' | 'dropped' | 'typical' | 'noStock' | 'unplaced'
 export type ProjectItem = { slot: SlotKind; appliance: KitchenAppliance | null; status: ItemStatus; inTotal: boolean }
-export type OrderPlan = Pick<Plan, 'dropped' | 'ovenMovedUnderHob'>
+export type OrderPlan = Pick<Plan, 'dropped' | 'ovenMovedUnderHob' | 'unplaced'>
 
 export function chosenItems(picks: KitchenState['picks'], appliances: readonly KitchenAppliance[]): Chosen {
   const out: Chosen = {}
@@ -88,6 +89,9 @@ export function planInputOf(s: KitchenState, chosen: Chosen, snap?: ItemKey[]): 
     hood: hood ? { w: hood.w } : null,
     ...(hob?.stove ? { stove: { w: hob.w, h: hob.h, d: hob.d } } : {}),
     ...(snap ? { snap } : {}),
+    ...(s.free ? { free: s.free } : {}),
+    ...(s.dining ? { dining: s.dining, ...(s.diningTurn ? { diningTurn: s.diningTurn } : {}) } : {}),
+    ...(s.shape === 'island' && s.islandTurn ? { islandTurn: s.islandTurn } : {}),
   }
 }
 
@@ -110,6 +114,11 @@ export function projectItems(state: KitchenState, plan: OrderPlan, appliances: r
       continue
     }
     const a = chosen[slot]
+    // пустая комната: выбрана, но на стене её нет — не в 3D и не в сумме
+    if (a !== null && plan.unplaced?.includes(slot)) {
+      out.push({ slot, appliance: a ?? null, status: 'unplaced', inTotal: false })
+      continue
+    }
     if (a === null) {
       // выключен покупателем или по умолчанию не ставится — «не нужно»;
       // а нужный слот без товара — честное «нет в наличии» (истории 37, 42)

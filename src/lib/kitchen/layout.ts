@@ -8,9 +8,11 @@ import {
   type BaseFront,
   type Cabinet,
   type CabinetId,
+  type DiningSeats,
   type FixedItem,
   type Gap,
   type GapId,
+  type FreeRoom,
   type HoodKind,
   type ItemKey,
   type KitchenAppliance,
@@ -23,7 +25,7 @@ import {
   type WallId,
 } from './types'
 import { baseKey } from './fronts'
-import { CARCASS_D, counterTop, FRONT_T, hoodBelow, hoodNorm, isTall, UPPER_BOTTOM, UPPER_CARCASS_D, up5 } from './dims'
+import { CARCASS_D, counterTop, DINING, DINING_AISLE, DINING_CHAIR, FRONT_T, hoodBelow, hoodNorm, isTall, UPPER_BOTTOM, UPPER_CARCASS_D, up5 } from './dims'
 
 /**
  * Раскладка кухни по стенам — как её сделал бы мебельщик.
@@ -170,7 +172,10 @@ export type Plan = {
    * это товар). Вытяжка над панелью под окном — `{ item: 'hob', slot: 'hood' }`.
    */
   dropped: Dropped[]
-  island?: { x: number; z: number; w: number; d: number }
+  /** turn — остров повёрнут на столько градусов (`islandTurn`); x, z, w, d — как до поворота */
+  island?: { x: number; z: number; w: number; d: number; turn?: number }
+  /** обеденная группа (только для примерки): середина x, z, см; rot 90 — стол вдоль Z */
+  dining?: DiningPlace
   /** духовку хотели в пенал или в свой шкаф, а она встала под варочную панель */
   ovenMovedUnderHob?: boolean
   /** техника шире своего места: w — ширина техники, room — ширина места, см */
@@ -181,6 +186,10 @@ export type Plan = {
   hoodHeight?: { over: number; gas: boolean }
   /** отдельностоящая плита встала: её габариты, см, и стена */
   stove?: { w: number; h: number; d: number; wall: RunId }
+  /** «Пустая комната»: между модулями — пустое место, шкафов по правилам нет */
+  free?: true
+  /** пустая комната: выбранная техника, которую не поставили на стену, — не в 3D и не в сумме */
+  unplaced?: SlotKind[]
 }
 
 /**
@@ -256,7 +265,21 @@ export type PlanInput = {
    * `[]` — места заморожены и никто не прилипает.
    */
   snap?: ItemKey[]
+  /** «Пустая комната» (PRO): раскладка `planFree`, без шкафов по правилам */
+  free?: FreeRoom
+  /** обеденный стол со стульями (только для примерки) */
+  dining?: DiningSeats
+  /** остров повёрнут, градусы */
+  islandTurn?: number
+  /** обеденный стол повёрнут, градусы */
+  diningTurn?: number
 }
+
+/**
+ * Обеденная группа на полу, см: середина x, z; rot — поворот стола, градусы
+ * (сам встал 0 или 90 + поворот покупателя `turn`); w×d — стол.
+ */
+export type DiningPlace = { x: number; z: number; rot: number; turn: number; seats: DiningSeats; w: number; d: number; long: number; ends: number }
 
 type Item =
   | {
@@ -452,14 +475,40 @@ type Placing = {
   canSnap: (key?: ItemKey) => boolean
 }
 
+/**
+ * Свой шкаф ≥ HOB_SIDE у варочной — сам столешница (P4), запаса между ними нет. Выпадает —
+ * между ними снова запас, как если бы шкафа там не было (как в `wallItems` без правила P4):
+ * иначе варочная оставалась без столешницы сбоку.
+ */
+function hobGapBack(items: Item[], victim: Item): Item[] {
+  const idx = items.indexOf(victim)
+  for (const dir of [-1, 1] as const) {
+    const j = idx + dir
+    const between = items[j] && isFill(items[j])
+    const n = items[between ? j + dir : j]
+    if (!n || isFill(n) || n.kind !== 'hob') continue
+    const out = items.slice()
+    const fill: Item = { fill: 1, min: HOB_SIDE, prefer: 'drawers', role: 'work' }
+    if (between) out[j] = fill
+    else out.splice(dir === -1 ? idx : idx + 1, 0, fill)
+    return out
+  }
+  return items
+}
+
 function place(length: number, start: number, seq: Sequence, dropped: Dropped[], how: Placing): { modules: LaidModule[]; items: Item[] } {
   let items = seq.items
   const order: FixedItem[] = ['pantry2', 'pantry', 'washer', 'dishwasher', 'oven', 'tall', 'fridge']
   const room = length - start
   /** measured — по какому списку считать нехватку (для мойки и плиты — по суженному) */
   const drop = (victim: ItemKey, measured: Item[] = items) => {
+    let victimItem = items.find((i) => !isFill(i) && i.item === victim) as Solid
+    // свой шкаф ≥ HOB_SIDE у варочной: без него у варочной снова запас (P4) — и нехватка считается с ним
+    if (measured === items && isCabinet(victim) && victimItem.w >= HOB_SIDE) {
+      items = measured = hobGapBack(items, victimItem)
+      victimItem = items.find((i) => !isFill(i) && i.item === victim) as Solid
+    }
     const fixed = measured.reduce((s, i) => s + sizeOf(i), 0)
-    const victimItem = items.find((i) => !isFill(i) && i.item === victim) as Solid
     // пустое место тоже записывается: иначе оно выпадало молча, и постановка «съедала» его без предупреждения (ревью 15)
     dropped.push({ item: victim, slot: victimItem.slot, need: Math.max(1, Math.ceil(fixed - room)), wall: how.wall })
     items = mergeFills(items.filter((i) => i !== victimItem))
@@ -844,7 +893,109 @@ function wallItems(
   return out
 }
 
+/**
+ * Раскладка. Остров повёрнут — ряд `I` поворачивается целиком (`turnIsland`);
+ * обеденная группа встаёт в свободную часть комнаты (`placeDining`) — обе
+ * поверх готовой раскладки: места шкафов от них не меняются.
+ */
 export function planKitchen(input: PlanInput, options: { shelves: boolean }): Plan {
+  let plan = planLayout(input, options)
+  if (input.islandTurn) plan = turnIsland(plan, input.islandTurn)
+  if (input.dining) plan = placeDining(plan, input.dining, input.diningTurn)
+  return plan
+}
+
+/** Градусы поворота острова: целое 0…359 (360 → 0, −1 → 359). */
+export function islandTurnOf(deg: number | undefined): number {
+  const d = Math.round(Number(deg) || 0) % 360
+  return d < 0 ? d + 360 : d
+}
+
+/** Середина острова со свесом, см (вокруг неё он и поворачивается). */
+export function islandCenter(isl: NonNullable<Plan['island']>): [number, number] {
+  return [isl.x + isl.w / 2, isl.z - DEPTH + isl.d / 2]
+}
+
+/**
+ * Остров, повёрнутый покупателем: ряд `I` поворачивается вокруг своей
+ * середины. 3D, план сверху, проверки и перетаскивание считают по `ox`/`oz`/`rot`
+ * ряда — поворот понимают сами; места модулей вдоль ряда те же.
+ */
+function turnIsland(plan: Plan, deg: number): Plan {
+  const turn = islandTurnOf(deg)
+  const isl = plan.island
+  if (!turn || !isl) return plan
+  const phi = (turn * Math.PI) / 180
+  const [cx, cz] = islandCenter(isl)
+  const cos = Math.cos(phi)
+  const sin = Math.sin(phi)
+  const runs = plan.runs.map((r) => {
+    if (r.wall) return r
+    const dx = r.ox - cx
+    const dz = r.oz - cz
+    return { ...r, ox: cx + dx * cos + dz * sin, oz: cz - dx * sin + dz * cos, rot: r.rot + phi }
+  })
+  return { ...plan, runs, island: { ...isl, turn } }
+}
+
+/** Как далеко от стены A по полу заняты шкафы ряда, см (по углам шкафов на полу: ряд B идёт от своего конца к углу). */
+const reachOf = (plan: Plan, id: RunId): number => {
+  const run = plan.runs.find((r) => r.id === id)
+  if (!run?.modules.length) return 0
+  const cos = Math.cos(run.rot)
+  const sin = Math.sin(run.rot)
+  const z = (x: number, d: number) => run.oz - x * sin + d * cos
+  return Math.max(...run.modules.flatMap((m) => [z(m.x, 0), z(m.x + m.w, 0), z(m.x, DEPTH), z(m.x + m.w, DEPTH)]))
+}
+
+/**
+ * Обеденная группа: перед кухней (за островом с его стульями), в проходе
+ * `DINING_AISLE`; не лезет к шкафам стен B и C. Сам стол встаёт поперёк
+ * комнаты, не влез — вдоль (90°), поворот покупателя (`turn`) — поверх.
+ * Повёрнутая группа (по её габариту на полу) рядом с рядами B/C не влезла —
+ * встаёт за их концом. Комната становится глубже, если группа в неё не входит.
+ */
+function placeDining(plan: Plan, seats: DiningSeats, turnDeg?: number): Plan {
+  const t = DINING[seats]
+  const turn = islandTurnOf(turnDeg)
+  const setW = t.w + 2 * t.ends * DINING_CHAIR
+  const setD = t.d + 2 * DINING_CHAIR
+  // габарит группы на полу при повороте deg: вдоль X, вдоль Z
+  const box = (deg: number): [number, number] => {
+    const a = (deg * Math.PI) / 180
+    const cos = Math.abs(Math.cos(a))
+    const sin = Math.abs(Math.sin(a))
+    return [setW * cos + setD * sin, setW * sin + setD * cos]
+  }
+  const W = plan.room.w
+  const b = reachOf(plan, 'B')
+  const c = reachOf(plan, 'C')
+  let front = reachOf(plan, 'A') ? DEPTH : 0
+  const iRun = plan.runs.find((r) => r.id === 'I')
+  if (iRun && reachOf(plan, 'I')) {
+    // шкафы, свес и стулья острова — стулья до 70 см за спинкой (в координатах ряда z < 0); остров мог быть повёрнут
+    const cos = Math.cos(iRun.rot)
+    const sin = Math.sin(iRun.rot)
+    const L = plan.island?.w ?? iRun.length
+    front = Math.max(front, ...[[0, -70], [L, -70], [0, DEPTH], [L, DEPTH]].map(([x, z]) => iRun.oz - x * sin + z * cos))
+  }
+  let z0 = front + DINING_AISLE
+  const sides = (z: number): [number, number] => [b > z ? DEPTH + DINING_AISLE : 20, c > z ? W - DEPTH - DINING_AISLE : W - 20]
+  let [xl, xr] = sides(z0)
+  const base = box(0)[0] <= xr - xl ? 0 : box(90)[0] <= xr - xl ? 90 : box(0)[0] <= W - 40 ? 0 : 90
+  const [wx, dz] = box(base + turn)
+  if (wx > xr - xl) {
+    // рядом с рядами B/C не встаёт — за их концом
+    z0 = Math.max(z0, b + 30, c + 30)
+    ;[xl, xr] = [20, W - 20]
+  }
+  const x = xr - xl >= wx ? Math.max(xl + wx / 2, Math.min(xr - wx / 2, W / 2)) : W / 2
+  const room = { ...plan.room, d: Math.max(plan.room.d, Math.ceil(z0 + dz + 30)) }
+  return { ...plan, room, dining: { x, z: z0 + dz / 2, rot: base + turn, turn, seats, w: t.w, d: t.d, long: t.long, ends: t.ends } }
+}
+
+function planLayout(input: PlanInput, options: { shelves: boolean }): Plan {
+  if (input.free) return planFree(input)
   const { shape } = input
   const dropped: Dropped[] = []
   // Плита: духовка в ней — пенал с духовкой и отдельная духовка не строятся.
@@ -1048,6 +1199,346 @@ export function planKitchen(input: PlanInput, options: { shelves: boolean }): Pl
   return plan
 }
 
+/* ───────────── пустая комната ───────────── */
+
+/** Свой верхний шкаф пустой комнаты: ширина, см. */
+export const FREE_UPPER = { min: 15, max: 120 }
+/** Пустая комната: ближе этого (см) к соседу или краю поставленное встаёт вплотную — меньше шага кнопок (5 см). */
+export const FREE_SNAP = 3
+/** Угловой шкаф пустой комнаты: ширина, см (глухая часть 60 + дверца). */
+export const FREE_CORNER = { min: 90, max: 130 }
+
+/** Ширина углового шкафа пустой комнаты у конца стены A, см. */
+export function freeCornerW(free: FreeRoom | undefined, end: 'start' | 'end'): number {
+  const w = Math.round(Number(free?.cornerW?.[end]))
+  return Number.isFinite(w) ? Math.max(FREE_CORNER.min, Math.min(FREE_CORNER.max, w)) : CORNER_W
+}
+
+/**
+ * Где на стене пустой комнаты можно ставить низ, см от угла (как `at`).
+ * Угловой шкаф стены A занимает свой конец; ряды B и C начинаются за
+ * глубиной ряда A — угол принадлежит стене A, как у правил.
+ */
+export function freeRange(input: Pick<PlanInput, 'shape' | 'a' | 'b' | 'c' | 'island' | 'free'>, wall: WallId): [number, number] {
+  const corners = freeCorners(input.shape, input.free)
+  if (wall === 'A') return [corners.includes('start') ? freeCornerW(input.free, 'start') : 0, input.a - (corners.includes('end') ? freeCornerW(input.free, 'end') : 0)]
+  if (wall === 'B') return [DEPTH, input.b]
+  if (wall === 'C') return [DEPTH, input.c]
+  return [0, Math.round(Math.min(input.island, input.a))]
+}
+
+/** Где на стене пустой комнаты можно вешать свой верх, см от угла: у B и C — от верха стены A. */
+export function freeUpperRange(input: Pick<PlanInput, 'a' | 'b' | 'c'>, wall: 'A' | 'B' | 'C'): [number, number] {
+  if (wall === 'A') return [0, input.a]
+  return [UPPER_DEPTH, wall === 'B' ? input.b : input.c]
+}
+
+/** Угловые шкафы, которые бывают у формы: start — угловая и П, end — только П. */
+export function freeCorners(shape: Shape, free: FreeRoom | undefined): ('start' | 'end')[] {
+  return (['start', 'end'] as const).filter((e) => (free?.corners ?? []).includes(e) && (e === 'start' ? shape === 'corner' || shape === 'u' : shape === 'u'))
+}
+
+/** Свободные промежутки [от, до] между занятыми отрезками внутри [lo, hi]. */
+export function freeGaps(taken: [number, number][], lo: number, hi: number): [number, number][] {
+  const out: [number, number][] = []
+  let at = lo
+  for (const [s, e] of [...taken].sort((p, q) => p[0] - q[0])) {
+    if (s - at > 0.01) out.push([at, Math.min(s, hi)])
+    at = Math.max(at, e)
+  }
+  if (hi - at > 0.01) out.push([at, hi])
+  return out.filter(([s, e]) => e - s > 0.01)
+}
+
+/**
+ * Место шириной w в промежутках: ближе всего к want (начало, см); first —
+ * первое свободное от начала стены. Нет промежутка шире w — null.
+ */
+function freeSpot(taken: [number, number][], lo: number, hi: number, w: number, want: number | null): number | null {
+  let best: { s: number; d: number } | null = null
+  for (const [g0, g1] of freeGaps(taken, lo, hi)) {
+    if (g1 - g0 < w - 0.01) continue
+    if (want === null) return g0
+    const s = Math.min(g1 - w, Math.max(g0, want))
+    const d = Math.abs(s - want)
+    if (!best || d < best.d - 0.001) best = { s, d }
+  }
+  return best ? best.s : null
+}
+
+/**
+ * «Пустая комната» (PRO): стоит только то, что поставили сами, — по стенам
+ * в `arrangement`, на своих местах `at` (середина от угла). Промежутки — пустое
+ * место: ни шкафов, ни столешницы. Места не пересекаются: предмет встаёт в
+ * ближайший свободный промежуток; двигаемые сейчас (`snap`) уступают стоящим.
+ * Не поместилось — `dropped`; выбранная техника без места на стене — `unplaced`.
+ * Комната, окно, духовка и вытяжка — по тем же правилам, что у обычной кухни.
+ */
+function planFree(input: PlanInput): Plan {
+  const { shape } = input
+  const dropped: Dropped[] = []
+  const stove = input.stove ?? null
+  const noOven = Boolean(input.noOven)
+  const walls = wallsOf(shape)
+  // пустая комната: пустых мест (gN) и ручного верха (uN) нет — только поставленное
+  const known = (k: ItemKey) => (isCabinet(k) ? Boolean(input.cabinets?.[k]) : !isGap(k) && !isUpperCab(k) && ITEM_KEYS.includes(k as FixedItem))
+  const used = new Set<ItemKey>()
+  const keysOn: Record<WallId, ItemKey[]> = { A: [], B: [], C: [], I: [] }
+  for (const w of walls) {
+    for (const k of input.arrangement?.[w] ?? []) {
+      if (!known(k) || used.has(k) || !allowedOn(w, k)) continue
+      keysOn[w].push(k)
+      used.add(k)
+    }
+  }
+  // Духовка: в своём шкафу, иначе в колонне, иначе под варочной панелью.
+  const ovenOwn = !stove && !noOven && used.has('oven')
+  const ovenInTall = !stove && !noOven && !ovenOwn && used.has('tall')
+  const ovenUnderHob = !stove && !noOven && !ovenOwn && !ovenInTall
+  const fridgeW = slotWidth(input.fridge, 0, input.fridgeOpen ? 0 : NICHE_EXTRA)
+  const ovenW = input.oven ? Math.max(HOB_W, up5(input.oven.w)) : HOB_W
+  const hobFloor = stove ? stove.w : Math.max(hobMinWidth(input.hob), ovenUnderHob ? ovenW : 0)
+  const hobW = stove ? stove.w : Math.max(hobFloor, sizedWidth('hob', input.widths?.hob))
+  const dwW = input.dishwasher ? (input.dishwasher.w <= 46 ? 45 : 60) : 0
+  const sinkW = sizedWidth('sink', input.widths?.sink ?? SINK_W)
+  const snapSet = input.snap ? new Set<ItemKey>(input.snap) : null
+  const canSnap = (key: ItemKey) => !snapSet || snapSet.has(key)
+
+  type Placeable = Solid & { kind: ModuleKind }
+  const kindOf = (k: ItemKey): Placeable | null => {
+    switch (k) {
+      case 'fridge':
+        return input.fridge ? { kind: 'fridge', w: fridgeW, slot: 'fridge', item: k } : null
+      case 'tall': {
+        const w = Math.max(sizedWidth('tall', input.widths?.tall ?? TALL_W), ovenInTall ? ovenW : 0)
+        const slot: SlotKind | undefined = input.microwave?.builtIn ? 'microwave' : ovenInTall ? 'oven' : undefined
+        return { kind: 'tall', w, ...(slot ? { slot } : {}), item: k }
+      }
+      case 'sink':
+        return { kind: 'sink', w: sinkW, item: k }
+      case 'dishwasher':
+        return input.dishwasher ? { kind: 'dishwasher', w: dwW, slot: 'dishwasher', item: k } : null
+      case 'washer':
+        return input.washer ? { kind: 'washer', w: slotWidth(input.washer, WASHER_W), slot: 'washer', item: k } : null
+      case 'hob':
+        return stove ? { kind: 'hob', w: hobW, slot: 'hob', oven: false, stove: true, item: k } : { kind: 'hob', w: hobW, slot: 'hob', oven: ovenUnderHob, item: k }
+      case 'pantry':
+        return { kind: 'pantry', w: sizedWidth('pantry', input.widths?.pantry ?? PANTRY_W), item: k }
+      case 'pantry2':
+        return { kind: 'pantry', w: sizedWidth('pantry2', input.widths?.pantry2 ?? PANTRY_W), item: k }
+      case 'oven':
+        return ovenOwn ? { kind: 'oven', w: ovenW, slot: 'oven', item: k } : null
+    }
+    const cab = isCabinet(k) ? input.cabinets?.[k] : undefined
+    if (!cab) return null
+    const w = sizedWidth('cabinet', cab.w)
+    return { kind: cab.front === 'doors' || cab.front === 'open' ? 'doors' : 'drawers', w, item: k, front: cab.front }
+  }
+
+  /** Места на стене (см от угла): сначала то, что стоит, потом двигаемое сейчас, потом без места. */
+  const placeWall = (wall: WallId): { item: Placeable; s: number }[] => {
+    const [lo, hi] = freeRange(input, wall)
+    const wants = keysOn[wall].flatMap((key) => {
+      const item = kindOf(key)
+      if (!item) return []
+      const c = input.at?.[key]
+      return [{ item, c: c !== undefined && Number.isFinite(c) ? c : undefined }]
+    })
+    const moving = (k?: ItemKey) => Boolean(k && snapSet?.has(k))
+    const queue = [
+      ...wants.filter((x) => x.c !== undefined && !moving(x.item.item)),
+      ...wants.filter((x) => x.c !== undefined && moving(x.item.item)),
+      ...wants.filter((x) => x.c === undefined),
+    ]
+    const taken: [number, number][] = []
+    const out: { item: Placeable; s: number }[] = []
+    for (const { item, c } of queue) {
+      const w = item.w
+      let s = freeSpot(taken, lo, hi, w, c === undefined ? null : c - w / 2)
+      if (s === null) {
+        const widest = freeGaps(taken, lo, hi).reduce((m, [g0, g1]) => Math.max(m, g1 - g0), 0)
+        dropped.push({ item: item.item!, ...(item.slot ? { slot: item.slot } : {}), need: Math.max(1, Math.ceil(w - widest)), wall })
+        continue
+      }
+      // Поставленное рукой ближе FREE_SNAP к соседу или краю встаёт вплотную
+      // (меньше шага «левее / правее» — иначе сдвиг на 5 см прилипал бы обратно).
+      if (item.item && canSnap(item.item)) {
+        const left = Math.max(lo, ...taken.filter(([, e]) => e <= s! + 0.01).map(([, e]) => e))
+        const right = Math.min(hi, ...taken.filter(([b]) => b >= s! + w - 0.01).map(([b]) => b))
+        if (s - left < FREE_SNAP) s = left
+        else if (right - (s + w) < FREE_SNAP) s = right - w
+      }
+      taken.push([s, s + w])
+      out.push({ item, s })
+    }
+    return out
+  }
+
+  const runs: Run[] = []
+  const placed: Plan['placed'] = {}
+  const addRun = (run: Omit<Run, 'modules' | 'uppers'>, wall: WallId, reversed: boolean) => {
+    const modules: Module[] = placeWall(wall).map(({ item, s }) => moduleOf(item, reversed ? run.length - s - item.w : s) as Module)
+    if (wall === 'A') {
+      for (const end of freeCorners(shape, input.free)) {
+        const w = freeCornerW(input.free, end)
+        modules.push({ kind: 'corner', x: end === 'start' ? 0 : run.length - w, w, blind: DEPTH, blindAt: end })
+      }
+    }
+    modules.sort((p, q) => p.x - q.x)
+    const full: Run = { ...run, modules, uppers: [] }
+    runs.push(full)
+    return full
+  }
+
+  let window: Plan['window'] = null
+  let room: Plan['room']
+  let island: Plan['island']
+  if (shape === 'straight' || shape === 'island') {
+    const a = input.a
+    addRun({ id: 'A', ox: 0, oz: 0, rot: 0, length: a, wall: true }, 'A', false)
+    room = { w: a, d: shape === 'island' ? 400 : 270 }
+    const w = Math.min(clampWindow(input.windowW ?? 110, room.d), room.d - 10 - DEPTH)
+    const at = Math.max(DEPTH + w / 2, Math.min(room.d - w / 2 - 10, shape === 'island' ? 200 : 180))
+    window = input.noWindow ? null : { wall: 'left', at, w }
+    if (shape === 'island') {
+      const [, len] = freeRange(input, 'I')
+      const x = Math.round(Math.max(0, (a - len) / 2))
+      island = { x, z: DEPTH + 110 + DEPTH, w: len, d: 90 }
+      addRun({ id: 'I', ox: x + len, oz: island.z, rot: Math.PI, length: len, wall: false }, 'I', false)
+    }
+  } else {
+    const a = addRun({ id: 'A', ox: 0, oz: 0, rot: 0, length: input.a, wall: true }, 'A', false)
+    if (!input.noWindow) {
+      // окно — над мойкой, если она у задней стены; не над высокими модулями
+      const want = clampWindow(input.windowW ?? (shape === 'u' ? 110 : 100), a.length)
+      const sink = a.modules.find((m) => m.kind === 'sink')
+      const mid = sink ? sink.x + sink.w / 2 : shape === 'u' ? input.a / 2 : CORNER_W + 45
+      const { at, w } = windowSpot(a.length, want, mid, a.modules.filter((m) => isTall(m.kind)))
+      window = { wall: 'back', at, w }
+    }
+    addRun({ id: 'B', ox: 0, oz: input.b, rot: Math.PI / 2, length: input.b, wall: true }, 'B', true)
+    if (shape === 'u') addRun({ id: 'C', ox: input.a, oz: 0, rot: -Math.PI / 2, length: input.c, wall: true }, 'C', false)
+    room = shape === 'corner' ? { w: input.a, d: Math.max(input.b + 40, 270) } : { w: input.a, d: Math.max(input.b, input.c) + 40 }
+  }
+
+  // Где встала духовка: свой шкаф → колонна → под варочной; некуда — не в кухне.
+  const kinds = new Set(runs.flatMap((r) => r.modules.map((m) => m.kind)))
+  const inTall = !stove && !noOven && !kinds.has('oven') && kinds.has('tall')
+  const underHob = !stove && !noOven && !kinds.has('oven') && !inTall && runs.some((r) => r.modules.some((m) => m.kind === 'hob' && !m.stove))
+  for (const r of runs) {
+    for (const m of r.modules) {
+      if (m.kind === 'hob') m.oven = underHob && !m.stove
+      if (m.kind === 'tall') m.oven = inTall
+    }
+    r.modules.forEach((m, index) => {
+      if (m.kind === 'oven' || (m.kind === 'tall' && m.oven)) placed.oven = { run: r.id, index }
+      if (m.kind === 'hob') {
+        placed.hob = { run: r.id, index }
+        if (m.oven) placed.oven = { run: r.id, index }
+      }
+      if (m.kind === 'tall' && input.microwave?.builtIn) placed.microwave = { run: r.id, index }
+      if (m.kind === 'fridge' || m.kind === 'dishwasher' || m.kind === 'washer') placed[m.kind] = { run: r.id, index }
+    })
+  }
+
+  // Верх: над варочной — вытяжка, над угловым — угловой, над холодильником — антресоль,
+  // у колонн — ничего; свои верхние шкафы — там, где их повесили, в обход занятого и окна.
+  const tooWide: NonNullable<Plan['tooWide']> = []
+  for (const r of runs) {
+    if (!r.wall) continue
+    const wall = r.id as 'A' | 'B' | 'C'
+    const reversed = wall === 'B'
+    const toRun = (from: number, to: number): [number, number] => (reversed ? [r.length - to, r.length - from] : [from, to])
+    const [u0, u1] = toRun(...freeUpperRange(input, wall))
+    const win = wall === 'A' && window?.wall === 'back' ? ([window.at - window.w / 2, window.at + window.w / 2] as [number, number]) : null
+    const ups: Upper[] = []
+    // Окно режет верх над угловым и холодильником, как у правил (uppersFor): у углового
+    // шкафом остаётся кусок со стороны угла, по другую сторону окна — обычный шкаф.
+    const pushCut = (u: Upper) => {
+      if (!win || u.x >= win[1] || u.x + u.w <= win[0]) return ups.push(u)
+      const left = win[0] - u.x
+      const right = u.x + u.w - win[1]
+      const piece = (x: number, w: number, cornerSide: boolean): Upper =>
+        u.kind === 'corner' ? (cornerSide ? { ...u, x, w } : { kind: 'doors', x, w }) : { kind: 'none', x, w }
+      if (left > 0.01) ups.push(piece(u.x, left, u.blindAt === 'start'))
+      if (right > 0.01) ups.push(piece(win[1], right, u.blindAt === 'end'))
+    }
+    for (const m of r.modules) {
+      if (m.kind === 'corner') pushCut({ kind: 'corner', x: m.x, w: m.w, blind: UPPER_DEPTH, blindAt: m.blindAt })
+      else if (m.kind === 'tall' || m.kind === 'pantry') ups.push({ kind: 'none', x: m.x, w: m.w })
+      else if (m.kind === 'fridge') pushCut({ kind: input.fridgeOpen ? 'none' : 'fridge', x: m.x, w: m.w })
+    }
+    const taken: [number, number][] = ups.map((u) => [u.x, u.x + u.w])
+    const hobM = r.modules.find((m) => m.kind === 'hob')
+    if (hobM && input.hood) {
+      // вытяжка — над серединой варочной, не уже самой вытяжки; соседние колонны, угол и края стены её не пускают
+      const want = Math.max(hobM.w, up5(input.hood.w))
+      const mid = hobM.x + hobM.w / 2
+      const overlap = win ? Math.min(mid + want / 2, win[1]) - Math.max(mid - want / 2, win[0]) : 0
+      const span = freeGaps(taken, Math.max(u0, mid - want / 2), Math.min(u1, mid + want / 2)).find(([g0, g1]) => g0 <= mid + 0.01 && g1 >= mid - 0.01)
+      if (overlap > 0.01 || !span) {
+        // Плита под окном (или над ней уже колонна): вытяжку не повесить — как у правил (C18).
+        dropped.push({ item: 'hob', slot: 'hood', need: Math.max(1, Math.ceil(overlap > 0.01 ? overlap : want)), wall: r.id })
+      } else {
+        ups.push({ kind: 'hood', x: span[0], w: span[1] - span[0] })
+        taken.push(span)
+        if (span[1] - span[0] < input.hood.w - 0.01) tooWide.push({ slot: 'hood', w: input.hood.w, room: span[1] - span[0], wall: r.id })
+      }
+    }
+    if (win) taken.push(win)
+    for (const fu of input.free?.uppers?.[wall] ?? []) {
+      if (!Number.isFinite(fu.c) || !Number.isFinite(fu.w)) continue
+      const w = Math.max(FREE_UPPER.min, Math.min(FREE_UPPER.max, fu.w))
+      const [s0, s1] = toRun(fu.c - w / 2, fu.c + w / 2)
+      // свой верх режется занятым, окном и краями стены — остаются куски
+      for (const [g0, g1] of freeGaps(taken, Math.max(u0, s0), Math.min(u1, s1))) {
+        if (g1 - g0 < 1) continue
+        ups.push({ kind: 'doors', x: g0, w: g1 - g0 })
+        taken.push([g0, g1])
+      }
+    }
+    ups.sort((p, q) => p.x - q.x)
+    narrowToFiller(ups)
+    r.uppers = ups
+  }
+
+  const underCounter: NonNullable<Plan['underCounter']> = []
+  for (const r of runs) {
+    for (const m of r.modules) {
+      const holdsOven = m.kind === 'oven' || (m.oven && (m.kind === 'hob' || m.kind === 'tall'))
+      if (input.oven && !noOven && holdsOven && m.w < input.oven.w - 0.01) tooWide.push({ slot: 'oven', w: input.oven.w, room: m.w, wall: r.id })
+      if (m.kind === 'washer' && input.washer) underCounter.push({ slot: 'washer', h: input.washer.h, wall: r.id })
+      if (m.kind === 'dishwasher' && input.dishwasher && !input.dishwasher.builtIn) underCounter.push({ slot: 'dishwasher', h: input.dishwasher.h, wall: r.id })
+    }
+  }
+
+  // Выбранная техника без места на стене: не в 3D и не в сумме.
+  const hasKind = (k: ModuleKind) => runs.some((r) => r.modules.some((m) => m.kind === k))
+  const unplaced: SlotKind[] = []
+  if (input.fridge && !hasKind('fridge')) unplaced.push('fridge')
+  if (input.dishwasher && !hasKind('dishwasher')) unplaced.push('dishwasher')
+  if (input.washer && !hasKind('washer')) unplaced.push('washer')
+  if (!hasKind('hob')) unplaced.push('hob', 'hood')
+  if (!stove && !noOven && !placed.oven) unplaced.push('oven')
+  if (input.microwave?.builtIn && !hasKind('tall')) unplaced.push('microwave')
+  // что не поместилось, «не на стене» не дублирует
+  const lost = new Set(dropped.map((d) => d.slot))
+  const notOnWall = unplaced.filter((s) => !lost.has(s))
+
+  const plan: Plan = { shape, runs, room, window, placed, dropped, island, free: true }
+  if (tooWide.length) plan.tooWide = tooWide
+  if (underCounter.length) plan.underCounter = underCounter
+  const hoodHangs = Boolean(input.hood) && runs.some((r) => r.uppers.some((u) => u.kind === 'hood') || (!r.wall && r.modules.some((m) => m.kind === 'hob'))) && !dropped.some((d) => d.slot === 'hood')
+  if (hoodHangs) {
+    const gas = input.hob?.hob === 'gas'
+    plan.hoodHeight = { over: hoodNorm(gas), gas }
+  }
+  const stoveRun = stove && runs.find((r) => r.modules.some((m) => m.kind === 'hob' && m.stove))
+  if (stove && stoveRun) plan.stove = { w: stove.w, h: stove.h, d: stove.d, wall: stoveRun.id }
+  if (notOnWall.length) plan.unplaced = notOnWall
+  return plan
+}
+
 /** Нехватка по каждой стене: сколько см добавить именно этой стене. Вытяжку под окном удлинением не поправить — её тут нет. */
 export function needByWall(plan: Pick<Plan, 'dropped'>): Partial<Record<RunId, number>> {
   const out: Partial<Record<RunId, number>> = {}
@@ -1189,6 +1680,8 @@ export function pinCabinet(
  * покупателя сюда не входят — каждый двигается сам по себе.
  */
 export function companions(plan: Plan, key: ItemKey): ItemKey[] {
+  // в пустой комнате каждый предмет двигается сам по себе
+  if (plan.free) return []
   for (const run of plan.runs) {
     const i = run.modules.findIndex((m) => m.item === key)
     if (i < 0) continue
@@ -1216,6 +1709,19 @@ export function itemGaps(plan: Plan, key: ItemKey): { center: number; w: number 
   for (const run of plan.runs) {
     const i = run.modules.findIndex((m) => m.item === key)
     if (i < 0) continue
+    if (plan.free) {
+      // пустая комната: пустое место до соседа или до края, где ставить можно
+      const m = run.modules[i]
+      const [lo, hi] = freeRunRange(run)
+      const left = Math.max(lo, ...run.modules.filter((o) => o !== m && o.x + o.w <= m.x + 0.01).map((o) => o.x + o.w))
+      const right = Math.min(hi, ...run.modules.filter((o) => o !== m && o.x >= m.x + m.w - 0.01).map((o) => o.x))
+      return [
+        [left, m.x],
+        [m.x + m.w, right],
+      ]
+        .filter(([a, b]) => b - a >= 1)
+        .map(([a, b]) => ({ center: moduleCenter(run, { x: a, w: b - a }), w: Math.round((b - a) * 10) / 10 }))
+    }
     const free = (m: Module) => !m.item && m.kind !== 'corner'
     const span = (from: number, step: 1 | -1) => {
       let x0 = Infinity
@@ -1229,6 +1735,26 @@ export function itemGaps(plan: Plan, key: ItemKey): { center: number; w: number 
     return [span(i - 1, -1), span(i + 1, 1)].filter((g): g is { center: number; w: number } => g !== null)
   }
   return []
+}
+
+/**
+ * Пустая комната: концы ряда B или C, где в углу стоит шкаф стены A (у B угол —
+ * в конце ряда, у C — в начале). У обычной кухни — undefined: там угол — пустой конец ряда.
+ */
+export function neighbourCorners(plan: Pick<Plan, 'free' | 'runs'>, run: Pick<Run, 'id'>): ('start' | 'end')[] | undefined {
+  if (!plan.free) return undefined
+  const a = plan.runs.find((r) => r.id === 'A')
+  if (!a || (run.id !== 'B' && run.id !== 'C')) return []
+  const [x0, x1] = run.id === 'B' ? [0, DEPTH] : [a.length - DEPTH, a.length]
+  const covered = a.modules.some((m) => m.x < x1 - 0.5 && m.x + m.w > x0 + 0.5)
+  return covered ? [run.id === 'B' ? 'end' : 'start'] : []
+}
+
+/** Где в ряду пустой комнаты можно ставить низ — в координатах ряда (у B ряд перевёрнут). */
+export function freeRunRange(run: Pick<Run, 'id' | 'length'>): [number, number] {
+  if (run.id === 'B') return [0, run.length - DEPTH]
+  if (run.id === 'C') return [DEPTH, run.length]
+  return [0, run.length]
 }
 
 /** Где на стене стоит модуль (центр, см от угла) — как у itemPositions. */

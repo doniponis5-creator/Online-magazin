@@ -318,6 +318,21 @@ export function PlanView({ plan, selected, preview, onPick, onDrag, onAdd, label
   const win = plan.window
   const isl = plan.island
   const runOf = (id: string) => plan.runs.find((r) => r.id === id)
+  // повёрнутый остров (как PlanSketch): ячейки — в координатах ряда внутри группы с поворотом, столешница — многоугольником
+  const turned = isl?.turn ? plan.runs.find((r) => !r.wall) : undefined
+  const turnedTf = turned ? `translate(${turned.ox} ${turned.oz}) rotate(${(-turned.rot * 180) / Math.PI})` : undefined
+  const islandTop = turned && isl ? [[0, -30], [isl.w, -30], [isl.w, 62], [0, 62]].map(([x, d]) => runWorld(turned, x, d)).map((q) => `${q.x},${q.z}`).join(' ') : null
+  const local = (c: PlanCell): PlanCell => ({ ...c, rect: { x: c.x, y: 0, w: c.w, h: c.depth }, vertical: false })
+  const drawCells = (row: PlanCell['row']) => {
+    const list = cells.filter((c) => c.row === row)
+    if (!turned) return list.map(cellNode)
+    return [
+      ...list.filter((c) => c.wall !== turned.id).map(cellNode),
+      <g key={`turned-${row}`} transform={turnedTf}>
+        {list.filter((c) => c.wall === turned.id).map((c) => cellNode(local(c)))}
+      </g>,
+    ]
+  }
 
   // тянуть можно только выбранный (onPointerMove: d.key === selected), а сняли выбор — перетаскивание отменено; ref в рендере не читаем
   const dragKey = preview ? selected : null
@@ -473,11 +488,12 @@ export function PlanView({ plan, selected, preview, onPick, onDrag, onAdd, label
           {u && <rect x={W} y={0} width={T} height={D} className="kp-plan__wall" />}
           {win?.wall === 'back' && <rect x={win.at - win.w / 2} y={-T} width={win.w} height={T} className="kp-plan__win" />}
           {win?.wall === 'left' && <rect x={-T} y={win.at - win.w / 2} width={T} height={win.w} className="kp-plan__win" />}
-          {isl && <rect x={isl.x} y={isl.z - 62} width={isl.w} height={92} rx={3} className="kp-plan__top" />}
+          {isl && !islandTop && <rect x={isl.x} y={isl.z - 62} width={isl.w} height={92} rx={3} className="kp-plan__top" />}
+          {islandTop && <polygon points={islandTop} className="kp-plan__top" />}
           {plan.runs.map((run) => chain(run, wallLabelOf(run.id)))}
-          {cells.filter((c) => c.row === 'base').map(cellNode)}
-          {cells.filter((c) => c.row === 'gap').map(cellNode)}
-          {cells.filter((c) => c.row === 'upper').map(cellNode)}
+          {drawCells('base')}
+          {drawCells('gap')}
+          {drawCells('upper')}
           {previewNode()}
         </g>
       </svg>

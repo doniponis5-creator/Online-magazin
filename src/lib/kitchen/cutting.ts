@@ -174,7 +174,7 @@ export function cutParts(spec: SpecData, look: CutLook): CutPart[] {
   // фасад, добор, планка угла, панели у духовки, пилястры, задняя панель острова — в цвет фасадов (верх — в цвет верха, остров — в цвет острова)
   const face = (name: FrontType | PanelName, w: number, h: number, count: number, f: Finish) => {
     // рамка со стеклом, рамочный фасад, пилястру и капитель из плоского листа не выпилить, у стиля материала нет — в цех фасадов, без «МДФ»
-    const shop = name === 'glass' || name === 'framed' || DECOR.includes(name as PanelName) || f.material === null
+    const shop = name === 'glass' || name === 'mirror' || name === 'framed' || DECOR.includes(name as PanelName) || f.material === null
     const sheet = !shop && f.material === 'laminate'
     const grain = f.wood
     const material: CutMaterial = { kind: sheet ? 'ldsp' : shop ? 'shop' : 'mdf', label: f.label, color: f.color, thick: sheet ? LDSP : null }

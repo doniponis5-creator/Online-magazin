@@ -71,6 +71,8 @@ export type SpecFront = {
   upper?: boolean
   /** фасад острова своего цвета (`islandFacade`); нет — в цвете низа */
   island?: boolean
+  /** зеркальный фасад — заказывают в цехе, как стекло */
+  mirror?: boolean
 }
 
 export type SpecBox = Dims & { x: number; y: number }
@@ -84,7 +86,21 @@ export type SpecTop = { x0: number; x1: number; depth: number; thick: number; si
 /** модули ряда по раскладке: начало и ширина, см — для цепочки размеров */
 export type SpecModule = { x: number; w: number }
 
-export type SpecRun = { id: RunId; length: number; modules: SpecModule[]; boxes: SpecBox[]; fronts: SpecFront[]; tops: SpecTop[]; /** пустые места стены (Run.gaps) — для угла развёртки */ gaps?: { x: number; w: number; row?: string }[] }
+export type SpecRun = {
+  id: RunId
+  length: number
+  modules: SpecModule[]
+  boxes: SpecBox[]
+  fronts: SpecFront[]
+  tops: SpecTop[]
+  /** пустые места стены (Run.gaps) — для угла развёртки */
+  gaps?: { x: number; w: number; row?: string }[]
+  /**
+   * Пустая комната: концы ряда, где стоит шкаф соседней стены (угол). Нет поля —
+   * обычная кухня: угол — пустой конец ряда (`cornerZones`).
+   */
+  corners?: ('start' | 'end')[]
+}
 
 /**
  * Проёмы и доборы — то, что не шкаф: проём под встраиваемую посудомойку
@@ -183,7 +199,7 @@ export function extraList(data: Pick<SpecData, 'extras'>): ExtraRow[] {
 
 /* ───────── фасады ───────── */
 
-export type FrontType = 'door' | 'glass' | 'framed' | 'drawer' | 'lift' | 'dw' | 'panel'
+export type FrontType = 'door' | 'glass' | 'mirror' | 'framed' | 'drawer' | 'lift' | 'dw' | 'panel'
 export type FrontRow = { type: FrontType; w: number; h: number; count: number; color?: string }
 
 export function frontType(f: SpecFront): FrontType {
@@ -191,6 +207,7 @@ export function frontType(f: SpecFront): FrontType {
   if (f.hinge === 'top') return f.glass ? 'glass' : 'lift'
   if (f.hinge === 'fold') return 'dw'
   if (f.hinge === 'none') return 'panel'
+  if (f.mirror) return 'mirror'
   if (f.glass) return 'glass'
   return f.framed ? 'framed' : 'door'
 }
@@ -210,7 +227,7 @@ export function frontList(runs: SpecRun[]): FrontRow[] {
       else rows.set(key, { type, w, h, count: 1, ...(f.color ? { color: f.color } : {}) })
     }
   }
-  const order: FrontType[] = ['door', 'framed', 'glass', 'drawer', 'lift', 'dw', 'panel']
+  const order: FrontType[] = ['door', 'framed', 'glass', 'mirror', 'drawer', 'lift', 'dw', 'panel']
   return [...rows.values()].sort((p, q) => order.indexOf(p.type) - order.indexOf(q.type) || q.h - p.h || q.w - p.w)
 }
 

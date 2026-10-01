@@ -13,6 +13,8 @@ Green API). Отвечают там живые люди. Робот вступа
   • больше 30 ответов робота одному человеку за день — дальше отвечает
     сотрудник (робот предупреждает и замолкает);
   • покупатель попросил живого человека — робот передаёт и замолкает на 12 часов.
+  • номер записан в телефоне магазина (знакомые, постоянные клиенты) — робот
+    не отвечает вовсе, только новым незаписанным номерам (владелец, 29.09.2026);
   • покупатель посмотрел товар и замолчал на 2 часа — робот один раз спрашивает
     «ещё актуально?» (в рабочее время, не чаще раза в 3 дня на чат);
   • каждое утро в 9:05 владелец получает сводку за вчера: где робот сдался и
@@ -55,10 +57,15 @@ logger = logging.getLogger("sbonus.shop.wa_bot")
 router_wa_bot = APIRouter(prefix="/webhook/greenapi", tags=["WhatsApp: продавец"])
 
 HUMAN_QUIET = 12 * 3600          # сотрудник ответил — робот молчит в чате столько
+# Робот сам передал чат руководству (заявка на звонок, жалоба) — молчит только час. Дальше
+# покупатель спрашивает «чоңу барбы?», «Бишкекте би?» и ждать ответа до утра не должен
+# (аудит 01.10: Умар 13 часов писал в пустоту). Написал владелец сам — снова 12 часов.
+HANDOFF_QUIET = 3600
 TURNS_TTL = 3 * 24 * 3600        # сколько помним разговор
 MAX_TURNS = 12                   # сколько реплик отдаём мозгу
 DAILY_LIMIT = 30                 # ответов робота одному человеку за сутки
 MAX_PHOTOS = 1                   # одно фото, как пришлёт продавец; три подряд — это рассылка
+SAVED_TTL = 30 * 24 * 3600      # «номер записан в телефоне» помним месяц (обновляется с каждым сообщением)
 NUDGE_AFTER = 2 * 3600           # покупатель молчит столько после показа товара — напоминаем
 NUDGE_QUIET = 3 * 24 * 3600      # не чаще раза в столько на один чат
 WORK_HOURS = range(9, 18)        # напоминаем только в рабочее время (Бишкек)
@@ -117,6 +124,14 @@ async def _journal(method: str, minutes: int = JOURNAL_MINUTES) -> list[dict]:
         return []
     data = response.json()
     return data if isinstance(data, list) else []
+
+
+def _saved_contact(message: dict) -> bool:
+    """
+    Номер записан в телефоне магазина: Green API кладёт имя из записной книжки
+    в senderContactName. Нет записи — поле пустое (senderName — имя профиля).
+    """
+    return bool(str(message.get("senderContactName") or "").strip())
 
 
 def _journal_text(message: dict) -> str:
@@ -222,6 +237,13 @@ async def poll_once() -> dict:
         if text and WA_LOGIN_RE.search(text):
             continue
         digits = chat.removesuffix("@c.us")
+        # Номер записан в телефоне магазина — это знакомый: робот ему не пишет
+        # (решение владельца 29.09.2026). Отвечает только новым, незаписанным номерам.
+        if _saved_contact(message):
+            await redis_client.set(f"wa:saved:{digits}", "1", ex=SAVED_TTL)
+            await redis_client.hdel("wa:pending", digits)
+            await redis_client.delete(f"wa:nudge:{digits}")
+            continue
         voice = False
         if kind:
             # Голосовое → текст, фото → описание. Не вышло с голосовым — попросим написать.
@@ -230,6 +252,12 @@ async def poll_once() -> dict:
                 text = heard
             elif kind == "audio":
                 voice = True
+        # Ответ на статус магазина или на наше фото: «Нима бу?», «шулар нечпул?» без
+        # картинки непонятны — берём подпись или маленькую картинку из цитаты.
+        if text and message.get("typeMessage") == "quotedMessage":
+            context = await _read_quote(message)
+            if context:
+                text = f"{context}\n{text}"
         if text:
             await _remember(digits, "user", text)
         # Покупатель написал сам — напоминать не о чем.
@@ -249,6 +277,9 @@ async def poll_once() -> dict:
         try:
             pending = json.loads(raw)
         except Exception:
+            await redis_client.hdel("wa:pending", digits)
+            continue
+        if await redis_client.get(f"wa:saved:{digits}"):
             await redis_client.hdel("wa:pending", digits)
             continue
         if await redis_client.get(f"wa:human:{digits}"):
@@ -280,6 +311,42 @@ def _media_kind(message: dict) -> str | None:
     if kind in IMAGE_TYPES:
         return "image"
     return None
+
+
+async def _read_quote(message: dict) -> str:
+    """
+    На что ответил покупатель: «[Ответ на фото: …]» (подпись или описание маленькой
+    картинки из цитаты) или «[Ответ на сообщение: …]». Не вышло — пустая строка.
+    """
+    quoted = message.get("quotedMessage") or {}
+    if not isinstance(quoted, dict):
+        return ""
+    kind = quoted.get("typeMessage")
+    if kind in ("imageMessage", "videoMessage"):
+        caption = str(quoted.get("caption") or "").strip()
+        if caption:
+            return f"[Ответ на фото: {caption[:200]}]"
+        thumb = str(quoted.get("jpegThumbnail") or "")
+        if not thumb:
+            return ""
+        from .shop_router import _site_base_url, _site_secret
+        payload = json.dumps({"data": thumb, "mime": "image/jpeg", "kind": "image"}, ensure_ascii=False)
+        signature = hmac.new(_site_secret().encode(), payload.encode("utf-8"), hashlib.sha256).hexdigest()
+        try:
+            async with httpx.AsyncClient(timeout=60) as client:
+                response = await client.post(
+                    f"{_site_base_url()}/api/channel/media",
+                    content=payload.encode("utf-8"),
+                    headers={"Content-Type": "application/json", "X-Signature": signature},
+                )
+            data = response.json() if response.status_code == 200 else {}
+        except Exception as error:
+            logger.error(f"wa bot quote: {error}")
+            return ""
+        seen = str(data.get("text") or "").strip() if data.get("ok") else ""
+        return f"[Ответ на фото: {seen[:300]}]" if seen else ""
+    text = str(quoted.get("textMessage") or quoted.get("caption") or "").strip()
+    return f"[Ответ на сообщение: {text[:200]}]" if text else ""
 
 
 async def _read_media(message: dict, kind: str) -> str:
@@ -365,8 +432,10 @@ async def _answer(digits: str, name: str) -> bool:
             await redis_client.set(f"wa:shown:{digits}", json.dumps(ids), ex=TURNS_TTL)
             # Показали товар — если покупатель замолчит, через 2 часа спросим «ещё актуально?».
             await redis_client.set(f"wa:nudge:{digits}", json.dumps({"ts": time.time(), "name": name}), ex=24 * 3600)
-        if reply.get("handoff") or count + 1 >= DAILY_LIMIT:
+        if count + 1 >= DAILY_LIMIT:
             await redis_client.set(f"wa:human:{digits}", "1", ex=HUMAN_QUIET)
+        elif reply.get("handoff"):
+            await redis_client.set(f"wa:human:{digits}", "1", ex=HANDOFF_QUIET)
         return True
     except Exception as error:
         logger.error(f"wa bot {digits[-4:]}: {error}")
@@ -442,7 +511,7 @@ async def _nudge_silent() -> int:
         if time.time() - float(pending.get("ts") or 0) < NUDGE_AFTER:
             continue
         await redis_client.delete(key)
-        if await redis_client.get(f"wa:human:{digits}"):
+        if await redis_client.get(f"wa:human:{digits}") or await redis_client.get(f"wa:saved:{digits}"):
             continue
         if not await redis_client.set(f"wa:nudged:{digits}", "1", ex=NUDGE_QUIET, nx=True):
             continue

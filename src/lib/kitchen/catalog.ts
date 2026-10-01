@@ -207,6 +207,8 @@ export function finishOf(text: string): Finish | null {
 
 function hoodKind(type: string): HoodKind {
   if (/телескоп|выдвиж/.test(type)) return 'telescopic'
+  // «Плоская кухонная вытяжка» (ARTEL ART-0960 PUNTO) — висит под шкафом, трубы нет
+  if (/плоск|подвесн/.test(type)) return 'flat'
   if (/полностью встраив|встраиваем/.test(type)) return 'insert'
   if (/наклон/.test(type)) return 'inclined'
   return 'chimney'

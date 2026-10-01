@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import './helpers/canvas'
 import { buildKitchen, type Built } from '@/components/kitchen/three/build'
 import { planKitchen, type Plan, type PlanInput } from '@/lib/kitchen/layout'
-import { UNDER_COUNTER } from '@/lib/kitchen/checks'
+import { checkProject, UNDER_COUNTER } from '@/lib/kitchen/checks'
 import { BASE_H, BODY, PLINTH } from '@/lib/kitchen/dims'
 import { frontColor } from '@/lib/kitchen/finishes'
 import { cutList, extraList, frontList, modulesOf, type SpecData } from '@/lib/kitchen/spec'
@@ -79,7 +79,7 @@ function* matrix(): Generator<Case> {
           k++
           const style = STYLES[k % STYLES.length]
           const gas = k % 3 === 0
-          const hoodKind = (['chimney', 'inclined', 'telescopic'] as const)[k % 3]
+          const hoodKind = (['chimney', 'inclined', 'telescopic', 'flat'] as const)[k % 4]
           const items = { fridge, dishwasher: dw(k % 2 ? 45 : 60), hob: hob(gas ? 'gas' : 'electric'), oven, hood: hood(hoodKind) }
           // длина A гуляет — так появляются узкие доборы (C06)
           const a = s.a + ((k * 37) % 90) - 45
@@ -376,6 +376,27 @@ describe('08: высоты из dims.ts — одни для проверки, 3D
   })
 })
 
+describe('M1: плоская вытяжка (ARTEL ART-0960) — центр над варочной', () => {
+  it('на переборе с плоской вытяжкой: середина меша вытяжки над серединой варочной ±1 см, hoodOffHob нет', () => {
+    let seen = 0
+    const box = new THREE.Box3()
+    const mid = (o: THREE.Object3D) => box.setFromObject(o).getCenter(new THREE.Vector3())
+    for (const { c, built, plan } of SPECS) {
+      if (c.items.hood?.hood !== 'flat' || !built.objects.hood || !built.objects.hob) continue
+      const run = plan.runs.find((r) => r.modules.some((m) => m.kind === 'hob'))!
+      built.root.updateMatrixWorld(true)
+      const a = mid(built.objects.hood)
+      const b = mid(built.objects.hob)
+      // вдоль ряда: ось ряда в мире — (cos rot, −sin rot) в плоскости XZ
+      const along = (v: THREE.Vector3) => v.x * Math.cos(run.rot) - v.z * Math.sin(run.rot)
+      expect(Math.abs(along(a) - along(b)) * 100, c.name).toBeLessThanOrEqual(1)
+      expect(checkProject(plan, { hoodOver: built.hoodOver }).some((x) => x.id === 'hoodOffHob'), c.name).toBe(false)
+      seen++
+    }
+    expect(seen).toBeGreaterThan(10)
+  })
+})
+
 describe('08/D16: hoodOver меряется по поставленной вытяжке', () => {
   it('на переборе: hoodOver = низ меша вытяжки над столешницей (±0,5 см)', () => {
     let seen = 0
@@ -437,6 +458,25 @@ describe('2026-09-27: встроенная вытяжка поднимает в�
       expect(built.hoodOver).toBe(norm)
       const strip = built.spec.runs.flatMap((r) => r.boxes).find((b) => b.slot === 'hood')!
       expect(strip.y - counter).toBeCloseTo(norm, 1)
+    })
+
+  for (const [hobKind, norm] of [
+    ['electric', 65],
+    ['gas', 75],
+  ] as const)
+    it(`плоская над ${hobKind === 'gas' ? 'газовой' : 'электрической'}: ряд прежний, вытяжка на норме под своим шкафом, шкаф над ней короче`, () => {
+      const built = withHood('flat', hobKind)
+      const counter = 82 + STYLES[0].topCm
+      expect(built.spec.heights.upperBottom).toBe(142)
+      expect(built.hoodOver).toBe(norm)
+      const box = built.spec.runs.flatMap((r) => r.boxes).find((b) => b.slot === 'hood')!
+      expect(box.y - counter).toBeCloseTo(norm, 1)
+      expect(box.h).toBe(12)
+      // над вытяжкой — шкаф от её верха; соседи — от низа ряда
+      const run = built.spec.runs.find((r) => r.boxes.includes(box))!
+      const over = modulesOf(run).upper.find((b) => b.x <= box.x + 0.5 && b.x + b.w >= box.x + box.w - 0.5)!
+      expect(over.y).toBeCloseTo(box.y + 12, 1)
+      for (const b of rowBottoms(built.spec).filter((r) => r.run === run.id && r.x !== over.x)) expect(b.y).toBeCloseTo(142, 1)
     })
 
   it('каминная, наклонная, без вытяжки, «камин» классики и вытяжка над островом — ряд прежний: 142 см на всех стенах', () => {

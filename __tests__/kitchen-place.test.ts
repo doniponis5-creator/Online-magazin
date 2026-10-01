@@ -888,3 +888,22 @@ describe('доводка круг 3 (P6): «левее / правее» у св�
     expect(left === null || left.pos.u1?.center === 120).toBe(true)
   })
 })
+
+describe('M1: свой шкаф у варочной не встал — столешница у варочной остаётся (ревью слияния)', () => {
+  // Стена 260: мойка 60, плита 60 и свой шкаф 150 вплотную к плите справа — шкаф не помещается и выпадает.
+  // Он был «столешницей» у плиты (правило P4), а раз его нет — у плиты снова ≥ HOB_SIDE с обеих сторон.
+  const s: KitchenState = { ...DEFAULT_STATE, shape: 'straight', a: 260, arrangement: { A: ['sink', 'hob', 'k1'] }, cabinets: { k1: { w: 150, front: 'doors' } } }
+  it('шкаф выпал → по бокам плиты не меньше 30 см, пункта hobSides нет', () => {
+    const p = planner(s, [])
+    expect(p.dropped.map((d) => d.item)).toContain('k1')
+    const mods = A(p).modules
+    const i = mods.findIndex((m) => m.kind === 'hob')
+    const side = (from: number, step: 1 | -1) => {
+      let w = 0
+      for (let j = from + step; j >= 0 && j < mods.length && mods[j].kind !== 'sink' && mods[j].kind !== 'hob' && !mods[j].item; j += step) w += mods[j].w
+      return w
+    }
+    expect(side(i, 1)).toBeGreaterThanOrEqual(30)
+    expect(checkProject(p).some((c) => c.id === 'hobSides' && c.level === 'warn')).toBe(false)
+  })
+})

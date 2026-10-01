@@ -370,6 +370,29 @@ export function chimneyHood(a: KitchenAppliance, mats: Mats, chimney: number): T
   return g
 }
 
+/**
+ * Плоская (подвесная) вытяжка: тонкий корпус под верхним шкафом, спереди —
+ * кнопки, снизу — два жировых фильтра и подсветка. `h`, `d` — м.
+ */
+export function flatHood(a: KitchenAppliance, mats: Mats, h: number, d: number): THREE.Group {
+  const g = new THREE.Group()
+  const w = cm(a.w)
+  const finish = mats.appliance(a.finish)
+  // низ фильтров — низ вытяжки (y = 0): он и стоит на норме над панелью
+  const lip = 0.004
+  g.add(slab(finish, 0, lip, 0, w, h, d, true))
+  // снизу: два металлических фильтра и лампа между ними
+  const f0 = 0.03
+  const f1 = d - 0.07
+  g.add(slab(mats.metal('steel'), 0.03, 0, f0, w / 2 - 0.05, lip, f1))
+  g.add(slab(mats.metal('steel'), w / 2 + 0.05, 0, f0, w - 0.03, lip, f1))
+  g.add(slab(mats.led, w / 2 - 0.03, 0, f1 - 0.1, w / 2 + 0.03, lip, f1 - 0.04))
+  // лицевая планка с кнопками (вровень — габарит корпуса не растёт)
+  g.add(slab(mats.darkGlass, 0.02, h * 0.25, d, w - 0.02, h * 0.75, d + 0.002))
+  for (let i = 0; i < 3; i++) g.add(slab(mats.metal('steel'), w * 0.6 + i * 0.04, h * 0.4, d + 0.002, w * 0.6 + i * 0.04 + 0.022, h * 0.6, d + 0.004))
+  return g
+}
+
 /* ───────── посудомоечная ───────── */
 
 /**

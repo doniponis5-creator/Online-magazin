@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     return new Response('Not found', { status: 404 })
   }
 
-  let raw: { url?: unknown; mime?: unknown; kind?: unknown }
+  let raw: { url?: unknown; mime?: unknown; kind?: unknown; data?: unknown }
   try {
     raw = JSON.parse(body)
   } catch {
@@ -36,8 +36,20 @@ export async function POST(request: Request) {
   }
   const url = typeof raw.url === 'string' && /^https:\/\//.test(raw.url) ? raw.url : ''
   const kind: MediaKind | null = raw.kind === 'audio' || raw.kind === 'image' ? raw.kind : null
-  if (!url || !kind) return Response.json({ ok: false, error: 'bad-request' }, { status: 400 })
+  // Маленькая картинка из цитаты (ответ на статус) приходит сразу байтами, без ссылки.
+  const inline = typeof raw.data === 'string' && /^[A-Za-z0-9+/=]+$/.test(raw.data) && raw.data.length <= 400_000 ? raw.data : ''
+  if ((!url && !inline) || !kind) return Response.json({ ok: false, error: 'bad-request' }, { status: 400 })
   if (!geminiConfigured()) return Response.json({ ok: false, error: 'no-model' }, { status: 503 })
+
+  if (inline) {
+    try {
+      const text = await readMedia(kind, 'image/jpeg', inline)
+      return Response.json({ ok: true, text })
+    } catch (error) {
+      console.error('[whatsapp] картинка из цитаты:', error instanceof Error ? error.message : error)
+      return Response.json({ ok: false, error: 'failed' }, { status: 502 })
+    }
+  }
 
   try {
     const file = await fetch(url, { signal: AbortSignal.timeout(20_000) })

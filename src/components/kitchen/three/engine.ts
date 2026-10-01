@@ -954,8 +954,20 @@ export class KitchenEngine {
       slot: (d?.slot as SlotKind | undefined) ?? null,
       item: (d?.item as ItemKey | undefined) ?? null,
       dims: (owner?.userData.dims as Dims | undefined) ?? null,
-      cab: (this.cabOwner(hit?.object ?? null)?.userData.cab as CabInfo | undefined) ?? null,
+      cab: (this.partOf(hit)?.userData.cab as CabInfo | undefined) ?? null,
     }
+  }
+
+  /**
+   * Шкаф под указателем. У колонны с духовкой выше духовки — её верх: нутро
+   * (дверцу открыли нажатием) и корпус там общие с нижним шкафом, а у
+   * открытого верха фасадов нет вовсе — иначе верх было бы не выбрать.
+   */
+  private partOf(hit: THREE.Intersection | null): THREE.Object3D | null {
+    const owner = this.cabOwner(hit?.object ?? null)
+    const from = owner?.userData.upFrom as number | undefined
+    if (!hit || !owner || from === undefined || owner.worldToLocal(hit.point.clone()).y < from) return owner
+    return owner.children.find((c) => (c.userData.cab as CabInfo | undefined)?.column) ?? owner
   }
 
   private cabOwner(o: THREE.Object3D | null): THREE.Object3D | null {
@@ -975,7 +987,8 @@ export class KitchenEngine {
     if (!found) return null
     const obj = found as THREE.Object3D
     this.showMeasure(obj)
-    return { dims: (obj.userData.dims as Dims | undefined) ?? null, cab: obj.userData.cab as CabInfo }
+    // у части без своих размеров (верх колонны) — размеры всего предмета
+    return { dims: (this.dimsOwner(obj)?.userData.dims as Dims | undefined) ?? null, cab: obj.userData.cab as CabInfo }
   }
 
   /**
@@ -1178,7 +1191,8 @@ export class KitchenEngine {
     const cab = this.cabOwner(hit.object)?.userData.cab as CabInfo | undefined
     let key: string | null = null
     if (item) key = item
-    else if (cab && !cab.fridge) {
+    // пустая комната: угловой шкаф стоит в углу по правилу — его не таскают
+    else if (cab && !cab.fridge && !(cab.corner && this.input?.plan.free)) {
       const w = (this.dimsOwner(hit.object)?.userData.dims as Dims | undefined)?.w
       if (cab.row === 'upper' || w === undefined || w >= NARROW_W) key = cab.key
     }
