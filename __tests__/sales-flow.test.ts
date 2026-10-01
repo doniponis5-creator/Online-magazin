@@ -686,3 +686,12 @@ describe('продавец, а не «Тариздейлиби?» в каждо�
     expect(detailed).toContain(withSpecs.specs[0].valueRu)
   })
 })
+
+describe('язык: кыргызские окончания без особых букв', () => {
+  it('«Программалары кандай? Энергиясы кандай класс?» — кыргызский; «Тариздейлиби?» — кыргызский; русские «товары» — нет', () => {
+    expect(talkLang([{ role: 'user', text: 'Программалары кандай? Энергиясы кандай класс?' }], 'ru')).toBe('ky')
+    expect(talkLang([{ role: 'user', text: 'Тариздейлиби' }], 'ru')).toBe('ky')
+    expect(talkLang([{ role: 'user', text: 'Какие товары есть?' }], 'ru')).toBe('ru')
+    expect(talkLang([{ role: 'user', text: 'Стиральная машина нужна' }], 'ru')).toBe('ru')
+  })
+})
