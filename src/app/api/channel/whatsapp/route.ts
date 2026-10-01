@@ -84,6 +84,7 @@ export async function POST(request: Request) {
     silent: Boolean(reply.silent),
     // Глушить чат на 12 часов — только когда пишет не покупатель.
     mute: Boolean(reply.mute),
+    followAfter: reply.followAfter ?? null,
     products: reply.products.map((p) => ({
       id: p.id,
       name: p.name,

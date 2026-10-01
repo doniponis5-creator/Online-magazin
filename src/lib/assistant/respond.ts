@@ -15,6 +15,7 @@ import { cleanName } from './talk'
 import { AFFIRM, BUY_INTENT, CALL_OFFER, DEFER, OFFER, cancel, hasDraft, looksLikeQuestion, start, step } from '@/lib/telegram/order'
 import { CALL_INTENT, cancelLead, hasLead, leadContext, leadStep, startLead } from './leads'
 import { lookupIn, salesCatalogNow } from './live'
+import { type Intent, followAfter, isSureYes, jevConfigured, objectionNote, readAnswer } from './jev'
 import type { ChatTurn } from './gemini'
 import type { CustomerBrief, ProductHit } from './knowledge'
 import { getInstallment, getProfile } from '@/lib/customer/gateway'
@@ -33,6 +34,8 @@ export type Reply = {
    * настоящий вопрос («Токмокко доставка канча?»), и на него надо ответить.
    */
   mute?: boolean
+  /** покупатель отложил («после зарплаты», «завтра») — напомнить через столько секунд, а не через 2 часа */
+  followAfter?: number
 }
 
 export type Channel = {
@@ -55,7 +58,9 @@ export async function respond(
   /** id товара, страница которого открыта у покупателя (чат на сайте) */
   page?: string,
 ): Promise<Reply> {
-  const flow = await salesFlow(channel, turns, lang, customer, buy, shown, page)
+  // Jev читает ответ на наш вопрос «Оформляем?» / «Позвонить?» — salesFlow кладёт его сюда.
+  const hint: { intent?: Intent | null } = {}
+  const flow = await salesFlow(channel, turns, lang, customer, buy, shown, page, hint)
   if (flow) return flow
   // «Ок», «👍», «рахмат» в ответ на напоминание или наш ответ — это не вопрос.
   // Отвечать «какую технику ищете?» на «Ок» — верный способ выглядеть роботом.
@@ -64,8 +69,11 @@ export async function respond(
     if (isOtherBot(turns)) return { text: '', products: [], source: 'flow', silent: true, mute: true }
     if (isAcknowledgement(turns) || isJunk(turns)) return { text: '', products: [], source: 'flow', silent: true }
   }
-  const first = await answer(turns, lang, customer, page, channel.known.name, Boolean(channel.known.phone))
-  const reply = declined(turns) ? { ...first, text: withoutCallOffer(first.text) } : first
+  const intent = hint.intent ?? null
+  const first = await answer(turns, lang, customer, page, channel.known.name, Boolean(channel.known.phone), objectionNote(intent))
+  const said = declined(turns) || intent?.kind === 'decline' ? { ...first, text: withoutCallOffer(first.text) } : first
+  const later = followAfter(intent)
+  const reply = later ? { ...said, followAfter: later } : { ...said, followAfter: undefined }
   // Сайт — там только покупатели. В WhatsApp модель ещё смотрит, кому адресовано.
   if (channel.leadChannel !== 'whatsapp') return reply
   // Идёт продажа (бот показывал товар) — это покупатель, даже если пишет о своём:
@@ -166,6 +174,7 @@ async function salesFlow(
   buy: unknown,
   shownRaw: unknown,
   page?: string,
+  hint: { intent?: Intent | null } = {},
 ): Promise<Reply | null> {
   const { key, known, orderSource } = channel
   const text = turns[turns.length - 1]?.text ?? ''
@@ -200,9 +209,17 @@ async function salesFlow(
   }
 
   // «Позвонить вам?» — «да» / «ооба» / «ха»: заявка на звонок без всяких кодовых слов.
-  const offeredCall = CALL_OFFER.test([...turns].reverse().find((t) => t.role === 'assistant')?.text ?? '')
+  const botAsked = [...turns].reverse().find((t) => t.role === 'assistant')?.text ?? ''
+  const offeredCall = CALL_OFFER.test(botAsked)
+  // На наш вопрос ответ короткий — его смысл читает Jev: списки слов не знали «Ладно давайте»,
+  // «Жарайт, берип коюңуз», «Апама айтып көрөйүн». Нет ключа или Jev молчит — работают списки.
+  if ((offeredCall || OFFER.test(botAsked)) && text.length <= 160 && jevConfigured()) hint.intent = await readAnswer(botAsked, text)
+  const jevYes = isSureYes(hint.intent ?? null, text)
+  // Jev уверенно слышит «потом» / «нет» / вопрос — «макул» из списка согласием не считаем.
+  const jevNo = Boolean(hint.intent && ['later', 'decline', 'question'].includes(hint.intent.kind) && hint.intent.confidence >= 0.8)
   // «Макул, мен 9 жаштамын, чоңдору барбы?» — не согласие на звонок, а новый вопрос: на него отвечает модель.
-  if (CALL_INTENT.test(text) || (offeredCall && AFFIRM.test(text.trim()) && !looksLikeQuestion(text))) {
+  const callYes = (AFFIRM.test(text.trim()) && !looksLikeQuestion(text) && !jevNo) || jevYes
+  if (CALL_INTENT.test(text) || (offeredCall && callYes)) {
     cancel(key)
     const questions = turns.filter((t) => t.role === 'user').map((t) => t.text)
     const reply = await startLead(key, talk, leadContext(questions, shownNames), who, channel.leadChannel)
@@ -227,7 +244,7 @@ async function salesFlow(
   // при получении можно?»). На него отвечает консультант, а не анкета заказа.
   const wantsToBuy = BUY_INTENT.test(text) && !visiting && !looksLikeQuestion(text.replace(/\?/g, '')) && !DEFER.test(text)
   // «Ооба, но денег пока нет, через 5 дней» — это не «да».
-  const agreed = AFFIRM.test(text) && OFFER.test(lastAnswer) && !looksLikeQuestion(text) && !DEFER.test(text)
+  const agreed = OFFER.test(lastAnswer) && ((AFFIRM.test(text) && !looksLikeQuestion(text) && !DEFER.test(text) && !jevNo) || jevYes)
   if (shown.length > 0 && (wantsToBuy || agreed)) {
     return only(await start(key, shown, talk, orderSource, who, wantedQty(text)))
   }

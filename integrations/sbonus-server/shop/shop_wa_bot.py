@@ -432,6 +432,15 @@ async def _answer(digits: str, name: str) -> bool:
             await redis_client.set(f"wa:shown:{digits}", json.dumps(ids), ex=TURNS_TTL)
             # Показали товар — если покупатель замолчит, через 2 часа спросим «ещё актуально?».
             await redis_client.set(f"wa:nudge:{digits}", json.dumps({"ts": time.time(), "name": name}), ex=24 * 3600)
+        # «Оыликдан кейин оламан», «эртең» — сайт (Jev) сказал, когда спросить снова:
+        # напоминание «ещё актуально?» придёт тогда, а не через 2 часа. Разговор и
+        # показанные товары помним до того дня.
+        later = int(reply.get("followAfter") or 0)
+        if later > 0:
+            keep = later + 2 * 24 * 3600
+            await redis_client.set(f"wa:nudge:{digits}", json.dumps({"ts": time.time() + later - NUDGE_AFTER, "name": name}), ex=keep)
+            await redis_client.expire(f"wa:turns:{digits}", max(keep, TURNS_TTL))
+            await redis_client.expire(f"wa:shown:{digits}", max(keep, TURNS_TTL))
         if count + 1 >= DAILY_LIMIT:
             await redis_client.set(f"wa:human:{digits}", "1", ex=HUMAN_QUIET)
         elif reply.get("handoff"):
