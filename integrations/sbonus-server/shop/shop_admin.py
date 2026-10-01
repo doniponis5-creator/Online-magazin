@@ -131,6 +131,16 @@ SETTINGS: list[dict] = [
         "type": "bool",
         "default": "1",
     },
+    # Анимация баннера на главной. Коды — те же, что в src/lib/hero.ts на сайте;
+    # 1С показывает владельцу русские названия и сама переводит их в коды.
+    {
+        "key": "SITE_HERO_VARIANT",
+        "title": "Анимация баннера на главной",
+        "hint": "classic — прежняя; reveal — окно и точки на технике; glow — утро → вечер; kitchens — готовые 3D-кухни веером.",
+        "type": "choice",
+        "choices": ["classic", "reveal", "glow", "kitchens"],
+        "default": "classic",
+    },
 ]
 
 BY_KEY = {s["key"]: s for s in SETTINGS}
@@ -139,6 +149,13 @@ BY_KEY = {s["key"]: s for s in SETTINGS}
 def _clean(spec: dict, raw) -> str:
     """Привести значение к тому, что можно положить в базу. Мусор — ошибка, а не тихая замена."""
     value = str(raw).strip()
+    if spec["type"] == "choice":
+        if value in spec["choices"]:
+            return value
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            f"{spec['title']}: допустимо {', '.join(spec['choices'])}",
+        )
     if spec["type"] == "bool":
         if value.lower() in ("1", "true", "да", "истина", "yes", "on"):
             return "1"
@@ -213,6 +230,7 @@ async def site_settings(request: Request, db: AsyncSession = Depends(get_db)):
         "bonusMaxPct": int(current["SITE_BONUS_MAX_PCT"]),
         "bonusMaxOrder": int(current["SITE_BONUS_MAX_ORDER_SOM"]),
         "welcomeBonus": int(current["SITE_WELCOME_BONUS_AMOUNT"]),
+        "heroVariant": current["SITE_HERO_VARIANT"],
     }
 
 

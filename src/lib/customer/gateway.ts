@@ -9,6 +9,7 @@
  */
 import 'server-only'
 import { callServer, mockOrdersOf, paymentMode } from '@/lib/orders/gateway'
+import { asHeroVariant, HERO_FALLBACK, type HeroVariant } from '@/lib/hero'
 
 export type BonusHistoryItem = { type: string; amount: number; note: string; date: string | null }
 export type CustomerOrderItem = {
@@ -202,6 +203,22 @@ export async function getSiteSettings(): Promise<SiteSettings> {
     // Сервер не ответил — не запираем магазин: заказ важнее настройки
     console.error('[settings] не удалось получить настройки сайта:', error)
     return SITE_SETTINGS_FALLBACK
+  }
+}
+
+/**
+ * Анимация баннера на главной — владелец выбирает в 1С («Панель сайта»).
+ * Ответ живёт минуту: главная остаётся быстрой, а выбор доходит до сайта за минуту.
+ * В тестовом режиме — из SITE_HERO_VARIANT в .env.local.
+ */
+export async function getHeroVariant(): Promise<HeroVariant> {
+  if (paymentMode() === 'mock') return asHeroVariant(process.env.SITE_HERO_VARIANT)
+  try {
+    const data = await callServer<{ heroVariant?: unknown }>('/api/v1/webhook/site/settings', { method: 'GET', revalidate: 60 })
+    return asHeroVariant(data.heroVariant)
+  } catch (error) {
+    console.error('[settings] не удалось узнать анимацию баннера:', error)
+    return HERO_FALLBACK
   }
 }
 

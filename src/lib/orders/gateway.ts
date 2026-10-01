@@ -54,7 +54,10 @@ function sign(body: string): string {
   return createHmac('sha256', API_SECRET ?? '').update(body, 'utf8').digest('hex')
 }
 
-export async function callServer<T>(path: string, init: { method: 'GET' | 'POST'; body?: unknown }): Promise<T> {
+export async function callServer<T>(
+  path: string,
+  init: { method: 'GET' | 'POST'; body?: unknown; /** кэш ответа, секунд; без него — каждый раз заново */ revalidate?: number },
+): Promise<T> {
   if (!API_URL || !API_SECRET) throw new Error('Сервер заказов не настроен (SHOP_API_URL, SHOP_API_SECRET)')
   const body = init.body === undefined ? undefined : JSON.stringify(init.body)
   const response = await fetch(`${API_URL}${path}`, {
@@ -65,7 +68,7 @@ export async function callServer<T>(path: string, init: { method: 'GET' | 'POST'
       'X-Signature': sign(body ?? path),
     },
     body,
-    cache: 'no-store',
+    ...(init.revalidate ? { next: { revalidate: init.revalidate } } : { cache: 'no-store' as const }),
     signal: AbortSignal.timeout(20000),
   })
   if (!response.ok) {
