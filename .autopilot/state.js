@@ -1,7 +1,7 @@
 window.STATE =
 {
   "slug": "kitchen-3d-pro",
-  "dir": "2026-09-29-kitchen-3d-pro--wip",
+  "dir": "2026-09-29-kitchen-3d-pro",
   "title": "3D-конструктор кухни — как у профессионалов: свободная расстановка, план сверху, телефон",
   "mode": "full",
   "depth": "normal",
@@ -14,8 +14,8 @@ window.STATE =
   "memoryFile": "CLAUDE.md",
   "skillDir": "/Users/doniyorabduganiev/.claude/skills/autopilot",
   "startedAt": "2026-09-29T22:14:27+06:00",
-  "updatedAt": "2026-10-01T10:42:39+06:00",
-  "finishedAt": null,
+  "updatedAt": "2026-10-01T10:49:04+06:00",
+  "finishedAt": "2026-10-01T10:49:04+06:00",
   "stages": [
     {
       "id": "preflight",
