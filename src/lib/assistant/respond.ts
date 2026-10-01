@@ -12,7 +12,7 @@ import 'server-only'
 import type { Lang } from '@/lib/i18n/config'
 import { answer, talkLang } from './reply'
 import { cleanName } from './talk'
-import { AFFIRM, BUY_INTENT, CALL_OFFER, DEFER, OFFER, cancel, hasDraft, looksLikeQuestion, start, step } from '@/lib/telegram/order'
+import { AFFIRM, BUY_INTENT, CALL_OFFER, DEFER, OFFER, PAY_ASIDE, cancel, hasDraft, looksLikeQuestion, start, step } from '@/lib/telegram/order'
 import { CALL_INTENT, cancelLead, hasLead, leadContext, leadStep, startLead } from './leads'
 import { lookupIn, salesCatalogNow } from './live'
 import { type Intent, followAfter, isSureYes, jevConfigured, objectionNote, readAnswer } from './jev'
@@ -138,9 +138,18 @@ function isOtherBot(turns: ChatTurn[]): boolean {
 }
 
 /** «{{SWE001}}», один знак, e-mail — сообщение не человеку, отвечать нечего. */
+/** Сообщения покупателя после последнего ответа бота: пишут очередью, «Адрес скиньте», «Или локацию», «?». */
+function sinceBot(turns: ChatTurn[]): string[] {
+  const out: string[] = []
+  for (let i = turns.length - 1; i >= 0 && turns[i].role === 'user'; i--) out.unshift(turns[i].text.trim())
+  return out
+}
+
+const JUNK = (text: string) => /^\{\{[^}]*\}\}$/.test(text) || /^[\p{P}\p{S}]{1,3}$/u.test(text) || /^[\w.+-]+@[\w-]+\.[\w.]+$/.test(text)
+/** Мусор — только если ВСЁ после ответа бота мусор: «?» после «Адрес скиньте» — это «ну ответьте же». */
 function isJunk(turns: ChatTurn[]): boolean {
-  const text = turns[turns.length - 1]?.text.trim() ?? ''
-  return /^\{\{[^}]*\}\}$/.test(text) || /^[\p{P}\p{S}]{1,3}$/u.test(text) || /^[\w.+-]+@[\w-]+\.[\w.]+$/.test(text)
+  const own = sinceBot(turns)
+  return own.length > 0 && own.every(JUNK)
 }
 
 function isAcknowledgement(turns: ChatTurn[]): boolean {
@@ -148,6 +157,8 @@ function isAcknowledgement(turns: ChatTurn[]): boolean {
   if (!last || last.role !== 'user') return false
   const text = last.text.trim()
   if (!text || text.length > 40 || !ACK.test(text)) return false
+  // «Адрес скиньте» + «Ок» — вопрос остался без ответа.
+  if (sinceBot(turns).some((t) => !(t.length <= 40 && ACK.test(t)) && !JUNK(t))) return false
   // Бот ждёт ответа, только если его последняя фраза — вопрос («Как вас зовут?»).
   // «Чем могу помочь? Если ищете технику — подберу.» вопросом не считается.
   const before = [...turns].reverse().find((t) => t.role === 'assistant')
@@ -194,7 +205,11 @@ async function salesFlow(
   const lead = await leadStep(key, text, talk)
   if (lead) return only(lead, true)
 
-  const ongoing = await step(key, text, talk, lang)
+  // Очередь сообщений на шаге анкеты: берём то, что похоже на ответ, а не последнее.
+  // «Кызыл-кыя шаарына даставка…» + «Мбанк номер жоноткуло» — город Кызыл-Кыя.
+  const queue = sinceBot(turns).filter((t) => t && !PAY_ASIDE.test(t) && !t.includes('?'))
+  const stepText = hasDraft(key) && queue.length > 0 && PAY_ASIDE.test(text) ? queue.join(', ') : text
+  const ongoing = await step(key, stepText, talk, lang)
   if (ongoing) return only(ongoing)
 
   const find = lookupIn(await salesCatalogNow())

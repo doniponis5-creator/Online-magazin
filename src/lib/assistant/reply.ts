@@ -102,6 +102,10 @@ export function talkLang(turns: ChatTurn[], lang: Lang) {
  * язык не определить; считаются только подпись под фото и голосовое.
  */
 function ownWords(text: string): string {
+  // «[Ответ на фото: Ушул мото дагы барбы] ?» — своих слов нет, язык берём из цитаты,
+  // если там не описание фото (его модель пишет по-русски: «На фото …»).
+  const quote = text.match(/^\[Ответ на[^:\]]*:\s*([^\]]*)\]\s*([\s\S]*)$/u)
+  if (quote && !/\p{L}/u.test(quote[2]) && !/^(На (фото|фотографии|скриншоте|изображении|снимке)|Скриншот|Фото)/i.test(quote[1])) return quote[1]
   text = text.replace(/^\[Ответ на[^\]]*\]\s*/u, '')
   if (!text.startsWith('[Фото]')) return text.replace(/^\[Голосовое\]\s*/, '')
   const caption = text.split('Подпись покупателя:')[1]

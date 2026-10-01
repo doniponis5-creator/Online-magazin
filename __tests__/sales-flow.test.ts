@@ -530,3 +530,69 @@ describe('склад в Бишкеке (01.10)', () => {
     expect(houseStyle('Холодильник есть, 16 900 сом.', 'ru')).not.toMatch(/https?:/)
   })
 })
+
+describe('аудит 01.10 (день): очередь сообщений, оплата в анкете, язык цитаты и приветствия', () => {
+  const wa = (key: string) => ({ key, orderSource: 'Заказ из WhatsApp', leadChannel: 'whatsapp' as const, known: { phone: '+996555000080', name: 'Нурсеит' } })
+
+  it('«Адрес скиньте» + «Или местоположение» + «?» — не мусор, отвечает модель', async () => {
+    vi.resetModules()
+    vi.doMock('@/lib/assistant/reply', async (orig) => ({
+      ...(await orig<typeof import('@/lib/assistant/reply')>()),
+      answer: async () => ({ text: 'Адрес: Араванский район, улица Ош-3000, 86.', products: [], source: 'gemini' as const, audience: 'customer' as const }),
+    }))
+    const { respond } = await import('@/lib/assistant/respond')
+    const r = await respond(wa('wa:f1'), [
+      { role: 'assistant', text: 'Поздравляем с днём рождения!' },
+      { role: 'user', text: 'Адрес можете скинуть пожалуйста' },
+      { role: 'user', text: 'Или местоположение' },
+      { role: 'user', text: '?' },
+    ], 'ru', null)
+    expect(r.silent).toBeFalsy()
+    expect(r.text).toContain('Ош-3000')
+    vi.doUnmock('@/lib/assistant/reply')
+    vi.resetModules()
+  })
+
+  it('один «?» или «Ок» после ответа бота — по-прежнему тишина', async () => {
+    const { respond } = await import('@/lib/assistant/respond')
+    for (const q of ['?', 'Ок']) {
+      const r = await respond(wa('wa:f2'), [{ role: 'assistant', text: 'Готово.' }, { role: 'user', text: q }], 'ru', null)
+      expect(r.silent, q).toBe(true)
+    }
+  })
+
+  it('«Кызыл-кыя шаарына…» + «Мбанк номер жоноткуло» на «Кайда жеткирели?» — город Кызыл-Кыя, не «Мбанк»', async () => {
+    const { respond } = await import('@/lib/assistant/respond')
+    const first = await respond(wa('wa:f3'), [{ role: 'assistant', text: `${product.nameRu}. Тариздейлиби?` }, { role: 'user', text: 'Болду алам' }], 'ky', null, undefined, [product.id])
+    expect(first.text).toMatch(/Кайда жеткирели/)
+    const r = await respond(wa('wa:f3'), [
+      { role: 'assistant', text: first.text },
+      { role: 'user', text: 'Кызыл-кыя шаарына даставка кылып берсениздер жакшы болот' },
+      { role: 'user', text: 'Мбанк номер жоноткуло' },
+    ], 'ky', null, undefined, [product.id])
+    expect(r.text).toMatch(/Көчө жана үй/)
+  })
+
+  it('одно «Мбанк номер жоноткуло» на шаге «куда» — объяснить оплату и спросить снова', async () => {
+    const { start, step } = await import('@/lib/telegram/order')
+    await start('wa:f4', [product.id], 'ky', 'Заказ из WhatsApp', { name: 'Нурсеит', phone: '+996555000081' })
+    const r = await step('wa:f4', 'Мбанк номер жоноткуло', 'ky', 'ru')
+    expect(r).toMatch(/QR-код/)
+    expect(r).toMatch(/Кайда жеткирели/)
+  })
+
+  it('язык: «[Ответ на фото: Ушул мото дагы барбы] ?» — кыргызский; приветствия', () => {
+    expect(talkLang([{ role: 'user', text: '[Ответ на фото: Ушул мото дагы барбы] ?' }], 'ru')).toBe('ky')
+    expect(talkLang([{ role: 'user', text: '[Ответ на фото: На фото красный мотоцикл] ?' }], 'ru')).toBe('ru')
+    expect(detectLang('Ассалом алейкум', 'ru')).toBe('uz')
+    expect(detectLang('Ассалому алейкум', 'ru')).toBe('uz')
+    expect(detectLang('Ассаламу алейкум', 'ru')).toBe('ky')
+  })
+
+  it('в промпте: сроки не обещать, разрешения «тактап берейинби?» не спрашивать', async () => {
+    const { systemInstruction } = await import('@/lib/assistant/prompt')
+    const text = systemInstruction('ru', null, 'ky', [], '', '', undefined, null)
+    expect(text).toMatch(/эртең келет/)
+    expect(text).toMatch(/тактап берейинби/)
+  })
+})
