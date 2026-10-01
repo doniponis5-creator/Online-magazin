@@ -163,31 +163,31 @@
   },
   "integrations/sbonus-server/shop/001_shop_orders_migration.sql": {
     "mtime": 1789746574.7940266,
-    "seen": 1790789316.2608352,
+    "seen": 1790830153.624331,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/002_shop_catalog_migration.sql": {
     "mtime": 1789746574.7941577,
-    "seen": 1790789316.260841,
+    "seen": 1790830153.6243331,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/003_shop_bonus_migration.sql": {
     "mtime": 1789746574.7942019,
-    "seen": 1790789316.260844,
+    "seen": 1790830153.6243331,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/004_shop_stats_migration.sql": {
     "mtime": 1789746574.7942476,
-    "seen": 1790789316.2608461,
+    "seen": 1790830153.624334,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/005_shop_push_migration.sql": {
     "mtime": 1789751144.4544964,
-    "seen": 1790789316.260847,
+    "seen": 1790830153.624334,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -954,9 +954,9 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1790696959.915315,
-    "seen": 1790697010.0016,
-    "ast_hash": "51dbce7700aa630d1cebecab908f969e",
+    "mtime": 1790834257.3797727,
+    "seen": 1790834263.41872,
+    "ast_hash": "4142c17f0a6d9970c35767f8c87f4d07",
     "semantic_hash": ""
   },
   "DESIGN.md": {
@@ -3984,9 +3984,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/reply.ts": {
-    "mtime": 1790789167.0035264,
-    "seen": 1790789296.846577,
-    "ast_hash": "9a734e2862bff40660b38aed9108b2bd",
+    "mtime": 1790834124.9809697,
+    "seen": 1790834263.416838,
+    "ast_hash": "a3484b1e5621bb426cd2840e41304958",
     "semantic_hash": ""
   },
   "src/lib/assistant/talk.ts": {
@@ -4285,13 +4285,13 @@
   },
   "integrations/sbonus-server/shop/006_shop_installments_migration.sql": {
     "mtime": 1789980267.1214871,
-    "seen": 1790789316.260849,
+    "seen": 1790830153.624335,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/007_shop_notes_migration.sql": {
     "mtime": 1789980267.1215398,
-    "seen": 1790789316.260851,
+    "seen": 1790830153.6243358,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -4339,26 +4339,26 @@
   },
   "integrations/sbonus-server/shop/008_shop_chat_extra_migration.sql": {
     "mtime": 1790002975.5050404,
-    "seen": 1790789316.260854,
+    "seen": 1790830153.6243358,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/shop_wa_bot.py": {
-    "mtime": 1790830123.3002338,
-    "seen": 1790830150.077301,
-    "ast_hash": "29272c6e1e1e6f501769eedae98fb42a",
+    "mtime": 1790834124.9827342,
+    "seen": 1790834263.413867,
+    "ast_hash": "a50e3e4d884a1286d1b10834e5f38d8f",
     "semantic_hash": ""
   },
   "src/app/api/channel/whatsapp/route.ts": {
-    "mtime": 1790605222.0155287,
-    "seen": 1790697010.0014489,
-    "ast_hash": "bd29aa74415f206643193f3ffdf07404",
+    "mtime": 1790834124.982178,
+    "seen": 1790834263.415021,
+    "ast_hash": "73910f9d83181453a57bb333674ecca9",
     "semantic_hash": ""
   },
   "src/lib/assistant/respond.ts": {
-    "mtime": 1790830123.29966,
-    "seen": 1790830150.080308,
-    "ast_hash": "f88531151fbc88d108d06ffe07f9b4e3",
+    "mtime": 1790834132.5229797,
+    "seen": 1790834263.416838,
+    "ast_hash": "f43ec3b5684d3580549922b5717ebbf4",
     "semantic_hash": ""
   },
   "docs/PC_2026-09-21.md": {
@@ -6529,19 +6529,19 @@
   },
   "integrations/sbonus-server/shop/009_shop_push_token_len_migration.sql": {
     "mtime": 1790604951.2586076,
-    "seen": 1790789316.2608562,
+    "seen": 1790830153.624337,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/010_shop_cart_reminders_migration.sql": {
     "mtime": 1790604951.2590644,
-    "seen": 1790789316.260858,
+    "seen": 1790830153.624338,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/011_shop_promo_migration.sql": {
     "mtime": 1790604951.2591376,
-    "seen": 1790789316.26086,
+    "seen": 1790830153.624338,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -6723,6 +6723,30 @@
     "mtime": 1790696959.9175713,
     "seen": 1790697010.001612,
     "ast_hash": "4cd3b4eaab254813e175ecd60a4849c1",
+    "semantic_hash": ""
+  },
+  "__tests__/jev.test.ts": {
+    "mtime": 1790834212.683597,
+    "seen": 1790834263.4125881,
+    "ast_hash": "23ac9c269d33b0a944710a8c64cd5701",
+    "semantic_hash": ""
+  },
+  "scripts/jev-remote.sh": {
+    "mtime": 1790834247.6560063,
+    "seen": 1790834263.414357,
+    "ast_hash": "2519a030187eb89714772a3eceb97799",
+    "semantic_hash": ""
+  },
+  "scripts/setup-jev.sh": {
+    "mtime": 1790834247.6583805,
+    "seen": 1790834263.414492,
+    "ast_hash": "c7a6541002967426737cfdcc3e2eb038",
+    "semantic_hash": ""
+  },
+  "src/lib/assistant/jev.ts": {
+    "mtime": 1790834212.6834455,
+    "seen": 1790834263.416714,
+    "ast_hash": "05e8baf005893035eb6e0d15f1fcea15",
     "semantic_hash": ""
   }
 }
