@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>smarket.kg · ролики</title>
+<style>
+  @font-face {
+    font-family: Manrope;
+    src: url(assets/fonts/manrope-cyrillic.woff2) format('woff2');
+    font-weight: 200 800;
+    unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+  }
+  @font-face {
+    font-family: Manrope;
+    src: url(assets/fonts/manrope-latin.woff2) format('woff2');
+    font-weight: 200 800;
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  html, body { margin: 0; background: #0e131b; color: #e8edf3; font-family: Manrope, sans-serif; }
+  #stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #fff; perspective: 2600px; perspective-origin: 540px 960px; transform-origin: 0 0; }
+  #stage text { white-space: pre; }
+  #stage .layer { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; transform-style: flat; }
+  #stage .abs { position: absolute; left: 0; top: 0; }
+  #stage svg { display: block; overflow: visible; }
+  body.preview { min-height: 100vh; }
+  body.preview #frame { position: relative; margin: 12px auto 0; border-radius: 18px; overflow: hidden; box-shadow: 0 20px 60px #0008; }
+  .bar { display: flex; align-items: center; gap: 12px; width: min(560px, calc(100% - 32px)); margin: 12px auto; }
+  .bar button { font: 700 14px Manrope, sans-serif; background: #eaf500; color: #263244; border: 0; border-radius: 10px; padding: 10px 16px; cursor: pointer; }
+  .bar input { flex: 1; accent-color: #eaf500; }
+  .bar output { font: 600 13px ui-monospace, monospace; min-width: 64px; text-align: right; }
+  body.render .bar { display: none; }
+</style>
+</head>
+<body>
+<div id="frame"><div id="stage"></div></div>
+<div class="bar">
+  <button id="play" type="button">Пауза</button>
+  <input id="scrub" type="range" min="0" max="30" step="0.0333" value="0" aria-label="Время">
+  <output id="clock">0.00 с</output>
+</div>
+<script type="module">
+  // ?v=order — «Как заказать», ?v=address — «Запомните один адрес».
+  const params = new URLSearchParams(location.search);
+  const v = params.get('v') || 'address';
+  const { start } = await import(`./${v}.anim.js`);
+  const { DURATION } = await import(`./${v}.timeline.mjs`);
+  document.getElementById('scrub').max = DURATION;
+  const render = params.has('render');
+  document.body.className = render ? 'render' : 'preview';
+  const stage = document.getElementById('stage'), frame = document.getElementById('frame');
+  if (!render) {
+    const fit = () => {
+      const k = Math.min((innerHeight - 90) / 1920, (innerWidth - 32) / 1080);
+      stage.style.transform = `scale(${k})`;
+      frame.style.width = 1080 * k + 'px';
+      frame.style.height = 1920 * k + 'px';
+    };
+    fit();
+    addEventListener('resize', fit);
+  }
+  await start(stage);
+  window.__ready = true;
+  if (!render) {
+    const scrub = document.getElementById('scrub'), clock = document.getElementById('clock'), play = document.getElementById('play');
+    let playing = true, t0 = performance.now(), at = 0;
+    const tick = now => {
+      if (playing) { at = ((now - t0) / 1000) % DURATION; window.seek(at); scrub.value = at; clock.textContent = at.toFixed(2) + ' с'; }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+    play.onclick = () => { playing = !playing; play.textContent = playing ? 'Пауза' : 'Играть'; t0 = performance.now() - at * 1000; };
+    scrub.oninput = () => { playing = false; play.textContent = 'Играть'; at = +scrub.value; window.seek(at); clock.textContent = at.toFixed(2) + ' с'; };
+    const q = new URLSearchParams(location.search).get('t');
+    if (q) { playing = false; play.textContent = 'Играть'; at = +q; window.seek(at); scrub.value = at; }
+  }
+</script>
+</body>
+</html>
