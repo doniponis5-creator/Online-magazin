@@ -163,31 +163,31 @@
   },
   "integrations/sbonus-server/shop/001_shop_orders_migration.sql": {
     "mtime": 1789746574.7940266,
-    "seen": 1790870208.245736,
+    "seen": 1790870563.030186,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/002_shop_catalog_migration.sql": {
     "mtime": 1789746574.7941577,
-    "seen": 1790870208.245737,
+    "seen": 1790870563.030187,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/003_shop_bonus_migration.sql": {
     "mtime": 1789746574.7942019,
-    "seen": 1790870208.245738,
+    "seen": 1790870563.030188,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/004_shop_stats_migration.sql": {
     "mtime": 1789746574.7942476,
-    "seen": 1790870208.245738,
+    "seen": 1790870563.030188,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/005_shop_push_migration.sql": {
     "mtime": 1789751144.4544964,
-    "seen": 1790870208.245739,
+    "seen": 1790870563.030189,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -3936,9 +3936,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/knowledge.ts": {
-    "mtime": 1790870073.9449167,
-    "seen": 1790870204.06787,
-    "ast_hash": "6038ed9bbf60187d84e0e29a2416ad23",
+    "mtime": 1790871318.173294,
+    "seen": 1790871373.23104,
+    "ast_hash": "e81ae74049670f20a0fe8c7d600dbd42",
     "semantic_hash": ""
   },
   "__tests__/assistant.test.ts": {
@@ -3978,9 +3978,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/prompt.ts": {
-    "mtime": 1790870105.1535923,
-    "seen": 1790870204.0679722,
-    "ast_hash": "e063422a7be9e1148f1fe324d9f344cb",
+    "mtime": 1790871318.174278,
+    "seen": 1790871373.231128,
+    "ast_hash": "0c31bf7b9d1509ac4a8dd8c68a94e8c0",
     "semantic_hash": ""
   },
   "src/lib/assistant/reply.ts": {
@@ -4285,13 +4285,13 @@
   },
   "integrations/sbonus-server/shop/006_shop_installments_migration.sql": {
     "mtime": 1789980267.1214871,
-    "seen": 1790870208.24574,
+    "seen": 1790870563.030189,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/007_shop_notes_migration.sql": {
     "mtime": 1789980267.1215398,
-    "seen": 1790870208.24574,
+    "seen": 1790870563.03019,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -4314,9 +4314,9 @@
     "semantic_hash": ""
   },
   "__tests__/sales-flow.test.ts": {
-    "mtime": 1790870481.4824793,
-    "seen": 1790870501.904192,
-    "ast_hash": "b968ae205c71a4f547bfd194479749df",
+    "mtime": 1790871346.5976727,
+    "seen": 1790871373.227069,
+    "ast_hash": "e2c6a702b02aadbab204a0fc7e8eee95",
     "semantic_hash": ""
   },
   "src/lib/assistant/leads.ts": {
@@ -4339,14 +4339,14 @@
   },
   "integrations/sbonus-server/shop/008_shop_chat_extra_migration.sql": {
     "mtime": 1790002975.5050404,
-    "seen": 1790870208.2457411,
+    "seen": 1790870563.0301912,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/shop_wa_bot.py": {
-    "mtime": 1790870175.2892318,
-    "seen": 1790870204.0647879,
-    "ast_hash": "3be7510573caa1d310879be022db0522",
+    "mtime": 1790870554.7593524,
+    "seen": 1790870563.0302038,
+    "ast_hash": "74fc1e44382cd2ecaa90a05395d27f61",
     "semantic_hash": ""
   },
   "src/app/api/channel/whatsapp/route.ts": {
@@ -4494,15 +4494,15 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/policy.ts": {
-    "mtime": 1790847213.4183285,
-    "seen": 1790853193.408521,
-    "ast_hash": "95890ed3d080e799766b22cb4221be8d",
+    "mtime": 1790871318.1737418,
+    "seen": 1790871373.231127,
+    "ast_hash": "d95ab8f111dfc712b3f304341f02c5d8",
     "semantic_hash": ""
   },
   "scripts/exam/questions.txt": {
-    "mtime": 1790853426.952829,
-    "seen": 1790853433.6208289,
-    "ast_hash": "ede84dd265e722a9295acd679089b9e1",
+    "mtime": 1790871366.4572473,
+    "seen": 1790871373.234289,
+    "ast_hash": "adfd5f3c0848d93429a7712bdc110b49",
     "semantic_hash": ""
   },
   "android/app/src/main/res/drawable-nodpi/splash_logo.png": {
@@ -6517,19 +6517,19 @@
   },
   "integrations/sbonus-server/shop/009_shop_push_token_len_migration.sql": {
     "mtime": 1790604951.2586076,
-    "seen": 1790870208.245742,
+    "seen": 1790870563.0301912,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/010_shop_cart_reminders_migration.sql": {
     "mtime": 1790604951.2590644,
-    "seen": 1790870208.245742,
+    "seen": 1790870563.0301921,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/011_shop_promo_migration.sql": {
     "mtime": 1790604951.2591376,
-    "seen": 1790870208.245743,
+    "seen": 1790870563.0301929,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -7173,6 +7173,12 @@
     "mtime": 1790870428.2127917,
     "seen": 1790870501.904531,
     "ast_hash": "41c0bb15dbc9613188b65358b26f37ad",
+    "semantic_hash": ""
+  },
+  "src/data/product-facts.ts": {
+    "mtime": 1790871318.1508539,
+    "seen": 1790871373.2309382,
+    "ast_hash": "eaa948bfdaae4b75cf7341c325aba392",
     "semantic_hash": ""
   }
 }

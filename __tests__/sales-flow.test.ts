@@ -695,3 +695,28 @@ describe('язык: кыргызские окончания без особых 
     expect(talkLang([{ role: 'user', text: 'Стиральная машина нужна' }], 'ru')).toBe('ru')
   })
 })
+
+describe('факты о товаре, размеры и доверие (01.10)', () => {
+  it('Эндуро: возраст 8–10, заряд 3–4 часа, в горы не рекомендуем — в подробном каталоге', async () => {
+    const { catalogForQuestion } = await import('@/lib/assistant/knowledge')
+    const { productFacts } = await import('@/data/product-facts')
+    expect(productFacts('cb-00002545')).toMatch(/8–10 лет/)
+    expect(productFacts('cb-нет-такого')).toBe('')
+    const enduro = { ...products[0], id: 'cb-00002545', nameRu: 'Электро Эндуро WN-A10', nameKy: 'Электро Эндуро WN-A10', brand: 'WN', specs: [] }
+    const text = catalogForQuestion([enduro, ...products], 'эндуро', 'ru', null, ['cb-00002545'])
+    expect(text.split('ВЕСЬ КАТАЛОГ')[0]).toMatch(/3–4 часа.*НЕ рекомендуем/)
+  })
+
+  it('в правилах: страх обмана — QR на магазин, с 2011 года, приехать, Instagram, голос руководства', async () => {
+    const { storePolicy } = await import('@/lib/assistant/policy')
+    const p = storePolicy()
+    expect(p).toMatch(/А ВДРУГ ОБМАНУТ/)
+    expect(p).toMatch(/QR-код O!Деньги/)
+    expect(p).toMatch(/smartcentrr/)
+  })
+
+  it('в промпте: размеры и возраст — только из каталога, «на глаз» нельзя', async () => {
+    const { systemInstruction } = await import('@/lib/assistant/prompt')
+    expect(systemInstruction('ru', null, 'ky', [], '', '', undefined, null)).toMatch(/РАЗМЕРЫ И ВОЗРАСТ/)
+  })
+})

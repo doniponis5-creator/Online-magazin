@@ -7,6 +7,7 @@
  * поэтому цена в чате и цена на странице товара не могут разойтись.
  */
 
+import { productFacts } from '@/data/product-facts'
 import { address, phones, since, yearsOnMarket } from '@/data/contacts'
 import { categories, categoryName } from '@/data/categories'
 import { products, type Product } from '@/data/products'
@@ -228,6 +229,7 @@ export function catalogForQuestion(list: Product[], question: string, lang: Lang
       productLine(product),
       `доставка: ${product.deliveryPrice ? `${product.deliveryPrice} сом` : 'бесплатно'}`,
       specs ? `характеристики: ${specs}` : '',
+      productFacts(product.id),
       desc ? `описание: ${desc.slice(0, DESC_CHARS)}${desc.length > DESC_CHARS ? '…' : ''}` : '',
     ]
       .filter(Boolean)
