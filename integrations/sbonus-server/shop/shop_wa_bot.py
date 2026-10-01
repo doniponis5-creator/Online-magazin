@@ -656,9 +656,43 @@ async def _waiting_chats() -> list[str]:
 DIGEST_HOUR = 9
 
 
+WAITING_HOURS = (13, 17)
+
+
+async def send_waiting() -> bool:
+    """
+    Днём — только «Ждут ответа», без сводки: как в колл-центре, покупатель не должен ждать
+    до утра. Пусто — ничего не шлём.
+    """
+    from .shop_router import _admin_phone
+    waiting = await _waiting_chats()
+    if not waiting:
+        return False
+    await _send_text(_admin_phone(), "\n".join(waiting))
+    logger.info(f"wa waiting: отправлен список ({len(waiting) - 1})")
+    return True
+
+
 def run_digest() -> None:
-    """Запуск из cron раз в час; шлём только в 9 утра по Бишкеку, один раз в день."""
-    if _bishkek_now().hour != DIGEST_HOUR:
+    """Запуск из cron раз в час: в 9 утра сводка, в 13 и 17 — кто ждёт ответа. Каждое — раз в день."""
+    hour = _bishkek_now().hour
+    if hour in WAITING_HOURS:
+        logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
+
+        async def waiting_once() -> None:
+            try:
+                key = f"wa:waiting:{_bishkek_now().strftime('%Y%m%d')}:{hour}"
+                if await redis_client.set(key, "1", ex=2 * 24 * 3600, nx=True):
+                    await send_waiting()
+            finally:
+                await _close_redis()
+
+        try:
+            asyncio.run(waiting_once())
+        except Exception as error:
+            logger.error(f"wa waiting: {error}")
+        return
+    if hour != DIGEST_HOUR:
         return
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 

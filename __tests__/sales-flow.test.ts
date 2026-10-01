@@ -345,11 +345,11 @@ describe('аудит 26–28.09: WhatsApp', () => {
 
   it('полный адрес на шаге «куда» — сразу заказ; «озум алам» на шаге «адрес» — самовывоз', async () => {
     await start('wa:a6', [product.id], 'ky', 'Заказ из WhatsApp', { name: 'Айгүл', phone: '+996555000031' })
-    expect(await step('wa:a6', 'Ош шаары Араван району жаны арык айылы.Айтиев жоро кочосу 20 уй', 'ky', 'ky')).toMatch(/Даяр ✅/)
+    expect(await step('wa:a6', 'Ош шаары Араван району жаны арык айылы.Айтиев жоро кочосу 20 уй', 'ky', 'ky')).toMatch(/Рахмат! ✅/)
     await start('wa:a7', [product.id], 'ky', 'Заказ из WhatsApp', { name: 'Айгүл', phone: '+996555000032' })
     expect(await step('wa:a7', 'Ош', 'ky', 'ky')).toMatch(/Көчө жана үй/)
     const done = await step('wa:a7', 'Озум алам', 'ky', 'ky')
-    expect(done).toMatch(/Даяр ✅/)
+    expect(done).toMatch(/Рахмат! ✅/)
   })
 
   it('«Доставкасын айтып койгулачы Таласка» на шаге «адрес» — не адрес', async () => {
@@ -653,7 +653,7 @@ describe('аудит 01.10 ночь: адрес вместо «да»', () => {
       { role: 'user', text: 'улица Эркин-Эл, 20 Бишкек https://yandex.ru/navi?whatshere%5Bzoom%5D=12&ll=74.6%2C42.8' },
     ], 'ky', null, undefined, [product.id])
     expect(r.text).not.toMatch(/Кайда жеткирели/)
-    expect(r.text).toMatch(/SC-|Даяр|Готово/)
+    expect(r.text).toMatch(/Заказ .*(сом|KGS)/)
     delete process.env.JEV_API_KEY
     vi.unstubAllGlobals()
   })
@@ -718,5 +718,15 @@ describe('факты о товаре, размеры и доверие (01.10)',
   it('в промпте: размеры и возраст — только из каталога, «на глаз» нельзя', async () => {
     const { systemInstruction } = await import('@/lib/assistant/prompt')
     expect(systemInstruction('ru', null, 'ky', [], '', '', undefined, null)).toMatch(/РАЗМЕРЫ И ВОЗРАСТ/)
+  })
+})
+
+describe('хушмомила (01.10)', () => {
+  it('в промпте: «Рахмат», «Кечиресиз», пожелание в конце — одной фразой', async () => {
+    const { systemInstruction } = await import('@/lib/assistant/prompt')
+    const t = systemInstruction('ru', null, 'ky', [], '', '', undefined, null)
+    expect(t).toMatch(/ХУШМОМИЛА/)
+    expect(t).toMatch(/Кечиресиз, күттүрүп койдук/)
+    expect(t).toMatch(/Ден соолук болсун/)
   })
 })

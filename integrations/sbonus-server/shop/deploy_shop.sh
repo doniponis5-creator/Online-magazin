@@ -363,7 +363,7 @@ cat > /etc/cron.d/sbonus-wa-digest <<'CRONEOF'
 5 * * * * root docker exec sbonus_api python3 -c "from app.shop.shop_wa_bot import run_digest; run_digest()" >> /var/log/sbonus-wa-bot.log 2>&1
 CRONEOF
 chmod 644 /etc/cron.d/sbonus-wa-digest
-echo "✓ cron: утренняя сводка консультанта владельцу в 9:05 (/etc/cron.d/sbonus-wa-digest)"
+echo "✓ cron: сводка консультанта в 9:05, «Ждут ответа» в 13:05 и 17:05 (/etc/cron.d/sbonus-wa-digest)"
 # Напоминания о корзине: раз в 30 минут одна проверка и выход. «День по Бишкеку»,
 # расписание и согласие проверяет сам модуль — часовой пояс сервера не важен.
 # Файл в /etc/cron.d перезаписывается целиком: повторный деплой строку не дублирует.
