@@ -423,7 +423,7 @@ async def _answer(digits: str, name: str) -> bool:
         if count + 1 >= DAILY_LIMIT:
             text += "\n\nДальше вам ответит сотрудник магазина."
         await _send_text(digits, text)
-        await _send_photos(digits, reply.get("products") or [])
+        await _send_photos(digits, await _new_photos(digits, reply.get("products") or []))
         await _remember(digits, "assistant", text)
         await redis_client.set(count_key, str(count + 1), ex=2 * 24 * 3600)
         await redis_client.set(f"wa:botactive:{digits}", "1", ex=30 * 60)
@@ -477,6 +477,23 @@ async def _ask_site(digits: str, name: str) -> dict | None:
 async def _send_text(digits: str, text: str) -> None:
     from app.payments import payments_greenapi as wa  # type: ignore
     await asyncio.to_thread(wa.send_text, digits, text)
+
+
+async def _new_photos(digits: str, products: list[dict]) -> list[dict]:
+    """
+    Товары, чьё фото в этом чате ещё не отправляли. Модель прикладывает тот же товар к
+    каждому ответу — и покупатель (…8989, 01.10) получил одно фото со ссылкой шесть раз.
+    """
+    key = f"wa:photos:{digits}"
+    try:
+        sent = set(json.loads(await redis_client.get(key) or "[]"))
+    except Exception:
+        sent = set()
+    fresh = [p for p in products if p.get("id") and p.get("id") not in sent]
+    if fresh:
+        sent.update(p["id"] for p in fresh[:MAX_PHOTOS])
+        await redis_client.set(key, json.dumps(sorted(sent)), ex=TURNS_TTL)
+    return fresh
 
 
 async def _send_photos(digits: str, products: list[dict]) -> None:

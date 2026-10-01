@@ -138,6 +138,19 @@ function isOtherBot(turns: ChatTurn[]): boolean {
 }
 
 /** «{{SWE001}}», один знак, e-mail — сообщение не человеку, отвечать нечего. */
+/** Наличные: «наличка», «накталай», «нахт» — про оплату, не про покупку. */
+const CASH = /(наличк|наличн|накталай|накд|нахт|naqd|nalichk)/i
+
+/** Вопрос без «?»: кыргызское/узбекское «…болобу», «…барбы», «…борми» в конце. */
+function asks(text: string): boolean {
+  return looksLikeQuestion(text) || /[\p{L}]{2,}(бы|бу|пы|пу|би|бү|пү|ми|мы)$/iu.test(text.trim())
+}
+
+/** Текст без цитаты «[Ответ на сообщение: …]» — только слова покупателя. */
+function withoutQuote(text: string): string {
+  return text.replace(/^\[Ответ на[^\]]*\]\s*/u, '').trim()
+}
+
 /** Сообщения покупателя после последнего ответа бота: пишут очередью, «Адрес скиньте», «Или локацию», «?». */
 function sinceBot(turns: ChatTurn[]): string[] {
   const out: string[] = []
@@ -188,7 +201,12 @@ async function salesFlow(
   hint: { intent?: Intent | null } = {},
 ): Promise<Reply | null> {
   const { key, known, orderSource } = channel
-  const text = turns[turns.length - 1]?.text ?? ''
+  // «[Ответ на сообщение: …Кайда жеткирели?] Учкун айылына жеткирип бериң» — в цитате наш
+  // вопрос со знаком «?», и анкета решала, что это вопрос покупателя, и начиналась заново.
+  const text = withoutQuote(turns[turns.length - 1]?.text ?? '')
+  // Среди сообщений очереди есть вопрос («Акчасын алып келгенде берсем болобу?» + «Оа») —
+  // сначала ответ на него, «оа» согласием на заказ не считаем.
+  const askedToo = sinceBot(turns).slice(0, -1).some((t) => asks(withoutQuote(t)))
   const talk = talkLang(turns, lang)
   const only = (reply: string, handoff = false): Reply => ({ text: reply, products: [], source: 'flow', handoff })
   const who = { name: cleanName(known.name) ?? customer?.name ?? nameFromTurns(turns), phone: known.phone }
@@ -207,7 +225,7 @@ async function salesFlow(
 
   // Очередь сообщений на шаге анкеты: берём то, что похоже на ответ, а не последнее.
   // «Кызыл-кыя шаарына даставка…» + «Мбанк номер жоноткуло» — город Кызыл-Кыя.
-  const queue = sinceBot(turns).filter((t) => t && !PAY_ASIDE.test(t) && !t.includes('?'))
+  const queue = sinceBot(turns).map(withoutQuote).filter((t) => t && !PAY_ASIDE.test(t) && !t.includes('?'))
   const stepText = hasDraft(key) && queue.length > 0 && PAY_ASIDE.test(text) ? queue.join(', ') : text
   const ongoing = await step(key, stepText, talk, lang)
   if (ongoing) return only(ongoing)
@@ -233,7 +251,7 @@ async function salesFlow(
   // Jev уверенно слышит «потом» / «нет» / вопрос — «макул» из списка согласием не считаем.
   const jevNo = Boolean(hint.intent && ['later', 'decline', 'question'].includes(hint.intent.kind) && hint.intent.confidence >= 0.8)
   // «Макул, мен 9 жаштамын, чоңдору барбы?» — не согласие на звонок, а новый вопрос: на него отвечает модель.
-  const callYes = (AFFIRM.test(text.trim()) && !looksLikeQuestion(text) && !jevNo) || jevYes
+  const callYes = ((AFFIRM.test(text.trim()) && !looksLikeQuestion(text) && !jevNo) || jevYes) && !askedToo
   if (CALL_INTENT.test(text) || (offeredCall && callYes)) {
     cancel(key)
     const questions = turns.filter((t) => t.role === 'user').map((t) => t.text)
@@ -257,9 +275,10 @@ async function salesFlow(
   const lastAnswer = [...turns].reverse().find((t) => t.role === 'assistant')?.text ?? ''
   // Длинная фраза со словом «заказ» — обычно вопрос («если закажем, оплатить
   // при получении можно?»). На него отвечает консультант, а не анкета заказа.
-  const wantsToBuy = BUY_INTENT.test(text) && !visiting && !looksLikeQuestion(text.replace(/\?/g, '')) && !DEFER.test(text)
+  // «Мен наличка алам» — «заплачу наличными», а не «беру»: про оплату отвечает консультант.
+  const wantsToBuy = BUY_INTENT.test(text) && !visiting && !CASH.test(text) && !looksLikeQuestion(text.replace(/\?/g, '')) && !DEFER.test(text)
   // «Ооба, но денег пока нет, через 5 дней» — это не «да».
-  const agreed = OFFER.test(lastAnswer) && ((AFFIRM.test(text) && !looksLikeQuestion(text) && !DEFER.test(text) && !jevNo) || jevYes)
+  const agreed = OFFER.test(lastAnswer) && ((AFFIRM.test(text) && !looksLikeQuestion(text) && !DEFER.test(text) && !jevNo) || jevYes) && !askedToo
   if (shown.length > 0 && (wantsToBuy || agreed)) {
     return only(await start(key, shown, talk, orderSource, who, wantedQty(text)))
   }

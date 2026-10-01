@@ -596,3 +596,48 @@ describe('аудит 01.10 (день): очередь сообщений, опл
     expect(text).toMatch(/тактап берейинби/)
   })
 })
+
+describe('аудит 01.10 вечер (…8989): цитата, вопрос в очереди, наличные', () => {
+  const wa = (key: string) => ({ key, orderSource: 'Заказ из WhatsApp', leadChannel: 'whatsapp' as const, known: { phone: '+996555000090', name: 'Тест' } })
+
+  it('ответ цитатой на «Кайда жеткирели?» — город принят, анкета не начинается заново', async () => {
+    const { respond } = await import('@/lib/assistant/respond')
+    const first = await respond(wa('wa:g1'), [{ role: 'assistant', text: `${product.nameRu}. Тариздейлиби?` }, { role: 'user', text: 'Ооба' }], 'ky', null, undefined, [product.id])
+    expect(first.text).toMatch(/Кайда жеткирели/)
+    const r = await respond(wa('wa:g1'), [
+      { role: 'assistant', text: first.text },
+      { role: 'user', text: `[Ответ на сообщение: ${first.text}]\nУчкун айылына жеткирип бериң` },
+    ], 'ky', null, undefined, [product.id])
+    expect(r.text).toMatch(/Көчө жана үй/)
+  })
+
+  it('«Акчасын алып келгенде берсем болобу» + «Оа» — сначала ответ на вопрос, не анкета', async () => {
+    vi.resetModules()
+    vi.doMock('@/lib/assistant/reply', async (orig) => ({
+      ...(await orig<typeof import('@/lib/assistant/reply')>()),
+      answer: async () => ({ text: 'Жок, алдын ала төлөм гана. Тариздейлиби?', products: [], source: 'gemini' as const, audience: 'customer' as const }),
+    }))
+    const { respond } = await import('@/lib/assistant/respond')
+    const r = await respond(wa('wa:g2'), [
+      { role: 'assistant', text: 'Тариздейлиби?' },
+      { role: 'user', text: 'Акчасын алып келгенде берсем болобу' },
+      { role: 'user', text: 'Оа' },
+    ], 'ky', null, undefined, [product.id])
+    expect(r.source).toBe('gemini')
+    vi.doUnmock('@/lib/assistant/reply')
+    vi.resetModules()
+  })
+
+  it('«Мен наличка алам» — не заказ', async () => {
+    vi.resetModules()
+    vi.doMock('@/lib/assistant/reply', async (orig) => ({
+      ...(await orig<typeof import('@/lib/assistant/reply')>()),
+      answer: async () => ({ text: 'Накталай — дүкөндө гана.', products: [], source: 'gemini' as const, audience: 'customer' as const }),
+    }))
+    const { respond } = await import('@/lib/assistant/respond')
+    const r = await respond(wa('wa:g3'), [{ role: 'assistant', text: 'Сүйлөшүп көрүңүз.' }, { role: 'user', text: 'Мен наличка алам' }], 'ky', null, undefined, [product.id])
+    expect(r.source).toBe('gemini')
+    vi.doUnmock('@/lib/assistant/reply')
+    vi.resetModules()
+  })
+})
