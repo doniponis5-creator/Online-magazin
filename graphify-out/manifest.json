@@ -163,31 +163,31 @@
   },
   "integrations/sbonus-server/shop/001_shop_orders_migration.sql": {
     "mtime": 1789746574.7940266,
-    "seen": 1790846842.315294,
+    "seen": 1790853437.658081,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/002_shop_catalog_migration.sql": {
     "mtime": 1789746574.7941577,
-    "seen": 1790846842.315295,
+    "seen": 1790853437.658081,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/003_shop_bonus_migration.sql": {
     "mtime": 1789746574.7942019,
-    "seen": 1790846842.315295,
+    "seen": 1790853437.658082,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/004_shop_stats_migration.sql": {
     "mtime": 1789746574.7942476,
-    "seen": 1790846842.315296,
+    "seen": 1790853437.658083,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/005_shop_push_migration.sql": {
     "mtime": 1789751144.4544964,
-    "seen": 1790846842.315296,
+    "seen": 1790853437.658083,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -4285,13 +4285,13 @@
   },
   "integrations/sbonus-server/shop/006_shop_installments_migration.sql": {
     "mtime": 1789980267.1214871,
-    "seen": 1790846842.3152971,
+    "seen": 1790853437.6580842,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/007_shop_notes_migration.sql": {
     "mtime": 1789980267.1215398,
-    "seen": 1790846842.315298,
+    "seen": 1790853437.6580842,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -4339,7 +4339,7 @@
   },
   "integrations/sbonus-server/shop/008_shop_chat_extra_migration.sql": {
     "mtime": 1790002975.5050404,
-    "seen": 1790846842.315299,
+    "seen": 1790853437.658085,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -6517,19 +6517,19 @@
   },
   "integrations/sbonus-server/shop/009_shop_push_token_len_migration.sql": {
     "mtime": 1790604951.2586076,
-    "seen": 1790846842.315299,
+    "seen": 1790853437.6580858,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/010_shop_cart_reminders_migration.sql": {
     "mtime": 1790604951.2590644,
-    "seen": 1790846842.3153,
+    "seen": 1790853437.6580858,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/011_shop_promo_migration.sql": {
     "mtime": 1790604951.2591376,
-    "seen": 1790846842.3153012,
+    "seen": 1790853437.658087,
     "ast_hash": "",
     "semantic_hash": ""
   },
