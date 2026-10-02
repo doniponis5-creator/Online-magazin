@@ -142,7 +142,10 @@ export function HomeStorySale({ cards }: { cards: SaleCard[] }) {
           </button>)}
         </div>
       </div>
-      <div className="hr__footer"><span className="hs__tag"><i aria-hidden="true" />Акция · {ky ? `${deck.length} товар` : `${deck.length} ${deck.length < 5 ? 'товара' : 'товаров'}`}</span><span aria-hidden="true">0{focus + 1} / 0{deck.length}</span></div>
+      <div className="hr__footer"><span className="hs__tag"><i aria-hidden="true" />Акция · {ky ? `${deck.length} товар` : `${deck.length} ${deck.length < 5 ? 'товара' : 'товаров'}`}</span>
+        {/* только на телефоне: там подсказки под кнопкой нет — без неё не понять, что карточки меняются при прокрутке */}
+        <span className="hs__scroll" aria-hidden="true"><IconArrowDown size={12} />{ky ? 'Сыдырыңыз' : 'Листайте'}</span>
+        <span aria-hidden="true">0{focus + 1} / 0{deck.length}</span></div>
       <div className="hr__progress" aria-hidden="true" />
     </div>
   </section>
