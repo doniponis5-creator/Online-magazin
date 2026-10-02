@@ -32,7 +32,7 @@ export type LogRow = {
   /** gemini — отвечала модель, local — запасной режим */
   source: string
   /** откуда пришёл вопрос: сайт или Telegram. Старые записи — с сайта. */
-  ch?: 'site' | 'telegram' | 'whatsapp'
+  ch?: 'site' | 'telegram' | 'whatsapp' | 'instagram'
 }
 
 /** Папка журнала. На сервере это подключённая папка, переживающая обновление сайта. */

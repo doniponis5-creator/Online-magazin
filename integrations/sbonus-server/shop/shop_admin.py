@@ -315,7 +315,7 @@ async def site_lead(request: Request):
     # должно звонить владельцу два раза.
     if not await redis_client.set(f"shop_lead:{digits}", "1", ex=600, nx=True):
         return {"ok": True, "duplicate": True}
-    where = {"telegram": "Telegram-бот", "whatsapp": "WhatsApp (ответил робот)"}.get(payload.channel, "чат на сайте")
+    where = {"telegram": "Telegram-бот", "whatsapp": "WhatsApp (ответил робот)", "instagram": "Instagram (ответил робот)"}.get(payload.channel, "чат на сайте")
     try:
         wa.send_text(_admin_phone(), (
             f"📞 ПЕРЕЗВОНИТЬ — {where}\n━━━━━━━━━━━━━━━━━━━\n"

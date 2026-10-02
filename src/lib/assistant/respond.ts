@@ -39,11 +39,11 @@ export type Reply = {
 }
 
 export type Channel = {
-  /** ключ разговора: «web:<вкладка>», «wa:<телефон>» */
+  /** ключ разговора: «web:<вкладка>», «wa:<телефон>», «ig:<id Instagram>» */
   key: string
   /** пишется в комментарий заказа */
   orderSource: string
-  leadChannel: 'site' | 'telegram' | 'whatsapp'
+  leadChannel: 'site' | 'telegram' | 'whatsapp' | 'instagram'
   /** что точно известно о покупателе */
   known: { name?: string; phone?: string }
 }
@@ -62,9 +62,11 @@ export async function respond(
   const hint: { intent?: Intent | null } = {}
   const flow = await salesFlow(channel, turns, lang, customer, buy, shown, page, hint)
   if (flow) return flow
+  // WhatsApp и Instagram — переписка с магазином: пишут не только покупатели.
+  const messenger = channel.leadChannel === 'whatsapp' || channel.leadChannel === 'instagram'
   // «Ок», «👍», «рахмат» в ответ на напоминание или наш ответ — это не вопрос.
   // Отвечать «какую технику ищете?» на «Ок» — верный способ выглядеть роботом.
-  if (channel.leadChannel === 'whatsapp') {
+  if (messenger) {
     // Чужой автоответ или наша же фраза, вернувшаяся эхом, — два бота заговорят друг с другом.
     if (isOtherBot(turns)) return { text: '', products: [], source: 'flow', silent: true, mute: true }
     if (isAcknowledgement(turns) || isJunk(turns)) return { text: '', products: [], source: 'flow', silent: true }
@@ -76,8 +78,8 @@ export async function respond(
   const said = declined(turns) || intent?.kind === 'decline' ? { ...first, text: withoutCallOffer(first.text) } : first
   const later = followAfter(intent)
   const reply = later ? { ...said, followAfter: later } : { ...said, followAfter: undefined }
-  // Сайт — там только покупатели. В WhatsApp модель ещё смотрит, кому адресовано.
-  if (channel.leadChannel !== 'whatsapp') return reply
+  // Сайт — там только покупатели. В WhatsApp и Instagram модель ещё смотрит, кому адресовано.
+  if (!messenger) return reply
   // Идёт продажа (бот показывал товар) — это покупатель, даже если пишет о своём:
   // «Эртең Nova 7 сатсам…» у покупателя из Таласа модель сочла личным и замолчала.
   const selling = Array.isArray(shown) && shown.length > 0
@@ -91,16 +93,18 @@ export async function respond(
     const talk = talkLang(turns, lang)
     const questions = turns.filter((t) => t.role === 'user').map((t) => t.text)
     const who = { name: cleanName(channel.known.name) ?? customer?.name ?? nameFromTurns(turns), phone: channel.known.phone }
-    await startLead(channel.key, talk, leadContext(questions, []), who, 'whatsapp')
+    await startLead(channel.key, talk, leadContext(questions, []), who, channel.leadChannel)
     return { ...reply, handoff: true }
   }
   if (reply.audience === 'staff') {
     const talk = talkLang(turns, lang)
     const last = turns[turns.length - 1]?.text ?? ''
-    const context = `Сообщение для руководства (WhatsApp):\n${last.slice(0, 600)}`
+    const where = channel.leadChannel === 'instagram' ? 'Instagram' : 'WhatsApp'
+    const context = `Сообщение для руководства (${where}):\n${last.slice(0, 600)}`
     const who = { name: cleanName(channel.known.name) ?? customer?.name ?? nameFromTurns(turns), phone: channel.known.phone }
     // Номер в WhatsApp известен всегда — заявка уходит молча. Без номера анкету не заводим: это не «перезвоните».
-    if (who.phone) await startLead(channel.key, talk, context, who, 'whatsapp')
+    // В Instagram номера нет: сообщение увидит сотрудник в самом Instagram и в сводке «Ждут ответа».
+    if (who.phone) await startLead(channel.key, talk, context, who, channel.leadChannel)
     // Всегда одна и та же короткая фраза на языке покупателя — так решил владелец.
     return { text: pick(STAFF_ACK, talk), products: [], source: reply.source, handoff: true }
   }

@@ -15,7 +15,7 @@ import type { LogRow } from './log'
 export const GAVE_UP =
   /(перезвон|сотрудник|не знаю|уточн|позвоните|чалыңыз|кызматкер|билбейм|тактап|xodim|bilmayman|qo.?ng.?iroq|aniqla)/i
 
-const CHANNEL: Record<string, string> = { site: 'сайт', telegram: 'Telegram', whatsapp: 'WhatsApp' }
+const CHANNEL: Record<string, string> = { site: 'сайт', telegram: 'Telegram', whatsapp: 'WhatsApp', instagram: 'Instagram' }
 
 /** Строки за день `day` (ГГГГ-ММ-ДД) по Бишкеку (UTC+6). */
 export function rowsForDay(rows: LogRow[], day: string): LogRow[] {

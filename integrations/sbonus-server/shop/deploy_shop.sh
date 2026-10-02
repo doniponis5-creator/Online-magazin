@@ -25,7 +25,7 @@ SRC="$(cd "$(dirname "$0")" && pwd)"
 API=sbonus_api
 DB=sbonus_db
 TS=$(date +%Y%m%d_%H%M%S)
-FILES="__init__.py shop_models.py shop_router.py shop_catalog.py shop_telegram.py shop_customers.py shop_admin.py shop_push.py shop_push_fcm.py shop_cart_rules.py shop_cart_remind.py shop_promo_rules.py shop_promo.py shop_whatsapp.py shop_installments_calc.py shop_installments.py shop_stock.py shop_wa_bot.py"
+FILES="__init__.py shop_models.py shop_router.py shop_catalog.py shop_telegram.py shop_customers.py shop_admin.py shop_push.py shop_push_fcm.py shop_cart_rules.py shop_cart_remind.py shop_promo_rules.py shop_promo.py shop_whatsapp.py shop_installments_calc.py shop_installments.py shop_stock.py shop_wa_bot.py shop_ig_rules.py shop_ig_bot.py"
 MIGRATIONS="001_shop_orders_migration.sql 002_shop_catalog_migration.sql 003_shop_bonus_migration.sql 004_shop_stats_migration.sql 005_shop_push_migration.sql 006_shop_installments_migration.sql 007_shop_notes_migration.sql 008_shop_chat_extra_migration.sql 009_shop_push_token_len_migration.sql 010_shop_cart_reminders_migration.sql 011_shop_promo_migration.sql"
 
 echo "=== Деплой: интернет-магазин (заказы + каталог + вход и бонусы) ==="
@@ -65,6 +65,10 @@ import app.shop_precheck.shop_whatsapp as wa_btn
 import app.shop_precheck.shop_installments as inst
 import app.shop_precheck.shop_stock as stock
 import app.shop_precheck.shop_wa_bot as wabot
+import app.shop_precheck.shop_ig_rules as ig_rules
+import app.shop_precheck.shop_ig_bot as igbot
+assert ig_rules.split_text('a. ' * 600) and ig_rules.events({'object': 'instagram', 'entry': []}) == []
+assert callable(igbot.poll_once) and {x.path for x in igbot.router_ig_bot.routes} == {'/webhook/instagram'}
 import app.shop_precheck.shop_push as push
 import app.shop_precheck.shop_push_fcm as fcm
 assert callable(push.send) and fcm.classify(200, {}) == 'ok' and fcm.load_account('') is None
@@ -252,6 +256,28 @@ print("✓ main.py: WhatsApp-продавец подключён")
 PYEOF4
 [ $? -eq 0 ] || { cp "$APP/main.py.bak_$TS" "$APP/main.py"; echo "↩️ main.py восстановлен"; exit 1; }
 
+python3 - "$APP/main.py" <<'PYEOF5'
+import sys
+p = sys.argv[1]
+s = open(p, encoding="utf-8").read()
+if "app.shop.shop_ig_bot" in s:
+    print("• main.py уже подключает Instagram-продавца — пропуск")
+    raise SystemExit(0)
+anchor = 'app.include_router(router_wa_bot, prefix="/api/v1")'
+idx = s.find(anchor)
+if idx < 0:
+    raise SystemExit("❌ В main.py нет WhatsApp-продавца — не к чему подключить Instagram")
+end = s.find(chr(10), idx)
+end = len(s) if end < 0 else end
+block = """
+from app.shop.shop_ig_bot import router_ig_bot
+app.include_router(router_ig_bot, prefix="/api/v1")  # /api/v1/webhook/instagram (webhook Meta)"""
+s = s[:end] + block + s[end:]
+open(p, "w", encoding="utf-8").write(s)
+print("✓ main.py: Instagram-продавец подключён")
+PYEOF5
+[ $? -eq 0 ] || { cp "$APP/main.py.bak_$TS" "$APP/main.py"; echo "↩️ main.py восстановлен"; exit 1; }
+
 # ── 4. Синтаксис ─────────────────────────────────────────────────────────────
 for f in $FILES; do
     python3 -c "import ast; ast.parse(open('$DST/$f', encoding='utf-8').read())" \
@@ -312,6 +338,16 @@ else
         "$(openssl rand -hex 32)" >> "$ENV_FILE"
     echo "✓ SHOP_SITE_SECRET создан в $ENV_FILE (тот же секрет нужно указать сайту как SHOP_API_SECRET)"
 fi
+# Instagram: слово для проверки webhook — придумываем сами (его же вводят в кабинете Meta).
+# Ключ IG_ACCESS_TOKEN и секрет IG_APP_SECRET выдаёт Meta — их владелец добавляет сам.
+if grep -q '^IG_VERIFY_TOKEN=' "$ENV_FILE" 2>/dev/null; then
+    echo "• IG_VERIFY_TOKEN уже есть в $ENV_FILE"
+else
+    cp "$ENV_FILE" "$ENV_FILE.bak_ig_$TS" 2>/dev/null
+    printf '\n# Instagram-продавец: слово для webhook Meta (ключи Meta — IG_ACCESS_TOKEN, IG_APP_SECRET)\nIG_VERIFY_TOKEN=%s\n' \
+        "$(openssl rand -hex 16)" >> "$ENV_FILE"
+    echo "✓ IG_VERIFY_TOKEN создан в $ENV_FILE"
+fi
 
 # ── 6.1 Библиотека HTTP/2 для Apple push ─────────────────────────────────────
 # Apple принимает уведомления только по HTTP/2, а httpx умеет его лишь с пакетом h2.
@@ -363,6 +399,13 @@ cat > /etc/cron.d/sbonus-wa-digest <<'CRONEOF'
 5 * * * * root docker exec sbonus_api python3 -c "from app.shop.shop_wa_bot import run_digest; run_digest()" >> /var/log/sbonus-wa-bot.log 2>&1
 CRONEOF
 chmod 644 /etc/cron.d/sbonus-wa-digest
+# Instagram-продавец: webhook только складывает сообщения в очередь, отвечает cron раз в минуту.
+# Без IG_ACCESS_TOKEN запуск сразу выходит — до подключения Instagram он ничего не делает.
+cat > /etc/cron.d/sbonus-ig-bot <<'CRONEOF'
+* * * * * root flock -n /var/lock/sbonus-ig-bot.lock docker exec sbonus_api python3 -c "from app.shop.shop_ig_bot import run_cron; run_cron()" >> /var/log/sbonus-ig-bot.log 2>&1
+CRONEOF
+chmod 644 /etc/cron.d/sbonus-ig-bot
+echo "✓ cron: Instagram-продавец раз в минуту (/etc/cron.d/sbonus-ig-bot, журнал /var/log/sbonus-ig-bot.log)"
 echo "✓ cron: сводка в 9:05 (по понедельникам + оценка недели), «Ждут ответа» в 13:05 и 17:05 (/etc/cron.d/sbonus-wa-digest)"
 # Напоминания о корзине: раз в 30 минут одна проверка и выход. «День по Бишкеку»,
 # расписание и согласие проверяет сам модуль — часовой пояс сервера не важен.
@@ -400,6 +443,9 @@ curl -s -o /dev/null -w "  HTTP %{http_code}
 " https://api.smartcentr.store/api/v1/webhook/1c/shop/promo/candidates
 curl -s -o /dev/null -w "  HTTP %{http_code}
 " -X POST https://api.smartcentr.store/api/v1/webhook/1c/shop/promo/send
+echo "--- Instagram webhook: проверка с чужим словом и сообщение без подписи (ожидается 403 и 403) ---"
+curl -s -o /dev/null -w "  HTTP %{http_code}\n" "https://api.smartcentr.store/api/v1/webhook/instagram?hub.mode=subscribe&hub.verify_token=wrong&hub.challenge=1"
+curl -s -o /dev/null -w "  HTTP %{http_code}\n" -X POST https://api.smartcentr.store/api/v1/webhook/instagram
 echo "--- знания для чата без подписи (ожидается 401) ---"
 curl -s -o /dev/null -w "  HTTP %{http_code}\n" https://api.smartcentr.store/api/v1/webhook/site/notes
 echo "--- ошибки запуска ---"

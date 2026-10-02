@@ -628,7 +628,9 @@ def waiting_lines(chats: list[tuple[str, list[dict]]], limit: int = 12) -> list[
         if last.get("role") == "user" or PROMISED.search(str(last.get("text") or "")):
             said = re.sub(r"^\[[^\]]*\]\s*", "", asked[-1]).replace("\n", " ").strip()
             said = said[:80] + ("…" if len(said) > 80 else "")
-            rows.append(f"• +{digits} — «{said}»")
+            # WhatsApp — номер, Instagram — уже готовая подпись («Instagram @ник»).
+            who = f"+{digits}" if digits.isdigit() else digits
+            rows.append(f"• {who} — «{said}»")
     if not rows:
         return []
     more = f"\n…и ещё {len(rows) - limit}" if len(rows) > limit else ""
@@ -636,7 +638,7 @@ def waiting_lines(chats: list[tuple[str, list[dict]]], limit: int = 12) -> list[
 
 
 async def _waiting_chats() -> list[str]:
-    """Чаты вчера и сегодня (по Бишкеку), где покупатель ждёт человека. Записанные в телефоне — не наши."""
+    """Чаты вчера и сегодня (по Бишкеку), где покупатель ждёт человека: WhatsApp и Instagram. Записанные в телефоне — не наши."""
     days = {_today(), (_bishkek_now() - timedelta(days=1)).strftime("%Y%m%d")}
     chats = []
     try:
@@ -653,6 +655,11 @@ async def _waiting_chats() -> list[str]:
     except Exception as error:
         logger.warning(f"wa digest: список ждущих не собран: {error}")
         return []
+    try:
+        from .shop_ig_bot import waiting_chats as instagram_chats
+        chats += await instagram_chats(days)
+    except Exception as error:
+        logger.warning(f"wa digest: Instagram не добавлен: {error}")
     return waiting_lines(chats)
 
 
