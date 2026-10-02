@@ -108,7 +108,7 @@ export function HomeStorySale({ cards }: { cards: SaleCard[] }) {
     ? ['Дүкөндө бар техниканын баасы түштү.', 'Эң чоң арзандатуу — биринчи.', 'Карточканы басыңыз — товар ачылат.']
     : ['Цены снижены на технику, которая есть в магазине.', 'Самая большая скидка — первой.', 'Нажмите на карточку — откроется товар.']
 
-  return <section ref={root} className="hr hr--kitchens hr--sale" aria-label={ky ? 'Арзандатуулар' : 'Скидки'}>
+  return <section ref={root} className="hr hr--kitchens hr--sale" lang={ky ? 'ky' : 'ru'} aria-label={ky ? 'Арзандатуулар' : 'Скидки'}>
     <div className="hr__stage">
       <div className="hk__deck">
         {/* огромная скидка передней карточки позади колоды — меняется вместе с карточкой */}
