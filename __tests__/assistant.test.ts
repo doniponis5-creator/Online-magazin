@@ -336,8 +336,15 @@ describe('менеджер по продажам, а не «помощник»',
   it('сам себя ботом не называет, на прямой вопрос не врёт', () => {
     const text = systemInstruction('ru', null, 'ru', products)
     expect(text).toMatch(/Сам не называй себя ботом/)
-    expect(text).toMatch(/не ври: «Это онлайн-консультант Smart Centr/)
+    expect(text).toMatch(/не ври: «Я Акылай, онлайн-консультант Smart Centr/)
     expect(text).toMatch(/ОДИН шаг вперёд/)
+  })
+  it('зовут Акылай: называется один раз в первом ответе, по-русски — в женском роде', () => {
+    const text = systemInstruction('ru', null, 'ru', products)
+    expect(text).toMatch(/^Ты — Акылай/)
+    expect(text).toContain('в женском роде')
+    expect(text).toContain('«Ассаламу алейкум, я Акылай.»')
+    expect(text).toContain('имя больше не повторяй')
   })
 })
 
