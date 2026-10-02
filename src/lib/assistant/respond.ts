@@ -19,6 +19,7 @@ import { type Intent, followAfter, isSureYes, jevConfigured, objectionNote, read
 import type { ChatTurn } from './gemini'
 import type { CustomerBrief, ProductHit } from './knowledge'
 import { getInstallment, getProfile } from '@/lib/customer/gateway'
+import { phones } from '@/data/contacts'
 
 export type Reply = {
   text: string
@@ -106,7 +107,8 @@ export async function respond(
     // В Instagram номера нет: сообщение увидит сотрудник в самом Instagram и в сводке «Ждут ответа».
     if (who.phone) await startLead(channel.key, talk, context, who, channel.leadChannel)
     // Всегда одна и та же короткая фраза на языке покупателя — так решил владелец.
-    return { text: pick(STAFF_ACK, talk), products: [], source: reply.source, handoff: true }
+    const ack = channel.leadChannel === 'instagram' ? `${pick(STAFF_ACK, talk)}\n${pick(WHATSAPP_LINE, talk)}` : pick(STAFF_ACK, talk)
+    return { text: ack, products: [], source: reply.source, handoff: true }
   }
   return reply
 }
@@ -176,7 +178,10 @@ function sinceBot(turns: ChatTurn[]): string[] {
   return out
 }
 
-const JUNK = (text: string) => /^\{\{[^}]*\}\}$/.test(text) || /^[\p{P}\p{S}]{1,3}$/u.test(text) || /^[\w.+-]+@[\w-]+\.[\w.]+$/.test(text)
+// «[Прислал публикацию из Instagram]» без подписи и без слов — чаще всего мем от подписчика.
+// Отвечает сотрудник (решение владельца 02.10); рилс с подписью о товаре консультант читает.
+const BARE_SHARE = /^\[Прислал публикацию из Instagram\]$/
+const JUNK = (text: string) => /^\{\{[^}]*\}\}$/.test(text) || /^[\p{P}\p{S}]{1,3}$/u.test(text) || /^[\w.+-]+@[\w-]+\.[\w.]+$/.test(text) || BARE_SHARE.test(text)
 /** Мусор — только если ВСЁ после ответа бота мусор: «?» после «Адрес скиньте» — это «ну ответьте же». */
 function isJunk(turns: ChatTurn[]): boolean {
   const own = sinceBot(turns)
@@ -197,9 +202,15 @@ function isAcknowledgement(turns: ChatTurn[]): boolean {
 }
 
 const STAFF_ACK = {
-  ru: 'Понял, уточню у руководства и напишу вам.',
+  ru: 'Поняла, уточню у руководства и напишу вам.',
   ky: 'Түшүндүм, руководстводон тактап, жазам.',
   uz: 'Тушундим, руководстводан аниклаб, ёзаман.',
+}
+// В Instagram номера покупателя нет — заявку не завести; пусть знает, где ответят быстрее.
+const WHATSAPP_LINE = {
+  ru: `Быстрее ответим в WhatsApp: ${phones[0].display}`,
+  ky: `WhatsApp'тан тезирээк жооп беребиз: ${phones[0].display}`,
+  uz: `WhatsApp'да тезрок жавоб берамиз: ${phones[0].display}`,
 }
 const pick = (say: Record<'ru' | 'ky' | 'uz', string>, lang: 'ru' | 'ky' | 'uz') => say[lang]
 

@@ -730,3 +730,45 @@ describe('хушмомила (01.10)', () => {
     expect(t).toMatch(/Ден соолук болсун/)
   })
 })
+
+describe('Instagram (02.10): мем без подписи — молчим; не справилась — номер WhatsApp', () => {
+  const ig = (key: string) => ({ key, orderSource: 'Заказ из Instagram', leadChannel: 'instagram' as const, known: {} })
+
+  it('рилс без подписи и без слов — silent, отвечает сотрудник', async () => {
+    const { respond } = await import('@/lib/assistant/respond')
+    const r = await respond(ig('ig:share-1'), [{ role: 'user', text: '[Прислал публикацию из Instagram]' }], 'ru', null)
+    expect(r.silent).toBe(true)
+    expect(r.mute).not.toBe(true)
+  })
+
+  it('рилс с подписью о товаре — отвечает консультант', async () => {
+    vi.resetModules()
+    vi.doMock('@/lib/assistant/reply', async (orig) => ({
+      ...(await orig<typeof import('@/lib/assistant/reply')>()),
+      answer: async () => ({ text: 'Есть, 27 500 сом.', products: [], source: 'gemini' as const, audience: 'customer' as const }),
+    }))
+    const { respond } = await import('@/lib/assistant/respond')
+    const r = await respond(ig('ig:share-2'), [{ role: 'user', text: '[Прислал публикацию: Холодильник Avest 300 л]' }], 'ru', null)
+    expect(r.silent).not.toBe(true)
+    expect(r.text).toBe('Есть, 27 500 сом.')
+    vi.doUnmock('@/lib/assistant/reply')
+    vi.resetModules()
+  })
+
+  it('вопрос для руководства: в Instagram — с номером WhatsApp, в WhatsApp — без', async () => {
+    vi.resetModules()
+    vi.doMock('@/lib/assistant/reply', async (orig) => ({
+      ...(await orig<typeof import('@/lib/assistant/reply')>()),
+      answer: async () => ({ text: 'x', products: [], source: 'gemini' as const, audience: 'staff' as const }),
+    }))
+    const { respond } = await import('@/lib/assistant/respond')
+    const turns = [{ role: 'user' as const, text: 'Сколько весит мотоцикл?' }]
+    const inIg = await respond(ig('ig:staff-1'), turns, 'ru', null)
+    expect(inIg.text).toBe('Поняла, уточню у руководства и напишу вам.\nБыстрее ответим в WhatsApp: +996 557 100 505')
+    expect(inIg.handoff).toBe(true)
+    const inWa = await respond({ key: 'wa:staff-1', orderSource: 'Заказ из WhatsApp', leadChannel: 'whatsapp', known: { phone: '+996555000060' } }, turns, 'ru', null)
+    expect(inWa.text).toBe('Поняла, уточню у руководства и напишу вам.')
+    vi.doUnmock('@/lib/assistant/reply')
+    vi.resetModules()
+  })
+})
