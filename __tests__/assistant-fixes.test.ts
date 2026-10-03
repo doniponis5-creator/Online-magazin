@@ -270,3 +270,15 @@ describe('напоминание как у продавца (владелец 03
     expect(r.text).not.toMatch(/сом|акысыз|ойлонуп/)
   })
 })
+
+describe('голосовое из Instagram (03.10): тип файла по первым байтам', () => {
+  it('MP4-контейнер, ogg, mp3 и «octet-stream»', async () => {
+    const { mediaMime } = await import('@/lib/assistant/media-mime')
+    const mp4 = Buffer.from('\x00\x00\x00\x18ftypM4A \x00\x00', 'latin1')
+    expect(mediaMime('audio', 'application/octet-stream', mp4)).toBe('video/mp4')
+    expect(mediaMime('audio', 'audio/mp4', mp4)).toBe('video/mp4')
+    expect(mediaMime('audio', 'audio/ogg', Buffer.from('OggS'))).toBe('audio/ogg')
+    expect(mediaMime('audio', '', Buffer.from('ID3\x03', 'latin1'))).toBe('audio/mpeg')
+    expect(mediaMime('image', 'application/octet-stream', Buffer.from('x'))).toBe('image/jpeg')
+  })
+})

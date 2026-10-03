@@ -372,6 +372,9 @@ async def _read_media(message: dict, kind: str) -> str:
                 headers={"Content-Type": "application/json", "X-Signature": signature},
             )
         data = response.json() if response.status_code == 200 else {}
+        if response.status_code != 200:
+            # Раньше молча: в Instagram «голосовое не получилось разобрать», а в журнале пусто (03.10).
+            logger.warning(f"media {kind}: сайт ответил {response.status_code} {response.text[:120]}")
     except Exception as error:
         logger.error(f"wa bot media {kind}: {error}")
         return ""

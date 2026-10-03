@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { geminiConfigured, readMedia, type MediaKind } from '@/lib/assistant/gemini'
+import { mediaMime } from '@/lib/assistant/media-mime'
 
 /**
  * Голосовое или фото из WhatsApp → текст.
@@ -51,21 +52,38 @@ export async function POST(request: Request) {
     }
   }
 
+  // Хост — для журнала: в самой ссылке подпись, её не пишем.
+  const host = (() => {
+    try {
+      return new URL(url).host
+    } catch {
+      return '?'
+    }
+  })()
   try {
-    const file = await fetch(url, { signal: AbortSignal.timeout(20_000) })
-    if (!file.ok) return Response.json({ ok: false, error: `download-${file.status}` }, { status: 502 })
+    // Instagram отдаёт файл с lookaside.fbsbx.com — без обычного User-Agent CDN может отказать.
+    const file = await fetch(url, { signal: AbortSignal.timeout(20_000), headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SmartCentrBot/1.0)' } })
+    if (!file.ok) {
+      // Раньше молча: «голосовое не получилось разобрать» в Instagram, а в журнале пусто (03.10).
+      console.error(`[channel] ${kind}: не скачалось ${host} — HTTP ${file.status}`)
+      return Response.json({ ok: false, error: `download-${file.status}` }, { status: 502 })
+    }
     const bytes = Buffer.from(await file.arrayBuffer())
     if (bytes.length === 0 || bytes.length > MAX_BYTES) {
+      console.error(`[channel] ${kind}: размер ${bytes.length} байт с ${host}`)
       return Response.json({ ok: false, error: 'bad-size' }, { status: 413 })
     }
-    const mime =
+    const given =
       (typeof raw.mime === 'string' && raw.mime.split(';')[0].trim()) ||
       file.headers.get('content-type')?.split(';')[0].trim() ||
-      (kind === 'audio' ? 'audio/ogg' : 'image/jpeg')
+      ''
+    const mime = mediaMime(kind, given, bytes)
     const text = await readMedia(kind, mime, bytes.toString('base64'))
+    if (!text.trim()) console.error(`[channel] ${kind}: модель вернула пустой текст (${mime}, ${bytes.length} байт, ${host})`)
     return Response.json({ ok: true, text })
   } catch (error) {
     console.error('[whatsapp] голосовое/фото:', error instanceof Error ? error.message : error)
     return Response.json({ ok: false, error: 'failed' }, { status: 502 })
   }
 }
+
