@@ -38,10 +38,11 @@
 .hk__more:hover { color: var(--color-ink); }
 
 @media (max-width: 900px) {
-  /* 76px снизу — место под нижнее меню телефона */
-  .hr--kitchens { --travel: 900px; }
-  .hr--kitchens[data-enhanced] { height: calc(100svh - var(--story-top) - 76px + var(--travel)); }
-  .hr--kitchens[data-enhanced] .hr__stage { height: calc(100svh - var(--stick) - 76px); max-height: none; border-radius: calc(14px * (1 - var(--fill))); }
+  /* снизу — место под нижнее меню телефона; на iPhone в приложении под меню ещё полоска жеста «домой»
+     (safe-area-inset-bottom) — без неё меню закрывало плашку «Листайте вниз» */
+  .hr--kitchens { --travel: 900px; --nav: calc(76px + env(safe-area-inset-bottom, 0px)); }
+  .hr--kitchens[data-enhanced] { height: calc(100svh - var(--story-top) - var(--nav) + var(--travel)); }
+  .hr--kitchens[data-enhanced] .hr__stage { height: calc(100svh - var(--stick) - var(--nav)); max-height: none; border-radius: calc(14px * (1 - var(--fill))); }
   .hr--kitchens .hr__copy { left: calc(var(--pad-l) + 22px); width: calc(var(--w0) - 44px); top: calc(var(--ex) + 22px); }
   .hr--kitchens .hr__footer { inset-inline: calc(var(--pad-l) + 14px) calc(var(--pad-r) + 14px); }
   .hk__deck { left: var(--pad-l); right: var(--pad-r); top: calc(var(--ex) + 215px); bottom: 40px; height: auto; padding-left: 0; -webkit-mask-image: none; mask-image: none; }
