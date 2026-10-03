@@ -13,7 +13,6 @@ import type { ChatTurn } from './gemini'
 import type { Lang } from '@/lib/i18n/config'
 import { lookupIn, salesCatalogNow } from './live'
 import { talkLang } from './reply'
-import { formatSom } from '@/lib/format'
 import { shortName } from '@/lib/telegram/order'
 import { mentionsFreeDelivery } from './policy'
 
@@ -44,23 +43,37 @@ export async function followUp(turns: ChatTurn[], shown: string[], lang: Lang, n
   // «Ойбек ака налог», а в профиле WhatsApp — «Dilshadakanvaliyeva». Обращаться так нельзя.
   void name
   const who = ''
-  const title = shortName(product.nameRu)
-  const price = formatSom(product.price)
-  // «Бесплатно» — только если покупатель назвал город из списка: Таласу и Нарыну
-  // доставку считает руководство, обещать её даром нельзя (владелец, 21.09; аудит 03.10).
-  const free = mentionsFreeDelivery(turns.filter((t) => t.role === 'user').map((t) => t.text).join(' '))
-  // Не «оформим сегодня?» — человек замолчал, значит, что-то держит. Продавец спрашивает,
-  // что смущает, а не торопит (владелец 03.10: «оформит қилайлик деб сўрамасин»).
+  // Как товар называют люди: «Электро Эндуро», «FLAGMAN», а не код модели «WN-A10». Цену не повторяем:
+  // её уже назвали в разговоре (владелец 03.10: «WN-A10 15 900 сом — дагы ойлонуп жатасызбы?» — не так).
+  const title = spokenName(product.nameRu)
+  const said = turns.filter((t) => t.role === 'assistant').map((t) => t.text).join(' ')
+  // «Бесплатно» — только если покупатель назвал город из списка (Таласу и Нарыну доставку считает
+  // руководство) и только если об этом ещё не говорили: повтор — это рассылка, а не продавец.
+  const free = mentionsFreeDelivery(turns.filter((t) => t.role === 'user').map((t) => t.text).join(' ')) && !/(акысыз|бесплатн|бепул)/iu.test(said)
+  // Не «оформим сегодня?» и не «ещё думаете?» — человек мог и не думать. Продавец спрашивает,
+  // остались ли вопросы, и предлагает помощь (владелец 03.10: «оформит қилайлик деб сўрамасин»).
   const say = {
-    ru: `${who}${title} за ${price} — ещё думаете? Если что-то смущает, напишите — подскажу.`,
-    ky: `${who}${title} ${price} — дагы ойлонуп жатасызбы? Суроо болсо жазыңыз, жардам берем.`,
-    uz: `${who}${title} ${price} — хали уйлаяпсизми? Савол булса ёзинг, ёрдам бераман.`,
+    ru: `${who}Остались вопросы по ${title}? Пишите — подскажу.`,
+    ky: `${who}${title} боюнча суроо калдыбы? Жазыңыз, жардам берем.`,
+    uz: `${who}${title} буйича савол колдими? Ёзинг, ёрдам бераман.`,
   }
   const freeLine = {
-    ru: ' До центра района привезём бесплатно.',
-    ky: ' Райондун борборуна чейин акысыз жеткиребиз.',
-    uz: ' Район марказигача бепул олиб борамиз.',
+    ru: ' К вам привезём бесплатно.',
+    ky: ' Сиз жакка акысыз жеткиребиз.',
+    uz: ' Сизга бепул олиб борамиз.',
   }
   const text = say[talk] + (free ? freeLine[talk] : '')
   return { text: text.charAt(0).toUpperCase() + text.slice(1) }
+}
+
+/**
+ * Название, как его говорят люди. Код модели (есть цифра: «WN-A10», «AV-80MXLB(BG)») — вон.
+ * Есть марка латиницей («FLAGMAN», «AVEST») — марка; нет — русские слова («Электро Эндуро»).
+ */
+export function spokenName(name: string): string {
+  const words = name.replace(/\*/g, '').split(/\s+/).filter((w) => w && !/\d/.test(w))
+  const brand = words.find((w) => /^[A-Z][A-Z-]{2,}$/.test(w))
+  if (brand) return brand
+  const plain = words.filter((w) => /^[А-ЯЁа-яё-]+$/.test(w)).join(' ')
+  return plain || shortName(name)
 }

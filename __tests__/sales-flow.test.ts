@@ -6,7 +6,7 @@ import { products } from '@/data/products'
 import { AFFIRM, BUY_INTENT, OFFER, looksLikeQuestion, shortName, start, step } from '@/lib/telegram/order'
 import { detectLang } from '@/lib/assistant/talk'
 import { talkLang } from '@/lib/assistant/reply'
-import { followUp } from '@/lib/assistant/followup'
+import { followUp, spokenName } from '@/lib/assistant/followup'
 import { nameFromTurns } from '@/lib/assistant/respond'
 import { CALL_INTENT, leadContext, leadStep, startLead } from '@/lib/assistant/leads'
 
@@ -111,8 +111,8 @@ describe('напоминание «ещё актуально?»', () => {
     const text = (r as { text: string }).text
     // Имя не ставим: в телефоне владельца оно бывает «Жанатим. Онам», «Ааааааа».
     expect(text).not.toMatch(/^Aziz/)
-    expect(text).toContain(shortName(product.nameRu))
-    expect(text).toContain('уйлаяпсизми')
+    expect(text).toContain(spokenName(product.nameRu))
+    expect(text).toContain('савол колдими')
     // Напоминание не торопит с оформлением (владелец 03.10).
     expect(text).not.toMatch(/расмийлаштир|оформ/)
   })

@@ -253,3 +253,20 @@ describe('журнал сайта 20.09–03.10', () => {
     expect(await step('t:addr', '15', 'ky', 'ky')).toMatch(/мисалы: Ленин 15/)
   })
 })
+
+describe('напоминание как у продавца (владелец 03.10, скриншот WhatsApp)', () => {
+  it('без кода модели и цены, «бесплатно» не повторяет', async () => {
+    const { followUp, spokenName } = await import('@/lib/assistant/followup')
+    expect(spokenName('Электро Эндуро WN-A10')).toBe('Электро Эндуро')
+    expect(spokenName('Стиральная машина FLAGMAN AV-80MXLB(BG)')).toBe('FLAGMAN')
+    const { products: list } = await import('@/data/products')
+    const p = list.find((x) => x.price > 0)!
+    const turns = [
+      { role: 'user' as const, text: 'Баасы канча. Кызыл кыя га чейин доставка канча болот' },
+      { role: 'assistant' as const, text: 'Бар. Кызыл-Кыянын борборуна чейин жеткирүү акысыз.' },
+    ]
+    const r = (await followUp(turns, [p.id], 'ky')) as { text: string }
+    expect(r.text).toMatch(/боюнча суроо калдыбы\? Жазыңыз, жардам берем\.$/)
+    expect(r.text).not.toMatch(/сом|акысыз|ойлонуп/)
+  })
+})
