@@ -158,3 +158,15 @@ describe('«Оформляем?» — по ситуации, а не в кажд
     expect(text).toMatch(/тариздеп берем/)
   })
 })
+
+describe('«айта оласизми?» — «можете сказать?», не «купите?» (имтихон 03.10)', () => {
+  it('OFFER не путает «айта оласизми» и «айта аласызбы» с предложением купить', async () => {
+    const { OFFER } = await import('@/lib/telegram/order')
+    expect(OFFER.test('Кайси товар, номини айта оласизми?')).toBe(false)
+    expect(OFFER.test('Расмини юбора оласизми?')).toBe(false)
+    expect(OFFER.test('Моделин айта аласызбы?')).toBe(false)
+    expect(OFFER.test('Флагманни оласизми?')).toBe(true)
+    expect(OFFER.test('Аласызбы?')).toBe(true)
+    expect(OFFER.test('Тариздейлиби?')).toBe(true)
+  })
+})

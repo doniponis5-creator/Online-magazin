@@ -171,7 +171,9 @@ function withoutEarlyOffer(text: string, turns: ChatTurn[]): string {
   const recently = ours.slice(-3).some((t) => OFFER.test(t.text))
   if (ours.length > 0 && !recently && (ready || ripe)) return text
   const kept = text.split(/(?<=[.!?])\s+/).filter((sentence) => !OFFER.test(sentence))
-  return kept.length > 0 ? kept.join(' ') : text
+  // Остался один «Ассаламу алейкум.» — значит, вырезали сам ответ: лучше не трогать.
+  const rest = kept.join(' ')
+  return rest.replace(/ассал[ао]му?\s+ал[еа]йкум\.?/giu, '').trim().length > 0 ? rest : text
 }
 
 /** Наличные: «наличка», «накталай», «нахт» — про оплату, не про покупку. */
