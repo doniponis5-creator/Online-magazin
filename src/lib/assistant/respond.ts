@@ -75,7 +75,7 @@ export async function respond(
   const intent = hint.intent ?? null
   const talked = Array.isArray(shown) ? shown.filter((x): x is string => typeof x === 'string').slice(0, 5) : []
   const raw = await answer(turns, lang, customer, page, channel.known.name, Boolean(channel.known.phone), objectionNote(intent), talked, channel.leadChannel)
-  const first = { ...raw, text: withoutRepeatOffer(raw.text, turns) }
+  const first = { ...raw, text: withoutEarlyOffer(raw.text, turns) }
   const said = declined(turns) || intent?.kind === 'decline' ? { ...first, text: withoutCallOffer(first.text) } : first
   const later = followAfter(intent)
   const reply = later ? { ...said, followAfter: later } : { ...said, followAfter: undefined }
@@ -147,13 +147,29 @@ function isOtherBot(turns: ChatTurn[]): boolean {
 
 /** «{{SWE001}}», один знак, e-mail — сообщение не человеку, отвечать нечего. */
 /**
- * «Тариздейлиби?» в каждом ответе — так не продаёт ни один живой менеджер: покупатель
- * чувствует, что его торопят (владелец, 01.10). Предлагали оформить в одном из двух
- * последних ответов — в этом не предлагаем: отвечаем и спрашиваем о деле.
+ * Покупатель сам показал, что готов: как оплатить или купить, когда привезёте, понравилось,
+ * подходит, назвал адрес. На трёх языках, как пишут на самом деле.
  */
-function withoutRepeatOffer(text: string, turns: ChatTurn[]): string {
-  const recent = turns.filter((t) => t.role === 'assistant').slice(-2)
-  if (!recent.some((t) => OFFER.test(t.text))) return text
+export const READY =
+  /(как (оплатить|платить|купить|заказать)|куда (платить|перевести|скинуть)|нравится|понравил|подходит|устраивает|когда (привез|доставит|будет)|адрес|кантип (төлө|толо|сатып ал|заказ)|кандай (төлө|толо)|качан (алып кел|жеткир|келет)|жакты|жагып|туура келет|дарек|qanday to.?la|qachon olib|qachon yetkaz|кандай тула|качон олиб кел|качон етказ|ёкди|ёкяпти|ёкиб|маъкул|yoqdi|manzil|манзил)/iu
+
+/**
+ * «Оформляем?» — только по ситуации (владелец 01.10 и 03.10: «оформит қилайлик деб сўрамасин,
+ * вазиятга қараб айтсин»). Модель всё равно вставляет его по привычке, поэтому код
+ * оставляет предложение, только если:
+ *   • это не первый ответ и за три последних ответа оформить не предлагали;
+ *   • и покупатель подал знак, что готов (READY, «беру»), — или разговор о товаре идёт
+ *     давно (три сообщения покупателя и больше), а оформить не предлагали ни разу.
+ * Иначе фраза с «Оформляем?» убирается — остаётся ответ и вопрос о деле.
+ */
+function withoutEarlyOffer(text: string, turns: ChatTurn[]): string {
+  if (!OFFER.test(text)) return text
+  const ours = turns.filter((t) => t.role === 'assistant')
+  const theirs = sinceBot(turns).join(' ')
+  const ready = READY.test(theirs) || BUY_INTENT.test(theirs)
+  const ripe = turns.filter((t) => t.role === 'user').length >= 3 && !ours.some((t) => OFFER.test(t.text))
+  const recently = ours.slice(-3).some((t) => OFFER.test(t.text))
+  if (ours.length > 0 && !recently && (ready || ripe)) return text
   const kept = text.split(/(?<=[.!?])\s+/).filter((sentence) => !OFFER.test(sentence))
   return kept.length > 0 ? kept.join(' ') : text
 }

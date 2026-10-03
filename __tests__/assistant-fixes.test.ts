@@ -108,3 +108,53 @@ describe('продавец, а не реклама (владелец 03.10: «з
     expect(text.split('НЕ ТОРОПИ С ОФОРМЛЕНИЕМ').length - 1).toBe(1)
   })
 })
+
+describe('«Оформляем?» — по ситуации, а не в каждом ответе (владелец 03.10)', () => {
+  const wa = (key: string) => ({ key, orderSource: 'Заказ из WhatsApp', leadChannel: 'whatsapp' as const, known: { phone: '+996555000077' } })
+  const withModel = async (said: string, turns: { role: 'user' | 'assistant'; text: string }[]) => {
+    vi.resetModules()
+    vi.doMock('@/lib/assistant/reply', async (orig) => ({
+      ...(await orig<typeof import('@/lib/assistant/reply')>()),
+      answer: async () => ({ text: said, products: [], source: 'gemini' as const, audience: 'customer' as const }),
+    }))
+    const { respond } = await import('@/lib/assistant/respond')
+    const r = await respond(wa(`wa:offer-${Math.random()}`), turns, 'ky', null)
+    vi.doUnmock('@/lib/assistant/reply')
+    vi.resetModules()
+    return r.text
+  }
+
+  it('в первом ответе «Тариздейлиби?» убирается', async () => {
+    const text = await withModel('Бар, 15 900 сом. Тариздейлиби?', [{ role: 'user', text: 'Эндуро барбы?' }])
+    expect(text).toBe('Бар, 15 900 сом.')
+  })
+  it('ещё выбирает (спрашивает характеристику) — не предлагаем', async () => {
+    const text = await withModel('Аккумулятор 12 Ач. Тариздейлиби?', [
+      { role: 'user', text: 'Эндуро барбы?' }, { role: 'assistant', text: 'Бар, 15 900 сом. Балаңыз канча жашта?' },
+      { role: 'user', text: 'Аккумулятору канча?' },
+    ])
+    expect(text).not.toMatch(/Тариздейлиби/)
+  })
+  it('готов («Жакты, Ошко жеткиресизби?») — предложение остаётся', async () => {
+    const text = await withModel('Ооба, акысыз. Тариздейлиби?', [
+      { role: 'user', text: 'Эндуро барбы?' }, { role: 'assistant', text: 'Бар, 15 900 сом.' },
+      { role: 'user', text: 'Жакты. Ошко жеткиресизби?' },
+    ])
+    expect(text).toMatch(/Тариздейлиби/)
+  })
+  it('предлагали в прошлом ответе — второй раз подряд не предлагаем, даже если готов', async () => {
+    const text = await withModel('Ооба. Тариздейлиби?', [
+      { role: 'user', text: 'Эндуро барбы?' }, { role: 'assistant', text: 'Бар, 15 900 сом. Тариздейлиби?' },
+      { role: 'user', text: 'Жакты, кантип төлөйм?' },
+    ])
+    expect(text).toBe('Ооба.')
+  })
+  it('разговор идёт давно, а не предлагали ни разу — можно предложить', async () => {
+    const text = await withModel('Кафилдиги 1 жыл. Алсаңыз, ушул жерден тариздеп берем?', [
+      { role: 'user', text: 'Эндуро барбы?' }, { role: 'assistant', text: 'Бар.' },
+      { role: 'user', text: 'Түсү кандай?' }, { role: 'assistant', text: 'Кызыл.' },
+      { role: 'user', text: 'Кепилдиги барбы?' },
+    ])
+    expect(text).toMatch(/тариздеп берем/)
+  })
+})

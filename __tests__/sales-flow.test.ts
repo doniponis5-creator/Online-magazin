@@ -112,7 +112,9 @@ describe('напоминание «ещё актуально?»', () => {
     // Имя не ставим: в телефоне владельца оно бывает «Жанатим. Онам», «Ааааааа».
     expect(text).not.toMatch(/^Aziz/)
     expect(text).toContain(shortName(product.nameRu))
-    expect(text).toContain('расмийлаштириб')
+    expect(text).toContain('уйлаяпсизми')
+    // Напоминание не торопит с оформлением (владелец 03.10).
+    expect(text).not.toMatch(/расмийлаштир|оформ/)
   })
   it('без товара — пропуск', async () => {
     expect(await followUp([{ role: 'user', text: 'привет' }], [], 'ru')).toEqual({ skip: 'not-shown' })
