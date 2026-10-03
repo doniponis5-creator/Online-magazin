@@ -19,7 +19,9 @@ try {
 } catch {
   // нет файла — отвечает запасной режим
 }
-process.env.SHOP_PAYMENT_MODE ??= 'mock'
+// Пустое «SHOP_PAYMENT_MODE=» в .env.local — это не «не задано»: ??= его не трогал, и при
+// SHOP_API_URL имтихон шёл в боевом режиме — «позвонить» слало владельцу настоящую заявку.
+if (process.env.SHOP_PAYMENT_MODE !== 'mock') process.env.SHOP_PAYMENT_MODE = 'mock'
 
 it('имтихон', async () => {
   const { respond } = await import('@/lib/assistant/respond')
