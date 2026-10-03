@@ -73,3 +73,28 @@ describe('durableMap на диске', () => {
     }
   })
 })
+
+describe('продавец, а не реклама (владелец 03.10: «звучит не как человек»)', () => {
+  const text = systemInstruction('ru', null, 'ky', products)
+  it('не вываливает всё сразу и не пишет по шаблону', () => {
+    expect(text).toContain('НЕ ВЫВАЛИВАЙ ВСЁ СРАЗУ')
+    expect(text).toContain('Не пиши каждый ответ по одному шаблону')
+    expect(text).toContain('Не два и не три вопроса сразу')
+  })
+  it('пишет в тон покупателю и его словами', () => expect(text).toContain('Пиши в тон покупателю'))
+  it('имя покупателя не выспрашивает', () => {
+    expect(text).toContain('не выспрашивай')
+    expect(text).not.toMatch(/в первом или втором ответе спроси, как зовут/)
+  })
+  it('в образцах нет обещания «до центра района бесплатно» всем подряд и нет настоящих цен', () => {
+    expect(text).not.toContain('Привезём бесплатно до центра района.')
+    expect(text).not.toContain('до центра района или области — бесплатно')
+    expect(text).toContain('Не знаешь, откуда он, — не обещай')
+    const samples = text.slice(text.indexOf('ОБРАЗЦЫ'), text.indexOf('ЧЕГО НЕЛЬЗЯ'))
+    expect(samples).not.toMatch(/15 900|18 800/)
+  })
+  it('правила не задублированы: «Здоровайся один раз» — одна строка', () => {
+    expect(text.split('Здоровайся один раз').length - 1).toBe(1)
+    expect(text.split('НЕ ТОРОПИ С ОФОРМЛЕНИЕМ').length - 1).toBe(1)
+  })
+})
