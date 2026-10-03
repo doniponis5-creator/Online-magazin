@@ -24,9 +24,19 @@ const clamp = (v: number) => Math.max(0, Math.min(1, v))
 const smooth = (t: number) => t * t * (3 - 2 * t)
 
 /**
+ * Сколько пикселей прокрутки сцена стоит на месте (--travel в home-story-kitchens.css).
+ * Ход не зависит от шапки: уехала она или вернулась — карточки не прыгают.
+ */
+export function deckTravel(el: HTMLElement) {
+  return parseFloat(getComputedStyle(el).getPropertyValue('--travel')) || 1
+}
+
+/**
  * Колода карточек на прокрутке (общая для «Готовых кухонь» и «Скидок»).
  * 0–0.3 хода колода раскрывается в веер; 0.3–0.95 веер проходит с карточки start до end.
  * spread — шаг веера в долях ширины карточки. Двигаются только transform и opacity.
+ * Пока сцена стоит, она растягивается на весь экран (--fill от 0 до 1): по бокам и сверху
+ * не остаётся пустого белого места, а когда шапка уезжает — сцена поднимается к верху экрана.
  */
 export function useFanDeck(root: RefObject<HTMLElement | null>, { start, end, spread }: { start: number; end: number; spread: number }) {
   const [phase, setPhase] = useState(0)
@@ -36,14 +46,27 @@ export function useFanDeck(root: RefObject<HTMLElement | null>, { start, end, sp
     if (!el) return
     const media = matchMedia('(prefers-reduced-motion: reduce)')
     const cards = Array.from(el.querySelectorAll<HTMLElement>('.hk__card'))
+    const stage = el.querySelector<HTMLElement>('.hr__stage')!
     let frame = 0
     const update = () => {
       frame = 0
-      const header = document.querySelector('.header')?.getBoundingClientRect().height ?? 0
-      el.style.setProperty('--story-top', `${header + 8}px`)
-      const stage = el.querySelector<HTMLElement>('.hr__stage')!
-      const travel = el.offsetHeight - stage.offsetHeight
-      const p = media.matches ? 1 : clamp((header + 8 - el.getBoundingClientRect().top) / Math.max(1, travel))
+      const head = document.querySelector('.header')?.getBoundingClientRect()
+      // место шапки в потоке страницы — не меняется, когда она уезжает (она сдвигается, а не прячется)
+      const top = (head?.height ?? 0) + 8
+      el.style.setProperty('--story-top', `${top}px`)
+      const box = el.getBoundingClientRect()
+      const d = top - box.top
+      // без «залипания» (меньше движения, низкий телефон боком) сцена — обычная карточка
+      const sticky = !media.matches && getComputedStyle(stage).position === 'sticky'
+      // первые 160 px прокрутки сцена разворачивается на весь экран
+      const fill = sticky ? smooth(clamp(d / 160)) : 0
+      el.style.setProperty('--fill', fill.toFixed(3))
+      el.style.setProperty('--bleed-l', `${Math.max(0, box.left).toFixed(1)}px`)
+      el.style.setProperty('--bleed-r', `${Math.max(0, document.documentElement.clientWidth - box.right).toFixed(1)}px`)
+      el.style.setProperty('--w0', `${el.clientWidth}px`)
+      // сцена встаёт под низ шапки; уехала шапка — к самому верху экрана
+      el.style.setProperty('--stick', `${sticky ? Math.max(0, head?.bottom ?? 0) + 8 * (1 - fill) : top}px`)
+      const p = media.matches || !sticky ? 1 : clamp(d / deckTravel(el))
       el.style.setProperty('--story-progress', p.toFixed(4))
       el.dataset.progress = p.toFixed(3)
       const fan = smooth(clamp(p / .3))
@@ -74,13 +97,33 @@ export function useFanDeck(root: RefObject<HTMLElement | null>, { start, end, sp
     observer.observe(el)
     const header = document.querySelector('.header')
     if (header) observer.observe(header)
+    let follow = 0
+    let until = 0
+    // шапка уезжает плавно (~0,26 с) и после того, как палец остановился, — сцена едет за ней каждый кадр
+    const chase = () => {
+      cancelAnimationFrame(frame)
+      update()
+      follow = performance.now() < until ? requestAnimationFrame(chase) : 0
+    }
+    // слушаем документ, а не саму шапку: настоящая шапка может прийти позже заглушки
+    const headerMoves = (e: TransitionEvent) => {
+      if (!(e.target instanceof Element) || !e.target.classList.contains('header')) return
+      // сцена не на экране — следить не за чем
+      const box = el.getBoundingClientRect()
+      if (box.bottom < 0 || box.top > innerHeight) return
+      until = performance.now() + 340
+      if (!follow) follow = requestAnimationFrame(chase)
+    }
+    document.addEventListener('transitionrun', headerMoves)
     addEventListener('scroll', schedule, { passive: true })
     addEventListener('resize', schedule)
     media.addEventListener('change', schedule)
     update()
     return () => {
       cancelAnimationFrame(frame)
+      cancelAnimationFrame(follow)
       observer.disconnect()
+      document.removeEventListener('transitionrun', headerMoves)
       removeEventListener('scroll', schedule)
       removeEventListener('resize', schedule)
       media.removeEventListener('change', schedule)

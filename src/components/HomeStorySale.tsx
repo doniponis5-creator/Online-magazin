@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { formatSom } from '@/lib/format'
 import { discountPct, type SaleCard } from '@/lib/hero-sale'
-import { useFanDeck } from './HomeStoryKitchens'
+import { deckTravel, useFanDeck } from './HomeStoryKitchens'
 import './home-story-reveal.css'
 import './home-story-kitchens.css'
 import './home-story-sale.css'
@@ -86,15 +86,14 @@ export function HomeStorySale({ cards }: { cards: SaleCard[] }) {
   /** Миниатюра под кнопкой: прокрутить ровно к моменту, когда эта карточка впереди. */
   const goTo = (i: number) => {
     const el = root.current
-    const stage = el?.querySelector<HTMLElement>('.hr__stage')
-    if (!el || !stage) return
+    if (!el) return
     // обратная к useFanDeck: k = end · smooth((p − 0.3) / 0.65)
     const u = end ? i / end : 0
     let lo = 0, hi = 1
     for (let n = 0; n < 20; n++) { const t = (lo + hi) / 2; if (t * t * (3 - 2 * t) < u) lo = t; else hi = t }
     const p = .3 + .65 * lo
-    const header = (document.querySelector('.header')?.getBoundingClientRect().height ?? 0) + 8
-    const top = el.getBoundingClientRect().top + scrollY - header + p * (el.offsetHeight - stage.offsetHeight)
+    const header = parseFloat(el.style.getPropertyValue('--story-top')) || 0
+    const top = el.getBoundingClientRect().top + scrollY - header + p * deckTravel(el)
     scrollTo({ top, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
   }
   const ky = lang === 'ky'
@@ -143,9 +142,13 @@ export function HomeStorySale({ cards }: { cards: SaleCard[] }) {
         </div>
       </div>
       <div className="hr__footer"><span className="hs__tag"><i aria-hidden="true" />Акция · {ky ? `${deck.length} товар` : `${deck.length} ${deck.length < 5 ? 'товара' : 'товаров'}`}</span>
-        {/* только на телефоне: там подсказки под кнопкой нет — без неё не понять, что карточки меняются при прокрутке */}
-        <span className="hs__scroll" aria-hidden="true"><IconArrowDown size={12} />{ky ? 'Сыдырыңыз' : 'Листайте'}</span>
-        <span aria-hidden="true">0{focus + 1} / 0{deck.length}</span></div>
+        {/* только на телефоне: подсказки под кнопкой там нет. Тёмная плашка «↓ Листайте вниз» и точки — сколько скидок
+            и какая сейчас впереди; на последней карточке надпись прячется, остаются точки */}
+        <span className="hs__scroll" aria-hidden="true" data-last={focus >= end || undefined}>
+          <span className="hs__scroll-say"><IconArrowDown size={14} />{ky ? 'Ылдый сыдырыңыз' : 'Листайте вниз'}</span>
+          <span className="hs__dots">{deck.map((c, i) => <i key={c.id} data-on={i === focus || undefined} />)}</span>
+        </span>
+        <span className="hs__count" aria-hidden="true">0{focus + 1} / 0{deck.length}</span></div>
       <div className="hr__progress" aria-hidden="true" />
     </div>
   </section>

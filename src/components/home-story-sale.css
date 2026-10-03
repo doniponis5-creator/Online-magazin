@@ -83,14 +83,22 @@
   /* без размытия (blur): на огромном тексте оно тормозит телефон при каждой смене карточки — только прозрачность и сдвиг */
   .hs__big { animation-name: hs-big-lite; }
   .hs__rail { display: none; }
-  .hr--sale .hr__footer .hs__tag { padding: 4px 10px 4px 8px; }
-  /* «↓ Листайте» между меткой и счётчиком: видна, пока колода не тронута (прогресс 0,0…), и гаснет, как только листают */
-  .hr--sale .hr__footer .hs__scroll { display: inline-flex; align-self: center; align-items: center; gap: 4px; padding: 4px 9px; border-radius: 999px;
-    font-size: 11px; font-weight: 700; transition: opacity .3s; }
-  .hs__scroll svg { flex: none; animation: hr-nudge 1.4s ease-in-out infinite; }
-  .hr--sale:not([data-progress^='0.0']) .hs__scroll { opacity: 0; }
+  /* «Листайте» на телефоне: тёмная плашка внизу сцены — её видно на лимоне. Стрелка качается, точки — сколько скидок
+     и какая впереди. Метка «Акция» и счётчик «01 / 07» тут не помещались (справа их закрывала кнопка чата) — их заменяют точки.
+     На последней карточке надпись сворачивается, остаются точки. */
+  .hr--sale .hr__footer .hs__tag, .hr--sale .hr__footer .hs__count { display: none; }
+  .hr--sale .hr__footer .hs__scroll { display: inline-flex; align-items: center; gap: 10px; padding: 9px 14px 9px 12px; border-radius: 999px;
+    background: var(--color-ink); color: #fff; font-size: 13px; font-weight: 700; box-shadow: 0 6px 18px rgb(38 50 68 / 22%); transition: gap .4s; }
+  .hr--sale .hr__footer .hs__scroll span { background: none; padding: 0; border-radius: 0; }
+  .hs__scroll-say { display: inline-flex; align-items: center; gap: 6px; max-width: 14em; overflow: hidden; white-space: nowrap; transition: max-width .4s, opacity .3s; }
+  .hs__scroll svg { flex: none; color: var(--color-lemon); animation: hr-nudge 1.2s ease-in-out infinite; }
+  .hr--sale .hr__footer .hs__scroll[data-last] { gap: 0; }
+  .hs__scroll[data-last] .hs__scroll-say { max-width: 0; opacity: 0; }
+  .hs__dots { display: inline-flex; align-items: center; gap: 4px; }
+  .hs__dots i { width: 6px; height: 6px; border-radius: 3px; background: rgb(255 255 255 / 35%); transition: width .3s, background-color .3s; }
+  .hs__dots i[data-on] { width: 16px; background: var(--color-lemon); }
   /* на телефоне текст сверху — дымка сверху вниз */
-  .hr--sale .hr__stage::before { background: linear-gradient(180deg, rgb(255 255 255 / 78%), rgb(255 255 255 / 58%) 130px, rgb(255 255 255 / 0%) 240px); }
+  .hr--sale .hr__stage::before { background: linear-gradient(180deg, rgb(255 255 255 / 78%), rgb(255 255 255 / 58%) calc(var(--ex) + 130px), rgb(255 255 255 / 0%) calc(var(--ex) + 240px)); }
 }
 /* Совсем низкий экран (iPhone в Safari с панелями): над колодой места под число нет —
    оно встаёт справа от кнопки «Все скидки», целиком на виду. По-кыргызски кнопка длиннее — число меньше. */
