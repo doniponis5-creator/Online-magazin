@@ -40,6 +40,8 @@ function count(low: string, words: RegExp): number {
 
 /** Русские служебные слова: есть хотя бы одно — «русский» уверенный. */
 const RU_MARKERS = /(?<![\p{L}])(что|как|это|есть|можно|сколько|когда|где|пожалуйста|здравствуйте|спасибо|хочу|нужно|нужна|нужен|у вас|вы|мы|я|не|нет|и|в|на|с|по|для|или|если|какой|какая|какие|будет|можно ли)(?![\p{L}])/iu
+/** Русские слова латиницей — так пишут с телефона без русской раскладки. */
+const RU_LATIN = /(?<![a-z])(kak|ty|mojno|mozhno|ponimayu|ponimaju|tebya|tebja|znaesh|chto|chtoli|privet|spasibo|skolko|nuzhno|nado|pochemu|gde|kogda|russki|zdravstvuyte|horosho|khorosho|eto|est|mne|vy|ne)(?![a-z])/gi
 /** Кыргызский вопрос приклеивается к слову: «араванбы», «оштобу», «барбы». Русские «грибы» и «зубы» — не в счёт. */
 const KY_QUESTION = /(?<![\p{L}])[а-яё]{3,}(бы|бу|пы|пу|би|пи)(?![\p{L}])/giu
 const RU_BY = /^(грибы|зубы|трубы|рыбы|судьбы|столбы|шубы|губы|дубы|клубы|бабы|гробы|лбы|чтобы|дабы|якобы|кабы|табу)$/i
@@ -75,6 +77,8 @@ export function detectLangScored(text: string, fallback: TalkLang): { lang: Talk
     return { lang, strong: RU_MARKERS.test(low) }
   }
   const latinOnly = !/[а-яё]/i.test(low)
+  // Русский латиницей: «kak ty?», «ya ne ponimayu tebya», «ty ne znaesh chtoli» (журнал сайта 30.09).
+  if (latinOnly && (low.match(RU_LATIN) ?? []).length >= 2) return { lang: 'ru', strong: true }
   const listed = count(low, UZ_CYR) + count(low, KY_CYR) > 0 || /\b(salam|kanday|baasy|baaby|barby|kerek|oshol|ele|jok|ooba|assalom|salom|qancha|kerak|yaxshi|rahmat|bormi|narx)\b/i.test(low)
   return { lang, strong: !latinOnly || listed }
 }

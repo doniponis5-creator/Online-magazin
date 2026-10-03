@@ -225,3 +225,31 @@ describe('короткая кыргызская фраза без «ы»', () =>
     expect(talkLang([{ role: 'user', text: '9 жашка толот да' }], 'ru')).toBe('ky')
   })
 })
+
+describe('журнал сайта 20.09–03.10', () => {
+  it('кнопка «Заказать: … GEPARD M2 16\'» — одна штука, «M2» не количество', async () => {
+    const { wantedQty } = await import('@/lib/assistant/respond')
+    expect(wantedQty("Заказать: Электро Велик GEPARD M2 16'")).toBe(1)
+    expect(wantedQty('беру X5')).toBe(1)
+    expect(wantedQty('беру 2')).toBe(2)
+    expect(wantedQty('2 шт')).toBe(2)
+  })
+  it('попросил по-русски (латиницей) — дальше по-русски', async () => {
+    const { talkLang } = await import('@/lib/assistant/reply')
+    const turns = [
+      { role: 'user' as const, text: 'salom' }, { role: 'assistant' as const, text: 'Ассаламу алейкум. Эшитаман, кандай техника керак?' },
+      { role: 'user' as const, text: 'po russki mojno' },
+    ]
+    expect(talkLang(turns, 'ru')).toBe('ru')
+    expect(talkLang([...turns, { role: 'assistant' as const, text: 'x' }, { role: 'user' as const, text: 'ya ne ponimayu tebya' }], 'ru')).toBe('ru')
+    expect(talkLang([{ role: 'user' as const, text: 'orusча эмес, кыргызча жазыңыз' }], 'ru')).toBe('ky')
+  })
+  it('адрес «15» — не «не получилось», а переспрос с примером', async () => {
+    const { start, step } = await import('@/lib/telegram/order')
+    const { products: list } = await import('@/data/products')
+    const p = list.find((x) => x.price > 0 && x.variants.some((v) => v.stock > 0))!
+    await start('t:addr', [p.id], 'ky', 'test', { name: 'Байэл', phone: '0555123456' })
+    await step('t:addr', 'Ош', 'ky', 'ky')
+    expect(await step('t:addr', '15', 'ky', 'ky')).toMatch(/мисалы: Ленин 15/)
+  })
+})

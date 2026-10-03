@@ -84,6 +84,13 @@ export async function answer(
  */
 export function talkLang(turns: ChatTurn[], lang: Lang) {
   const users = turns.filter((t) => t.role === 'user').map((t) => ownWords(t.text))
+  // «po russki mojno», «орусча жазыңызчы» — покупатель сам попросил язык (журнал сайта 30.09:
+  // попросил по-русски, а бот дважды ответил по-узбекски). Просьба действует дальше в разговоре.
+  for (const text of users.slice(-6).reverse()) {
+    if (ASK_RU.test(text)) return 'ru'
+    if (ASK_KY.test(text)) return 'ky'
+    if (ASK_UZ.test(text)) return 'uz'
+  }
   const recent = detectLangScored(users.slice(-2).join(' '), lang)
   if (recent.strong) return recent.lang
   // «Доставкасын айтып койгулачы Таласка» без единой приметы давало «русский»,
@@ -100,6 +107,10 @@ export function talkLang(turns: ChatTurn[], lang: Lang) {
   }
   return recent.lang
 }
+
+const ASK_RU = /(по-?русски|po[\s-]?russki|на русском|na russkom|орусча|орус тилинде|русча|рус тилида|ruscha|rus tilida)/iu
+const ASK_KY = /(кыргызча|кыргыз тилинде|kyrgyzcha|qirg.?izcha)/iu
+const ASK_UZ = /(узбекча|ўзбекча|озбекча|uzbekcha|o.?zbekcha|узбек тилида)/iu
 
 /**
  * Слова самого покупателя. Описание фото пишет модель по-русски — по нему

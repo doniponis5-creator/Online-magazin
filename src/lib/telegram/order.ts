@@ -129,6 +129,12 @@ const ASK_ADDRESS: Say = {
   uz: 'Куча ва уй?',
 }
 
+const ASK_ADDRESS_FULL: Say = {
+  ru: 'Напишите улицу и номер дома, например: Ленина 15.',
+  ky: 'Көчөнүн атын жана үйдүн номерин жазыңыз, мисалы: Ленин 15.',
+  uz: 'Куча номи ва уй ракамини ёзинг, масалан: Ленин 15.',
+}
+
 const ASK_PICK: Say = {
   ru: 'Какой берёте — первый или второй?',
   ky: 'Кайсынысын аласыз — биринчисинби, экинчисинби?',
@@ -367,6 +373,9 @@ async function advance(chatId: ChatKey, text: string, lang: TalkLang, siteLang: 
 
   // address — «Озум алам» и здесь значит «заберу сам».
   if (PICKUP.test(value)) return await finish(chatId, draft, 'pickup', lang, siteLang)
+  // «15» вместо адреса — проверка заказа (не короче 4 знаков) его не пропускала, и покупатель
+  // получал «не получилось оформить» (журнал сайта 02.10). Переспрашиваем с примером.
+  if (value.replace(/\s/g, '').length < 4) return pick(ASK_ADDRESS_FULL, lang)
   draft.city = draft.city ?? ''
   return await finish(chatId, draft, 'delivery', lang, siteLang, value.slice(0, 120))
 }
