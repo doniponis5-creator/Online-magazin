@@ -110,6 +110,15 @@ const SYNONYMS: Record<string, string[]> = {
   мошина: ['стиральная'],
   pylesos: ['пылесос'],
   changyutgich: ['пылесос'],
+  // Как пишут на самом деле (переписки 26.09–03.10): «Пилисоска», «стиралкаларды», «эндура».
+  пилисос: ['пылесос'],
+  пилесос: ['пылесос'],
+  музлаткич: ['холодильник'],
+  жуугуч: ['стиральная'],
+  эндура: ['эндуро'],
+  велик: ['велосипед', 'велик'],
+  велосипед: ['велик'],
+  velosiped: ['велик', 'велосипед'],
   наушник: ['наушники'],
   quloqchin: ['наушники'],
   soat: ['часы'],
@@ -155,7 +164,11 @@ function expand(words: string[]): string[] {
   const out = new Set<string>()
   for (const word of words) {
     out.add(word)
-    for (const alias of SYNONYMS[word] ?? []) out.add(alias)
+    // С окончанием тоже: «стиралкаларды», «муздаткычтар», «пилисоска» — по началу слова.
+    for (const [key, aliases] of Object.entries(SYNONYMS)) {
+      // «мошинага батабы» — это про автомобиль, не про стиральную: «мошина» только целым словом.
+      if (word === key || (key.length >= 4 && key !== 'мошина' && word.startsWith(key))) for (const alias of aliases) out.add(alias)
+    }
   }
   return [...out]
 }

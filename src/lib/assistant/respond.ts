@@ -106,8 +106,13 @@ export async function respond(
     // Номер в WhatsApp известен всегда — заявка уходит молча. Без номера анкету не заводим: это не «перезвоните».
     // В Instagram номера нет: сообщение увидит сотрудник в самом Instagram и в сводке «Ждут ответа».
     if (who.phone) await startLead(channel.key, talk, context, who, channel.leadChannel)
-    // Всегда одна и та же короткая фраза на языке покупателя — так решил владелец.
-    const ack = channel.leadChannel === 'instagram' ? `${pick(STAFF_ACK, talk)}\n${pick(WHATSAPP_LINE, talk)}` : pick(STAFF_ACK, talk)
+    // Короткая фраза на языке покупателя — так решил владелец. Но одна и та же три раза подряд —
+    // это робот (переписка 01.10: покупатель трижды спросил цену и трижды получил «руководстводон
+    // тактап, жазам»). Уже говорили — второй раз «уже передала», третий — молчим: ответит человек.
+    const said = turns.filter((t) => t.role === 'assistant').slice(-2).filter((t) => isStaffAck(t.text)).length
+    if (said >= 2) return { text: '', products: [], source: reply.source, silent: true, handoff: true }
+    const first = said === 0 ? pick(STAFF_ACK, talk) : pick(STAFF_ACK_AGAIN, talk)
+    const ack = channel.leadChannel === 'instagram' && said === 0 ? `${first}\n${pick(WHATSAPP_LINE, talk)}` : first
     return { text: ack, products: [], source: reply.source, handoff: true }
   }
   return reply
@@ -134,7 +139,7 @@ const ACK = new RegExp(`^[\\s\\p{P}\\p{S}]*(?:${ACK_WORD}[\\s\\p{P}\\p{S}]*){0,3
 
 /** Автоответ чужого WhatsApp Business или наша же фраза, пришедшая назад. */
 const OTHER_BOT =
-  /(спасибо за (ваше )?обращение|благодарим за (ваше )?(обращение|сообщение)|добро пожаловать!|мы (скоро )?(ответим|свяжемся)|сейчас (мы )?не на связи|автоответ|in the office|we are (currently )?away|thanks for (contacting|your message)|кайрылганыңыз үчүн рахмат|murojaatingiz uchun rahmat)/i
+  /(спасибо за (ваше )?обращение|благодарим за (ваше )?(обращение|сообщение)|добро пожаловать!|мы (скоро )?(ответим|свяжемся)|сейчас (мы )?не на связи|автоответ|in the office|we are (currently )?away|thanks for (contacting|your message)|successfully connected|business portfolio|facebook page|whatsapp business account|кайрылганыңыз үчүн рахмат|murojaatingiz uchun rahmat)/i
 
 function isOtherBot(turns: ChatTurn[]): boolean {
   const last = turns[turns.length - 1]
@@ -223,6 +228,16 @@ const STAFF_ACK = {
   ru: 'Поняла, уточню у руководства и напишу вам.',
   ky: 'Түшүндүм, руководстводон тактап, жазам.',
   uz: 'Тушундим, руководстводан аниклаб, ёзаман.',
+}
+const STAFF_ACK_AGAIN = {
+  ru: 'Уже передала руководству — скоро ответят.',
+  ky: 'Руководствого айтып койдум, жакында жооп беришет.',
+  uz: 'Руководствога айтдим, тез орада жавоб беришади.',
+}
+/** Наша фраза «уточню у руководства» (любой вариант, любой язык) — первая строка ответа. */
+function isStaffAck(text: string): boolean {
+  const first = text.split('\n')[0].trim()
+  return [STAFF_ACK, STAFF_ACK_AGAIN].some((say) => Object.values(say).includes(first))
 }
 // В Instagram номера покупателя нет — заявку не завести; пусть знает, где ответят быстрее.
 const WHATSAPP_LINE = {

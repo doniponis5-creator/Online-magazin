@@ -170,3 +170,58 @@ describe('«айта оласизми?» — «можете сказать?», �
     expect(OFFER.test('Тариздейлиби?')).toBe(true)
   })
 })
+
+describe('уроки настоящих переписок 26.09–03.10', () => {
+  it('кыргыз в голосовом с казахскими «қ» — кыргызский, а не узбекский', async () => {
+    const { detectLang } = await import('@/lib/assistant/talk')
+    const q = '[Голосовое] Алло, ассалому алейкум. Қандайсыз, ака? Жақшысызбы? Ден соолуктар жақшыбы? Мына бу ака мини мотоцикл боюнча чыгып жатат, сатууда барбы же заказга келеби?'
+    expect(detectLang(q, 'ru')).toBe('ky')
+    expect(detectLang('Ассалому алейкум, қанча турады? Ўзбекча ёзинг', 'ru')).toBe('uz')
+  })
+  it('«Пилисоска», «стиралкаларды», «муздаткычтар» находят товар', async () => {
+    const { searchProducts } = await import('@/lib/assistant/knowledge')
+    for (const q of ['Пилисоска', 'стиралкаларды', 'пилесос керак']) // во вшитом каталоге холодильников нет
+      expect(searchProducts(q, 'ru').length, q).toBeGreaterThan(0)
+  })
+  it('«К сожалению», «Тилекке каршы» в начале фразы убираются', async () => {
+    const { houseStyle } = await import('@/lib/assistant/reply')
+    expect(houseStyle('К сожалению, шлемов нет. Есть Эндуро.', 'ru')).toBe('Шлемов нет. Есть Эндуро.')
+    expect(houseStyle('Бар. Тилекке каршы, шлем жок.', 'ky')).toBe('Бар. Шлем жок.')
+  })
+  it('уехал или отказался — «ещё думаете?» не шлём', async () => {
+    const { followUp } = await import('@/lib/assistant/followup')
+    const { products: list } = await import('@/data/products')
+    const id = list.find((p) => p.price > 0)!.id
+    expect(await followUp([{ role: 'user', text: 'Мен эртен россияга кетем' }, { role: 'assistant', text: 'Түшүнүктүү, жакшы барып келиңиз.' }], [id], 'ky')).toEqual({ skip: 'declined' })
+    expect(await followUp([{ role: 'user', text: 'А жок рахмат' }, { role: 'assistant', text: 'Макул.' }], [id], 'ky')).toEqual({ skip: 'declined' })
+  })
+  it('«уточню у руководства» не повторяется: второй раз «уже передала», третий — тишина', async () => {
+    vi.resetModules()
+    vi.doMock('@/lib/assistant/reply', async (orig) => ({
+      ...(await orig<typeof import('@/lib/assistant/reply')>()),
+      answer: async () => ({ text: 'x', products: [], source: 'gemini' as const, audience: 'staff' as const }),
+    }))
+    const { respond } = await import('@/lib/assistant/respond')
+    const wa = { key: 'wa:ack', orderSource: 'Заказ из WhatsApp', leadChannel: 'whatsapp' as const, known: {} }
+    const ack = 'Түшүндүм, руководстводон тактап, жазам.'
+    const second = await respond(wa, [{ role: 'user', text: 'Ылдамдыгы канча?' }, { role: 'assistant', text: ack }, { role: 'user', text: 'Канча?' }], 'ky', null)
+    expect(second.text).toBe('Руководствого айтып койдум, жакында жооп беришет.')
+    const third = await respond(wa, [{ role: 'user', text: 'a' }, { role: 'assistant', text: ack }, { role: 'user', text: 'b' }, { role: 'assistant', text: second.text }, { role: 'user', text: 'Жооп бериңизчи' }], 'ky', null)
+    expect(third.silent).toBe(true)
+    vi.doUnmock('@/lib/assistant/reply')
+    vi.resetModules()
+  })
+  it('системное сообщение Facebook — не покупатель', async () => {
+    const { respond } = await import('@/lib/assistant/respond')
+    const wa = { key: 'wa:fb', orderSource: 'Заказ из WhatsApp', leadChannel: 'whatsapp' as const, known: {} }
+    const r = await respond(wa, [{ role: 'user', text: 'Your WhatsApp account is successfully connected to your Facebook Page and added to the S маркет business portfolio.' }], 'ru', null)
+    expect(r.silent).toBe(true)
+  })
+})
+
+describe('короткая кыргызская фраза без «ы»', () => {
+  it('«9 жашка толот да» — кыргызский', async () => {
+    const { talkLang } = await import('@/lib/assistant/reply')
+    expect(talkLang([{ role: 'user', text: '9 жашка толот да' }], 'ru')).toBe('ky')
+  })
+})

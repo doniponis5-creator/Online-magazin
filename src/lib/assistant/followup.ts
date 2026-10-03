@@ -17,7 +17,12 @@ import { formatSom } from '@/lib/format'
 import { shortName } from '@/lib/telegram/order'
 import { mentionsFreeDelivery } from './policy'
 
-export type FollowUp = { text: string } | { skip: 'ordered' | 'no-product' | 'not-shown' }
+export type FollowUp = { text: string } | { skip: 'ordered' | 'no-product' | 'not-shown' | 'declined' }
+
+/** Покупатель уехал или отказался: «Россияга кетем», «жок рахмат», «керакмас». */
+const GONE = /(росси|кетем|кетип жатам|кетаман|кетяпман|уезжаю|уеду|жок,? рахмат|йук,? рахмат|нет,? спасибо|не надо|керек эмес|керакмас|kerak emas)/iu
+/** Бот уже попрощался: напоминание после «жакшы барып келиңиз» выглядит как рассылка. */
+const BYE = /(барып келиңиз|ден соолук|всего доброго|саломат булинг|хайр|до свидания|сапарыңыз|яхши бориб келинг)/iu
 
 export async function followUp(turns: ChatTurn[], shown: string[], lang: Lang, name?: string): Promise<FollowUp> {
   const lastAnswer = [...turns].reverse().find((t) => t.role === 'assistant')?.text ?? ''
@@ -25,6 +30,10 @@ export async function followUp(turns: ChatTurn[], shown: string[], lang: Lang, n
   // Карта магазина или склада (Google Maps, 2ГИС) — не оплата: напоминать можно.
   if (/https?:\/\/(?!2gis\.kg|maps\.app\.goo\.gl)/.test(lastAnswer)) return { skip: 'ordered' }
   if (shown.length === 0) return { skip: 'not-shown' }
+  // «Мен эртең Россияга кетем» — бот попрощался «жакшы барып келиңиз», а через два часа
+  // спросил «дагы керекпи?» (переписка 30.09). Отказался или уехал — не напоминаем.
+  const lastAsk = [...turns].reverse().find((t) => t.role === 'user')?.text ?? ''
+  if (GONE.test(lastAsk) || BYE.test(lastAnswer)) return { skip: 'declined' }
 
   const find = lookupIn(await salesCatalogNow())
   const product = shown.map(find).find((p) => p && p.price > 0)
