@@ -280,6 +280,15 @@ const PICKUP = /(заберу|сам заберу|самовывоз|приед�
 export const FULL_ADDRESS = /(көчө|кочо|кучаси|кўчаси|улица|ул\.|үй|(?<![\p{L}])уй(?![\p{L}])|дом|мкр|микрорайон|переул|проспект|пр\.)/iu
 
 export async function step(chatId: ChatKey, text: string, lang: TalkLang, siteLang: Lang): Promise<string | null> {
+  const reply = await advance(chatId, text, lang, siteLang)
+  // Шаг меняет черновик на месте (draft.step = 'phone'). set() — чтобы новый шаг попал в файл:
+  // иначе после перезапуска сайта номер телефона читался бы как ответ на «как вас зовут?».
+  const draft = drafts.get(chatId)
+  if (draft) drafts.set(chatId, draft)
+  return reply
+}
+
+async function advance(chatId: ChatKey, text: string, lang: TalkLang, siteLang: Lang): Promise<string | null> {
   const draft = drafts.get(chatId)
   if (!draft) return null
 

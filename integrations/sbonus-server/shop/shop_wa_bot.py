@@ -395,16 +395,21 @@ async def alert_brain_down(channel: str, why: str) -> None:
     (аудит 03.10). Cron повторяет попытку каждую минуту — пишем не чаще раза в 3 часа.
     Текст ошибки не пересылаем: в нём бывает адрес Green API с ключом.
     """
-    if not await redis_client.set("bot:alerted", "1", ex=ALERT_QUIET, nx=True):
-        return
     from .shop_router import _admin_phone
     try:
+        if not await redis_client.set("bot:alerted", "1", ex=ALERT_QUIET, nx=True):
+            return
         await _send_text(_admin_phone(), (
             f"⚠️ Онлайн-консультант сейчас не отвечает покупателям ({channel}): {why}.\n"
             f"Пока не заработает, отвечайте в {channel} сами. Следующее такое сообщение — не раньше чем через 3 часа."
         ))
     except Exception as error:
+        # Не дошло — следующая попытка через минуту, а не через 3 часа. Redis лежит — тоже не падаем.
         logger.error(f"wa bot alert: {type(error).__name__}")
+        try:
+            await redis_client.delete("bot:alerted")
+        except Exception:
+            pass
 
 
 async def _ask_for_text(digits: str) -> bool:
@@ -422,6 +427,9 @@ async def _ask_for_text(digits: str) -> bool:
 
 
 async def _answer(digits: str, name: str) -> bool:
+    # Сайт ответил — дальше ошибки уже про отправку покупателю (Green API), «консультант
+    # не отвечает» владельцу тогда не пишем: консультант как раз ответил.
+    answered_by_site = False
     try:
         count_key = f"wa:count:{digits}:{_today()}"
         count = int(await redis_client.get(count_key) or 0)
@@ -429,6 +437,7 @@ async def _answer(digits: str, name: str) -> bool:
             return False
 
         reply = await _ask_site(digits, name)
+        answered_by_site = bool(reply)
         if reply and reply.get("silent"):
             # Не покупатель (рабочие, родные, чужой бот) — робот в этом чате молчит 12 часов.
             # «Ок» и «{{SWE001}}» чат не глушат: следом идёт настоящий вопрос.
@@ -476,7 +485,8 @@ async def _answer(digits: str, name: str) -> bool:
         return True
     except Exception as error:
         logger.error(f"wa bot {digits[-4:]}: {error}")
-        await alert_brain_down("WhatsApp", "техническая ошибка, подробности в журнале сервера")
+        if not answered_by_site:
+            await alert_brain_down("WhatsApp", "сайт не ответил вовремя, подробности в журнале сервера")
         return False
 
 

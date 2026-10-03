@@ -304,10 +304,7 @@ async def poll_once() -> dict:
     await _refresh_token()
     from .shop_wa_bot import _settings
     _, delay = await _settings()
-    if not await _switched_on():
-        # Выключен в 1С: накопленное выбрасываем — после включения не отвечаем на старое разом.
-        await redis_client.delete("ig:inbox", "ig:pending")
-        return {"enabled": False}
+    on = await _switched_on()
 
     # Сначала всё, что принёс webhook, — по порядку.
     while True:
@@ -322,8 +319,16 @@ async def poll_once() -> dict:
             continue
         if event.get("kind") == "echo":
             await _on_echo(event)
-        else:
+        elif on:
             await _on_message(event)
+        elif not rules.mention_only(event) and rules.describe(event):
+            # Выключен в 1С: разговор и ответы сотрудников всё равно записываем (без платной
+            # расшифровки голоса) — после включения робот не спорит с тем, что сказал человек.
+            await _remember(event["user"], "user", rules.describe(event))
+    if not on:
+        # На накопленное не отвечаем: после включения робот не ответит на старое разом.
+        await redis_client.delete("ig:pending")
+        return {"enabled": False}
 
     answered = 0
     now = time.time()
@@ -369,12 +374,15 @@ async def _ask_for_text(user: str) -> bool:
 
 
 async def _answer(user: str) -> bool:
+    # Как в WhatsApp: ошибка после ответа сайта — это отправка в Instagram (окно 24 часа, ключ), не консультант.
+    answered_by_site = False
     try:
         count_key = f"ig:count:{user}:{_today()}"
         count = int(await redis_client.get(count_key) or 0)
         if count >= DAILY_LIMIT:
             return False
         reply = await _ask_site(user)
+        answered_by_site = bool(reply)
         if reply and reply.get("silent"):
             if reply.get("mute"):
                 await redis_client.set(f"ig:human:{user}", "1", ex=HUMAN_QUIET)
@@ -418,8 +426,9 @@ async def _answer(user: str) -> bool:
         return True
     except Exception as error:
         logger.error(f"ig bot ...{user[-4:]}: {error}")
-        from .shop_wa_bot import alert_brain_down
-        await alert_brain_down("Instagram", "техническая ошибка, подробности в журнале сервера")
+        if not answered_by_site:
+            from .shop_wa_bot import alert_brain_down
+            await alert_brain_down("Instagram", "сайт не ответил вовремя, подробности в журнале сервера")
         return False
 
 

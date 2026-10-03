@@ -14,6 +14,10 @@ import 'server-only'
  * Запись старше ttl при чтении выбрасывается: черновик заказа недельной
  * давности не должен перехватить новый разговор. Ключи-числа (чат Telegram)
  * остаются числами — поэтому массив пар, а не объект.
+ *
+ * Черновик заказа меняют на месте (draft.step = 'phone') — set() при этом не
+ * зовут. Поэтому запись планирует и get(): взяли значение — могли поменять.
+ * При выходе процесса (обновление сайта) несохранённое пишется сразу.
  */
 
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
@@ -31,6 +35,7 @@ class DurableMap<K, V> extends Map<K, V> {
   private stamps = new Map<K, number>()
   private timer: ReturnType<typeof setTimeout> | null = null
   private ready = false
+  private exitHook = false
 
   constructor(
     private readonly file: string,
@@ -62,7 +67,11 @@ class DurableMap<K, V> extends Map<K, V> {
   }
 
   override get(key: K): V | undefined {
-    return this.fresh(key) ? super.get(key) : undefined
+    if (!this.fresh(key)) return undefined
+    const value = super.get(key)
+    // Объект могут поменять на месте (черновик заказа) — запишем через секунду.
+    if (value !== undefined && typeof value === 'object') this.later()
+    return value
   }
 
   override has(key: K): boolean {
@@ -99,11 +108,22 @@ class DurableMap<K, V> extends Map<K, V> {
       this.save()
     }, 1000)
     this.timer.unref?.()
+    // Сайт останавливают для обновления — то, что не успело записаться за секунду, пишем сейчас.
+    if (!this.exitHook) {
+      this.exitHook = true
+      process.once('exit', () => {
+        if (this.timer) this.save()
+      })
+    }
   }
 
   private save(): void {
     try {
-      const rows = [...super.entries()].map(([key, value]) => [key, value, this.stamps.get(key) ?? Date.now()])
+      const now = Date.now()
+      // Брошенные черновики старше ttl в файл не переносим.
+      const rows = [...super.entries()]
+        .map(([key, value]) => [key, value, this.stamps.get(key) ?? now] as const)
+        .filter(([, , at]) => now - at < this.ttl)
       mkdirSync(stateDir(), { recursive: true })
       const temp = `${this.file}.${process.pid}.tmp`
       writeFileSync(temp, JSON.stringify(rows), 'utf8')
