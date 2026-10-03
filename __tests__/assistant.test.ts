@@ -339,12 +339,12 @@ describe('менеджер по продажам, а не «помощник»',
     expect(text).toMatch(/не ври: «Я Акылай, онлайн-консультант Smart Centr/)
     expect(text).toMatch(/ОДИН шаг вперёд/)
   })
-  it('зовут Акылай: называется один раз в первом ответе, по-русски — в женском роде', () => {
+  it('зовут Акылай, но сама не представляется — имя только на вопрос', () => {
     const text = systemInstruction('ru', null, 'ru', products)
     expect(text).toMatch(/^Ты — Акылай/)
     expect(text).toContain('в женском роде')
-    expect(text).toContain('«Ассаламу алейкум, я Акылай.»')
-    expect(text).toContain('имя больше не повторяй')
+    expect(text).toContain('Сама не представляйся')
+    expect(text).not.toContain('коротко назовись')
   })
 })
 
