@@ -821,6 +821,8 @@ def panel_form():
     f.attribute("НаценкаМелкая", t_num(3, 0), title="мелкая техника, %", saved_data=True)
     f.attribute("РоботВотсАп", t_bool(), title="WhatsApp-консультант", saved_data=True)
     f.attribute("РоботЖдатьМинут", t_num(3, 0), title="ждать сотрудника, мин", saved_data=True)
+    f.attribute("РоботИнстаграм", t_bool(), title="Instagram-консультант", saved_data=True)
+    f.attribute("ЕстьНастройкаИнстаграм", t_bool())
     f.attribute("ЗнанияДляЧата", t_str(0), title="Знания для чата", saved_data=True)
     f.attribute("ЗнанияЗагружены", t_bool())
     f.attribute("Состояние", t_str(0), title="Состояние")
@@ -939,6 +941,8 @@ def panel_form():
                         # Робот на WhatsApp магазина: отвечает, если сотрудник молчит столько минут.
                         f.check("РоботВотсАп", "РоботВотсАп", title_location="Right"),
                         f.input("РоботЖдатьМинут", "РоботЖдатьМинут", width=4),
+                        # Робот в Direct Instagram — ждёт столько же минут, сколько в WhatsApp.
+                        f.check("РоботИнстаграм", "РоботИнстаграм", title_location="Right"),
                         f.button("КнопкаСохранить", "СохранитьНастройки"),
                     ], direction="AlwaysHorizontal"),
                 ], title="Настройки сайта (действуют сразу)"),

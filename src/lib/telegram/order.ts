@@ -20,7 +20,7 @@ import { SITE_URL } from '@/lib/seo'
 import { formatSom } from '@/lib/format'
 import type { Lang } from '@/lib/i18n/config'
 import type { TalkLang } from './../assistant/talk'
-import { store } from '@/lib/store'
+import { durableMap } from '@/lib/durable'
 
 type Step = 'pick' | 'name' | 'phone' | 'where' | 'address'
 
@@ -44,7 +44,8 @@ type Draft = {
   qty: number
 }
 
-const drafts = store('drafts', () => new Map<ChatKey, Draft>())
+// Переживает перезапуск сайта: обновили сайт посреди заказа — покупатель не начинает заново.
+const drafts = durableMap<ChatKey, Draft>('order-drafts', 24 * 3600 * 1000)
 
 type Say = { ru: string; ky: string; uz: string }
 const pick = (say: Say, lang: TalkLang) => say[lang]

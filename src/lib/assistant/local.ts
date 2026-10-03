@@ -22,6 +22,7 @@ import { isInStock, searchProducts, type CustomerBrief } from './knowledge'
 import { orderStatusWord } from './orders'
 import { detectLang, type TalkLang, uzCyrillic } from './talk'
 import { bonusRule } from '@/lib/customer/bonusRule'
+import { FREE_DELIVERY_POINTS } from './policy'
 
 export { detectLang }
 export type { TalkLang }
@@ -274,9 +275,10 @@ const topics: Topic[] = [
   {
     match: /достав|жеткир|yetkaz|курьер|отправ|pochta/i,
     say: {
-      ru: 'Возим по всему Кыргызстану, до центра района или области — бесплатно. Как оплатите заказ, наш сотрудник свяжется с вами и договорится, когда привезти.',
-      ky: 'Кыргызстандын бардык жерине жеткиребиз, район же облус борборуна — акысыз. Заказды төлөгөнүңүздөн кийин кызматкерибиз байланышып, качан жеткирерин келишет.',
-      uz: "Butun Qirg'iziston bo'ylab olib boramiz, tuman yoki viloyat markazigacha — bepul. Buyurtmani to'laganingizdan keyin xodimimiz bog'lanib, qachon yetkazishni kelishadi.",
+      // Бесплатно — только до центра городов из списка (policy.ts FREE_DELIVERY_POINTS); Талас, Нарын — цену скажет руководство.
+      ru: `Возим по всему Кыргызстану. До центра этих городов и районов — бесплатно: ${FREE_DELIVERY_POINTS.join(', ')}. В другие места стоимость скажем после оформления. Как оплатите заказ, мы свяжемся и договоримся, когда привезти.`,
+      ky: `Кыргызстандын бардык жерине жеткиребиз. Бул шаар-райондордун борборуна чейин акысыз: ${FREE_DELIVERY_POINTS.join(', ')}. Башка жерге баасын заказдан кийин айтабыз. Төлөгөндөн кийин байланышып, качан жеткирерин келишебиз.`,
+      uz: `Butun Qirg'iziston bo'ylab olib boramiz. Bu shahar va rayonlar markazigacha — bepul: ${FREE_DELIVERY_POINTS.join(', ')}. Boshqa joylarga narxini buyurtmadan keyin aytamiz. To'laganingizdan keyin bog'lanib, qachon yetkazishni kelishamiz.`,
     },
   },
   {

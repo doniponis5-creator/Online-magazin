@@ -282,6 +282,19 @@ async def _on_message(event: dict) -> None:
     await redis_client.hset("ig:pending", user, json.dumps({"ts": event.get("ts") or time.time(), "voice": voice}))
 
 
+async def _switched_on() -> bool:
+    """Галочка «Instagram-консультант» в 1С («Панель сайта»). Нет связи с базой — считаем включённым."""
+    from app.core.database import async_session
+    from .shop_admin import _values
+    try:
+        async with async_session() as db:
+            values = await _values(db)
+        return values.get("SITE_IG_BOT", "1") == "1"
+    except Exception as error:
+        logger.warning(f"ig bot settings: {error}")
+        return True
+
+
 async def poll_once() -> dict:
     if not await _load_token():
         # Робот выключен — webhook всё равно копит сообщения. Выбрасываем их, иначе после
@@ -291,6 +304,10 @@ async def poll_once() -> dict:
     await _refresh_token()
     from .shop_wa_bot import _settings
     _, delay = await _settings()
+    if not await _switched_on():
+        # Выключен в 1С: накопленное выбрасываем — после включения не отвечаем на старое разом.
+        await redis_client.delete("ig:inbox", "ig:pending")
+        return {"enabled": False}
 
     # Сначала всё, что принёс webhook, — по порядку.
     while True:
@@ -362,11 +379,16 @@ async def _answer(user: str) -> bool:
             if reply.get("mute"):
                 await redis_client.set(f"ig:human:{user}", "1", ex=HUMAN_QUIET)
             return False
-        if not reply or not reply.get("text"):
+        from .shop_wa_bot import alert_brain_down
+        if not reply:
+            await alert_brain_down("Instagram", "сайт не ответил")
+            return False
+        if not reply.get("text"):
             return False
         # Модель недоступна — шаблон в Instagram не шлём, пусть ответит сотрудник.
         if reply.get("source") == "local":
             logger.warning("ig bot: модель недоступна — отвечать оставляю сотруднику")
+            await alert_brain_down("Instagram", "не отвечает Gemini — кончилась дневная норма, ключ или связь")
             return False
         text = str(reply["text"])
         if count + 1 >= DAILY_LIMIT:
@@ -396,6 +418,8 @@ async def _answer(user: str) -> bool:
         return True
     except Exception as error:
         logger.error(f"ig bot ...{user[-4:]}: {error}")
+        from .shop_wa_bot import alert_brain_down
+        await alert_brain_down("Instagram", "техническая ошибка, подробности в журнале сервера")
         return False
 
 

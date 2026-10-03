@@ -13,9 +13,11 @@ import 'server-only'
  */
 
 import { store } from '@/lib/store'
+import { durableMap } from '@/lib/durable'
 
 const hits = store('limit-hits', () => new Map<string, number[]>())
-const day = store('limit-day', () => ({ date: '', used: 0 }))
+// Дневной счётчик — в файле: перезапуск сайта не обнуляет норму (аудит 03.10).
+const days = durableMap<string, number>('assistant-day', 2 * 24 * 3600 * 1000)
 
 /** Слишком часто? Заодно засчитывает попытку. */
 export function tooOften(key: string, max: number, windowMs: number): boolean {
@@ -36,11 +38,8 @@ function dailyLimit(): number {
 /** Есть ли ещё дневная норма. Засчитывает обращение. */
 export function dayBudgetLeft(): boolean {
   const today = new Date().toISOString().slice(0, 10)
-  if (day.date !== today) {
-    day.date = today
-    day.used = 0
-  }
-  if (day.used >= dailyLimit()) return false
-  day.used += 1
+  const used = days.get(today) ?? 0
+  if (used >= dailyLimit()) return false
+  days.set(today, used + 1)
   return true
 }

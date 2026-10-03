@@ -14,7 +14,7 @@ import 'server-only'
  */
 
 import { callServer, paymentMode } from '@/lib/orders/gateway'
-import { store } from '@/lib/store'
+import { durableMap } from '@/lib/durable'
 import type { ChatKey } from '@/lib/telegram/order'
 import type { TalkLang } from './talk'
 
@@ -26,7 +26,7 @@ export const CALL_INTENT =
   /(перезвон|позвоните мне|позвонить мне|свяжитесь со мной|свяжитесь|менеджер|оператор|живой человек|живым человеком|с человеком|консультант.{0,10}человек|чалып кой|мага чал|чалыңыз мага|менеджер менен|qo.?ng.?iroq qiling menga|menga qo.?ng.?iroq|menga tel|qo.?ng.?iroq qilib|odam bilan|operator|menejer|телефон қилинг|менга қўнғироқ|телефон килинг|менга кунгирок|кунгирок килинг|одам билан|менежер|оператор билан)/i
 
 type Draft = { context: string; name?: string; channel: 'site' | 'telegram' | 'whatsapp' | 'instagram' }
-const drafts = store('lead-drafts', () => new Map<ChatKey, Draft>())
+const drafts = durableMap<ChatKey, Draft>('lead-drafts', 24 * 3600 * 1000)
 
 const ASK_PHONE: Say = {
   ru: 'Хорошо, позвоним. Ваш номер телефона?',

@@ -56,7 +56,10 @@ describe('localAnswer', () => {
 
   it('про срок доставки обещает звонок сотрудника, а не день', () => {
     const { text } = localAnswer('Доставка есть?', 'ru')
-    expect(text).toMatch(/сотрудник свяжется/)
+    expect(text).toMatch(/свяжемся и договоримся/)
+    // Бесплатно — не «до любого района», а до городов из списка (аудит 03.10).
+    expect(text).toMatch(/Ош, Бишкек/)
+    expect(text).not.toMatch(/района или области — бесплатно/)
     expect(text).not.toMatch(/\b\d+\s*(дн|дня|дней)\b/)
   })
 

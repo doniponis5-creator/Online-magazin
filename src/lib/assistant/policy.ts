@@ -26,6 +26,27 @@ export const FREE_DELIVERY_POINTS = [
   'Манас',
 ]
 
+/**
+ * Как эти места пишут покупатели: по-кыргызски, по-узбекски, через дефис и без.
+ * «Ош» короткий — к нему только падежные окончания, иначе «ошибка» станет Ошем.
+ */
+const FREE_DELIVERY_SPELLINGS = [
+  'бишкек', 'ноокат', 'базар-коргон', 'аксы', 'баткен', 'раззаков', 'исфана', 'кызыл-кия', 'кызыл-кыя',
+  'узген', 'озгон', 'узган', 'куршаб', 'ала-бука', 'джалал-абад', 'жалал-абад', 'жалолобод', 'манас',
+  'bishkek', 'nookat', 'batken', 'uzgen', 'jalal-abad', 'kyzyl-kiya',
+]
+const SOFT = (text: string) =>
+  text.toLowerCase().replace(/ё/g, 'е').replace(/ө/g, 'о').replace(/[үў]/g, 'у').replace(/қ/g, 'к').replace(/ғ/g, 'г').replace(/ҳ/g, 'х')
+// «Ош» отдельно: короткое слово — «до пяти любых букв» после него поймало бы «ошибка».
+const OSH = /(?<![\p{L}])(?:ош(?:ко|то|тон|тан|до|дон|да|дан|га|ка|ке|а|е|у|ом)?|osh)(?![\p{L}])/iu
+const OTHERS = FREE_DELIVERY_SPELLINGS.map((s) => new RegExp(`(?<![\\p{L}])${s.replace('-', '[\\s-]?')}\\p{L}{0,5}(?![\\p{L}])`, 'iu'))
+
+/** Покупатель назвал место, куда доставка бесплатная. Только тогда «привезём бесплатно» — правда. */
+export function mentionsFreeDelivery(text: string): boolean {
+  const soft = SOFT(text)
+  return OSH.test(soft) || OTHERS.some((re) => re.test(soft))
+}
+
 export function storePolicy(): string {
   return `ЧАСЫ РАБОТЫ
 Каждый день, без выходных, с 9:00 до 18:00.

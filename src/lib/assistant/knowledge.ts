@@ -227,7 +227,8 @@ export function catalogForQuestion(list: Product[], question: string, lang: Lang
     const desc = product.descRu.replace(/\s+/g, ' ').trim()
     return [
       productLine(product),
-      `доставка: ${product.deliveryPrice ? `${product.deliveryPrice} сом` : 'бесплатно'}`,
+      // 0 в 1С — «доставка не стоит денег» только до городов из списка ДОСТАВКА; модель читала «бесплатно» как «везде».
+      `доставка: ${product.deliveryPrice ? `${product.deliveryPrice} сом` : 'бесплатно до центра городов из списка «ДОСТАВКА»'}`,
       specs ? `характеристики: ${specs}` : '',
       productFacts(product.id),
       desc ? `описание: ${desc.slice(0, DESC_CHARS)}${desc.length > DESC_CHARS ? '…' : ''}` : '',
@@ -325,7 +326,8 @@ export function storeFacts(lang: Lang): string {
     'Свойства товара, которых нет в его характеристиках. Не дописывай «инверторный мотор», «класс А+++», «есть пар» — этого может не быть.',
     'Спорный случай с браком или возвратом — посочувствуй и позови сотрудника, сверх правил не обещай.',
     '',
+    // Язык ответа задаёт «ЯЗЫК ОТВЕТА» в начале (по словам покупателя). Здесь был язык сайта —
+    // в WhatsApp всегда «русский», и он спорил с узбекским покупателем (аудит 03.10).
     `Разделы каталога: ${sections}.`,
-    `Язык покупателя сейчас: ${lang === 'ky' ? 'кыргызский' : 'русский'}.`,
   ].join('\n')
 }

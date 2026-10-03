@@ -18,7 +18,7 @@ import { dayBudgetLeft } from './limits'
 import { toHit, type CustomerBrief, type ProductHit } from './knowledge'
 import { localAnswer, parseAnswer, type Audience } from './local'
 import { detectLang, detectLangScored, type TalkLang } from './talk'
-import { systemInstruction } from './prompt'
+import { systemInstruction, type Where } from './prompt'
 
 export type AssistantReply = {
   text: string
@@ -43,6 +43,8 @@ export async function answer(
   note = '',
   /** id товаров, показанных в этом разговоре */
   talked: string[] = [],
+  /** канал разговора — модель должна знать, где она пишет */
+  where: Where = 'site',
 ): Promise<AssistantReply> {
   const lastQuestion = [...turns].reverse().find((t) => t.role === 'user')?.text ?? ''
   // Каталог берём сегодняшний: из 1С, если сервер настроен, иначе вшитый.
@@ -60,7 +62,7 @@ export async function answer(
     try {
       const lastAnswer = [...turns].reverse().find((t) => t.role === 'assistant')?.text ?? ''
       const ceiling = cheaperThan(lastQuestion, lastAnswer)
-      const raw = await askGemini(systemInstruction(lang, customer, talkLang(turns, lang), list, recent, notes, ceiling, viewing, knownName, knownPhone, talked) + note, turns)
+      const raw = await askGemini(systemInstruction(lang, customer, talkLang(turns, lang), list, recent, notes, ceiling, viewing, knownName, knownPhone, talked, where) + note, turns)
       const parsed = parseAnswer(raw)
       const talk = talkLang(turns, lang)
       return { text: houseStyle(parsed.text, talk), products: hits(parsed.productIds, lang, list), source: 'gemini', audience: parsed.audience }

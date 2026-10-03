@@ -144,7 +144,7 @@ export async function handleUpdate(update: TelegramUpdate): Promise<void> {
     { role: 'user' as const, text: text.slice(0, 800) },
   ].slice(-MEMORY)
 
-  const reply = await answer(turns, lang, null)
+  const reply = await answer(turns, lang, null, undefined, undefined, false, '', [], 'telegram')
 
   const next: ChatTurn[] = [...turns, { role: 'assistant' as const, text: reply.text }]
   talks.set(chatId, next.slice(-MEMORY))

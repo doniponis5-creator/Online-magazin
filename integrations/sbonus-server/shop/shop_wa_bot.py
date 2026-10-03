@@ -70,6 +70,7 @@ SAVED_TTL = 30 * 24 * 3600      # «номер записан в телефон�
 NUDGE_AFTER = 2 * 3600           # покупатель молчит столько после показа товара — напоминаем
 NUDGE_QUIET = 3 * 24 * 3600      # не чаще раза в столько на один чат
 WORK_HOURS = range(9, 18)        # напоминаем только в рабочее время (Бишкек)
+ALERT_QUIET = 3 * 3600           # о сбое консультанта владельцу пишем не чаще раза в столько
 
 
 def _bishkek_now() -> datetime:
@@ -382,8 +383,28 @@ async def _read_media(message: dict, kind: str) -> str:
     caption = str(message.get("caption") or "").strip()
     return f"[Фото] {heard}" + (f"\nПодпись покупателя: {caption}" if caption else "")
 
-# Только по-русски — так решил владелец.
-ASK_FOR_TEXT = "Извините, голосовые сообщения я не слушаю — напишите, пожалуйста, текстом 🙏"
+# Только по-русски — так решил владелец. Голосовые робот обычно расшифровывает; эта фраза — когда
+# не разобрал (WhatsApp) или когда расшифровки нет вовсе (Instagram). «Не слушаю» было неправдой.
+ASK_FOR_TEXT = "Извините, голосовое не получилось разобрать — напишите, пожалуйста, текстом 🙏"
+
+
+async def alert_brain_down(channel: str, why: str) -> None:
+    """
+    Консультант не может ответить (Gemini молчит, сайт лежит) — покупатели в WhatsApp и
+    Instagram ждут, пока напишет сотрудник. Владелец узнаёт сразу, а не из утренней сводки
+    (аудит 03.10). Cron повторяет попытку каждую минуту — пишем не чаще раза в 3 часа.
+    Текст ошибки не пересылаем: в нём бывает адрес Green API с ключом.
+    """
+    if not await redis_client.set("bot:alerted", "1", ex=ALERT_QUIET, nx=True):
+        return
+    from .shop_router import _admin_phone
+    try:
+        await _send_text(_admin_phone(), (
+            f"⚠️ Онлайн-консультант сейчас не отвечает покупателям ({channel}): {why}.\n"
+            f"Пока не заработает, отвечайте в {channel} сами. Следующее такое сообщение — не раньше чем через 3 часа."
+        ))
+    except Exception as error:
+        logger.error(f"wa bot alert: {type(error).__name__}")
 
 
 async def _ask_for_text(digits: str) -> bool:
@@ -415,12 +436,16 @@ async def _answer(digits: str, name: str) -> bool:
                 await redis_client.set(f"wa:human:{digits}", "1", ex=HUMAN_QUIET)
                 logger.info(f"wa bot: не для магазина, молчу ...{digits[-4:]}")
             return False
-        if not reply or not reply.get("text"):
+        if not reply:
+            await alert_brain_down("WhatsApp", "сайт не ответил")
+            return False
+        if not reply.get("text"):
             return False
         # Модель недоступна (кончился лимит Gemini) — шаблонный ответ в WhatsApp не шлём:
         # человек написал живым людям, пусть ответит сотрудник.
         if reply.get("source") == "local":
             logger.warning("wa bot: модель недоступна — отвечать оставляю сотруднику")
+            await alert_brain_down("WhatsApp", "не отвечает Gemini — кончилась дневная норма, ключ или связь")
             return False
         text = str(reply["text"])
         if count + 1 >= DAILY_LIMIT:
@@ -451,6 +476,7 @@ async def _answer(digits: str, name: str) -> bool:
         return True
     except Exception as error:
         logger.error(f"wa bot {digits[-4:]}: {error}")
+        await alert_brain_down("WhatsApp", "техническая ошибка, подробности в журнале сервера")
         return False
 
 

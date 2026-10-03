@@ -15,6 +15,7 @@ import { lookupIn, salesCatalogNow } from './live'
 import { talkLang } from './reply'
 import { formatSom } from '@/lib/format'
 import { shortName } from '@/lib/telegram/order'
+import { mentionsFreeDelivery } from './policy'
 
 export type FollowUp = { text: string } | { skip: 'ordered' | 'no-product' | 'not-shown' }
 
@@ -36,11 +37,20 @@ export async function followUp(turns: ChatTurn[], shown: string[], lang: Lang, n
   const who = ''
   const title = shortName(product.nameRu)
   const price = formatSom(product.price)
-  const say = {
-    ru: `${who}${title} за ${price} ещё актуальна? Могу оформить сегодня — до центра района привезём бесплатно.`,
-    ky: `${who}${title} ${price} дагы керекпи? Бүгүн эле тариздеп берейин — райондун борборуна чейин акысыз.`,
-    uz: `${who}${title} ${price} хали керакми? Бугун расмийлаштириб берайми — туман марказигача бепул.`,
-  }
+  // «Бесплатно» — только если покупатель назвал город из списка: Таласу и Нарыну
+  // доставку считает руководство, обещать её даром нельзя (владелец, 21.09; аудит 03.10).
+  const free = mentionsFreeDelivery(turns.filter((t) => t.role === 'user').map((t) => t.text).join(' '))
+  const say = free
+    ? {
+        ru: `${who}${title} за ${price} ещё актуальна? Могу оформить сегодня — до центра района привезём бесплатно.`,
+        ky: `${who}${title} ${price} дагы керекпи? Бүгүн эле тариздеп берейин — райондун борборуна чейин акысыз.`,
+        uz: `${who}${title} ${price} хали керакми? Бугун расмийлаштириб берайми — район марказигача бепул.`,
+      }
+    : {
+        ru: `${who}${title} за ${price} ещё актуальна? Могу оформить сегодня.`,
+        ky: `${who}${title} ${price} дагы керекпи? Бүгүн эле тариздеп берейин.`,
+        uz: `${who}${title} ${price} хали керакми? Бугун расмийлаштириб берайми.`,
+      }
   const text = say[talk]
   return { text: text.charAt(0).toUpperCase() + text.slice(1) }
 }
