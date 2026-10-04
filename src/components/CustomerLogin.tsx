@@ -140,7 +140,9 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
   }, [step, wa])
 
   const waMessage = wa ? a.waMessage.replace('{code}', wa.code) : ''
-  const waHref = wa ? `https://wa.me/${wa.waPhone}?text=${encodeURIComponent(waMessage)}` : '#'
+  // В WhatsApp — код и под ним «нажмите Отправить и вернитесь на сайт»: подсказку сайта там уже не видно.
+  // Вручную (если текст не подставился) хватит одной строки с кодом.
+  const waHref = wa ? `https://wa.me/${wa.waPhone}?text=${encodeURIComponent(`${waMessage}\n${a.waSend}`)}` : '#'
 
   const requestCode = async (e?: FormEvent) => {
     e?.preventDefault()

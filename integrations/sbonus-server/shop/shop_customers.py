@@ -33,6 +33,7 @@ import hmac
 import logging
 import re
 import secrets
+import time
 import uuid
 from decimal import Decimal, ROUND_FLOOR
 
@@ -59,6 +60,17 @@ WA_LOGIN_TTL = 300      # столько ждём сообщение покуп�
 WA_SCAN_EVERY = 3       # журнал Green API читаем не чаще раза в столько секунд
 # Текст, который сайт подставляет в wa.me. Русский, кыргызский и узбекский варианты.
 WA_LOGIN_RE = re.compile(r"(?:код входа|кирүү коду|kirish kodi)\D{0,40}(\d{6})", re.I)
+# Ответ в WhatsApp на «Код входа: …» (04.10): покупатель отправил код и не знал, что дальше — в WhatsApp
+# тишина. Отвечаем один раз — это ответ на его же сообщение, не рассылка; без ссылок (ссылка от
+# незнакомого номера — признак спама); не больше WA_ACK_PER_HOUR в час на весь магазин.
+WA_ACK_QUIET = 600       # одному номеру — не чаще раза в 10 минут, сколько бы кодов он ни прислал
+WA_ACK_PER_HOUR = 60
+WA_ACK = {
+    ("ky", True): "✅ Сиз сайтка кирдиңиз. Браузерге кайтыңыз — кабинетиңиз ачык.",
+    ("ru", True): "✅ Вы вошли на сайт. Вернитесь в браузер — кабинет уже открыт.",
+    ("ky", False): "Бул коддун мөөнөтү бүттү. Сайтта «WhatsApp аркылуу кирүү» баскычын кайра басыңыз.",
+    ("ru", False): "Этот код уже не действует. На сайте нажмите «Войти через WhatsApp» ещё раз.",
+}
 TICKET_TTL = 900        # 15 минут, чтобы ввести имя
 MAX_ATTEMPTS = 5
 DEFAULT_WELCOME = Decimal("1000")
@@ -321,16 +333,47 @@ async def _scan_wa_logins() -> None:
         chat = str(message.get("chatId") or "")
         if not chat.endswith("@c.us"):
             continue
-        found = WA_LOGIN_RE.search(_journal_text(message))
-        if not found:
-            continue
-        code = found.group(1)
-        if not await redis_client.get(f"shop_walogin:{code}"):
-            continue
-        phone = "+" + chat.removesuffix("@c.us")
-        if not PHONE_RE.fullmatch(phone):
-            continue
-        await redis_client.setex(f"shop_walogin_done:{code}", WA_LOGIN_TTL, phone)
+        # Чужие и просроченные коды здесь не трогаем: на них отвечает робот WhatsApp (раз в минуту).
+        await wa_login_message(chat.removesuffix("@c.us"), _journal_text(message), only_known=True)
+
+
+async def wa_login_message(digits: str, text: str, only_known: bool = False) -> bool:
+    """
+    Покупатель прислал «Код входа: 482913». Код наш и живой — отмечаем вход (сайт увидит при следующей
+    проверке) и отвечаем «вы вошли, вернитесь в браузер»; просрочен — «нажмите ещё раз».
+    Зовут сканер журнала (каждые 3 с, пока сайт ждёт) и робот WhatsApp (раз в минуту).
+    True — это был код входа: продавцу и Gemini его не передавать.
+    """
+    found = WA_LOGIN_RE.search(text or "")
+    if not found:
+        return False
+    code = found.group(1)
+    phone = "+" + digits
+    known = bool(await redis_client.get(f"shop_walogin:{code}")) or bool(await redis_client.get(f"shop_walogin_used:{code}"))
+    valid = known and bool(PHONE_RE.fullmatch(phone))
+    if only_known and not valid:
+        return True
+    if valid and await redis_client.get(f"shop_walogin:{code}"):
+        # nx: код случайный, но первым его прислал этот номер — второй его не перехватит.
+        await redis_client.set(f"shop_walogin_done:{code}", phone, ex=WA_LOGIN_TTL, nx=True)
+    await _wa_login_ack(digits, text, valid)
+    return True
+
+
+async def _wa_login_ack(digits: str, text: str, ok: bool) -> None:
+    if not await redis_client.set(f"shop_walogin_ack:{digits}", "1", ex=WA_ACK_QUIET, nx=True):
+        return
+    hour = f"shop_walogin_ack_hour:{int(time.time() // 3600)}"
+    count = await redis_client.incr(hour)
+    await redis_client.expire(hour, 3600)
+    if count > WA_ACK_PER_HOUR:
+        logger.warning("wa-login: ответов за час больше предела — молчим, вход и так работает")
+        return
+    lang = "ky" if re.search(r"кирүү", text or "", re.I) else "ru"
+    try:
+        await asyncio.to_thread(wa.send_text, digits, WA_ACK[(lang, ok)])
+    except Exception as error:
+        logger.warning(f"wa-login: ответ не ушёл ({type(error).__name__})")
 
 
 @router_site_customer.post("/wa-login/start")
@@ -366,6 +409,8 @@ async def wa_login_check(request: Request, db: AsyncSession = Depends(get_db)):
     if not phone:
         return {"ok": True, "pending": True}
     await redis_client.delete(f"shop_walogin:{code}", f"shop_walogin_done:{code}")
+    # Вошёл — но робот WhatsApp увидит это же сообщение позже (раз в минуту): пусть не скажет «код просрочен».
+    await redis_client.setex(f"shop_walogin_used:{code}", WA_ACK_QUIET, "1")
     await _track(db, "code_sent", phone, "whatsapp-in")
     return await _logged_in(db, phone)
 

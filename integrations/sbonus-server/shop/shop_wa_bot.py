@@ -49,7 +49,7 @@ from fastapi import APIRouter
 
 from app.core.redis import redis_client
 
-from .shop_customers import WA_LOGIN_RE
+from .shop_customers import WA_LOGIN_RE, wa_login_message
 
 logger = logging.getLogger("sbonus.shop.wa_bot")
 
@@ -276,8 +276,10 @@ async def poll_once() -> dict:
         kind = _media_kind(message)
         if (not text and not kind) or not await _first_time(str(message.get("idMessage"))):
             continue
-        # «Код входа: 482913» — это вход на сайт (shop_customers), а не вопрос продавцу.
+        # «Код входа: 482913» — это вход на сайт (shop_customers), а не вопрос продавцу:
+        # отмечаем вход и отвечаем один раз «вы вошли / код просрочен» (04.10).
         if text and WA_LOGIN_RE.search(text):
+            await wa_login_message(chat.removesuffix("@c.us"), text)
             continue
         digits = chat.removesuffix("@c.us")
         # Номер записан в телефоне магазина — это знакомый: робот ему не пишет
