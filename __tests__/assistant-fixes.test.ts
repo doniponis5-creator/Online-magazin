@@ -297,3 +297,64 @@ describe('кэш Gemini (04.10): постоянная часть промпта 
     expect(b.slice(b.indexOf(NOW_MARK))).toMatch(/ТОЛЬКО кириллицей/)
   })
 })
+
+describe('расход Gemini (04.10): считаем, показываем, бережём', () => {
+  it('цена дня: ввод, кэш вдесятеро дешевле, ответ, хранение; с 2027 — вдвое дороже', async () => {
+    const { costOf } = await import('@/lib/assistant/usage')
+    const u = { calls: 1, input: 1_000_000, cached: 500_000, output: 100_000, caches: 0, storage: 0 }
+    // 0,5 млн × 0,75 + 0,5 млн × 0,075 + 0,1 млн × 3,75 = 0,375 + 0,0375 + 0,375
+    expect(costOf(u, '2026-10-04')).toBeCloseTo(0.7875, 6)
+    expect(costOf(u, '2027-01-02')).toBeCloseTo(1.575, 6)
+  })
+  it('строка сводки и пустой день', async () => {
+    const { recordCall, usageLine, bishkekToday } = await import('@/lib/assistant/usage')
+    expect(usageLine('2000-01-01')).toMatch(/запросов не было/)
+    recordCall({ promptTokenCount: 15_000, cachedContentTokenCount: 10_538, candidatesTokenCount: 70, thoughtsTokenCount: 100 })
+    expect(usageLine(bishkekToday())).toMatch(/💰 Gemini: запросов \d+, .*% из кэша\) — ≈ \$\d+,\d\d\.\n   сайт \$\d+,\d\d \(1\)/)
+  })
+  it('утренняя сводка показывает расход', async () => {
+    const { dailyDigest } = await import('@/lib/assistant/digest')
+    expect(dailyDigest([], '2026-10-04', '💰 Gemini: 3 запросов')).toContain('💰 Gemini: 3 запросов')
+  })
+  it('сводка разделов — без остатков (кэш не пересоздаётся каждые 10 минут)', async () => {
+    const { catalogSections } = await import('@/lib/assistant/knowledge')
+    const text = catalogSections(products)
+    expect(text).not.toMatch(/в наличии \d/)
+    expect(text).toMatch(/обычно \d+–\d+ сом/)
+    // Товар ушёл со склада — сводка та же.
+    const sold = products.map((p, i) => (i === 0 ? { ...p, variants: p.variants.map((v) => ({ ...v, stock: 0 })) } : p))
+    expect(catalogSections(sold)).toBe(text)
+  })
+  it('первое сообщение — одно приветствие: отвечаем без модели, на языке приветствия', async () => {
+    const { respond } = await import('@/lib/assistant/respond')
+    const ch = (key: string) => ({ key, orderSource: 'x', leadChannel: 'whatsapp' as const, known: {} })
+    const uz = await respond(ch('g1'), [{ role: 'user', text: 'Ассалому алейкум ука яхшимисиз' }], 'ru', null)
+    expect(uz).toMatchObject({ source: 'flow', text: 'Ассаламу алейкум. Эшитаман, кандай техника керак?' })
+    const ky = await respond(ch('g2'), [{ role: 'user', text: 'Саламатсызбы' }], 'ru', null)
+    expect(ky.text).toBe('Ассаламу алейкум. Угуп жатам, кандай техника керек?')
+    // Есть вопрос — уже не приветствие: отвечает модель (здесь без ключа — запасной режим).
+    const ask = await respond(ch('g3'), [{ role: 'user', text: 'Салам, кир машина барбы' }], 'ru', null)
+    expect(ask.source).not.toBe('flow')
+    // Разговор уже шёл — приветствие отдаём модели: она помнит, о чём говорили.
+    const mid = await respond(ch('g4'), [{ role: 'user', text: 'кир машина' }, { role: 'assistant', text: 'Бар.' }, { role: 'user', text: 'Салам' }], 'ru', null)
+    expect(mid.text).not.toBe('Ассаламу алейкум. Слушаю вас — что подобрать?')
+  })
+})
+
+describe('расход по каналам', () => {
+  it('WhatsApp, Instagram и голосовые — отдельно, дорогие первыми', async () => {
+    const { recordCall, usageOf, usageLine, bishkekToday } = await import('@/lib/assistant/usage')
+    const before = usageOf(bishkekToday()).ch ?? {}
+    recordCall({ promptTokenCount: 20_000, cachedContentTokenCount: 10_000, candidatesTokenCount: 100 }, 'whatsapp')
+    recordCall({ promptTokenCount: 20_000, cachedContentTokenCount: 10_000, candidatesTokenCount: 100 }, 'whatsapp')
+    recordCall({ promptTokenCount: 15_000, cachedContentTokenCount: 10_000, candidatesTokenCount: 80 }, 'instagram')
+    recordCall({ promptTokenCount: 1_000, candidatesTokenCount: 40 }, 'media')
+    const ch = usageOf(bishkekToday()).ch!
+    expect(ch.whatsapp.calls - (before.whatsapp?.calls ?? 0)).toBe(2)
+    expect(ch.instagram.calls - (before.instagram?.calls ?? 0)).toBe(1)
+    const line = usageLine(bishkekToday())
+    expect(line).toMatch(/WhatsApp \$\d+,\d\d \(2\)/)
+    expect(line.indexOf('WhatsApp')).toBeLessThan(line.indexOf('Instagram'))
+    expect(line).toMatch(/голосовые и фото/)
+  })
+})

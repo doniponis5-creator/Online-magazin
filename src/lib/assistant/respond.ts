@@ -72,6 +72,11 @@ export async function respond(
     if (isOtherBot(turns)) return { text: '', products: [], source: 'flow', silent: true, mute: true }
     if (isAcknowledgement(turns) || isJunk(turns)) return { text: '', products: [], source: 'flow', silent: true }
   }
+  // Первое сообщение — одно приветствие («Салам», «Ассалому алейкум, яхшимисиз») — отвечаем сами:
+  // модель за 10 тыс. токенов писала то же самое (владелец 04.10: «токен эконом, сифат тушмасин»).
+  // Есть хоть слово сверх приветствия или разговор уже шёл — как обычно, отвечает модель.
+  const greet = greetingOnly(turns, lang)
+  if (greet) return { text: greet, products: [], source: 'flow' }
   const intent = hint.intent ?? null
   const talked = Array.isArray(shown) ? shown.filter((x): x is string => typeof x === 'string').slice(0, 5) : []
   const raw = await answer(turns, lang, customer, page, channel.known.name, Boolean(channel.known.phone), objectionNote(intent), talked, channel.leadChannel)
@@ -116,6 +121,33 @@ export async function respond(
     return { text: ack, products: [], source: reply.source, handoff: true }
   }
   return reply
+}
+
+/** Слова приветствия на трёх языках (и как их пишут с ошибками), обращения «ака», «уко». */
+const GREET_WORD =
+  '(салам|саламатсызбы|саламатсыңарбы|саламатсынарбы|салом|ассалому|ассалом|ассаламу|ассалам|асалому|асаламу|алейкум|алайкум|алекум|алейкум|ваалейкум|валейкум|assalomu|assalom|assalamu|salom|salam|alaykum|aleykum|привет|здравствуйте|здраствуйте|добрый|день|вечер|утро|кандайсыз|кандайсыз|яхшимисиз|йахшимисиз|жакшысызбы|ало|алло|ака|ука|уко|уков|укам|эже|опа|ассалом|ва|рахматуллахи|ва|баракатух)'
+const GREETING = new RegExp(`^[\\s\\p{P}\\p{S}]*(?:${GREET_WORD}[\\s\\p{P}\\p{S}]*){1,6}$`, 'iu')
+const GREET_REPLY = {
+  ru: 'Ассаламу алейкум. Слушаю вас — что подобрать?',
+  ky: 'Ассаламу алейкум. Угуп жатам, кандай техника керек?',
+  uz: 'Ассаламу алейкум. Эшитаман, кандай техника керак?',
+}
+
+/** Первое и единственное, что написал покупатель, — приветствие. Иначе null. */
+function greetingOnly(turns: ChatTurn[], lang: Lang): string | null {
+  if (turns.some((t) => t.role === 'assistant')) return null
+  const own = turns.map((t) => t.text.trim()).filter(Boolean)
+  if (own.length === 0 || !own.every((t) => t.length <= 60 && GREETING.test(t))) return null
+  const all = own.join(' ').toLowerCase()
+  // По самому приветствию язык виден лучше, чем по общему правилу: «Ассалому» — узбек, «Саламатсызбы» — кыргыз.
+  const talk = /(ассалому|асалому|салом|яхшимисиз|йахшимисиз|уко|assalomu|salom)/.test(all)
+    ? 'uz'
+    : /(саламатсы|жакшысызбы|кандайсыз|эже)/.test(all)
+      ? 'ky'
+      : /(привет|здра|добрый)/.test(all)
+        ? 'ru'
+        : talkLang(turns, lang)
+  return pick(GREET_REPLY, talk)
 }
 
 /** «А жок рахмат», «нет, спасибо» — покупатель отказался. */

@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { readRows } from '@/lib/assistant/log'
 import { dailyDigest, rowsForDay, yesterday } from '@/lib/assistant/digest'
+import { usageLine } from '@/lib/assistant/usage'
 
 /**
  * Сводка консультанта за день — для сервера SBonus, который шлёт её владельцу
@@ -32,5 +33,5 @@ export async function POST(request: Request) {
   }
 
   const rows = rowsForDay(await readRows(2), day)
-  return Response.json({ ok: true, day, count: rows.length, text: dailyDigest(rows, day) })
+  return Response.json({ ok: true, day, count: rows.length, text: dailyDigest(rows, day, usageLine(day)) })
 }

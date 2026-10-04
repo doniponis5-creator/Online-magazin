@@ -34,10 +34,11 @@ export function yesterday(now = new Date()): string {
 
 const MAX_CHARS = 3500
 
-export function dailyDigest(rows: LogRow[], day: string): string {
+/** cost — строка расхода Gemini за этот день (usage.ts usageLine), её считает маршрут. */
+export function dailyDigest(rows: LogRow[], day: string, cost = ''): string {
   const [y, m, d] = day.split('-')
   const title = `🤖 Консультант за ${d}.${m}.${y}`
-  if (rows.length === 0) return `${title}\n\nВопросов не было.`
+  if (rows.length === 0) return `${title}\n\nВопросов не было.${cost ? `\n${cost}` : ''}`
 
   const byChannel = new Map<string, number>()
   for (const r of rows) {
@@ -55,6 +56,7 @@ export function dailyDigest(rows: LogRow[], day: string): string {
     '━━━━━━━━━━━━━━━━━━━',
     `Вопросов: ${rows.length} (${channels}).`,
     local > 0 ? `⚠ ${local} раз модель была недоступна — отвечал запасной режим.` : '',
+    cost,
     '',
   ]
 

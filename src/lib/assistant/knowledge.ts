@@ -294,15 +294,20 @@ ${sectionIndex(list)}`
 function sectionIndex(list: Product[]): string {
   const groups = new Map<string, Product[]>()
   for (const p of list) groups.set(p.categoryId, [...(groups.get(p.categoryId) ?? []), p])
+  // Это постоянная часть промпта (кэш Gemini): любая цифра, которая меняется с остатками
+  // («в наличии 19»), пересоздавала бы кэш каждые 10 минут (выгрузка 1С) — и экономия уходила бы
+  // на создание кэша. Поэтому без количества, цены — грубо: от (вниз до тысячи) — до (вверх до 5 тысяч).
   return [...groups.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
     .map(([id, items]) => {
-      // Цены — от 10-го до 90-го процента товаров в наличии: «от 200 сом» за запчасть в разделе
-      // стиральных машин звучало как цена машины (имтихон 04.10).
-      const prices = items.filter(isInStock).map((p) => p.price).filter((n) => n > 0).sort((a, b) => a - b)
+      // От 10-го до 90-го процента цен: «от 200 сом» за запчасть в разделе стиральных машин
+      // звучало как цена машины (имтихон 04.10).
+      const prices = items.map((p) => p.price).filter((n) => n > 0).sort((a, b) => a - b)
       const at = (q: number) => prices[Math.min(prices.length - 1, Math.floor(q * prices.length))]
-      const span = prices.length > 0 ? `, обычно ${at(0.1)}–${at(0.9)} сом` : ''
-      const have = items.filter(isInStock).length
-      return `${categoryName(id, 'ru')}: ${items.length} (в наличии ${have})${span}`
+      const low = Math.max(1000, Math.floor(at(0.1) / 1000) * 1000)
+      const high = Math.max(low, Math.ceil(at(0.9) / 5000) * 5000)
+      const span = prices.length > 0 ? `обычно ${low}–${high} сом` : 'цены уточнить'
+      return `${categoryName(id, 'ru')}: ${span}`
     })
     .join('\n')
 }

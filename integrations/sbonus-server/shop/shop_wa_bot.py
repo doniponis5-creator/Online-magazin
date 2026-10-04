@@ -186,7 +186,40 @@ async def _first_time(message_id: str) -> bool:
     return bool(await redis_client.set(f"wa:seen:{message_id}", "1", ex=2 * 24 * 3600, nx=True))
 
 
+async def check_spend() -> None:
+    """
+    Расход Gemini за сегодня перевалил за предел (ASSISTANT_DAILY_USD на сайте, по умолчанию $3) —
+    один раз за день пишем владельцу (владелец 04.10: «пул тугаб коляпти», узнал по графику Google).
+    Спрашиваем сайт не чаще раза в 15 минут; любая ошибка — молча, робот работает дальше.
+    """
+    try:
+        if not await redis_client.set("bot:spendcheck", "1", ex=15 * 60, nx=True):
+            return
+        from .shop_router import _admin_phone, _site_base_url, _site_secret
+        payload = "{}"
+        signature = hmac.new(_site_secret().encode(), payload.encode("utf-8"), hashlib.sha256).hexdigest()
+        async with httpx.AsyncClient(timeout=20) as client:
+            response = await client.post(
+                f"{_site_base_url()}/api/assistant/usage",
+                content=payload.encode("utf-8"),
+                headers={"Content-Type": "application/json", "X-Signature": signature},
+            )
+        data = response.json() if response.status_code == 200 else {}
+        if not data.get("over"):
+            return
+        if not await redis_client.set(f"bot:spend:{data.get('day')}", "1", ex=2 * 24 * 3600, nx=True):
+            return
+        await _send_text(_admin_phone(), (
+            f"⚠️ Консультант сегодня потратил на Gemini больше предела: ≈ ${data.get('usd')} (предел ${data.get('limit')}).\n"
+            f"{data.get('line') or ''}\n"
+            "Если это не наплыв покупателей — посмотрите «Ждут ответа» и журнал. Предел меняется в .env.production сайта: ASSISTANT_DAILY_USD."
+        ))
+    except Exception as error:
+        logger.warning(f"spend check: {type(error).__name__}")
+
+
 async def poll_once() -> dict:
+    await check_spend()
     enabled, delay = await _settings()
     if not enabled:
         return {"enabled": False}

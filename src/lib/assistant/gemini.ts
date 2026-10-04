@@ -14,6 +14,7 @@ import 'server-only'
 import { createHash } from 'node:crypto'
 import { fromJson } from './answer-json'
 import { store } from '@/lib/store'
+import { recordCache, recordCall } from './usage'
 
 const API = 'https://generativelanguage.googleapis.com/v1beta'
 const ENDPOINT = `${API}/models`
@@ -50,8 +51,9 @@ async function cacheFor(key: string, model: string, fixed: string): Promise<stri
         body: JSON.stringify({ model: `models/${model}`, displayName: 'smartcentr-consultant', systemInstruction: { parts: [{ text: fixed }] }, ttl: `${CACHE_TTL_S}s` }),
       })
       if (!response.ok) throw new Error(`${response.status} ${(await response.text().catch(() => '')).slice(0, 200)}`)
-      const { name } = (await response.json()) as { name?: string }
+      const { name, usageMetadata } = (await response.json()) as { name?: string; usageMetadata?: { totalTokenCount?: number } }
       if (!name) throw new Error('нет имени кэша')
+      recordCache(usageMetadata?.totalTokenCount ?? 0, CACHE_TTL_S / 3600)
       const old = cache.hash !== hash ? cache.name : ''
       Object.assign(cache, { hash, name, until: Date.now() + CACHE_TTL_S * 1000 })
       // Прежний кэш (правила или каталог поменялись) — удалить, чтобы не платить за хранение.
@@ -86,12 +88,13 @@ export function geminiConfigured(): boolean {
   return Boolean(process.env.GEMINI_API_KEY)
 }
 
-export async function askGemini(system: string, turns: ChatTurn[]): Promise<string> {
+/** channel — для учёта расхода по каналам (usage.ts): сайт, WhatsApp, Instagram, Telegram. */
+export async function askGemini(system: string, turns: ChatTurn[], channel = 'site'): Promise<string> {
   const key = process.env.GEMINI_API_KEY
   if (!key) throw new GeminiError('no-key', 500)
 
   try {
-    return await once(key, system, turns)
+    return await once(key, system, turns, channel)
   } catch (error) {
     // 429 и 503 — «сейчас много народу» у самого Google. Это проходит за
     // секунду-другую, поэтому один раз пробуем ещё. Остальные ошибки
@@ -99,28 +102,28 @@ export async function askGemini(system: string, turns: ChatTurn[]): Promise<stri
     const status = error instanceof GeminiError ? error.status : 0
     if (status !== 429 && status !== 503) throw error
     await new Promise((resolve) => setTimeout(resolve, 1500))
-    return await once(key, system, turns)
+    return await once(key, system, turns, channel)
   }
 }
 
-async function once(key: string, system: string, turns: ChatTurn[]): Promise<string> {
+async function once(key: string, system: string, turns: ChatTurn[], channel: string): Promise<string> {
   const model = process.env.GEMINI_MODEL || DEFAULT_MODEL
   const at = system.indexOf(NOW_MARK)
   const name = at > 0 ? await cacheFor(key, model, system.slice(0, at)) : null
-  if (!name) return await request(key, model, { systemInstruction: { parts: [{ text: system }] } }, turns)
+  if (!name) return await request(key, model, { systemInstruction: { parts: [{ text: system }] } }, turns, '', channel)
   try {
     // Постоянная часть — из кэша; «СЕЙЧАС…» (канал, язык, покупатель, товары) — первой частью разговора.
-    return await request(key, model, { cachedContent: name }, turns, system.slice(at))
+    return await request(key, model, { cachedContent: name }, turns, system.slice(at), channel)
   } catch (error) {
     // Кэш пропал раньше срока (удалили, истёк) — забываем его и отвечаем без кэша.
     const status = error instanceof GeminiError ? error.status : 0
     if (status !== 400 && status !== 403 && status !== 404) throw error
     if (cache.name === name) Object.assign(cache, { name: '', until: 0 })
-    return await request(key, model, { systemInstruction: { parts: [{ text: system }] } }, turns)
+    return await request(key, model, { systemInstruction: { parts: [{ text: system }] } }, turns, '', channel)
   }
 }
 
-async function request(key: string, model: string, head: Record<string, unknown>, turns: ChatTurn[], now = ''): Promise<string> {
+async function request(key: string, model: string, head: Record<string, unknown>, turns: ChatTurn[], now = '', channel = 'site'): Promise<string> {
 
   // 12 секунд — предел ожидания. Обычный ответ приходит за одну-две секунды;
   // если Google молчит дольше, он, скорее всего, не ответит вовсе, и лучше
@@ -176,6 +179,7 @@ async function request(key: string, model: string, head: Record<string, unknown>
     candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] }; finishReason?: string }[]
     usageMetadata?: { promptTokenCount?: number; cachedContentTokenCount?: number; candidatesTokenCount?: number; thoughtsTokenCount?: number }
   }
+  recordCall(data.usageMetadata, channel)
   // GEMINI_LOG_USAGE=1 — в журнал сколько токенов ушло и сколько из них из кэша (проверка экономии).
   if (process.env.GEMINI_LOG_USAGE === '1') {
     const u = data.usageMetadata ?? {}
@@ -230,7 +234,9 @@ export async function readMedia(kind: MediaKind, mime: string, base64: string): 
   }
   const data = (await response.json()) as {
     candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[]
+    usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; thoughtsTokenCount?: number }
   }
+  recordCall(data.usageMetadata, 'media')
   return (
     data.candidates?.[0]?.content?.parts
       ?.filter((p) => !p.thought)
