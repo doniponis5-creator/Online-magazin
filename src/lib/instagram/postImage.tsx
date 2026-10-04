@@ -22,7 +22,9 @@ export const FORMATS: Record<PostFormat, { w: number; h: number; pad: string; ph
   story: { w: 1080, h: 1920, pad: '230px 64px 270px', photoH: 880 },
 }
 
-export type PostKind = 'sale' | 'new' | 'plain'
+/** Метка на картинке — по меткам товара в 1С («Товар дня», «Скидка», «Хит», «Специально для вас», «Новинка»). */
+export type PostKind = 'sale' | 'new' | 'deal' | 'hit' | 'foryou' | 'plain'
+export const POST_KINDS: readonly PostKind[] = ['sale', 'new', 'deal', 'hit', 'foryou', 'plain']
 
 export type PostData = {
   format: PostFormat
@@ -51,6 +53,15 @@ const C = {
   mist: '#e3e8ee',
   success: '#1e9e5a',
   mark: '#fef102',
+}
+
+type Badge = { text: string; bg: string; fg: string }
+const BADGES: Partial<Record<PostKind, (pct: number) => Badge>> = {
+  sale: (pct) => ({ text: pct > 0 ? `СКИДКА −${pct}%` : 'СКИДКА', bg: C.lemon, fg: C.ink }),
+  deal: (pct) => ({ text: pct > 0 ? `ТОВАР ДНЯ −${pct}%` : 'ТОВАР ДНЯ', bg: C.lemon, fg: C.ink }),
+  hit: () => ({ text: 'ХИТ ПРОДАЖ', bg: C.ice, fg: C.cobalt }),
+  foryou: () => ({ text: 'СПЕЦИАЛЬНО ДЛЯ ВАС', bg: C.ice, fg: C.cobalt }),
+  new: () => ({ text: 'НОВИНКА', bg: C.ice, fg: C.cobalt }),
 }
 
 /** Откуда можно брать фото товара: только наш сервер и сайт — чужой адрес не скачиваем. */
@@ -102,16 +113,13 @@ const PAD_Y = 92
 
 export function PostCard({ data }: { data: PostData }) {
   const name = postName(data.name)
-  const pct = data.kind === 'sale' ? discountPct(data.price, data.oldPrice) : 0
-  const showOld = data.kind === 'sale' && data.oldPrice > data.price
+  const pct = discountPct(data.price, data.oldPrice)
+  // Старая цена из 1С — честный факт при любой метке: «Хит» со скидкой показывает и её.
+  const showOld = data.oldPrice > data.price
   const frame = FORMATS[data.format]
   const img = fitBox(data.photoW, data.photoH, PHOTO_W - PAD_X * 2, frame.photoH - PAD_Y * 2)
-  const badge =
-    data.kind === 'sale'
-      ? { text: pct > 0 ? `СКИДКА −${pct}%` : 'СКИДКА', bg: C.lemon, fg: C.ink }
-      : data.kind === 'new'
-        ? { text: 'НОВИНКА', bg: C.ice, fg: C.cobalt }
-        : null
+  // Лимон — только скидка и «Товар дня» (выгода), остальные метки — ледяные, как выбранный язык на сайте.
+  const badge = BADGES[data.kind]?.(pct) ?? null
 
   return (
     <div

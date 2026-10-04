@@ -160,9 +160,10 @@ complaint/spam, без Gemini, шаблоны) → ответ под комме�
 `/api/v1/shop/photos/ig/<v>.jpg` (Redis `ig:post:req|img:<v>`), не со smarket.kg (Cloudflare). ≤ 10 постов в день, товар+шаблон — раз в
 сутки; неудача день не занимает; ответ media_publish потерялся — спрашиваем контейнер (PUBLISHED → вышел, не ясно —
 замок держим). Истории — тот же путь, `format: story` (1080×1920, `media_type=STORIES`, без подписи); ответ на нашу
-историю → `ig:story:<id>` → `describe_story` подставляет товар в разговор Direct. Авто-история — галочка
-`SITE_IG_AUTO_STORY` (по умолчанию 0): `shop_ig_post.auto_story` из cron робота, 11:00–20:00 Бишкек, раз в день,
-`pick_story` (самая большая скидка, не показывали 14 дней), итог владельцу в WhatsApp. Посты в ленту — только кнопкой.
+историю → `ig:story:<id>` → `describe_story` подставляет товар в разговор Direct. Авто-истории — галочка
+`SITE_IG_AUTO_STORY` (по умолчанию 0): `shop_ig_post.auto_story` из cron робота, слоты `AUTO_SLOTS` (Бишкек: 10 «Товар
+дня» `dealOfDay`, 13 «Хит» `hit`, 16 «Новинка» `isNew`, 19 «Специально для вас» `forYou` / «Скидка»), `pick_story`, итог
+владельцу в WhatsApp; метка на картинке — `image_kind` (`deal|sale|hit|foryou|new|plain`). Посты в ленту — только кнопкой.
 Нужен ключ с правом `instagram_business_content_publish` (старый ключ — 403). В Manrope нет «ң» — её дорисовывает
 `scripts/instagram-fonts.py` в статичные срезы.
 

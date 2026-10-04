@@ -4,8 +4,9 @@
 Владелец в 1С («Панель сайта» → «Уведомления» → «Пост в Instagram») выбирает товар и шаблон,
 правит текст и нажимает «Опубликовать в Instagram» (лента) или «В историю».
 Сам робот выпускает только истории — и только если в 1С включена «Авто-история в Instagram»:
-раз в день в 11:00 по Бишкеку, товар со скидкой (auto_story). Посты в ленту — только по кнопке:
-пост остаётся навсегда, ошибку цены в нём увидят все.
+четыре в день по меткам товара из 1С (AUTO_SLOTS: 10:00 «Товар дня», 13:00 «Хит», 16:00 «Новинка»,
+19:00 «Специально для вас» или «Скидка»). Посты в ленту — только по кнопке: пост остаётся навсегда,
+ошибку цены в нём увидят все.
 
 Путь картинки:
   1С → /promo/ig-preview → prepare(): данные товара из каталога сервера → Redis ig:post:req:<v>
@@ -33,7 +34,7 @@ import hmac
 import json
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import httpx
 
@@ -53,9 +54,11 @@ PUBLISH_WAIT = 60                # сколько ждём, пока Instagram �
 SAME_ITEM_QUIET = 24 * 3600      # один и тот же товар тем же шаблоном и видом — не чаще раза в сутки
 STUCK_AFTER = 300                # «публикуется» дольше — сервер перезапускали посреди публикации
 STORY_TTL = 2 * 24 * 3600        # история живёт сутки; ответы на неё приходят и позже
-AUTO_HOUR = 11                   # авто-история — в 11:00 по Бишкеку (с 11 до 20, если сервер лежал)
-AUTO_UNTIL = 20
-AUTO_REPEAT_DAYS = 14            # тот же товар в авто-истории — не чаще раза в две недели
+# Авто-истории: (час по Бишкеку, метки по порядку). Сервер лежал — слот ещё можно выпустить
+# в течение AUTO_LATE часов, позже — пропускаем: «Товар дня» вечером уже не новость.
+AUTO_SLOTS = ((10, ("deal",)), (13, ("hit",)), (16, ("new",)), (19, ("foryou", "sale")))
+AUTO_LATE = 2
+AUTO_REPEAT_DAYS = 3             # тот же товар с той же меткой — не чаще раза в три дня («Товар дня» — каждый день)
 PATH = "/api/v1/shop/photos/ig/{v}.jpg"
 
 WORD = {"post": "Пост", "story": "История"}
@@ -76,13 +79,23 @@ def _version(req: dict) -> str:
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
 
 
+def marks(item: dict) -> set[str]:
+    """Метки товара из 1С: «Товар дня», «Скидка» (есть старая цена), «Хит», «Специально для вас», «Новинка»."""
+    from . import shop_promo_rules as promo
+    found = {"sale"} if promo.on_sale(item) else set()
+    for mark, field in (("deal", "dealOfDay"), ("hit", "hit"), ("foryou", "forYou"), ("new", "isNew")):
+        if item.get(field):
+            found.add(mark)
+    return found
+
+
 def request_for(kind: str, item: dict, fmt: str = "post") -> dict:
     """Что рисовать — только из каталога 1С на сервере: название, цены, первое фото."""
     from . import shop_promo_rules as promo
     photos = [p for p in (item.get("photos") or []) if isinstance(p, str) and p.startswith("https://")]
     return {
         "format": fmt if fmt in FORMATS else "post",
-        "kind": rules.image_kind(kind, promo.on_sale(item)),
+        "kind": rules.image_kind(kind, marks(item)),
         "name": promo.clean_text(item.get("name"))[:200],
         "price": promo.price(item),
         "oldPrice": promo.old_price(item),
@@ -413,31 +426,55 @@ async def describe_story(story_id: str) -> str:
     return rules.story_note(str(story.get("name") or ""), int(story.get("price") or 0), int(story.get("oldPrice") or 0))
 
 
-# ── Авто-история (галочка «Авто-история в Instagram» в 1С) ───────────────────
+# ── Авто-истории (галочка «Авто-история в Instagram» в 1С) ──────────────────
 
-def pick_story(items: list[dict], recent: set[str]) -> dict | None:
+SLOT_WORD = {"deal": "Товар дня", "hit": "Хит", "new": "Новинка", "foryou": "Специально для вас", "sale": "Скидка"}
+
+
+def pick_story(items: list[dict], wanted: tuple[str, ...], shown: dict[str, str], taken: set[str], today: str) -> tuple[dict, str] | None:
     """
-    Какой товар показать сегодня: со скидкой, можно заказать, есть фото, не показывали две недели.
-    Из таких — с самой большой скидкой; скидок нет — новинка. Ничего не подходит — сегодня без истории.
+    Товар для слота: с нужной меткой из 1С, можно заказать, есть фото, сегодня ещё не показан
+    (taken) и не показан с этой меткой последние AUTO_REPEAT_DAYS дней (shown: «метка|код» → день).
+    «Товар дня» владелец меняет сам — его показываем каждый день. Из подходящих — дольше всех
+    не показанный, при равенстве — с большей скидкой. Возвращает (товар, метка) или None.
     """
+    from datetime import date
     from . import shop_promo_rules as promo
 
-    def ok(item: dict) -> bool:
-        return (promo.sellable(item) and str(item.get("code") or "") not in recent
-                and bool(request_for("sale", item)["photo"]))
+    def days_ago(mark: str, code: str) -> int:
+        last = shown.get(f"{mark}|{code}")
+        try:
+            return (date.fromisoformat(today) - date.fromisoformat(last)).days if last else 10_000
+        except ValueError:
+            return 10_000
 
-    sale = [i for i in items or [] if promo.on_sale(i) and ok(i)]
-    if sale:
-        return max(sale, key=lambda i: (rules.discount_pct(promo.price(i), promo.old_price(i)), promo.old_price(i) - promo.price(i)))
-    new = [i for i in items or [] if promo.is_new(i) and ok(i)]
-    return min(new, key=lambda i: str(i.get("code"))) if new else None
+    for mark in wanted:
+        fits = [
+            i for i in items or []
+            if mark in marks(i) and promo.sellable(i) and str(i.get("code") or "") not in taken
+            and request_for(mark, i)["photo"]
+            and (mark == "deal" or days_ago(mark, str(i.get("code") or "")) >= AUTO_REPEAT_DAYS)
+        ]
+        if fits:
+            best = max(fits, key=lambda i: (days_ago(mark, str(i.get("code") or "")),
+                                            rules.discount_pct(promo.price(i), promo.old_price(i))))
+            return best, mark
+    return None
+
+
+def due_slot(here: datetime) -> tuple[int, tuple[str, ...]] | None:
+    """Какой слот сейчас пора выпускать (по часам Бишкека); None — ни один."""
+    for hour, wanted in AUTO_SLOTS:
+        if hour <= here.hour < hour + AUTO_LATE:
+            return hour, wanted
+    return None
 
 
 async def auto_story(now: datetime | None = None) -> dict | None:
     """
-    Раз в день в 11:00 по Бишкеку (сервер лежал — до 20:00): одна история со скидкой.
-    Зовёт cron робота Instagram (shop_ig_bot.poll_once) раз в минуту; галочка в 1С — SITE_IG_AUTO_STORY.
-    Сделал — владельцу в WhatsApp, что вышло.
+    Зовёт cron робота Instagram (shop_ig_bot.poll_once) раз в минуту. Пора слота (AUTO_SLOTS) и он
+    сегодня ещё не выходил — одна история с товаром нужной метки. Галочка в 1С — SITE_IG_AUTO_STORY.
+    Сделал — владельцу в WhatsApp, что вышло. Нечего показать — слот молча пропускается.
     """
     from . import shop_promo_rules as promo
     from app.core.database import async_session
@@ -446,53 +483,66 @@ async def auto_story(now: datetime | None = None) -> dict | None:
 
     now = now or datetime.now(timezone.utc)
     here = promo.local(now)
-    if not AUTO_HOUR <= here.hour < AUTO_UNTIL:
+    slot = due_slot(here)
+    if slot is None:
         return None
+    hour, wanted = slot
     day = here.date().isoformat()
-    if await redis_client.get(f"ig:autostory:{day}"):
+    slot_key = f"ig:autostory:{day}:{hour}"
+    if await redis_client.get(slot_key):
         return None
     async with async_session() as db:
         if (await _values(db)).get("SITE_IG_AUTO_STORY", "0") != "1":
             return None
         items = await catalog_items(db)
-    # Сегодняшний день занимаем до публикации: следующая минута cron не выпустит вторую.
-    if not await redis_client.set(f"ig:autostory:{day}", "1", ex=2 * 24 * 3600, nx=True):
+    # Слот занимаем до публикации: следующая минута cron не выпустит вторую такую же.
+    if not await redis_client.set(slot_key, "1", ex=2 * 24 * 3600, nx=True):
         return None
-    recent = set(await redis_client.smembers("ig:autostory:recent") or [])
-    item = pick_story(items, recent)
-    if item is None:
-        logger.info("ig auto story: сегодня нечего показать — нет товаров со скидкой и новинок с фото")
+    shown_raw = await redis_client.get("ig:autostory:shown")
+    try:
+        shown = json.loads(shown_raw) if shown_raw else {}
+    except Exception:
+        shown = {}
+    taken = set(await redis_client.smembers(f"ig:autostory:{day}:codes") or [])
+    picked = pick_story(items, wanted, shown, taken, day)
+    if picked is None:
+        logger.info(f"ig auto story {hour}:00: нечего показать ({', '.join(SLOT_WORD[m] for m in wanted)})")
         return {"status": "skipped"}
-    kind = "sale" if promo.on_sale(item) else "new"
+    item, mark = picked
     code = str(item.get("code") or "")
     name = promo.clean_text(item.get("name"))
-    if await blocked_reason(kind, code, item, "story"):
+    if await blocked_reason(mark, code, item, "story"):
         return {"status": "skipped"}
-    v = await prepare(kind, item, "story")
-    entry_id, reason = await start(kind, code, name, v, "story", auto=True)
+    v = await prepare(mark, item, "story")
+    entry_id, reason = await start(mark, code, name, v, "story", auto=True)
     if entry_id is None:
         return {"status": "skipped", "note": reason}
     story_of = {"code": code, "name": name, "price": promo.price(item), "oldPrice": promo.old_price(item)}
     result = await publish(entry_id, v, "", "story", story_of)
     if result["status"] == "done":
-        await redis_client.sadd("ig:autostory:recent", code)
-        await redis_client.expire("ig:autostory:recent", AUTO_REPEAT_DAYS * 24 * 3600)
-    await _tell_owner(name, item, result)
-    return result
+        await redis_client.sadd(f"ig:autostory:{day}:codes", code)
+        await redis_client.expire(f"ig:autostory:{day}:codes", 2 * 24 * 3600)
+        shown[f"{mark}|{code}"] = day
+        # Старше месяца не нужны: правило — «раз в три дня».
+        month_ago = (here.date() - timedelta(days=30)).isoformat()
+        shown = {k: d for k, d in shown.items() if isinstance(d, str) and d >= month_ago}
+        await redis_client.set("ig:autostory:shown", json.dumps(shown, ensure_ascii=False), ex=60 * 24 * 3600)
+    await _tell_owner(name, item, result, SLOT_WORD[mark])
+    return {**result, "mark": mark}
 
 
-async def _tell_owner(name: str, item: dict, result: dict) -> None:
+async def _tell_owner(name: str, item: dict, result: dict, label: str = "") -> None:
     from . import shop_promo_rules as promo
     from .shop_router import _admin_phone
     from .shop_wa_bot import _send_text as send_whatsapp
     price = f"{promo.money(promo.price(item))} сом"
     if result["status"] == "done":
-        text = (f"📸 Авто-история в Instagram\n━━━━━━━━━━━━━━━━━━━\n{name}\n{price}"
+        text = (f"📸 Авто-история в Instagram{f' · {label}' if label else ''}\n━━━━━━━━━━━━━━━━━━━\n{name}\n{price}"
                 + (f" (было {promo.money(promo.old_price(item))} сом)" if promo.old_price(item) else "")
                 + "\n\nИстория висит сутки. Ответы на неё придут в Direct — робот знает этот товар."
                 + "\nВыключить: 1С → «Панель сайта» → «Настройки сайта» → «Авто-история в Instagram».")
     else:
-        text = (f"⚠️ Авто-история в Instagram не вышла\n━━━━━━━━━━━━━━━━━━━\n{name}\n\n{result.get('note') or ''}"
+        text = (f"⚠️ Авто-история в Instagram не вышла{f' · {label}' if label else ''}\n━━━━━━━━━━━━━━━━━━━\n{name}\n\n{result.get('note') or ''}"
                 "\n\nПовторить можно кнопкой «В историю» в 1С («Панель сайта» → «Уведомления»).")
     try:
         await send_whatsapp(_admin_phone(), text)

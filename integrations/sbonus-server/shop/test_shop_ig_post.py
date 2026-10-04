@@ -335,40 +335,56 @@ class Publish(Base):
         self.assertIn("забрать картинку", post.explain("Instagram 400: (#9004) The media could not be fetched"))
 
 
-# 11:30 по Бишкеку = 05:30 UTC
-MORNING = datetime(2026, 10, 5, 5, 30, tzinfo=timezone.utc)
+# 10:30 по Бишкеку = 04:30 UTC — слот «Товар дня»
+DEAL_TIME = datetime(2026, 10, 5, 4, 30, tzinfo=timezone.utc)
+HIT_TIME = datetime(2026, 10, 5, 7, 30, tzinfo=timezone.utc)      # 13:30
+EVENING = datetime(2026, 10, 5, 13, 30, tzinfo=timezone.utc)      # 19:30
 
 
 class AutoStory(Base):
     def test_pick(self):
+        today = "2026-10-05"
         small = {**ITEM, "code": "a", "price": 900, "oldPrice": 1000}
         big = {**ITEM, "code": "b", "price": 500, "oldPrice": 1000}
         no_photo = {**ITEM, "code": "c", "price": 100, "oldPrice": 1000, "photos": []}
-        new = {**ITEM, "code": "d", "oldPrice": 0, "isNew": True}
-        self.assertEqual(post.pick_story([small, big, no_photo, new], set())["code"], "b")
-        self.assertEqual(post.pick_story([small, big, new], {"b"})["code"], "a")
-        self.assertEqual(post.pick_story([new, {**ITEM, "code": "e", "oldPrice": 0}], set())["code"], "d")
-        self.assertIsNone(post.pick_story([{**ITEM, "oldPrice": 0}], set()))
+        hit = {**ITEM, "code": "h", "oldPrice": 0, "hit": True}
+        foryou = {**ITEM, "code": "f", "oldPrice": 0, "forYou": True}
+        self.assertEqual(post.pick_story([small, big, no_photo], ("foryou", "sale"), {}, set(), today)[0]["code"], "b")
+        self.assertEqual(post.pick_story([small, big, foryou], ("foryou", "sale"), {}, set(), today), (foryou, "foryou"))
+        # Сегодня уже был в другом слоте — не повторяем; показывали вчера — ждём три дня.
+        self.assertEqual(post.pick_story([small, big], ("sale",), {}, {"b"}, today)[0]["code"], "a")
+        self.assertIsNone(post.pick_story([hit], ("hit",), {"hit|h": "2026-10-04"}, set(), today))
+        self.assertEqual(post.pick_story([hit], ("hit",), {"hit|h": "2026-10-01"}, set(), today)[1], "hit")
+        # «Товар дня» — каждый день, даже если вчера показывали.
+        deal = {**ITEM, "code": "d", "dealOfDay": True}
+        self.assertEqual(post.pick_story([deal], ("deal",), {"deal|d": "2026-10-04"}, set(), today)[1], "deal")
 
-    def test_once_a_day_at_eleven(self):
+    def test_slots(self):
         self.use(Meta())
+        CATALOG[:] = [{**ITEM, "dealOfDay": True}, {**ITEM, "code": "ЦБ-2", "name": "Хит", "hit": True, "oldPrice": 0}]
         self.assertIsNone(run(post.auto_story(datetime(2026, 10, 5, 3, 0, tzinfo=timezone.utc))))  # 9:00 — рано
-        result = run(post.auto_story(MORNING))
-        self.assertEqual(result["status"], "done")
-        self.assertIn("📸 Авто-история", SENT[0])
+        deal = run(post.auto_story(DEAL_TIME))
+        self.assertEqual((deal["status"], deal["mark"]), ("done", "deal"))
+        self.assertIn("📸 Авто-история в Instagram · Товар дня", SENT[0])
         self.assertIn("15 900 сом", SENT[0])
-        self.assertIsNone(run(post.auto_story(MORNING)))  # вторая минута — уже было
-        self.assertIn(ITEM["code"], redis.data["ig:autostory:recent"])
+        self.assertIsNone(run(post.auto_story(DEAL_TIME)))  # следующая минута — слот уже был
+        hit = run(post.auto_story(HIT_TIME))
+        self.assertEqual(hit["mark"], "hit")
+        req = json.loads(redis.data[f"ig:post:req:{run(post.prepare('hit', CATALOG[1], 'story'))}"])
+        self.assertEqual(req["kind"], "hit")
+        # Вечером «Специально для вас»/«Скидка»: товар дня со скидкой уже был сегодня — не повторяем.
+        self.assertEqual(run(post.auto_story(EVENING))["status"], "skipped")
 
     def test_switched_off(self):
         SETTINGS["SITE_IG_AUTO_STORY"] = "0"
-        self.assertIsNone(run(post.auto_story(MORNING)))
+        self.assertIsNone(run(post.auto_story(DEAL_TIME)))
         self.assertEqual(SENT, [])
 
     def test_failure_tells_owner(self):
         self.use(Meta(media_error="(#10) no permission"))
-        self.assertEqual(run(post.auto_story(MORNING))["status"], "failed")
-        self.assertIn("не вышла", SENT[0])
+        CATALOG[:] = [{**ITEM, "dealOfDay": True}]
+        self.assertEqual(run(post.auto_story(DEAL_TIME))["status"], "failed")
+        self.assertIn("не вышла · Товар дня", SENT[0])
 
 
 if __name__ == "__main__":

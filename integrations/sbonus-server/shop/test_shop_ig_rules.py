@@ -187,10 +187,14 @@ class PostCaption(unittest.TestCase):
         self.assertNotIn("%", rules.post_caption("sale", "Утюг", 1200, 1200))
 
     def test_image_kind(self):
-        self.assertEqual(rules.image_kind("sale", False), "sale")
-        self.assertEqual(rules.image_kind("new", True), "new")
-        self.assertEqual(rules.image_kind("custom", True), "sale")
-        self.assertEqual(rules.image_kind("custom", False), "plain")
+        self.assertEqual(rules.image_kind("sale", set()), "sale")
+        self.assertEqual(rules.image_kind("new", {"sale"}), "new")
+        self.assertEqual(rules.image_kind("hit", set()), "hit")  # слот авто-истории — его метка
+        # «Свой текст» — самая важная метка товара из 1С.
+        self.assertEqual(rules.image_kind("custom", {"sale"}), "sale")
+        self.assertEqual(rules.image_kind("custom", {"new", "hit"}), "hit")
+        self.assertEqual(rules.image_kind("custom", {"new", "deal", "sale"}), "deal")
+        self.assertEqual(rules.image_kind("custom", set()), "plain")
         self.assertEqual(rules.discount_pct(15900, 18900), 15)  # 15,87 % → 15, как на картинке
         self.assertEqual(rules.discount_pct(100, 0), 0)
 

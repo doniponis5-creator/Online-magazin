@@ -272,13 +272,22 @@ def discount_pct(price: int, old: int) -> int:
     return (old - price) * 100 // old
 
 
-def image_kind(kind: str, on_sale: bool) -> str:
-    """Какая метка на картинке: «Скидка», «Новинка» или без метки («свой текст» без скидки)."""
-    if kind == "sale":
-        return "sale"
-    if kind == "new":
-        return "new"
-    return "sale" if on_sale else "plain"
+# Метки товара из 1С (карточка товара: «Товар дня», «Скидка», «Хит», «Специально для вас», «Новинка»)
+# и метка на картинке. Порядок — что важнее показать, если меток несколько.
+MARKS = ("deal", "sale", "hit", "foryou", "new")
+
+
+def image_kind(kind: str, marks) -> str:
+    """
+    Какая метка на картинке. Шаблон из 1С («Скидка», «Новинка») или слот авто-истории
+    («deal», «hit», «foryou») — его метка; «свой текст» — самая важная метка товара, нет меток — без метки.
+    """
+    if kind in MARKS:
+        return kind
+    for mark in MARKS:
+        if mark in marks:
+            return mark
+    return "plain"
 
 
 def post_caption(kind: str, name: str, price: int, old: int) -> str:

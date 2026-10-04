@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { ImageResponse } from 'next/og'
 import sharp, { type Sharp } from 'sharp'
-import { FORMATS, PostCard, photoAllowed, postFonts, type PostData, type PostFormat, type PostKind } from '@/lib/instagram/postImage'
+import { FORMATS, POST_KINDS, PostCard, photoAllowed, postFonts, type PostData, type PostFormat, type PostKind } from '@/lib/instagram/postImage'
 
 /**
  * Картинка поста Instagram для сервера SBonus (shop_ig_post.py): он присылает данные товара
@@ -9,14 +9,14 @@ import { FORMATS, PostCard, photoAllowed, postFonts, type PostData, type PostFor
  * Instagram принимает только JPEG.
  *
  * Подпись — та же, что у /api/channel/instagram (HMAC тела секретом SHOP_API_SECRET).
- * Тело: {"format": "post" | "story", "kind": "sale" | "new" | "plain", "name": "…", "price": 15900, "oldPrice": 18900,
+ * Тело: {"format": "post" | "story", "kind": "sale" | "new" | "deal" | "hit" | "foryou" | "plain", "name": "…", "price": 15900, "oldPrice": 18900,
  *        "photo": "https://api.smartcentr.store/…jpg"}
  * Ответ: image/jpeg 1080 × 1350 (пост) или 1080 × 1920 (история).
  * Фото просили, а скачать не вышло — 502: пост с заглушкой вместо товара не публикуем.
  */
 export const dynamic = 'force-dynamic'
 
-const KINDS = new Set<PostKind>(['sale', 'new', 'plain'])
+const KINDS = new Set<PostKind>(POST_KINDS)
 const PHOTO_MAX = 8 * 1024 * 1024
 
 function signed(body: string, signature: string): boolean {
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
     kind,
     name,
     price,
-    oldPrice: kind === 'sale' && oldPrice > price ? oldPrice : 0,
+    oldPrice: oldPrice > price ? oldPrice : 0,
     ...photo,
   }
   try {
