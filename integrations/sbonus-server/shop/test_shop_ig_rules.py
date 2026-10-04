@@ -141,6 +141,32 @@ class MentionOnly(unittest.TestCase):
         self.assertFalse(rules.mention_only(event))
 
 
+def comment_hook(value: dict, own: str = "17841427957347118", time_ms: int = 1_759_500_000_000) -> dict:
+    return {"object": "instagram", "entry": [{"id": own, "time": time_ms, "changes": [{"field": "comments", "value": value}]}]}
+
+
+class Comments(unittest.TestCase):
+    def test_buyer_comment(self):
+        [c] = rules.comment_events(comment_hook({
+            "id": "18001", "text": " Канча? ", "from": {"id": "555", "username": "aibek_osh"}, "media": {"id": "9001", "media_product_type": "REELS"},
+        }))
+        self.assertEqual(c, {"kind": "comment", "id": "18001", "mid": "c:18001", "user": "555", "username": "aibek_osh",
+                             "media": "9001", "text": "Канча?", "ts": 1_759_500_000.0})
+
+    def test_own_reply_empty_and_other_fields_skipped(self):
+        self.assertEqual(rules.comment_events(comment_hook({"id": "1", "text": "Директке жаздык", "from": {"id": "17841427957347118"}})), [])
+        self.assertEqual(rules.comment_events(comment_hook({"id": "2", "text": "  ", "from": {"id": "555"}})), [])
+        self.assertEqual(rules.comment_events(comment_hook({"id": "", "text": "+", "from": {"id": "555"}})), [])
+        hook = comment_hook({"id": "3", "text": "+", "from": {"id": "555"}})
+        hook["entry"][0]["changes"][0]["field"] = "messages"
+        self.assertEqual(rules.comment_events(hook), [])
+        self.assertEqual(rules.comment_events({"object": "page"}), [])
+
+    def test_messages_ignore_comments(self):
+        # Комментарий не должен попасть в разговор Direct: events() их не берёт.
+        self.assertEqual(rules.events(comment_hook({"id": "4", "text": "+", "from": {"id": "555"}})), [])
+
+
 class Window(unittest.TestCase):
     def test_window(self):
         self.assertTrue(rules.window_open(1000, 1000 + 2 * 3600))

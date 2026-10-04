@@ -164,6 +164,61 @@ export function searchProducts(query: string, lang: Lang, limit = 6, list: Produ
     .map((row) => row.product)
 }
 
+/** Слова рекламных подписей, которые ничего не говорят о товаре: «литр» дал «Казан 6 литр» на «Мини печь 38 литр». */
+const POST_NOISE = new Set([
+  'литр', 'литра', 'литров', 'литрлик', 'доставка', 'доставкой', 'бесплатная', 'бесплатно', 'акция', 'акциясы', 'скидка', 'скидкой',
+  'товар', 'дня', 'новинка', 'новый', 'новая', 'менен', 'арзандатуу', 'чегирма', 'жаңы', 'келди', 'кайрадан', 'поступление', 'болду',
+  'бар', 'бор', 'есть', 'наличии', 'цена', 'баасы', 'нархи', 'сом', 'som', 'для', 'это', 'все', 'шашылыңыз', 'успейте', 'только',
+])
+
+/**
+ * Один товар по подписи поста Instagram — или null, если уверенности нет.
+ *
+ * searchProducts здесь не годится: в подписи «Эндура мотоцикл мини электрический кайрадан
+ * поступление болду» она нашла «Парту МИНИ за 500 сом» (слово «мини» и характеристики), и человек
+ * получил бы в Direct чужую цену (замер 04.10). Здесь — только название, и редкое слово весит
+ * больше частого: «эндуро» есть у одного товара (вес 1), «мини» — у пяти (вес 0,2 каждому).
+ * Победитель должен быть явным: не меньше 0,6 и в полтора раза больше второго.
+ */
+export function bestNameMatch(text: string, list: Product[]): Product | null {
+  // Слово подписи вместе с его синонимами — одно слово: «мотоцикл» (→ «мототцикл», «эндуро») не должен
+  // давать очки сразу и Эндуро, и спортивному мотоциклу как два разных слова.
+  // Числа — только от трёх цифр: «940» из «ZL-940» отличает модель; «8 кг», «38 литр» — нет (короче).
+  // Цена «15900» в названия не входит и очков не даёт.
+  const words = [...new Set(splitWords(text).filter((w) => w.length >= 3 && !POST_NOISE.has(w)))]
+  if (words.length === 0) return null
+  const names = list.map((p) => splitWords(`${p.nameRu} ${p.nameKy} ${p.brand}`))
+  const scores = list.map(() => 0)
+  const score = (word: string, among: (i: number) => boolean) => {
+    const forms = expand([word])
+    const hits = names.map((name, i) => (among(i) && forms.some((f) => startsAny(name, f)) ? i : -1)).filter((i) => i >= 0)
+    for (const i of hits) scores[i] += 1 / hits.length
+  }
+  // Сначала слова, потом числа — и числа только среди тех, кого уже нашли по словам: «322 литр»
+  // у холодильника AVEST иначе дал «Духовку UAKEEN UK-322» (замер 04.10).
+  for (const word of words.filter((w) => !/^\d+$/.test(w))) score(word, () => true)
+  for (const word of words.filter((w) => /^\d+$/.test(w))) score(word, (i) => scores[i] > 0)
+  const order = scores.map((s, i) => [s, i] as const).sort((a, b) => b[0] - a[0])
+  const [first, second] = order
+  if (!first || first[0] < 0.6 || (second && second[0] * 1.5 > first[0])) return null
+  const winner = list[first[1]]
+  // Одного общего слова мало (ревью 04.10: «Ламинат для пола» → «Парта МИНИ Ламинат» за 500,
+  // «Спорт костюм» → мотоцикл): нужно два слова подписи в названии — или одно, но марка/модель
+  // (латиница или с цифрой: «UAKEEN», «AV-80MXLB», «940»).
+  const name = names[first[1]]
+  const matched = words.filter((w) => expand([w]).some((f) => startsAny(name, f)))
+  const distinctive = matched.some((w) => /[a-z0-9]/.test(w) && w.length >= 3)
+  // Цена в подписи. Число — тысячи группами по три («13 900», «13.900») или подряд («13900»);
+  // «ZL-940 13 900 сом» — 13 900, не 94013900.
+  const prices = [...text.matchAll(/(?<![\d.,])(\d{1,3}(?:[  .,]\d{3})+|\d{3,7})\s*(?:сом|som|с(?![\p{L}]))/giu)].map((m) => Number(m[1].replace(/\D/g, '')))
+  const samePrice = prices.some((p) => Math.abs(p - winner.price) <= winner.price * 0.03)
+  // Цена есть, а у товара другая — это не он (новый товар, которого ещё нет в каталоге).
+  if (prices.length > 0 && !samePrice) return null
+  // Одно слово + та же цена («Эндура мини 15 900 сом гана!») — достаточно.
+  if (matched.length < 2 && !distinctive && !samePrice) return null
+  return winner
+}
+
 /** Слово покупателя + его синонимы из таблицы выше. */
 function expand(words: string[]): string[] {
   const out = new Set<string>()

@@ -147,6 +147,11 @@ payment) и `ref` (ключ чата; у Instagram номера нет, подп
 `/api/assistant/usage` + `shop_wa_bot.check_spend` — больше `ASSISTANT_DAILY_USD` ($3) → владельцу раз в день. Промпт
 до `NOW_MARK` («СЕЙЧАС — ЭТОТ РАЗГОВОР») одинаков у всех и лежит в кэше Gemini (`gemini.ts cacheFor`) — туда ничего
 переменного (канал, язык, покупатель, остатки) не писать.
+Комментарии Instagram (04.10.2026): webhook `comments` → `shop_ig_rules.comment_events` → очередь `ig:comments` →
+`shop_ig_bot._handle_comments` → `/api/channel/instagram-comment` (`src/lib/assistant/comments.ts`: Jev — ask/praise/
+complaint/spam, без Gemini, шаблоны) → ответ под комментарием, личный ответ в Direct (`recipient.comment_id`; recipient_id
+ответа — ключ разговора), скрыть спам. Товар поста — `knowledge.bestNameMatch` (только название, редкое слово весит
+больше, числа — только среди найденных по словам; не уверен — null и «какой товар?»: чужую цену не называть).
 
 **Отзывы покупателей.** Пишет только купивший на сайте (оплаченный заказ),
 один отзыв на заказ, до 5 фото. На главной — 20 последних. Хранятся на сайте

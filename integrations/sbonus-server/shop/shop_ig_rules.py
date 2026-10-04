@@ -133,6 +133,48 @@ def events(payload: dict) -> list[dict]:
     return sorted(found, key=lambda e: e["ts"])
 
 
+def comment_events(payload: dict) -> list[dict]:
+    """
+    Комментарии под постами и рилсами магазина (поле webhook «comments», 04.10):
+      {"kind": "comment", "id", "mid": "c:<id>", "user", "username", "media", "text", "ts"}
+    Комментарии самого магазина (from.id = id аккаунта) — не события: это наши ответы.
+    """
+    if not isinstance(payload, dict) or payload.get("object") != "instagram":
+        return []
+    found = []
+    for entry in payload.get("entry") or []:
+        if not isinstance(entry, dict):
+            continue
+        own = str(entry.get("id") or "")
+        ts = entry.get("time") or 0
+        for change in entry.get("changes") or []:
+            if not isinstance(change, dict) or change.get("field") != "comments" or not isinstance(change.get("value"), dict):
+                continue
+            value = change["value"]
+            sender = value.get("from") or {}
+            user = str(sender.get("id") or "") if isinstance(sender, dict) else ""
+            cid = str(value.get("id") or "")
+            text = str(value.get("text") or "").strip()
+            if not cid or not user or not text or (own and user == own):
+                continue
+            media = value.get("media") or {}
+            try:
+                ts = float(ts)
+            except (TypeError, ValueError):
+                ts = 0.0
+            found.append({
+                "kind": "comment",
+                "id": cid,
+                "mid": f"c:{cid}",
+                "user": user,
+                "username": str(sender.get("username") or "")[:60],
+                "media": str(media.get("id") or "") if isinstance(media, dict) else "",
+                "text": text[:500],
+                "ts": ts / 1000 if ts > 10_000_000_000 else ts,
+            })
+    return found
+
+
 def describe(event: dict) -> str:
     """Реплика покупателя для разговора: пометки (реклама, пост) + его текст."""
     return "\n".join([*(event.get("context") or []), event.get("text") or ""]).strip()

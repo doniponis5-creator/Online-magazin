@@ -152,6 +152,12 @@ async def incoming(request: Request):
         await redis_client.rpush("ig:inbox", json.dumps(event, ensure_ascii=False))
     if found:
         await redis_client.ltrim("ig:inbox", -INBOX_MAX, -1)
+    # Комментарии под постами — своя очередь: им отвечает не разговор Direct, а шаблон (04.10).
+    comments = rules.comment_events(payload)
+    for event in comments:
+        await redis_client.rpush("ig:comments", json.dumps(event, ensure_ascii=False))
+    if comments:
+        await redis_client.ltrim("ig:comments", -INBOX_MAX, -1)
     return {"ok": True}
 
 
@@ -299,7 +305,7 @@ async def poll_once() -> dict:
     if not await _load_token():
         # Робот выключен — webhook всё равно копит сообщения. Выбрасываем их, иначе после
         # включения робот ответил бы на всё накопленное разом и с опозданием.
-        await redis_client.delete("ig:inbox", "ig:pending")
+        await redis_client.delete("ig:inbox", "ig:pending", "ig:comments")
         return {"enabled": False}
     await _refresh_token()
     from .shop_wa_bot import _settings
@@ -327,7 +333,7 @@ async def poll_once() -> dict:
             await _remember(event["user"], "user", rules.describe(event))
     if not on:
         # На накопленное не отвечаем: после включения робот не ответит на старое разом.
-        await redis_client.delete("ig:pending")
+        await redis_client.delete("ig:pending", "ig:comments")
         return {"enabled": False}
 
     answered = 0
@@ -356,7 +362,198 @@ async def poll_once() -> dict:
         elif await _answer(user):
             answered += 1
     nudged = await _nudge_silent()
-    return {"enabled": True, "answered": answered, "nudged": nudged}
+    # Комментарии — последними: сначала люди, которые уже пишут в Direct.
+    commented = await _handle_comments()
+    return {"enabled": True, "answered": answered, "nudged": nudged, "comments": commented}
+
+
+# ── Комментарии под постами (04.10) ──────────────────────────────────────────
+# Что делать — решает сайт (/api/channel/instagram-comment: Jev + шаблон, без Gemini); здесь только
+# выполняем: ответ под комментарием, личный ответ в Direct (Instagram разрешает один на комментарий,
+# в течение 7 дней), скрыть спам. Ответ человека в Direct дальше ведёт обычный робот — у него уже
+# записаны наш первый ответ и товар поста.
+
+COMMENTS_PER_RUN = 30            # за один запуск cron: под рекламой их бывает сотни
+COMMENTS_PER_USER = 3            # одному человеку в день: «+», «+», «+» — один ответ, не десять
+COMMENT_STALE = 24 * 3600        # старше суток не отвечаем: «Директке жаздык» через два дня — странно
+
+
+async def _caption(media: str) -> str:
+    """Подпись поста — по ней сайт узнаёт товар. Помним сутки."""
+    if not media:
+        return ""
+    key = f"ig:caption:{media}"
+    cached = await redis_client.get(key)
+    if cached is not None:
+        return str(cached)
+    caption = ""
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            response = await client.get(f"{rules.GRAPH}/{media}", params={"fields": "caption"}, headers={"Authorization": f"Bearer {_token()}"})
+        if response.status_code == 200:
+            caption = str(response.json().get("caption") or "")[:1000]
+    except Exception as error:
+        logger.warning(f"ig caption: {type(error).__name__}")
+    await redis_client.set(key, caption, ex=24 * 3600 if caption else 600)
+    return caption
+
+
+async def _graph_post(path: str, **kwargs) -> dict:
+    async with httpx.AsyncClient(timeout=20) as client:
+        response = await client.post(f"{rules.GRAPH}/{path}", headers={"Authorization": f"Bearer {_token()}"}, **kwargs)
+    if response.status_code != 200:
+        raise RuntimeError(f"Instagram {response.status_code}: {response.text[:200]}")
+    try:
+        return response.json()
+    except Exception:
+        return {}
+
+
+async def _plan_comment(event: dict, caption: str) -> dict:
+    from .shop_router import _site_base_url, _site_secret
+    payload = json.dumps({"id": event["id"], "text": event["text"], "caption": caption, "username": event.get("username") or ""}, ensure_ascii=False)
+    signature = hmac.new(_site_secret().encode(), payload.encode("utf-8"), hashlib.sha256).hexdigest()
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.post(
+            f"{_site_base_url()}/api/channel/instagram-comment",
+            content=payload.encode("utf-8"),
+            headers={"Content-Type": "application/json", "X-Signature": signature},
+        )
+    data = response.json() if response.status_code == 200 else {}
+    return data if data.get("ok") else {}
+
+
+async def _own_username() -> str:
+    """Ник аккаунта магазина: его комментарии — ответы сотрудников, им робот не отвечает. Помним сутки."""
+    cached = await redis_client.get("ig:own_username")
+    if cached is not None:
+        return str(cached)
+    name = ""
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            response = await client.get(f"{rules.GRAPH}/me", params={"fields": "username"}, headers={"Authorization": f"Bearer {_token()}"})
+        if response.status_code == 200:
+            name = str(response.json().get("username") or "")
+    except Exception as error:
+        logger.warning(f"ig own username: {type(error).__name__}")
+    await redis_client.set("ig:own_username", name, ex=24 * 3600 if name else 600)
+    return name
+
+
+async def _alert_complaint(event: dict, caption: str) -> None:
+    """Жалоба в комментарии → владельцу в WhatsApp — уже после того, как ответ в Direct ушёл. Раз в день на человека."""
+    user = str(event.get("user") or "")
+    key = f"ig:calert:{user}:{_today()}"
+    if not await redis_client.set(key, "1", ex=2 * 24 * 3600, nx=True):
+        return
+    from .shop_router import _admin_phone
+    from .shop_wa_bot import _send_text as send_whatsapp
+    who = f"@{event.get('username')}" if event.get("username") else f"id {user}"
+    post = f"\nПод постом: {' '.join(caption.split())[:200]}" if caption else ""
+    try:
+        await send_whatsapp(_admin_phone(), (
+            f"🚨 ЖАЛОБА — Instagram, комментарий\n━━━━━━━━━━━━━━━━━━━\n👤 Instagram {who}\n\n"
+            f"Написал под постом:\n{str(event.get('text') or '')[:500]}{post}\n\n"
+            "Робот извинился и написал ему в Direct — продолжите разговор там."
+        ))
+    except Exception as error:
+        await redis_client.delete(key)
+        logger.error(f"ig comment alert: {type(error).__name__}")
+
+
+async def _handle_comments(budget: float = 20.0) -> int:
+    """
+    Очередь комментариев: решение сайта → ответ, Direct, скрыть. Ошибка одного не мешает другим.
+    Идёт после ответов в Direct и не дольше budget секунд: под рекламой их сотни, а покупатель в
+    Direct ждать не должен (ревью 04.10). Что не успели — разберём в следующую минуту.
+    """
+    done, started = 0, time.monotonic()
+    own = await _own_username()
+    for _ in range(COMMENTS_PER_RUN):
+        if time.monotonic() - started > budget:
+            break
+        raw = await redis_client.lpop("ig:comments")
+        if raw is None:
+            break
+        try:
+            event = json.loads(raw)
+        except Exception:
+            continue
+        cid, user, media = str(event.get("id") or ""), str(event.get("user") or ""), str(event.get("media") or "")
+        # Наш же ответ под комментарием вернулся webhook'ом, или пишет сам магазин (сотрудник) — не отвечаем.
+        if not cid or not user or await redis_client.get(f"ig:myreply:{cid}"):
+            continue
+        if own and str(event.get("username") or "").lower() == own.lower():
+            continue
+        if not await _first_time(str(event.get("mid"))):
+            continue
+        if time.time() - float(event.get("ts") or time.time()) > COMMENT_STALE:
+            continue
+        # С этим человеком уже говорит сотрудник в Direct — робот туда не лезет.
+        if await redis_client.get(f"ig:human:{user}"):
+            continue
+        try:
+            caption = await _caption(media)
+            plan = await _plan_comment(event, caption)
+            if not plan:
+                from .shop_wa_bot import alert_brain_down
+                await alert_brain_down("Instagram", "сайт не ответил на комментарий")
+                continue
+            action = plan.get("action")
+            if action == "hide":
+                await _graph_post(cid, params={"hide": "true"})
+                logger.warning(f"ig comment: скрыт спам ...{cid[-4:]}")
+                done += 1
+                continue
+            if action not in ("answer", "alert"):
+                continue
+            # Один ответ человеку на пост: «+», «+», «+» под одним рилсом — один Direct, не три.
+            # И не больше трёх постов в день на человека.
+            if await redis_client.get(f"ig:cpost:{user}:{media}"):
+                continue
+            count_key = f"ig:ccount:{user}:{_today()}"
+            if int(await redis_client.get(count_key) or 0) >= COMMENTS_PER_USER:
+                continue
+            private = str(plan.get("private") or "").strip()
+            if private:
+                # Не ушло в Direct — исключение: «Директке жаздык» при всех тогда не пишем.
+                await _private_reply(cid, user, private, plan.get("productId"))
+            await redis_client.set(f"ig:cpost:{user}:{media}", "1", ex=7 * 24 * 3600)
+            await redis_client.incr(count_key)
+            await redis_client.expire(count_key, 2 * 24 * 3600)
+            if action == "alert":
+                await _alert_complaint(event, caption)
+            public = str(plan.get("public") or "").strip()
+            if public:
+                reply = await _graph_post(f"{cid}/replies", json={"message": public})
+                if reply.get("id"):
+                    await redis_client.set(f"ig:myreply:{reply['id']}", "1", ex=7 * 24 * 3600)
+            done += 1
+            logger.warning(f"ig comment: {action} ...{cid[-4:]}")
+        except Exception as error:
+            logger.error(f"ig comment ...{cid[-4:]}: {error}")
+    return done
+
+
+async def _private_reply(cid: str, user: str, text: str, product_id) -> None:
+    """
+    Личный ответ на комментарий: первое сообщение в Direct. Instagram сам открывает разговор с
+    автором комментария; recipient_id в ответе — id этого разговора (может отличаться от id в
+    комментарии), по нему и записываем: когда человек ответит, робот увидит свой первый ответ и товар.
+    """
+    # Отпечаток — до отправки: эхо нашего сообщения не должно показаться ответом сотрудника.
+    await redis_client.set(f"ig:mytext:{user}:{rules.text_key(text)}", "1", ex=2 * 24 * 3600)
+    sent = await _graph_post("me/messages", json={"recipient": {"comment_id": cid}, "message": {"text": text}})
+    chat = str(sent.get("recipient_id") or user)
+    mid = str(sent.get("message_id") or "")
+    await redis_client.set(f"ig:mytext:{chat}:{rules.text_key(text)}", "1", ex=2 * 24 * 3600)
+    if mid:
+        await redis_client.sadd(f"ig:mine:{chat}", mid)
+        await redis_client.expire(f"ig:mine:{chat}", 2 * 24 * 3600)
+    await _remember(chat, "assistant", text)
+    # Товар поста — в «показанные», только если разговор о другом ещё не шёл: не затирать то, что смотрел.
+    if product_id and not await redis_client.get(f"ig:shown:{chat}"):
+        await redis_client.set(f"ig:shown:{chat}", json.dumps([str(product_id)]), ex=TURNS_TTL)
 
 
 async def _ask_for_text(user: str) -> bool:
@@ -591,7 +788,7 @@ def run_cron() -> None:
 
     try:
         result = asyncio.run(once())
-        if result.get("answered") or result.get("nudged"):
-            print(f"{datetime.now():%Y-%m-%d %H:%M} instagram ответил: {result.get('answered', 0)}, напомнил: {result.get('nudged', 0)}")
+        if result.get("answered") or result.get("nudged") or result.get("comments"):
+            print(f"{datetime.now():%Y-%m-%d %H:%M} instagram ответил: {result.get('answered', 0)}, напомнил: {result.get('nudged', 0)}, комментариев: {result.get('comments', 0)}")
     except Exception as error:
         print(f"{datetime.now():%Y-%m-%d %H:%M} instagram ошибка: {type(error).__name__}: {error}")
