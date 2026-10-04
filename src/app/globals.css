@@ -1486,9 +1486,10 @@ main#content {
   .chip-row {
     flex-wrap: nowrap;
     overflow-x: auto;
-    margin-inline: -16px;
-    padding: 2px 16px;
-    scroll-padding-inline: 16px;
+    /* поля страницы на телефоне — 20px (14px на самых узких, light-lemon.css .container) */
+    margin-inline: -20px;
+    padding: 2px 20px;
+    scroll-padding-inline: 20px;
     scrollbar-width: none;
     overscroll-behavior-x: contain;
     -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent);
@@ -1506,6 +1507,14 @@ main#content {
   /* категория выбрана — товары ближе к верху: общий подзаголовок каталога только на компьютере */
   .page-head__sub--wide {
     display: none;
+  }
+}
+
+@media (max-width: 370px) {
+  .chip-row {
+    margin-inline: -14px;
+    padding-inline: 14px;
+    scroll-padding-inline: 14px;
   }
 }
 

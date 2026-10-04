@@ -172,10 +172,11 @@ input, textarea { caret-color: var(--color-primary); }
 /* Подпись шире своей колонки на половину промежутка с каждой стороны, а шрифт
    сжимается с экраном (11px на 360px): «Холодильники» и «Муздаткычтар» влезают
    в строку и на узком Android. Переносом режется только длинное слово, которое
-   не влезет никак («Энергоснаб-жение»): hyphenate-limit-chars не даёт рвать
-   короткие («Швей-ные»). text-wrap: balance тут нельзя — ради ровных строк он
-   рвал слова и там, где хватало места («Стираль-ные машины»). */
-.cat-icon__name { width: calc(100% + 8px); margin-inline: -4px; font: 650 clamp(11px, 3.05vw, 12px)/1.25 var(--font); letter-spacing: -.005em; hyphens: auto; hyphenate-limit-chars: 12 5 5; overflow-wrap: break-word; }
+   не влезет никак, и только в выбранном месте — мягким переносом в названии
+   (glue в HomeSections: «Энерго-снабжение»). Автоперенос браузера рвал где придётся
+   («Энергоснабже-ние»), поэтому hyphens: manual. text-wrap: balance тут нельзя — ради
+   ровных строк он рвал слова и там, где хватало места («Стираль-ные машины»). */
+.cat-icon__name { width: calc(100% + 8px); margin-inline: -4px; font: 650 clamp(11px, 3.05vw, 12px)/1.25 var(--font); letter-spacing: -.005em; hyphens: manual; overflow-wrap: break-word; }
 .cat-icon:hover .cat-icon__media { border-color: #b6c2d1; transform: translateY(-2px); }
 .cat-icon:active .cat-icon__media { transform: scale(.96); }
 .cat-icon:focus-visible .cat-icon__media { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgb(37 99 235 / 30%); }
