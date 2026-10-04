@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { ImageResponse } from 'next/og'
 import sharp, { type Sharp } from 'sharp'
-import { FORMATS, POST_KINDS, PostCard, photoAllowed, postFonts, type PostData, type PostFormat, type PostKind } from '@/lib/instagram/postImage'
+import { CoverCard, FORMATS, POST_KINDS, PostCard, photoAllowed, postFonts, type PostData, type PostFormat, type PostKind } from '@/lib/instagram/postImage'
 
 /**
  * Картинка поста Instagram для сервера SBonus (shop_ig_post.py): он присылает данные товара
@@ -68,11 +68,22 @@ export async function POST(request: Request) {
   const body = await request.text()
   if (!signed(body, request.headers.get('x-signature') ?? '')) return new Response('Not found', { status: 404 })
 
-  let raw: { format?: unknown; kind?: unknown; name?: unknown; price?: unknown; oldPrice?: unknown; photo?: unknown; cta?: unknown }
+  let raw: {
+    format?: unknown; kind?: unknown; name?: unknown; price?: unknown; oldPrice?: unknown; photo?: unknown; cta?: unknown
+    count?: unknown; maxPct?: unknown; week?: unknown
+  }
   try {
     raw = JSON.parse(body)
   } catch {
     return Response.json({ ok: false, error: 'bad-json' }, { status: 400 })
+  }
+  // Обложка карусели «Скидки недели»: {"kind": "cover", "count": 7, "maxPct": 25, "week": "04.10 – 10.10"}.
+  if (raw.kind === 'cover') {
+    const count = typeof raw.count === 'number' && raw.count > 0 ? Math.min(Math.round(raw.count), 99) : 0
+    const maxPct = typeof raw.maxPct === 'number' && raw.maxPct > 0 ? Math.min(Math.round(raw.maxPct), 99) : 0
+    const week = typeof raw.week === 'string' ? raw.week.slice(0, 40) : ''
+    if (!count) return Response.json({ ok: false, error: 'bad-request' }, { status: 400 })
+    return jpegOf(<CoverCard data={{ count, maxPct, week }} />, 'post', false)
   }
   const kind = typeof raw.kind === 'string' && KINDS.has(raw.kind as PostKind) ? (raw.kind as PostKind) : null
   const name = typeof raw.name === 'string' ? raw.name.trim().slice(0, 200) : ''
@@ -94,11 +105,15 @@ export async function POST(request: Request) {
     oldPrice: oldPrice > price ? oldPrice : 0,
     ...photo,
   }
+  return jpegOf(<PostCard data={data} />, format, Boolean(data.photo))
+}
+
+async function jpegOf(element: React.ReactElement, format: PostFormat, withPhoto: boolean): Promise<Response> {
   try {
-    const png = new ImageResponse(<PostCard data={data} />, { width: FORMATS[format].w, height: FORMATS[format].h, fonts: await postFonts() })
+    const png = new ImageResponse(element, { width: FORMATS[format].w, height: FORMATS[format].h, fonts: await postFonts() })
     const jpeg = await sharp(Buffer.from(await png.arrayBuffer())).jpeg({ quality: 90, mozjpeg: true }).toBuffer()
     return new Response(new Uint8Array(jpeg), {
-      headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'no-store', 'X-Photo': data.photo ? '1' : '0' },
+      headers: { 'Content-Type': 'image/jpeg', 'Cache-Control': 'no-store', 'X-Photo': withPhoto ? '1' : '0' },
     })
   } catch (error) {
     console.error('instagram post-image:', error instanceof Error ? error.message : error)

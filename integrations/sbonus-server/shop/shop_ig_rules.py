@@ -122,6 +122,25 @@ def events(payload: dict) -> list[dict]:
             continue
         own = str(entry.get("id") or "")
         for item in _items(entry):
+            # Нажали готовый вопрос (ice breaker) — Meta шлёт postback, а не сообщение: читаем его текст
+            # как сообщение покупателя («Баасы канча?»), робот отвечает как обычно.
+            postback = item.get("postback")
+            if isinstance(postback, dict) and not item.get("message"):
+                sender = str((item.get("sender") or {}).get("id") or "")
+                title = str(postback.get("title") or "").strip()
+                ts = item.get("timestamp") or 0
+                try:
+                    ts = float(ts)
+                except (TypeError, ValueError):
+                    ts = 0.0
+                if sender and title and not (own and sender == own):
+                    found.append({
+                        "kind": "in", "user": sender,
+                        "mid": str(postback.get("mid") or f"pb:{sender}:{int(ts)}"),
+                        "ts": ts / 1000 if ts > 10_000_000_000 else ts,
+                        "text": title[:200], "context": [], "media": [], "story": "",
+                    })
+                continue
             message = item.get("message")
             if not isinstance(message, dict) or message.get("is_deleted") or message.get("is_unsupported"):
                 continue
@@ -376,3 +395,48 @@ def wa_status_caption(name: str, price: int, old: int, link: str) -> str:
     """Подпись статуса WhatsApp: там ссылка нажимается — ведём прямо на страницу товара."""
     was = f" (мурун {_som(old)})" if old > price else ""
     return f"{name}\n{_som(price)}{was}\n\nСайттан көрүү · Смотреть на сайте:\n{link}"
+
+
+# ── Готовые вопросы в Direct и карусель «Скидки недели» (04.10) ───────────────
+
+# Покупатель впервые открывает Direct — Instagram показывает эти кнопки (ice breakers, не больше 4).
+# Нажал — приходит postback с текстом вопроса (events() делает из него сообщение), отвечает робот.
+ICE_BREAKERS = {
+    "default": ["Баасы канча?", "Дарегиңиз кайда?", "Жеткирүү барбы?", "Насыяга алсам болобу?"],
+    "ru_RU": ["Сколько стоит?", "Где вы находитесь?", "Есть доставка?", "Можно в рассрочку?"],
+}
+
+
+def ice_breakers_payload() -> dict:
+    """Тело POST /me/messenger_profile: набор по умолчанию (кыргызский) и русский для русского Instagram."""
+    return {
+        "platform": "instagram",
+        "ice_breakers": [
+            {"locale": locale, "call_to_actions": [{"question": q, "payload": f"IB_{i}"} for i, q in enumerate(questions)]}
+            for locale, questions in ICE_BREAKERS.items()
+        ],
+    }
+
+
+CAROUSEL_MAX = 9                  # товаров в карусели: Instagram даёт 10 картинок, первая — обложка
+
+
+def carousel_caption(rows: list[tuple[str, int, int]]) -> str:
+    """Подпись карусели: каждый товар строкой с ценой — по ней робот комментариев найдёт товар по названию."""
+    lines = ["🔥 Аптанын арзандатуулары · Скидки недели", ""]
+    for name, price, old in rows:
+        was = f" (мурун {_som(old)})" if old > price else ""
+        # Без обратной косой внутри f-строки: на сервере Python 3.11.
+        clean = re.sub(r"\s+", " ", name.replace("*", "")).strip()
+        lines.append(f"• {clean} — {_som(price)}{was}")
+    lines += [
+        "",
+        "Жылдырып көрүңүз 👉 · Листайте 👉",
+        "✅ В наличии · Бар",
+        "📩 Пишите в Direct · Директке жазыңыз",
+        f"📞 WhatsApp: {SHOP_PHONE}",
+        "🌐 smarket.kg",
+        "",
+        "#smartcentr #smarketkg #скидка #арзандатуу #ош #кыргызстан",
+    ]
+    return "\n".join(lines)

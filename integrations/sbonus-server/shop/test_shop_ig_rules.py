@@ -230,6 +230,28 @@ class StoryReply(unittest.TestCase):
         self.assertIn("1 200 сом (мурун 1 500 сом)", caption)
 
 
+class IceBreakers(unittest.TestCase):
+    def test_tap_becomes_message(self):
+        tap = {"sender": {"id": BUYER}, "recipient": {"id": SHOP}, "timestamp": 1_759_400_000_000,
+               "postback": {"mid": "pb1", "title": "Баасы канча?", "payload": "IB_0"}}
+        [event] = rules.events(webhook(tap))
+        self.assertEqual((event["kind"], event["user"], event["mid"], event["text"]), ("in", BUYER, "pb1", "Баасы канча?"))
+        # Свой же postback (от аккаунта магазина) — не событие.
+        self.assertEqual(rules.events(webhook({**tap, "sender": {"id": SHOP}})), [])
+
+    def test_payload(self):
+        body = rules.ice_breakers_payload()
+        self.assertEqual(body["platform"], "instagram")
+        self.assertTrue(all(len(x["call_to_actions"]) <= 4 for x in body["ice_breakers"]))
+        self.assertEqual(body["ice_breakers"][0]["locale"], "default")
+
+    def test_carousel_caption(self):
+        text = rules.carousel_caption([("Утюг  Philips*", 900, 1200), ("Чайник", 500, 0)])
+        self.assertIn("• Утюг Philips — 900 сом (мурун 1 200 сом)", text)
+        self.assertIn("• Чайник — 500 сом\n", text)
+        self.assertIsNone(rules.caption_problem(text))
+
+
 class Window(unittest.TestCase):
     def test_window(self):
         self.assertTrue(rules.window_open(1000, 1000 + 2 * 3600))

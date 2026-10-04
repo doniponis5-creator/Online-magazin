@@ -273,6 +273,91 @@ export function PostCard({ data }: { data: PostData }) {
   )
 }
 
+export type CoverData = {
+  /** сколько товаров в карусели после обложки */
+  count: number
+  /** самая большая скидка среди них, % (0 — не писать) */
+  maxPct: number
+  /** «04.10 – 10.10» — неделя, за которую скидки */
+  week: string
+}
+
+/**
+ * Обложка карусели «Скидки недели» (первая картинка поста): тот же холст и шапка, что у карточек товара,
+ * крупный заголовок по-кыргызски и по-русски и «листайте →» — дальше идут карточки товаров.
+ */
+export function CoverCard({ data }: { data: CoverData }) {
+  const frame = FORMATS.post
+  return (
+    <div
+      style={{
+        width: frame.w,
+        height: frame.h,
+        display: 'flex',
+        flexDirection: 'column',
+        background: '#ffffff',
+        padding: frame.pad,
+        fontFamily: 'Manrope',
+        color: C.ink,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64 }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <svg width={42} height={75} viewBox="0 0 55.96 100">
+            <path fill={C.mark} d={MARK} />
+          </svg>
+          <div style={{ marginLeft: 16, fontSize: 40, fontWeight: 800, letterSpacing: '-0.035em' }}>Смарт Центр</div>
+        </div>
+        <div style={{ fontSize: 30, fontWeight: 600, color: C.soft }}>smarket.kg</div>
+      </div>
+
+      <div
+        style={{
+          marginTop: 36,
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          padding: '0 64px',
+          background: C.cloud,
+          border: `2px solid ${C.mist}`,
+          borderRadius: 32,
+        }}
+      >
+        <div style={{ display: 'flex' }}>
+          <div style={{ display: 'flex', padding: '14px 26px', borderRadius: 16, background: C.lemon, fontSize: 34, fontWeight: 800 }}>
+            {data.maxPct > 0 ? `−${data.maxPct}% ЧЕЙИН · ДО −${data.maxPct}%` : 'СКИДКИ'}
+          </div>
+        </div>
+        <div style={{ marginTop: 40, fontSize: 96, fontWeight: 800, lineHeight: 1.02, letterSpacing: '-0.045em' }}>Аптанын арзандатуулары</div>
+        <div style={{ marginTop: 22, fontSize: 52, fontWeight: 800, color: C.soft, letterSpacing: '-0.025em' }}>Скидки недели</div>
+        <div style={{ marginTop: 40, fontSize: 34, fontWeight: 600, color: C.muted }}>{data.week}</div>
+      </div>
+
+      <div
+        style={{
+          marginTop: 30,
+          paddingTop: 26,
+          borderTop: `2px solid ${C.mist}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontSize: 30,
+          fontWeight: 600,
+        }}
+      >
+        <div style={{ display: 'flex', color: C.soft }}>{`${data.count} товар · Direct · WhatsApp ${phones[0].display}`}</div>
+        <div style={{ display: 'flex', alignItems: 'center', fontWeight: 800, color: C.ink }}>
+          Жылдырыңыз
+          <svg width={40} height={40} viewBox="0 0 24 24" style={{ marginLeft: 10 }}>
+            <path d="M4 12h14M12 5l7 7-7 7" stroke={C.ink} strokeWidth={2.6} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 let fonts: Promise<{ name: string; data: Buffer; weight: 600 | 800; style: 'normal' }[]> | null = null
 
 /** Manrope 600 и 800 — статичные срезы manrope-variable.ttf: переменный шрифт Satori рисует самым тонким. */

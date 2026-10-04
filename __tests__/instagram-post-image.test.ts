@@ -48,6 +48,14 @@ describe('картинка поста Instagram', () => {
     }
   }, 30_000)
 
+  it('обложка карусели «Скидки недели» — 1080 × 1350; без числа товаров — 400', async () => {
+    vi.stubEnv('SHOP_API_SECRET', SECRET)
+    const response = await call({ kind: 'cover', count: 7, maxPct: 25, week: '04.10 – 10.10' })
+    const meta = await sharp(Buffer.from(await response.arrayBuffer())).metadata()
+    expect([response.status, meta.width, meta.height]).toEqual([200, 1080, 1350])
+    expect((await call({ kind: 'cover', count: 0 })).status).toBe(400)
+  }, 30_000)
+
   it('фото с чужого адреса не скачиваем; фото не скачалось — 502, а не пост с заглушкой', async () => {
     vi.stubEnv('SHOP_API_SECRET', SECRET)
     const fetched = fakeFetch()

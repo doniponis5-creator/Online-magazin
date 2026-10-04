@@ -699,6 +699,8 @@ class IgPostRequest(BaseModel):
 async def _ig_check(db: AsyncSession, payload: IgPostRequest) -> dict:
     from . import shop_ig_post as post, shop_ig_rules as ig, shop_promo_rules as rules
 
+    if payload.format == "carousel":
+        return await _carousel_check(db, payload)
     kind = (payload.kind or "").strip()
     code = (payload.code or "").strip()
     fmt = "story" if payload.format == "story" else "post"
@@ -712,6 +714,19 @@ async def _ig_check(db: AsyncSession, payload: IgPostRequest) -> dict:
     image_url = post.image_url(await post.prepare(kind, item, fmt)) if item else ""
     return {"kind": kind, "code": code, "item": item, "caption": caption, "template": template,
             "imageUrl": image_url, "blockedReason": reason, "format": fmt}
+
+
+async def _carousel_check(db: AsyncSession, payload: IgPostRequest) -> dict:
+    """Карусель «Скидки недели»: товар в 1С выбирать не нужно — берутся все со скидкой (shop_ig_post.week_items)."""
+    from . import shop_ig_post as post, shop_ig_rules as ig, shop_promo_rules as rules
+
+    items = post.week_items(await _catalog(db))
+    template = ig.carousel_caption([(rules.clean_text(i.get("name")), rules.price(i), rules.old_price(i)) for i in items])
+    caption = ig.clean_caption(payload.caption) or template
+    reason = await post.carousel_blocked(len(items)) or ig.caption_problem(caption)
+    image_url = post.image_url(await post.prepare_cover(items)) if items else ""
+    return {"kind": "week", "code": "week", "item": None, "items": items, "caption": caption, "template": template,
+            "imageUrl": image_url, "blockedReason": reason, "format": "carousel"}
 
 
 @router_1c_admin.post("/promo/ig-preview")
@@ -739,6 +754,16 @@ async def ig_post(request: Request, background: BackgroundTasks, db: AsyncSessio
     check = await _ig_check(db, IgPostRequest.parse_raw(await _verify_1c_body(request)))
     if check["blockedReason"]:
         return {"ok": False, "started": False, "blockedReason": check["blockedReason"]}
+    if check["format"] == "carousel":
+        items = check["items"]
+        cover = await post.prepare_cover(items)
+        cards = [await post.prepare("sale", i, "post") for i in items]
+        entry_id, reason = await post.start("week", "week", f"Скидки недели ({len(items)} товаров)", cover, "carousel")
+        if entry_id is None:
+            return {"ok": False, "started": False, "blockedReason": reason}
+        background.add_task(post.publish, entry_id, cover, check["caption"], "carousel", None, cards)
+        logger.info(f"ig carousel {entry_id}: {len(items)} товаров — публикация пошла")
+        return {"ok": True, "started": True, "id": entry_id}
     fmt, item = check["format"], check["item"]
     name = rules.clean_text(item.get("name"))
     v = await post.prepare(check["kind"], item, fmt)

@@ -166,7 +166,11 @@ complaint/spam, без Gemini, шаблоны) → ответ под комме�
 владельцу в WhatsApp; метка на картинке — `image_kind` (`deal|sale|hit|foryou|new|plain`). У истории Instagram внизу
 плашка «Жооп жазыңыз — шилтеме жиберебиз» (`cta: reply`); короткий ответ на неё (≤ 60 знаков) — `shop_ig_bot._story_reply`:
 фото, цена, ссылка (`shop_ig_rules.story_answer`), без Gemini. Каждая история — ещё и статус WhatsApp (`shop_ig_post.wa_status`,
-Green API `sendMediaStatus`, ссылка в подписи, картинка без плашки, товар — раз в сутки). Посты в ленту — только кнопкой.
+Green API `sendMediaStatus`, ссылка в подписи, картинка без плашки, товар — раз в сутки). Готовые вопросы в Direct —
+`shop_ig_rules.ICE_BREAKERS` → `shop_ig_bot._ensure_ice_breakers` (POST /me/messenger_profile, раз, пока список тот же);
+нажатие приходит postback'ом (поле webhook `messaging_postbacks`) — `events()` делает из него сообщение. Карусель
+«Скидки недели» — `format: carousel` в `/promo/ig-preview|ig-post`: обложка `CoverCard` (`kind: cover`) + до 9 карточек
+(`week_items`), контейнеры `is_carousel_item` → `CAROUSEL`, подпись `carousel_caption`; раз в сутки. Посты в ленту — только кнопкой.
 Нужен ключ с правом `instagram_business_content_publish` (старый ключ — 403). В Manrope нет «ң» — её дорисовывает
 `scripts/instagram-fonts.py` в статичные срезы.
 

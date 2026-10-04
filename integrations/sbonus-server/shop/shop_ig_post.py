@@ -44,7 +44,7 @@ from . import shop_ig_rules as rules
 
 logger = logging.getLogger("sbonus.shop.ig_post")
 
-FORMATS = ("post", "story")
+FORMATS = ("post", "story")      # картинка: пост 1080×1350 (и карточки карусели) или история 1080×1920
 REQ_TTL = 3 * 24 * 3600          # данные картинки: 1С показала превью — Meta заберёт позже
 IMG_TTL = 3 * 24 * 3600          # готовая картинка (Meta берёт её один раз, а превью 1С — много)
 ENTRY_TTL = 30 * 24 * 3600       # запись истории публикаций
@@ -249,9 +249,12 @@ def explain(error: str) -> str:
     return error[:200]
 
 
-async def publish(entry_id: str, v: str, caption: str, fmt: str = "post", story_of: dict | None = None) -> dict:
+async def publish(entry_id: str, v: str, caption: str, fmt: str = "post", story_of: dict | None = None,
+                  children: list[str] | None = None) -> dict:
     """
     Картинка → контейнер → ждём, пока Instagram её обработает → публикация.
+    Карусель (fmt="carousel"): v — обложка, children — карточки товаров; каждая картинка — свой контейнер
+    (is_carousel_item), потом общий контейнер CAROUSEL с подписью.
     После media_publish ошибка не значит «не вышло»: ответ мог потеряться, а пост — выйти.
     Тогда спрашиваем контейнер; не ясно — замок товара не снимаем, чтобы не выпустить второй такой же.
     """
@@ -268,15 +271,27 @@ async def publish(entry_id: str, v: str, caption: str, fmt: str = "post", story_
             account = str(me.get("user_id") or me.get("id") or "")
             if not account:
                 raise RuntimeError("Instagram не назвал аккаунт магазина")
-            fields = {"image_url": image_url(v)}
-            if fmt == "story":
-                fields["media_type"] = "STORIES"   # у истории подписи нет: всё на картинке
+            if fmt == "carousel":
+                kids = []
+                for one in [v, *(children or [])]:
+                    if not await image(one):
+                        raise RuntimeError("сайт не нарисовал картинку одного из товаров")
+                    kid = await _graph(client, "POST", f"{account}/media", token, image_url=image_url(one), is_carousel_item="true")
+                    if not kid.get("id"):
+                        raise RuntimeError("Instagram не принял картинку карусели")
+                    kids.append(str(kid["id"]))
+                fields = {"media_type": "CAROUSEL", "children": ",".join(kids), "caption": caption}
             else:
-                fields["caption"] = caption
+                fields = {"image_url": image_url(v)}
+                if fmt == "story":
+                    fields["media_type"] = "STORIES"   # у истории подписи нет: всё на картинке
+                else:
+                    fields["caption"] = caption
             creation = str((await _graph(client, "POST", f"{account}/media", token, **fields)).get("id") or "")
             if not creation:
                 raise RuntimeError("Instagram не принял картинку")
-            deadline = time.monotonic() + PUBLISH_WAIT
+            # Десять картинок карусели Instagram обрабатывает дольше одной.
+            deadline = time.monotonic() + PUBLISH_WAIT * (2 if fmt == "carousel" else 1)
             while True:
                 code = str((await _graph(client, "GET", creation, token, fields="status_code")).get("status_code") or "")
                 if code == "FINISHED":
@@ -480,6 +495,44 @@ async def wa_status(kind: str, item: dict) -> dict:
         return {"status": "failed", "note": note}
     logger.info(f"wa status: {info['code']} вышел")
     return {"status": "done", "note": ""}
+
+
+# ── Карусель «Скидки недели» ─────────────────────────────────────────────────
+
+def week_items(items: list[dict]) -> list[dict]:
+    """Товары карусели: со скидкой, можно заказать, есть фото; самые большие скидки первыми, не больше 9."""
+    from . import shop_promo_rules as promo
+    fits = [i for i in items or [] if promo.on_sale(i) and promo.sellable(i) and request_for("sale", i)["photo"]]
+    fits.sort(key=lambda i: (-rules.discount_pct(promo.price(i), promo.old_price(i)), promo.price(i)))
+    return fits[: rules.CAROUSEL_MAX]
+
+
+def week_label(now: datetime | None = None) -> str:
+    """«04.10 – 10.10»: неделя от сегодняшнего дня по Бишкеку."""
+    from . import shop_promo_rules as promo
+    day = promo.local(now or datetime.now(timezone.utc)).date()
+    return f"{day:%d.%m} – {day + timedelta(days=6):%d.%m}"
+
+
+async def prepare_cover(items: list[dict]) -> str:
+    """Обложка карусели: сколько товаров, самая большая скидка, неделя. Возвращает отпечаток картинки."""
+    from . import shop_promo_rules as promo
+    best = max((rules.discount_pct(promo.price(i), promo.old_price(i)) for i in items), default=0)
+    req = {"format": "post", "kind": "cover", "count": len(items), "maxPct": best, "week": week_label()}
+    v = _version(req)
+    await redis_client.set(f"ig:post:req:{v}", json.dumps(req, ensure_ascii=False), ex=REQ_TTL)
+    return v
+
+
+async def carousel_blocked(count: int) -> str | None:
+    from .shop_ig_bot import _load_token
+    if not await _load_token():
+        return "На сервере нет ключа Instagram (IG_ACCESS_TOKEN) — публиковать нельзя."
+    if count < 2:
+        return "Для карусели нужно хотя бы два товара со скидкой и фото — сейчас их меньше."
+    if await redis_client.get(_item_key("carousel", "week", "week")):
+        return "Карусель «Скидки недели» уже публиковали за последние сутки (или ещё публикуется)."
+    return None
 
 
 async def publish_story(entry_id: str, v: str, kind: str, item: dict) -> None:

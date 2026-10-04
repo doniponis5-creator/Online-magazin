@@ -243,6 +243,26 @@ class Publish(Base):
         # История того же товара — отдельно от поста.
         self.assertIsNone(run(post.blocked_reason("sale", ITEM["code"], ITEM, "story")))
 
+    def test_carousel(self):
+        meta = self.use(Meta())
+        other = {**ITEM, "code": "ЦБ-2", "name": "Утюг", "price": 900, "oldPrice": 1200}
+        no_sale = {**ITEM, "code": "ЦБ-3", "oldPrice": 0}
+        items = post.week_items([ITEM, other, no_sale])
+        self.assertEqual([i["code"] for i in items], ["ЦБ-2", ITEM["code"]])  # −25 % раньше −15 %, без скидки — нет
+        self.assertIsNone(run(post.carousel_blocked(len(items))))
+        self.assertIn("хотя бы два", run(post.carousel_blocked(1)))
+        cover = run(post.prepare_cover(items))
+        self.assertEqual(json.loads(redis.data[f"ig:post:req:{cover}"])["maxPct"], 25)
+        cards = [run(post.prepare("sale", i, "post")) for i in items]
+        entry, _ = run(post.start("week", "week", "Скидки недели", cover, "carousel"))
+        result = run(post.publish(entry, cover, "Подпись", "carousel", None, cards))
+        self.assertEqual(result["status"], "done")
+        creates = [c[2] for c in meta.calls if c[1].endswith("/1784/media")]
+        self.assertEqual(len(creates), 4)  # обложка + 2 карточки + сама карусель
+        self.assertTrue(all(c.get("is_carousel_item") == "true" for c in creates[:3]))
+        self.assertEqual((creates[3]["media_type"], creates[3]["children"], creates[3]["caption"]), ("CAROUSEL", "C1,C1,C1", "Подпись"))
+        self.assertIn("уже публиковали", run(post.carousel_blocked(2)))
+
     def test_story(self):
         meta = self.use(Meta())
         v, result = self.publish(fmt="story")

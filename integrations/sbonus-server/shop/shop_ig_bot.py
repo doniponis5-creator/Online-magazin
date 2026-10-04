@@ -312,6 +312,27 @@ async def _show_story_product(user: str, story_id: str) -> None:
         await redis_client.set(f"ig:shown:{user}", json.dumps([slug_from_code(code)]), ex=TURNS_TTL)
 
 
+async def _ensure_ice_breakers() -> None:
+    """
+    Готовые вопросы в Direct (rules.ICE_BREAKERS): ставим один раз и заново — только если список поменяли.
+    Не вышло — попробуем через сутки, ответам в Direct это не мешает.
+    """
+    payload = rules.ice_breakers_payload()
+    mark = hashlib.sha256(json.dumps(payload, ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:12]
+    if await redis_client.get(f"ig:icebreakers:{mark}") or not await redis_client.set("ig:icebreakers:try", "1", ex=24 * 3600, nx=True):
+        return
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            response = await client.post(f"{rules.GRAPH}/me/messenger_profile", headers={"Authorization": f"Bearer {_token()}"}, json=payload)
+        if response.status_code == 200:
+            await redis_client.set(f"ig:icebreakers:{mark}", "1")
+            logger.info("ig bot: готовые вопросы в Direct поставлены")
+        else:
+            logger.warning(f"ig bot: готовые вопросы не поставлены ({response.status_code}): {response.text[:200]}")
+    except Exception as error:
+        logger.warning(f"ig bot: готовые вопросы не поставлены: {error}")
+
+
 async def _story_reply(user: str) -> bool:
     """
     Ответ на нашу историю коротким «Канча?» / «+» / «Баасы»: товар истории известен — сразу фото,
@@ -370,6 +391,7 @@ async def poll_once() -> dict:
         await redis_client.delete("ig:inbox", "ig:pending", "ig:comments")
         return {"enabled": False}
     await _refresh_token()
+    await _ensure_ice_breakers()
     # Авто-история (галочка в 1С) — сама решает, пора ли; ошибка её не мешает ответам в Direct.
     try:
         from .shop_ig_post import auto_story

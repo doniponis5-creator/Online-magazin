@@ -70,7 +70,7 @@ import app.shop_precheck.shop_ig_bot as igbot
 assert ig_rules.split_text('a. ' * 600) and ig_rules.events({'object': 'instagram', 'entry': []}) == []
 assert callable(igbot.poll_once) and {x.path for x in igbot.router_ig_bot.routes} == {'/webhook/instagram'}
 import app.shop_precheck.shop_ig_post as igpost
-assert callable(igpost.publish) and callable(igpost.auto_story) and ig_rules.caption_problem(ig_rules.post_caption('new', 'A', 100, 0)) is None
+assert callable(igpost.publish) and callable(igpost.auto_story) and callable(igpost.week_items) and ig_rules.ice_breakers_payload()['platform'] == 'instagram' and ig_rules.caption_problem(ig_rules.post_caption('new', 'A', 100, 0)) is None
 assert '/shop/photos/ig/{v}.jpg' in {x.path for x in c.router_public_photos.routes}
 import app.shop_precheck.shop_push as push
 import app.shop_precheck.shop_push_fcm as fcm
