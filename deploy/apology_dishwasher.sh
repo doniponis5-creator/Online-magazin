@@ -14,6 +14,8 @@
 # снова скажет «нет»):
 #   bash /tmp/apology_dishwasher.sh          ← посмотреть
 #   bash /tmp/apology_dishwasher.sh --send   ← отправить
+#   bash /tmp/apology_dishwasher.sh --shown  ← тем, кому уже отправили, запомнить показанную модель
+#                                              (на «ооба, жибериңиз» робот пришлёт её фото)
 set -euo pipefail
 
 MODE="${1:-}"
@@ -24,6 +26,7 @@ import asyncio, json, os, re, time
 from app.core.redis import redis_client
 
 SEND = os.environ.get("MODE") == "--send"
+SHOWN_ONLY = os.environ.get("MODE") == "--shown"
 # Ответ бота «посудомойки нет»: про посудомойку и «нет» в одном сообщении.
 ABOUT = re.compile(r"посуд|идиш|idish", re.I)
 NONE = re.compile(r"\bнет\b|жок|калбай|калган|йук|йўқ|yo.?q|закончил", re.I)
@@ -66,11 +69,19 @@ async def dishwashers() -> list[dict]:
     async with async_session() as db:
         items = await catalog_items(db)
     found = [
-        {"name": promo.clean_text(i.get("name")).replace("Посудомоечная машина ", ""), "price": promo.price(i)}
+        {"name": promo.clean_text(i.get("name")).replace("Посудомоечная машина ", ""), "price": promo.price(i),
+         "id": promo.slug_from_code(i.get("code") or "")}
         for i in items
         if str(i.get("name") or "").lower().startswith("посудомоечн") and promo.sellable(i)
     ]
     return sorted(found, key=lambda x: x["price"])
+
+
+async def remember_shown(channel: str, who: str, product_id: str) -> None:
+    """Названную в извинении модель — в «показанные»: на «да, пришлите фото» робот знает, какую."""
+    key = f"{'wa' if channel == 'whatsapp' else 'ig'}:shown:{who}"
+    if product_id:
+        await redis_client.set(key, json.dumps([product_id]), ex=3 * 24 * 3600)
 
 
 async def main() -> None:
@@ -98,6 +109,15 @@ async def main() -> None:
             if FIXED.search(after):
                 continue
             todo.append((channel, who, turns[wrong[-1]]["text"]))
+
+    if SHOWN_ONLY:
+        done = 0
+        for channel, who, _said in todo:
+            if await redis_client.get(f"apology:dish:{channel}:{who}"):
+                await remember_shown(channel, who, small["id"])
+                done += 1
+        print(f"Запомнил модель {small['name']} у {done} покупателей — на «фото жибериңиз» робот пришлёт её.")
+        return
 
     sent = skipped = 0
     for channel, who, said in todo:
@@ -127,6 +147,7 @@ async def main() -> None:
                 await _send_text(who, text)
                 await _remember(who, "assistant", text)
             await redis_client.set(f"apology:dish:{channel}:{who}", "1", ex=30 * 24 * 3600)
+            await remember_shown(channel, who, small["id"])
             sent += 1
             print("   ✅ отправлено")
         except Exception as error:
