@@ -79,9 +79,12 @@ export function HomeStorySale({ cards }: { cards: SaleCard[] }) {
   const root = useRef<HTMLElement>(null)
   // самая большая скидка — сверху колоды, веер идёт к концу списка
   const deck = cards
-  const end = Math.max(0, deck.length - 1)
+  // последняя карточка колоды — «Все скидки» (ведёт в каталог), поэтому веер идёт на одну дальше товаров
+  const end = deck.length
+  const last = deck.length - 1
   const { phase, focus } = useFanDeck(root, { start: 0, end, spread: .6 })
-  const front = deck[Math.min(focus, end)]
+  // на карточке «Все скидки» огромного «−N%» нет
+  const front = deck[focus]
 
   /**
    * Положение колоды одним числом s: 0…end — какая карточка впереди (дробное — между карточками),
@@ -203,6 +206,20 @@ export function HomeStorySale({ cards }: { cards: SaleCard[] }) {
             </span>
           </Link>
         })}
+        {/* конец колоды — не тупик: дошли до края, а тут все скидки каталога */}
+        <Link className="hk__card hs__card hs__more" href={`/${lang}/catalog?sale=1`} aria-label={ky ? 'Бардык арзандатуулар' : 'Все скидки'}
+          style={{ zIndex: 100 - deck.length * 10, opacity: deck.length > 3 ? 0 : 1 }}>
+          <span className="hs__media hs__grid" aria-hidden="true">
+            {deck.slice(0, 4).map((c) => <img key={c.id} src={c.image} alt="" width="200" height="200" loading="lazy"
+              onError={(e) => { e.currentTarget.style.visibility = 'hidden' }} />)}
+          </span>
+          <span className="hs__name">{ky ? 'Бардык арзандатуулар' : 'Все скидки'}</span>
+          {/* невидимые цены держат высоту ровно как у соседних карточек; поверх — «Смотреть в каталоге» */}
+          <span className="hs__prices hs__go" aria-hidden="true">
+            <b className="hs__ghost">{formatSom(deck[0].price)}</b><s className="hs__ghost">{formatSom(deck[0].oldPrice)}</s>
+            <span className="hs__go-text">{ky ? 'Каталогдон көрүү' : 'Смотреть в каталоге'}<IconArrowUpRight size={16} /></span>
+          </span>
+        </Link>
       </div>
       <div className="hr__copy">
         <h1 key={`t${phase}`}><SaleTitle text={titles[phase]} mark={marks[phase]} count={phase === 1 ? max : undefined} /></h1>
@@ -221,9 +238,9 @@ export function HomeStorySale({ cards }: { cards: SaleCard[] }) {
             и какая сейчас впереди; на последней карточке надпись прячется, остаются точки */}
         <span className="hs__scroll" aria-hidden="true" data-last={focus >= end || undefined}>
           <span className="hs__scroll-say"><IconArrowDown size={14} />{ky ? 'Ылдый сыдырыңыз' : 'Листайте вниз'}</span>
-          <span className="hs__dots">{deck.map((c, i) => <i key={c.id} data-on={i === focus || undefined} />)}</span>
+          <span className="hs__dots">{deck.map((c, i) => <i key={c.id} data-on={i === Math.min(focus, last) || undefined} />)}</span>
         </span>
-        <span className="hs__count" aria-hidden="true">0{focus + 1} / 0{deck.length}</span></div>
+        <span className="hs__count" aria-hidden="true">0{Math.min(focus, last) + 1} / 0{deck.length}</span></div>
       <div className="hr__progress" aria-hidden="true" />
     </div>
   </section>

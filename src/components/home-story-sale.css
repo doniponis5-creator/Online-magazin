@@ -43,6 +43,14 @@
 .hs__prices s::after { content: ''; position: absolute; left: -2px; right: -2px; top: 52%; height: 1.5px; background: var(--color-story-copy); transform: scaleX(1); transform-origin: left; }
 .hs__card[data-front] .hs__prices s::after { animation: hs-strike .5s .15s cubic-bezier(.2,.8,.2,1) both; }
 @keyframes hs-strike { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+/* Последняя карточка «Все скидки»: четыре первых товара плиткой, внизу — «Смотреть в каталоге →».
+   Под надписью — невидимые цены (.hs__ghost): высота карточки ровно как у соседних на любой ширине */
+.hs__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px; }
+.hs__grid img { width: 100%; height: 100%; min-height: 0; object-fit: contain; border-radius: 8px; background: #fff; mix-blend-mode: multiply; }
+.hs__go { position: relative; }
+.hs__ghost { visibility: hidden; }
+.hs__go-text { position: absolute; inset: 0; display: flex; align-items: center; gap: 6px; color: var(--sale); font-size: 17px; font-weight: 800; line-height: 1.15; }
+.hs__go-text svg { flex: none; }
 .hs__badge { position: absolute; left: 12px; top: 12px; z-index: 1; padding: 5px 10px; border-radius: 999px; background: var(--sale); color: #fff; font-size: 12px; font-weight: 800; }
 .hs__card[data-front] .hs__badge { animation: hs-pop .5s cubic-bezier(.16,1,.3,1) backwards; }
 @keyframes hs-pop { from { transform: scale(.55) rotate(-10deg); opacity: 0; } to { transform: none; opacity: 1; } }
@@ -77,6 +85,8 @@
   .hs__card { width: var(--hs-w); padding: 10px 10px 12px; }
   .hs__name { font-size: 12px; margin-top: 6px; }
   .hs__prices b { font-size: 15px; }
+  .hs__go-text { font-size: 12px; gap: 3px; }
+  .hs__grid { gap: 4px; padding: 5px; }
   .hs__badge { padding: 4px 8px; left: 8px; top: 8px; }
   /* низ числа стоит на верхнем крае колоды (передняя карточка ≈ ширина + 90px, задние выше на 21px) и чуть уходит за неё;
      выше верха колоды число не поднимается — иначе наедет на кнопку «Все скидки» */
