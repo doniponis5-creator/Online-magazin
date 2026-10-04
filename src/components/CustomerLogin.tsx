@@ -31,7 +31,8 @@ type Step = 'phone' | 'code' | 'name' | 'wa'
  * «Получить код» и «Войти через WhatsApp» ждут токен, если владелец включил
  * проверку. Выключена — виджета нет, всё как раньше.
  */
-const WA_POLL_MS = 3000
+// 1,5 с: сканер журнала на сервере общий и сам не чаще (WA_SCAN_EVERY), лишних запросов к Green API нет.
+const WA_POLL_MS = 1500
 const WA_WAIT_MS = 5 * 60_000
 export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, welcomeBonus: number) => void }) {
   const { t } = useI18n()
@@ -105,8 +106,17 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
   useEffect(() => {
     if (step !== 'wa' || !wa) return
     let stopped = false
+    let running = false
     const tick = async () => {
-      if (stopped) return
+      if (stopped || running) return
+      running = true
+      try {
+        await check()
+      } finally {
+        running = false
+      }
+    }
+    const check = async () => {
       if (Date.now() - wa.startedAt > WA_WAIT_MS) {
         setError(a.waExpired)
         setStep('phone')
@@ -131,10 +141,23 @@ export function CustomerLogin({ onDone }: { onDone: (customer: CustomerProfile, 
       }
       waTimer.current = setTimeout(tick, WA_POLL_MS)
     }
+    // Покупатель был в WhatsApp — телефон «усыпил» вкладку, и таймер проверки просыпался с опозданием
+    // (04.10: «сайтга қайтгандан кейин озгина задержка»). Вернулся на страницу — проверяем сразу.
+    const back = () => {
+      if (document.visibilityState !== 'visible' || stopped) return
+      waStop()
+      void tick()
+    }
+    document.addEventListener('visibilitychange', back)
+    window.addEventListener('focus', back)
+    window.addEventListener('pageshow', back)
     waTimer.current = setTimeout(tick, WA_POLL_MS)
     return () => {
       stopped = true
       waStop()
+      document.removeEventListener('visibilitychange', back)
+      window.removeEventListener('focus', back)
+      window.removeEventListener('pageshow', back)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, wa])

@@ -57,7 +57,8 @@ router_site_customer = APIRouter(prefix="/webhook/site/customer", tags=["Сай�
 
 CODE_TTL = 300          # код действует 5 минут
 WA_LOGIN_TTL = 300      # столько ждём сообщение покупателя
-WA_SCAN_EVERY = 3       # журнал Green API читаем не чаще раза в столько секунд
+# Журнал Green API читаем не чаще раза в 1,5 с — один на всех ждущих (04.10: было 3 с, вход ощущался медленным)
+WA_SCAN_EVERY_MS = 1500
 # Текст, который сайт подставляет в wa.me. Русский, кыргызский и узбекский варианты.
 WA_LOGIN_RE = re.compile(r"(?:код входа|кирүү коду|kirish kodi)\D{0,40}(\d{6})", re.I)
 # Ответ в WhatsApp на «Код входа: …» (04.10): покупатель отправил код и не знал, что дальше — в WhatsApp
@@ -318,10 +319,10 @@ async def _own_wa_number() -> str:
 async def _scan_wa_logins() -> None:
     """
     Прочитать свежие входящие WhatsApp и отметить коды входа, которые прислали
-    покупатели. Не чаще раза в WA_SCAN_EVERY секунд: сайт спрашивает часто,
+    покупатели. Не чаще раза в WA_SCAN_EVERY_MS: сайт спрашивает часто,
     Green API дёргать каждый раз незачем.
     """
-    if not await redis_client.set("shop_walogin_scan", "1", ex=WA_SCAN_EVERY, nx=True):
+    if not await redis_client.set("shop_walogin_scan", "1", px=WA_SCAN_EVERY_MS, nx=True):
         return
     from .shop_wa_bot import _journal, _journal_text
     try:
