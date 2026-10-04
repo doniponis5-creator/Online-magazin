@@ -96,6 +96,30 @@ export function HomeStorySale({ cards }: { cards: SaleCard[] }) {
     const top = el.getBoundingClientRect().top + scrollY - header + p * deckTravel(el)
     scrollTo({ top, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
   }
+  /**
+   * Телефон: смахнуть колоду влево — следующая скидка, вправо — предыдущая. Веер и так уходит влево,
+   * покупатели пробуют смахнуть пальцем. Страница докручивается к нужной карточке (goTo) — прокрутка вниз тоже работает.
+   */
+  const swipe = useRef<{ x: number; y: number; t: number } | null>(null)
+  const swiped = useRef(false)
+  // несколько быстрых смахиваний подряд: страница ещё едет, focus прежний — считаем от последней цели
+  const aim = useRef<{ i: number; t: number } | null>(null)
+  const onDeckDown = (e: React.PointerEvent) => {
+    swiped.current = false
+    swipe.current = e.pointerType === 'mouse' ? null : { x: e.clientX, y: e.clientY, t: e.timeStamp }
+  }
+  const onDeckUp = (e: React.PointerEvent) => {
+    const s = swipe.current
+    swipe.current = null
+    if (!s) return
+    const dx = e.clientX - s.x, dy = e.clientY - s.y
+    if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.5 || e.timeStamp - s.t > 800) return
+    swiped.current = true
+    const from = aim.current && performance.now() - aim.current.t < 900 ? aim.current.i : focus
+    const to = Math.max(0, Math.min(end, from + (dx < 0 ? 1 : -1)))
+    aim.current = { i: to, t: performance.now() }
+    goTo(to)
+  }
   const ky = lang === 'ky'
   const max = discountPct(cards[0])
   const titles = ky
@@ -109,7 +133,8 @@ export function HomeStorySale({ cards }: { cards: SaleCard[] }) {
 
   return <section ref={root} className="hr hr--kitchens hr--sale" lang={ky ? 'ky' : 'ru'} aria-label={ky ? 'Арзандатуулар' : 'Скидки'}>
     <div className="hr__stage">
-      <div className="hk__deck">
+      <div className="hk__deck" onPointerDown={onDeckDown} onPointerUp={onDeckUp} onPointerCancel={() => { swipe.current = null }}
+        onClickCapture={(e) => { if (swiped.current) { e.preventDefault(); swiped.current = false } }}>
         {/* огромная скидка передней карточки позади колоды — меняется вместе с карточкой */}
         {front && <span className="hs__big" key={front.id} aria-hidden="true">−{discountPct(front)}%</span>}
         {deck.map((c, i) => {

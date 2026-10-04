@@ -71,7 +71,9 @@
      за карточки уходит только низ. Ширина карточки считается от высоты колоды (cqh — процент высоты колоды),
      поэтому на низком экране (Safari с панелями) карточка сама становится меньше и не закрывает число. */
   .hr--sale .hk__deck { --hs-big: min(26vw, 112px); --hs-w: clamp(32vw, calc(100cqh - var(--hs-big) * .78 - 111px), 48vw);
-    container-type: size; align-items: end; bottom: 54px; }
+    container-type: size; align-items: end; bottom: 54px;
+    /* вертикально палец листает страницу, горизонтальное смахивание забирает колода (HomeStorySale onDeckUp) */
+    touch-action: pan-y; }
   .hs__card { width: var(--hs-w); padding: 10px 10px 12px; }
   .hs__name { font-size: 12px; margin-top: 6px; }
   .hs__prices b { font-size: 15px; }
