@@ -206,6 +206,30 @@ class PostCaption(unittest.TestCase):
         self.assertIsNone(rules.caption_problem("Цена 100 сом #a#b"))  # «#a#b» — один хэштег, как считает Instagram
 
 
+class StoryReply(unittest.TestCase):
+    def test_lang(self):
+        self.assertEqual(rules.talk_lang("Канча?"), "ky")
+        self.assertEqual(rules.talk_lang("Баасы канча турат"), "ky")
+        self.assertEqual(rules.talk_lang("Сколько стоит?"), "ru")
+        self.assertEqual(rules.talk_lang("Нархи қанча"), "uz")
+        self.assertEqual(rules.talk_lang("+"), "ky")
+
+    def test_answer_and_status(self):
+        link = rules.product_link("https://smarket.kg/", "cb-00002536", "ky")
+        self.assertEqual(link, "https://smarket.kg/ky/product/cb-00002536")
+        self.assertEqual(rules.product_link("https://smarket.kg", "x", "uz"), "https://smarket.kg/ru/product/x")
+        self.assertEqual(
+            rules.story_answer("ky", "MIDEA MDWM-218TWO", 23900, 26900, link),
+            "Ассаламу алейкум! MIDEA MDWM-218TWO — 23 900 сом (мурун 26 900 сом).\n"
+            "Сайттан көрүп, заказ берсеңиз болот: https://smarket.kg/ky/product/cb-00002536\nКайсы шаардан болосуз?",
+        )
+        self.assertIn("Посмотреть и заказать на сайте:", rules.story_answer("ru", "A", 100, 0, "u"))
+        self.assertNotIn("было", rules.story_answer("ru", "A", 100, 0, "u"))
+        caption = rules.wa_status_caption("Утюг", 1200, 1500, "https://smarket.kg/ky/product/x")
+        self.assertTrue(caption.endswith("https://smarket.kg/ky/product/x"))
+        self.assertIn("1 200 сом (мурун 1 500 сом)", caption)
+
+
 class Window(unittest.TestCase):
     def test_window(self):
         self.assertTrue(rules.window_open(1000, 1000 + 2 * 3600))

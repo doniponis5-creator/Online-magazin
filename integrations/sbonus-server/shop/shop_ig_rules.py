@@ -335,3 +335,44 @@ def caption_problem(caption: str) -> str | None:
     if tags > HASHTAGS_MAX:
         return f"Хэштегов {tags}, Instagram разрешает не больше {HASHTAGS_MAX}."
     return None
+
+
+# ── Ответ на нашу историю и статус WhatsApp (04.10) ───────────────────────────
+# Ссылку-стикер Instagram через программу не даёт, поэтому на истории — «ответьте, пришлём ссылку»,
+# и первый ответ на короткое «Канча?» — шаблоном, без Gemini: товар истории известен.
+
+STORY_QUICK_MAX = 60              # короче — шаблон с фото и ссылкой; длиннее (вопрос) — отвечает Gemini
+
+
+def talk_lang(text: str) -> str:
+    """Язык покупателя по буквам и частым словам: ky | uz | ru. Не понять («+», «?») — кыргызский."""
+    low = (text or "").lower()
+    if re.search(r"[ңөү]", low) or re.search(r"(?<![а-я])(канча|баасы|барбы|бар|жок|кандай|салам)(?![а-я])", low):
+        return "ky"
+    if re.search(r"[ўқғҳ]", low) or re.search(r"(?<![а-я])(нархи|нечпул|борми|керак)(?![а-я])", low):
+        return "uz"
+    if re.search(r"(?<![а-я])(сколько|цена|стоит|есть|здравствуйте|добрый|можно)(?![а-я])", low):
+        return "ru"
+    return "ky"
+
+
+def product_link(site: str, slug: str, lang: str) -> str:
+    return f"{site.rstrip('/')}/{'ky' if lang == 'ky' else 'ru'}/product/{slug}"
+
+
+def story_answer(lang: str, name: str, price: int, old: int, link: str) -> str:
+    """Ответ на нашу историю: товар, цена, ссылка на сайт и вопрос — как первый ответ продавца."""
+    if lang == "ru":
+        was = f" (было {_som(old)})" if old > price else ""
+        return f"Здравствуйте! {name} — {_som(price)}{was}.\nПосмотреть и заказать на сайте: {link}\nВы из какого города?"
+    if lang == "uz":
+        was = f" (олдин {_som(old)})" if old > price else ""
+        return f"Ассалому алайкум! {name} — {_som(price)}{was}.\nСайтда кўриб, буюртма беришингиз мумкин: {link}\nҚайси шаҳардансиз?"
+    was = f" (мурун {_som(old)})" if old > price else ""
+    return f"Ассаламу алейкум! {name} — {_som(price)}{was}.\nСайттан көрүп, заказ берсеңиз болот: {link}\nКайсы шаардан болосуз?"
+
+
+def wa_status_caption(name: str, price: int, old: int, link: str) -> str:
+    """Подпись статуса WhatsApp: там ссылка нажимается — ведём прямо на страницу товара."""
+    was = f" (мурун {_som(old)})" if old > price else ""
+    return f"{name}\n{_som(price)}{was}\n\nСайттан көрүү · Смотреть на сайте:\n{link}"

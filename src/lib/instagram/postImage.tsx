@@ -19,7 +19,7 @@ export type PostFormat = 'post' | 'story'
 /** Размер кадра и поля: у истории Instagram кладёт поверх ник (сверху) и «Ответить» (снизу). */
 export const FORMATS: Record<PostFormat, { w: number; h: number; pad: string; photoH: number }> = {
   post: { w: 1080, h: 1350, pad: '52px 64px 56px', photoH: 700 },
-  story: { w: 1080, h: 1920, pad: '230px 64px 270px', photoH: 880 },
+  story: { w: 1080, h: 1920, pad: '230px 64px 270px', photoH: 760 },
 }
 
 /** Метка на картинке — по меткам товара в 1С («Товар дня», «Скидка», «Хит», «Специально для вас», «Новинка»). */
@@ -39,6 +39,8 @@ export type PostData = {
   photoH: number
   /** фон самого фото (по его углам): белое фото — белая рамка, иначе на облачном фоне виден белый прямоугольник */
   photoBg: string | null
+  /** история Instagram: внизу «ответьте — пришлём ссылку» (ссылку-стикер Instagram через программу не даёт) */
+  cta?: boolean
 }
 
 /** Цвета из DESIGN.md (frontmatter colors) и знак из Brand.tsx. */
@@ -242,6 +244,31 @@ export function PostCard({ data }: { data: PostData }) {
         </div>
         <div style={{ display: 'flex', color: C.soft }}>Direct · WhatsApp {phones[0].display}</div>
       </div>
+
+      {/* История: переход на сайт — через ответ. Робот на ответ присылает фото и ссылку на товар.
+          Лимон — это главное действие кадра (The Lemon Signal Rule), стрелка — к строке «Ответить» Instagram. */}
+      {data.format === 'story' && data.cta ? (
+        <div
+          style={{
+            marginTop: 40,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '26px 34px',
+            borderRadius: 24,
+            background: C.lemon,
+            color: C.ink,
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ fontSize: 38, fontWeight: 800, letterSpacing: '-0.02em' }}>Жооп жазыңыз — шилтеме жиберебиз</div>
+            <div style={{ fontSize: 28, fontWeight: 600, marginTop: 6 }}>Ответьте — пришлём ссылку на сайт</div>
+          </div>
+          <svg width={56} height={56} viewBox="0 0 24 24">
+            <path d="M12 4v14M5 12l7 7 7-7" stroke={C.ink} strokeWidth={2.6} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+      ) : null}
     </div>
   )
 }

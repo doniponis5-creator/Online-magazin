@@ -89,12 +89,16 @@ def marks(item: dict) -> set[str]:
     return found
 
 
-def request_for(kind: str, item: dict, fmt: str = "post") -> dict:
-    """Что рисовать — только из каталога 1С на сервере: название, цены, первое фото."""
+def request_for(kind: str, item: dict, fmt: str = "post", channel: str = "ig") -> dict:
+    """
+    Что рисовать — только из каталога 1С на сервере: название, цены, первое фото.
+    История Instagram — с плашкой «ответьте, пришлём ссылку»; статус WhatsApp — без неё (там ссылка в подписи).
+    """
     from . import shop_promo_rules as promo
     photos = [p for p in (item.get("photos") or []) if isinstance(p, str) and p.startswith("https://")]
     return {
         "format": fmt if fmt in FORMATS else "post",
+        "cta": "reply" if fmt == "story" and channel == "ig" else "",
         "kind": rules.image_kind(kind, marks(item)),
         "name": promo.clean_text(item.get("name"))[:200],
         "price": promo.price(item),
@@ -103,9 +107,9 @@ def request_for(kind: str, item: dict, fmt: str = "post") -> dict:
     }
 
 
-async def prepare(kind: str, item: dict, fmt: str = "post") -> str:
+async def prepare(kind: str, item: dict, fmt: str = "post", channel: str = "ig") -> str:
     """Запомнить, что рисовать, и вернуть отпечаток (картинка рисуется при первом запросе)."""
-    req = request_for(kind, item, fmt)
+    req = request_for(kind, item, fmt, channel)
     v = _version(req)
     await redis_client.set(f"ig:post:req:{v}", json.dumps(req, ensure_ascii=False), ex=REQ_TTL)
     return v
@@ -426,6 +430,64 @@ async def describe_story(story_id: str) -> str:
     return rules.story_note(str(story.get("name") or ""), int(story.get("price") or 0), int(story.get("oldPrice") or 0))
 
 
+# ── Товар истории и статус WhatsApp ──────────────────────────────────────────
+
+def story_info(item: dict) -> dict:
+    """Что запомнить об истории (ig:story:<id>): по нему робот отвечает на ответ — фото, цена, ссылка."""
+    from . import shop_promo_rules as promo
+    photos = [p for p in (item.get("photos") or []) if isinstance(p, str) and p.startswith("https://")]
+    return {
+        "code": str(item.get("code") or ""),
+        "slug": promo.slug_from_code(item.get("code") or ""),
+        "name": promo.clean_text(item.get("name")),
+        "price": promo.price(item),
+        "oldPrice": promo.old_price(item),
+        "photo": photos[0] if photos else "",
+    }
+
+
+async def wa_status(kind: str, item: dict) -> dict:
+    """
+    Та же история — статусом WhatsApp магазина (Green API sendMediaStatus): его видят те, кто сохранил
+    номер магазина, а ссылка в подписи там нажимается. Тот же товар — не чаще раза в сутки.
+    Green API помечает статусы как «бета»: не вышло — {"status": "failed", "note"}, ничего не ломаем.
+    """
+    from .shop_router import _site_base_url
+    from .shop_whatsapp import _url
+    info = story_info(item)
+    if not info["photo"] or not info["slug"]:
+        return {"status": "skipped", "note": "нет фото"}
+    if not await redis_client.set(f"wa:status:{_today()}:{info['code']}", "1", ex=2 * 24 * 3600, nx=True):
+        return {"status": "skipped", "note": "сегодня уже был"}
+    v = await prepare(kind, item, "story", channel="wa")
+    if not await image(v):
+        await redis_client.delete(f"wa:status:{_today()}:{info['code']}")
+        return {"status": "failed", "note": "сайт не нарисовал картинку"}
+    link = rules.product_link(_site_base_url(), info["slug"], "ky")
+    payload = {"urlFile": image_url(v), "fileName": "smarket.jpg",
+               "caption": rules.wa_status_caption(info["name"], info["price"], info["oldPrice"], link)}
+    try:
+        host, instance, token = _url()
+        async with httpx.AsyncClient(timeout=40) as client:
+            response = await client.post(f"{host}/waInstance{instance}/sendMediaStatus/{token}", json=payload)
+        ok = response.status_code == 200 and bool((response.json() or {}).get("idMessage"))
+        note = "" if ok else f"Green API {response.status_code}: {response.text[:150]}"
+    except Exception as error:
+        ok, note = False, f"{type(error).__name__}: {str(error)[:150]}"
+    if not ok:
+        await redis_client.delete(f"wa:status:{_today()}:{info['code']}")
+        logger.warning(f"wa status: не вышел: {note}")
+        return {"status": "failed", "note": note}
+    logger.info(f"wa status: {info['code']} вышел")
+    return {"status": "done", "note": ""}
+
+
+async def publish_story(entry_id: str, v: str, kind: str, item: dict) -> None:
+    """История из 1С кнопкой: Instagram, потом статус WhatsApp (не вышел Instagram — статус всё равно)."""
+    await publish(entry_id, v, "", "story", story_info(item))
+    await wa_status(kind, item)
+
+
 # ── Авто-истории (галочка «Авто-история в Instagram» в 1С) ──────────────────
 
 SLOT_WORD = {"deal": "Товар дня", "hit": "Хит", "new": "Новинка", "foryou": "Специально для вас", "sale": "Скидка"}
@@ -517,8 +579,7 @@ async def auto_story(now: datetime | None = None) -> dict | None:
     entry_id, reason = await start(mark, code, name, v, "story", auto=True)
     if entry_id is None:
         return {"status": "skipped", "note": reason}
-    story_of = {"code": code, "name": name, "price": promo.price(item), "oldPrice": promo.old_price(item)}
-    result = await publish(entry_id, v, "", "story", story_of)
+    result = await publish(entry_id, v, "", "story", story_info(item))
     if result["status"] == "done":
         await redis_client.sadd(f"ig:autostory:{day}:codes", code)
         await redis_client.expire(f"ig:autostory:{day}:codes", 2 * 24 * 3600)
@@ -527,11 +588,13 @@ async def auto_story(now: datetime | None = None) -> dict | None:
         month_ago = (here.date() - timedelta(days=30)).isoformat()
         shown = {k: d for k, d in shown.items() if isinstance(d, str) and d >= month_ago}
         await redis_client.set("ig:autostory:shown", json.dumps(shown, ensure_ascii=False), ex=60 * 24 * 3600)
-    await _tell_owner(name, item, result, SLOT_WORD[mark])
-    return {**result, "mark": mark}
+    # Та же история — статусом WhatsApp (там ссылка в подписи нажимается). Instagram не вышел — статус всё равно.
+    status = await wa_status(mark, item)
+    await _tell_owner(name, item, result, SLOT_WORD[mark], status)
+    return {**result, "mark": mark, "wa": status["status"]}
 
 
-async def _tell_owner(name: str, item: dict, result: dict, label: str = "") -> None:
+async def _tell_owner(name: str, item: dict, result: dict, label: str = "", wa: dict | None = None) -> None:
     from . import shop_promo_rules as promo
     from .shop_router import _admin_phone
     from .shop_wa_bot import _send_text as send_whatsapp
@@ -544,6 +607,10 @@ async def _tell_owner(name: str, item: dict, result: dict, label: str = "") -> N
     else:
         text = (f"⚠️ Авто-история в Instagram не вышла{f' · {label}' if label else ''}\n━━━━━━━━━━━━━━━━━━━\n{name}\n\n{result.get('note') or ''}"
                 "\n\nПовторить можно кнопкой «В историю» в 1С («Панель сайта» → «Уведомления»).")
+    if wa and wa.get("status") == "done":
+        text += "\n\n✅ Статус WhatsApp тоже вышел — со ссылкой на товар."
+    elif wa and wa.get("status") == "failed":
+        text += f"\n\n⚠️ Статус WhatsApp не вышел: {wa.get('note') or 'ошибка Green API'}"
     try:
         await send_whatsapp(_admin_phone(), text)
     except Exception as error:

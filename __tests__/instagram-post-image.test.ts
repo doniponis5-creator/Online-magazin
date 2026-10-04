@@ -40,7 +40,7 @@ describe('картинка поста Instagram', () => {
     vi.stubEnv('SHOP_API_SECRET', SECRET)
     vi.stubGlobal('fetch', fakeFetch())
     for (const [format, height] of [['post', 1350], ['story', 1920]] as const) {
-      const response = await call({ format, kind: 'sale', name: 'Жаңы Эндуро WN-A10', price: 15900, oldPrice: 18900 })
+      const response = await call({ format, cta: 'reply', kind: 'sale', name: 'Жаңы Эндуро WN-A10', price: 15900, oldPrice: 18900 })
       expect(response.status).toBe(200)
       expect(response.headers.get('content-type')).toBe('image/jpeg')
       const meta = await sharp(Buffer.from(await response.arrayBuffer())).metadata()

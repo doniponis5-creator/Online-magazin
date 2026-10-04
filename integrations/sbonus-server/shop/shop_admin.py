@@ -745,8 +745,11 @@ async def ig_post(request: Request, background: BackgroundTasks, db: AsyncSessio
     entry_id, reason = await post.start(check["kind"], check["code"], name, v, fmt)
     if entry_id is None:
         return {"ok": False, "started": False, "blockedReason": reason}
-    story_of = {"code": check["code"], "name": name, "price": rules.price(item), "oldPrice": rules.old_price(item)}
-    background.add_task(post.publish, entry_id, v, check["caption"], fmt, story_of)
+    if fmt == "story":
+        # История — ещё и статусом WhatsApp (со ссылкой на товар), сразу после Instagram.
+        background.add_task(post.publish_story, entry_id, v, check["kind"], item)
+    else:
+        background.add_task(post.publish, entry_id, v, check["caption"], fmt)
     logger.info(f"ig {fmt} {entry_id}: {check['kind']} {check['code']} — публикация пошла")
     return {"ok": True, "started": True, "id": entry_id}
 

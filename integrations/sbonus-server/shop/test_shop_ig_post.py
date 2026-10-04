@@ -115,14 +115,15 @@ def _load():
         "app.core.database": {"async_session": _Session},
         f"{_PKG}.shop_router": {
             "_cfg": lambda name, default="": default,
-            "_site_base_url": lambda: "https://site.test",
             "_site_secret": lambda: "secret",
+            "_site_base_url": lambda: "https://site.test",
             "_admin_phone": lambda: "+996000000000",
             "catalog_items": _catalog_items,
         },
         f"{_PKG}.shop_ig_bot": {"_load_token": _token},
         f"{_PKG}.shop_admin": {"_values": _values},
         f"{_PKG}.shop_wa_bot": {"_send_text": _send_whatsapp},
+        f"{_PKG}.shop_whatsapp": {"_url": lambda: ("https://green.test", "111", "tok")},
     }.items():
         module = types.ModuleType(name)
         module.__dict__.update(attrs)
@@ -147,17 +148,21 @@ class Meta:
     """Сайт и Instagram за одним MockTransport."""
 
     def __init__(self, statuses=("IN_PROGRESS", "FINISHED"), media_error=None, publish_drops=False,
-                 after_drop="PUBLISHED", photo_ok=True):
+                 after_drop="PUBLISHED", photo_ok=True, wa_ok=True):
         self.calls: list[tuple[str, str, dict]] = []
         self.statuses = list(statuses)
         self.media_error = media_error
         self.publish_drops = publish_drops
         self.after_drop = after_drop
         self.photo_ok = photo_ok
+        self.wa_ok = wa_ok
         self.published = False
 
     def __call__(self, request: httpx.Request) -> httpx.Response:
         site = request.url.host == "site.test"
+        if request.url.host == "green.test":
+            self.calls.append(("POST", request.url.path, json.loads(request.content)))
+            return httpx.Response(200 if self.wa_ok else 466, json={"idMessage": "W1"} if self.wa_ok else {"message": "status beta off"})
         body = parse_qs(request.content.decode()) if request.method == "POST" and not site else {}
         self.calls.append((request.method, request.url.path, {k: v[0] for k, v in body.items()}))
         path = request.url.path
@@ -360,7 +365,7 @@ class AutoStory(Base):
         self.assertEqual(post.pick_story([deal], ("deal",), {"deal|d": "2026-10-04"}, set(), today)[1], "deal")
 
     def test_slots(self):
-        self.use(Meta())
+        self.meta = self.use(Meta())
         CATALOG[:] = [{**ITEM, "dealOfDay": True}, {**ITEM, "code": "ЦБ-2", "name": "Хит", "hit": True, "oldPrice": 0}]
         self.assertIsNone(run(post.auto_story(datetime(2026, 10, 5, 3, 0, tzinfo=timezone.utc))))  # 9:00 — рано
         deal = run(post.auto_story(DEAL_TIME))
@@ -368,6 +373,12 @@ class AutoStory(Base):
         self.assertIn("📸 Авто-история в Instagram · Товар дня", SENT[0])
         self.assertIn("15 900 сом", SENT[0])
         self.assertIsNone(run(post.auto_story(DEAL_TIME)))  # следующая минута — слот уже был
+        # Та же история — статусом WhatsApp, со ссылкой на товар в подписи и без плашки «ответьте».
+        status = next(c for c in self.meta.calls if c[1].endswith("/sendMediaStatus/tok"))
+        self.assertIn("https://site.test/ky/product/cb-00001234", status[2]["caption"])
+        wa_v = status[2]["urlFile"].rsplit("/", 1)[1].removesuffix(".jpg")
+        self.assertEqual(json.loads(redis.data[f"ig:post:req:{wa_v}"])["cta"], "")
+        self.assertIn("✅ Статус WhatsApp тоже вышел", SENT[0])
         hit = run(post.auto_story(HIT_TIME))
         self.assertEqual(hit["mark"], "hit")
         req = json.loads(redis.data[f"ig:post:req:{run(post.prepare('hit', CATALOG[1], 'story'))}"])
@@ -381,10 +392,12 @@ class AutoStory(Base):
         self.assertEqual(SENT, [])
 
     def test_failure_tells_owner(self):
-        self.use(Meta(media_error="(#10) no permission"))
+        self.use(Meta(media_error="(#10) no permission", wa_ok=False))
         CATALOG[:] = [{**ITEM, "dealOfDay": True}]
         self.assertEqual(run(post.auto_story(DEAL_TIME))["status"], "failed")
         self.assertIn("не вышла · Товар дня", SENT[0])
+        self.assertIn("Статус WhatsApp не вышел: Green API 466", SENT[0])
+        self.assertNotIn(f"wa:status:{post._today()}:{ITEM['code']}", redis.data)  # не вышел — можно повторить
 
 
 if __name__ == "__main__":

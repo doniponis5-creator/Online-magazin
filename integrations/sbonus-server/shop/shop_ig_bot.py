@@ -279,6 +279,9 @@ async def _on_message(event: dict) -> None:
         if note:
             event = {**event, "context": [note if c == rules.STORY_NOTE else c for c in event.get("context") or []]}
             await _show_story_product(user, event["story"])
+            # Короткое «Канча?», «+» на нашу историю — ответим шаблоном с фото и ссылкой, без Gemini (_story_reply).
+            if len(str(event.get("text") or "")) <= rules.STORY_QUICK_MAX and not event.get("media"):
+                await redis_client.set(f"ig:storyreply:{user}", json.dumps({"story": str(event["story"]), "text": str(event.get("text") or "")}, ensure_ascii=False), ex=3600)
     text = rules.describe(event)
     voice = False
     for media in (event.get("media") or [])[:1]:
@@ -307,6 +310,44 @@ async def _show_story_product(user: str, story_id: str) -> None:
     if code and not await redis_client.get(f"ig:shown:{user}"):
         from .shop_promo_rules import slug_from_code
         await redis_client.set(f"ig:shown:{user}", json.dumps([slug_from_code(code)]), ex=TURNS_TTL)
+
+
+async def _story_reply(user: str) -> bool:
+    """
+    Ответ на нашу историю коротким «Канча?» / «+» / «Баасы»: товар истории известен — сразу фото,
+    цена и ссылка на сайт (ссылку-стикер на историю Instagram через программу не даёт). Без Gemini.
+    Дальше разговор ведёт обычный робот: товар уже в «показанных».
+    """
+    raw = await redis_client.get(f"ig:storyreply:{user}")
+    if not raw:
+        return False
+    await redis_client.delete(f"ig:storyreply:{user}")
+    try:
+        ask = json.loads(raw)
+        story = json.loads(await redis_client.get(f"ig:story:{ask.get('story')}") or "null")
+    except Exception:
+        story = None
+    if not story or not story.get("slug"):
+        return False
+    # Пока ждали сотрудника, покупатель дописал вопрос — пусть отвечает Gemini, шаблон его не покроет.
+    last = next((t.get("text") or "" for t in reversed(await _turns(user)) if t.get("role") == "user"), "")
+    if not last.strip().endswith(str(ask.get("text") or "").strip()):
+        return False
+    from .shop_router import _site_base_url
+    lang = rules.talk_lang(str(ask.get("text") or ""))
+    link = rules.product_link(_site_base_url(), str(story["slug"]), lang)
+    text = rules.story_answer(lang, str(story.get("name") or ""), int(story.get("price") or 0), int(story.get("oldPrice") or 0), link)
+    try:
+        if str(story.get("photo") or "").startswith("https://"):
+            await redis_client.set(f"ig:myphoto:{user}", "1", ex=10 * 60)
+            await _send(user, {"attachment": {"type": "image", "payload": {"url": story["photo"]}}})
+        await _send_text(user, text)
+    except Exception as error:
+        logger.warning(f"ig story reply: {error}")
+        return False
+    await _remember(user, "assistant", text)
+    await redis_client.set(f"ig:botactive:{user}", "1", ex=30 * 60)
+    return True
 
 
 async def _switched_on() -> bool:
@@ -386,6 +427,8 @@ async def poll_once() -> dict:
         if pending.get("voice"):
             if await _ask_for_text(user):
                 answered += 1
+        elif await _story_reply(user):
+            answered += 1
         elif await _answer(user):
             answered += 1
     nudged = await _nudge_silent()

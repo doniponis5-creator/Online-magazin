@@ -163,7 +163,10 @@ complaint/spam, без Gemini, шаблоны) → ответ под комме�
 историю → `ig:story:<id>` → `describe_story` подставляет товар в разговор Direct. Авто-истории — галочка
 `SITE_IG_AUTO_STORY` (по умолчанию 0): `shop_ig_post.auto_story` из cron робота, слоты `AUTO_SLOTS` (Бишкек: 10 «Товар
 дня» `dealOfDay`, 13 «Хит» `hit`, 16 «Новинка» `isNew`, 19 «Специально для вас» `forYou` / «Скидка»), `pick_story`, итог
-владельцу в WhatsApp; метка на картинке — `image_kind` (`deal|sale|hit|foryou|new|plain`). Посты в ленту — только кнопкой.
+владельцу в WhatsApp; метка на картинке — `image_kind` (`deal|sale|hit|foryou|new|plain`). У истории Instagram внизу
+плашка «Жооп жазыңыз — шилтеме жиберебиз» (`cta: reply`); короткий ответ на неё (≤ 60 знаков) — `shop_ig_bot._story_reply`:
+фото, цена, ссылка (`shop_ig_rules.story_answer`), без Gemini. Каждая история — ещё и статус WhatsApp (`shop_ig_post.wa_status`,
+Green API `sendMediaStatus`, ссылка в подписи, картинка без плашки, товар — раз в сутки). Посты в ленту — только кнопкой.
 Нужен ключ с правом `instagram_business_content_publish` (старый ключ — 403). В Manrope нет «ң» — её дорисовывает
 `scripts/instagram-fonts.py` в статичные срезы.
 

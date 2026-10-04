@@ -10,7 +10,7 @@ import { FORMATS, POST_KINDS, PostCard, photoAllowed, postFonts, type PostData, 
  *
  * Подпись — та же, что у /api/channel/instagram (HMAC тела секретом SHOP_API_SECRET).
  * Тело: {"format": "post" | "story", "kind": "sale" | "new" | "deal" | "hit" | "foryou" | "plain", "name": "…", "price": 15900, "oldPrice": 18900,
- *        "photo": "https://api.smartcentr.store/…jpg"}
+ *        "photo": "https://api.smartcentr.store/…jpg", "cta": "reply" — у истории Instagram внизу «ответьте — пришлём ссылку»}
  * Ответ: image/jpeg 1080 × 1350 (пост) или 1080 × 1920 (история).
  * Фото просили, а скачать не вышло — 502: пост с заглушкой вместо товара не публикуем.
  */
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
   const body = await request.text()
   if (!signed(body, request.headers.get('x-signature') ?? '')) return new Response('Not found', { status: 404 })
 
-  let raw: { format?: unknown; kind?: unknown; name?: unknown; price?: unknown; oldPrice?: unknown; photo?: unknown }
+  let raw: { format?: unknown; kind?: unknown; name?: unknown; price?: unknown; oldPrice?: unknown; photo?: unknown; cta?: unknown }
   try {
     raw = JSON.parse(body)
   } catch {
@@ -87,6 +87,7 @@ export async function POST(request: Request) {
   if (photoUrl && !photo.photo) return Response.json({ ok: false, error: 'photo' }, { status: 502 })
   const data: PostData = {
     format,
+    cta: format === 'story' && raw.cta === 'reply',
     kind,
     name,
     price,
