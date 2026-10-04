@@ -24,6 +24,21 @@ const clamp = (v: number) => Math.max(0, Math.min(1, v))
 const smooth = (t: number) => t * t * (3 - 2 * t)
 
 /**
+ * Шапка сайта. Пока она грузится, на её месте заглушка в 1 px, а бывает и скрытая копия нулевой высоты —
+ * берём ту, что занимает место в потоке. Иначе сцена считает шапку пустой и встаёт не туда.
+ */
+export function siteHeader() {
+  const all = document.querySelectorAll<HTMLElement>('.header')
+  for (const h of all) if (h.offsetHeight > 1) return h
+  return all[0] ?? null
+}
+
+/** Место шапки в потоке (+8 px воздуха) — от этой линии считается ход сцены. */
+export function storyTop() {
+  return (siteHeader()?.offsetHeight ?? 0) + 8
+}
+
+/**
  * Сколько пикселей прокрутки сцена стоит на месте (--travel в home-story-kitchens.css).
  * Ход не зависит от шапки: уехала она или вернулась — карточки не прыгают.
  */
@@ -50,7 +65,7 @@ export function useFanDeck(root: RefObject<HTMLElement | null>, { start, end, sp
     let frame = 0
     const update = () => {
       frame = 0
-      const head = document.querySelector('.header')?.getBoundingClientRect()
+      const head = siteHeader()?.getBoundingClientRect()
       // место шапки в потоке страницы — не меняется, когда она уезжает (она сдвигается, а не прячется)
       const top = (head?.height ?? 0) + 8
       el.style.setProperty('--story-top', `${top}px`)
@@ -98,7 +113,7 @@ export function useFanDeck(root: RefObject<HTMLElement | null>, { start, end, sp
     el.dataset.enhanced = 'true'
     const observer = new ResizeObserver(schedule)
     observer.observe(el)
-    const header = document.querySelector('.header')
+    const header = siteHeader()
     if (header) observer.observe(header)
     let follow = 0
     let until = 0

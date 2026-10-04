@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { formatSom } from '@/lib/format'
 import { discountPct, type SaleCard } from '@/lib/hero-sale'
-import { deckTravel, useFanDeck } from './HomeStoryKitchens'
+import { deckTravel, storyTop, useFanDeck } from './HomeStoryKitchens'
 import './home-story-reveal.css'
 import './home-story-kitchens.css'
 import './home-story-sale.css'
@@ -83,42 +83,92 @@ export function HomeStorySale({ cards }: { cards: SaleCard[] }) {
   const { phase, focus } = useFanDeck(root, { start: 0, end, spread: .6 })
   const front = deck[Math.min(focus, end)]
 
-  /** Миниатюра под кнопкой: прокрутить ровно к моменту, когда эта карточка впереди. */
-  const goTo = (i: number) => {
-    const el = root.current
-    if (!el) return
-    // обратная к useFanDeck: k = end · smooth((p − 0.3) / 0.65)
-    const u = end ? i / end : 0
-    let lo = 0, hi = 1
-    for (let n = 0; n < 20; n++) { const t = (lo + hi) / 2; if (t * t * (3 - 2 * t) < u) lo = t; else hi = t }
-    const p = .3 + .65 * lo
-    const header = parseFloat(el.style.getPropertyValue('--story-top')) || 0
-    const top = el.getBoundingClientRect().top + scrollY - header + p * deckTravel(el)
-    scrollTo({ top, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
-  }
   /**
-   * Телефон: смахнуть колоду влево — следующая скидка, вправо — предыдущая. Веер и так уходит влево,
-   * покупатели пробуют смахнуть пальцем. Страница докручивается к нужной карточке (goTo) — прокрутка вниз тоже работает.
+   * Положение колоды одним числом s: 0…end — какая карточка впереди (дробное — между карточками),
+   * −OPEN…0 — колода ещё раскрывается в веер. Прокрутка страницы и палец двигают одно и то же s.
    */
-  const swipe = useRef<{ x: number; y: number; t: number } | null>(null)
-  const swiped = useRef(false)
-  // несколько быстрых смахиваний подряд: страница ещё едет, focus прежний — считаем от последней цели
-  const aim = useRef<{ i: number; t: number } | null>(null)
-  const onDeckDown = (e: React.PointerEvent) => {
-    swiped.current = false
-    swipe.current = e.pointerType === 'mouse' ? null : { x: e.clientX, y: e.clientY, t: e.timeStamp }
+  const OPEN = .5
+  const smooth = (t: number) => t * t * (3 - 2 * t)
+  const clampS = (v: number) => Math.max(-OPEN, Math.min(end, v))
+  /** s → ход сцены p (обратная к useFanDeck: k = end · smooth((p − 0.3) / 0.65)) */
+  const progressOf = (v: number) => {
+    if (v < 0 || !end) return .3 * (1 + Math.min(0, v) / OPEN)
+    const u = Math.min(1, v / end)
+    let lo = 0, hi = 1
+    for (let n = 0; n < 20; n++) { const t = (lo + hi) / 2; if (smooth(t) < u) lo = t; else hi = t }
+    return .3 + .65 * lo
   }
-  const onDeckUp = (e: React.PointerEvent) => {
-    const s = swipe.current
-    swipe.current = null
-    if (!s) return
-    const dx = e.clientX - s.x, dy = e.clientY - s.y
-    if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.5 || e.timeStamp - s.t > 800) return
+  const geometry = () => {
+    const el = root.current!
+    // линию шапки меряем заново: переменная сцены обновляется только на прокрутке, а палец мог прийти раньше
+    return { el, header: storyTop(), travel: deckTravel(el), top: el.getBoundingClientRect().top }
+  }
+  const scrollToS = (v: number, behavior: ScrollBehavior) => {
+    if (!root.current) return
+    const g = geometry()
+    scrollTo({ top: g.top + scrollY - g.header + progressOf(v) * g.travel, behavior })
+  }
+  const nowS = () => {
+    const g = geometry()
+    const p = Math.max(0, Math.min(1, (g.header - g.top) / g.travel))
+    return p < .3 ? OPEN * (p / .3 - 1) : end * smooth(Math.min(1, (p - .3) / .65))
+  }
+  const calm = () => (matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth')
+
+  /** Миниатюра под кнопкой: прокрутить ровно к моменту, когда эта карточка впереди. */
+  const goTo = (i: number) => scrollToS(i, calm())
+
+  /**
+   * Телефон: колоду можно вести пальцем вбок, как прокрутку. Палец влево — веер едет за ним к следующим скидкам,
+   * вправо — назад; передняя карточка идёт ровно под пальцем. Отпустили — колода докатывается до ближайшей
+   * карточки (быстрый взмах — на следующую). Двигаем ту же прокрутку страницы, поэтому листать вниз можно как раньше.
+   */
+  type Drag = { x: number; y: number; s0: number; s: number; on: boolean; w: number; lastX: number; lastT: number; vx: number }
+  const drag = useRef<Drag | null>(null)
+  const swiped = useRef(false)
+  const onDeckDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    swiped.current = false
+    if (e.pointerType === 'mouse' || !root.current) { drag.current = null; return }
+    const card = root.current.querySelector<HTMLElement>('.hk__card')
+    const s0 = nowS()
+    drag.current = { x: e.clientX, y: e.clientY, s0, s: s0, on: false, w: Math.max(40, (card?.offsetWidth ?? 160) * .6),
+      lastX: e.clientX, lastT: e.timeStamp, vx: 0 }
+  }
+  const onDeckMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = drag.current
+    if (!d) return
+    const dx = e.clientX - d.x, dy = e.clientY - d.y
+    if (!d.on) {
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return
+      // больше вниз, чем вбок — это прокрутка страницы, её ведёт браузер
+      if (Math.abs(dx) < Math.abs(dy) * 1.2) { drag.current = null; return }
+      d.on = true
+      // палец ушёл с колоды — движения всё равно приходят сюда (если браузер не дал захватить — не беда)
+      try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* без захвата */ }
+    }
+    const dt = e.timeStamp - d.lastT
+    // скорость пальца, px/мс; слишком частые события и рывки не считаем — не больше ±2 px/мс
+    if (dt >= 4) {
+      d.vx = Math.max(-2, Math.min(2, .7 * ((e.clientX - d.lastX) / dt) + .3 * d.vx))
+      d.lastX = e.clientX
+      d.lastT = e.timeStamp
+    }
+    const next = clampS(d.s0 - dx / d.w)
+    if (next === d.s) return
+    d.s = next
+    scrollToS(next, 'instant')
+  }
+  const onDeckEnd = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = drag.current
+    drag.current = null
+    if (!d?.on) return
     swiped.current = true
-    const from = aim.current && performance.now() - aim.current.t < 900 ? aim.current.i : focus
-    const to = Math.max(0, Math.min(end, from + (dx < 0 ? 1 : -1)))
-    aim.current = { i: to, t: performance.now() }
-    goTo(to)
+    const dx = e.clientX - d.x
+    // в начале колоды палец вправо — оставляем как есть, страницу назад не дёргаем
+    if (d.s <= 0 && dx > 0) return
+    // взмах: колода докатывается по инерции (~0,12 с полёта — до трёх карточек)
+    const target = Math.max(0, Math.min(end, Math.round(d.s - (d.vx * 120) / d.w)))
+    scrollToS(target, calm())
   }
   const ky = lang === 'ky'
   const max = discountPct(cards[0])
@@ -133,7 +183,7 @@ export function HomeStorySale({ cards }: { cards: SaleCard[] }) {
 
   return <section ref={root} className="hr hr--kitchens hr--sale" lang={ky ? 'ky' : 'ru'} aria-label={ky ? 'Арзандатуулар' : 'Скидки'}>
     <div className="hr__stage">
-      <div className="hk__deck" onPointerDown={onDeckDown} onPointerUp={onDeckUp} onPointerCancel={() => { swipe.current = null }}
+      <div className="hk__deck" onPointerDown={onDeckDown} onPointerMove={onDeckMove} onPointerUp={onDeckEnd} onPointerCancel={onDeckEnd}
         onClickCapture={(e) => { if (swiped.current) { e.preventDefault(); swiped.current = false } }}>
         {/* огромная скидка передней карточки позади колоды — меняется вместе с карточкой */}
         {front && <span className="hs__big" key={front.id} aria-hidden="true">−{discountPct(front)}%</span>}
