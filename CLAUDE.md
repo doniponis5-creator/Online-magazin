@@ -152,6 +152,19 @@ payment) и `ref` (ключ чата; у Instagram номера нет, подп
 complaint/spam, без Gemini, шаблоны) → ответ под комментарием, личный ответ в Direct (`recipient.comment_id`; recipient_id
 ответа — ключ разговора), скрыть спам. Товар поста — `knowledge.bestNameMatch` (только название, редкое слово весит
 больше, числа — только среди найденных по словам; не уверен — null и «какой товар?»: чужую цену не называть).
+Посты Instagram (04.10.2026): 1С «Панель сайта» → «Уведомления» → вкладка «Пост в Instagram» → `/promo/ig-preview`,
+`/promo/ig-post` (в фоне), `/promo/ig-history` (`shop_admin.py`) → `shop_ig_post.py`; текст — `shop_ig_rules.post_caption`
+(RU+KY, полное название и цена — по ним бот комментариев узнаёт товар). Картинку 1080×1350 рисует сайт
+`/api/instagram/post-image` (`src/lib/instagram/postImage.tsx`, next/og + sharp → JPEG, шрифты — статичные срезы
+`public/fonts/manrope-600|800.ttf`: переменный Satori рисует тонким); Meta забирает её с сервера
+`/api/v1/shop/photos/ig/<v>.jpg` (Redis `ig:post:req|img:<v>`), не со smarket.kg (Cloudflare). ≤ 10 постов в день, товар+шаблон — раз в
+сутки; неудача день не занимает; ответ media_publish потерялся — спрашиваем контейнер (PUBLISHED → вышел, не ясно —
+замок держим). Истории — тот же путь, `format: story` (1080×1920, `media_type=STORIES`, без подписи); ответ на нашу
+историю → `ig:story:<id>` → `describe_story` подставляет товар в разговор Direct. Авто-история — галочка
+`SITE_IG_AUTO_STORY` (по умолчанию 0): `shop_ig_post.auto_story` из cron робота, 11:00–20:00 Бишкек, раз в день,
+`pick_story` (самая большая скидка, не показывали 14 дней), итог владельцу в WhatsApp. Посты в ленту — только кнопкой.
+Нужен ключ с правом `instagram_business_content_publish` (старый ключ — 403). В Manrope нет «ң» — её дорисовывает
+`scripts/instagram-fonts.py` в статичные срезы.
 
 **Отзывы покупателей.** Пишет только купивший на сайте (оплаченный заказ),
 один отзыв на заказ, до 5 фото. На главной — 20 последних. Хранятся на сайте

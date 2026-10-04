@@ -1,0 +1,258 @@
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
+import { MARK } from '@/components/Brand'
+import { phones } from '@/data/contacts'
+import { formatSom } from '@/lib/format'
+
+/**
+ * Картинка поста Instagram «Скидка» / «Новинка» — в оформлении smarket.kg (DESIGN.md):
+ * белый холст, облачная зона под фото, Manrope, графитовый текст, лимон — только знак
+ * и метка скидки. Пост — 1080 × 1350 (4:5, самый крупный кадр ленты), история — 1080 × 1920:
+ * у неё сверху и снизу поля под ник и строку «Ответить» Instagram, их ничего не закрывает.
+ *
+ * Только разметка и проверка данных; рисует и переводит в JPEG маршрут
+ * src/app/api/instagram/post-image/route.tsx (его зовёт сервер SBonus, shop_ig_post.py).
+ */
+
+export type PostFormat = 'post' | 'story'
+
+/** Размер кадра и поля: у истории Instagram кладёт поверх ник (сверху) и «Ответить» (снизу). */
+export const FORMATS: Record<PostFormat, { w: number; h: number; pad: string; photoH: number }> = {
+  post: { w: 1080, h: 1350, pad: '52px 64px 56px', photoH: 700 },
+  story: { w: 1080, h: 1920, pad: '230px 64px 270px', photoH: 880 },
+}
+
+export type PostKind = 'sale' | 'new' | 'plain'
+
+export type PostData = {
+  format: PostFormat
+  kind: PostKind
+  name: string
+  price: number
+  oldPrice: number
+  /** фото товара как data: URI (маршрут сам скачивает его с сервера) */
+  photo: string | null
+  /** размер фото в пикселях — чтобы вписать в рамку без искажений */
+  photoW: number
+  photoH: number
+  /** фон самого фото (по его углам): белое фото — белая рамка, иначе на облачном фоне виден белый прямоугольник */
+  photoBg: string | null
+}
+
+/** Цвета из DESIGN.md (frontmatter colors) и знак из Brand.tsx. */
+const C = {
+  ink: '#263244',
+  soft: '#4b5b70',
+  muted: '#5d6d7e',
+  cloud: '#f7f9fc',
+  ice: '#eaf3ff',
+  cobalt: '#1d4ed8',
+  lemon: '#eaf500',
+  mist: '#e3e8ee',
+  success: '#1e9e5a',
+  mark: '#fef102',
+}
+
+/** Откуда можно брать фото товара: только наш сервер и сайт — чужой адрес не скачиваем. */
+export const PHOTO_HOSTS = new Set(['api.smartcentr.store', 'smarket.kg'])
+
+export function photoAllowed(url: string): boolean {
+  try {
+    const u = new URL(url)
+    return u.protocol === 'https:' && PHOTO_HOSTS.has(u.hostname)
+  } catch {
+    return false
+  }
+}
+
+/** Скидка в процентах — как её считает покупатель: от старой цены, вниз до целого. */
+export function discountPct(price: number, oldPrice: number): number {
+  if (!(price > 0) || !(oldPrice > price)) return 0
+  // Целые числа до деления: (20000 − 14200) / 20000 × 100 в дробях даёт 28,999… → «28», а подпись поста — «29».
+  return Math.floor(((oldPrice - price) * 100) / oldPrice)
+}
+
+/** Название без звёздочек 1С и лишних пробелов; длинное — обрезаем по слову, чтобы влезло в три строки. */
+export function postName(name: string, max = 86): string {
+  const clean = name.replace(/\*+/g, '').replace(/\s+/g, ' ').trim()
+  if (clean.length <= max) return clean
+  const cut = clean.slice(0, max)
+  const space = cut.lastIndexOf(' ')
+  return `${(space > max * 0.6 ? cut.slice(0, space) : cut).trimEnd()}…`
+}
+
+/** Крупнее короткое название, мельче длинное: цена и фото не должны съезжать. */
+function nameSize(name: string): number {
+  if (name.length <= 34) return 60
+  if (name.length <= 60) return 52
+  return 46
+}
+
+/** Вписать фото в рамку w × h с сохранением пропорций. */
+export function fitBox(pw: number, ph: number, w: number, h: number): { w: number; h: number } {
+  if (!(pw > 0) || !(ph > 0)) return { w, h }
+  const k = Math.min(w / pw, h / ph)
+  return { w: Math.round(pw * k), h: Math.round(ph * k) }
+}
+
+const PHOTO_W = 952
+// Сверху и снизу поле больше: в углу метка «Скидка», фото под неё не заходит.
+const PAD_X = 56
+const PAD_Y = 92
+
+export function PostCard({ data }: { data: PostData }) {
+  const name = postName(data.name)
+  const pct = data.kind === 'sale' ? discountPct(data.price, data.oldPrice) : 0
+  const showOld = data.kind === 'sale' && data.oldPrice > data.price
+  const frame = FORMATS[data.format]
+  const img = fitBox(data.photoW, data.photoH, PHOTO_W - PAD_X * 2, frame.photoH - PAD_Y * 2)
+  const badge =
+    data.kind === 'sale'
+      ? { text: pct > 0 ? `СКИДКА −${pct}%` : 'СКИДКА', bg: C.lemon, fg: C.ink }
+      : data.kind === 'new'
+        ? { text: 'НОВИНКА', bg: C.ice, fg: C.cobalt }
+        : null
+
+  return (
+    <div
+      style={{
+        width: frame.w,
+        height: frame.h,
+        display: 'flex',
+        flexDirection: 'column',
+        background: '#ffffff',
+        padding: frame.pad,
+        fontFamily: 'Manrope',
+        color: C.ink,
+      }}
+    >
+      {/* Шапка как на сайте: знак S + «Смарт Центр», справа адрес сайта. */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64 }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <svg width={42} height={75} viewBox="0 0 55.96 100">
+            <path fill={C.mark} d={MARK} />
+          </svg>
+          <div style={{ marginLeft: 16, fontSize: 40, fontWeight: 800, letterSpacing: '-0.035em' }}>Смарт Центр</div>
+        </div>
+        <div style={{ fontSize: 30, fontWeight: 600, color: C.soft }}>smarket.kg</div>
+      </div>
+
+      {/* Фото на облачной поверхности (карточка товара сайта), метка — в углу. */}
+      <div
+        style={{
+          marginTop: 36,
+          width: PHOTO_W,
+          height: frame.photoH,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+          background: data.photo && data.photoBg ? data.photoBg : C.cloud,
+          border: `2px solid ${C.mist}`,
+          borderRadius: 32,
+        }}
+      >
+        {data.photo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={data.photo} width={img.w} height={img.h} alt="" style={{ width: img.w, height: img.h }} />
+        ) : (
+          <svg width={160} height={286} viewBox="0 0 55.96 100">
+            <path fill={C.mist} d={MARK} />
+          </svg>
+        )}
+        {badge ? (
+          <div
+            style={{
+              position: 'absolute',
+              top: 28,
+              left: 28,
+              display: 'flex',
+              padding: '14px 26px',
+              borderRadius: 16,
+              background: badge.bg,
+              color: badge.fg,
+              fontSize: 34,
+              fontWeight: 800,
+              letterSpacing: '0.01em',
+            }}
+          >
+            {badge.text}
+          </div>
+        ) : null}
+      </div>
+
+      {/* Название и цена — главное после фото, их не мельчим (The Compact Commerce Rule). */}
+      <div
+        style={{
+          marginTop: 34,
+          display: 'flex',
+          fontSize: nameSize(name),
+          fontWeight: 800,
+          lineHeight: 1.14,
+          letterSpacing: '-0.025em',
+          maxHeight: nameSize(name) * 1.14 * 3,
+          overflow: 'hidden',
+        }}
+      >
+        {name}
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'baseline', marginTop: 'auto' }}>
+        <div style={{ fontSize: 88, fontWeight: 800, letterSpacing: '-0.045em', lineHeight: 1 }}>{formatSom(data.price)}</div>
+        {showOld ? (
+          <div
+            style={{
+              marginLeft: 28,
+              fontSize: 44,
+              fontWeight: 600,
+              color: C.muted,
+              textDecoration: 'line-through',
+              lineHeight: 1,
+            }}
+          >
+            {formatSom(data.oldPrice)}
+          </div>
+        ) : null}
+      </div>
+
+      {/* Подвал: наличие (зелёный — только настоящий статус) и куда писать. */}
+      <div
+        style={{
+          marginTop: 30,
+          paddingTop: 26,
+          borderTop: `2px solid ${C.mist}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontSize: 30,
+          fontWeight: 600,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', color: C.success }}>
+          <div style={{ width: 16, height: 16, borderRadius: 8, background: C.success, marginRight: 14 }} />
+          В наличии · Бар
+        </div>
+        <div style={{ display: 'flex', color: C.soft }}>Direct · WhatsApp {phones[0].display}</div>
+      </div>
+    </div>
+  )
+}
+
+let fonts: Promise<{ name: string; data: Buffer; weight: 600 | 800; style: 'normal' }[]> | null = null
+
+/** Manrope 600 и 800 — статичные срезы manrope-variable.ttf: переменный шрифт Satori рисует самым тонким. */
+export function postFonts() {
+  fonts ??= Promise.all(
+    ([600, 800] as const).map(async (weight) => ({
+      name: 'Manrope',
+      data: await readFile(join(process.cwd(), 'public', 'fonts', `manrope-${weight}.ttf`)),
+      weight,
+      style: 'normal' as const,
+    })),
+  ).catch((error) => {
+    // Не прочитали — не запоминаем отказ навсегда: следующий запрос попробует снова.
+    fonts = null
+    throw error
+  })
+  return fonts
+}

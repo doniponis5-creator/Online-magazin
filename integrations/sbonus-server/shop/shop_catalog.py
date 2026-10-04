@@ -9,6 +9,7 @@
   GET  /api/v1/webhook/site/catalog                (HMAC пути)  каталог + hash (сайт обновляется при смене hash)
 Публично:
   GET  /api/v1/shop/photos/{key}.jpg               фото товара (кэш на год: ключ меняется вместе с фото)
+  GET  /api/v1/shop/photos/ig/{v}.jpg              картинка поста Instagram (её забирает Meta; shop_ig_post.py)
 Только для чата (на сайте не показываются):
   POST /api/v1/webhook/1c/shop/chat-extra          (HMAC тела)  товары со склада, которых нет на сайте, с ценой из 1С
   GET  /api/v1/webhook/site/chat-extra             (HMAC пути)  те же товары для чата
@@ -200,6 +201,22 @@ async def site_chat_extra(request: Request, db: AsyncSession = Depends(get_db)):
     if free:
         items = [{**i, "stock": free[str(i.get("id"))]} if str(i.get("id")) in free else i for i in items]
     return {"items": items}
+
+
+IG_RE = re.compile(r"^[0-9a-f]{16}$")
+
+
+# Отдельный путь (/ig/…): «/{key}.jpg» косую черту не пропускает, маршруты не пересекаются.
+@router_public_photos.get("/ig/{v}.jpg")
+async def instagram_post_image(v: str):
+    if not IG_RE.match(v):
+        raise HTTPException(404)
+    from .shop_ig_post import image
+
+    body = await image(v)
+    if not body:
+        raise HTTPException(404)
+    return Response(content=body, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=86400"})
 
 
 @router_public_photos.get("/{key}.jpg")

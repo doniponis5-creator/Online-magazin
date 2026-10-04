@@ -82,15 +82,17 @@ def _token() -> str:
 
 async def _load_token() -> str:
     """Продлённый ключ из Redis, если он от того же ключа, что в .env. Без ключа в .env робот выключен."""
-    _fresh["token"] = ""
     if not _base_token():
+        _fresh["token"] = ""
         return ""
     try:
         stored = json.loads(await redis_client.get("ig:token") or "{}")
     except Exception:
         stored = {}
-    if isinstance(stored, dict) and stored.get("base") == _base_mark():
-        _fresh["token"] = str(stored.get("token") or "")
+    # Одним присваиванием после чтения: пока ждём Redis, ответ в Direct не должен уйти со старым ключом из .env
+    # (ревью 04.10 — посты из 1С зовут эту функцию часто).
+    fresh = str(stored.get("token") or "") if isinstance(stored, dict) and stored.get("base") == _base_mark() else ""
+    _fresh["token"] = fresh
     return _token()
 
 
@@ -270,6 +272,13 @@ async def _on_message(event: dict) -> None:
     if rules.mention_only(event):
         return
     user = event["user"]
+    if event.get("story"):
+        # Ответ на нашу историю — подставляем товар с неё: «Канча?» без него не понять.
+        from .shop_ig_post import describe_story
+        note = await describe_story(str(event["story"]))
+        if note:
+            event = {**event, "context": [note if c == rules.STORY_NOTE else c for c in event.get("context") or []]}
+            await _show_story_product(user, event["story"])
     text = rules.describe(event)
     voice = False
     for media in (event.get("media") or [])[:1]:
@@ -286,6 +295,18 @@ async def _on_message(event: dict) -> None:
     await redis_client.set(f"ig:lastin:{user}", str(event.get("ts") or time.time()), ex=2 * 24 * 3600)
     await redis_client.delete(f"ig:nudge:{user}")
     await redis_client.hset("ig:pending", user, json.dumps({"ts": event.get("ts") or time.time(), "voice": voice}))
+
+
+async def _show_story_product(user: str, story_id: str) -> None:
+    """Товар истории — в «показанные»: на «оформляем» робот возьмёт его, а не спросит «какой?»."""
+    raw = await redis_client.get(f"ig:story:{story_id}")
+    try:
+        code = str(json.loads(raw).get("code") or "") if raw else ""
+    except Exception:
+        code = ""
+    if code and not await redis_client.get(f"ig:shown:{user}"):
+        from .shop_promo_rules import slug_from_code
+        await redis_client.set(f"ig:shown:{user}", json.dumps([slug_from_code(code)]), ex=TURNS_TTL)
 
 
 async def _switched_on() -> bool:
@@ -308,6 +329,12 @@ async def poll_once() -> dict:
         await redis_client.delete("ig:inbox", "ig:pending", "ig:comments")
         return {"enabled": False}
     await _refresh_token()
+    # Авто-история (галочка в 1С) — сама решает, пора ли; ошибка её не мешает ответам в Direct.
+    try:
+        from .shop_ig_post import auto_story
+        await auto_story()
+    except Exception as error:
+        logger.warning(f"ig auto story: {type(error).__name__}: {error}")
     from .shop_wa_bot import _settings
     _, delay = await _settings()
     on = await _switched_on()

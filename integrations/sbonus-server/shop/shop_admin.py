@@ -21,6 +21,9 @@
   POST /webhook/1c/shop/promo/preview     подпись 1С сколько получат и можно ли слать (ничего не шлёт)
   POST /webhook/1c/shop/promo/send        подпись 1С отправить рассылку (в фоне)
   GET  /webhook/1c/shop/promo/history     ключ 1С    последние 20 рассылок
+  POST /webhook/1c/shop/promo/ig-preview  подпись 1С картинка и текст поста Instagram (ничего не публикует)
+  POST /webhook/1c/shop/promo/ig-post     подпись 1С опубликовать пост в Instagram (в фоне)
+  GET  /webhook/1c/shop/promo/ig-history  ключ 1С    последние 20 постов
 
 Настройки лежат в таблице settings SBonus и действуют сразу, без перезапуска.
 Значения проверяются здесь: из 1С может прийти что угодно, а в базе должно
@@ -130,6 +133,15 @@ SETTINGS: list[dict] = [
         "hint": "Включено — в Direct магазина отвечает робот. Ждёт сотрудника столько же минут, сколько в WhatsApp.",
         "type": "bool",
         "default": "1",
+    },
+    {
+        # 04.10: история со скидкой раз в день сама (shop_ig_post.auto_story). Посты в ленту — только кнопкой.
+        "key": "SITE_IG_AUTO_STORY",
+        "title": "Авто-история в Instagram (каждый день в 11:00 — товар со скидкой)",
+        "hint": "Включено — робот сам выпускает одну историю в день: товар с самой большой скидкой, "
+                "который не показывали две недели. Что вышло — владельцу в WhatsApp.",
+        "type": "bool",
+        "default": "0",
     },
     {
         "key": "SITE_GUEST_CHECKOUT",
@@ -669,6 +681,85 @@ async def promo_history(_=Depends(_verify_1c_key), db: AsyncSession = Depends(ge
     from . import shop_promo as promo
 
     return {"ok": True, "items": await promo.history(db, datetime.now(timezone.utc))}
+
+
+# ── Посты в Instagram из той же вкладки «Уведомления» (04.10) ─────────────────
+#
+# Тот же товар и шаблон, что у уведомления, но отдельная кнопка «Опубликовать в Instagram».
+# Картинку рисует сайт в оформлении smarket.kg, публикует shop_ig_post.py в фоне.
+# Тихих часов и «одной в день» у постов нет: до 10 в день, тот же товар — раз в сутки.
+
+class IgPostRequest(BaseModel):
+    kind: str = ""
+    code: str = ""
+    caption: str = ""
+    format: str = "post"
+
+
+async def _ig_check(db: AsyncSession, payload: IgPostRequest) -> dict:
+    from . import shop_ig_post as post, shop_ig_rules as ig, shop_promo_rules as rules
+
+    kind = (payload.kind or "").strip()
+    code = (payload.code or "").strip()
+    fmt = "story" if payload.format == "story" else "post"
+    item = rules.find_item(await _catalog(db), code) if code else None
+    template = ig.post_caption(kind, rules.clean_text(item.get("name")), rules.price(item), rules.old_price(item)) if item else ""
+    caption = ig.clean_caption(payload.caption) or template
+    reason = None if kind in rules.KINDS else "Неизвестный шаблон."
+    reason = reason or await post.blocked_reason(kind, code, item, fmt)
+    # У истории подписи нет — текст проверяем только у поста.
+    reason = reason or (ig.caption_problem(caption) if fmt == "post" else None)
+    image_url = post.image_url(await post.prepare(kind, item, fmt)) if item else ""
+    return {"kind": kind, "code": code, "item": item, "caption": caption, "template": template,
+            "imageUrl": image_url, "blockedReason": reason, "format": fmt}
+
+
+@router_1c_admin.post("/promo/ig-preview")
+async def ig_preview(request: Request, db: AsyncSession = Depends(get_db)):
+    """
+    {kind, code, caption?, format: post|story} → {ok, imageUrl, caption, template, blockedReason, captionMax}.
+    Ничего не публикует. imageUrl — картинка поста или истории (рисуется при первом открытии, 1–3 с);
+    template — подпись по шаблону (её 1С подставляет, когда выбрали другой товар).
+    """
+    from . import shop_ig_rules as ig
+
+    check = await _ig_check(db, IgPostRequest.parse_raw(await _verify_1c_body(request)))
+    return {"ok": True, "captionMax": ig.CAPTION_MAX,
+            **{key: check[key] for key in ("imageUrl", "caption", "template", "blockedReason")}}
+
+
+@router_1c_admin.post("/promo/ig-post")
+async def ig_post(request: Request, background: BackgroundTasks, db: AsyncSession = Depends(get_db)):
+    """
+    То же, что ig-preview, и публикация в фоне. Ответ сразу: {ok, started, id} или
+    {ok: false, started: false, blockedReason}. Чем кончилось — в /promo/ig-history.
+    """
+    from . import shop_ig_post as post, shop_promo_rules as rules
+
+    check = await _ig_check(db, IgPostRequest.parse_raw(await _verify_1c_body(request)))
+    if check["blockedReason"]:
+        return {"ok": False, "started": False, "blockedReason": check["blockedReason"]}
+    fmt, item = check["format"], check["item"]
+    name = rules.clean_text(item.get("name"))
+    v = await post.prepare(check["kind"], item, fmt)
+    entry_id, reason = await post.start(check["kind"], check["code"], name, v, fmt)
+    if entry_id is None:
+        return {"ok": False, "started": False, "blockedReason": reason}
+    story_of = {"code": check["code"], "name": name, "price": rules.price(item), "oldPrice": rules.old_price(item)}
+    background.add_task(post.publish, entry_id, v, check["caption"], fmt, story_of)
+    logger.info(f"ig {fmt} {entry_id}: {check['kind']} {check['code']} — публикация пошла")
+    return {"ok": True, "started": True, "id": entry_id}
+
+
+@router_1c_admin.get("/promo/ig-history")
+async def ig_history(_=Depends(_verify_1c_key)):
+    """
+    Последние 20 публикаций: items[{id, at (UTC), format post|story, kind, code, name, auto,
+    status sending|done|failed|interrupted|unclear, link, note}].
+    """
+    from . import shop_ig_post as post
+
+    return {"ok": True, "items": await post.history()}
 
 
 @router_site_admin.post("/visit")

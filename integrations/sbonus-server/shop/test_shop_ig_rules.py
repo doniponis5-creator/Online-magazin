@@ -83,6 +83,9 @@ class Events(unittest.TestCase):
             "[Пришёл по рекламе: Стиральная Artel 7 кг]\n[Ответ на историю магазина]\n[Прислал публикацию: Новые холодильники]\nКанча?",
         )
         self.assertEqual(event["media"], [])  # рилс не читаем как фото
+        self.assertEqual(event["story"], "s1")  # по id робот узнаёт товар нашей истории
+        self.assertEqual(rules.story_note("Утюг", 1200, 1500), "[Ответ на историю магазина: Утюг — 1 200 сом, было 1 500 сом]")
+        self.assertEqual(rules.story_note("Утюг", 1200, 0), "[Ответ на историю магазина: Утюг — 1 200 сом]")
 
     def test_photo_and_voice_go_to_media(self):
         message = {"mid": "m7", "attachments": [
@@ -165,6 +168,38 @@ class Comments(unittest.TestCase):
     def test_messages_ignore_comments(self):
         # Комментарий не должен попасть в разговор Direct: events() их не берёт.
         self.assertEqual(rules.events(comment_hook({"id": "4", "text": "+", "from": {"id": "555"}})), [])
+
+
+class PostCaption(unittest.TestCase):
+    def test_sale(self):
+        text = rules.post_caption("sale", "Электро  Эндуро WN-A10**", 15900, 18900)
+        lines = text.split("\n")
+        self.assertEqual(lines[:5], ["🔥 Скидка −15% · Арзандатуу", "Электро Эндуро WN-A10", "", "Было: 18 900 сом", "Сейчас: 15 900 сом"])
+        self.assertIn("📞 WhatsApp: +996 557 100 505", lines)
+        self.assertTrue(lines[-1].startswith("#smartcentr"))
+        self.assertIsNone(rules.caption_problem(text))
+
+    def test_new_and_plain(self):
+        self.assertTrue(rules.post_caption("new", "Холодильник", 52900, 0).startswith("✨ Новинка · Жаңы товар\nХолодильник\n\nЦена: 52 900 сом"))
+        plain = rules.post_caption("custom", "Утюг", 1200, 0)
+        self.assertTrue(plain.startswith("Утюг\n\nЦена: 1 200 сом"))
+        # «Скидка» без старой цены не обещает процент.
+        self.assertNotIn("%", rules.post_caption("sale", "Утюг", 1200, 1200))
+
+    def test_image_kind(self):
+        self.assertEqual(rules.image_kind("sale", False), "sale")
+        self.assertEqual(rules.image_kind("new", True), "new")
+        self.assertEqual(rules.image_kind("custom", True), "sale")
+        self.assertEqual(rules.image_kind("custom", False), "plain")
+        self.assertEqual(rules.discount_pct(15900, 18900), 15)  # 15,87 % → 15, как на картинке
+        self.assertEqual(rules.discount_pct(100, 0), 0)
+
+    def test_caption_checks(self):
+        self.assertEqual(rules.clean_caption("  Скидка  на\r\n\n\n\nутюг  "), "Скидка на\n\nутюг")
+        self.assertEqual(rules.caption_problem(""), "Заполните текст поста.")
+        self.assertIn("2200", rules.caption_problem("ж" * 2201))
+        self.assertIn("Хэштегов 31", rules.caption_problem(" ".join(f"#t{i}" for i in range(31))))
+        self.assertIsNone(rules.caption_problem("Цена 100 сом #a#b"))  # «#a#b» — один хэштег, как считает Instagram
 
 
 class Window(unittest.TestCase):

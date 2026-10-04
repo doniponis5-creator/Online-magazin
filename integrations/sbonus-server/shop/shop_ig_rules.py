@@ -59,9 +59,8 @@ def _context(message: dict, item: dict) -> list[str]:
             notes.append(f"[Пришёл по рекламе: {title[:200]}]")
         elif referral.get("source") == "ADS" or referral.get("ad_id"):
             notes.append("[Пришёл по рекламе в Instagram]")
-    reply_to = message.get("reply_to") or {}
-    if isinstance(reply_to, dict) and reply_to.get("story"):
-        notes.append("[Ответ на историю магазина]")
+    if story_of(message):
+        notes.append(STORY_NOTE)
     for attachment in message.get("attachments") or []:
         if not isinstance(attachment, dict):
             continue
@@ -73,6 +72,24 @@ def _context(message: dict, item: dict) -> list[str]:
         elif kind == "story_mention":
             notes.append("[Отметил магазин в своей истории]")
     return notes
+
+
+STORY_NOTE = "[Ответ на историю магазина]"
+
+
+def story_of(message: dict) -> str:
+    """id истории, на которую ответили; "" — не ответ на историю. По нему робот узнаёт товар нашей истории."""
+    reply_to = message.get("reply_to") or {}
+    story = reply_to.get("story") if isinstance(reply_to, dict) else None
+    if not story:
+        return ""
+    return str(story.get("id") or "-") if isinstance(story, dict) else "-"
+
+
+def story_note(name: str, price: int, old: int) -> str:
+    """Пометка для мозга: на какую нашу историю ответили — товар и цена, как на картинке."""
+    was = f", было {_som(old)}" if old > price > 0 else ""
+    return f"[Ответ на историю магазина: {name} — {_som(price)}{was}]"
 
 
 def _media(message: dict) -> list[dict]:
@@ -129,6 +146,7 @@ def events(payload: dict) -> list[dict]:
                 "text": str(message.get("text") or "").strip(),
                 "context": _context(message, item),
                 "media": _media(message),
+                "story": story_of(message).strip("-"),
             })
     return sorted(found, key=lambda e: e["ts"])
 
@@ -227,3 +245,84 @@ def mention_only(event: dict) -> bool:
 def window_open(last_user_ts: float, at: float) -> bool:
     """Можно ли написать первым в момент at: покупатель писал меньше 23 часов назад."""
     return bool(last_user_ts) and 0 <= at - last_user_ts < WINDOW_SAFE
+
+
+# ── Посты «Скидка» / «Новинка» из 1С (04.10) ─────────────────────────────────
+# Пост выходит только по кнопке владельца в «Панели сайта» → «Уведомления».
+# Картинку рисует сайт в оформлении smarket.kg (/api/instagram/post-image),
+# публикует shop_ig_post.py. Здесь — только текст и проверки, без сервера.
+
+CAPTION_MAX = 2200                # предел Instagram
+HASHTAGS_MAX = 30                 # больше Instagram не опубликует
+POSTS_PER_DAY = 10                # наш предел: лента из десяти скидок в день — уже спам
+STORIES_PER_DAY = 10              # историй — столько же (у Instagram общий предел 100 в сутки)
+# Тот же номер, что первый в src/data/contacts.ts (подвал сайта и картинка поста).
+SHOP_PHONE = "+996 557 100 505"
+
+
+def _som(value: int) -> str:
+    """15900 → «15 900 сом» — как formatSom на сайте (пробел-разделитель тысяч)."""
+    return f"{int(value):,}".replace(",", " ") + " сом"
+
+
+def discount_pct(price: int, old: int) -> int:
+    """Как на картинке (postImage.tsx discountPct): от старой цены, вниз до целого."""
+    if price <= 0 or old <= price:
+        return 0
+    return (old - price) * 100 // old
+
+
+def image_kind(kind: str, on_sale: bool) -> str:
+    """Какая метка на картинке: «Скидка», «Новинка» или без метки («свой текст» без скидки)."""
+    if kind == "sale":
+        return "sale"
+    if kind == "new":
+        return "new"
+    return "sale" if on_sale else "plain"
+
+
+def post_caption(kind: str, name: str, price: int, old: int) -> str:
+    """
+    Подпись поста по шаблону: по-русски и по-кыргызски, цена только из каталога.
+    Полное название и цена в подписи нужны и роботу комментариев: по ним он узнаёт товар
+    поста (knowledge.bestNameMatch) и отвечает «Канча?» правильной ценой.
+    """
+    name = re.sub(r"\s+", " ", name.replace("*", "")).strip()
+    pct = discount_pct(price, old)
+    if kind == "sale" and pct > 0:
+        head = [f"🔥 Скидка −{pct}% · Арзандатуу", name, "", f"Было: {_som(old)}", f"Сейчас: {_som(price)}"]
+        tags = "#smartcentr #smarketkg #скидка #арзандатуу #ош #кыргызстан"
+    elif kind == "new":
+        head = ["✨ Новинка · Жаңы товар", name, "", f"Цена: {_som(price)}"]
+        tags = "#smartcentr #smarketkg #новинка #жаңытовар #ош #кыргызстан"
+    else:
+        head = [name, "", f"Цена: {_som(price)}"]
+        tags = "#smartcentr #smarketkg #ош #кыргызстан"
+    tail = [
+        "",
+        "✅ В наличии · Бар",
+        "📩 Пишите в Direct · Директке жазыңыз",
+        f"📞 WhatsApp: {SHOP_PHONE}",
+        "🌐 smarket.kg",
+        "",
+        tags,
+    ]
+    return "\n".join(head + tail)
+
+
+def clean_caption(value) -> str:
+    """Переводы строк оставляем (пост — не уведомление), лишние пробелы в строках убираем."""
+    lines = [re.sub(r"[ \t]+", " ", line).strip() for line in str(value or "").replace("\r\n", "\n").split("\n")]
+    return re.sub(r"\n{3,}", "\n\n", "\n".join(lines)).strip()
+
+
+def caption_problem(caption: str) -> str | None:
+    """Что не так с подписью — фразой для 1С. None — всё хорошо."""
+    if not caption:
+        return "Заполните текст поста."
+    if len(caption) > CAPTION_MAX:
+        return f"Текст поста длиннее {CAPTION_MAX} знаков ({len(caption)}) — сократите."
+    tags = len(re.findall(r"(?<![\w#])#\w", caption))
+    if tags > HASHTAGS_MAX:
+        return f"Хэштегов {tags}, Instagram разрешает не больше {HASHTAGS_MAX}."
+    return None

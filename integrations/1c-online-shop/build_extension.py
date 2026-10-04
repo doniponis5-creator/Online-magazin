@@ -472,9 +472,13 @@ PANEL_STOCK_FILTERS = ["Все", "Продаётся без остатка", "Н
 # Вкладка «Уведомления»: какие товары показать и какой шаблон текста. Слова — в ПанельСайтаМодуль.bsl.
 PANEL_PROMO_FILTERS = ["Со скидкой", "Новинки", "Все товары"]
 PANEL_PROMO_TEMPLATES = ["Скидка", "Новинка", "Свой текст"]
+# Instagram: пост в ленту или история. Слова — в ПанельСайтаМодуль.bsl (ФорматПубликации).
+PANEL_IG_FORMATS = ["Пост в ленту", "История"]
 # Как на сервере (shop_promo_rules.py): длиннее 1С не даст ни ввести, ни отправить.
 PROMO_TITLE_MAX = 60
 PROMO_BODY_MAX = 180
+# Пост в Instagram: предел Instagram (shop_ig_rules.CAPTION_MAX).
+IG_CAPTION_MAX = 2200
 
 
 def list_form():
@@ -822,6 +826,8 @@ def panel_form():
     f.attribute("РоботВотсАп", t_bool(), title="WhatsApp-консультант", saved_data=True)
     f.attribute("РоботЖдатьМинут", t_num(3, 0), title="ждать сотрудника, мин", saved_data=True)
     f.attribute("РоботИнстаграм", t_bool(), title="Instagram-консультант", saved_data=True)
+    f.attribute("АвтоИсторияИнстаграм", t_bool(), title="Авто-история в Instagram", saved_data=True)
+    f.attribute("ЕстьНастройкаАвтоИстории", t_bool())
     f.attribute("ЕстьНастройкаИнстаграм", t_bool())
     f.attribute("ЗнанияДляЧата", t_str(0), title="Знания для чата", saved_data=True)
     f.attribute("ЗнанияЗагружены", t_bool())
@@ -854,12 +860,22 @@ def panel_form():
     f.attribute("ЖдёмИтогаРассылки", t_num(3, 0))
     f.attribute("Рассылки", "<v8:Type>v8:ValueTable</v8:Type>", title="Последние рассылки", columns=[
         ("Когда", "Когда", t_date()),
-        ("Шаблон", "Шаблон", t_str(20)),
+        ("Шаблон", "Шаблон", t_str(40)),
         ("Заголовок", "Заголовок", t_str(0)),
         ("Получателей", "Слали", t_num(8, 0)),
         ("Доставлено", "Дошло", t_num(8, 0)),
-        ("Итог", "Итог", t_str(30)),
+        ("Итог", "Итог", t_str(300)),
+        # Ссылка на пост Instagram: двойной щелчок по строке открывает его.
+        ("Ссылка", "Ссылка", t_str(0)),
     ])
+    # Пост в Instagram — тот же товар и шаблон, что у уведомления. ПодписьПостаШаблон и
+    # ПодписьПостаКлюч — какой текст дал сервер и для какого товара: не правили — подменяем.
+    f.attribute("ВидПубликации", t_str(20), title="Куда")
+    f.attribute("ПодписьПоста", t_str(IG_CAPTION_MAX), title="Текст поста")
+    f.attribute("ПодписьПостаШаблон", t_str(0))
+    f.attribute("ПодписьПостаКлюч", t_str(100))
+    f.attribute("ВидПостаHTML", t_str(0), title="Как увидят в Instagram")
+    f.attribute("ПричинаНельзяПост", t_str(0))
 
     for name, title, tip in [
         ("Обновить", "Обновить", "Забрать свежие цифры с сервера"),
@@ -868,6 +884,8 @@ def panel_form():
         ("ОткрытьКарточкуРасхождения", "Карточка товара", "Открыть карточку: цена сайта и «Наличие на сайте»"),
         ("ОтправитьУведомлениеКоманда", "Отправить", "Отправить уведомление покупателям, которые согласились их получать"),
         ("ОбновитьУведомления", "Обновить список", "Заново забрать товары, историю рассылок и число получателей"),
+        ("ОпубликоватьВИнстаграм", "Опубликовать в Instagram",
+         "Опубликовать пост с картинкой товара в Instagram магазина — его увидят все подписчики"),
     ]:
         f.command(name, title, tip)
 
@@ -888,11 +906,11 @@ def panel_form():
     ]
     history_columns = [
         f.input("РассылкиКогда", "Рассылки.Когда", readonly=True, width=14, table=True, fmt="ДФ='dd.MM.yy HH:mm'"),
-        f.input("РассылкиШаблон", "Рассылки.Шаблон", readonly=True, width=10, table=True),
+        f.input("РассылкиШаблон", "Рассылки.Шаблон", readonly=True, width=16, table=True),
         f.input("РассылкиЗаголовок", "Рассылки.Заголовок", readonly=True, width=40, table=True),
-        f.input("РассылкиПолучателей", "Рассылки.Получателей", readonly=True, width=7, table=True, fmt="ЧН=0"),
-        f.input("РассылкиДоставлено", "Рассылки.Доставлено", readonly=True, width=7, table=True, fmt="ЧН=0"),
-        f.input("РассылкиИтог", "Рассылки.Итог", readonly=True, width=16, table=True),
+        f.input("РассылкиПолучателей", "Рассылки.Получателей", readonly=True, width=7, table=True),
+        f.input("РассылкиДоставлено", "Рассылки.Доставлено", readonly=True, width=7, table=True),
+        f.input("РассылкиИтог", "Рассылки.Итог", readonly=True, width=24, table=True),
     ]
     # Четыре вкладки: сводка на всю высоту, склад отдельно (длинный список не заслоняет
     # графики), настройки отдельно, уведомления отдельно. Строка состояния — под вкладками,
@@ -943,6 +961,10 @@ def panel_form():
                         f.input("РоботЖдатьМинут", "РоботЖдатьМинут", width=4),
                         # Робот в Direct Instagram — ждёт столько же минут, сколько в WhatsApp.
                         f.check("РоботИнстаграм", "РоботИнстаграм", title_location="Right"),
+                        # Раз в день сам выпускает историю со скидкой; что вышло — владельцу в WhatsApp.
+                        f.check("АвтоИсторияИнстаграм", "АвтоИсторияИнстаграм", title_location="Right",
+                                hint="Каждый день в 11:00 робот сам выпускает историю: товар с самой большой скидкой, "
+                                     "который не показывали две недели. Что вышло — вам в WhatsApp."),
                         f.button("КнопкаСохранить", "СохранитьНастройки"),
                     ], direction="AlwaysHorizontal"),
                 ], title="Настройки сайта (действуют сразу)"),
@@ -967,17 +989,34 @@ def panel_form():
                         f.input("Шаблон", "Шаблон", width=14, stretch=False, choices=PANEL_PROMO_TEMPLATES,
                                 events={"OnChange": "ШаблонПриИзменении"}),
                         f.input("ТоварУведомления", "ТоварУведомления", readonly=True, full_width=True),
-                        f.input("ЗаголовокУведомления", "ЗаголовокУведомления", full_width=True,
-                                hint=f"не длиннее {PROMO_TITLE_MAX} знаков",
-                                events={"OnChange": "ТекстУведомленияПриИзменении"}),
-                        f.input("ТекстУведомления", "ТекстУведомления", multiline=True, height=3, full_width=True,
-                                hint=f"не длиннее {PROMO_BODY_MAX} знаков",
-                                events={"OnChange": "ТекстУведомленияПриИзменении"}),
-                        f.html("ВидУведомления", "ВидУведомленияHTML", width=60, height=11, v_stretch=False),
-                        f.button("КнопкаОтправитьУведомление", "ОтправитьУведомлениеКоманда"),
+                        # Один товар — два канала: уведомление в телефон и пост в Instagram.
+                        f.pages("СтраницыКанала", [
+                            f.page("СтраницаТелефон", "Уведомление в телефон", [
+                                f.input("ЗаголовокУведомления", "ЗаголовокУведомления", full_width=True,
+                                        hint=f"не длиннее {PROMO_TITLE_MAX} знаков",
+                                        events={"OnChange": "ТекстУведомленияПриИзменении"}),
+                                f.input("ТекстУведомления", "ТекстУведомления", multiline=True, height=3, full_width=True,
+                                        hint=f"не длиннее {PROMO_BODY_MAX} знаков",
+                                        events={"OnChange": "ТекстУведомленияПриИзменении"}),
+                                f.html("ВидУведомления", "ВидУведомленияHTML", width=60, height=11, v_stretch=False),
+                                f.button("КнопкаОтправитьУведомление", "ОтправитьУведомлениеКоманда"),
+                            ]),
+                            f.page("СтраницаИнстаграм", "Пост в Instagram", [
+                                f.input("ВидПубликации", "ВидПубликации", width=14, stretch=False,
+                                        choices=PANEL_IG_FORMATS, events={"OnChange": "ВидПубликацииПриИзменении"}),
+                                f.group("ГруппаПост", [
+                                    f.input("ПодписьПоста", "ПодписьПоста", multiline=True, height=14, width=30,
+                                            title_location="Top", hint=f"не длиннее {IG_CAPTION_MAX} знаков",
+                                            events={"OnChange": "ПодписьПостаПриИзменении"}),
+                                    f.html("ВидПоста", "ВидПостаHTML", width=32, height=16, v_stretch=False),
+                                ], direction="AlwaysHorizontal"),
+                                f.button("КнопкаОпубликоватьПост", "ОпубликоватьВИнстаграм"),
+                            ]),
+                        ], events={"OnCurrentPageChange": "СтраницыКаналаПриСменеСтраницы"}),
                     ]),
                 ], direction="AlwaysHorizontal"),
-                f.table("Рассылки", "Рассылки", history_columns, height=5, search=False),
+                f.table("Рассылки", "Рассылки", history_columns, height=5, search=False,
+                        events={"Selection": "РассылкиВыбор"}),
             ]),
         ], events={"OnCurrentPageChange": "СтраницыПриСменеСтраницы"}),
         f.input("Состояние", "Состояние", readonly=True, title_location="None", stretch=True, height=2,
