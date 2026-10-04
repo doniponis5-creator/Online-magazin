@@ -64,8 +64,11 @@ export function useFanDeck(root: RefObject<HTMLElement | null>, { start, end, sp
       el.style.setProperty('--bleed-l', `${Math.max(0, box.left).toFixed(1)}px`)
       el.style.setProperty('--bleed-r', `${Math.max(0, document.documentElement.clientWidth - box.right).toFixed(1)}px`)
       el.style.setProperty('--w0', `${el.clientWidth}px`)
-      // сцена встаёт под низ шапки; уехала шапка — к самому верху экрана
-      el.style.setProperty('--stick', `${sticky ? Math.max(0, head?.bottom ?? 0) + 8 * (1 - fill) : top}px`)
+      // сцена встаёт под низ шапки; уехала шапка — к самому верху экрана. У покупателя с бонусами под шапкой
+      // прилипает полоска «У вас N бонусов» (BonusReminder): шапка уехала — полоска остаётся, сцена встаёт под неё
+      const bonus = document.querySelector('.bonus-bar')?.getBoundingClientRect()
+      const line = Math.max(0, head?.bottom ?? 0, bonus?.height ? bonus.bottom : 0)
+      el.style.setProperty('--stick', `${sticky ? line + 8 * (1 - fill) : top}px`)
       const p = media.matches || !sticky ? 1 : clamp(d / deckTravel(el))
       el.style.setProperty('--story-progress', p.toFixed(4))
       el.dataset.progress = p.toFixed(3)
@@ -115,6 +118,9 @@ export function useFanDeck(root: RefObject<HTMLElement | null>, { start, end, sp
       if (!follow) follow = requestAnimationFrame(chase)
     }
     document.addEventListener('transitionrun', headerMoves)
+    // полоска бонусов появляется через пару секунд после загрузки и исчезает по крестику — сцена переезжает под неё
+    const bars = new MutationObserver(schedule)
+    bars.observe(document.body, { childList: true })
     addEventListener('scroll', schedule, { passive: true })
     addEventListener('resize', schedule)
     media.addEventListener('change', schedule)
@@ -124,6 +130,7 @@ export function useFanDeck(root: RefObject<HTMLElement | null>, { start, end, sp
       cancelAnimationFrame(follow)
       observer.disconnect()
       document.removeEventListener('transitionrun', headerMoves)
+      bars.disconnect()
       removeEventListener('scroll', schedule)
       removeEventListener('resize', schedule)
       media.removeEventListener('change', schedule)
