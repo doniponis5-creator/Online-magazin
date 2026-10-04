@@ -767,7 +767,9 @@ describe('Instagram (02.10): мем без подписи — молчим; не
       item('desk', 'Парта мини'),
       item('vac', 'Пылесос моющий мини'),
     ]
-    for (const q of ['Идиш жууган машинка канча экен', 'идиш жуугуч барбы', 'idish yuvadigan mashina', 'Посудомойка есть?', 'мини посуда мойка', 'посуда мыть машина']) {
+    for (const q of ['Идиш жууган машинка канча экен', 'идиш жуугуч барбы', 'idish yuvadigan mashina', 'Посудомойка есть?', 'мини посуда мойка', 'посуда мыть машина',
+      // Instagram 04.10, вечер — как пишут на самом деле:
+      'Мини пасуда мойка', 'Миний пасуда мойка', 'Мини пасуда моцка', 'мин посуда мойши машина', 'Пасудомойка']) {
       expect(searchProducts(q, 'ky', 3, list)[0]?.id, q).toBe('dish')
       expect(searchProducts(q, 'ky', 3, list).map((p) => p.id), q).toEqual(['dish'])
     }
@@ -784,8 +786,18 @@ describe('Instagram (02.10): мем без подписи — молчим; не
     expect(searchProducts('Матаскыл кача', 'ky', 3, moto).map((p) => p.id)).toEqual(expect.arrayContaining(['enduro', 'moto']))
     // В сводке разделов видно, что посудомойки есть: «Кухонная техника» сама этого не говорила.
     const { kindsOf } = await import('@/lib/assistant/knowledge')
-    expect(kindsOf([item('d1', 'Посудомоечная машина MIDEA MDWM-218TWO'), item('d2', 'Посудомоечная машина VELBERG'), item('o', 'Духовка UAKEEN')]))
-      .toBe('посудомоечная машина, духовка')
+    // У вида — свои цены: «посудомоечные обычно от 5 000» модель брала из цены всего раздела.
+    const priced = (id: string, name: string, price: number) => ({ ...item(id, name), price })
+    expect(kindsOf([priced('d1', 'Посудомоечная машина MIDEA MDWM-218TWO', 23900), priced('d2', 'Посудомоечная машина VELBERG', 37400), priced('o', 'Духовка UAKEEN', 15000)]))
+      .toBe('посудомоечная машина: 23900–37400 сом; духовка: 15000 сом')
+
+    // Магазин уже поздоровался (ответ на комментарий) — второй «Ассаламу алейкум» в начале не пишем.
+    const { withoutRepeatGreeting } = await import('@/lib/assistant/respond')
+    const before = [{ role: 'assistant' as const, text: 'Ассаламу алейкум! Кайсы товар кызыктырды? Жазыңыз — баасын айтып берем.' }, { role: 'user' as const, text: 'Мини посуда мойка' }]
+    expect(withoutRepeatGreeting('Ассаламу алейкум. Есть компактная Midea, 23 900 сом.', before)).toBe('Есть компактная Midea, 23 900 сом.')
+    expect(withoutRepeatGreeting('Ассаламу алейкум, Мира. Бар, 23 900 сом.', before)).toBe('Бар, 23 900 сом.')
+    expect(withoutRepeatGreeting('Ассаламу алейкум. Есть Midea.', [{ role: 'user', text: 'Салам' }])).toBe('Ассаламу алейкум. Есть Midea.') // первый ответ — здороваемся
+    expect(withoutRepeatGreeting('Ассаламу алейкум!', before)).toBe('Ассаламу алейкум!') // кроме приветствия ничего — не трогаем
 
     vi.resetModules()
     const leads: string[] = []

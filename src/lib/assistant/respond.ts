@@ -91,7 +91,7 @@ export async function respond(
   const intent = hint.intent ?? null
   const talked = Array.isArray(shown) ? shown.filter((x): x is string => typeof x === 'string').slice(0, 5) : []
   const raw = await answer(turns, lang, customer, page, channel.known.name, Boolean(channel.known.phone), objectionNote(intent), talked, channel.leadChannel)
-  const first = { ...raw, text: withoutEarlyOffer(raw.text, turns) }
+  const first = { ...raw, text: withoutRepeatGreeting(withoutEarlyOffer(raw.text, turns), turns) }
   const said = declined(turns) || intent?.kind === 'decline' ? { ...first, text: withoutCallOffer(first.text) } : first
   const later = followAfter(intent)
   const reply = later ? { ...said, followAfter: later } : { ...said, followAfter: undefined }
@@ -228,6 +228,19 @@ function greetingOnly(turns: ChatTurn[], lang: Lang): string | null {
         ? 'ru'
         : talkLang(turns, lang)
   return pick(GREET_REPLY, talk)
+}
+
+/**
+ * Магазин уже поздоровался в этом разговоре (наш ответ на комментарий «Ассаламу алейкум! Кайсы товар…»,
+ * прошлый ответ) — второй раз «Ассаламу алейкум.» в начале не пишем (Instagram 04.10: здоровался дважды подряд).
+ */
+const GREET_START = /^\s*(ассал[ао]му?\s+ал[еа]йкум|ваалейкум\s+ассалам|здравствуйте|саламатсызбы)[^.!?\n]{0,40}[.!]\s*/iu
+export function withoutRepeatGreeting(text: string, turns: ChatTurn[]): string {
+  const greeted = turns.some((t) => t.role === 'assistant' && /(ассал[ао]му?\s+ал[еа]йкум|здравствуйте)/iu.test(t.text))
+  if (!greeted) return text
+  const rest = text.replace(GREET_START, '')
+  if (!rest.trim()) return text
+  return rest.charAt(0).toUpperCase() + rest.slice(1)
 }
 
 /** «А жок рахмат», «нет, спасибо» — покупатель отказался. */

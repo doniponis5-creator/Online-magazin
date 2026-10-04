@@ -150,9 +150,10 @@ const SYNONYMS: Record<string, string[]> = {
 // «жуу…», «кир», «машина», «мойка» по отдельности тянут к стиральным и моющим пылесосам (переписки 04.10: в WhatsApp
 // бот сказал «посудомоечных нет» при семи в наличии, в Instagram на «мини посуда мойка» — «калбай калган» про MIDEA
 // MDWM-218TWO, которая есть). «Идиш»/«посуда» без «мыть» — просто посуда (казан, набор) — не трогаем.
-const DISH = /^(идиш|idish|idsh|посуд|posud)/
-const DISH_WORD = /^(посудомо|посудомой|posudomo|посудамой)/
-const WASH = /^(жуу|жуг|юв|yuv|кир|kir|мошин|машин|mashin|стирал|мойк|моеч|моющ|мыт|моет|моют)/
+// Как пишут на самом деле (Instagram 04.10, вечер): «пасуда мойка», «посудац мойканын», «мойши», «моцка».
+const DISH = /^(идиш|idish|idsh|посуд|пасуд|posud|pasud)/
+const DISH_WORD = /^(посудомо|посудамо|пасудомо|пасудамо|posudomo|pasudomo)/
+const WASH = /^(жуу|жуг|юв|yuv|кир|kir|мошин|машин|mashin|стирал|мойк|мойш|моц|моеч|моек|моющ|мыт|моет|моют)/
 
 export function dishwasherWords(words: string[]): string[] {
   const dish = words.some((w) => DISH_WORD.test(w)) || (words.some((w) => DISH.test(w)) && words.some((w) => WASH.test(w)))
@@ -364,7 +365,8 @@ export function catalogForQuestion(list: Product[], question: string, lang: Lang
  */
 export function catalogSections(list: Product[]): string {
   return `РАЗДЕЛЫ МАГАЗИНА — сводка (модели здесь не перечислены). Спросят про товар раздела, которого нет в «КАТАЛОГ» в конце, —
-скажи, что такие есть, назови цены «обычно от … до …» и уточни одним вопросом, что именно нужно (объём, размер, бюджет):
+скажи, что такие есть, назови цены «обычно от … до …» и уточни одним вопросом, что именно нужно (объём, размер, бюджет).
+Спрашивают про вид товара из скобок — называй цены ЭТОГО вида из скобок, а не всего раздела:
 по следующему вопросу ты увидишь модели подробно. «Нет» про раздел из этого списка не говори.
 ${sectionIndex(list)}`
 }
@@ -399,19 +401,27 @@ function sectionIndex(list: Product[]): string {
  * Только названия — меняется вместе с каталогом, не с остатками: кэш Gemini не страдает.
  */
 export function kindsOf(items: Product[], limit = 10): string {
-  const count = new Map<string, number>()
+  const prices = new Map<string, number[]>()
   for (const p of items) {
     const words = p.nameRu.replace(/[*"«»()]/g, ' ').trim().toLowerCase().split(/\s+/)
     if (!words[0] || !/^[а-яё-]{3,}$/.test(words[0])) continue
     // «Посудомоечная машина», «Варочная панель» — прилагательное без существительного ничего не говорит.
     const kind = /(ая|ый|ой|ое|ий)$/.test(words[0]) && words[1] && /^[а-яё-]{3,}$/.test(words[1]) ? `${words[0]} ${words[1]}` : words[0]
-    count.set(kind, (count.get(kind) ?? 0) + 1)
+    prices.set(kind, [...(prices.get(kind) ?? []), p.price])
   }
-  return [...count.entries()]
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+  // Цены вида — свои: «посудомоечные обычно от 5 000» модель брала из цены всего раздела (Instagram 04.10),
+  // а самая дешёвая посудомойка — 23 900.
+  return [...prices.entries()]
+    .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]))
     .slice(0, limit)
-    .map(([kind]) => kind)
-    .join(', ')
+    .map(([kind, list]) => {
+      const real = list.filter((n) => n > 0)
+      if (real.length === 0) return kind
+      const low = Math.min(...real)
+      const high = Math.max(...real)
+      return `${kind}: ${low === high ? low : `${low}–${high}`} сом`
+    })
+    .join('; ')
 }
 
 function productLine(product: Product): string {
