@@ -97,8 +97,8 @@ describe('catalogForQuestion', () => {
     const ids = idsIn(text)
     expect(new Set(ids).size).toBe(ids.length)
     expect(ids).toContain(p.id)
-    // Другие разделы — одной строкой на раздел, не на товар.
-    expect(text).toContain('ОСТАЛЬНЫЕ РАЗДЕЛЫ МАГАЗИНА')
+    // Все разделы — одной строкой на раздел, в постоянной части промпта (кэш), не здесь.
+    expect(systemInstruction('ru', null, 'ru', products)).toContain('РАЗДЕЛЫ МАГАЗИНА — сводка')
     expect(ids.length).toBeLessThan(products.length)
   })
 

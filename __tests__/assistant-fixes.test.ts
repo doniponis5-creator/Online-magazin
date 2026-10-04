@@ -282,3 +282,18 @@ describe('голосовое из Instagram (03.10): тип файла по пе
     expect(mediaMime('image', 'application/octet-stream', Buffer.from('x'))).toBe('image/jpeg')
   })
 })
+
+describe('кэш Gemini (04.10): постоянная часть промпта одна на всех', () => {
+  it('до «СЕЙЧАС» — одинаково у разных каналов, языков, покупателей и вопросов', async () => {
+    const { NOW_MARK } = await import('@/lib/assistant/gemini')
+    const fixed = (s: string) => s.slice(0, s.indexOf(NOW_MARK))
+    const a = systemInstruction('ru', null, 'ky', products, 'кир машина', '', null, null, 'Азамат', true, [], 'whatsapp')
+    const b = systemInstruction('ru', null, 'uz', products, 'пылесос до 10000', '', 10000, products[0], undefined, false, [products[1].id], 'instagram')
+    expect(a.split(NOW_MARK).length).toBe(2)
+    expect(fixed(a)).toBe(fixed(b))
+    expect(fixed(a).length).toBeGreaterThan(8000)
+    // Канал, язык, покупатель — только после границы.
+    expect(fixed(a)).not.toMatch(/Ты отвечаешь в WhatsApp|ЯЗЫК ОТВЕТА: |Имя известно/)
+    expect(b.slice(b.indexOf(NOW_MARK))).toMatch(/ТОЛЬКО кириллицей/)
+  })
+})

@@ -11,9 +11,63 @@ import 'server-only'
  * и чат отвечает запасным режимом (reply.ts).
  */
 
+import { createHash } from 'node:crypto'
 import { fromJson } from './answer-json'
+import { store } from '@/lib/store'
 
-const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models'
+const API = 'https://generativelanguage.googleapis.com/v1beta'
+const ENDPOINT = `${API}/models`
+
+/**
+ * Граница постоянной и переменной части промпта (prompt.ts). Всё до неё одинаково у всех
+ * покупателей — Gemini хранит это в кэше (cachedContents) и берёт за кэш меньше, чем за обычный
+ * ввод. Замер 04.10: 10 538 из 12–19 тыс. токенов каждого ответа — из кэша.
+ */
+export const NOW_MARK = 'СЕЙЧАС — ЭТОТ РАЗГОВОР'
+
+/** Кэш живёт час; за минуту до конца создаём новый. GEMINI_CACHE=0 — без кэша. */
+const CACHE_TTL_S = 3600
+const cache = store('gemini-cache', () => ({ hash: '', name: '', until: 0, failedUntil: 0, pending: null as Promise<string | null> | null }))
+
+function cacheOn(): boolean {
+  return process.env.GEMINI_CACHE !== '0'
+}
+
+/** Имя кэша постоянной части или null (кэш выключен, не создался — тогда как раньше, без кэша). */
+async function cacheFor(key: string, model: string, fixed: string): Promise<string | null> {
+  if (!cacheOn() || fixed.length < 8000) return null
+  const hash = createHash('sha256').update(`${model}|${fixed}`).digest('hex')
+  const now = Date.now()
+  if (cache.hash === hash && cache.name && now < cache.until - 60_000) return cache.name
+  if (now < cache.failedUntil) return null
+  if (cache.pending) return cache.pending
+  cache.pending = (async () => {
+    try {
+      const response = await fetch(`${API}/cachedContents`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
+        signal: AbortSignal.timeout(15_000),
+        body: JSON.stringify({ model: `models/${model}`, displayName: 'smartcentr-consultant', systemInstruction: { parts: [{ text: fixed }] }, ttl: `${CACHE_TTL_S}s` }),
+      })
+      if (!response.ok) throw new Error(`${response.status} ${(await response.text().catch(() => '')).slice(0, 200)}`)
+      const { name } = (await response.json()) as { name?: string }
+      if (!name) throw new Error('нет имени кэша')
+      const old = cache.hash !== hash ? cache.name : ''
+      Object.assign(cache, { hash, name, until: Date.now() + CACHE_TTL_S * 1000 })
+      // Прежний кэш (правила или каталог поменялись) — удалить, чтобы не платить за хранение.
+      if (old) void fetch(`${API}/${old}`, { method: 'DELETE', headers: { 'x-goog-api-key': key } }).catch(() => undefined)
+      return name
+    } catch (error) {
+      // Не создался — 10 минут работаем без кэша, как раньше: ответ важнее экономии.
+      cache.failedUntil = Date.now() + 10 * 60_000
+      console.error('[assistant] кэш Gemini не создан:', error instanceof Error ? error.message : error)
+      return null
+    } finally {
+      cache.pending = null
+    }
+  })()
+  return cache.pending
+}
 
 /** Модель по умолчанию. Меняется через GEMINI_MODEL, пересборка не нужна. */
 // 3.8 Flash: заметно умнее «lite» и дешевле 3.5 Flash; понимает голос и фото.
@@ -51,6 +105,22 @@ export async function askGemini(system: string, turns: ChatTurn[]): Promise<stri
 
 async function once(key: string, system: string, turns: ChatTurn[]): Promise<string> {
   const model = process.env.GEMINI_MODEL || DEFAULT_MODEL
+  const at = system.indexOf(NOW_MARK)
+  const name = at > 0 ? await cacheFor(key, model, system.slice(0, at)) : null
+  if (!name) return await request(key, model, { systemInstruction: { parts: [{ text: system }] } }, turns)
+  try {
+    // Постоянная часть — из кэша; «СЕЙЧАС…» (канал, язык, покупатель, товары) — первой частью разговора.
+    return await request(key, model, { cachedContent: name }, turns, system.slice(at))
+  } catch (error) {
+    // Кэш пропал раньше срока (удалили, истёк) — забываем его и отвечаем без кэша.
+    const status = error instanceof GeminiError ? error.status : 0
+    if (status !== 400 && status !== 403 && status !== 404) throw error
+    if (cache.name === name) Object.assign(cache, { name: '', until: 0 })
+    return await request(key, model, { systemInstruction: { parts: [{ text: system }] } }, turns)
+  }
+}
+
+async function request(key: string, model: string, head: Record<string, unknown>, turns: ChatTurn[], now = ''): Promise<string> {
 
   // 12 секунд — предел ожидания. Обычный ответ приходит за одну-две секунды;
   // если Google молчит дольше, он, скорее всего, не ответит вовсе, и лучше
@@ -62,10 +132,10 @@ async function once(key: string, system: string, turns: ChatTurn[]): Promise<str
     headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
     signal: abort,
     body: JSON.stringify({
-      systemInstruction: { parts: [{ text: system }] },
-      contents: turns.map((turn) => ({
+      ...head,
+      contents: turns.map((turn, i) => ({
         role: turn.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: turn.text }],
+        parts: i === 0 && now ? [{ text: now }, { text: turn.text }] : [{ text: turn.text }],
       })),
       generationConfig: {
         // Низкая температура — меньше выдумок про цены.
@@ -104,6 +174,12 @@ async function once(key: string, system: string, turns: ChatTurn[]): Promise<str
 
   const data = (await response.json()) as {
     candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] }; finishReason?: string }[]
+    usageMetadata?: { promptTokenCount?: number; cachedContentTokenCount?: number; candidatesTokenCount?: number; thoughtsTokenCount?: number }
+  }
+  // GEMINI_LOG_USAGE=1 — в журнал сколько токенов ушло и сколько из них из кэша (проверка экономии).
+  if (process.env.GEMINI_LOG_USAGE === '1') {
+    const u = data.usageMetadata ?? {}
+    console.info(`[assistant] токены: ввод ${u.promptTokenCount ?? '?'}, из кэша ${u.cachedContentTokenCount ?? 0}, ответ ${u.candidatesTokenCount ?? '?'}, мысли ${u.thoughtsTokenCount ?? 0}`)
   }
   // Части с thought — размышления модели; покупателю их не отдаём никогда.
   const text =
