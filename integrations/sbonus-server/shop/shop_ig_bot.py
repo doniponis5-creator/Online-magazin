@@ -361,9 +361,7 @@ async def _story_reply(user: str) -> bool:
     link = rules.product_link(_site_base_url(), str(story["slug"]), lang)
     text = rules.story_answer(lang, str(story.get("name") or ""), int(story.get("price") or 0), int(story.get("oldPrice") or 0), link)
     try:
-        if str(story.get("photo") or "").startswith("https://"):
-            await redis_client.set(f"ig:myphoto:{user}", "1", ex=10 * 60)
-            await _send(user, {"attachment": {"type": "image", "payload": {"url": story["photo"]}}})
+        # В тексте — ссылка на товар: Instagram сам покажет карточку с его фото; отдельное фото было бы вторым.
         await _send_text(user, text)
     except Exception as error:
         logger.warning(f"ig story reply: {error}")
@@ -808,14 +806,19 @@ async def _new_photos(user: str, products: list[dict]) -> list[dict]:
 
 
 async def _send_photos(user: str, products: list[dict]) -> None:
-    """Фото товара, следом — название, цена и ссылка (подписей к фото Instagram не принимает)."""
+    """
+    Карточка товара: название, цена и ссылка на сайт. Instagram сам делает из ссылки карточку с фото товара
+    (og:image страницы — то же фото) — отдельное фото не шлём: покупатель видел одну картинку дважды (04.10).
+    Ссылки нет — тогда фото и текст, как раньше.
+    """
     from .shop_router import _site_base_url
     for product in [p for p in products if str(p.get("image") or "").startswith("https://")][:MAX_PHOTOS]:
         caption = f"{product.get('name')} — {product.get('priceLabel')}"
         href = str(product.get("href") or "")
-        if href.startswith("/"):
-            caption += f"\n{_site_base_url()}{href}"
         try:
+            if href.startswith("/"):
+                await _send_text(user, f"{caption}\n{_site_base_url()}{href}")
+                continue
             await redis_client.set(f"ig:myphoto:{user}", "1", ex=10 * 60)
             await _send(user, {"attachment": {"type": "image", "payload": {"url": product["image"]}}})
             await _send_text(user, caption)
