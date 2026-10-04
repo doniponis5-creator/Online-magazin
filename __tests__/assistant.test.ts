@@ -91,9 +91,15 @@ describe('searchProducts', () => {
 describe('catalogForQuestion', () => {
   const idsIn = (text: string) => [...text.matchAll(/id=([^ |]+)/g)].map((m) => m[1])
 
-  it('каждый товар каталога ровно один раз', () => {
-    const ids = idsIn(catalogForQuestion(products, 'холодильник', 'ru'))
-    expect(ids.sort()).toEqual(products.map((p) => p.id).sort())
+  it('товар — не больше одного раза; разделы без строк — сводкой (каталог целиком не везём, 04.10)', () => {
+    const p = products.find((x) => x.nameRu.includes('Пылесос'))!
+    const text = catalogForQuestion(products, 'пылесос', 'ru')
+    const ids = idsIn(text)
+    expect(new Set(ids).size).toBe(ids.length)
+    expect(ids).toContain(p.id)
+    // Другие разделы — одной строкой на раздел, не на товар.
+    expect(text).toContain('ОСТАЛЬНЫЕ РАЗДЕЛЫ МАГАЗИНА')
+    expect(ids.length).toBeLessThan(products.length)
   })
 
   it('товары по вопросу — со всеми характеристиками', () => {

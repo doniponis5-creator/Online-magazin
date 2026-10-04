@@ -116,6 +116,11 @@ const SYNONYMS: Record<string, string[]> = {
   музлаткич: ['холодильник'],
   жуугуч: ['стиральная'],
   эндура: ['эндуро'],
+  // Каталог больше не едет целиком (04.10) — что не нашёл поиск, модель уже не видит: «Kir mashina kerak», «Мотолор келдиби».
+  kir: ['стиральная'],
+  кир: ['стиральная'],
+  мото: ['мотоцикл', 'мототцикл', 'эндуро'],
+  moto: ['мотоцикл', 'мототцикл', 'эндуро'],
   велик: ['велосипед', 'велик'],
   велосипед: ['велик'],
   velosiped: ['велик', 'велосипед'],
@@ -195,7 +200,8 @@ function normalize(value: string): string {
 }
 
 /** Сколько товаров по вопросу модель видит целиком, со всеми характеристиками. */
-const FOCUS_LIMIT = 25
+// 12, а не 25: «электро» находило и чайники, и велосипеды — каждый ответ вёз их подробно (замер 04.10)
+const FOCUS_LIMIT = 12
 /** Сколько товаров влезает в короткий список всего каталога. */
 const BRIEF_LIMIT = 1500
 const DESC_CHARS = 400
@@ -250,18 +256,48 @@ export function catalogForQuestion(list: Product[], question: string, lang: Lang
       .join(' | ')
   })
 
+  // Весь каталог строкой на товар — 36 000 из 46 000 токенов каждого ответа (замер 04.10, 544 товара):
+  // за него платили на каждое «Салам». Теперь строкой — только разделы, о которых идёт речь
+  // (разделы найденного и показанного); остальные — сводкой «раздел: сколько, цены от–до».
   const rest = list.filter((p) => !focusIds.has(p.id))
+  // Разделы — показанных в разговоре и трёх самых подходящих: не всех найденных по одному слову.
+  const near = new Set([...talked, ...focus.slice(0, talked.length + 3)].map((p) => p.categoryId))
   const brief = rest
+    .filter((p) => near.has(p.categoryId))
     .slice(0, BRIEF_LIMIT)
     .map((p) => productLine(p) + (budget && p.price > budget ? ' | дороже бюджета — не предлагай' : ''))
-  const cut = rest.length > BRIEF_LIMIT ? `\n(показаны ${BRIEF_LIMIT} из ${rest.length})` : ''
 
   return [
     detailed.length > 0
       ? `ПО ВОПРОСУ ПОКУПАТЕЛЯ — подробно, отсюда сравнивай и советуй:\n${budgetNote}${detailed.join('\n')}`
-      : 'ПО ВОПРОСУ ПОКУПАТЕЛЯ: по словам вопроса ничего не нашлось — ищи в общем списке ниже.',
-    `ВЕСЬ КАТАЛОГ — коротко (характеристики у этих товаров есть, но здесь не показаны; спросят — скажи, что уточнишь, и дай телефон):\n${brief.join('\n')}${cut}`,
-  ].join('\n\n')
+      : 'ПО ВОПРОСУ ПОКУПАТЕЛЯ: по словам вопроса ничего не нашлось — посмотри разделы ниже и спроси, что именно нужно.',
+    brief.length > 0
+      ? `ЕЩЁ В ЭТИХ ЖЕ РАЗДЕЛАХ — коротко (характеристики у них есть, но здесь не показаны; спросят — скажи, что уточнишь):\n${brief.join('\n')}`
+      : '',
+    `ОСТАЛЬНЫЕ РАЗДЕЛЫ МАГАЗИНА — сводка (модели здесь не перечислены). Спросят про такой товар — скажи, что такие есть,
+назови цены «от … до …» и уточни одним вопросом, что именно нужно (объём, размер, бюджет): по следующему вопросу ты увидишь
+модели подробно. «Нет» про раздел из этого списка не говори.
+${sectionIndex(rest.filter((p) => !near.has(p.categoryId)))}`,
+  ]
+    .filter(Boolean)
+    .join('\n\n')
+}
+
+/** Сводка раздела: «Холодильники: 23 (в наличии 19), 13 700–55 700 сом». */
+function sectionIndex(list: Product[]): string {
+  const groups = new Map<string, Product[]>()
+  for (const p of list) groups.set(p.categoryId, [...(groups.get(p.categoryId) ?? []), p])
+  return [...groups.entries()]
+    .map(([id, items]) => {
+      // Цены — от 10-го до 90-го процента товаров в наличии: «от 200 сом» за запчасть в разделе
+      // стиральных машин звучало как цена машины (имтихон 04.10).
+      const prices = items.filter(isInStock).map((p) => p.price).filter((n) => n > 0).sort((a, b) => a - b)
+      const at = (q: number) => prices[Math.min(prices.length - 1, Math.floor(q * prices.length))]
+      const span = prices.length > 0 ? `, обычно ${at(0.1)}–${at(0.9)} сом` : ''
+      const have = items.filter(isInStock).length
+      return `${categoryName(id, 'ru')}: ${items.length} (в наличии ${have})${span}`
+    })
+    .join('\n')
 }
 
 function productLine(product: Product): string {
