@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useParams, useSearchParams } from 'next/navigation'
 import { Suspense, useCallback, useEffect, useState } from 'react'
+import { AppOrderPromo } from '@/components/AppBanner'
 import { phones, whatsappHref } from '@/data/contacts'
 import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
@@ -187,6 +188,8 @@ function OrderView() {
               {t.order.number1c}: <strong>{order.number1c}</strong>
             </p>
           )}
+          {/* «Следите за заказом в приложении» — iPhone вне приложения; отменённому — незачем. */}
+          {order.status !== 'cancelled' && <AppOrderPromo />}
           <div className="order-page__actions">
             <Link href={`/${lang}/catalog`} className="btn btn--outline">
               {t.order.toCatalog}

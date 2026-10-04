@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react'
 import { bonusRule } from '@/lib/customer/bonusRule'
 import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
+import { inNativeApp } from '@/lib/native/bonusCard'
+import { appBarWanted } from '@/lib/native/appStore'
 import { IconArrowUpRight, IconClose, IconGift } from './Icons'
 
 /**
@@ -33,6 +35,9 @@ export function BonusReminder() {
   const [info, setInfo] = useState<Cached | null>(null)
   const [hidden, setHidden] = useState(true)
   const [ready, setReady] = useState(false)
+  // Полоса «Скачайте приложение» уже говорит о бонусах — вторая полоса подряд не нужна.
+  const [appBar, setAppBar] = useState(false)
+  useEffect(() => setAppBar(appBarWanted(inNativeApp())), [])
 
   useEffect(() => {
     try {
@@ -84,7 +89,7 @@ export function BonusReminder() {
   }, [ready, hidden])
 
   const quietPages = ['account', 'cart', 'checkout', 'order'].some((p) => pathname.startsWith(`/${lang}/${p}`))
-  if (hidden || quietPages || !info || info.balance <= 0) return null
+  if (hidden || quietPages || appBar || !info || info.balance <= 0) return null
 
   const hide = () => {
     setHidden(true)

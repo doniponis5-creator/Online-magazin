@@ -11,6 +11,8 @@ import { Header } from '@/components/Header'
 import { BottomNav } from '@/components/BottomNav'
 import { CartReminder } from '@/components/CartReminder'
 import { BonusReminder } from '@/components/BonusReminder'
+import { AppBanner } from '@/components/AppBanner'
+import { APP_STORE_ID } from '@/lib/native/appStore'
 import { AssistantChat } from '@/components/AssistantChat'
 import { Footer } from '@/components/Footer'
 import { HtmlLang } from '@/components/HtmlLang'
@@ -70,6 +72,7 @@ export default async function LangLayout({
             {dict.nav.skipToContent}
           </a>
           <Header />
+          <AppBanner />
           <BonusReminder />
           <main id="content" tabIndex={-1}>
             {children}
@@ -95,6 +98,8 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
     title: dict.meta.title,
     description: dict.meta.description,
     applicationName: SITE_NAME,
+    // Safari на iPhone сам покажет вверху полосу «S Маркет — Открыть / Загрузить» (Smart App Banner).
+    itunes: { appId: APP_STORE_ID },
     // Каноническая ссылка и пара языков: без них поисковик считает русскую
     // и кыргызскую версии разными сайтами и делит вес между ними.
     alternates: {
