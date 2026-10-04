@@ -1461,7 +1461,8 @@ main#content {
 /* ---------- Catalog controls ---------- */
 .catalog-layout {
   display: grid;
-  grid-template-columns: 1fr;
+  /* minmax(0, …): иначе колонка растягивается под строку категорий, и она не листается на телефоне */
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   margin-top: 20px;
 }
@@ -1476,6 +1477,36 @@ main#content {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+/* Телефон: категории одной строкой, листаются пальцем вбок (CatalogView ставит выбранную в середину).
+   Шесть рядов кнопок уводили товары за экран — покупатель с главной («Холодильники») видел одни кнопки.
+   Строка доходит до краёв экрана; правый край тает — видно, что дальше есть ещё. */
+@media (max-width: 900px) {
+  .chip-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin-inline: -16px;
+    padding: 2px 16px;
+    scroll-padding-inline: 16px;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent);
+    mask-image: linear-gradient(90deg, #000 calc(100% - 32px), transparent);
+  }
+
+  .chip-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .chip-row .chip {
+    flex: none;
+  }
+
+  /* категория выбрана — товары ближе к верху: общий подзаголовок каталога только на компьютере */
+  .page-head__sub--wide {
+    display: none;
+  }
 }
 
 .chip {

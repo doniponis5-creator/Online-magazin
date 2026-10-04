@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { categories, type CategoryId } from '@/data/categories'
 import { brands, products, type Product } from '@/data/products'
 import { useI18n } from '@/lib/i18n/I18nProvider'
@@ -87,6 +87,19 @@ function CatalogViewInner() {
     }
   }, [panelOpen])
 
+  // Телефон: категории — одна строка, листается вбок. Выбранная (пришли с главной, «Холодильники») встаёт
+  // в середину строки — её видно сразу, а товары начинаются под строкой, а не через шесть рядов кнопок.
+  const chosen = categories.find((c) => c.id === cat)
+  const chipRow = useRef<HTMLDivElement>(null)
+  const chipsPlaced = useRef(false)
+  useEffect(() => {
+    const row = chipRow.current
+    const on = row?.querySelector<HTMLElement>('[aria-pressed="true"]')
+    if (!row || !on || row.scrollWidth <= row.clientWidth) return
+    const left = on.offsetLeft - (row.clientWidth - on.offsetWidth) / 2
+    row.scrollTo({ left: Math.max(0, left), behavior: chipsPlaced.current ? 'smooth' : 'auto' })
+    chipsPlaced.current = true
+  }, [cat])
   useEffect(() => setInput(q), [q])
   useEffect(() => setMinInput(minPrice ? String(minPrice) : ''), [minPrice])
   useEffect(() => setMaxInput(maxPrice ? String(maxPrice) : ''), [maxPrice])
@@ -205,8 +218,9 @@ function CatalogViewInner() {
   return (
     <div className="container">
       <div className="page-head">
-        <h1 className="page-head__title">{t.catalog.title}</h1>
-        <p className="page-head__sub">{t.catalog.subtitle}</p>
+        {/* выбрана категория — заголовок её именем («Холодильники»), общий подзаголовок на телефоне прячется */}
+        <h1 className="page-head__title">{chosen ? (lang === 'ky' ? chosen.nameKy : chosen.nameRu) : t.catalog.title}</h1>
+        <p className={`page-head__sub${chosen ? ' page-head__sub--wide' : ''}`}>{t.catalog.subtitle}</p>
       </div>
 
       <div className="catalog-layout">
@@ -225,7 +239,7 @@ function CatalogViewInner() {
             />
           </div>
 
-          <div className="chip-row" role="group" aria-label={t.categories.title}>
+          <div ref={chipRow} className="chip-row" role="group" aria-label={t.categories.title}>
             <button
               type="button"
               className="chip"
