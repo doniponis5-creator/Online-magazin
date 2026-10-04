@@ -138,17 +138,20 @@ const SYNONYMS: Record<string, string[]> = {
  * «Вы чините велосипеды?» находил «Вытяжку» — потому что «вы» есть внутри
  * слова «вытяжка». Слова короче трёх букв не ищутся вовсе.
  */
-// «Идиш жууган машинка», «idish yuvadigan mashina» — посудомоечная, а не стиральная: «жуу…», «кир», «машина»
-// по отдельности тянут к стиральным (переписка 04.10: бот сказал «посудомоечных нет» при четырёх в наличии
-// и предложил стиралки). «Идиш» без «мыть» — просто посуда (казан, контейнер) — не трогаем.
-const DISH = /^(идиш|idish|idsh)/
-const DISH_WORD = /^(посудомо|посудомой|posudomo)/
-const WASH = /^(жуу|жуг|юв|yuv|кир|kir|мошин|машин|mashin|стирал|мойк|моеч|моющ)/
+// «Идиш жууган машинка», «мини посуда мойка», «idish yuvadigan mashina» — посудомоечная, а не стиральная:
+// «жуу…», «кир», «машина», «мойка» по отдельности тянут к стиральным и моющим пылесосам (переписки 04.10: в WhatsApp
+// бот сказал «посудомоечных нет» при семи в наличии, в Instagram на «мини посуда мойка» — «калбай калган» про MIDEA
+// MDWM-218TWO, которая есть). «Идиш»/«посуда» без «мыть» — просто посуда (казан, набор) — не трогаем.
+const DISH = /^(идиш|idish|idsh|посуд|posud)/
+const DISH_WORD = /^(посудомо|посудомой|posudomo|посудамой)/
+const WASH = /^(жуу|жуг|юв|yuv|кир|kir|мошин|машин|mashin|стирал|мойк|моеч|моющ|мыт|моет|моют)/
 
 export function dishwasherWords(words: string[]): string[] {
   const dish = words.some((w) => DISH_WORD.test(w)) || (words.some((w) => DISH.test(w)) && words.some((w) => WASH.test(w)))
   if (!dish) return words
-  return [...words.filter((w) => !DISH.test(w) && !DISH_WORD.test(w) && !WASH.test(w)), 'посудомоечная']
+  // Остаются только марка и модель (латиница, цифры): «мини», «канча» тянули «Парту мини» наравне с посудомойкой.
+  // Какая именно — компактная, на 14 персон — модель видит по характеристикам всех посудомоечных.
+  return [...words.filter((w) => /[a-z0-9]/.test(w) && !DISH.test(w) && !DISH_WORD.test(w) && !WASH.test(w)), 'посудомоечная']
 }
 
 export function searchProducts(query: string, lang: Lang, limit = 6, list: Product[] = products): Product[] {
@@ -375,9 +378,32 @@ function sectionIndex(list: Product[]): string {
       const low = Math.max(1000, Math.floor(at(0.1) / 1000) * 1000)
       const high = Math.max(low, Math.ceil(at(0.9) / 5000) * 5000)
       const span = prices.length > 0 ? `обычно ${low}–${high} сом` : 'цены уточнить'
-      return `${categoryName(id, 'ru')}: ${span}`
+      const kinds = kindsOf(items)
+      return `${categoryName(id, 'ru')}${kinds ? ` (${kinds})` : ''}: ${span}`
     })
     .join('\n')
+}
+
+/**
+ * Что лежит в разделе — по первым словам названий: «посудомоечная машина, духовка, вытяжка».
+ * Без этого «Кухонная техника: 6 000–40 000 сом» не говорила модели, что посудомойки есть, и на
+ * «мини посуда мойка» она ответила «калбай калган» при MIDEA в наличии (Instagram, 04.10).
+ * Только названия — меняется вместе с каталогом, не с остатками: кэш Gemini не страдает.
+ */
+export function kindsOf(items: Product[], limit = 10): string {
+  const count = new Map<string, number>()
+  for (const p of items) {
+    const words = p.nameRu.replace(/[*"«»()]/g, ' ').trim().toLowerCase().split(/\s+/)
+    if (!words[0] || !/^[а-яё-]{3,}$/.test(words[0])) continue
+    // «Посудомоечная машина», «Варочная панель» — прилагательное без существительного ничего не говорит.
+    const kind = /(ая|ый|ой|ое|ий)$/.test(words[0]) && words[1] && /^[а-яё-]{3,}$/.test(words[1]) ? `${words[0]} ${words[1]}` : words[0]
+    count.set(kind, (count.get(kind) ?? 0) + 1)
+  }
+  return [...count.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, limit)
+    .map(([kind]) => kind)
+    .join(', ')
 }
 
 function productLine(product: Product): string {

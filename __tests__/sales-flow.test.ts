@@ -760,14 +760,26 @@ describe('Instagram (02.10): мем без подписи — молчим; не
   it('посудомойка (04.10): «идиш жууган машинка» — посудомоечная, не стиральная; заявке — вся переписка', async () => {
     const { searchProducts, dishwasherWords } = await import('@/lib/assistant/knowledge')
     const item = (id: string, nameRu: string) => ({ ...products[0], id, nameRu, nameKy: nameRu, brand: '', specs: [] })
-    const list = [item('wash', 'Стиральная машина Artel 7 кг'), item('dish', 'Посудомоечная машина VELBERG VLB-4512Z инвертор 10 персон'), item('kazan', 'Казан идиш 6 литр')]
-    for (const q of ['Идиш жууган машинка канча экен', 'идиш жуугуч барбы', 'idish yuvadigan mashina', 'Посудомойка есть?']) {
+    const list = [
+      item('wash', 'Стиральная машина Artel 7 кг'),
+      item('dish', 'Посудомоечная машина VELBERG VLB-4512Z инвертор 10 персон'),
+      item('kazan', 'Казан идиш 6 литр'),
+      item('desk', 'Парта мини'),
+      item('vac', 'Пылесос моющий мини'),
+    ]
+    for (const q of ['Идиш жууган машинка канча экен', 'идиш жуугуч барбы', 'idish yuvadigan mashina', 'Посудомойка есть?', 'мини посуда мойка', 'посуда мыть машина']) {
       expect(searchProducts(q, 'ky', 3, list)[0]?.id, q).toBe('dish')
-      expect(searchProducts(q, 'ky', 3, list).map((p) => p.id), q).not.toContain('wash')
+      expect(searchProducts(q, 'ky', 3, list).map((p) => p.id), q).toEqual(['dish'])
     }
     // «Кир жуугуч» — по-прежнему стиральная, «идиш» без «мыть» — посуда.
     expect(searchProducts('Кир жуугуч машина', 'ky', 3, list)[0]?.id).toBe('wash')
     expect(dishwasherWords(['идиш', 'казан'])).toEqual(['идиш', 'казан'])
+    expect(dishwasherWords(['набор', 'посуды'])).toEqual(['набор', 'посуды'])
+    expect(dishwasherWords(['посудомоечная', 'midea', 'mdwm'])).toEqual(['midea', 'mdwm', 'посудомоечная'])
+    // В сводке разделов видно, что посудомойки есть: «Кухонная техника» сама этого не говорила.
+    const { kindsOf } = await import('@/lib/assistant/knowledge')
+    expect(kindsOf([item('d1', 'Посудомоечная машина MIDEA MDWM-218TWO'), item('d2', 'Посудомоечная машина VELBERG'), item('o', 'Духовка UAKEEN')]))
+      .toBe('посудомоечная машина, духовка')
 
     vi.resetModules()
     const leads: string[] = []
