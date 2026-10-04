@@ -25,7 +25,7 @@ SRC="$(cd "$(dirname "$0")" && pwd)"
 API=sbonus_api
 DB=sbonus_db
 TS=$(date +%Y%m%d_%H%M%S)
-FILES="__init__.py shop_models.py shop_router.py shop_catalog.py shop_telegram.py shop_customers.py shop_admin.py shop_push.py shop_push_fcm.py shop_cart_rules.py shop_cart_remind.py shop_promo_rules.py shop_promo.py shop_whatsapp.py shop_installments_calc.py shop_installments.py shop_stock.py shop_wa_bot.py shop_ig_rules.py shop_ig_bot.py shop_ig_post.py"
+FILES="__init__.py shop_models.py shop_router.py shop_catalog.py shop_telegram.py shop_customers.py shop_admin.py shop_push.py shop_push_fcm.py shop_cart_rules.py shop_cart_remind.py shop_promo_rules.py shop_promo.py shop_whatsapp.py shop_installments_calc.py shop_installments.py shop_stock.py shop_wa_bot.py shop_ig_rules.py shop_ig_bot.py shop_ig_post.py shop_ig_stats.py"
 MIGRATIONS="001_shop_orders_migration.sql 002_shop_catalog_migration.sql 003_shop_bonus_migration.sql 004_shop_stats_migration.sql 005_shop_push_migration.sql 006_shop_installments_migration.sql 007_shop_notes_migration.sql 008_shop_chat_extra_migration.sql 009_shop_push_token_len_migration.sql 010_shop_cart_reminders_migration.sql 011_shop_promo_migration.sql"
 
 echo "=== Деплой: интернет-магазин (заказы + каталог + вход и бонусы) ==="
@@ -70,6 +70,8 @@ import app.shop_precheck.shop_ig_bot as igbot
 assert ig_rules.split_text('a. ' * 600) and ig_rules.events({'object': 'instagram', 'entry': []}) == []
 assert callable(igbot.poll_once) and {x.path for x in igbot.router_ig_bot.routes} == {'/webhook/instagram'}
 import app.shop_precheck.shop_ig_post as igpost
+import app.shop_precheck.shop_ig_stats as igstats
+assert callable(igstats.send_week_report) and callable(igstats.collect_stories) and 'Instagram' in ig_rules.week_report('1', {}, [], [], {}, None)
 assert callable(igpost.publish) and callable(igpost.auto_story) and callable(igpost.week_items) and ig_rules.ice_breakers_payload()['platform'] == 'instagram' and ig_rules.caption_problem(ig_rules.post_caption('new', 'A', 100, 0)) is None
 assert '/shop/photos/ig/{v}.jpg' in {x.path for x in c.router_public_photos.routes}
 import app.shop_precheck.shop_push as push

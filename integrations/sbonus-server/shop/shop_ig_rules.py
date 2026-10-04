@@ -440,3 +440,58 @@ def carousel_caption(rows: list[tuple[str, int, int]]) -> str:
         "#smartcentr #smarketkg #скидка #арзандатуу #ош #кыргызстан",
     ]
     return "\n".join(lines)
+
+
+# ── Недельная статистика владельцу (shop_ig_stats.py, 04.10) ──────────────────
+
+def _n(value) -> str:
+    try:
+        return f"{int(value):,}".replace(",", " ")
+    except (TypeError, ValueError):
+        return "—"
+
+
+def _title(caption: str, limit: int = 48) -> str:
+    """Первая осмысленная строка подписи: без эмодзи и хэштегов, коротко."""
+    for line in (caption or "").split("\n"):
+        line = re.sub(r"#\S+", "", line)
+        line = re.sub(r"[^\w\s.,%()+−-]", "", line).strip(" ·-")
+        line = re.sub(r"\s{2,}", " ", line)
+        if len(line) >= 4:
+            return line[:limit] + ("…" if len(line) > limit else "")
+    return "Пост"
+
+
+def week_report(period: str, account: dict, posts: list[dict], stories: list[dict], counts: dict,
+                followers: tuple | None, problem: str = "") -> str:
+    """Текст «Instagram за неделю» для WhatsApp владельца: цифры и лучшие публикации, без советов от модели."""
+    lines = [f"📊 Instagram за неделю ({period})", "━━━━━━━━━━━━━━━━━━━"]
+    if problem:
+        lines += [f"⚠️ {problem}", ""]
+    if account.get("reach") is not None:
+        lines.append(f"👀 Охват — сколько людей видели магазин: {_n(account['reach'])}")
+    if account.get("profile_views") is not None:
+        lines.append(f"👤 Открыли профиль: {_n(account['profile_views'])}")
+    if account.get("website_clicks") is not None:
+        lines.append(f"🌐 Перешли на сайт из профиля: {_n(account['website_clicks'])}")
+    if followers:
+        now, before = followers
+        delta = f" ({'+' if now - before >= 0 else ''}{now - before} за неделю)" if before is not None else ""
+        lines.append(f"👥 Подписчиков: {_n(now)}{delta}")
+    lines.append(f"💬 Написали в Direct: {_n(counts.get('dm', 0))} чел.")
+    lines.append(f"↩️ Ответили на истории: {_n(counts.get('storyreply', 0))}")
+    lines.append(f"🗨️ Комментариев разобрал робот: {_n(counts.get('comments', 0))}")
+    ranked = sorted(posts, key=lambda p: (p.get("reach") or 0, p.get("likes") or 0), reverse=True)[:3]
+    if ranked:
+        lines += ["", f"🏆 Лучшие посты (всего {len(posts)}):"]
+        for p in ranked:
+            reach = f"охват {_n(p['reach'])}, " if p.get("reach") is not None else ""
+            lines.append(f"• {_title(p.get('caption') or '')} — {reach}❤ {_n(p.get('likes'))}, 💬 {_n(p.get('comments'))}")
+    best = sorted(stories, key=lambda s: (s.get("reach") or 0), reverse=True)[:3]
+    if best:
+        lines += ["", f"📸 Лучшие истории (всего {len(stories)}):"]
+        for s in best:
+            lines.append(f"• {(s.get('name') or 'История')[:48]} — охват {_n(s.get('reach'))}, ответов {_n(s.get('replies'))}")
+    if not posts and not stories:
+        lines += ["", "Постов и историй за неделю не было."]
+    return "\n".join(lines)

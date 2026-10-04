@@ -170,7 +170,10 @@ Green API `sendMediaStatus`, ссылка в подписи, картинка б
 `shop_ig_rules.ICE_BREAKERS` → `shop_ig_bot._ensure_ice_breakers` (POST /me/messenger_profile, раз, пока список тот же);
 нажатие приходит postback'ом (поле webhook `messaging_postbacks`) — `events()` делает из него сообщение. Карусель
 «Скидки недели» — `format: carousel` в `/promo/ig-preview|ig-post`: обложка `CoverCard` (`kind: cover`) + до 9 карточек
-(`week_items`), контейнеры `is_carousel_item` → `CAROUSEL`, подпись `carousel_caption`; раз в сутки. Посты в ленту — только кнопкой.
+(`week_items`), контейнеры `is_carousel_item` → `CAROUSEL`, подпись `carousel_caption`; раз в сутки. Недельная статистика —
+`shop_ig_stats.py`: понедельник после сводки 9:05 (`shop_wa_bot.run_digest` → `send_week_report`), текст `week_report`;
+истории — `collect_stories` раз в час из cron робота (Instagram отдаёт их цифры только 24 ч); свои счётчики `ig:stats:dm|
+storyreply|comments:<день>` пишет `shop_ig_bot._stat`; право `instagram_business_manage_insights` (без него — подсказка). Посты в ленту — только кнопкой.
 Нужен ключ с правом `instagram_business_content_publish` (старый ключ — 403). В Manrope нет «ң» — её дорисовывает
 `scripts/instagram-fonts.py` в статичные срезы.
 

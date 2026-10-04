@@ -272,6 +272,7 @@ async def _on_message(event: dict) -> None:
     if rules.mention_only(event):
         return
     user = event["user"]
+    await _stat("dm", user)
     if event.get("story"):
         # Ответ на нашу историю — подставляем товар с неё: «Канча?» без него не понять.
         from .shop_ig_post import describe_story
@@ -279,6 +280,7 @@ async def _on_message(event: dict) -> None:
         if note:
             event = {**event, "context": [note if c == rules.STORY_NOTE else c for c in event.get("context") or []]}
             await _show_story_product(user, event["story"])
+            await _stat("storyreply")
             # Короткое «Канча?», «+» на нашу историю — ответим шаблоном с фото и ссылкой, без Gemini (_story_reply).
             if len(str(event.get("text") or "")) <= rules.STORY_QUICK_MAX and not event.get("media"):
                 await redis_client.set(f"ig:storyreply:{user}", json.dumps({"story": str(event["story"]), "text": str(event.get("text") or "")}, ensure_ascii=False), ex=3600)
@@ -371,6 +373,18 @@ async def _story_reply(user: str) -> bool:
     return True
 
 
+async def _stat(kind: str, user: str = "") -> None:
+    """Счётчики для недельного отчёта (shop_ig_stats): ошибка счётчика ответу покупателю не мешает."""
+    try:
+        from .shop_ig_stats import count, count_dm
+        if kind == "dm":
+            await count_dm(user)
+        else:
+            await count(kind)
+    except Exception as error:
+        logger.info(f"ig stats {kind}: {type(error).__name__}")
+
+
 async def _switched_on() -> bool:
     """Галочка «Instagram-консультант» в 1С («Панель сайта»). Нет связи с базой — считаем включённым."""
     from app.core.database import async_session
@@ -398,6 +412,12 @@ async def poll_once() -> dict:
         await auto_story()
     except Exception as error:
         logger.warning(f"ig auto story: {type(error).__name__}: {error}")
+    # Цифры живых историй — раз в час: через сутки Instagram их не отдаст, а отчёт — в понедельник.
+    try:
+        from .shop_ig_stats import collect_stories
+        await collect_stories()
+    except Exception as error:
+        logger.info(f"ig stats: {type(error).__name__}: {error}")
     from .shop_wa_bot import _settings
     _, delay = await _settings()
     on = await _switched_on()
@@ -595,6 +615,7 @@ async def _handle_comments(budget: float = 20.0) -> int:
             if action == "hide":
                 await _graph_post(cid, params={"hide": "true"})
                 logger.warning(f"ig comment: скрыт спам ...{cid[-4:]}")
+                await _stat("comments")
                 done += 1
                 continue
             if action not in ("answer", "alert"):
@@ -620,6 +641,7 @@ async def _handle_comments(budget: float = 20.0) -> int:
                 reply = await _graph_post(f"{cid}/replies", json={"message": public})
                 if reply.get("id"):
                     await redis_client.set(f"ig:myreply:{reply['id']}", "1", ex=7 * 24 * 3600)
+            await _stat("comments")
             done += 1
             logger.warning(f"ig comment: {action} ...{cid[-4:]}")
         except Exception as error:

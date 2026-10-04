@@ -904,6 +904,12 @@ def run_digest() -> None:
                     await send_quality()
                 except Exception as error:
                     logger.error(f"wa quality: {error}")
+                # И Instagram за неделю (04.10): охват, подписчики, лучшие посты и истории, Direct.
+                try:
+                    from .shop_ig_stats import send_week_report
+                    await send_week_report()
+                except Exception as error:
+                    logger.error(f"ig week report: {error}")
         finally:
             await _close_redis()
 

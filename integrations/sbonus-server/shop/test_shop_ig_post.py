@@ -18,7 +18,7 @@ import pathlib
 import sys
 import types
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qs
 
 import httpx
@@ -74,6 +74,12 @@ class FakeRedis:
     async def smembers(self, key):
         return set(self.data.get(key, set()))
 
+    async def hset(self, key, field, value):
+        self.data.setdefault(key, {})[field] = value
+
+    async def hgetall(self, key):
+        return dict(self.data.get(key, {}))
+
 
 redis = FakeRedis()
 TOKEN = {"value": "ig-token"}
@@ -128,7 +134,7 @@ def _load():
         module = types.ModuleType(name)
         module.__dict__.update(attrs)
         sys.modules[name] = module
-    for name in ("shop_ig_rules", "shop_promo_rules", "shop_ig_post"):
+    for name in ("shop_ig_rules", "shop_promo_rules", "shop_ig_post", "shop_ig_stats"):
         spec = importlib.util.spec_from_file_location(f"{_PKG}.{name}", _HERE / f"{name}.py")
         module = importlib.util.module_from_spec(spec)
         sys.modules[f"{_PKG}.{name}"] = module
@@ -137,6 +143,7 @@ def _load():
 
 
 post = _load()
+stats = sys.modules[f"{_PKG}.shop_ig_stats"]
 
 ITEM = {
     "code": "ЦБ-00001234", "name": "Электро Эндуро WN-A10", "price": 15900, "oldPrice": 18900,
@@ -418,6 +425,67 @@ class AutoStory(Base):
         self.assertIn("не вышла · Товар дня", SENT[0])
         self.assertIn("Статус WhatsApp не вышел: Green API 466", SENT[0])
         self.assertNotIn(f"wa:status:{post._today()}:{ITEM['code']}", redis.data)  # не вышел — можно повторить
+
+
+class WeekStats(Base):
+    """Недельная статистика: Instagram отдаёт цифры, робот — свои счётчики."""
+
+    def insights(self, permission=True):
+        now = datetime.now(timezone.utc)
+        fresh = (now - timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%S+0000")
+        old = (now - timedelta(days=20)).strftime("%Y-%m-%dT%H:%M:%S+0000")
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            path = request.url.path
+            if path.endswith("/me/insights") or path.endswith("/insights"):
+                if not permission:
+                    return httpx.Response(403, json={"error": {"message": "(#10) Application does not have permission"}})
+                if path.endswith("/me/insights"):
+                    return httpx.Response(200, json={"data": [
+                        {"name": "reach", "total_value": {"value": 5400}},
+                        {"name": "website_clicks", "total_value": {"value": 37}},
+                    ]})
+                return httpx.Response(200, json={"data": [{"name": "reach", "values": [{"value": 900}]}]})
+            if path.endswith("/me/media"):
+                return httpx.Response(200, json={"data": [
+                    {"id": "P1", "caption": "🔥 Скидка −15% · Арзандатуу\nЭлектро Эндуро", "timestamp": fresh, "like_count": 12, "comments_count": 3},
+                    {"id": "P0", "caption": "Старый пост", "timestamp": old, "like_count": 99, "comments_count": 9},
+                ]})
+            if path.endswith("/me"):
+                return httpx.Response(200, json={"followers_count": 1250})
+            return httpx.Response(404)
+        return handler
+
+    def test_report(self):
+        self.use(self.insights())
+        run(stats.count_dm("u1"))
+        run(stats.count_dm("u1"))  # один человек — один, сколько бы ни писал
+        run(stats.count_dm("u2"))
+        run(stats.count("storyreply"))
+        redis.data["ig:stats:followers"] = json.dumps({"day": "20000101", "count": 1200})
+        redis.data["ig:stats:stories"] = {"S1": json.dumps({
+            "ts": (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S+0000"),
+            "name": "Утюг", "reach": 300, "replies": 4})}
+        text = run(stats.week_report())
+        self.assertIn("👀 Охват — сколько людей видели магазин: 5 400", text)
+        self.assertIn("🌐 Перешли на сайт из профиля: 37", text)
+        self.assertIn("👥 Подписчиков: 1 250 (+50 за неделю)", text)
+        self.assertIn("💬 Написали в Direct: 2 чел.", text)
+        self.assertIn("↩️ Ответили на истории: 1", text)
+        self.assertIn("• Скидка −15% Арзандатуу — охват 900, ❤ 12, 💬 3", text)
+        self.assertIn("• Утюг — охват 300, ответов 4", text)
+        self.assertNotIn("Старый пост", text)  # старше недели — не в отчёт
+
+    def test_no_permission(self):
+        self.use(self.insights(permission=False))
+        text = run(stats.week_report())
+        self.assertIn("instagram_business_manage_insights", text)
+        self.assertIn("👥 Подписчиков: 1 250", text)  # подписчики — и без права на статистику
+
+    def use(self, handler):
+        real = self.real_client
+        post.httpx.AsyncClient = lambda **kw: real(transport=httpx.MockTransport(handler), **kw)
+        stats.httpx.AsyncClient = post.httpx.AsyncClient
 
 
 if __name__ == "__main__":
