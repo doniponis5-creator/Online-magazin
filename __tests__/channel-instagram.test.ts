@@ -49,6 +49,16 @@ describe('/api/channel/instagram', () => {
     expect(respond).not.toHaveBeenCalled()
   })
 
+  it('ник приходит с сервера — подпись «Instagram @ник»; странный ник не берём', async () => {
+    vi.stubEnv('SHOP_API_SECRET', SECRET)
+    respond.mockResolvedValue({ text: 'ok', products: [], source: 'gemini' })
+    const { POST } = await import('@/app/api/channel/instagram/route')
+    await POST(request({ id: '1234567890', name: 'Айбек', username: 'aibek_osh', messages: [{ role: 'user', text: 'Салам' }] }))
+    expect(respond.mock.calls.at(-1)?.[0].label).toBe('Instagram @aibek_osh')
+    await POST(request({ id: '1234567890', username: '<script>', messages: [{ role: 'user', text: 'Салам' }] }))
+    expect(respond.mock.calls.at(-1)?.[0].label).toBe('Instagram id 1234567890')
+  })
+
   it('канал instagram, без телефона и без данных покупателя', async () => {
     vi.stubEnv('SHOP_API_SECRET', SECRET)
     respond.mockResolvedValue({ text: 'Есть, 32 900 сом.', products: [], source: 'gemini' })
@@ -57,7 +67,8 @@ describe('/api/channel/instagram', () => {
     expect(response.status).toBe(200)
     expect(await response.json()).toMatchObject({ ok: true, text: 'Есть, 32 900 сом.', source: 'gemini', silent: false, handoff: false })
     const [channel, turns, , customer, buy, shown] = respond.mock.calls[0]
-    expect(channel).toEqual({ key: 'ig:1234567890', orderSource: 'Заказ из Instagram', leadChannel: 'instagram', known: { name: 'Айбек' } })
+    // label — подпись для владельца в 🚨/💳 (ника нет — id): по ней он найдёт чат.
+    expect(channel).toEqual({ key: 'ig:1234567890', orderSource: 'Заказ из Instagram', leadChannel: 'instagram', known: { name: 'Айбек' }, label: 'Instagram id 1234567890' })
     expect(turns).toEqual([{ role: 'user', text: 'Холодильник барбы?' }])
     expect(customer).toBeNull()
     expect(buy).toBeUndefined()

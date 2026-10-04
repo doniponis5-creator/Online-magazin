@@ -13,7 +13,9 @@ import type { Lang } from '@/lib/i18n/config'
 import { answer, talkLang } from './reply'
 import { cleanName } from './talk'
 import { AFFIRM, BUY_INTENT, CALL_OFFER, DEFER, FULL_ADDRESS, OFFER, PAY_ASIDE, cancel, hasDraft, looksLikeQuestion, start, step } from '@/lib/telegram/order'
-import { CALL_INTENT, cancelLead, hasLead, leadContext, leadStep, startLead } from './leads'
+import { CALL_INTENT, cancelLead, hasLead, leadContext, leadStep, notifyOwner, startLead } from './leads'
+import { decide, paidAmount, triage } from './triage'
+import { durableMap } from '@/lib/durable'
 import { lookupIn, salesCatalogNow } from './live'
 import { type Intent, followAfter, isSureYes, jevConfigured, objectionNote, readAnswer } from './jev'
 import type { ChatTurn } from './gemini'
@@ -47,6 +49,8 @@ export type Channel = {
   leadChannel: 'site' | 'telegram' | 'whatsapp' | 'instagram'
   /** что точно известно о покупателе */
   known: { name?: string; phone?: string }
+  /** как подписать человека владельцу, когда номера нет: «Instagram @ник» */
+  label?: string
 }
 
 export async function respond(
@@ -77,6 +81,13 @@ export async function respond(
   // Есть хоть слово сверх приветствия или разговор уже шёл — как обычно, отвечает модель.
   const greet = greetingOnly(turns, lang)
   if (greet) return { text: greet, products: [], source: 'flow' }
+  // Идёт продажа (бот показывал товар) — это покупатель, даже если пишет о своём:
+  // «Эртең Nova 7 сатсам…» у покупателя из Таласа модель сочла личным и замолчала.
+  const selling = Array.isArray(shown) && shown.length > 0
+  if (messenger) {
+    const sorted = await sortByJev(channel, turns, lang, customer, selling)
+    if (sorted) return sorted
+  }
   const intent = hint.intent ?? null
   const talked = Array.isArray(shown) ? shown.filter((x): x is string => typeof x === 'string').slice(0, 5) : []
   const raw = await answer(turns, lang, customer, page, channel.known.name, Boolean(channel.known.phone), objectionNote(intent), talked, channel.leadChannel)
@@ -86,9 +97,6 @@ export async function respond(
   const reply = later ? { ...said, followAfter: later } : { ...said, followAfter: undefined }
   // Сайт — там только покупатели. В WhatsApp и Instagram модель ещё смотрит, кому адресовано.
   if (!messenger) return reply
-  // Идёт продажа (бот показывал товар) — это покупатель, даже если пишет о своём:
-  // «Эртең Nova 7 сатсам…» у покупателя из Таласа модель сочла личным и замолчала.
-  const selling = Array.isArray(shown) && shown.length > 0
   if (reply.audience === 'personal' && !selling) {
     return { text: '', products: [], source: reply.source, silent: true, mute: true }
   }
@@ -102,25 +110,93 @@ export async function respond(
     await startLead(channel.key, talk, leadContext(questions, []), who, channel.leadChannel)
     return { ...reply, handoff: true }
   }
-  if (reply.audience === 'staff') {
-    const talk = talkLang(turns, lang)
-    const last = turns[turns.length - 1]?.text ?? ''
-    const where = channel.leadChannel === 'instagram' ? 'Instagram' : 'WhatsApp'
-    const context = `Сообщение для руководства (${where}):\n${last.slice(0, 600)}`
-    const who = { name: cleanName(channel.known.name) ?? customer?.name ?? nameFromTurns(turns), phone: channel.known.phone }
-    // Номер в WhatsApp известен всегда — заявка уходит молча. Без номера анкету не заводим: это не «перезвоните».
-    // В Instagram номера нет: сообщение увидит сотрудник в самом Instagram и в сводке «Ждут ответа».
-    if (who.phone) await startLead(channel.key, talk, context, who, channel.leadChannel)
-    // Короткая фраза на языке покупателя — так решил владелец. Но одна и та же три раза подряд —
-    // это робот (переписка 01.10: покупатель трижды спросил цену и трижды получил «руководстводон
-    // тактап, жазам»). Уже говорили — второй раз «уже передала», третий — молчим: ответит человек.
-    const said = turns.filter((t) => t.role === 'assistant').slice(-2).filter((t) => isStaffAck(t.text)).length
-    if (said >= 2) return { text: '', products: [], source: reply.source, silent: true, handoff: true }
-    const first = said === 0 ? pick(STAFF_ACK, talk) : pick(STAFF_ACK_AGAIN, talk)
-    const ack = channel.leadChannel === 'instagram' && said === 0 ? `${first}\n${pick(WHATSAPP_LINE, talk)}` : first
-    return { text: ack, products: [], source: reply.source, handoff: true }
-  }
+  if (reply.audience === 'staff') return await toStaff(channel, turns, lang, customer, reply.source)
   return reply
+}
+
+/** Покупатель хочет живого человека или пишет работнику: заявка владельцу и короткая фраза. */
+async function toStaff(channel: Channel, turns: ChatTurn[], lang: Lang, customer: CustomerBrief | null, source: Reply['source']): Promise<Reply> {
+  const talk = talkLang(turns, lang)
+  const last = turns[turns.length - 1]?.text ?? ''
+  const where = channel.leadChannel === 'instagram' ? 'Instagram' : 'WhatsApp'
+  const context = `Сообщение для руководства (${where}):\n${last.slice(0, 600)}`
+  const who = whoOf(channel, turns, customer)
+  // Номер в WhatsApp известен всегда — заявка уходит молча. Без номера анкету не заводим: это не «перезвоните».
+  // В Instagram номера нет: сообщение увидит сотрудник в самом Instagram и в сводке «Ждут ответа».
+  // Сегодня по этому чату уже ушла 🚨 жалоба — второй «📞 ПЕРЕЗВОНИТЬ» о том же владельцу не шлём.
+  const complained = alerted.get(`complaint:${channel.key}`) === new Date(Date.now() + 6 * 3600_000).toISOString().slice(0, 10)
+  if (who.phone && !complained) await startLead(channel.key, talk, context, who, channel.leadChannel)
+  // Короткая фраза на языке покупателя — так решил владелец. Но одна и та же три раза подряд —
+  // это робот (переписка 01.10: покупатель трижды спросил цену и трижды получил «руководстводон
+  // тактап, жазам»). Уже говорили — второй раз «уже передала», третий — молчим: ответит человек.
+  const said = turns.filter((t) => t.role === 'assistant').slice(-2).filter((t) => isStaffAck(t.text)).length
+  if (said >= 2) return { text: '', products: [], source, silent: true, handoff: true }
+  const first = said === 0 ? pick(STAFF_ACK, talk) : pick(STAFF_ACK_AGAIN, talk)
+  const ack = channel.leadChannel === 'instagram' && said === 0 ? `${first}\n${pick(WHATSAPP_LINE, talk)}` : first
+  return { text: ack, products: [], source, handoff: true }
+}
+
+function whoOf(channel: Channel, turns: ChatTurn[], customer: CustomerBrief | null): { name?: string; phone?: string } {
+  return { name: cleanName(channel.known.name) ?? customer?.name ?? nameFromTurns(turns), phone: channel.known.phone }
+}
+
+/**
+ * Jev сортирует сообщение до Gemini (triage.ts): не покупателю модель не нужна. null — дальше как
+ * обычно, отвечает Gemini. Пороги высокие: сомнение — всегда к модели, потерять покупателя хуже,
+ * чем потратить один ответ. Идёт продажа — «не покупатель» не бывает, но чек и жалоба — бывают.
+ */
+async function sortByJev(channel: Channel, turns: ChatTurn[], lang: Lang, customer: CustomerBrief | null, selling: boolean): Promise<Reply | null> {
+  const who = whoOf(channel, turns, customer)
+  // Имена — не в Jev: «Азамат, …» в ответе бота и в словах покупателя станет «Имя».
+  const scores = await triage(turns, [who.name, customer?.name, nameFromTurns(turns)])
+  if (!scores) return null
+  const { kind, alarm } = decide(scores, selling)
+  const own = sinceBot(turns).join('\n')
+  const label = channel.label ? { ...who, name: `${channel.label}${who.name ? `, ${who.name}` : ''}` } : who
+  const talk = talkLang(turns, lang)
+  const day = new Date(Date.now() + 6 * 3600_000).toISOString().slice(0, 10)
+  if (alarm && alerted.get(`complaint:${channel.key}`) !== day) {
+    // Отвечает покупателю по-прежнему Gemini (посочувствует и скажет, что сделаем), а владелец знает сразу.
+    // Одна тревога на чат в день — и отмечаем, только если дошла: сервер лежал — попробуем со следующим сообщением.
+    const bot = [...turns].reverse().find((t) => t.role === 'assistant')?.text ?? ''
+    const before = bot ? `\n\nПеред этим магазин писал:\n${bot.slice(0, 300)}` : ''
+    if (await notifyOwner('complaint', `Написал:\n${own.slice(0, 700)}${before}`, label, channel.leadChannel, channel.key)) {
+      alerted.set(`complaint:${channel.key}`, day)
+    }
+  }
+  // «Төлөдүмбү? Карызым канча?» — вопрос про рассрочку, а не чек: на него ответит модель по данным 1С.
+  if (kind === 'payment' && !asksAboutPayment(own)) {
+    const sum = paidAmount(own)
+    const text = `${sum ? `Сумма: ${sum} сом (по словам или чеку покупателя)\n` : ''}Написал:\n${own.slice(0, 700)}`
+    await notifyOwner('payment', text, label, channel.leadChannel, channel.key)
+    return { text: pick(PAID_ACK, talk), products: [], source: 'flow', handoff: true }
+  }
+  if (kind === 'personal') return { text: '', products: [], source: 'flow', silent: true, mute: true }
+  if (kind === 'staff') return await toStaff(channel, turns, lang, customer, 'flow')
+  return null
+}
+
+/**
+ * Покупатель спрашивает, а не сообщает: «Төлөдүмбү?», «Пул тушдими?», «карызым канча калды?».
+ * Только его собственные слова: описание чека («[Фото] …») — текст модели, вопросом не бывает.
+ * looksLikeQuestion тут не годится — у неё «больше пяти слов» уже вопрос.
+ */
+function asksAboutPayment(text: string): boolean {
+  const own = text
+    .split('\n')
+    .filter((line) => !/^\[(Фото|Ответ на)/.test(line.trim()))
+    .join(' ')
+    .replace(/^\[Голосовое\]\s*/gm, '')
+  return own.includes('?') || /[\p{L}]{2,}(бы|бу|пы|пу|би|бү|пү|ми|мы)(?![\p{L}])/iu.test(own)
+}
+
+/** Одно предупреждение о жалобе на чат в день: на «синди», «ишлебей атат», «качан?» — не три тревоги. */
+const alerted = durableMap<string, string>('owner-alerts', 2 * 24 * 3600 * 1000)
+
+const PAID_ACK = {
+  ru: 'Рахмат! Руководство проверит оплату и напишет вам.',
+  ky: 'Рахмат! Руководство төлөмдү текшерип, жазат.',
+  uz: 'Рахмат! Руководство туловни текшириб, ёзади.',
 }
 
 /** Слова приветствия на трёх языках (и как их пишут с ошибками), обращения «ака», «уко». */

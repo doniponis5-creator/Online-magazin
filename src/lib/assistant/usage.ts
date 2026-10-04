@@ -28,6 +28,8 @@ export type Usage = {
   storage: number
   /** то же по каналам: site, whatsapp, instagram, telegram, media (голосовые и фото) */
   ch?: Record<string, Part>
+  /** запросов к Jev (OpenRouter/TypeSafe; цена в счёт Gemini не входит) */
+  jev?: number
 }
 
 /** Расход одного канала. */
@@ -41,7 +43,7 @@ export function bishkekToday(now = new Date()): string {
   return new Date(now.getTime() + 6 * 3600_000).toISOString().slice(0, 10)
 }
 
-type Counts = Omit<Usage, 'ch'>
+type Counts = Omit<Usage, 'ch' | 'jev'>
 
 function add(patch: Partial<Counts>, channel = '', now = new Date()): void {
   const day = bishkekToday(now)
@@ -70,6 +72,13 @@ export function recordCall(
     },
     channel,
   )
+}
+
+/** Один запрос к Jev. */
+export function recordJev(now = new Date()): void {
+  const day = bishkekToday(now)
+  const prev = days.get(day) ?? empty()
+  days.set(day, { ...prev, jev: (prev.jev ?? 0) + 1 })
 }
 
 /** Создан кэш: его токены оплачиваются как обычный ввод, плюс хранение на срок жизни. */
@@ -109,7 +118,7 @@ const millions = (n: number) => (n >= 100_000 ? `${(n / 1_000_000).toFixed(1).re
 /** Строка для сводки: «💰 Gemini: 312 запросов, 4,1 млн токенов (78 % из кэша) — ≈ $1,24». */
 export function usageLine(day: string): string {
   const u = usageOf(day)
-  if (u.calls === 0) return '💰 Gemini: запросов не было — $0.'
+  if (u.calls === 0) return `💰 Gemini: запросов не было — $0.${u.jev ? ` Jev: запросов ${u.jev}.` : ''}`
   const share = u.input > 0 ? Math.round((u.cached / u.input) * 100) : 0
   const head = `💰 Gemini: запросов ${u.calls}, ${millions(u.input + u.output)} токенов (${share} % из кэша) — ≈ ${money(costOf(u, day))}.`
   // По каналам — дорогие первыми; «кэш» — создание и хранение общей части промпта, ни к какому каналу.
@@ -119,6 +128,7 @@ export function usageLine(day: string): string {
     .map((x) => `${x.name} ${money(x.usd)} (${x.calls})`)
   const shared = costOf({ calls: 0, input: 0, cached: 0, output: 0, storage: u.storage }, day) + creation(u, day)
   if (shared >= 0.005) parts.push(`кэш ${money(shared)}`)
+  if (u.jev) parts.push(`Jev: запросов ${u.jev}`)
   return parts.length > 0 ? `${head}
    ${parts.join(' · ')}` : head
 }

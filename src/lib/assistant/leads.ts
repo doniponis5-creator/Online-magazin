@@ -89,15 +89,23 @@ export async function leadStep(key: ChatKey, text: string, lang: TalkLang): Prom
   return ok ? pick(SENT, lang) : pick(FAILED, lang)
 }
 
-async function sendLead(lead: { name?: string; phone: string; context: string; channel: string }): Promise<boolean> {
+/**
+ * Жалоба или чек оплаты — сразу владельцу в WhatsApp (Jev, 04.10), разговор при этом не меняется.
+ * Из Instagram номера нет — в name подпись вроде «Instagram, Айбек»; сервер это допускает.
+ */
+export function notifyOwner(kind: 'complaint' | 'payment', text: string, who: { name?: string; phone?: string }, channel: string, ref = ''): Promise<boolean> {
+  return sendLead({ name: who.name, phone: who.phone ?? '', context: text, channel, kind, ref })
+}
+
+async function sendLead(lead: { name?: string; phone: string; context: string; channel: string; kind?: 'call' | 'complaint' | 'payment'; ref?: string }): Promise<boolean> {
   if (paymentMode() === 'mock') {
-    console.info('[lead] тестовый режим, заявка:', lead.phone, lead.context.slice(0, 200))
+    console.info('[lead] тестовый режим, заявка:', lead.kind ?? 'call', lead.phone, lead.context.slice(0, 200))
     return true
   }
   try {
     await callServer('/api/v1/webhook/site/lead', {
       method: 'POST',
-      body: { name: lead.name ?? '', phone: lead.phone, text: lead.context, channel: lead.channel },
+      body: { name: lead.name ?? '', phone: lead.phone, text: lead.context, channel: lead.channel, kind: lead.kind ?? 'call', ref: lead.ref ?? '' },
     })
     return true
   } catch (error) {

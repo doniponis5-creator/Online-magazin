@@ -304,9 +304,16 @@ async def site_notes(request: Request, db: AsyncSession = Depends(get_db)):
 
 class SiteLead(BaseModel):
     name: str = ""
-    phone: str
+    phone: str = ""
     text: str = ""
     channel: str = "site"
+    # call — «перезвоните»; complaint — жалоба (Jev, 04.10); payment — прислал чек или пишет «оплатил».
+    kind: str = "call"
+    # ключ разговора на сайте («wa:996…», «ig:<id>») — для «одно уведомление в 10 минут» без номера
+    ref: str = ""
+
+
+_LEAD_HEAD = {"call": "📞 ПЕРЕЗВОНИТЬ", "complaint": "🚨 ЖАЛОБА — ответьте сами", "payment": "💳 ОПЛАТА — проверьте в 1С"}
 
 
 @router_site_admin.post("/lead")
@@ -316,18 +323,23 @@ async def site_lead(request: Request):
     from .shop_router import _admin_phone
 
     payload = SiteLead.parse_raw(await _verify_site_body(request))
+    kind = payload.kind if payload.kind in _LEAD_HEAD else "call"
     digits = re.sub(r"\D", "", payload.phone)
-    if not 9 <= len(digits) <= 12:
+    # «Перезвоните» без номера бессмысленно. Жалоба и чек из Instagram приходят без номера —
+    # там вместо него подпись «Instagram @ник» в имени.
+    if not 9 <= len(digits) <= 12 and (kind == "call" or not payload.name.strip()):
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "телефон")
-    # Один номер — одна заявка в 10 минут: «перезвоните» два раза подряд не
+    # Один номер — одно уведомление каждого вида в 10 минут: «перезвоните» два раза подряд не
     # должно звонить владельцу два раза.
-    if not await redis_client.set(f"shop_lead:{digits}", "1", ex=600, nx=True):
+    who = digits or payload.ref.strip()[:80] or payload.name.strip()[:60]
+    dedupe = f"shop_lead:{digits}" if kind == "call" else f"shop_lead:{kind}:{who}"
+    if not await redis_client.set(dedupe, "1", ex=600, nx=True):
         return {"ok": True, "duplicate": True}
     where = {"telegram": "Telegram-бот", "whatsapp": "WhatsApp (ответил робот)", "instagram": "Instagram (ответил робот)"}.get(payload.channel, "чат на сайте")
     try:
         wa.send_text(_admin_phone(), (
-            f"📞 ПЕРЕЗВОНИТЬ — {where}\n━━━━━━━━━━━━━━━━━━━\n"
-            f"👤 {payload.name.strip()[:80] or 'имя не сказал'}\n📱 {payload.phone.strip()[:30]}\n\n"
+            f"{_LEAD_HEAD[kind]} — {where}\n━━━━━━━━━━━━━━━━━━━\n"
+            f"👤 {payload.name.strip()[:80] or 'имя не сказал'}\n📱 {payload.phone.strip()[:30] or '—'}\n\n"
             f"{payload.text.strip()[:1200]}"
         ))
     except Exception as error:

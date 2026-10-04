@@ -207,13 +207,19 @@ async def check_spend() -> None:
         data = response.json() if response.status_code == 200 else {}
         if not data.get("over"):
             return
-        if not await redis_client.set(f"bot:spend:{data.get('day')}", "1", ex=2 * 24 * 3600, nx=True):
+        flag = f"bot:spend:{data.get('day')}"
+        if not await redis_client.set(flag, "1", ex=2 * 24 * 3600, nx=True):
             return
-        await _send_text(_admin_phone(), (
-            f"⚠️ Консультант сегодня потратил на Gemini больше предела: ≈ ${data.get('usd')} (предел ${data.get('limit')}).\n"
-            f"{data.get('line') or ''}\n"
-            "Если это не наплыв покупателей — посмотрите «Ждут ответа» и журнал. Предел меняется в .env.production сайта: ASSISTANT_DAILY_USD."
-        ))
+        try:
+            await _send_text(_admin_phone(), (
+                f"⚠️ Консультант сегодня потратил на Gemini больше предела: ≈ ${data.get('usd')} (предел ${data.get('limit')}).\n"
+                f"{data.get('line') or ''}\n"
+                "Если это не наплыв покупателей — посмотрите «Ждут ответа» и журнал. Предел меняется в .env.production сайта: ASSISTANT_DAILY_USD."
+            ))
+        except Exception:
+            # Не дошло — флаг снимаем: через 15 минут попробуем снова, а не молчим до завтра.
+            await redis_client.delete(flag)
+            raise
     except Exception as error:
         logger.warning(f"spend check: {type(error).__name__}")
 
@@ -667,6 +673,9 @@ async def send_digest(day: str = "") -> bool:
     waiting = await _waiting_chats()
     if waiting:
         text += "\n\n" + "\n".join(waiting)
+    hot = await _hot_leads()
+    if hot:
+        text += "\n\n" + "\n".join(hot)
     await _send_text(_admin_phone(), text)
     logger.info(f"wa digest: отправлена за {data.get('day')} ({data.get('count')} вопросов, ждут ответа: {max(len(waiting) - 1, 0)})")
     return True
@@ -733,6 +742,61 @@ async def _waiting_chats() -> list[str]:
     except Exception as error:
         logger.warning(f"wa digest: Instagram не добавлен: {error}")
     return waiting_lines(chats)
+
+
+async def _hot_leads() -> list[str]:
+    """
+    «Кому позвонить сегодня» для сводки (Jev, 04.10): вчерашние разговоры WhatsApp и Instagram →
+    сайт (/api/assistant/hot) → Jev оценивает, кто почти купил и что его остановило. Номер в Jev не
+    уходит: сайт шлёт ему только текст, а номер возвращается только в сводку владельцу. Записанные в
+    телефоне (знакомые) — не наши. Любая ошибка — сводка уходит без этого блока.
+    """
+    try:
+        from .shop_router import _site_base_url, _site_secret
+        day = (_bishkek_now() - timedelta(days=1)).strftime("%Y%m%d")
+        chats, seen = [], set()
+        async for key in redis_client.scan_iter(match="wa:count:*", count=500):
+            parts = str(key).split(":")
+            if len(parts) != 4 or parts[3] != day or parts[2] in seen:
+                continue
+            digits = parts[2]
+            seen.add(digits)
+            if await redis_client.get(f"wa:saved:{digits}"):
+                continue
+            # Один испорченный разговор не должен убрать из сводки весь блок.
+            try:
+                raw = await redis_client.get(f"wa:week:{digits}") or await redis_client.get(f"wa:turns:{digits}")
+                turns = json.loads(raw) if raw else []
+                shown_raw = await redis_client.get(f"wa:shown:{digits}")
+                shown = json.loads(shown_raw) if shown_raw else []
+            except Exception:
+                continue
+            if turns:
+                chats.append({"who": f"+{digits}", "messages": turns, "shown": shown})
+        try:
+            from .shop_ig_bot import waiting_chats as instagram_chats
+            for label, turns in await instagram_chats({day}):
+                if turns:
+                    chats.append({"who": label, "messages": turns, "shown": []})
+        except Exception as error:
+            logger.warning(f"hot leads: Instagram не добавлен: {type(error).__name__}")
+        if not chats:
+            return []
+        payload = json.dumps({"chats": chats}, ensure_ascii=False)
+        signature = hmac.new(_site_secret().encode(), payload.encode("utf-8"), hashlib.sha256).hexdigest()
+        async with httpx.AsyncClient(timeout=150) as client:
+            response = await client.post(
+                f"{_site_base_url()}/api/assistant/hot",
+                content=payload.encode("utf-8"),
+                headers={"Content-Type": "application/json", "X-Signature": signature},
+            )
+        data = response.json() if response.status_code == 200 else {}
+        lines = [str(x) for x in (data.get("lines") or [])]
+        logger.info(f"hot leads: {len(chats)} разговоров, в сводку {len(lines)} строк")
+        return lines
+    except Exception as error:
+        logger.warning(f"hot leads: {type(error).__name__}: {error}")
+        return []
 
 
 DIGEST_HOUR = 9

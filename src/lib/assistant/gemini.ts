@@ -118,7 +118,9 @@ async function once(key: string, system: string, turns: ChatTurn[], channel: str
     // Кэш пропал раньше срока (удалили, истёк) — забываем его и отвечаем без кэша.
     const status = error instanceof GeminiError ? error.status : 0
     if (status !== 400 && status !== 403 && status !== 404) throw error
-    if (cache.name === name) Object.assign(cache, { name: '', until: 0 })
+    // И 10 минут не создаём новый: если модель кэш не принимает вовсе (сменили GEMINI_MODEL), каждый
+    // ответ создавал бы платный кэш и всё равно шёл бы без него — дороже, чем без кэша (ревью 04.10).
+    if (cache.name === name) Object.assign(cache, { name: '', until: 0, failedUntil: Date.now() + 10 * 60_000 })
     return await request(key, model, { systemInstruction: { parts: [{ text: system }] } }, turns, '', channel)
   }
 }

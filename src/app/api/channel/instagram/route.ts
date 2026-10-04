@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     return new Response('Not found', { status: 404 })
   }
 
-  let raw: { id?: unknown; name?: unknown; messages?: unknown; shown?: unknown }
+  let raw: { id?: unknown; name?: unknown; username?: unknown; messages?: unknown; shown?: unknown }
   try {
     raw = JSON.parse(body)
   } catch {
@@ -46,6 +46,9 @@ export async function POST(request: Request) {
   const turns = readTurns(raw.messages)
   if (turns.length === 0) return Response.json({ ok: false, error: 'empty' }, { status: 400 })
   const name = typeof raw.name === 'string' ? cleanName(raw.name) : undefined
+  // Подпись для владельца в 🚨/💳: по нику он найдёт чат в Instagram, по имени — нет (ревью 04.10).
+  const username = typeof raw.username === 'string' && /^[\w.]{1,30}$/.test(raw.username) ? raw.username : ''
+  const label = username ? `Instagram @${username}` : `Instagram id ${id}`
 
   const reply = await respond(
     {
@@ -53,6 +56,7 @@ export async function POST(request: Request) {
       orderSource: 'Заказ из Instagram',
       leadChannel: 'instagram',
       known: { name },
+      label,
     },
     turns,
     defaultLang,

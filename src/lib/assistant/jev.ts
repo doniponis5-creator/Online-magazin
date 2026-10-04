@@ -13,6 +13,7 @@
  * покупателя — без имени и номера.
  */
 import 'server-only'
+import { recordJev } from './usage'
 
 export type IntentKind = 'agree' | 'decline' | 'later' | 'question' | 'thanks'
 export type Reason = 'price' | 'money' | 'family' | 'think' | 'other'
@@ -70,6 +71,7 @@ function baseUrl(key: string): string {
 export async function askJev(state: Record<string, string>, questions: object, timeout = JEV_TIMEOUT): Promise<unknown | null> {
   const key = process.env.JEV_API_KEY
   if (!key) return null
+  recordJev()
   try {
     const response = await fetch(`${baseUrl(key)}/v1/systemone`, {
       method: 'POST',

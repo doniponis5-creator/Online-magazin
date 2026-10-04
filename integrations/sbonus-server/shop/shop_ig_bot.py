@@ -439,6 +439,8 @@ async def _ask_site(user: str) -> dict | None:
     payload = json.dumps({
         "id": user,
         "name": profile.get("name") or "",
+        # Ник — подпись для владельца в 🚨 жалобе и 💳 чеке: по нему он найдёт чат.
+        "username": profile.get("username") or "",
         "messages": await _turns(user),
         "shown": json.loads(shown_raw) if shown_raw else [],
     }, ensure_ascii=False)
