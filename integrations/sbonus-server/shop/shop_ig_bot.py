@@ -400,7 +400,7 @@ async def _answer(user: str) -> bool:
             return False
         text = str(reply["text"])
         if count + 1 >= DAILY_LIMIT:
-            text += "\n\nДальше вам ответит сотрудник магазина."
+            text += "\n\nДальше вам ответит руководство магазина."
         await _send_text(user, text)
         await _send_photos(user, await _new_photos(user, reply.get("products") or []))
         await _remember(user, "assistant", text)
