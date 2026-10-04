@@ -150,9 +150,9 @@
     "semantic_hash": ""
   },
   "integrations/1c-online-shop/build_extension.py": {
-    "mtime": 1791106854.0753481,
-    "seen": 1791106944.0286856,
-    "ast_hash": "b135dc1eb69fd34c3853fadf531cee6d",
+    "mtime": 1791114324.6849911,
+    "seen": 1791119564.9121776,
+    "ast_hash": "dba0ceeb0e1177a6be31af0c52129e1b",
     "semantic_hash": ""
   },
   "integrations/1c-online-shop/manage.py": {
@@ -198,9 +198,9 @@
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/deploy_shop.sh": {
-    "mtime": 1791106844.2715743,
-    "seen": 1791106944.028692,
-    "ast_hash": "52f75b8c4266b76531b2d21e90e2333e",
+    "mtime": 1791117145.1458902,
+    "seen": 1791119564.9137533,
+    "ast_hash": "33ffa596143f0205f66d20ca9de12327",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/inspect_server.sh": {
@@ -210,21 +210,21 @@
     "semantic_hash": "de546f09e6a5fe14fc84b6f27abd37b5"
   },
   "integrations/sbonus-server/shop/shop_admin.py": {
-    "mtime": 1791106723.120403,
-    "seen": 1791106944.0286932,
-    "ast_hash": "d7f92106fbf63d00082bd5be46df3e66",
+    "mtime": 1791114257.236951,
+    "seen": 1791119564.9139898,
+    "ast_hash": "7f71c298043c8126efec671f8b7a1da2",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/shop_catalog.py": {
-    "mtime": 1791105381.6115022,
-    "seen": 1791106944.0286956,
+    "mtime": 1791106965.0940804,
+    "seen": 1791119564.914509,
     "ast_hash": "505faa1eb0c2845ce1fdcbf3d6bf8473",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/shop_customers.py": {
-    "mtime": 1791007493.7671463,
-    "seen": 1791106944.0286965,
-    "ast_hash": "b38ee69f23b85031d7e1712c029eae9e",
+    "mtime": 1791111937.1812696,
+    "seen": 1791119564.9145112,
+    "ast_hash": "3266d9c8f7f80805cdef58c4277aefa7",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/shop_models.py": {
@@ -504,9 +504,9 @@
     "semantic_hash": ""
   },
   "src/app/[lang]/layout.tsx": {
-    "mtime": 1791007494.0905347,
-    "seen": 1791106944.0287719,
-    "ast_hash": "fa4fbe3c3e033c682dddc3a1fc17a9c8",
+    "mtime": 1791116333.3057284,
+    "seen": 1791119564.9379358,
+    "ast_hash": "c6dae7d7b47552c48ca7782244864485",
     "semantic_hash": ""
   },
   "src/app/[lang]/not-found.tsx": {
@@ -522,9 +522,9 @@
     "semantic_hash": ""
   },
   "src/app/[lang]/order/[id]/page.tsx": {
-    "mtime": 1791007494.0905347,
-    "seen": 1791106944.0287735,
-    "ast_hash": "137cdea412251a5bcb2cb9ccefaae927",
+    "mtime": 1791116347.626281,
+    "seen": 1791119564.9386582,
+    "ast_hash": "76d4332a545f90121d1afcc8b35df8d3",
     "semantic_hash": ""
   },
   "src/app/[lang]/page.tsx": {
@@ -630,9 +630,9 @@
     "semantic_hash": ""
   },
   "src/components/Brand.tsx": {
-    "mtime": 1791105126.7341406,
-    "seen": 1791106944.0288205,
-    "ast_hash": "52512b43c13f9fbfa7b23d356473016d",
+    "mtime": 1791106965.0982373,
+    "seen": 1791119564.9558444,
+    "ast_hash": "4745daefc7665863653b61c87866b0ea",
     "semantic_hash": ""
   },
   "src/components/BrandLogo.tsx": {
@@ -648,9 +648,9 @@
     "semantic_hash": ""
   },
   "src/components/CustomerLogin.tsx": {
-    "mtime": 1791007494.109614,
-    "seen": 1791106944.0288231,
-    "ast_hash": "01c4500abfa3c00d23d12c718243eda9",
+    "mtime": 1791111926.909283,
+    "seen": 1791119564.9571872,
+    "ast_hash": "b451c9d5ce6558601750de0808ec3c90",
     "semantic_hash": ""
   },
   "src/components/FavoriteButton.tsx": {
@@ -876,9 +876,9 @@
     "semantic_hash": ""
   },
   "src/lib/i18n/dictionaries.ts": {
-    "mtime": 1791007577.082312,
-    "seen": 1791106944.0289125,
-    "ast_hash": "7aea9b43dc6bc021063e38d73a98d515",
+    "mtime": 1791116562.7161682,
+    "seen": 1791119564.9868586,
+    "ast_hash": "d5eb8c7227a5f5b562a181470dc6fcbd",
     "semantic_hash": ""
   },
   "src/lib/links.ts": {
@@ -954,9 +954,9 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1791106896.9480574,
-    "seen": 1791106944.0290284,
-    "ast_hash": "a296f7ad63db39248dba94bcc7e89ff7",
+    "mtime": 1791117215.5207663,
+    "seen": 1791119565.026184,
+    "ast_hash": "e5fdaa4af29bb586a31593cf717841f7",
     "semantic_hash": ""
   },
   "DESIGN.md": {
@@ -3936,9 +3936,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/knowledge.ts": {
-    "mtime": 1791104033.9231305,
-    "seen": 1791106944.0288842,
-    "ast_hash": "91a766265df562012a81a0cb5b52eda6",
+    "mtime": 1791117920.5468564,
+    "seen": 1791119564.9769516,
+    "ast_hash": "bff888c5fe75b15f844bf52a1277af10",
     "semantic_hash": ""
   },
   "__tests__/assistant.test.ts": {
@@ -3978,9 +3978,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/prompt.ts": {
-    "mtime": 1791092841.9867308,
-    "seen": 1791106944.028891,
-    "ast_hash": "e32778c31ac65607aa54ea709dfab976",
+    "mtime": 1791117920.5468564,
+    "seen": 1791119564.9789615,
+    "ast_hash": "d23bc8563a0bb56eeaf8a41372d8e5e4",
     "semantic_hash": ""
   },
   "src/lib/assistant/reply.ts": {
@@ -4314,9 +4314,9 @@
     "semantic_hash": ""
   },
   "__tests__/sales-flow.test.ts": {
-    "mtime": 1791022034.2543488,
-    "seen": 1791106944.028642,
-    "ast_hash": "fa5f1c219b6c4ad9de4a3dbc24e99841",
+    "mtime": 1791117975.3152697,
+    "seen": 1791119564.9007435,
+    "ast_hash": "7e9a7738040678381f336f4e65b2b965",
     "semantic_hash": ""
   },
   "src/lib/assistant/leads.ts": {
@@ -4344,9 +4344,9 @@
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/shop_wa_bot.py": {
-    "mtime": 1791101333.447609,
-    "seen": 1791106944.0287075,
-    "ast_hash": "4ff5b34e22790f92754cd78ee9864b64",
+    "mtime": 1791117145.1448903,
+    "seen": 1791119564.916727,
+    "ast_hash": "9d5bd5cc968d43991e62b36e514f0e2f",
     "semantic_hash": ""
   },
   "src/app/api/channel/whatsapp/route.ts": {
@@ -4356,9 +4356,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/respond.ts": {
-    "mtime": 1791095384.0294452,
-    "seen": 1791106944.0288932,
-    "ast_hash": "821e4713f14a6bf27328afc7f0effa4d",
+    "mtime": 1791117927.7343683,
+    "seen": 1791119564.9795182,
+    "ast_hash": "bfc3ea43aeb9ff0dbaa7e1337129a61b",
     "semantic_hash": ""
   },
   "docs/PC_2026-09-21.md": {
@@ -4650,9 +4650,9 @@
     "semantic_hash": ""
   },
   "src/components/BonusReminder.tsx": {
-    "mtime": 1791007494.108614,
-    "seen": 1791106944.028819,
-    "ast_hash": "32826b8c7c33b46942db36765e7a3f7e",
+    "mtime": 1791116562.7151668,
+    "seen": 1791119564.9553878,
+    "ast_hash": "b42f7e29d62b6564c58d99e2af65929a",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/cabinet/deploy_cabinet_walogin.sh": {
@@ -6558,9 +6558,9 @@
     "semantic_hash": ""
   },
   "scripts/category-icons.mjs": {
-    "mtime": 1791007494.0804534,
-    "seen": 1791106944.0287354,
-    "ast_hash": "0c192ca534bd12e5f7f8fa00c81d6510",
+    "mtime": 1791106964.9614205,
+    "seen": 1791119564.9254134,
+    "ast_hash": "2d5d5fcfa427140c667259340471a682",
     "semantic_hash": ""
   },
   "src/components/kitchen/ApplianceSheet.tsx": {
@@ -6570,9 +6570,9 @@
     "semantic_hash": ""
   },
   "src/data/category-icons.json": {
-    "mtime": 1791007494.1270828,
-    "seen": 1791106944.0288725,
-    "ast_hash": "7eea0f07de8e87627e0ad6ade2947853",
+    "mtime": 1791106964.9614205,
+    "seen": 1791119564.9733706,
+    "ast_hash": "04a02bbfb64bf87e1c291539951998fa",
     "semantic_hash": ""
   },
   "public/img/categories/care.webp": {
@@ -6582,9 +6582,9 @@
     "semantic_hash": ""
   },
   "public/img/categories/climate.webp": {
-    "mtime": 1791007493.799541,
-    "seen": 1791106944.0291884,
-    "ast_hash": "af63535cb72e44f988fcf447a0316b0e",
+    "mtime": 1791106964.9594169,
+    "seen": 1791119565.0812771,
+    "ast_hash": "447faef4ce473d49102ce7a01fabd62f",
     "semantic_hash": ""
   },
   "public/img/categories/fridges.webp": {
@@ -6594,9 +6594,9 @@
     "semantic_hash": ""
   },
   "public/img/categories/home.webp": {
-    "mtime": 1791007493.799541,
-    "seen": 1791106944.0291896,
-    "ast_hash": "cec0e6804fc04cc12cfa694be7e82dcb",
+    "mtime": 1791106964.9594169,
+    "seen": 1791119565.0815136,
+    "ast_hash": "506c2cafdaf129d9ebcd99b2705cfc90",
     "semantic_hash": ""
   },
   "public/img/categories/kitchen.webp": {
@@ -6612,15 +6612,15 @@
     "semantic_hash": ""
   },
   "public/img/categories/sewing.webp": {
-    "mtime": 1791007493.799541,
-    "seen": 1791106944.0291917,
-    "ast_hash": "f15cd3342e442e1db507dbd7be25c29e",
+    "mtime": 1791106964.9594169,
+    "seen": 1791119565.0832665,
+    "ast_hash": "a40e8c5fd90e7b6fb37f940c4892b7b7",
     "semantic_hash": ""
   },
   "public/img/categories/small-kitchen.webp": {
-    "mtime": 1791007493.799541,
-    "seen": 1791106944.0291922,
-    "ast_hash": "b5b626e57a61fd01dd3d52998e6844cc",
+    "mtime": 1791106964.9594169,
+    "seen": 1791119565.0832694,
+    "ast_hash": "5ae81dffaf8da845378c020d5319cf76",
     "semantic_hash": ""
   },
   "public/img/categories/sport.webp": {
@@ -7248,9 +7248,9 @@
     "semantic_hash": ""
   },
   "__tests__/instagram-post-image.test.ts": {
-    "mtime": 1791106570.2486632,
-    "seen": 1791106944.0286021,
-    "ast_hash": "6f2567347373cc5a3a9a696682f8985c",
+    "mtime": 1791114384.8547056,
+    "seen": 1791119564.8900337,
+    "ast_hash": "2281e7586380958d084a71cfbcdf9d49",
     "semantic_hash": ""
   },
   "__tests__/jev-triage.test.ts": {
@@ -7266,38 +7266,38 @@
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/shop_ig_bot.py": {
-    "mtime": 1791106723.119047,
-    "seen": 1791106944.028697,
-    "ast_hash": "fe5946f683b6f57474d39b3ad366e968",
+    "mtime": 1791117481.711725,
+    "seen": 1791119564.914513,
+    "ast_hash": "8849866e6be73f9aba66200da03d6852",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/shop_ig_post.py": {
-    "mtime": 1791106681.478573,
-    "seen": 1791106944.0286982,
-    "ast_hash": "32d5be54763da9cc41256a071353c095",
+    "mtime": 1791114257.2362888,
+    "seen": 1791119564.9145148,
+    "ast_hash": "99c767e24578cfdf4a19c877b0fc0e28",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/shop_ig_rules.py": {
-    "mtime": 1791106723.117543,
-    "seen": 1791106944.028699,
-    "ast_hash": "3f90558cf44dcaa934312f0fdc90fde7",
+    "mtime": 1791117195.51838,
+    "seen": 1791119564.9145164,
+    "ast_hash": "2b44c703a15207f4d32d7f0859b30ea7",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/test_shop_ig_post.py": {
-    "mtime": 1791106778.731387,
-    "seen": 1791106944.02871,
-    "ast_hash": "ec6f56ed69b4d6396255b6fc0c6333d9",
+    "mtime": 1791117195.5193787,
+    "seen": 1791119564.9173777,
+    "ast_hash": "f19919e4dc7f6214278528c612e67086",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/test_shop_ig_rules.py": {
-    "mtime": 1791106786.6679232,
-    "seen": 1791106944.0287106,
-    "ast_hash": "fd805fd3ed898e0d5ccd3aecaa626bcf",
+    "mtime": 1791114285.1227543,
+    "seen": 1791119564.91738,
+    "ast_hash": "70a5b14923b34c81484b14823a135160",
     "semantic_hash": ""
   },
   "scripts/instagram-fonts.py": {
-    "mtime": 1791106523.2994123,
-    "seen": 1791106944.0287392,
+    "mtime": 1791106965.0982373,
+    "seen": 1791119564.9263337,
     "ast_hash": "868b2cd2f2d1f725187804f60d8e1d85",
     "semantic_hash": ""
   },
@@ -7326,9 +7326,9 @@
     "semantic_hash": ""
   },
   "src/app/api/instagram/post-image/route.tsx": {
-    "mtime": 1791106553.9990263,
-    "seen": 1791106944.0288002,
-    "ast_hash": "47d7a915dafee2079774ee2853c5dabc",
+    "mtime": 1791114120.3991652,
+    "seen": 1791119564.9477668,
+    "ast_hash": "dceee22745fded0d6ab5f2fca9cb79e5",
     "semantic_hash": ""
   },
   "src/lib/assistant/comments.ts": {
@@ -7368,15 +7368,57 @@
     "semantic_hash": ""
   },
   "src/lib/instagram/postImage.tsx": {
-    "mtime": 1791106553.9990263,
-    "seen": 1791106944.0289135,
-    "ast_hash": "c2db048ce98cfd9a13b400e4cc339148",
+    "mtime": 1791114120.3991652,
+    "seen": 1791119564.986861,
+    "ast_hash": "5dd91afee9ee5192432d1b6321656aeb",
     "semantic_hash": ""
   },
   "docs/INSTAGRAM_CONSULTANT.md": {
-    "mtime": 1791106896.942807,
-    "seen": 1791106944.0290427,
-    "ast_hash": "496c3f24878a50f79ee8bb3c4b8a0440",
+    "mtime": 1791117215.5192604,
+    "seen": 1791119565.0309849,
+    "ast_hash": "2b0ac0aa5597c865cf416c06bafa7d68",
+    "semantic_hash": ""
+  },
+  "__tests__/app-store-banner.test.ts": {
+    "mtime": 1791116373.4730065,
+    "seen": 1791119564.8840365,
+    "ast_hash": "b8ae714582eb1f30f0d5aeb56ad0c55c",
+    "semantic_hash": ""
+  },
+  "deploy/apology_dishwasher.sh": {
+    "mtime": 1791109805.3667357,
+    "seen": 1791119564.9068065,
+    "ast_hash": "9d5de1ea11f2cb172c83de73d2eba780",
+    "semantic_hash": ""
+  },
+  "integrations/sbonus-server/shop/shop_ig_stats.py": {
+    "mtime": 1791117186.2143817,
+    "seen": 1791119564.9145184,
+    "ast_hash": "0f44a8e56294813a6fadb7a847b241ec",
+    "semantic_hash": ""
+  },
+  "scripts/instagram-token-remote.sh": {
+    "mtime": 1791109140.241377,
+    "seen": 1791119564.9263358,
+    "ast_hash": "d102952619de751c8ce9baab026b1544",
+    "semantic_hash": ""
+  },
+  "scripts/setup-instagram-token.ps1": {
+    "mtime": 1791109149.7962334,
+    "seen": 1791119564.9295702,
+    "ast_hash": "c31dbf8fe06626a0ba031a8931efc1cf",
+    "semantic_hash": ""
+  },
+  "src/components/AppBanner.tsx": {
+    "mtime": 1791116562.7151668,
+    "seen": 1791119564.9547365,
+    "ast_hash": "f94f000c4c53fa0ac8b05fd0a7d1b67d",
+    "semantic_hash": ""
+  },
+  "src/lib/native/appStore.ts": {
+    "mtime": 1791116562.714167,
+    "seen": 1791119564.9920297,
+    "ast_hash": "15c8124fc23993da60b604db2dae294b",
     "semantic_hash": ""
   }
 }
