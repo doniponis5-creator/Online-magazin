@@ -776,6 +776,12 @@ describe('Instagram (02.10): мем без подписи — молчим; не
     expect(dishwasherWords(['идиш', 'казан'])).toEqual(['идиш', 'казан'])
     expect(dishwasherWords(['набор', 'посуды'])).toEqual(['набор', 'посуды'])
     expect(dishwasherWords(['посудомоечная', 'midea', 'mdwm'])).toEqual(['midea', 'mdwm', 'посудомоечная'])
+    // Как пишут на самом деле (Instagram 04.10).
+    const moto = [item('enduro', 'Электро Эндуро WN-A10'), item('moto', 'Мототцикл спорт'), item('desk', 'Парта мини')]
+    for (const q of ['Детский эндурро баасы канча', 'ендура канча турат 4+', 'Детский эндеролор барбы', 'эндуронун ценазын']) {
+      expect(searchProducts(q, 'ky', 3, moto)[0]?.id, q).toBe('enduro')
+    }
+    expect(searchProducts('Матаскыл кача', 'ky', 3, moto).map((p) => p.id)).toEqual(expect.arrayContaining(['enduro', 'moto']))
     // В сводке разделов видно, что посудомойки есть: «Кухонная техника» сама этого не говорила.
     const { kindsOf } = await import('@/lib/assistant/knowledge')
     expect(kindsOf([item('d1', 'Посудомоечная машина MIDEA MDWM-218TWO'), item('d2', 'Посудомоечная машина VELBERG'), item('o', 'Духовка UAKEEN')]))
