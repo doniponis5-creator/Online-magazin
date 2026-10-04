@@ -757,6 +757,44 @@ describe('Instagram (02.10): мем без подписи — молчим; не
     vi.resetModules()
   })
 
+  it('посудомойка (04.10): «идиш жууган машинка» — посудомоечная, не стиральная; заявке — вся переписка', async () => {
+    const { searchProducts, dishwasherWords } = await import('@/lib/assistant/knowledge')
+    const item = (id: string, nameRu: string) => ({ ...products[0], id, nameRu, nameKy: nameRu, brand: '', specs: [] })
+    const list = [item('wash', 'Стиральная машина Artel 7 кг'), item('dish', 'Посудомоечная машина VELBERG VLB-4512Z инвертор 10 персон'), item('kazan', 'Казан идиш 6 литр')]
+    for (const q of ['Идиш жууган машинка канча экен', 'идиш жуугуч барбы', 'idish yuvadigan mashina', 'Посудомойка есть?']) {
+      expect(searchProducts(q, 'ky', 3, list)[0]?.id, q).toBe('dish')
+      expect(searchProducts(q, 'ky', 3, list).map((p) => p.id), q).not.toContain('wash')
+    }
+    // «Кир жуугуч» — по-прежнему стиральная, «идиш» без «мыть» — посуда.
+    expect(searchProducts('Кир жуугуч машина', 'ky', 3, list)[0]?.id).toBe('wash')
+    expect(dishwasherWords(['идиш', 'казан'])).toEqual(['идиш', 'казан'])
+
+    vi.resetModules()
+    const leads: string[] = []
+    vi.doMock('@/lib/assistant/leads', async (orig) => ({
+      ...(await orig<typeof import('@/lib/assistant/leads')>()),
+      startLead: async (_key: string, _talk: string, context: string) => { leads.push(context) },
+    }))
+    vi.doMock('@/lib/assistant/reply', async (orig) => ({
+      ...(await orig<typeof import('@/lib/assistant/reply')>()),
+      answer: async () => ({ text: 'x', products: [], source: 'gemini' as const, audience: 'staff' as const }),
+    }))
+    const { respond } = await import('@/lib/assistant/respond')
+    await respond({ key: 'wa:dish-1', orderSource: 'Заказ из WhatsApp', leadChannel: 'whatsapp', known: { phone: '+996555000061' } }, [
+      { role: 'user', text: 'Идиш жууган машинка канча экен' },
+      { role: 'assistant', text: 'Идиш жуугуч машиналар кампага келгенде сизге чалып кабар берип коёлубу?' },
+      { role: 'user', text: 'Макул рахмат' },
+      { role: 'user', text: 'Канча сом' },
+      { role: 'user', text: 'Ошого карап акчамды топтой берейин' },
+    ], 'ky', null)
+    // Раньше владелец видел одно «Ошого карап акчамды топтой берейин» — без цены и без товара.
+    expect(leads[0]).toMatch(/Макул рахмат\nКанча сом\nОшого карап акчамды топтой берейин/)
+    expect(leads[0]).toMatch(/Перед этим магазин писал:\nИдиш жуугуч машиналар/)
+    vi.doUnmock('@/lib/assistant/leads')
+    vi.doUnmock('@/lib/assistant/reply')
+    vi.resetModules()
+  })
+
   it('вопрос для руководства: в Instagram — с номером WhatsApp, в WhatsApp — без', async () => {
     vi.resetModules()
     vi.doMock('@/lib/assistant/reply', async (orig) => ({

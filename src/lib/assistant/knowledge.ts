@@ -138,8 +138,21 @@ const SYNONYMS: Record<string, string[]> = {
  * «Вы чините велосипеды?» находил «Вытяжку» — потому что «вы» есть внутри
  * слова «вытяжка». Слова короче трёх букв не ищутся вовсе.
  */
+// «Идиш жууган машинка», «idish yuvadigan mashina» — посудомоечная, а не стиральная: «жуу…», «кир», «машина»
+// по отдельности тянут к стиральным (переписка 04.10: бот сказал «посудомоечных нет» при четырёх в наличии
+// и предложил стиралки). «Идиш» без «мыть» — просто посуда (казан, контейнер) — не трогаем.
+const DISH = /^(идиш|idish|idsh)/
+const DISH_WORD = /^(посудомо|посудомой|posudomo)/
+const WASH = /^(жуу|жуг|юв|yuv|кир|kir|мошин|машин|mashin|стирал|мойк|моеч|моющ)/
+
+export function dishwasherWords(words: string[]): string[] {
+  const dish = words.some((w) => DISH_WORD.test(w)) || (words.some((w) => DISH.test(w)) && words.some((w) => WASH.test(w)))
+  if (!dish) return words
+  return [...words.filter((w) => !DISH.test(w) && !DISH_WORD.test(w) && !WASH.test(w)), 'посудомоечная']
+}
+
 export function searchProducts(query: string, lang: Lang, limit = 6, list: Product[] = products): Product[] {
-  const words = expand(splitWords(query).filter((w) => w.length >= 3))
+  const words = expand(dishwasherWords(splitWords(query).filter((w) => w.length >= 3)))
   if (words.length === 0) return []
 
   const scored = list.map((product) => {

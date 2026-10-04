@@ -117,9 +117,13 @@ export async function respond(
 /** Покупатель хочет живого человека или пишет работнику: заявка владельцу и короткая фраза. */
 async function toStaff(channel: Channel, turns: ChatTurn[], lang: Lang, customer: CustomerBrief | null, source: Reply['source']): Promise<Reply> {
   const talk = talkLang(turns, lang)
-  const last = turns[turns.length - 1]?.text ?? ''
   const where = channel.leadChannel === 'instagram' ? 'Instagram' : 'WhatsApp'
-  const context = `Сообщение для руководства (${where}):\n${last.slice(0, 600)}`
+  // Все сообщения покупателя после ответа бота и сам ответ: одно последнее «Ошого карап акчамды топтой
+  // берейин» владельцу ничего не говорит — о чём речь (посудомойка, цена), было в сообщениях раньше (04.10).
+  const wrote = sinceBot(turns).join('\n')
+  const bot = [...turns].reverse().find((t) => t.role === 'assistant')?.text ?? ''
+  const before = bot ? `\n\nПеред этим магазин писал:\n${bot.slice(0, 300)}` : ''
+  const context = `Сообщение для руководства (${where}):\n${wrote.slice(0, 600)}${before}`
   const who = whoOf(channel, turns, customer)
   // Номер в WhatsApp известен всегда — заявка уходит молча. Без номера анкету не заводим: это не «перезвоните».
   // В Instagram номера нет: сообщение увидит сотрудник в самом Instagram и в сводке «Ждут ответа».
