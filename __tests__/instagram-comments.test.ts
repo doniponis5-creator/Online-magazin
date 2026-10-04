@@ -1,7 +1,7 @@
 import { createHmac } from 'node:crypto'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 vi.mock('server-only', () => ({}))
-import { planComment, productOfPost, type CommentScores } from '@/lib/assistant/comments'
+import { commentLang, planComment, productOfPost, type CommentScores } from '@/lib/assistant/comments'
 import { bestNameMatch } from '@/lib/assistant/knowledge'
 import { products } from '@/data/products'
 import type { Product } from '@/data/products'
@@ -65,6 +65,16 @@ describe('что делать с комментарием', () => {
     const plan = planComment('Цена в лс', s({ ask: 0.94 }), null)
     expect(plan.public).toBe('Написали вам в Direct 📩')
     expect(plan.private).toBe('Ассаламу алейкум! Какой товар заинтересовал? Напишите — скажу цену.')
+  })
+  it('по-узбекски — под постом по-кыргызски, в Direct по-узбекски', () => {
+    const text = 'Бу канча туради? Нархини ёзинг, хозир борми?'
+    expect(commentLang(text)).toBe('uz')
+    const plan = planComment(text, s({ ask: 0.95 }), enduro)
+    expect(plan.public).toBe('Директке жаздык 📩')
+    expect(plan.private).toMatch(/Кайси шахардансиз\?$/)
+    const sorry = planComment('Ёмон товар, синиб колди, пулимни кайтаринглар!', s({ complaint: 0.9 }), null)
+    expect(sorry.public).toBe('Кечиресиз! Директке жаздык 📩')
+    expect(planComment('Директга ёздик 📩', s({ ask: 0.9 }), null).action).toBe('skip')
   })
   it('товара нет на складе — «предложить похожий?», цену не называем', () => {
     const plan = planComment('Канча турат?', s({ ask: 0.9 }), LIST.at(-1)!)

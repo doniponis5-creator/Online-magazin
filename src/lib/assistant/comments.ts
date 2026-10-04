@@ -70,9 +70,12 @@ export function productOfPost(caption: string, list: Product[]): Product | null 
   return bestNameMatch(text, list)
 }
 
-const PUBLIC_DM = { ky: 'Директке жаздык 📩', ru: 'Написали вам в Direct 📩', uz: 'Директга ёздик 📩' }
-const PUBLIC_SORRY = { ky: 'Кечиресиз! Директке жаздык 📩', ru: 'Извините! Написали вам в Direct 📩', uz: 'Кечирасиз! Директга ёздик 📩' }
-const OWN_REPLIES = new Set([...Object.values(PUBLIC_DM), ...Object.values(PUBLIC_SORRY)])
+// Под постом — только кыргызский или русский (владелец 04.10: «комментта узбекча ёзмасин»).
+// Узбеку под постом — кыргызский, в Direct — по-узбекски.
+const PUBLIC_DM = { ky: 'Директке жаздык 📩', ru: 'Написали вам в Direct 📩' }
+const PUBLIC_SORRY = { ky: 'Кечиресиз! Директке жаздык 📩', ru: 'Извините! Написали вам в Direct 📩' }
+// Старые узбекские ответы тоже свои: такой мог уже висеть под постом.
+const OWN_REPLIES = new Set([...Object.values(PUBLIC_DM), ...Object.values(PUBLIC_SORRY), 'Директга ёздик 📩', 'Кечирасиз! Директга ёздик 📩'])
 const CITY = { ky: 'Кайсы шаардан болосуз?', ru: 'Вы из какого города?', uz: 'Кайси шахардансиз?' }
 const WHICH = {
   ky: 'Ассаламу алейкум! Кайсы товар кызыктырды? Жазыңыз — баасын айтып берем.',
@@ -102,6 +105,7 @@ export function commentLang(text: string): TalkLang {
  */
 export function planComment(text: string, scores: CommentScores | null, product: Product | null): CommentPlan {
   const lang = commentLang(text)
+  const shown = lang === 'ru' ? 'ru' : 'ky'
   const plan = (action: CommentAction, pub = '', priv = ''): CommentPlan => ({ action, public: pub, private: priv, productId: product?.id ?? null, lang })
   // Наш же ответ «Директке жаздык 📩» вернулся webhook'ом: в нём «директ» — без этой проверки
   // робот отвечал бы сам себе по кругу. Сервер ещё и помнит id своих ответов — это вторая защита.
@@ -111,14 +115,14 @@ export function planComment(text: string, scores: CommentScores | null, product:
 
   // Жалоба — всегда владельцу, даже с матом (ревью 04.10: злой покупатель с матом уходил в «спам» и
   // молча скрывался). Скрываем только спам без жалобы и без интереса к товару.
-  if (s.complaint >= 0.6) return plan('alert', PUBLIC_SORRY[lang], SORRY_DM[lang])
+  if (s.complaint >= 0.6) return plan('alert', PUBLIC_SORRY[shown], SORRY_DM[lang])
   if (s.spam >= 0.8 && s.ask < 0.3 && !PRICE_WORDS.test(text)) return plan('hide')
   if (s.ask >= 0.5 || wordsAsk) {
-    if (!product) return plan('answer', PUBLIC_DM[lang], WHICH[lang])
+    if (!product) return plan('answer', PUBLIC_DM[shown], WHICH[lang])
     // Полное название, а не одна марка: «UAKEEN — 30 000 сом» непонятно, и ошибку покупатель не заметит.
     const name = product.nameRu.replace(/\*+/g, '').replace(/\s+/g, ' ').trim().slice(0, 70)
-    if (!isInStock(product) || product.price <= 0) return plan('answer', PUBLIC_DM[lang], NONE[lang](name))
-    return plan('answer', PUBLIC_DM[lang], `Ассаламу алейкум! ${name} — ${formatSom(product.price)}. ${CITY[lang]}`)
+    if (!isInStock(product) || product.price <= 0) return plan('answer', PUBLIC_DM[shown], NONE[lang](name))
+    return plan('answer', PUBLIC_DM[shown], `Ассаламу алейкум! ${name} — ${formatSom(product.price)}. ${CITY[lang]}`)
   }
   return plan('skip')
 }
