@@ -178,8 +178,10 @@ async def _turns(user: str) -> list[dict]:
         return []
 
 
-async def _remember(user: str, role: str, text: str) -> None:
-    turns = (await _turns(user)) + [{"role": role, "text": text[:800]}]
+async def _remember(user: str, role: str, text: str, asked: list[dict] | None = None) -> None:
+    current = await _turns(user)
+    # Ответ — сразу после реплик, на которые он отвечал (shop_ig_rules.place_answer).
+    turns = rules.place_answer(current, asked, text) if role == "assistant" else current + [{"role": role, "text": text[:800]}]
     await redis_client.set(f"ig:turns:{user}", json.dumps(turns[-MAX_TURNS:], ensure_ascii=False), ex=TURNS_TTL)
 
 
@@ -690,7 +692,8 @@ async def _answer(user: str) -> bool:
         count = int(await redis_client.get(count_key) or 0)
         if count >= DAILY_LIMIT:
             return False
-        reply = await _ask_site(user)
+        asked = await _turns(user)
+        reply = await _ask_site(user, asked)
         answered_by_site = bool(reply)
         if reply and reply.get("silent"):
             if reply.get("mute"):
@@ -713,7 +716,7 @@ async def _answer(user: str) -> bool:
             text += "\n\nДальше вам ответит руководство магазина."
         await _send_text(user, text)
         await _send_photos(user, await _new_photos(user, reply.get("products") or []))
-        await _remember(user, "assistant", text)
+        await _remember(user, "assistant", text, asked)
         await redis_client.set(count_key, str(count + 1), ex=2 * 24 * 3600)
         await redis_client.set(f"ig:botactive:{user}", "1", ex=30 * 60)
         ids = [p.get("id") for p in reply.get("products") or [] if p.get("id")]
@@ -742,7 +745,7 @@ async def _answer(user: str) -> bool:
         return False
 
 
-async def _ask_site(user: str) -> dict | None:
+async def _ask_site(user: str, asked: list[dict]) -> dict | None:
     from .shop_router import _site_base_url, _site_secret
     profile = await _profile(user)
     shown_raw = await redis_client.get(f"ig:shown:{user}")
@@ -751,7 +754,7 @@ async def _ask_site(user: str) -> dict | None:
         "name": profile.get("name") or "",
         # Ник — подпись для владельца в 🚨 жалобе и 💳 чеке: по нему он найдёт чат.
         "username": profile.get("username") or "",
-        "messages": await _turns(user),
+        "messages": asked,
         "shown": json.loads(shown_raw) if shown_raw else [],
     }, ensure_ascii=False)
     signature = hmac.new(_site_secret().encode(), payload.encode("utf-8"), hashlib.sha256).hexdigest()

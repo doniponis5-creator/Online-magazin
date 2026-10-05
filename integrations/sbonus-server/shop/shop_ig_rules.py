@@ -495,3 +495,17 @@ def week_report(period: str, account: dict, posts: list[dict], stories: list[dic
     if not posts and not stories:
         lines += ["", "Постов и историй за неделю не было."]
     return "\n".join(lines)
+
+
+def place_answer(current: list[dict], asked: list[dict] | None, text: str) -> list[dict]:
+    """
+    Ответ — сразу после тех реплик, на которые он отвечал. Покупатель дописал, пока думал Gemini
+    (05.10, Instagram после рилса): раньше ответ ложился в конец — «вопрос, вопрос, ответ», — и
+    следующий запрос к сайту кончался репликой магазина. Gemini такое не принимает (400 «Requests
+    ending with a model turn»), и второй вопрос оставался без ответа с тревогой владельцу.
+    """
+    turn = {"role": "assistant", "text": text[:800]}
+    n = len(asked or [])
+    if asked and len(current) > n and current[:n] == asked:
+        return current[:n] + [turn] + current[n:]
+    return current + [turn]

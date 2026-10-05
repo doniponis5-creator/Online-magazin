@@ -260,5 +260,21 @@ class Window(unittest.TestCase):
         self.assertFalse(rules.window_open(5000, 1000))
 
 
+class AnswerPlace(unittest.TestCase):
+    """05.10: покупатель дописал, пока думал Gemini, — ответ ложился в конец, и Gemini отвечал 400."""
+
+    def test_answer_goes_after_asked(self):
+        u = lambda t: {"role": "user", "text": t}
+        a = lambda t: {"role": "assistant", "text": t}
+        asked = [a("Директке жаздык"), u("Канча?")]
+        now = asked + [u("Жеткирүү барбы?")]
+        self.assertEqual(rules.place_answer(now, asked, "23 900 сом"), asked + [a("23 900 сом"), u("Жеткирүү барбы?")])
+        # Ничего не дописал — в конец, как раньше.
+        self.assertEqual(rules.place_answer(asked, asked, "23 900 сом"), asked + [a("23 900 сом")])
+        # Разговор успел смениться (обрезка, сотрудник) — в конец.
+        self.assertEqual(rules.place_answer([u("Салам")], asked, "Бар"), [u("Салам"), a("Бар")])
+        self.assertEqual(rules.place_answer(now, None, "Бар"), now + [a("Бар")])
+
+
 if __name__ == "__main__":
     unittest.main()

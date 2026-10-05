@@ -96,7 +96,8 @@ export function downWhy(error: unknown): DownWhy {
   if (isTimeout(error)) return 'timeout'
   const status = error instanceof GeminiError ? error.status : 0
   if (status === 429 || status === 503 || status === 500) return 'busy'
-  if (status === 400 || status === 401 || status === 403) return 'key'
+  // 400 — чаще наш кривой запрос, а не ключ (05.10: «Requests ending with a model turn»).
+  if (status === 401 || status === 403 || (status === 400 && /api.?key/i.test((error as Error).message))) return 'key'
   return 'error'
 }
 

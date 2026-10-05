@@ -30,6 +30,26 @@ describe('Gemini молчит 12 секунд (05.10, 06:31)', () => {
     expect(downWhy(timeout())).toBe('timeout')
     expect(downWhy(new GeminiError('quota', 429))).toBe('busy')
     expect(downWhy(new GeminiError('bad key', 403))).toBe('key')
+    expect(downWhy(new GeminiError('API key not valid. Please pass a valid API key.', 400))).toBe('key')
+    expect(downWhy(new GeminiError('Requests ending with a model turn are not supported.', 400))).toBe('error')
     expect(downWhy(new Error('ECONNRESET'))).toBe('error')
+  })
+})
+
+describe('разговор кончается репликой магазина (05.10, 400 от Gemini)', () => {
+  const u = (text: string) => ({ role: 'user' as const, text })
+  const a = (text: string) => ({ role: 'assistant' as const, text })
+  it('дописал, пока бот думал — ответ встаёт перед последним вопросом', async () => {
+    const { endWithCustomer } = await import('@/lib/assistant/respond')
+    expect(endWithCustomer([a('Директке жаздык'), u('Канча?'), u('Жеткирүү барбы?'), a('23 900 сом')]))
+      .toEqual([a('Директке жаздык'), u('Канча?'), a('23 900 сом'), u('Жеткирүү барбы?')])
+    expect(endWithCustomer([u('Салам'), u('Канча?'), a('Бар')])).toEqual([u('Салам'), a('Бар'), u('Канча?')])
+    // На единственный вопрос уже ответили — молчим, второй раз не отвечаем.
+    expect(endWithCustomer([a('Салам'), u('Канча?'), a('23 900 сом')])).toBeNull()
+    expect(endWithCustomer([u('Канча?'), a('23 900 сом')])).toBeNull()
+    expect(endWithCustomer([a('Ассаламу алейкум')])).toBeNull()
+    // Обычный разговор — как есть.
+    const fine = [a('Салам'), u('Канча?')]
+    expect(endWithCustomer(fine)).toBe(fine)
   })
 })

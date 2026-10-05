@@ -50,6 +50,7 @@ from fastapi import APIRouter
 from app.core.redis import redis_client
 
 from .shop_customers import WA_LOGIN_RE, wa_login_message
+from .shop_ig_rules import place_answer
 
 logger = logging.getLogger("sbonus.shop.wa_bot")
 
@@ -89,8 +90,9 @@ async def _turns(digits: str) -> list[dict]:
         return []
 
 
-async def _remember(digits: str, role: str, text: str) -> None:
-    turns = (await _turns(digits)) + [{"role": role, "text": text[:800]}]
+async def _remember(digits: str, role: str, text: str, asked: list[dict] | None = None) -> None:
+    current = await _turns(digits)
+    turns = place_answer(current, asked, text) if role == "assistant" else current + [{"role": role, "text": text[:800]}]
     await redis_client.set(f"wa:turns:{digits}", json.dumps(turns[-MAX_TURNS:], ensure_ascii=False), ex=TURNS_TTL)
     # Копия на неделю — для понедельничной оценки качества: сам разговор бот помнит 3 дня.
     await redis_client.set(f"wa:week:{digits}", json.dumps(turns[-MAX_TURNS:], ensure_ascii=False), ex=WEEK_TTL)
@@ -494,7 +496,8 @@ async def _answer(digits: str, name: str) -> bool:
         if count >= DAILY_LIMIT:
             return False
 
-        reply = await _ask_site(digits, name)
+        asked = await _turns(digits)
+        reply = await _ask_site(digits, name, asked)
         answered_by_site = bool(reply)
         if reply and reply.get("silent"):
             # Не покупатель (рабочие, родные, чужой бот) — робот в этом чате молчит 12 часов.
@@ -519,7 +522,7 @@ async def _answer(digits: str, name: str) -> bool:
             text += "\n\nДальше вам ответит руководство магазина."
         await _send_text(digits, text)
         await _send_photos(digits, await _new_photos(digits, reply.get("products") or []))
-        await _remember(digits, "assistant", text)
+        await _remember(digits, "assistant", text, asked)
         await redis_client.set(count_key, str(count + 1), ex=2 * 24 * 3600)
         await redis_client.set(f"wa:botactive:{digits}", "1", ex=30 * 60)
         ids = [p.get("id") for p in reply.get("products") or [] if p.get("id")]
@@ -548,13 +551,13 @@ async def _answer(digits: str, name: str) -> bool:
         return False
 
 
-async def _ask_site(digits: str, name: str) -> dict | None:
+async def _ask_site(digits: str, name: str, asked: list[dict]) -> dict | None:
     from .shop_router import _site_base_url, _site_secret
     shown_raw = await redis_client.get(f"wa:shown:{digits}")
     payload = json.dumps({
         "phone": "+" + digits,
         "name": name,
-        "messages": await _turns(digits),
+        "messages": asked,
         "shown": json.loads(shown_raw) if shown_raw else [],
     }, ensure_ascii=False)
     signature = hmac.new(_site_secret().encode(), payload.encode("utf-8"), hashlib.sha256).hexdigest()

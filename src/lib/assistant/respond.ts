@@ -55,9 +55,28 @@ export type Channel = {
   label?: string
 }
 
+/**
+ * Разговор кончается репликой магазина — Gemini такой запрос не берёт (400 «Requests ending with a model
+ * turn», 05.10). Так бывало, когда покупатель дописал, пока бот думал: бот клал ответ в конец — «вопрос,
+ * вопрос, ответ». Сервер теперь кладёт ответ на место (`place_answer`); старые разговоры в Redis чиним
+ * здесь: ответ — перед последним вопросом, на него и отвечаем. Вопроса нет вовсе — null (молчим).
+ */
+export function endWithCustomer(turns: ChatTurn[]): ChatTurn[] | null {
+  let end = turns.length
+  while (end > 0 && turns[end - 1].role === 'assistant') end--
+  if (end === turns.length) return turns
+  if (end === 0) return null
+  const tail = turns.slice(end)
+  // Один вопрос и ответ после него — на него уже ответили. Два и больше — последний дописан, пока бот думал.
+  let start = end - 1
+  while (start > 0 && turns[start - 1].role === 'user') start--
+  if (start === end - 1) return null
+  return [...turns.slice(0, end - 1), ...tail, turns[end - 1]]
+}
+
 export async function respond(
   channel: Channel,
-  turns: ChatTurn[],
+  given: ChatTurn[],
   lang: Lang,
   customer: CustomerBrief | null,
   buy?: unknown,
@@ -65,6 +84,8 @@ export async function respond(
   /** id товара, страница которого открыта у покупателя (чат на сайте) */
   page?: string,
 ): Promise<Reply> {
+  const turns = endWithCustomer(given)
+  if (!turns) return { text: '', products: [], source: 'flow', silent: true }
   // Jev читает ответ на наш вопрос «Оформляем?» / «Позвонить?» — salesFlow кладёт его сюда.
   const hint: { intent?: Intent | null } = {}
   const flow = await salesFlow(channel, turns, lang, customer, buy, shown, page, hint)
