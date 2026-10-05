@@ -4,7 +4,8 @@
 Покупатели пишут в Direct аккаунта магазина. Отвечают там живые люди. Робот
 вступает так же, как в WhatsApp (shop_wa_bot.py), — только если человек не ответил:
 
-  • пришло сообщение — ждём SITE_WA_DELAY_MIN минут (та же настройка, что у WhatsApp);
+  • пришло сообщение — отвечаем сразу, на ближайшем запуске cron (раз в минуту): IG_WAIT_MIN = 0
+    (владелец 05.10: «инстадан ёзса 5 мин кутмасин»; WhatsApp ждёт SITE_WA_DELAY_MIN, как раньше);
   • за это время сотрудник ответил из Instagram — робот молчит в этом чате 12 часов;
   • не ответил — робот отвечает как продавец на сайте: цена, фото, ссылка;
   • больше 30 ответов одному человеку за день — дальше отвечает сотрудник;
@@ -58,6 +59,7 @@ MAX_PHOTOS = 1
 NUDGE_AFTER = 2 * 3600           # покупатель молчит столько после показа товара — напоминаем
 NUDGE_QUIET = 3 * 24 * 3600      # не чаще раза в столько на один чат
 INBOX_MAX = 2000                 # очередь webhook'а: больше не держим
+IG_WAIT_MIN = 0                  # минут ждать сотрудника перед ответом робота (WhatsApp — SITE_WA_DELAY_MIN)
 STALE_AFTER = 3 * 3600           # сообщение старше — робот на него уже не отвечает
 
 
@@ -462,8 +464,8 @@ async def poll_once() -> dict:
         await collect_stories()
     except Exception as error:
         logger.info(f"ig stats: {type(error).__name__}: {error}")
-    from .shop_wa_bot import _settings
-    _, delay = await _settings()
+    # Ждать сотрудника в Instagram не нужно (владелец 05.10) — WhatsApp по-прежнему ждёт SITE_WA_DELAY_MIN.
+    delay = IG_WAIT_MIN
     on = await _switched_on()
 
     # Сначала всё, что принёс webhook, — по порядку.
