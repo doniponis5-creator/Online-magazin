@@ -480,7 +480,7 @@ async def poll_once() -> dict:
                 answered += 1
         elif await _story_reply(user):
             answered += 1
-        elif await _answer(user):
+        elif await _answer(user, pending):
             answered += 1
     nudged = await _nudge_silent()
     # Комментарии — последними: сначала люди, которые уже пишут в Direct.
@@ -694,7 +694,7 @@ async def _ask_for_text(user: str) -> bool:
         return False
 
 
-async def _answer(user: str) -> bool:
+async def _answer(user: str, pending: dict | None = None) -> bool:
     # Как в WhatsApp: ошибка после ответа сайта — это отправка в Instagram (окно 24 часа, ключ), не консультант.
     answered_by_site = False
     try:
@@ -717,8 +717,11 @@ async def _answer(user: str) -> bool:
             return False
         # Модель недоступна — шаблон в Instagram не шлём, пусть ответит сотрудник.
         if reply.get("source") == "local":
+            from .shop_wa_bot import brain_why, retry_later
+            if await retry_later("ig:pending", user, pending, reply.get("why")):
+                logger.warning(f"ig bot: Google занят — спрошу снова через минуту ...{user[-4:]}")
+                return False
             logger.warning("ig bot: модель недоступна — отвечать оставляю сотруднику")
-            from .shop_wa_bot import brain_why
             await alert_brain_down("Instagram", brain_why(reply.get("why")))
             return False
         text = str(reply["text"])

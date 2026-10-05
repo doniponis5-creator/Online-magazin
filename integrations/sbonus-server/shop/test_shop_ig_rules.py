@@ -276,5 +276,19 @@ class AnswerPlace(unittest.TestCase):
         self.assertEqual(rules.place_answer(now, None, "Бар"), now + [a("Бар")])
 
 
+class BusyRetry(unittest.TestCase):
+    """05.10: Google 503 «high demand» — покупатель ждёт минуту, а не остаётся без ответа."""
+
+    def test_retry(self):
+        pending = {"ts": 100, "voice": False}
+        self.assertEqual(rules.busy_retry(pending, "busy"), {"ts": 100, "voice": False, "retry": 1})
+        self.assertEqual(rules.busy_retry({**pending, "retry": 2}, "timeout")["retry"], 3)
+        self.assertEqual(rules.busy_retry(pending, "busy")["ts"], 100)  # время вопроса прежнее: старое не ответим
+        self.assertIsNone(rules.busy_retry({**pending, "retry": rules.BUSY_RETRIES}, "busy"))  # хватит — владельцу
+        self.assertIsNone(rules.busy_retry(pending, "key"))    # ключ сам не починится
+        self.assertIsNone(rules.busy_retry(pending, "limit"))
+        self.assertIsNone(rules.busy_retry(None, "busy"))
+
+
 if __name__ == "__main__":
     unittest.main()

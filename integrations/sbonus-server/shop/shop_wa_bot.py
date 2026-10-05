@@ -50,7 +50,7 @@ from fastapi import APIRouter
 from app.core.redis import redis_client
 
 from .shop_customers import WA_LOGIN_RE, wa_login_message
-from .shop_ig_rules import place_answer
+from .shop_ig_rules import busy_retry, place_answer
 
 logger = logging.getLogger("sbonus.shop.wa_bot")
 
@@ -341,7 +341,7 @@ async def poll_once() -> dict:
         if pending.get("voice"):
             if await _ask_for_text(digits):
                 answered += 1
-        elif await _answer(digits, str(pending.get("name") or "")):
+        elif await _answer(digits, str(pending.get("name") or ""), pending):
             answered += 1
     nudged = await _nudge_silent()
     return {"enabled": True, "answered": answered, "nudged": nudged}
@@ -444,6 +444,19 @@ BRAIN_WHY = {
 }
 
 
+async def retry_later(queue: str, key: str, pending: dict | None, why) -> bool:
+    """
+    True — вопрос снова в очереди `queue` (ig:pending / wa:pending), тревогу владельцу не шлём.
+    Когда — решает shop_ig_rules.busy_retry.
+    """
+    again = busy_retry(pending, why)
+    if again is None:
+        return False
+    # hsetnx: покупатель успел написать ещё — его новая запись в очереди важнее, она и так ответится.
+    await redis_client.hsetnx(queue, key, json.dumps(again, ensure_ascii=False))
+    return True
+
+
 def brain_why(why) -> str:
     return BRAIN_WHY.get(str(why or ""), "не отвечает Gemini — ошибка связи")
 
@@ -486,7 +499,7 @@ async def _ask_for_text(digits: str) -> bool:
         return False
 
 
-async def _answer(digits: str, name: str) -> bool:
+async def _answer(digits: str, name: str, pending: dict | None = None) -> bool:
     # Сайт ответил — дальше ошибки уже про отправку покупателю (Green API), «консультант
     # не отвечает» владельцу тогда не пишем: консультант как раз ответил.
     answered_by_site = False
@@ -514,6 +527,9 @@ async def _answer(digits: str, name: str) -> bool:
         # Модель недоступна (кончился лимит Gemini) — шаблонный ответ в WhatsApp не шлём:
         # человек написал живым людям, пусть ответит сотрудник.
         if reply.get("source") == "local":
+            if await retry_later("wa:pending", digits, pending, reply.get("why")):
+                logger.warning(f"wa bot: Google занят — спрошу снова через минуту ...{digits[-4:]}")
+                return False
             logger.warning("wa bot: модель недоступна — отвечать оставляю сотруднику")
             await alert_brain_down("WhatsApp", brain_why(reply.get("why")))
             return False

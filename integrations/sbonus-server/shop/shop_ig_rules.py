@@ -534,3 +534,19 @@ def place_answer(current: list[dict], asked: list[dict] | None, text: str) -> li
     if asked and len(current) > n and current[:n] == asked:
         return current[:n] + [turn] + current[n:]
     return current + [turn]
+
+
+# Google перегружен (503 «high demand», 05.10) или молчит — это минуты. Покупателя не бросаем:
+# вопрос возвращается в очередь, и cron спрашивает снова каждую минуту, до BUSY_RETRIES раз.
+# Владельцу «консультант не отвечает» — только если и это не помогло.
+BUSY_RETRIES = 5
+
+
+def busy_retry(pending: dict | None, why) -> dict | None:
+    """Запись очереди для следующей попытки или None — пробовать больше не нужно (ключ, норма) или хватит."""
+    if pending is None or str(why or "") not in ("busy", "timeout"):
+        return None
+    tries = int(pending.get("retry") or 0)
+    if tries >= BUSY_RETRIES:
+        return None
+    return {**pending, "retry": tries + 1}
