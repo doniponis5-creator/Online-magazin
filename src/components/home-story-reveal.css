@@ -83,6 +83,8 @@
 .hr__hint { display: flex; gap: 18px; margin-top: 24px; font-size: 12px; color: var(--color-story-copy); }
 .hr__hint svg { animation: hr-nudge 1.8s ease-in-out infinite; }
 .hr[data-progress^='1'] .hr__hint svg { animation: none; }
+/* колоды «Кухни» и «Скидки» (useFanDeck) не пишут data-progress каждый кадр — только «дошли до конца» */
+.hr[data-done] .hr__hint svg { animation: none; }
 @keyframes hr-nudge { 0%, 100% { transform: none; } 50% { transform: translateY(4px); } }
 .hr__footer { position: absolute; bottom: 20px; inset-inline: 5%; display: flex; justify-content: space-between; font-size: 10px; color: var(--color-ink); z-index: 1; pointer-events: none; }
 .hr__footer span { background: rgba(255,255,255,.9); padding: 5px 9px; border-radius: 6px; }

@@ -62,57 +62,95 @@ export function useFanDeck(root: RefObject<HTMLElement | null>, { start, end, sp
     const media = matchMedia('(prefers-reduced-motion: reduce)')
     const cards = Array.from(el.querySelectorAll<HTMLElement>('.hk__card'))
     const stage = el.querySelector<HTMLElement>('.hr__stage')!
+    const bar = el.querySelector<HTMLElement>('.hr__progress')
+    /*
+     * Телефон в браузере «тормозил» на этой сцене (05.10, замер: ~500 пересчётов стилей за 175 кадров прокрутки).
+     * Три правила кадра:
+     *  1) сначала все замеры, потом все записи — замер после записи заставляет браузер пересчитать страницу;
+     *  2) пишем только то, что изменилось: переменная на корне сцены пересчитывает стили всего, что внутри;
+     *  3) редкие замеры (позиция sticky, ход, ширина карточки) — не каждый кадр, а при изменении размеров (measure).
+     */
+    const written = new Map<string, string>()
+    const put = (target: HTMLElement, key: string, name: string, value: string) => {
+      if (written.get(key) === value) return
+      written.set(key, value)
+      if (name.startsWith('--')) target.style.setProperty(name, value)
+      else if (name === 'transform') target.style.transform = value
+      else if (name === 'opacity') target.style.opacity = value
+      else if (name === 'zIndex') target.style.zIndex = value
+    }
+    let sizes = { sticky: false, travel: 1, w: 400, w0: 0 }
+    const measure = () => {
+      // без «залипания» (меньше движения, низкий телефон боком) сцена — обычная карточка
+      sizes = {
+        sticky: !media.matches && getComputedStyle(stage).position === 'sticky',
+        travel: deckTravel(el),
+        w: cards[0]?.offsetWidth ?? 400,
+        w0: el.clientWidth,
+      }
+    }
+    let shownFocus = -1
+    let shownPhase = -1
     let frame = 0
+    let stale = true
     const update = () => {
       frame = 0
+      if (stale) { measure(); stale = false }
+      // ── замеры ──
       const head = siteHeader()?.getBoundingClientRect()
+      const box = el.getBoundingClientRect()
+      const bonus = document.querySelector('.bonus-bar')?.getBoundingClientRect()
+      const docW = document.documentElement.clientWidth
+      const { sticky, travel, w, w0 } = sizes
+      // ── расчёт ──
       // место шапки в потоке страницы — не меняется, когда она уезжает (она сдвигается, а не прячется)
       const top = (head?.height ?? 0) + 8
-      el.style.setProperty('--story-top', `${top}px`)
-      const box = el.getBoundingClientRect()
       const d = top - box.top
-      // без «залипания» (меньше движения, низкий телефон боком) сцена — обычная карточка
-      const sticky = !media.matches && getComputedStyle(stage).position === 'sticky'
       // первые 160 px прокрутки сцена разворачивается на весь экран
       const fill = sticky ? smooth(clamp(d / 160)) : 0
-      el.style.setProperty('--fill', fill.toFixed(3))
-      el.style.setProperty('--bleed-l', `${Math.max(0, box.left).toFixed(1)}px`)
-      el.style.setProperty('--bleed-r', `${Math.max(0, document.documentElement.clientWidth - box.right).toFixed(1)}px`)
-      el.style.setProperty('--w0', `${el.clientWidth}px`)
       // сцена встаёт под низ шапки; уехала шапка — к самому верху экрана. У покупателя с бонусами под шапкой
       // прилипает полоска «У вас N бонусов» (BonusReminder): шапка уехала — полоска остаётся, сцена встаёт под неё
-      const bonus = document.querySelector('.bonus-bar')?.getBoundingClientRect()
       const line = Math.max(0, head?.bottom ?? 0, bonus?.height ? bonus.bottom : 0)
-      el.style.setProperty('--stick', `${sticky ? line + 8 * (1 - fill) : top}px`)
-      const p = media.matches || !sticky ? 1 : clamp(d / deckTravel(el))
-      el.style.setProperty('--story-progress', p.toFixed(4))
-      el.dataset.progress = p.toFixed(3)
+      const p = media.matches || !sticky ? 1 : clamp(d / travel)
+      // ── записи ──
+      put(el, 'top', '--story-top', `${top}px`)
+      put(el, 'fill', '--fill', fill.toFixed(3))
+      put(el, 'bl', '--bleed-l', `${Math.max(0, box.left).toFixed(1)}px`)
+      put(el, 'br', '--bleed-r', `${Math.max(0, docW - box.right).toFixed(1)}px`)
+      put(el, 'w0', '--w0', `${w0}px`)
+      put(el, 'stick', '--stick', `${sticky ? (line + 8 * (1 - fill)).toFixed(1) : top}px`)
+      // полоска хода — переменной на самой полоске: на корне она каждый кадр пересчитывала бы всю сцену
+      if (bar) put(bar, 'progress', '--story-progress', p.toFixed(4))
+      if ((el.dataset.done !== undefined) !== (p >= 1)) el.toggleAttribute('data-done', p >= 1)
       const fan = smooth(clamp(p / .3))
       const k = start + (end - start) * smooth(clamp((p - .3) / .65))
-      const w = cards[0]?.offsetWidth ?? 400
       cards.forEach((card, i) => {
         const d = i - k
         const a = Math.abs(d)
         const stack = { x: d * 7, y: -Math.min(a, 3) * 7, r: d * 1.6, s: 1 - Math.min(a, 3) * .03, o: a > 3 ? 0 : 1 }
         const open = { x: d * w * spread, y: d * d * w * .035, r: d * 7, s: 1 - Math.min(a, 3) * .09, o: clamp(3.1 - a) }
         const mix = (from: number, to: number) => from + (to - from) * fan
-        card.style.setProperty('--x', `${mix(stack.x, open.x).toFixed(1)}px`)
-        card.style.setProperty('--y', `${mix(stack.y, open.y).toFixed(1)}px`)
-        card.style.setProperty('--rot', `${mix(stack.r, open.r).toFixed(2)}deg`)
-        card.style.setProperty('--sc', mix(stack.s, open.s).toFixed(3))
-        card.style.opacity = mix(stack.o, open.o).toFixed(3)
-        card.style.zIndex = String(100 - Math.round(a * 10))
-        card.toggleAttribute('data-front', a < .5)
+        // сразу transform, а не четыре переменные: переменная наследуется и пересчитывает стили всего внутри карточки
+        put(card, `t${i}`, 'transform', `translate(${mix(stack.x, open.x).toFixed(1)}px, ${mix(stack.y, open.y).toFixed(1)}px) rotate(${mix(stack.r, open.r).toFixed(2)}deg) scale(${mix(stack.s, open.s).toFixed(3)})`)
+        put(card, `o${i}`, 'opacity', mix(stack.o, open.o).toFixed(3))
+        put(card, `z${i}`, 'zIndex', String(100 - Math.round(a * 10)))
+        if (card.hasAttribute('data-front') !== a < .5) card.toggleAttribute('data-front', a < .5)
         // за веером карточка не должна ловить нажатия и фокус
-        card.tabIndex = a < 2.6 ? 0 : -1
+        const tab = a < 2.6 ? 0 : -1
+        if (card.tabIndex !== tab) card.tabIndex = tab
       })
-      setFocus(Math.round(k))
-      setPhase(p < .3 ? 0 : p < .72 ? 1 : 2)
+      const nextFocus = Math.round(k)
+      const nextPhase = p < .3 ? 0 : p < .72 ? 1 : 2
+      if (nextFocus !== shownFocus) { shownFocus = nextFocus; setFocus(nextFocus) }
+      if (nextPhase !== shownPhase) { shownPhase = nextPhase; setPhase(nextPhase) }
     }
     const schedule = () => { if (!frame) frame = requestAnimationFrame(update) }
+    // размеры поменялись (поворот, шрифт, карточка стала уже) — замерить заново на ближайшем кадре
+    const resized = () => { stale = true; schedule() }
     el.dataset.enhanced = 'true'
-    const observer = new ResizeObserver(schedule)
+    const observer = new ResizeObserver(resized)
     observer.observe(el)
+    if (cards[0]) observer.observe(cards[0])
     const header = siteHeader()
     if (header) observer.observe(header)
     let follow = 0
@@ -137,8 +175,8 @@ export function useFanDeck(root: RefObject<HTMLElement | null>, { start, end, sp
     const bars = new MutationObserver(schedule)
     bars.observe(document.body, { childList: true })
     addEventListener('scroll', schedule, { passive: true })
-    addEventListener('resize', schedule)
-    media.addEventListener('change', schedule)
+    addEventListener('resize', resized)
+    media.addEventListener('change', resized)
     update()
     return () => {
       cancelAnimationFrame(frame)
@@ -147,9 +185,10 @@ export function useFanDeck(root: RefObject<HTMLElement | null>, { start, end, sp
       document.removeEventListener('transitionrun', headerMoves)
       bars.disconnect()
       removeEventListener('scroll', schedule)
-      removeEventListener('resize', schedule)
-      media.removeEventListener('change', schedule)
+      removeEventListener('resize', resized)
+      media.removeEventListener('change', resized)
       delete el.dataset.enhanced
+      delete el.dataset.done
     }
   }, [root, start, end, spread])
   return { phase, focus }
