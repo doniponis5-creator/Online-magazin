@@ -1,7 +1,7 @@
 import { createHmac } from 'node:crypto'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 vi.mock('server-only', () => ({}))
-import { commentLang, planComment, productOfPost, type CommentScores } from '@/lib/assistant/comments'
+import { commentLang, installmentLine, planComment, productOfPost, type CommentScores } from '@/lib/assistant/comments'
 import { bestNameMatch } from '@/lib/assistant/knowledge'
 import { products } from '@/data/products'
 import type { Product } from '@/data/products'
@@ -104,7 +104,7 @@ describe('что делать с комментарием', () => {
     expect(planComment('канча турат', null, enduro).action).toBe('answer')
     expect(planComment('класс', null, enduro).action).toBe('skip')
   })
-  it('спор о цене — не жалоба: спокойный ответ без 🚨 (Instagram 05.10)', () => {
+  it('спор о цене — не жалоба: спокойный ответ без 🚨 (Instagram 05.10)', async () => {
     const dish = item('dish', 'Посудомоечная машина MIDEA MDWM-218TWO', 23900)
     // Настоящие комментарии под рилсом «Мини посудомойка»; Jev оба счёл жалобой.
     for (const text of [
@@ -117,7 +117,17 @@ describe('что делать с комментарием', () => {
       expect(['Пикириңизге рахмат 🙏 Баасы тууралуу Директке жаздык 📩', 'Спасибо за отзыв 🙏 Про цену написали вам в Direct 📩']).toContain(plan.public)
       expect(plan.private).toMatch(/23\s900/)
       expect(plan.private).not.toMatch(/кепилдик|гарант|жеткир|доставк/i) // не выдумываем
+      // «Дорого» — предлагаем рассрочку банка: 23 900 / 4 = 5 975 в месяц, без переплаты.
+      expect(plan.private).toMatch(/Адал рассрочка/)
+      expect(plan.private).toMatch(/5\s975/)
     }
+    // Дороже 40 000 — «МРассрочка» без суммы в месяц (там переплата, считает банк); дороже 200 000 — ничего.
+    expect(installmentLine(60000, 'ru')).toBe('Можно и в рассрочку: «МРассрочка» MBANK — до 24 месяцев (одобряет банк).')
+    expect(installmentLine(40000, 'ky')).toMatch(/айына 10\s000 сомдон/)
+    expect(installmentLine(250000, 'ky')).toBe('')
+    const { storePolicy } = await import('@/lib/assistant/policy')
+    expect(storePolicy()).toContain('«Адал рассрочка» (приложение MIslamic): до 40 000 сом, до 4 месяцев')
+    expect(storePolicy()).toContain('«МРассрочка» (приложение MBANK): до 200 000 сом, до 24 месяцев')
     // Товара не узнали — цену не называем.
     expect(planComment('Кымбат го', s({ complaint: 0.7 }), null).private).not.toMatch(/\d/)
     // Сломалось или «верните деньги» — это жалоба, хоть и про деньги.

@@ -373,6 +373,15 @@ async def _story_reply(user: str) -> bool:
     return True
 
 
+async def _stat_media(media: str, caption: str) -> None:
+    """Под каким постом спрашивают (shop_ig_stats.count_media); ошибка ответу не мешает."""
+    try:
+        from .shop_ig_stats import count_media
+        await count_media(media, caption)
+    except Exception as error:
+        logger.info(f"ig stats media: {type(error).__name__}")
+
+
 async def _stat(kind: str, user: str = "") -> None:
     """Счётчики для недельного отчёта (shop_ig_stats): ошибка счётчика ответу покупателю не мешает."""
     try:
@@ -642,6 +651,7 @@ async def _handle_comments(budget: float = 20.0) -> int:
                 if reply.get("id"):
                     await redis_client.set(f"ig:myreply:{reply['id']}", "1", ex=7 * 24 * 3600)
             await _stat("comments")
+            await _stat_media(media, caption)
             done += 1
             logger.warning(f"ig comment: {action} ...{cid[-4:]}")
         except Exception as error:

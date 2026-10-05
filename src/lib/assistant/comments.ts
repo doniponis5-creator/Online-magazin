@@ -18,6 +18,7 @@ import 'server-only'
 
 import { askJev, jevConfigured } from './jev'
 import { isPriceObjection } from './triage'
+import { INSTALLMENT } from './policy'
 import { hideDigits } from './log'
 import { detectLangScored, type TalkLang } from './talk'
 import { bestNameMatch, isInStock } from './knowledge'
@@ -103,6 +104,29 @@ const PRICE_DM = {
 }
 const IN_STOCK = { ky: 'азыр бизде бар.', ru: 'сейчас есть в наличии.', uz: 'хозир бизда бор.' }
 
+/**
+ * «Дорого» — чаще «сразу столько нет» (владелец 05.10). Рассрочку даёт банк, не магазин: в тексте
+ * «банк бекитет / одобряет банк». До 40 000 — «Адал рассрочка» без переплаты, сумма в месяц точная;
+ * дороже — «МРассрочка» с переплатой: месячную сумму не называем, её считает банк.
+ */
+export function installmentLine(price: number, lang: TalkLang): string {
+  const { adal, mbank } = INSTALLMENT
+  if (price <= 0 || price > mbank.max) return ''
+  if (price <= adal.max) {
+    const month = formatSom(Math.ceil(price / adal.months))
+    return {
+      ky: `Бөлүп төлөсөңүз да болот: MIslamic «Адал рассрочка» — ${adal.months} ай, айына ${month}дон, ашыкча төлөмсүз (банк бекитет).`,
+      ru: `Можно и в рассрочку: «Адал рассрочка» MIslamic — ${adal.months} месяца по ${month}, без переплаты (одобряет банк).`,
+      uz: `Булиб туласангиз хам булади: MIslamic «Адал рассрочка» — ${adal.months} ой, ойига ${month}дан, ортикча туловсиз (банк тасдиклайди).`,
+    }[lang]
+  }
+  return {
+    ky: `Бөлүп төлөсөңүз да болот: MBANK «МРассрочка» — ${mbank.months} айга чейин (банк бекитет).`,
+    ru: `Можно и в рассрочку: «МРассрочка» MBANK — до ${mbank.months} месяцев (одобряет банк).`,
+    uz: `Булиб туласангиз хам булади: MBANK «МРассрочка» — ${mbank.months} ойгача (банк тасдиклайди).`,
+  }[lang]
+}
+
 /** Язык комментария. «+» и «🔥» языка не имеют — по умолчанию кыргызский: большинство покупателей. */
 export function commentLang(text: string): TalkLang {
   const scored = detectLangScored(text, 'ky')
@@ -127,7 +151,8 @@ export function planComment(text: string, scores: CommentScores | null, product:
   // владельцу 🚨 не шлём, под постом — спокойное «спасибо, про цену написали в Direct», даже с грубым словом.
   if (isPriceObjection(text)) {
     const name = product?.nameRu.replace(/\*+/g, '').replace(/\s+/g, ' ').trim().slice(0, 70)
-    const what = product && name && isInStock(product) && product.price > 0 ? `${name} — ${formatSom(product.price)}, ${IN_STOCK[lang]}` : ''
+    const known = product && name && isInStock(product) && product.price > 0
+    const what = known ? `${name} — ${formatSom(product.price)}, ${IN_STOCK[lang]} ${installmentLine(product.price, lang)}` : ''
     return plan('answer', PUBLIC_PRICE[shown], PRICE_DM[lang](what).replace(/\s{2,}/g, ' '))
   }
   // Жалоба — всегда владельцу, даже с матом (ревью 04.10: злой покупатель с матом уходил в «спам» и

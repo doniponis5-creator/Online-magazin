@@ -462,8 +462,30 @@ def _title(caption: str, limit: int = 48) -> str:
     return "Пост"
 
 
+def sales_lines(sales: dict | None, dm: int) -> list[str]:
+    """«Продажи из Instagram»: заказы в Direct, доля от написавших и посты, под которыми больше спрашивали."""
+    if not sales:
+        return []
+    lines: list[str] = []
+    orders = sales.get("orders")
+    if orders is not None:
+        made, paid = int(orders.get("made") or 0), int(orders.get("paid") or 0)
+        paid_text = f" (оплатили {paid} — {_som(int(orders.get('sum') or 0))})" if paid else ""
+        lines.append(f"🛒 Заказали в Direct через бота: {_n(made)}{paid_text}")
+        if dm > 0:
+            share = f"{made * 100 / dm:.1f}".replace(".", ",").replace(",0", "")
+            lines.append(f"   из {_n(dm)} написавших — {share} %")
+        lines.append("   (заказы на сайте по ссылке из Instagram сюда не входят)")
+    top = [(caption, n) for caption, n in sales.get("top") or [] if n > 0]
+    if top:
+        lines += ["", "🎯 Больше всего спросили под публикацией:"]
+        for caption, n in top:
+            lines.append(f"• {_title(caption) if caption else 'Пост'} — {_n(n)} чел.")
+    return lines
+
+
 def week_report(period: str, account: dict, posts: list[dict], stories: list[dict], counts: dict,
-                followers: tuple | None, problem: str = "") -> str:
+                followers: tuple | None, problem: str = "", sales: dict | None = None) -> str:
     """Текст «Instagram за неделю» для WhatsApp владельца: цифры и лучшие публикации, без советов от модели."""
     lines = [f"📊 Instagram за неделю ({period})", "━━━━━━━━━━━━━━━━━━━"]
     if problem:
@@ -481,6 +503,9 @@ def week_report(period: str, account: dict, posts: list[dict], stories: list[dic
     lines.append(f"💬 Написали в Direct: {_n(counts.get('dm', 0))} чел.")
     lines.append(f"↩️ Ответили на истории: {_n(counts.get('storyreply', 0))}")
     lines.append(f"🗨️ Комментариев разобрал робот: {_n(counts.get('comments', 0))}")
+    selling = sales_lines(sales, int(counts.get("dm") or 0))
+    if selling:
+        lines += [""] + selling
     ranked = sorted(posts, key=lambda p: (p.get("reach") or 0, p.get("likes") or 0), reverse=True)[:3]
     if ranked:
         lines += ["", f"🏆 Лучшие посты (всего {len(posts)}):"]

@@ -80,6 +80,11 @@ class FakeRedis:
     async def hgetall(self, key):
         return dict(self.data.get(key, {}))
 
+    async def hincrby(self, key, field, amount):
+        bucket = self.data.setdefault(key, {})
+        bucket[field] = int(bucket.get(field, 0)) + amount
+        return bucket[field]
+
 
 redis = FakeRedis()
 TOKEN = {"value": "ig-token"}
@@ -475,6 +480,30 @@ class WeekStats(Base):
         self.assertIn("• Скидка −15% Арзандатуу — охват 900, ❤ 12, 💬 3", text)
         self.assertIn("• Утюг — охват 300, ответов 4", text)
         self.assertNotIn("Старый пост", text)  # старше недели — не в отчёт
+
+    def test_sales(self):
+        """05.10: «нечта сотув келди?» — заказы бота в Direct и посты, под которыми спрашивали."""
+        self.use(self.insights())
+        for user in ("u1", "u2", "u3", "u4"):
+            run(stats.count_dm(user))
+        for _ in range(3):
+            run(stats.count_media("R1", "Мини посудомойка 🤩😍 0557100505"))
+        run(stats.count_media("P1", "Электро Эндуро"))
+        real = stats._orders
+
+        async def orders(since, until):
+            return {"made": 1, "paid": 1, "sum": 23900}
+        stats._orders = orders
+        try:
+            text = run(stats.week_report())
+        finally:
+            stats._orders = real
+        self.assertIn("🛒 Заказали в Direct через бота: 1 (оплатили 1 — 23 900 сом)", text)
+        self.assertIn("из 4 написавших — 25 %", text)
+        self.assertIn("• Мини посудомойка 0557100505 — 3 чел.", text)
+        self.assertLess(text.index("Мини посудомойка"), text.index("• Электро Эндуро — 1 чел."))
+        # База недоступна — строки о заказах нет, остальное на месте.
+        self.assertNotIn("Заказали", run(stats.week_report()))
 
     def test_no_permission(self):
         self.use(self.insights(permission=False))

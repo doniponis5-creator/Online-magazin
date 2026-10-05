@@ -11,7 +11,11 @@
   • истории Instagram отдаёт цифры только пока история висит (24 часа) — поэтому collect_stories()
     раз в час (из cron робота) запоминает их в Redis ig:stats:stories;
   • свои счётчики робота: ig:stats:dm:<день> (кто написал в Direct), ig:stats:storyreply:<день>,
-    ig:stats:comments:<день> — их пишет shop_ig_bot.
+    ig:stats:comments:<день>, ig:stats:media:<день> (сколько человек спросили под каким постом) —
+    их пишет shop_ig_bot;
+  • продажи (05.10, владелец: «нечта сотув келди?») — заказы, оформленные ботом в Direct: в shop_orders
+    комментарий «Заказ из Instagram» (orderSource сайта). Заказы на сайте по ссылке из Instagram
+    отдельно не помечены — в отчёте так и сказано.
 """
 from __future__ import annotations
 
@@ -41,6 +45,46 @@ async def count_dm(user: str) -> None:
     key = f"ig:stats:dm:{_day(datetime.now(timezone.utc))}"
     await redis_client.sadd(key, user)
     await redis_client.expire(key, STATS_TTL)
+
+
+async def count_media(media: str, caption: str) -> None:
+    """Человек спросил под постом (ответ робота или жалоба) — какой рилс приводит покупателей."""
+    if not media:
+        return
+    key = f"ig:stats:media:{_day(datetime.now(timezone.utc))}"
+    await redis_client.hincrby(key, media, 1)
+    await redis_client.expire(key, STATS_TTL)
+    if caption:
+        await redis_client.set(f"ig:stats:caption:{media}", caption[:300], ex=STATS_TTL)
+
+
+async def _top_media(days: list[str], limit: int = 3) -> list[tuple[str, int]]:
+    total: dict[str, int] = {}
+    for d in days:
+        for media, n in (await redis_client.hgetall(f"ig:stats:media:{d}") or {}).items():
+            total[media] = total.get(media, 0) + int(n or 0)
+    best = sorted(total.items(), key=lambda kv: kv[1], reverse=True)[:limit]
+    return [(str(await redis_client.get(f"ig:stats:caption:{media}") or ""), n) for media, n in best]
+
+
+ORDER_SOURCE = "Заказ из Instagram"
+
+
+async def _orders(since: datetime, until: datetime) -> dict | None:
+    """Заказы, оформленные ботом в Direct за неделю: сколько, сколько оплатили и на какую сумму. Ошибка — None."""
+    try:
+        from sqlalchemy import text
+        from app.core.database import async_session
+        async with async_session() as db:
+            row = (await db.execute(text(
+                "SELECT COUNT(*) AS made, COUNT(*) FILTER (WHERE paid) AS paid, "
+                "COALESCE(SUM(total) FILTER (WHERE paid), 0) AS paid_sum "
+                "FROM shop_orders WHERE comment LIKE :src AND created_at >= :since AND created_at < :until"
+            ), {"src": ORDER_SOURCE + "%", "since": since.replace(tzinfo=None), "until": until.replace(tzinfo=None)})).mappings().first()
+        return {"made": int(row["made"] or 0), "paid": int(row["paid"] or 0), "sum": int(row["paid_sum"] or 0)}
+    except Exception as error:
+        logger.info(f"ig stats: заказы: {type(error).__name__}")
+        return None
 
 
 async def count(kind: str) -> None:
@@ -145,9 +189,11 @@ async def week_report(now: datetime | None = None) -> str:
         counts["comments"] += int(await redis_client.get(f"ig:stats:comments:{d}") or 0)
     counts["dm"] = len(people)
     period = f"{(since + timedelta(hours=6)):%d.%m} – {(now + timedelta(hours=6)):%d.%m}"
+    # created_at в базе — UTC без зоны (NOW() сервера), как и since/now здесь.
+    sales = {"orders": await _orders(since, now), "top": await _top_media(days)}
     token = await _load_token()
     if not token:
-        return rules.week_report(period, {}, [], [], counts, None, "Ключа Instagram нет — только счётчики робота.")
+        return rules.week_report(period, {}, [], [], counts, None, "Ключа Instagram нет — только счётчики робота.", sales)
     problem = ""
     account: dict = {}
     posts: list[dict] = []
@@ -188,7 +234,7 @@ async def week_report(now: datetime | None = None) -> str:
         when = _when(str(story.get("ts") or ""))
         if when and when >= since:
             stories.append(story)
-    return rules.week_report(period, account, posts, stories, counts, followers, problem)
+    return rules.week_report(period, account, posts, stories, counts, followers, problem, sales)
 
 
 async def send_week_report() -> bool:
