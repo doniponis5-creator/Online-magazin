@@ -23,6 +23,19 @@ describe('Jev до Gemini: что делать с сообщением (04.10)',
     expect(decide(scores({ payment: 0.95, shop: 0.2 }), true).kind).toBe('payment')
     expect(decide(scores({ complaint: 0.8 }), true).alarm).toBe(true)
   })
+  it('тревога «ЖАЛОБА» — только когда жалоба есть в словах (05.10)', () => {
+    const jevSays = scores({ shop: 0.6, complaint: 0.7 })
+    // Название товара — не жалоба, хоть Jev и сказал 0,7.
+    expect(decide(jevSays, false, 'Идиш жууган аппарат').alarm).toBe(false)
+    // Спор о цене — не жалоба.
+    expect(decide(jevSays, false, 'Кымбат экен, Москвада арзан').alarm).toBe(false)
+    // Настоящие жалобы — тревога.
+    expect(decide(jevSays, false, 'Не работает').alarm).toBe(true)
+    expect(decide(jevSays, false, 'кир жуугуч бузулуп калды').alarm).toBe(true)
+    expect(decide(jevSays, false, 'Посудомойку взяли у вас на прошлой неделе, течёт снизу вода').alarm).toBe(true)
+    // Jev не сказал «жалоба» — слова тревогу не поднимают.
+    expect(decide(scores({ shop: 0.9, complaint: 0.2 }), false, 'Не работает').alarm).toBe(false)
+  })
   it('сомнение — к модели: «оплатил?» рядом с вопросом о товаре — не чек', () => {
     expect(decide(scores({ payment: 0.85, shop: 0.7 }), false).kind).toBe('shop')
     expect(decide(scores({ personal: 0.9, shop: 0.4 }), false).kind).toBe('shop')

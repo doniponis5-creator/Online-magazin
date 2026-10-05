@@ -79,6 +79,7 @@ export async function POST(request: Request) {
     text: reply.text,
     // local — модель недоступна, ответ шаблонный: сервер его не шлёт, пусть ответит сотрудник.
     source: reply.source,
+    why: reply.why ?? null,
     handoff: Boolean(reply.handoff),
     silent: Boolean(reply.silent),
     mute: Boolean(reply.mute),

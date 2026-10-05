@@ -79,6 +79,7 @@ export async function POST(request: Request) {
     // local — модель недоступна, ответ шаблонный. В WhatsApp такой лучше не
     // слать: пусть отвечает сотрудник (сервер смотрит на это поле).
     source: reply.source,
+    why: reply.why ?? null,
     handoff: Boolean(reply.handoff),
     // Сообщение не для магазина (рабочие, родные владельца) — сервер ничего не шлёт.
     silent: Boolean(reply.silent),

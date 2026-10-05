@@ -18,7 +18,7 @@ import { decide, paidAmount, triage } from './triage'
 import { durableMap } from '@/lib/durable'
 import { lookupIn, salesCatalogNow } from './live'
 import { type Intent, followAfter, isSureYes, jevConfigured, objectionNote, readAnswer } from './jev'
-import type { ChatTurn } from './gemini'
+import type { ChatTurn, DownWhy } from './gemini'
 import type { CustomerBrief, ProductHit } from './knowledge'
 import { getInstallment, getProfile } from '@/lib/customer/gateway'
 import { phones } from '@/data/contacts'
@@ -27,6 +27,8 @@ export type Reply = {
   text: string
   products: ProductHit[]
   source: 'gemini' | 'local' | 'flow'
+  /** local — почему модель не ответила */
+  why?: DownWhy
   /** покупатель попросил живого человека — заявка ушла сотруднику */
   handoff?: boolean
   /** ничего не отправлять («Ок», «{{SWE001}}», чужой автоответ, не про магазин) */
@@ -154,8 +156,8 @@ async function sortByJev(channel: Channel, turns: ChatTurn[], lang: Lang, custom
   // Имена — не в Jev: «Азамат, …» в ответе бота и в словах покупателя станет «Имя».
   const scores = await triage(turns, [who.name, customer?.name, nameFromTurns(turns)])
   if (!scores) return null
-  const { kind, alarm } = decide(scores, selling)
   const own = sinceBot(turns).join('\n')
+  const { kind, alarm } = decide(scores, selling, own)
   const label = channel.label ? { ...who, name: `${channel.label}${who.name ? `, ${who.name}` : ''}` } : who
   const talk = talkLang(turns, lang)
   const day = new Date(Date.now() + 6 * 3600_000).toISOString().slice(0, 10)

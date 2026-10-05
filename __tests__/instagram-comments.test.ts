@@ -104,6 +104,28 @@ describe('что делать с комментарием', () => {
     expect(planComment('канча турат', null, enduro).action).toBe('answer')
     expect(planComment('класс', null, enduro).action).toBe('skip')
   })
+  it('спор о цене — не жалоба: спокойный ответ без 🚨 (Instagram 05.10)', () => {
+    const dish = item('dish', 'Посудомоечная машина MIDEA MDWM-218TWO', 23900)
+    // Настоящие комментарии под рилсом «Мини посудомойка»; Jev оба счёл жалобой.
+    for (const text of [
+      '23 мин  ге кымбат ,москвада 5 мин рубл .уялбайсынба',
+      '23900 го мындан чонун алса болотда жон эле кишини алдай бересинерби булар 5 минден 7 мин сомго эле турат',
+      'Очень дорого',
+    ]) {
+      const plan = planComment(text, s({ complaint: 0.85, spam: 0.6 }), dish)
+      expect(plan.action).toBe('answer')
+      expect(['Пикириңизге рахмат 🙏 Баасы тууралуу Директке жаздык 📩', 'Спасибо за отзыв 🙏 Про цену написали вам в Direct 📩']).toContain(plan.public)
+      expect(plan.private).toMatch(/23\s900/)
+      expect(plan.private).not.toMatch(/кепилдик|гарант|жеткир|доставк/i) // не выдумываем
+    }
+    // Товара не узнали — цену не называем.
+    expect(planComment('Кымбат го', s({ complaint: 0.7 }), null).private).not.toMatch(/\d/)
+    // Сломалось или «верните деньги» — это жалоба, хоть и про деньги.
+    expect(planComment('Кымбат алдым, бир жумада бузулду', s({ complaint: 0.9 }), dish).action).toBe('alert')
+    expect(planComment('Алдамчылар, акча алып товар бербей жатышат', s({ complaint: 0.88 }), dish).action).toBe('alert')
+    // Свой ответ под постом вернулся webhook'ом — молчим.
+    expect(planComment('Пикириңизге рахмат 🙏 Баасы тууралуу Директке жаздык 📩', s({ complaint: 0.7 }), dish).action).toBe('skip')
+  })
 })
 
 describe('/api/channel/instagram-comment', () => {

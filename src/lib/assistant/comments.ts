@@ -17,6 +17,7 @@ import 'server-only'
  */
 
 import { askJev, jevConfigured } from './jev'
+import { isPriceObjection } from './triage'
 import { hideDigits } from './log'
 import { detectLangScored, type TalkLang } from './talk'
 import { bestNameMatch, isInStock } from './knowledge'
@@ -74,8 +75,9 @@ export function productOfPost(caption: string, list: Product[]): Product | null 
 // Узбеку под постом — кыргызский, в Direct — по-узбекски.
 const PUBLIC_DM = { ky: 'Директке жаздык 📩', ru: 'Написали вам в Direct 📩' }
 const PUBLIC_SORRY = { ky: 'Кечиресиз! Директке жаздык 📩', ru: 'Извините! Написали вам в Direct 📩' }
+const PUBLIC_PRICE = { ky: 'Пикириңизге рахмат 🙏 Баасы тууралуу Директке жаздык 📩', ru: 'Спасибо за отзыв 🙏 Про цену написали вам в Direct 📩' }
 // Старые узбекские ответы тоже свои: такой мог уже висеть под постом.
-const OWN_REPLIES = new Set([...Object.values(PUBLIC_DM), ...Object.values(PUBLIC_SORRY), 'Директга ёздик 📩', 'Кечирасиз! Директга ёздик 📩'])
+const OWN_REPLIES = new Set([...Object.values(PUBLIC_DM), ...Object.values(PUBLIC_SORRY), ...Object.values(PUBLIC_PRICE), 'Директга ёздик 📩', 'Кечирасиз! Директга ёздик 📩'])
 const CITY = { ky: 'Кайсы шаардан болосуз?', ru: 'Вы из какого города?', uz: 'Кайси шахардансиз?' }
 const WHICH = {
   ky: 'Ассаламу алейкум! Кайсы товар кызыктырды? Жазыңыз — баасын айтып берем.',
@@ -92,6 +94,14 @@ const SORRY_DM = {
   ru: 'Ассаламу алейкум! Извините, что так вышло. Напишите, пожалуйста, что случилось — руководство сразу разберётся.',
   uz: 'Ассаламу алейкум! Кечирасиз, шундай булиб колганига. Нима булганини ёзинг — руководство дарров куради.',
 }
+// Спор о цене — без оправданий и без выдумок (гарантию, доставку не обещаем): цена, «есть в наличии»,
+// и предложение подобрать по другой цене. Дальше, если ответит, — обычный разговор с Gemini.
+const PRICE_DM = {
+  ky: (what: string) => `Ассаламу алейкум! Пикириңизге рахмат 🙏 ${what} Башка баадагы вариант керек болсо — жазыңыз, сунуштайм.`,
+  ru: (what: string) => `Ассаламу алейкум! Спасибо, что написали 🙏 ${what} Нужен вариант по другой цене — напишите, подскажу.`,
+  uz: (what: string) => `Ассаламу алейкум! Фикрингиз учун рахмат 🙏 ${what} Бошка нархдаги вариант керак булса — ёзинг, таклиф киламан.`,
+}
+const IN_STOCK = { ky: 'азыр бизде бар.', ru: 'сейчас есть в наличии.', uz: 'хозир бизда бор.' }
 
 /** Язык комментария. «+» и «🔥» языка не имеют — по умолчанию кыргызский: большинство покупателей. */
 export function commentLang(text: string): TalkLang {
@@ -113,6 +123,13 @@ export function planComment(text: string, scores: CommentScores | null, product:
   const wordsAsk = ASK_WORDS.test(text)
   const s = scores ?? { ask: wordsAsk ? 1 : 0, praise: 0, complaint: 0, spam: 0 }
 
+  // «Кымбат, Москвада 5 мин рубль», «алдайсыңар, 5–7 мин сом турат» (05.10) — спор о цене, а не жалоба:
+  // владельцу 🚨 не шлём, под постом — спокойное «спасибо, про цену написали в Direct», даже с грубым словом.
+  if (isPriceObjection(text)) {
+    const name = product?.nameRu.replace(/\*+/g, '').replace(/\s+/g, ' ').trim().slice(0, 70)
+    const what = product && name && isInStock(product) && product.price > 0 ? `${name} — ${formatSom(product.price)}, ${IN_STOCK[lang]}` : ''
+    return plan('answer', PUBLIC_PRICE[shown], PRICE_DM[lang](what).replace(/\s{2,}/g, ' '))
+  }
   // Жалоба — всегда владельцу, даже с матом (ревью 04.10: злой покупатель с матом уходил в «спам» и
   // молча скрывался). Скрываем только спам без жалобы и без интереса к товару.
   if (s.complaint >= 0.6) return plan('alert', PUBLIC_SORRY[shown], SORRY_DM[lang])

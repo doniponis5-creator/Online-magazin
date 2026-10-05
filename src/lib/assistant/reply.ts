@@ -13,7 +13,7 @@ import { ownerNotes } from './notes'
 import { cheaperThan } from './budget'
 import type { Product } from '@/data/products'
 import type { Lang } from '@/lib/i18n/config'
-import { askGemini, geminiConfigured, type ChatTurn } from './gemini'
+import { askGemini, downWhy, geminiConfigured, type ChatTurn, type DownWhy } from './gemini'
 import { dayBudgetLeft } from './limits'
 import { toHit, type CustomerBrief, type ProductHit } from './knowledge'
 import { localAnswer, parseAnswer, type Audience } from './local'
@@ -25,6 +25,8 @@ export type AssistantReply = {
   products: ProductHit[]
   /** gemini — отвечала модель; local — запасной режим по каталогу */
   source: 'gemini' | 'local'
+  /** local — почему модель не ответила (тревога владельцу пишет причину, а не «кончилась норма») */
+  why?: DownWhy
   /** кому адресовано сообщение покупателя — решает модель (WhatsApp) */
   audience?: Audience
 }
@@ -58,6 +60,7 @@ export async function answer(
     .map((t) => t.text)
     .join(' ')
 
+  let why: DownWhy = !geminiConfigured() ? 'key' : 'limit'
   if (geminiConfigured() && dayBudgetLeft()) {
     try {
       const lastAnswer = [...turns].reverse().find((t) => t.role === 'assistant')?.text ?? ''
@@ -69,11 +72,12 @@ export async function answer(
     } catch (error) {
       // Ошибку пишем в журнал сервера, покупателю её не показываем.
       console.error('[assistant] gemini:', error instanceof Error ? error.message : error)
+      why = downWhy(error)
     }
   }
 
   const fallback = localAnswer(lastQuestion, lang, customer, list)
-  return { text: fallback.text, products: hits(fallback.productIds, lang, list), source: 'local' }
+  return { text: fallback.text, products: hits(fallback.productIds, lang, list), source: 'local', why }
 }
 
 /**

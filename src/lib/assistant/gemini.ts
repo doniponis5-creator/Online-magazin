@@ -84,6 +84,22 @@ export class GeminiError extends Error {
   }
 }
 
+/** fetch оборвал `AbortSignal.timeout` — «The operation was aborted due to timeout». */
+export function isTimeout(error: unknown): boolean {
+  const name = (error as { name?: unknown } | null)?.name
+  return name === 'TimeoutError' || name === 'AbortError'
+}
+
+/** Почему модель не ответила — словом, для тревоги владельцу (без текста ошибки: в нём бывает ключ). */
+export type DownWhy = 'timeout' | 'busy' | 'key' | 'limit' | 'error'
+export function downWhy(error: unknown): DownWhy {
+  if (isTimeout(error)) return 'timeout'
+  const status = error instanceof GeminiError ? error.status : 0
+  if (status === 429 || status === 503 || status === 500) return 'busy'
+  if (status === 400 || status === 401 || status === 403) return 'key'
+  return 'error'
+}
+
 export function geminiConfigured(): boolean {
   return Boolean(process.env.GEMINI_API_KEY)
 }
@@ -100,7 +116,10 @@ export async function askGemini(system: string, turns: ChatTurn[], channel = 'si
     // секунду-другую, поэтому один раз пробуем ещё. Остальные ошибки
     // повторять бессмысленно: неверный ключ вторым разом верным не станет.
     const status = error instanceof GeminiError ? error.status : 0
-    if (status !== 429 && status !== 503) throw error
+    // Google молчал 12 секунд (05.10, 06:31: покупатель Instagram остался без ответа) — в WhatsApp и
+    // Instagram ещё раз: там 20 секунд ожидания никто не заметит. На сайте человек смотрит на крутилку.
+    const slow = isTimeout(error) && channel !== 'site'
+    if (status !== 429 && status !== 503 && !slow) throw error
     await new Promise((resolve) => setTimeout(resolve, 1500))
     return await once(key, system, turns, channel)
   }

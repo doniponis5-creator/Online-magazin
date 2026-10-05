@@ -705,7 +705,8 @@ async def _answer(user: str) -> bool:
         # Модель недоступна — шаблон в Instagram не шлём, пусть ответит сотрудник.
         if reply.get("source") == "local":
             logger.warning("ig bot: модель недоступна — отвечать оставляю сотруднику")
-            await alert_brain_down("Instagram", "не отвечает Gemini — кончилась дневная норма, ключ или связь")
+            from .shop_wa_bot import brain_why
+            await alert_brain_down("Instagram", brain_why(reply.get("why")))
             return False
         text = str(reply["text"])
         if count + 1 >= DAILY_LIMIT:

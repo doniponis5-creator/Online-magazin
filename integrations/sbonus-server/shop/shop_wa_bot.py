@@ -432,6 +432,20 @@ async def _read_media(message: dict, kind: str) -> str:
 ASK_FOR_TEXT = "Извините, голосовое не получилось разобрать — напишите, пожалуйста, текстом 🙏"
 
 
+# Почему консультант не ответил — поле `why` ответа сайта (05.10: таймаут Google приходил владельцу как
+# «кончилась дневная норма», и было непонятно, что делать).
+BRAIN_WHY = {
+    "timeout": "Google Gemini не ответил за 12 секунд дважды подряд — обычно это сбой у Google на несколько минут",
+    "busy": "Google Gemini перегружен или кончилась норма запросов у ключа",
+    "limit": "кончилась дневная норма ответов сайта (ASSISTANT_DAILY_LIMIT)",
+    "key": "ключ Gemini не принят или не вписан",
+}
+
+
+def brain_why(why) -> str:
+    return BRAIN_WHY.get(str(why or ""), "не отвечает Gemini — ошибка связи")
+
+
 async def alert_brain_down(channel: str, why: str) -> None:
     """
     Консультант не может ответить (Gemini молчит, сайт лежит) — покупатели в WhatsApp и
@@ -498,7 +512,7 @@ async def _answer(digits: str, name: str) -> bool:
         # человек написал живым людям, пусть ответит сотрудник.
         if reply.get("source") == "local":
             logger.warning("wa bot: модель недоступна — отвечать оставляю сотруднику")
-            await alert_brain_down("WhatsApp", "не отвечает Gemini — кончилась дневная норма, ключ или связь")
+            await alert_brain_down("WhatsApp", brain_why(reply.get("why")))
             return False
         text = str(reply["text"])
         if count + 1 >= DAILY_LIMIT:

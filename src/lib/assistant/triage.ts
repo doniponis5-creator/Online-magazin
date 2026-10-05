@@ -80,12 +80,42 @@ export function parseTriage(data: unknown): Triage | null {
   return out
 }
 
+// Слова настоящей жалобы: сломалось, не привезли, верните, обидели — RU/KY/UZ, как пишут.
+const BROKEN =
+  /(сломал|слома|не работ|не включ|не гре|не мо[ею]т|не крут|брак|бузул|бузук|сынып|сынык|сынд|синд|синиб|синик|иштебе|ишлама|бузил|не прив[её]з|не достав|не приш[её]л|келбе|келген жок|кечик|опозда|верн|возврат|кайтар|алмаштыр|замен|груб|орой|обидел|хамил|жалоб|арыз)/iu
+const CHEAT = /(алда|обман|обдира|aldad|алдад)/iu
+const COMPLAINT_CUE = new RegExp(`${BROKEN.source}|${CHEAT.source}|(плох|жаман|ёмон|ужас|кошмар|позор|уят|уял|недовол|нарааз|норози)`, 'iu')
+// Спор о цене: «кымбат», «в Москве 5 тысяч рублей», «5 минден 7 мин сомго эле турат».
+const PRICE_OBJECTION =
+  /(кымбат|қымбат|дорог|qimmat|киммат|қиммат|дешевл|арзан|арзон|ucuz|москв|кытай|китай|али ?экспресс|aliexpress|ozon|озон|wildberries|вайлдбер|рубл|переплат|накрут|наценк)/iu
+const PRICE_CONTEXT = /(\d|сом|мин|миң|тыс|рубл|баа|цен|нарх|narx)/iu
+
+/**
+ * «Дорого, в Москве дешевле», «алдайсыңар, 5–7 мин сом турат» — спор о цене, а не жалоба (Instagram 05.10:
+ * два таких комментария пришли владельцу «🚨 ЖАЛОБА»). Сломалось или не привезли — это уже жалоба.
+ */
+export function isPriceObjection(text: string): boolean {
+  if (BROKEN.test(text)) return false
+  return PRICE_OBJECTION.test(text) || (CHEAT.test(text) && PRICE_CONTEXT.test(text))
+}
+
+/**
+ * Тревога владельцу только там, где в словах есть жалоба. «Идиш жууган аппарат» (05.10) Jev счёл жалобой —
+ * короткое сообщение без единого слова недовольства тревоги не поднимает; спор о цене — тоже.
+ */
+export function complaintInWords(text: string): boolean {
+  if (isPriceObjection(text)) return false
+  const words = text.trim().split(/\s+/).filter(Boolean).length
+  return words > 4 || COMPLAINT_CUE.test(text)
+}
+
 /**
  * Что делать с сообщением. Сомнение — всегда 'shop' (отвечает Gemini). complaint — это тревога владельцу
  * поверх ответа, поэтому отдельно: `alarm`. Пороги подобраны на настоящих сообщениях 26.09–03.10.
+ * `text` — что написал покупатель: тревога ещё и по словам (`complaintInWords`).
  */
-export function decide(t: Triage, selling: boolean): { kind: Sort; alarm: boolean } {
-  const alarm = t.complaint >= 0.6
+export function decide(t: Triage, selling: boolean, text?: string): { kind: Sort; alarm: boolean } {
+  const alarm = t.complaint >= 0.6 && (text === undefined || complaintInWords(text))
   if (t.payment >= 0.8 && t.payment - t.shop >= 0.3) return { kind: 'payment', alarm }
   if (!selling && t.personal >= 0.85 && t.shop <= 0.2) return { kind: 'personal', alarm }
   if (!selling && t.staff >= 0.7 && t.shop <= 0.6 && t.staff - t.shop >= 0.2 && t.staff >= t.complaint) return { kind: 'staff', alarm }
