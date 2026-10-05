@@ -631,7 +631,8 @@ export function readTurns(value: unknown): ChatTurn[] {
     if (!text) continue
     turns.push({ role: row.role === 'assistant' ? 'assistant' : 'user', text })
   }
-  // Модель ждёт разговор, который начинается с вопроса покупателя.
-  while (turns.length > 0 && turns[0].role !== 'user') turns.shift()
+  // Реплики магазина до первого слова покупателя не выбрасываем (05.10): «Ассаламу алейкум! Кайсы товар
+  // кызыктырды?» под комментарием — без неё бот здоровался второй раз (142 раза за сутки) и не видел, что
+  // разговор начат по-кыргызски. Модели нужен первым вопрос покупателя — это решает gemini.ts (request).
   return turns
 }

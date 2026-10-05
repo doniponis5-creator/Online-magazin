@@ -276,6 +276,20 @@ class AnswerPlace(unittest.TestCase):
         self.assertEqual(rules.place_answer(now, None, "Бар"), now + [a("Бар")])
 
 
+class ManualStory(unittest.TestCase):
+    """05.10: ответ на историю, выложенную вручную, — «9600 бу», «Ушул посудамойка»: что на ней, по картинке."""
+
+    def test_url_and_note(self):
+        msg = {"text": "9600 бу", "reply_to": {"story": {"id": "1799", "url": "https://lookaside.fbsbx.com/ig_messaging_cdn/?asset_id=1"}}}
+        self.assertEqual(rules.story_of(msg), "1799")
+        self.assertEqual(rules.story_url_of(msg), "https://lookaside.fbsbx.com/ig_messaging_cdn/?asset_id=1")
+        self.assertEqual(rules.story_url_of({"reply_to": {"story": {"id": "1", "url": "http://x"}}}), "")
+        self.assertEqual(rules.story_url_of({"text": "салам"}), "")
+        self.assertEqual(rules.seen_story_note("[Фото] Кухонный комбайн RAF, цена 9 600 сом"),
+                         "[Ответ на историю магазина. На истории: Кухонный комбайн RAF, цена 9 600 сом]")
+        self.assertEqual(rules.seen_story_note(""), "")
+
+
 class CommentTurn(unittest.TestCase):
     """05.10: в Direct после комментария модель не знала, под каким постом спросили, и снова — «какой товар?»."""
 

@@ -279,6 +279,11 @@ async def _on_message(event: dict) -> None:
         # Ответ на нашу историю — подставляем товар с неё: «Канча?» без него не понять.
         from .shop_ig_post import describe_story
         note = await describe_story(str(event["story"]))
+        if not note:
+            # Историю выложили вручную, товара о ней мы не знаем — смотрим, что на картинке (один раз на историю).
+            seen = await _seen_story(str(event["story"]), str(event.get("story_url") or ""))
+            if seen:
+                event = {**event, "context": [seen if c == rules.STORY_NOTE else c for c in event.get("context") or []]}
         if note:
             event = {**event, "context": [note if c == rules.STORY_NOTE else c for c in event.get("context") or []]}
             await _show_story_product(user, event["story"])
@@ -302,6 +307,36 @@ async def _on_message(event: dict) -> None:
     await redis_client.set(f"ig:lastin:{user}", str(event.get("ts") or time.time()), ex=2 * 24 * 3600)
     await redis_client.delete(f"ig:nudge:{user}")
     await redis_client.hset("ig:pending", user, json.dumps({"ts": event.get("ts") or time.time(), "voice": voice}))
+
+
+async def _seen_story(story_id: str, url: str) -> str:
+    """
+    Что на истории, выложенной вручную: картинку (из webhook или по id) читает сайт, как фото покупателя.
+    Помним сутки на историю — двадцать ответов на одну историю не читают её двадцать раз.
+    """
+    if not story_id:
+        return ""
+    key = f"ig:storyseen:{story_id}"
+    cached = await redis_client.get(key)
+    if cached is not None:
+        return str(cached)
+    from .shop_wa_bot import _read_media
+    note = ""
+    try:
+        if not url:
+            async with httpx.AsyncClient(timeout=15) as client:
+                response = await client.get(f"{rules.GRAPH}/{story_id}", params={"fields": "media_type,media_url,thumbnail_url"},
+                                            headers={"Authorization": f"Bearer {_token()}"})
+            if response.status_code == 200:
+                data = response.json()
+                url = str(data.get("thumbnail_url") or data.get("media_url") or "")
+        if url.startswith("https://"):
+            note = rules.seen_story_note(await _read_media({"downloadUrl": url, "mimeType": "", "caption": ""}, "image"))
+    except Exception as error:
+        logger.info(f"ig story seen ...{story_id[-4:]}: {type(error).__name__}")
+    # Не вышло — попробуем снова через час, а не на каждый ответ.
+    await redis_client.set(key, note, ex=24 * 3600 if note else 3600)
+    return note
 
 
 async def _show_story_product(user: str, story_id: str) -> None:

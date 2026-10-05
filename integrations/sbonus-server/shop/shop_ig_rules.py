@@ -86,6 +86,23 @@ def story_of(message: dict) -> str:
     return str(story.get("id") or "-") if isinstance(story, dict) else "-"
 
 
+def story_url_of(message: dict) -> str:
+    """Картинка истории, на которую ответили (её даёт сам webhook) — по ней узнаём товар истории, выложенной вручную."""
+    reply_to = message.get("reply_to") or {}
+    story = reply_to.get("story") if isinstance(reply_to, dict) else None
+    url = str(story.get("url") or "") if isinstance(story, dict) else ""
+    return url if url.startswith("https://") else ""
+
+
+def seen_story_note(seen: str) -> str:
+    """
+    История выложена вручную (не из 1С) — что на ней, по картинке (05.10: на «9600 бу», «Ушул посудамойка»,
+    «канча сом» к такой истории робот спрашивал «какой товар?», а покупатель обижался: «өзүңөр реклама кылып…»).
+    """
+    seen = seen.removeprefix("[Фото]").strip()
+    return f"[Ответ на историю магазина. На истории: {seen[:400]}]" if seen else ""
+
+
 def story_note(name: str, price: int, old: int) -> str:
     """Пометка для мозга: на какую нашу историю ответили — товар и цена, как на картинке."""
     was = f", было {_som(old)}" if old > price > 0 else ""
@@ -166,6 +183,7 @@ def events(payload: dict) -> list[dict]:
                 "context": _context(message, item),
                 "media": _media(message),
                 "story": story_of(message).strip("-"),
+                "story_url": story_url_of(message),
             })
     return sorted(found, key=lambda e: e["ts"])
 

@@ -13,6 +13,7 @@ import type { ChatTurn } from './gemini'
 import type { Lang } from '@/lib/i18n/config'
 import { lookupIn, salesCatalogNow } from './live'
 import { talkLang } from './reply'
+import { detectLangScored } from './talk'
 import { shortName } from '@/lib/telegram/order'
 import { mentionsFreeDelivery } from './policy'
 
@@ -21,6 +22,11 @@ export type FollowUp = { text: string } | { skip: 'ordered' | 'no-product' | 'no
 /** Покупатель уехал или отказался: «Россияга кетем», «жок рахмат», «керакмас». */
 const GONE = /(росси|кетем|кетип жатам|кетаман|кетяпман|уезжаю|уеду|жок,? рахмат|йук,? рахмат|нет,? спасибо|не надо|керек эмес|керакмас|kerak emas)/iu
 /** Бот уже попрощался: напоминание после «жакшы барып келиңиз» выглядит как рассылка. */
+/**
+ * «Акча кылайын анан», «кийин алам», «потом» — покупатель сам сказал «позже» (05.10: напоминание пришло через
+ * два часа после «акча кылайын анан»). Когда спросить — решает Jev (followAfter), здесь не торопим.
+ */
+const LATER = /(анан|кийин|кейин|кийинчерээк|потом|позже|попозже|эртең|эртен|завтра|ертага|эртага|ойлонуп|ойлонойун|подумаю|уйлаб|зарплат|айлык)/iu
 const BYE = /(барып келиңиз|ден соолук|всего доброго|саломат булинг|хайр|до свидания|сапарыңыз|яхши бориб келинг)/iu
 
 export async function followUp(turns: ChatTurn[], shown: string[], lang: Lang, name?: string): Promise<FollowUp> {
@@ -32,13 +38,16 @@ export async function followUp(turns: ChatTurn[], shown: string[], lang: Lang, n
   // «Мен эртең Россияга кетем» — бот попрощался «жакшы барып келиңиз», а через два часа
   // спросил «дагы керекпи?» (переписка 30.09). Отказался или уехал — не напоминаем.
   const lastAsk = [...turns].reverse().find((t) => t.role === 'user')?.text ?? ''
-  if (GONE.test(lastAsk) || BYE.test(lastAnswer)) return { skip: 'declined' }
+  if (GONE.test(lastAsk) || LATER.test(lastAsk) || BYE.test(lastAnswer)) return { skip: 'declined' }
 
   const find = lookupIn(await salesCatalogNow())
   const product = shown.map(find).find((p) => p && p.price > 0)
   if (!product) return { skip: 'no-product' }
 
-  const talk = talkLang(turns, lang)
+  // Напоминание — продолжение слов бота: на его языке (05.10: после русского ответа приходило кыргызское).
+  // Язык ответа неясен — как обычно, по покупателю.
+  const bot = detectLangScored(lastAnswer, 'ru')
+  const talk = bot.strong ? bot.lang : talkLang(turns, lang)
   // Без имени: в телефоне владельца оно записано как «Жанатим. Онам», «Ааааааа»,
   // «Ойбек ака налог», а в профиле WhatsApp — «Dilshadakanvaliyeva». Обращаться так нельзя.
   void name
@@ -71,7 +80,8 @@ export async function followUp(turns: ChatTurn[], shown: string[], lang: Lang, n
  * Есть марка латиницей («FLAGMAN», «AVEST») — марка; нет — русские слова («Электро Эндуро»).
  */
 export function spokenName(name: string): string {
-  const words = name.replace(/\*/g, '').split(/\s+/).filter((w) => w && !/\d/.test(w))
+  // Единицы без числа («Весы 200 кг» → «Весы кг») — тоже вон.
+  const words = name.replace(/\*/g, '').split(/\s+/).filter((w) => w && !/\d/.test(w) && !/^(кг|г|л|литр|литров|мл|см|мм|м|вт|квт|w|kw|kg|l|cm|mm|шт)\.?$/i.test(w))
   const brand = words.find((w) => /^[A-Z][A-Z-]{2,}$/.test(w))
   if (brand) return brand
   const plain = words.filter((w) => /^[А-ЯЁа-яё-]+$/.test(w)).join(' ')

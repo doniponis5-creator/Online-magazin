@@ -38,8 +38,18 @@ function count(low: string, words: RegExp): number {
   return (low.match(words) ?? []).length
 }
 
+/**
+ * Основы слов с окончаниями (05.10, рилс посудомойки): «идиш жуугуч / жууган / жуган», «кичинекей», «наркы» —
+ * кыргызские, «ювадигон», «кичкина» — узбекские. Списки выше — целые слова, а здесь окончания любые.
+ * «идиш» общий для обоих языков, решает глагол: кыргызское «жуу-», узбекское «юв-».
+ */
+const KY_STEMS = /(?<![\p{L}])(жуу[а-яё]*|жуг[а-яё]+|жуучу[а-яё]*|кичине[а-яё]*|наркы[а-яё]*|чакан[а-яё]*)(?![\p{L}])/giu
+const UZ_STEMS = /(?<![\p{L}])(юв[а-яё]*|кичкина[а-яё]*|ювиш[а-яё]*)(?![\p{L}])/giu
+const kyCount = (low: string) => count(low, KY_CYR) + count(low, KY_STEMS)
+const uzCount = (low: string) => count(low, UZ_CYR) + count(low, UZ_STEMS)
+
 /** Русские служебные слова: есть хотя бы одно — «русский» уверенный. */
-const RU_MARKERS = /(?<![\p{L}])(что|как|это|есть|можно|сколько|когда|где|пожалуйста|здравствуйте|спасибо|хочу|нужно|нужна|нужен|у вас|вы|мы|я|не|нет|и|в|на|с|по|для|или|если|какой|какая|какие|будет|можно ли)(?![\p{L}])/iu
+const RU_MARKERS = /(?<![\p{L}])(что|как|это|есть|можно|сколько|когда|где|пожалуйста|здравствуйте|спасибо|хочу|нужно|нужна|нужен|у вас|вы|мы|я|не|нет|и|в|на|с|по|для|или|если|какой|какая|какие|будет|можно ли|слишком|очень|дорого|дешевле|давайте|ладно|понятно|хорошо)(?![\p{L}])/iu
 /** Русские слова латиницей — так пишут с телефона без русской раскладки. */
 const RU_LATIN = /(?<![a-z])(kak|ty|mojno|mozhno|ponimayu|ponimaju|tebya|tebja|znaesh|chto|chtoli|privet|spasibo|skolko|nuzhno|nado|pochemu|gde|kogda|russki|zdravstvuyte|horosho|khorosho|eto|est|mne|vy|ne)(?![a-z])/gi
 /** Кыргызский вопрос приклеивается к слову: «араванбы», «оштобу», «барбы». Русские «грибы» и «зубы» — не в счёт. */
@@ -71,15 +81,15 @@ export function detectLangScored(text: string, fallback: TalkLang): { lang: Talk
     // «Кыскасы в наличии бар ээ? Мен размерлерин билейин. Адресинер кандай?» — одно русское
     // «в наличии» среди кыргызских слов: разговор кыргызский, напоминание не по-русски.
     const ruHits = (low.match(new RegExp(RU_MARKERS.source, 'giu')) ?? []).length
-    if (ruHits <= 1 && count(low, KY_CYR) >= 3 && count(low, KY_CYR) > count(low, UZ_CYR)) return { lang: 'ky', strong: true }
+    if (ruHits <= 1 && kyCount(low) >= 3 && kyCount(low) > uzCount(low)) return { lang: 'ky', strong: true }
     // Короткое «9 жашка толот да» (переписка 02.10): два кыргызских слова, ни одного узбекского — кыргызский.
-    if (ruHits <= 1 && count(low, KY_CYR) >= 2 && count(low, UZ_CYR) === 0) return { lang: 'ky', strong: false }
+    if (ruHits <= 1 && kyCount(low) >= 2 && uzCount(low) === 0) return { lang: 'ky', strong: false }
     return { lang, strong: RU_MARKERS.test(low) }
   }
   const latinOnly = !/[а-яё]/i.test(low)
   // Русский латиницей: «kak ty?», «ya ne ponimayu tebya», «ty ne znaesh chtoli» (журнал сайта 30.09).
   if (latinOnly && (low.match(RU_LATIN) ?? []).length >= 2) return { lang: 'ru', strong: true }
-  const listed = count(low, UZ_CYR) + count(low, KY_CYR) > 0 || /\b(salam|kanday|baasy|baaby|barby|kerek|oshol|ele|jok|ooba|assalom|salom|qancha|kerak|yaxshi|rahmat|bormi|narx)\b/i.test(low)
+  const listed = uzCount(low) + kyCount(low) > 0 || /\b(salam|kanday|baasy|baaby|barby|kerek|oshol|ele|jok|ooba|assalom|salom|qancha|kerak|yaxshi|rahmat|bormi|narx)\b/i.test(low)
   return { lang, strong: !latinOnly || listed }
 }
 
@@ -97,7 +107,7 @@ export function detectLang(text: string, fallback: TalkLang): TalkLang {
   // Конца слова не проверяем: в узбекском к корню липнут окончания
   // («yetkaz» → «yetkazib», «bor» → «bormi»), и \b в конце всё бы испортил.
   const uzWords = /\b(nima|nimaga|nimaligi|qiziq|qanaqa|shu|shular|bormi|assalom|salom|qancha|qanaqa|qanday|narx|bormi|kerak|olmoq|olaman|olsam|yetkaz|rahmat|raqam|do.?kon|muzlatgich|changyutgich|kir mashina|nechta|necha|bo.?ladi|arzon|kafolat|to.?lo|sotib|buyurtma|nasiya|oy qoldi|xayr|pul|qachan|keladi|tushunmadim|bilmadim|ayting|aytasiz|menga|sizda|uchun|qayerga|qaerga|tashla|tashe|bering|beraman|qilsam|mumkin|yaxshi|kechir)/i
-  const kyWords = /\b(salam|kanday|baasy|baaby|barby|kerek|jetkir|rakmat|kancha|dukon|kaerde|arzan|kepildik|oshol|ele|jok|ooba|bolot|bolobu|kaysy|kaysyl|jakshy|flial|filial)\b/i
+  const kyWords = /\b(salam|kanday|baasy|baaby|barby|kerek|jetkir|rakmat|kancha|dukon|kaerde|arzan|kepildik|oshol|ele|jok|ooba|bolot|bolobu|kaysy|kaysyl|jakshy|flial|filial|jerde|jerden|jerge)\b/i
 
   if (uzWords.test(low)) return 'uz'
   if (kyWords.test(low)) return 'ky'
@@ -114,8 +124,8 @@ export function detectLang(text: string, fallback: TalkLang): TalkLang {
   // «яхшимисиз», «меники канча колди», «расмини ташолесими». Считаем, каких
   // слов больше — узбекских или кыргызских: «канча» есть в обоих языках, и
   // одно слово ничего не решает.
-  const uzScore = count(low, UZ_CYR)
-  const kyScore = count(low, KY_CYR)
+  const uzScore = uzCount(low)
+  const kyScore = kyCount(low)
   if (uzScore > kyScore) return 'uz'
   if (kyScore > uzScore) return 'ky'
 

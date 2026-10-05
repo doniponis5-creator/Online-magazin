@@ -149,6 +149,9 @@ async function once(key: string, system: string, turns: ChatTurn[], channel: str
   }
 }
 
+/** Первая реплика «от покупателя», когда разговор начал магазин. */
+const OPENED_BY_SHOP = '[Переписку начал магазин — дальше его сообщение и ответ покупателя]'
+
 async function request(key: string, model: string, head: Record<string, unknown>, turns: ChatTurn[], now = '', channel = 'site'): Promise<string> {
 
   // 12 секунд — предел ожидания. Обычный ответ приходит за одну-две секунды;
@@ -162,7 +165,8 @@ async function request(key: string, model: string, head: Record<string, unknown>
     signal: abort,
     body: JSON.stringify({
       ...head,
-      contents: turns.map((turn, i) => ({
+      // Разговор начал магазин (ответ на комментарий, напоминание) — Gemini ждёт первой реплику покупателя.
+      contents: (turns[0]?.role === 'assistant' ? [{ role: 'user' as const, text: OPENED_BY_SHOP }, ...turns] : turns).map((turn, i) => ({
         role: turn.role === 'assistant' ? 'model' : 'user',
         parts: i === 0 && now ? [{ text: now }, { text: turn.text }] : [{ text: turn.text }],
       })),
