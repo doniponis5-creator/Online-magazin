@@ -126,7 +126,8 @@ describe('что делать с комментарием', () => {
     expect(installmentLine(40000, 'ky')).toMatch(/айына 10\s000 сомдон/)
     expect(installmentLine(250000, 'ky')).toBe('')
     const { storePolicy } = await import('@/lib/assistant/policy')
-    expect(storePolicy()).toContain('«Адал рассрочка» (приложение MIslamic): до 40 000 сом, до 4 месяцев')
+    expect(storePolicy()).toContain('Лимит — от 2 000 до 40 000 сом')
+    expect(storePolicy()).toContain('за 4 месяца — каждый месяц четверть цены (23 900 сом → 4 платежа по 5 975)')
     expect(storePolicy()).toContain('«МРассрочка» (приложение MBANK): до 200 000 сом, до 24 месяцев')
     // Товара не узнали — цену не называем.
     expect(planComment('Кымбат го', s({ complaint: 0.7 }), null).private).not.toMatch(/\d/)
