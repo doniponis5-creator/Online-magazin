@@ -145,6 +145,14 @@ export function useFanDeck(root: RefObject<HTMLElement | null>, { start, end, sp
       if (nextPhase !== shownPhase) { shownPhase = nextPhase; setPhase(nextPhase) }
     }
     const schedule = () => { if (!frame) frame = requestAnimationFrame(update) }
+    // сцена далеко за экраном (листают каталог ниже) — на прокрутке её не считаем; вернулась — догоняем одним кадром
+    let near = true
+    const seen = new IntersectionObserver(([entry]) => {
+      near = entry.isIntersecting
+      if (near) schedule()
+    }, { rootMargin: '300px 0px' })
+    seen.observe(el)
+    const onScroll = () => { if (near) schedule() }
     // размеры поменялись (поворот, шрифт, карточка стала уже) — замерить заново на ближайшем кадре
     const resized = () => { stale = true; schedule() }
     el.dataset.enhanced = 'true'
@@ -174,7 +182,7 @@ export function useFanDeck(root: RefObject<HTMLElement | null>, { start, end, sp
     // полоска бонусов появляется через пару секунд после загрузки и исчезает по крестику — сцена переезжает под неё
     const bars = new MutationObserver(schedule)
     bars.observe(document.body, { childList: true })
-    addEventListener('scroll', schedule, { passive: true })
+    addEventListener('scroll', onScroll, { passive: true })
     addEventListener('resize', resized)
     media.addEventListener('change', resized)
     update()
@@ -184,7 +192,8 @@ export function useFanDeck(root: RefObject<HTMLElement | null>, { start, end, sp
       observer.disconnect()
       document.removeEventListener('transitionrun', headerMoves)
       bars.disconnect()
-      removeEventListener('scroll', schedule)
+      removeEventListener('scroll', onScroll)
+      seen.disconnect()
       removeEventListener('resize', resized)
       media.removeEventListener('change', resized)
       delete el.dataset.enhanced

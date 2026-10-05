@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { memo, useEffect, useLayoutEffect, useRef, useState, type SyntheticEvent } from 'react'
 import Link from 'next/link'
+import { getImageProps } from 'next/image'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { formatSom } from '@/lib/format'
 import { discountPct, type SaleCard } from '@/lib/hero-sale'
@@ -74,9 +75,57 @@ function SaleTitle({ text, mark, count }: { text: string; mark: number; count?: 
   })}</>
 }
 
+/**
+ * Фото по размеру на экране (05.10: из 1С приходят 1200×1200, а видно ~200 px — телефон распаковывал вчетверо
+ * больше). Сервер сайта ужимает их сам (next.config images), качество 90 — на экране как было.
+ * Ужатое не пришло (сервер не смог) — подставляем исходное фото; и его нет — прячем, как раньше.
+ */
+function photo(src: string, sizes: string) {
+  const { props } = getImageProps({ src, alt: '', width: 600, height: 600, sizes, quality: 90 })
+  return { src: props.src, srcSet: props.srcSet, sizes: props.sizes, 'data-photo': src }
+}
+/** Не пришло: сначала исходное фото, один раз; и его нет — прячем, без круга ошибок. */
+function brokenPhoto(img: HTMLImageElement) {
+  const original = img.dataset.photo
+  if (original && !img.dataset.original) { img.dataset.original = '1'; img.removeAttribute('srcset'); img.src = original; return }
+  img.style.visibility = 'hidden'
+}
+function photoFallback() {
+  return (e: SyntheticEvent<HTMLImageElement>) => brokenPhoto(e.currentTarget)
+}
+// телефон: карточка ~48vw; компьютер — до 300 px
+const CARD_SIZES = '(max-width: 900px) 48vw, 300px'
+
+/**
+ * Карточка колоды отдельно и через memo: смена передней карточки перерисовывает только две (старую и новую
+ * переднюю — у них меняется run), а не всю колоду.
+ */
+const SaleDeckCard = memo(function SaleDeckCard({ c, i, ky, lang, run }: { c: SaleCard; i: number; ky: boolean; lang: string; run: boolean }) {
+  const name = ky ? c.nameKy : c.nameRu
+  return <Link className="hk__card hs__card" href={`/${lang}/product/${c.id}`} aria-label={`${name}, ${formatSom(c.price)}`}
+    style={{ zIndex: 100 - i * 10, opacity: i > 3 ? 0 : 1 }}>
+    <span className="hs__badge" aria-hidden="true">−{discountPct(c)}%</span>
+    <span className="hs__media">
+      <img className="hs__photo" {...photo(c.image, CARD_SIZES)} alt="" width="600" height="600" loading={i < 3 ? 'eager' : 'lazy'}
+        onError={photoFallback()} />
+    </span>
+    <span className="hs__name">{name}</span>
+    <span className="hs__prices" aria-hidden="true">
+      <b><Ticker from={c.oldPrice} to={c.price} run={run} /></b>
+      <s>{formatSom(c.oldPrice)}</s>
+    </span>
+  </Link>
+})
+
 export function HomeStorySale({ cards }: { cards: SaleCard[] }) {
   const { lang } = useI18n()
   const root = useRef<HTMLElement>(null)
+  // фото, не пришедшее ещё до того, как React повесил onError, — ошибку он не увидел: проверяем сами
+  useEffect(() => {
+    root.current?.querySelectorAll<HTMLImageElement>('img[data-photo]').forEach((img) => {
+      if (img.complete && !img.naturalWidth) brokenPhoto(img)
+    })
+  }, [])
   // самая большая скидка — сверху колоды, веер идёт к концу списка
   const deck = cards
   // последняя карточка колоды — «Все скидки» (ведёт в каталог), поэтому веер идёт на одну дальше товаров
@@ -190,28 +239,13 @@ export function HomeStorySale({ cards }: { cards: SaleCard[] }) {
         onClickCapture={(e) => { if (swiped.current) { e.preventDefault(); swiped.current = false } }}>
         {/* огромная скидка передней карточки позади колоды — меняется вместе с карточкой */}
         {front && <span className="hs__big" key={front.id} aria-hidden="true">−{discountPct(front)}%</span>}
-        {deck.map((c, i) => {
-          const name = ky ? c.nameKy : c.nameRu
-          return <Link key={c.id} className="hk__card hs__card" href={`/${lang}/product/${c.id}`} aria-label={`${name}, ${formatSom(c.price)}`}
-            style={{ zIndex: 100 - i * 10, opacity: i > 3 ? 0 : 1 }}>
-            <span className="hs__badge" aria-hidden="true">−{discountPct(c)}%</span>
-            <span className="hs__media">
-              <img className="hs__photo" src={c.image} alt="" width="600" height="600" loading={i < 3 ? 'eager' : 'lazy'}
-                onError={(e) => { e.currentTarget.style.visibility = 'hidden' }} />
-            </span>
-            <span className="hs__name">{name}</span>
-            <span className="hs__prices" aria-hidden="true">
-              <b><Ticker from={c.oldPrice} to={c.price} run={i === focus} /></b>
-              <s>{formatSom(c.oldPrice)}</s>
-            </span>
-          </Link>
-        })}
+        {deck.map((c, i) => <SaleDeckCard key={c.id} c={c} i={i} ky={ky} lang={lang} run={i === focus} />)}
         {/* конец колоды — не тупик: дошли до края, а тут все скидки каталога */}
         <Link className="hk__card hs__card hs__more" href={`/${lang}/catalog?sale=1`} aria-label={ky ? 'Бардык арзандатуулар' : 'Все скидки'}
           style={{ zIndex: 100 - deck.length * 10, opacity: deck.length > 3 ? 0 : 1 }}>
           <span className="hs__media hs__grid" aria-hidden="true">
-            {deck.slice(0, 4).map((c) => <img key={c.id} src={c.image} alt="" width="200" height="200" loading="lazy"
-              onError={(e) => { e.currentTarget.style.visibility = 'hidden' }} />)}
+            {deck.slice(0, 4).map((c) => <img key={c.id} {...photo(c.image, '(max-width: 900px) 24vw, 150px')} alt="" width="200" height="200" loading="lazy"
+              onError={photoFallback()} />)}
           </span>
           <span className="hs__name">{ky ? 'Бардык арзандатуулар' : 'Все скидки'}</span>
           {/* невидимые цены держат высоту ровно как у соседних карточек; поверх — «Смотреть в каталоге» */}
@@ -229,7 +263,7 @@ export function HomeStorySale({ cards }: { cards: SaleCard[] }) {
         <div className="hs__rail">
           {deck.map((c, i) => <button key={c.id} type="button" className="hs__thumb" data-current={i === focus || undefined}
             aria-label={ky ? c.nameKy : c.nameRu} onClick={() => goTo(i)}>
-            <img src={c.image} alt="" width="96" height="96" loading="lazy" onError={(e) => { e.currentTarget.style.visibility = 'hidden' }} />
+            <img {...photo(c.image, '52px')} alt="" width="96" height="96" loading="lazy" onError={photoFallback()} />
           </button>)}
         </div>
       </div>
