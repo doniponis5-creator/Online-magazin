@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
-import { planComment, productOfPost, scoreComment } from '@/lib/assistant/comments'
+import { choicesOfPost, planComment, productOfPost, scoreComment } from '@/lib/assistant/comments'
 import { salesCatalogNow } from '@/lib/assistant/live'
 
 /**
@@ -36,7 +36,8 @@ export async function POST(request: Request) {
   const caption = typeof raw.caption === 'string' ? raw.caption.slice(0, 1000) : ''
 
   const [scores, list] = await Promise.all([scoreComment(text, caption), salesCatalogNow()])
-  const plan = planComment(text, scores, productOfPost(caption, list))
+  const product = productOfPost(caption, list)
+  const plan = planComment(text, scores, product, product ? [] : choicesOfPost(caption, list))
   // Жалобу владельцу шлёт сервер — и только после того, как ответ в Direct правда ушёл (ревью 04.10):
   // иначе «ему ответили в Direct» приходило и тогда, когда ответа не было.
   return Response.json({ ok: true, ...plan })

@@ -276,6 +276,15 @@ class AnswerPlace(unittest.TestCase):
         self.assertEqual(rules.place_answer(now, None, "Бар"), now + [a("Бар")])
 
 
+class CommentTurn(unittest.TestCase):
+    """05.10: в Direct после комментария модель не знала, под каким постом спросили, и снова — «какой товар?»."""
+
+    def test_turn(self):
+        self.assertEqual(rules.comment_turn(" Баасы ", "Мини посудомойка 🤩😍 0557100505\n#посуда"),
+                         "[Комментарий под постом «Мини посудомойка 0557100505»] Баасы")
+        self.assertEqual(rules.comment_turn("+", ""), "[Комментарий под постом] +")
+
+
 class BusyRetry(unittest.TestCase):
     """05.10: Google 503 «high demand» — покупатель ждёт минуту, а не остаётся без ответа."""
 

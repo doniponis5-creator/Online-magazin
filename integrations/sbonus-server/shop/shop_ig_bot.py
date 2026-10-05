@@ -639,7 +639,7 @@ async def _handle_comments(budget: float = 20.0) -> int:
             private = str(plan.get("private") or "").strip()
             if private:
                 # Не ушло в Direct — исключение: «Директке жаздык» при всех тогда не пишем.
-                await _private_reply(cid, user, private, plan.get("productId"))
+                await _private_reply(cid, user, private, plan.get("productId"), str(event.get("text") or ""), caption)
             await redis_client.set(f"ig:cpost:{user}:{media}", "1", ex=7 * 24 * 3600)
             await redis_client.incr(count_key)
             await redis_client.expire(count_key, 2 * 24 * 3600)
@@ -659,7 +659,7 @@ async def _handle_comments(budget: float = 20.0) -> int:
     return done
 
 
-async def _private_reply(cid: str, user: str, text: str, product_id) -> None:
+async def _private_reply(cid: str, user: str, text: str, product_id, comment: str = "", caption: str = "") -> None:
     """
     Личный ответ на комментарий: первое сообщение в Direct. Instagram сам открывает разговор с
     автором комментария; recipient_id в ответе — id этого разговора (может отличаться от id в
@@ -674,6 +674,10 @@ async def _private_reply(cid: str, user: str, text: str, product_id) -> None:
     if mid:
         await redis_client.sadd(f"ig:mine:{chat}", mid)
         await redis_client.expire(f"ig:mine:{chat}", 2 * 24 * 3600)
+    # Сначала — что человек написал и под каким постом: иначе на «вот эту» в Direct модель не знала,
+    # о каком товаре речь, и снова спрашивала «какой товар?» (05.10, рилс «Мини посудомойка»).
+    if comment:
+        await _remember(chat, "user", rules.comment_turn(comment, caption))
     await _remember(chat, "assistant", text)
     # Товар поста — в «показанные», только если разговор о другом ещё не шёл: не затирать то, что смотрел.
     if product_id and not await redis_client.get(f"ig:shown:{chat}"):

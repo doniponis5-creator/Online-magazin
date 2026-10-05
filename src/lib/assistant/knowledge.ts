@@ -210,7 +210,9 @@ export function bestNameMatch(text: string, list: Product[]): Product | null {
   // давать очки сразу и Эндуро, и спортивному мотоциклу как два разных слова.
   // Числа — только от трёх цифр: «940» из «ZL-940» отличает модель; «8 кг», «38 литр» — нет (короче).
   // Цена «15900» в названия не входит и очков не даёт.
-  const words = [...new Set(splitWords(text).filter((w) => w.length >= 3 && !POST_NOISE.has(w)))]
+  // «Мини посудомойка» (рилс 05.10) — у товара «Посудомоечная машина MIDEA…»: слово «посудомойка» с названием
+  // не сходилось, и в Direct уходило «какой товар?». dishwasherWords приводит его к «посудомоечная».
+  const words = [...new Set(dishwasherWords(splitWords(text).filter((w) => w.length >= 3 && !POST_NOISE.has(w))))]
   if (words.length === 0) return null
   const names = list.map((p) => splitWords(`${p.nameRu} ${p.nameKy} ${p.brand}`))
   const scores = list.map(() => 0)
@@ -223,6 +225,13 @@ export function bestNameMatch(text: string, list: Product[]): Product | null {
   // у холодильника AVEST иначе дал «Духовку UAKEEN UK-322» (замер 04.10).
   for (const word of words.filter((w) => !/^\d+$/.test(w))) score(word, () => true)
   for (const word of words.filter((w) => /^\d+$/.test(w))) score(word, (i) => scores[i] > 0)
+  // Цена в подписи. Число — тысячи группами по три («13 900», «13.900») или подряд («13900»);
+  // «ZL-940 13 900 сом» — 13 900, не 94013900.
+  const prices = [...text.matchAll(/(?<![\d.,])(\d{1,3}(?:[  .,]\d{3})+|\d{3,7})\s*(?:сом|som|с(?![\p{L}]))/giu)].map((m) => Number(m[1].replace(/\D/g, '')))
+  const near = (p: Product) => prices.some((x) => Math.abs(x - p.price) <= p.price * 0.03)
+  // «Мини посудомойка 23 900 сом»: по словам подходят все посудомойки, по цене — одна. Она и есть.
+  const byPrice = list.filter((p, i) => scores[i] > 0 && near(p))
+  if (byPrice.length === 1) return byPrice[0]
   const order = scores.map((s, i) => [s, i] as const).sort((a, b) => b[0] - a[0])
   const [first, second] = order
   if (!first || first[0] < 0.6 || (second && second[0] * 1.5 > first[0])) return null
@@ -233,15 +242,34 @@ export function bestNameMatch(text: string, list: Product[]): Product | null {
   const name = names[first[1]]
   const matched = words.filter((w) => expand([w]).some((f) => startsAny(name, f)))
   const distinctive = matched.some((w) => /[a-z0-9]/.test(w) && w.length >= 3)
-  // Цена в подписи. Число — тысячи группами по три («13 900», «13.900») или подряд («13900»);
-  // «ZL-940 13 900 сом» — 13 900, не 94013900.
-  const prices = [...text.matchAll(/(?<![\d.,])(\d{1,3}(?:[  .,]\d{3})+|\d{3,7})\s*(?:сом|som|с(?![\p{L}]))/giu)].map((m) => Number(m[1].replace(/\D/g, '')))
-  const samePrice = prices.some((p) => Math.abs(p - winner.price) <= winner.price * 0.03)
+  const samePrice = near(winner)
   // Цена есть, а у товара другая — это не он (новый товар, которого ещё нет в каталоге).
   if (prices.length > 0 && !samePrice) return null
   // Одно слово + та же цена («Эндура мини 15 900 сом гана!») — достаточно.
   if (matched.length < 2 && !distinctive && !samePrice) return null
   return winner
+}
+
+/**
+ * Товар поста не узнан, но вид ясен («Мини посудомойка» — посудомоечные): до трёх таких в наличии, дешёвые
+ * первыми. Под рилсом «Баасы?» человек получит в Direct цены, а не «какой товар?» (05.10). Видов два и больше —
+ * пусто: угадывать нельзя. Один товар вида — он, но с вопросом «этот?»: пост мог быть о новинке не из каталога.
+ */
+export function postChoices(caption: string, list: Product[], limit = 3): Product[] {
+  const words = dishwasherWords(splitWords(caption.replace(/[#@]\S+/g, ' ')).filter((w) => w.length >= 4 && !POST_NOISE.has(w) && !/^\d+$/.test(w)))
+  const forms = expand(words).filter((f) => f.length >= 4)
+  if (forms.length === 0) return []
+  const groups = new Map<string, Product[]>()
+  for (const p of list) {
+    if (!isInStock(p) || p.price <= 0) continue
+    const kind = kindOf(p)
+    const head = kind?.split(' ')[0] ?? ''
+    if (!kind || head.length < 4 || !forms.some((f) => head.startsWith(f) || f.startsWith(head))) continue
+    groups.set(kind, [...(groups.get(kind) ?? []), p])
+  }
+  if (groups.size !== 1) return []
+  const [only] = [...groups.values()]
+  return [...only].sort((a, b) => a.price - b.price).slice(0, limit)
 }
 
 /** Слово покупателя + его синонимы из таблицы выше. */
@@ -400,13 +428,19 @@ function sectionIndex(list: Product[]): string {
  * «мини посуда мойка» она ответила «калбай калган» при MIDEA в наличии (Instagram, 04.10).
  * Только названия — меняется вместе с каталогом, не с остатками: кэш Gemini не страдает.
  */
+/** Вид товара по началу названия: «посудомоечная машина», «холодильник». Нет русского слова — null. */
+export function kindOf(p: Product): string | null {
+  const words = p.nameRu.replace(/[*"«»()]/g, ' ').trim().toLowerCase().split(/\s+/)
+  if (!words[0] || !/^[а-яё-]{3,}$/.test(words[0])) return null
+  // «Посудомоечная машина», «Варочная панель» — прилагательное без существительного ничего не говорит.
+  return /(ая|ый|ой|ое|ий)$/.test(words[0]) && words[1] && /^[а-яё-]{3,}$/.test(words[1]) ? `${words[0]} ${words[1]}` : words[0]
+}
+
 export function kindsOf(items: Product[], limit = 10): string {
   const prices = new Map<string, number[]>()
   for (const p of items) {
-    const words = p.nameRu.replace(/[*"«»()]/g, ' ').trim().toLowerCase().split(/\s+/)
-    if (!words[0] || !/^[а-яё-]{3,}$/.test(words[0])) continue
-    // «Посудомоечная машина», «Варочная панель» — прилагательное без существительного ничего не говорит.
-    const kind = /(ая|ый|ой|ое|ий)$/.test(words[0]) && words[1] && /^[а-яё-]{3,}$/.test(words[1]) ? `${words[0]} ${words[1]}` : words[0]
+    const kind = kindOf(p)
+    if (!kind) continue
     prices.set(kind, [...(prices.get(kind) ?? []), p.price])
   }
   // Цены вида — свои: «посудомоечные обычно от 5 000» модель брала из цены всего раздела (Instagram 04.10),

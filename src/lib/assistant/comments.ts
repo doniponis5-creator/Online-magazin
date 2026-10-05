@@ -21,7 +21,7 @@ import { isPriceObjection } from './triage'
 import { INSTALLMENT } from './policy'
 import { hideDigits } from './log'
 import { detectLangScored, type TalkLang } from './talk'
-import { bestNameMatch, isInStock } from './knowledge'
+import { bestNameMatch, isInStock, postChoices } from './knowledge'
 import { formatSom } from '@/lib/format'
 import type { Product } from '@/data/products'
 
@@ -72,6 +72,11 @@ export function productOfPost(caption: string, list: Product[]): Product | null 
   return bestNameMatch(text, list)
 }
 
+/** Товар не узнан — несколько товаров того же вида из подписи (knowledge.postChoices). */
+export function choicesOfPost(caption: string, list: Product[]): Product[] {
+  return postChoices(caption, list)
+}
+
 // Под постом — только кыргызский или русский (владелец 04.10: «комментта узбекча ёзмасин»).
 // Узбеку под постом — кыргызский, в Direct — по-узбекски.
 const PUBLIC_DM = { ky: 'Директке жаздык 📩', ru: 'Написали вам в Direct 📩' }
@@ -84,6 +89,12 @@ const WHICH = {
   ky: 'Ассаламу алейкум! Кайсы товар кызыктырды? Жазыңыз — баасын айтып берем.',
   ru: 'Ассаламу алейкум! Какой товар заинтересовал? Напишите — скажу цену.',
   uz: 'Ассаламу алейкум! Кайси товар кизиктирди? Ёзинг — нархини айтиб бераман.',
+}
+// Вид из подписи ясен, модель — нет: показываем, что есть, и спрашиваем «какой?» (05.10).
+const CHOICES = {
+  ky: (lines: string, one: boolean) => `Ассаламу алейкум! Азыр бизде бар:\n${lines}\n${one ? 'Ушулбу?' : 'Кайсынысы кызыктырды?'}`,
+  ru: (lines: string, one: boolean) => `Ассаламу алейкум! Сейчас в наличии:\n${lines}\n${one ? 'Вас интересует этот?' : 'Какой вас интересует?'}`,
+  uz: (lines: string, one: boolean) => `Ассаламу алейкум! Хозир бизда бор:\n${lines}\n${one ? 'Шуми?' : 'Кайсиниси кизиктирди?'}`,
 }
 const NONE = {
   ky: (n: string) => `Ассаламу алейкум! ${n} азыр жок. Окшошун сунуштайынбы?`,
@@ -137,7 +148,7 @@ export function commentLang(text: string): TalkLang {
  * Что делать с комментарием. Сомнение — ничего (skip): лишний ответ под постом хуже пропущенного,
  * а интерес по словам («канча», «+») ловим и без Jev.
  */
-export function planComment(text: string, scores: CommentScores | null, product: Product | null): CommentPlan {
+export function planComment(text: string, scores: CommentScores | null, product: Product | null, choices: Product[] = []): CommentPlan {
   const lang = commentLang(text)
   const shown = lang === 'ru' ? 'ru' : 'ky'
   const plan = (action: CommentAction, pub = '', priv = ''): CommentPlan => ({ action, public: pub, private: priv, productId: product?.id ?? null, lang })
@@ -160,6 +171,10 @@ export function planComment(text: string, scores: CommentScores | null, product:
   if (s.complaint >= 0.6) return plan('alert', PUBLIC_SORRY[shown], SORRY_DM[lang])
   if (s.spam >= 0.8 && s.ask < 0.3 && !PRICE_WORDS.test(text)) return plan('hide')
   if (s.ask >= 0.5 || wordsAsk) {
+    if (!product && choices.length > 0) {
+      const lines = choices.map((p) => `• ${p.nameRu.replace(/\*+/g, '').replace(/\s+/g, ' ').trim().slice(0, 70)} — ${formatSom(p.price)}`).join('\n')
+      return plan('answer', PUBLIC_DM[shown], CHOICES[lang](lines, choices.length === 1))
+    }
     if (!product) return plan('answer', PUBLIC_DM[shown], WHICH[lang])
     // Полное название, а не одна марка: «UAKEEN — 30 000 сом» непонятно, и ошибку покупатель не заметит.
     const name = product.nameRu.replace(/\*+/g, '').replace(/\s+/g, ' ').trim().slice(0, 70)

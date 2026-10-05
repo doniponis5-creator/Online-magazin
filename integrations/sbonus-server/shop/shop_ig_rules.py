@@ -550,3 +550,12 @@ def busy_retry(pending: dict | None, why) -> dict | None:
     if tries >= BUSY_RETRIES:
         return None
     return {**pending, "retry": tries + 1}
+
+
+def comment_turn(comment: str, caption: str) -> str:
+    """
+    Реплика покупателя для разговора в Direct, начатого с комментария: что написал и под каким постом.
+    По ней модель понимает «вот эту», «баасы» — товар из подписи (05.10, рилс «Мини посудомойка»).
+    """
+    where = f"под постом «{_title(caption, 120)}»" if caption.strip() else "под постом"
+    return f"[Комментарий {where}] {comment.strip()[:500]}"

@@ -1,7 +1,7 @@
 import { createHmac } from 'node:crypto'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 vi.mock('server-only', () => ({}))
-import { commentLang, installmentLine, planComment, productOfPost, type CommentScores } from '@/lib/assistant/comments'
+import { choicesOfPost, commentLang, installmentLine, planComment, productOfPost, type CommentScores } from '@/lib/assistant/comments'
 import { bestNameMatch } from '@/lib/assistant/knowledge'
 import { products } from '@/data/products'
 import type { Product } from '@/data/products'
@@ -49,6 +49,39 @@ describe('товар по подписи поста — без чужой цен
   })
   it('хэштеги и отметки не считаются', () => {
     expect(productOfPost('#эндуро @smartcentrr', LIST)).toBeNull()
+  })
+})
+
+describe('рилс «Мини посудомойка» — «Баасы?» (05.10)', () => {
+  const dishes = [
+    item('dw1', 'Посудомоечная машина MIDEA MDWM-218TWO', 23900),
+    item('dw2', 'Посудомоечная машина VELBERG VDW-45', 37400),
+    item('dw3', 'Посудомоечная машина ARTEL AD-60', 41900),
+    item('dw0', 'Посудомоечная машина GORENJE', 30000, 0),
+  ]
+  const list = [...LIST, ...dishes]
+  const caption = 'Мини посудомойка 🤩😍 0557100505'
+  it('модель не названа — в Direct те, что есть, с ценами, дешёвые первыми', () => {
+    expect(productOfPost(caption, list)).toBeNull()
+    const choices = choicesOfPost(caption, list)
+    expect(choices.map((p) => p.id)).toEqual(['dw1', 'dw2', 'dw3']) // нет на складе — не предлагаем
+    const plan = planComment('Баасы', s({ ask: 0.9 }), null, choices)
+    expect(plan.public).toBe('Директке жаздык 📩')
+    expect(plan.private).toMatch(/^Ассаламу алейкум! Азыр бизде бар:\n• Посудомоечная машина MIDEA MDWM-218TWO — 23\s900 сом\n/)
+    expect(plan.private).toMatch(/Кайсынысы кызыктырды\?$/)
+    // Одна такая в наличии — «Ушулбу?»
+    expect(planComment('Баасы', s({ ask: 0.9 }), null, [dishes[0]]).private).toMatch(/Ушулбу\?$/)
+  })
+  it('цена или модель в подписи — сразу этот товар', () => {
+    expect(productOfPost('Мини посудомойка 23 900 сом 🔥', list)?.id).toBe('dw1')
+    expect(productOfPost('Посудомойка MIDEA MDWM-218TWO', list)?.id).toBe('dw1')
+    const plan = planComment('Баасы', s({ ask: 0.9 }), productOfPost('Мини посудомойка 23 900 сом', list))
+    expect(plan.private).toMatch(/MIDEA MDWM-218TWO — 23\s900 сом/)
+  })
+  it('вид не ясен — как раньше «какой товар?»', () => {
+    expect(choicesOfPost('Скидка! Успейте 🔥', list)).toEqual([])
+    expect(choicesOfPost('Холодильник и пылесос', list)).toEqual([]) // два вида — не угадываем
+    expect(planComment('Баасы', s({ ask: 0.9 }), null, []).private).toMatch(/Кайсы товар кызыктырды/)
   })
 })
 
