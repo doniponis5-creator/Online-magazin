@@ -311,6 +311,15 @@ describe('расход Gemini (04.10): считаем, показываем, б�
     expect(usageLine('2000-01-01')).toMatch(/запросов не было/)
     recordCall({ promptTokenCount: 15_000, cachedContentTokenCount: 10_538, candidatesTokenCount: 70, thoughtsTokenCount: 100 })
     expect(usageLine(bishkekToday())).toMatch(/💰 Gemini: запросов \d+, .*% из кэша\) — ≈ \$\d+,\d\d\.\n   сайт \$\d+,\d\d \(1\)/)
+    // 06.10: на что ушли деньги — «мысли» модели отдельно от ответа, и цена одного запроса
+    expect(usageLine(bishkekToday())).toMatch(/\n   На что: .*в среднем \$\d+,\d\d за запрос$/)
+  })
+  it('«мысли» считаются отдельно от ответа', async () => {
+    const { recordCall, usageOf } = await import('@/lib/assistant/usage')
+    const day = new Date(Date.now() + 6 * 3600_000).toISOString().slice(0, 10)
+    const before = usageOf(day).thoughts ?? 0
+    recordCall({ promptTokenCount: 1000, candidatesTokenCount: 50, thoughtsTokenCount: 300 }, 'instagram')
+    expect((usageOf(day).thoughts ?? 0) - before).toBe(300)
   })
   it('утренняя сводка показывает расход', async () => {
     const { dailyDigest } = await import('@/lib/assistant/digest')

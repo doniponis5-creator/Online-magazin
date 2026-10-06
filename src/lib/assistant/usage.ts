@@ -22,6 +22,8 @@ export type Usage = {
   cached: number
   /** токенов ответа вместе с «мыслями» модели */
   output: number
+  /** из них «мысли» (модель думает перед ответом; оплачиваются как ответ). Нет в старых днях — 0 */
+  thoughts?: number
   /** сколько раз создан кэш */
   caches: number
   /** хранение кэша, токено-часов */
@@ -49,7 +51,8 @@ function add(patch: Partial<Counts>, channel = '', now = new Date()): void {
   const day = bishkekToday(now)
   const prev = days.get(day) ?? empty()
   const next: Usage = { ...prev, ch: { ...(prev.ch ?? {}) } }
-  for (const [key, value] of Object.entries(patch) as [keyof Counts, number][]) next[key] += Math.max(0, value || 0)
+  // `?? 0`: в днях, записанных до 06.10, поля «мысли» нет — undefined + N дало бы NaN
+  for (const [key, value] of Object.entries(patch) as [keyof Counts, number][]) next[key] = (next[key] ?? 0) + Math.max(0, value || 0)
   if (channel) {
     const part = { ...(next.ch![channel] ?? { calls: 0, input: 0, cached: 0, output: 0 }) }
     for (const key of ['calls', 'input', 'cached', 'output'] as const) part[key] += Math.max(0, patch[key] || 0)
@@ -69,6 +72,7 @@ export function recordCall(
       input: meta.promptTokenCount ?? 0,
       cached: meta.cachedContentTokenCount ?? 0,
       output: (meta.candidatesTokenCount ?? 0) + (meta.thoughtsTokenCount ?? 0),
+      thoughts: meta.thoughtsTokenCount ?? 0,
     },
     channel,
   )
@@ -129,8 +133,30 @@ export function usageLine(day: string): string {
   const shared = costOf({ calls: 0, input: 0, cached: 0, output: 0, storage: u.storage }, day) + creation(u, day)
   if (shared >= 0.005) parts.push(`кэш ${money(shared)}`)
   if (u.jev) parts.push(`Jev: запросов ${u.jev}`)
-  return parts.length > 0 ? `${head}
-   ${parts.join(' · ')}` : head
+  const lines = [head]
+  if (parts.length > 0) lines.push(`   ${parts.join(' · ')}`)
+  lines.push(`   ${spentOn(u, day)}`)
+  return lines.join('\n')
+}
+
+/**
+ * На что ушли деньги (владелец 06.10: «5 $ 2 кунга етмаяпти» — прежде чем урезать, смотрим, что дорого):
+ * «вопрос» — ввод без кэша (разговор, товары по вопросу, создание кэша), «из кэша» — общая часть правил,
+ * «мысли» — модель думает перед ответом, «ответ» — сам текст, «хранение» — кэш живёт час. И сколько в среднем за ответ.
+ */
+function spentOn(u: Usage, day: string): string {
+  const p = prices(day)
+  const thoughts = Math.min(u.output, u.thoughts ?? 0)
+  const usd = (tokens: number, price: number) => (tokens * price) / 1_000_000
+  const items: [string, number][] = [
+    ['вопрос', usd(u.input - u.cached, p.input)],
+    ['из кэша', usd(u.cached, p.cached)],
+    ['мысли', usd(thoughts, p.output)],
+    ['ответ', usd(u.output - thoughts, p.output)],
+    ['хранение кэша', usd(u.storage, p.storage)],
+  ]
+  const shown = items.filter(([, v]) => v >= 0.005).sort((a, b) => b[1] - a[1]).map(([name, v]) => `${name} ${money(v)}`)
+  return `На что: ${shown.join(' · ') || 'меньше цента'} · в среднем ${money(costOf(u, day) / u.calls)} за запрос`
 }
 
 /** Создание кэша: его ввод не попал ни в один канал. */
