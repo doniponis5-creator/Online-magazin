@@ -333,11 +333,11 @@ input, textarea { caret-color: var(--color-primary); }
 .footer-app__qr img { display: block; width: 64px; height: 64px; padding: 4px; border-radius: 6px; background: #fff; border: 1px solid var(--color-border); image-rendering: pixelated; }
 .footer-app__qr span { max-width: 96px; font-size: 12px; font-weight: 650; line-height: 1.4; color: var(--color-muted); }
 /* Телефон: QR не нужен — тот же телефон его не отсканирует */
+/* Телефон (владелец 06.10): только значок App Store во всю ширину — без иконки, подписи, рамки и QR */
 @media (max-width: 900px) {
-  .footer-app { max-width: none; }
-  .footer-app__qr { display: none; }
-  /* одна колонка: значок во всю ширину карточки, по центру — без пустоты справа */
-  .footer-app__row { margin-top: 12px; }
+  .footer-app { max-width: none; padding: 0; border: 0; background: none; }
+  .footer-app__head, .footer-app__qr { display: none; }
+  .footer-app__row { margin-top: 0; }
   .footer-app .store-badge { flex: 1; justify-content: center; }
 }
 .bottom-nav { border-top: 1px solid var(--color-border); box-shadow: none; background: #fff; }
