@@ -4,6 +4,16 @@ import { MARK } from '@/components/Brand'
 import { phones } from '@/data/contacts'
 import { formatSom } from '@/lib/format'
 import { adalMonthly, INSTALLMENT } from '@/lib/installment'
+import { readFileSync } from 'node:fs'
+
+/** Знак MIslamic для плашки рассрочки (public/brand/mislamic-mark.svg). Нет файла — плашка без знака. */
+const MIS_MARK = (() => {
+  try {
+    return `data:image/svg+xml;base64,${readFileSync(join(process.cwd(), 'public', 'brand', 'mislamic-mark.svg')).toString('base64')}`
+  } catch {
+    return ''
+  }
+})()
 
 /**
  * Картинка поста Instagram «Скидка» / «Новинка» — в оформлении smarket.kg (DESIGN.md):
@@ -57,11 +67,13 @@ const C = {
   success: '#1e9e5a',
   mark: '#fef102',
   mbank: '#fedd2e',
+  sale: '#d33b2e',
 }
 
 type Badge = { text: string; bg: string; fg: string }
 const BADGES: Partial<Record<PostKind, (pct: number) => Badge>> = {
-  sale: (pct) => ({ text: pct > 0 ? `СКИДКА −${pct}%` : 'СКИДКА', bg: C.lemon, fg: C.ink }),
+  // красная, как скидка на сайте (--color-danger), — владелец 06.10: «Скидка ёзув қизилда бўлсин»
+  sale: (pct) => ({ text: pct > 0 ? `СКИДКА −${pct}%` : 'СКИДКА', bg: C.sale, fg: '#ffffff' }),
   deal: (pct) => ({ text: pct > 0 ? `ТОВАР ДНЯ −${pct}%` : 'ТОВАР ДНЯ', bg: C.lemon, fg: C.ink }),
   hit: () => ({ text: 'ХИТ ПРОДАЖ', bg: C.ice, fg: C.cobalt }),
   foryou: () => ({ text: 'СПЕЦИАЛЬНО ДЛЯ ВАС', bg: C.ice, fg: C.cobalt }),
@@ -121,7 +133,9 @@ export function PostCard({ data }: { data: PostData }) {
   // Старая цена из 1С — честный факт при любой метке: «Хит» со скидкой показывает и её.
   const showOld = data.oldPrice > data.price
   const frame = FORMATS[data.format]
-  const img = fitBox(data.photoW, data.photoH, PHOTO_W - PAD_X * 2, frame.photoH - PAD_Y * 2)
+  // У истории ещё плашка «Жооп жазыңыз»: с плашкой рассрочки фото ниже на 120 — иначе название уходит под цену.
+  const photoH = frame.photoH - (data.format === 'story' && adalMonthly(data.price) ? 120 : 0)
+  const img = fitBox(data.photoW, data.photoH, PHOTO_W - PAD_X * 2, photoH - PAD_Y * 2)
   // Лимон — только скидка и «Товар дня» (выгода), остальные метки — ледяные, как выбранный язык на сайте.
   const badge = BADGES[data.kind]?.(pct) ?? null
 
@@ -154,7 +168,7 @@ export function PostCard({ data }: { data: PostData }) {
         style={{
           marginTop: 36,
           width: PHOTO_W,
-          height: frame.photoH,
+          height: photoH,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -227,25 +241,47 @@ export function PostCard({ data }: { data: PostData }) {
         ) : null}
       </div>
 
-      {/* «Айына 5 975 сомдон · 4 ай пайызсыз» (владелец 06.10: «кымбат» — частый ответ под постами).
-          Только в лимите «Адал рассрочки» MIslamic (src/lib/installment.ts); дороже — строки нет. */}
+      {/* Рассрочка — как плашка на странице товара (владелец 06.10: «шунака стильда чиқсин», «русс тилида болсин»): светло-жёлтая
+          карточка, знак MIslamic в белом круге, «Айына 5 975 сом × 4 ай» и подпись. Только в лимите «Адал»
+          (2 000–40 000, src/lib/installment.ts); дороже — плашки нет. */}
       {adalMonthly(data.price) ? (
         <div
           style={{
             display: 'flex',
+            alignItems: 'center',
             alignSelf: 'flex-start',
             marginTop: 22,
-            padding: '12px 22px',
-            borderRadius: 16,
-            // в стиле MBANK (владелец 06.10): их жёлтый #FEDD2E и тёмный текст, как кнопка «Оформить покупку»
-            background: C.mbank,
-            color: '#1f1f1f',
-            fontSize: 34,
-            fontWeight: 800,
-            letterSpacing: '-0.01em',
+            padding: '16px 26px 16px 16px',
+            borderRadius: 22,
+            background: '#fffbea',
+            border: '2px solid #f3e3a6',
           }}
         >
-          Айына {formatSom(adalMonthly(data.price)!)}дон · {INSTALLMENT.adal.months} ай пайызсыз
+          {MIS_MARK ? (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 72,
+                height: 72,
+                marginRight: 20,
+                borderRadius: 36,
+                background: '#ffffff',
+                border: '2px solid #f3e3a6',
+              }}
+            >
+              <img src={MIS_MARK} width={34} height={37} alt="" />
+            </div>
+          ) : null}
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ fontSize: 38, fontWeight: 800, color: C.ink, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+              {`${formatSom(adalMonthly(data.price)!)} в месяц × ${INSTALLMENT.adal.months} месяца`}
+            </div>
+            <div style={{ marginTop: 6, fontSize: 26, fontWeight: 600, color: C.muted, lineHeight: 1.2 }}>
+              «Адал рассрочка» MIslamic — без процентов и переплаты
+            </div>
+          </div>
         </div>
       ) : null}
 
