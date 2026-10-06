@@ -109,6 +109,8 @@ const KNOWN_BRANDS = [
   'ARSHIA', 'BRUCE', 'BRUSE', 'BAOYU', 'KUMTEL', 'SHIVAKI', 'ARISTON', 'GEMEI', 'LG', 'XIAOMI',
   'TEFAL', 'BRAUN', 'ATLANT', 'INDESIT', 'HAIER', 'GORENJE', 'ELECTROLUX', 'POLARIS',
   'SCARLETT', 'VITEK', 'TCL', 'SONY', 'PANASONIC', 'SHARP', 'KENWOOD', 'DELONGHI', 'FLAGMAN',
+  // 06.10: были без бренда в каталоге и в рекламе Google/Meta (там стояло «Smart Centr»)
+  'TOSHIBA', 'KONKA', 'KLEO', 'JASS', 'JACK', 'JANOME', 'RAF', 'IDEAL', 'ODUL', 'ELITA', 'WENICE', 'SIGMA', 'GEPARD',
 ]
 
 export function detectBrand(...texts: (string | undefined)[]): string {
@@ -122,7 +124,9 @@ export function productFromOneC(item: OneCItem): Product {
   const name = cleanName(item.name)
   // Раздел, выбранный владельцем в 1С, важнее угадывания по группе и названию.
   const categoryId = categoryForSection(item.section) ?? categoryForGroup(item.group ?? '', item.parentGroup ?? '', name)
-  const rawBrand = item.brand || detectBrand(item.name, item.article)
+  // «Марка» 1С → строка «Бренд» в характеристиках → слово из названия или артикула.
+  const specBrand = item.specs?.find((row) => /^бренд$/i.test(row?.label?.trim() ?? ''))?.value?.trim() ?? ''
+  const rawBrand = item.brand || specBrand.toUpperCase() || detectBrand(item.name, item.article)
   const brand = BRAND_ALIASES[rawBrand.toUpperCase()] ?? rawBrand
   const price = Math.max(0, Math.round(item.price || 0))
   const oldPrice = item.oldPrice && item.oldPrice > price && price > 0 ? Math.round(item.oldPrice) : undefined

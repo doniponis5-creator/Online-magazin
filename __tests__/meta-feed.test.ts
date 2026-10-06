@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Product } from '@/data/products'
-import { metaFeedCsv } from '@/lib/feed/meta'
+import { productFromOneC } from '@/data/1c/adapter'
+import { feedDescription, metaFeedCsv } from '@/lib/feed/meta'
 
 const base = {
   id: 'x1',
@@ -46,5 +47,30 @@ describe('metaFeedCsv', () => {
     ] as Product[]
     const csv = metaFeedCsv(list, 'https://smarket.kg', new Set(['a', 'b', 'd']))
     expect(csv.trim().split('\n')).toHaveLength(1)
+  })
+})
+
+describe('описание и бренд для рекламы (06.10)', () => {
+  it('нет описания в 1С — собираем из характеристик, служебные строки не берём', () => {
+    const p = {
+      ...base,
+      nameRu: 'Вытяжка MIDEA MH-60T349B',
+      specs: [
+        { labelRu: 'Бренд', labelKy: '', valueRu: 'MIDEA', valueKy: '' },
+        { labelRu: 'Ширина', labelKy: '', valueRu: '60 см', valueKy: '' },
+        { labelRu: 'Код товара', labelKy: '', valueRu: 'ЦБ-1', valueKy: '' },
+      ],
+    } as Product
+    expect(feedDescription(p)).toBe('Вытяжка MIDEA MH-60T349B. Ширина: 60 см.')
+    expect(feedDescription({ ...p, descRu: 'Своё описание' })).toBe('Своё описание')
+    expect(feedDescription({ ...p, specs: [] })).toBe('Вытяжка MIDEA MH-60T349B')
+  })
+
+  it('бренд: «Марка» 1С → строка «Бренд» характеристик → слово из названия', () => {
+    const item = { id: 'g', code: 'C1', price: 100, stock: 1 }
+    expect(productFromOneC({ ...item, name: 'Швейная Машина JASS JS-H1' }).brand).toBe('JASS')
+    expect(productFromOneC({ ...item, name: 'Стиральная машина TOSHIBA TW-BN90C4 8 кг' }).brand).toBe('TOSHIBA')
+    expect(productFromOneC({ ...item, name: 'Швейная Машина', specs: [{ label: 'Бренд', value: 'Janome' }] }).brand).toBe('JANOME')
+    expect(productFromOneC({ ...item, name: 'Комод Колорит 5 секция' }).brand).toBe('')
   })
 })

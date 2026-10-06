@@ -35,13 +35,30 @@ function absolute(url: string, site: string): string {
   return url.startsWith('http') ? url : `${site}${url.startsWith('/') ? '' : '/'}${url}`
 }
 
+/** Служебные строки характеристик — покупателю в рекламе не нужны. */
+const SERVICE_SPECS = /^(код товара|артикул|бренд|модель)$/i
+
+/**
+ * Описание для рекламы. В 1С его нет у части товаров — тогда не повторяем название (Google и Meta считают
+ * такое описание пустым), а собираем из характеристик: «Название. Ширина: 60 см; Мощность: 2000 Вт».
+ * Ничего не выдумываем: только то, что вписано в 1С.
+ */
+export function feedDescription(p: Product): string {
+  if (p.descRu.trim()) return p.descRu
+  const facts = p.specs
+    .filter((row) => !SERVICE_SPECS.test(row.labelRu.trim()) && row.valueRu.trim())
+    .slice(0, 12)
+    .map((row) => `${row.labelRu.trim()}: ${row.valueRu.trim()}`)
+  return facts.length ? `${p.nameRu}. ${facts.join('; ')}.` : p.nameRu
+}
+
 export function metaFeedRows(list: Product[], site: string, pages: Set<string>): string[][] {
   const rows: string[][] = []
   for (const p of list) {
     if (p.chatOnly || !p.price || p.price <= 0 || !p.image || !pages.has(p.id)) continue
     const inStock = p.variants.some((v) => v.stock > 0)
     const title = p.nameRu.slice(0, 150)
-    const description = (p.descRu || p.nameRu).slice(0, 5000)
+    const description = feedDescription(p).slice(0, 5000)
     // Скидка: обычная цена — прежняя, sale_price — сегодняшняя.
     const onSale = Boolean(p.oldPrice && p.oldPrice > p.price)
     const extra = (p.images ?? []).filter((img) => img !== p.image).slice(0, 9).map((img) => absolute(img, site))
