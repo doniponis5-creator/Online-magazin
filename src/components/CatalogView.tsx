@@ -7,6 +7,7 @@ import { brands, products, type Product } from '@/data/products'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { buildCatalogHref } from '@/lib/links'
 import { formatSom } from '@/lib/format'
+import { adalMonthly } from '@/lib/installment'
 import { ProductCard } from '@/components/ProductCard'
 import { FilterSelect } from '@/components/FilterSelect'
 import { IconClose, IconFilter, IconSearch } from '@/components/Icons'
@@ -61,6 +62,8 @@ function CatalogViewInner() {
   const maxPrice = parsePrice(searchParams.get('max'))
   const stockOnly = searchParams.get('stock') === '1'
   const saleOnly = searchParams.get('sale') === '1'
+  // ?inst=1 — «Бөлүп төлөөгө»: цена в лимите «Адал рассрочки» (владелец 06.10)
+  const instOnly = searchParams.get('inst') === '1'
   const selectedBadges = parseList(searchParams.get('badge')).filter((b): b is Badge =>
     BADGES.includes(b as Badge),
   )
@@ -144,6 +147,7 @@ function CatalogViewInner() {
       if (maxPrice && p.price > maxPrice) return false
       if (stockOnly && !inStock(p)) return false
       if (saleOnly && !onSale(p)) return false
+      if (instOnly && !adalMonthly(p.price)) return false
       if (selectedBadges.length && !(p.badge && selectedBadges.includes(p.badge))) return false
       const needle = normalize(q)
       if (needle) {
@@ -153,7 +157,7 @@ function CatalogViewInner() {
       return true
     },
     // brandKey/badgeKey — стабильные ключи массивов из URL
-    [q, cat, brandKey, minPrice, maxPrice, stockOnly, saleOnly, badgeKey],
+    [q, cat, brandKey, minPrice, maxPrice, stockOnly, saleOnly, instOnly, badgeKey],
   )
 
   const filtered = useMemo(() => {
@@ -193,6 +197,7 @@ function CatalogViewInner() {
     (minPrice || maxPrice ? 1 : 0) +
     (stockOnly ? 1 : 0) +
     (saleOnly ? 1 : 0) +
+    (instOnly ? 1 : 0) +
     selectedBadges.length
 
   const hasFilters = Boolean(q) || cat !== 'all' || sort !== 'popular' || activeCount > 0
@@ -210,7 +215,7 @@ function CatalogViewInner() {
   const resetPanel = () => {
     setMinInput('')
     setMaxInput('')
-    update({ brand: null, min: null, max: null, stock: null, sale: null, badge: null })
+    update({ brand: null, min: null, max: null, stock: null, sale: null, inst: null, badge: null })
   }
 
   const badgeLabel: Record<Badge, string> = { hit: t.catalog.badgeHit, new: t.catalog.badgeNew }
@@ -377,6 +382,14 @@ function CatalogViewInner() {
                   onChange={() => update({ sale: saleOnly ? null : '1' })}
                 />
                 <span className="check__label">{t.catalog.onSale}</span>
+              </label>
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={instOnly}
+                  onChange={() => update({ inst: instOnly ? null : '1' })}
+                />
+                <span className="check__label">{t.catalog.installmentOnly}</span>
               </label>
               {BADGES.map((b) => (
                 <label key={b} className="check">

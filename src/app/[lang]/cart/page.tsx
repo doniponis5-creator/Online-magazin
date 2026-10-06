@@ -6,6 +6,7 @@ import { unitPrice } from '@/lib/cart/logic'
 import { getProduct } from '@/data/products'
 import { variantLabel } from '@/lib/cart/sku'
 import { formatSom } from '@/lib/format'
+import { adalMonthly, INSTALLMENT } from '@/lib/installment'
 import { ProductImage } from '@/components/ProductImage'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { QuantityStepper } from '@/components/QuantityStepper'
@@ -150,6 +151,13 @@ export default function CartPage() {
             <span>{t.cart.total}</span>
             <span>{formatSom(cart.subtotal)}</span>
           </div>
+          {/* «Айына 8 200 сом × 4 ай» на весь заказ — пока сумма в лимите «Адал рассрочки» (src/lib/installment.ts) */}
+          {adalMonthly(cart.subtotal) && (
+            <p className="summary-card__installment">
+              {t.product.installmentLine.replace('{sum}', formatSom(adalMonthly(cart.subtotal)!)).replace('{n}', String(INSTALLMENT.adal.months))}
+              <span>{t.product.installmentNote}</span>
+            </p>
+          )}
           <p className="summary-card__note">{t.cart.totalNote}</p>
           <Link href={`/${lang}/checkout`} className="btn btn--primary btn--block">
             {t.cart.checkout}

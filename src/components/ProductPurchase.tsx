@@ -146,6 +146,8 @@ function InstallmentBadge({ price, name }: { price: number; name: string }) {
             </a>
           </li>
         </ol>
+        {/* Владелец 06.10: банк даёт лимит каждому свой (5 300, 23 800…), не всем 40 000 */}
+        <p className="installment-how__low">{t.product.installmentLowLimit}</p>
         <a className="btn btn--block installment-how__connect" href={ADAL_APP_LINK} target="_blank" rel="noopener noreferrer">
           {t.product.installmentConnect}
         </a>

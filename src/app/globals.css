@@ -4023,3 +4023,25 @@ html.dialog-open {
 }
 .btn.installment-how__connect:hover { background: #f6d21f; color: #1f1f1f; }
 .btn.installment-how__connect:active { background: #ecc815; }
+.installment-how__low {
+  margin: -4px 0 12px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--color-muted);
+}
+.summary-card__installment {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--color-surface);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.summary-card__installment span {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-muted);
+}
