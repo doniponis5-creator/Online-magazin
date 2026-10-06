@@ -2,12 +2,15 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { address, developer, phones, telHref, telegramHref, whatsappHref } from '@/data/contacts'
 import { paymentMethods } from '@/data/payment-methods'
 import { IconTelegram, IconWhatsApp } from './Icons'
 import { InstagramLink } from './InstagramLink'
 import { Brand } from './Brand'
+import { APP_STORE_URL } from '@/lib/native/appStore'
+import { inNativeApp } from '@/lib/native/bonusCard'
 
 export function Footer() {
   const { t, lang } = useI18n()
@@ -24,6 +27,7 @@ export function Footer() {
               <Brand />
             </span>
             <p className="footer__text">{t.footer.about}</p>
+            <AppDownload />
           </div>
           {/* Средняя колонка: главные разделы. Раньше слева под описанием
               пустовало полэкрана, а юридические ссылки стояли в контактах. */}
@@ -113,5 +117,49 @@ export function Footer() {
         </div>
       </div>
     </footer>
+  )
+}
+
+/**
+ * «Скачайте приложение» в подвале: значок App Store и QR-код. На компьютере QR — главный путь:
+ * навёл камеру iPhone — открылась страница приложения. Внутри приложения блока нет (appStore.ts: «внутри — нигде»).
+ * Android — когда приложение откроется в Google Play для всех.
+ */
+function AppDownload() {
+  const { t } = useI18n()
+  const a = t.app
+  const [inApp, setInApp] = useState(false)
+  useEffect(() => setInApp(inNativeApp()), [])
+  if (inApp) return null
+  return (
+    <div className="footer-app">
+      <div className="footer-app__head">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="footer-app__icon" src="/icon.jpg" alt="" width={48} height={48} loading="lazy" />
+        <span className="footer-app__text">
+          <b>{a.barTitle}</b>
+          <span>{a.barText}</span>
+        </span>
+      </div>
+      <div className="footer-app__row">
+        <a className="store-badge" href={APP_STORE_URL} target="_blank" rel="noopener" aria-label={a.orderCta}>
+          <svg className="store-badge__logo" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"
+            />
+          </svg>
+          <span className="store-badge__text">
+            <small>{a.badgeTop}</small>
+            <b>App Store</b>
+          </span>
+        </a>
+        <span className="footer-app__qr">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/app-store-qr.svg" alt="" width={64} height={64} loading="lazy" />
+          <span>{a.qrHint}</span>
+        </span>
+      </div>
+    </div>
   )
 }

@@ -314,6 +314,26 @@ input, textarea { caret-color: var(--color-primary); }
 .footer__pay-row img { display: block; width: 28px; height: 28px; border-radius: 8px; object-fit: contain; background: #fff; border: 1px solid var(--color-border); }
 .footer__pay-row span { display: inline-flex; align-items: center; height: 28px; padding: 0 8px; border-radius: 8px; background: #fff; border: 1px solid var(--color-border); font-size: 11px; font-weight: 650; }
 .footer__bottom { margin-top: 18px; }
+.footer-app { margin-top: 24px; max-width: 460px; padding: 16px; border: 1px solid var(--color-border); border-radius: 16px; background: #fff; }
+.footer-app__head { display: flex; align-items: center; gap: 12px; }
+.footer-app__icon { flex: none; width: 48px; height: 48px; border-radius: 12px; border: 1px solid var(--color-border); }
+.footer-app__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.footer-app__text b { font-size: 15px; font-weight: 800; letter-spacing: -.01em; color: var(--color-ink); }
+.footer-app__text span { font-size: 12px; line-height: 1.4; color: var(--color-ink-soft); }
+.footer-app__row { display: flex; align-items: center; gap: 16px; margin-top: 14px; }
+/* Значок App Store: графитовый, а не чёрный (DESIGN.md: без чёрных плоскостей), форма и надпись — как у Apple */
+.store-badge { flex: none; display: inline-flex; align-items: center; gap: 10px; height: 50px; padding: 0 18px 0 14px; border-radius: 12px; background: var(--color-ink); color: #fff; text-decoration: none; transition: background-color 160ms, transform 160ms, box-shadow 160ms; }
+.store-badge:hover { background: #1b2433; color: #fff; box-shadow: 0 4px 12px rgb(38 50 68 / 8%); }
+.store-badge:active { transform: scale(.98); }
+.store-badge__logo { flex: none; margin-top: -3px; }
+.store-badge__text { display: flex; flex-direction: column; gap: 1px; line-height: 1.15; white-space: nowrap; }
+.store-badge__text small { font-size: 12px; font-weight: 600; opacity: .85; }
+.store-badge__text b { font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+.footer-app__qr { display: inline-flex; align-items: center; gap: 10px; padding-left: 16px; border-left: 1px solid var(--color-border); }
+.footer-app__qr img { display: block; width: 64px; height: 64px; padding: 4px; border-radius: 6px; background: #fff; border: 1px solid var(--color-border); image-rendering: pixelated; }
+.footer-app__qr span { max-width: 96px; font-size: 12px; font-weight: 650; line-height: 1.4; color: var(--color-muted); }
+/* Телефон: QR не нужен — тот же телефон его не отсканирует */
+@media (max-width: 900px) { .footer-app__qr { display: none; } .footer-app { max-width: none; } }
 .bottom-nav { border-top: 1px solid var(--color-border); box-shadow: none; background: #fff; }
 /* Активный раздел: чистый лимонный штрих сверху, тёмная подпись и залитая
    лимоном иконка. Заливки плитки нет: прямоугольник во всю высоту панели

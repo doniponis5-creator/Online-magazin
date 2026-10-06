@@ -666,9 +666,9 @@
     "semantic_hash": ""
   },
   "src/components/Footer.tsx": {
-    "mtime": 1791299270.2169611,
-    "seen": 1791302059.8114939,
-    "ast_hash": "0145703f939c17bb501abda0a0fe2ee4",
+    "mtime": 1791304062.6951323,
+    "seen": 1791304145.304823,
+    "ast_hash": "3d7668bd0427dd38e5467c29cb06d4b5",
     "semantic_hash": ""
   },
   "src/components/Gallery.tsx": {
@@ -876,9 +876,9 @@
     "semantic_hash": ""
   },
   "src/lib/i18n/dictionaries.ts": {
-    "mtime": 1791300088.5799065,
-    "seen": 1791302059.8115609,
-    "ast_hash": "32b49c4f4309d11139e76f67835edba0",
+    "mtime": 1791304043.5281785,
+    "seen": 1791304145.306933,
+    "ast_hash": "e8bed852715776da4be89d2311fc37ee",
     "semantic_hash": ""
   },
   "src/lib/links.ts": {
@@ -7533,6 +7533,12 @@
     "mtime": 1791299269.7770598,
     "seen": 1791302059.811753,
     "ast_hash": "d010368728595a97d4c145bcad57ee01",
+    "semantic_hash": ""
+  },
+  "public/app-store-qr.svg": {
+    "mtime": 1791304043.5032382,
+    "seen": 1791304145.312789,
+    "ast_hash": "1d49adf55e9960007a549c266b5b5d96",
     "semantic_hash": ""
   }
 }
