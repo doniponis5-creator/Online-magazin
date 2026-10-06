@@ -32,6 +32,8 @@ describe('Gemini молчит 12 секунд (05.10, 06:31)', () => {
     expect(downWhy(new GeminiError('Resource has been exhausted (e.g. check quota).', 429))).toBe('busy') // так же пишет и минутный предел — это пройдёт
     expect(downWhy(new GeminiError('You exceeded your current quota, please check your plan and billing details.', 429))).toBe('money')
     expect(downWhy(new GeminiError('Your prepayment credits are depleted.', 429))).toBe('money')
+    // 06.10, как пришло на самом деле: код 402
+    expect(downWhy(new GeminiError('{"error":{"code":402,"message":"Your prepayment credits are depleted. Please go to AI Studio"}}', 402))).toBe('money')
     expect(downWhy(new GeminiError('Too many requests', 429))).toBe('busy')
     expect(downWhy(new GeminiError('bad key', 403))).toBe('key')
     expect(downWhy(new GeminiError('API key not valid. Please pass a valid API key.', 400))).toBe('key')

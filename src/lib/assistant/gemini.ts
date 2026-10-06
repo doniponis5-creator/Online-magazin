@@ -98,7 +98,8 @@ export function downWhy(error: unknown): DownWhy {
   // «You exceeded your current quota, please check your plan and billing details», «billing account»,
   // «prepayment credits are depleted» — у ключа кончились деньги или квота: само не пройдёт, пополнять.
   const text = error instanceof Error ? error.message : ''
-  if ((status === 429 || status === 403 || status === 400) && /billing|prepa|credits|payment/i.test(text)) return 'money'
+  // 402 «Your prepayment credits are depleted» (06.10: так Google и сообщил, что деньги кончились) — всегда деньги.
+  if (status === 402 || ((status === 429 || status === 403 || status === 400) && /billing|prepa|credits|payment/i.test(text))) return 'money'
   if (status === 429 || status === 503 || status === 500) return 'busy'
   // 400 — чаще наш кривой запрос, а не ключ (05.10: «Requests ending with a model turn»).
   if (status === 401 || status === 403 || (status === 400 && /api.?key/i.test((error as Error).message))) return 'key'
