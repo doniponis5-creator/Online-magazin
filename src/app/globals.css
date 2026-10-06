@@ -4013,3 +4013,13 @@ html.dialog-open {
   color: var(--color-muted);
   text-align: center;
 }
+/* Кнопка в стиле MBANK (владелец 06.10): их жёлтый #FEDD2E (снят с кнопки «Оформить покупку» в приложении) и тёмный текст */
+.btn.installment-how__connect {
+  background: #fedd2e;
+  color: #1f1f1f;
+  border: 0;
+  border-radius: 14px;
+  font-weight: 600;
+}
+.btn.installment-how__connect:hover { background: #f6d21f; color: #1f1f1f; }
+.btn.installment-how__connect:active { background: #ecc815; }

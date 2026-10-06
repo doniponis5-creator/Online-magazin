@@ -146,7 +146,7 @@ function InstallmentBadge({ price, name }: { price: number; name: string }) {
             </a>
           </li>
         </ol>
-        <a className="btn btn--outline btn--block installment-how__connect" href={ADAL_APP_LINK} target="_blank" rel="noopener noreferrer">
+        <a className="btn btn--block installment-how__connect" href={ADAL_APP_LINK} target="_blank" rel="noopener noreferrer">
           {t.product.installmentConnect}
         </a>
         <p className="installment-how__stores">
