@@ -169,6 +169,9 @@ export function PostCard({ data }: { data: PostData }) {
           marginTop: 36,
           width: PHOTO_W,
           height: photoH,
+          // Длинное название (три строки) не помещается — уступает фото, а не название: оно уходило под цену.
+          flexShrink: 1,
+          minHeight: photoH - 160,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -217,6 +220,7 @@ export function PostCard({ data }: { data: PostData }) {
           lineHeight: 1.14,
           letterSpacing: '-0.025em',
           maxHeight: nameSize(name) * 1.14 * 3,
+          flexShrink: 0,
           overflow: 'hidden',
         }}
       >
