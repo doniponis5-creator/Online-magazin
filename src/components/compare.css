@@ -1,0 +1,133 @@
+/* Сравнение товаров (DESIGN.md: белый холст, туманные границы, плоские карточки 16px, Manrope).
+   Колонки — товары; подпись строки — над значениями, во всю ширину, прилипает к левому краю при прокрутке вбок. */
+
+.compare__bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 16px; }
+.compare__bar .chip { margin-right: auto; }
+.compare__hint { margin: 0 auto 0 0; font-size: 14px; color: var(--color-ink-soft); }
+
+.compare__scroll { overflow-x: auto; margin: 0 -4px; padding: 0 4px 8px; -webkit-overflow-scrolling: touch; }
+.compare__grid {
+  display: grid;
+  grid-template-columns: repeat(var(--compare-cols, 2), minmax(150px, 1fr));
+  column-gap: 12px;
+  min-width: min-content;
+}
+
+.compare__head {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: #fff;
+  margin-bottom: 8px;
+}
+.compare__photo { display: block; position: relative; aspect-ratio: 1 / 1; max-height: 200px; border-radius: 12px; overflow: hidden; background: var(--color-surface); }
+.compare__photo .product-placeholder { position: absolute; inset: 0; height: 100%; }
+.compare__name {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--color-ink);
+  text-decoration: none;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.compare__name:hover { color: var(--color-primary); }
+.compare__remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+.compare__remove:hover { color: var(--color-danger); }
+
+.compare__row { display: contents; }
+.compare__label {
+  grid-column: 1 / -1;
+  position: sticky;
+  left: 0;
+  width: max-content;
+  max-width: calc(100vw - 40px);
+  padding: 14px 0 4px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--color-muted);
+}
+.compare__cell {
+  padding: 0 0 12px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+}
+.compare__cell--price { font-size: 18px; font-weight: 800; }
+/* Лучшее значение строки: кобальт (выбор и акцент по DESIGN.md), не зелёный — зелёный только для статусов. */
+.compare__cell--best { color: var(--color-primary-hover); }
+.compare__best {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: max-content;
+  margin-top: 4px;
+  padding: 2px 8px 2px 6px;
+  border-radius: 6px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-hover);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+/* Значок «Сравнить» в карточке — под сердечком; на странице товара — рядом с ним. */
+.card__fav { display: flex; flex-direction: column; gap: 6px; }
+.compare-btn { position: relative; display: inline-flex; }
+.compare-btn__note {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 5;
+  width: max-content;
+  max-width: 220px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--color-ink);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.4;
+  box-shadow: 0 10px 32px rgb(38 50 68 / 12%);
+}
+
+.compare-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+.compare-link:hover { color: var(--color-primary-hover); }
+
+@media (max-width: 540px) {
+  .compare__grid { grid-template-columns: repeat(var(--compare-cols, 2), minmax(142px, 1fr)); column-gap: 10px; }
+  .compare__head { padding: 10px; }
+  .compare__cell { font-size: 14px; }
+  .compare__cell--price { font-size: 16px; }
+}

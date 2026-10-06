@@ -14,6 +14,7 @@ import { suggestCombos, variantLabel } from '@/lib/cart/sku'
 import { categoryName } from '@/data/categories'
 import { AddToCartButton } from './AddToCartButton'
 import { FavoriteButton } from './FavoriteButton'
+import { CompareButton, CompareLink } from './CompareButton'
 import { PromoCountdown } from './PromoCountdown'
 
 function StockLine({ stock, hidden, preorder }: { stock: number; hidden?: boolean; preorder?: boolean }) {
@@ -312,7 +313,9 @@ export function ProductPurchase({
           </button>
         )}
         <FavoriteButton productId={product.id} variant="floating" />
+        <CompareButton productId={product.id} />
       </div>
+      <CompareLink className="purchase__compare" />
 
       <span className="bonus-hint">{t.checkout.sbonusNote}</span>
 

@@ -11,6 +11,7 @@ import { adalMonthly } from '@/lib/installment'
 import { FACETS, facetOptions, facetsFor, parseFacet } from '@/lib/catalogFacets'
 import { ProductCard } from '@/components/ProductCard'
 import { FilterSelect } from '@/components/FilterSelect'
+import { CompareLink } from '@/components/CompareButton'
 import { IconClose, IconFilter, IconSearch } from '@/components/Icons'
 import './catalog-filters.css'
 
@@ -480,6 +481,7 @@ function CatalogViewInner() {
             <span aria-live="polite" className="catalog-meta__found">
               {t.catalog.found}: {filtered.length}
             </span>
+            <CompareLink />
             {hasFilters && (
               <button type="button" className="btn btn--ghost btn--sm" onClick={reset}>
                 {t.catalog.reset}

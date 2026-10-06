@@ -12,6 +12,7 @@ import type { Product } from '@/data/products'
 import { useCart } from '@/lib/cart/CartProvider'
 import { AddToCartButton } from './AddToCartButton'
 import { FavoriteButton } from './FavoriteButton'
+import { CompareButton } from './CompareButton'
 import { IconWhatsApp } from './Icons'
 import { ProductImage } from './ProductImage'
 import { PromoCountdown } from './PromoCountdown'
@@ -55,6 +56,7 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
         <div className="card__fav">
           <FavoriteButton productId={product.id} variant="floating" />
+          <CompareButton productId={product.id} />
         </div>
         {/* Срок акции задаёт владелец у самого товара в 1С; нет срока — нет наклейки */}
         {product.promoUntil && <PromoCountdown until={product.promoUntil} variant="card" />}

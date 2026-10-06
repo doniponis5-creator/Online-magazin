@@ -7,6 +7,7 @@ import { getDictionary } from '@/lib/i18n/dictionaries'
 import { I18nProvider } from '@/lib/i18n/I18nProvider'
 import { CartProvider } from '@/lib/cart/CartProvider'
 import { FavoritesProvider } from '@/lib/favorites/FavoritesProvider'
+import { CompareProvider } from '@/lib/compare/CompareProvider'
 import { Header } from '@/components/Header'
 import { BottomNav } from '@/components/BottomNav'
 import { CartReminder } from '@/components/CartReminder'
@@ -64,6 +65,7 @@ export default async function LangLayout({
       <I18nProvider lang={lang} dict={dict}>
       <CartProvider>
         <FavoritesProvider>
+        <CompareProvider>
           <HtmlLang lang={lang} />
           <MotionProvider />
           <VisitCounter />
@@ -81,6 +83,7 @@ export default async function LangLayout({
           <CartReminder />
           <AssistantChat />
           <BottomNav />
+        </CompareProvider>
         </FavoritesProvider>
       </CartProvider>
       </I18nProvider>

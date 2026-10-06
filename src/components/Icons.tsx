@@ -379,6 +379,15 @@ export function IconCamera(props: IconProps) {
   )
 }
 
+/** Сравнение товаров: три столбика разной высоты. */
+export function IconCompare(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M5 20V11M12 20V4M19 20v-6" />
+    </svg>
+  )
+}
+
 /** Звезда оценки. filled — закрашенная. */
 export function IconStar({ filled = false, ...props }: IconProps & { filled?: boolean }) {
   return (
