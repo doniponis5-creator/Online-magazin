@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { products, type Product } from '@/data/products'
 import { cleanCompare, COMPARE_MAX } from '@/lib/compare/CompareProvider'
-import { bestOf, compareRows, type CompareWords } from '@/lib/compare/table'
+import { bestOf, compareRows, leadOf, shortNames, type CompareWords } from '@/lib/compare/table'
 
 const words: CompareWords = {
   price: 'Цена',
@@ -71,6 +71,13 @@ describe('лучшее значение', () => {
     expect(bestOf([0, 12000, 15000], true)).toEqual([1])
   })
 
+  it('разница — до ближайшего другого значения, без лучшего — null', () => {
+    expect(leadOf([34900, 52000, 31000], true)).toBe(3900)
+    expect(leadOf([12, 36, 36], false)).toBe(24)
+    expect(leadOf([36, 36], false)).toBeNull()
+    expect(leadOf([8725, null], true)).toBeNull()
+  })
+
   it('в таблице — только цена, рассрочка и гарантия', () => {
     const a = item('a', 34900, { Шум: '52 дБ' }, { warrantyMonths: 12 })
     const b = item('b', 31000, { Шум: '60 дБ' }, { warrantyMonths: 36 })
@@ -80,6 +87,9 @@ describe('лучшее значение', () => {
     expect(best.installment).toEqual([1])
     expect(best.warranty).toEqual([1])
     expect(rows.filter((r) => r.best.length).map((r) => r.key)).toEqual(['price', 'installment', 'warranty'])
+    expect(rows.find((r) => r.key === 'price')?.lead).toBe(3900)
+    expect(rows.find((r) => r.key === 'warranty')?.lead).toBe(24)
+    expect(rows.find((r) => r.key === 'spec:шум')?.group).toBe('specs')
   })
 })
 
@@ -88,5 +98,14 @@ describe('список сравнения', () => {
     const ids = products.slice(0, 6).map((p) => p.id)
     expect(cleanCompare([ids[0], ids[0], 'нет-такого', 5, ...ids.slice(1)])).toEqual(ids.slice(0, COMPARE_MAX))
     expect(cleanCompare('мусор')).toEqual([])
+  })
+})
+
+describe('короткие названия', () => {
+  it('общие слова в начале убираем, целыми словами; не с чем сравнить — как есть', () => {
+    expect(shortNames(['Стиральная машина LG F2V3PS6J', 'Стиральная машина MIDEA MFM05'])).toEqual(['LG F2V3PS6J', 'MIDEA MFM05'])
+    expect(shortNames(['Холодильник LG', 'Стиральная машина LG'])).toEqual(['Холодильник LG', 'Стиральная машина LG'])
+    expect(shortNames(['Телевизор LG', 'Телевизор LG'])).toEqual(['LG', 'LG'])
+    expect(shortNames(['Чайник'])).toEqual(['Чайник'])
   })
 })

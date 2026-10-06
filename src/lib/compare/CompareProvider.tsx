@@ -18,6 +18,8 @@ type CompareContextValue = {
   toggle: (productId: string) => boolean
   remove: (productId: string) => void
   clear: () => void
+  /** заменить весь список — когда открыли чужую ссылку на сравнение */
+  replace: (productIds: string[]) => void
 }
 
 const CompareContext = createContext<CompareContextValue | null>(null)
@@ -84,10 +86,11 @@ export function CompareProvider({ children }: { children: ReactNode }) {
 
   const remove = useCallback((productId: string) => setIds((prev) => prev.filter((id) => id !== productId)), [])
   const clear = useCallback(() => setIds([]), [])
+  const replace = useCallback((productIds: string[]) => setIds(cleanCompare(productIds)), [])
 
   const value = useMemo<CompareContextValue>(
-    () => ({ ids, hydrated, has: (productId: string) => ids.includes(productId), toggle, remove, clear }),
-    [ids, hydrated, toggle, remove, clear],
+    () => ({ ids, hydrated, has: (productId: string) => ids.includes(productId), toggle, remove, clear, replace }),
+    [ids, hydrated, toggle, remove, clear, replace],
   )
 
   return <CompareContext.Provider value={value}>{children}</CompareContext.Provider>

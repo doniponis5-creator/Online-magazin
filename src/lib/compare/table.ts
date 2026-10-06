@@ -15,6 +15,10 @@ export type CompareRow = {
   differ: boolean
   /** номера товаров с лучшим значением (дешевле, меньше в месяц, дольше гарантия); пусто — отмечать нечего */
   best: number[]
+  /** насколько лучшее значение лучше ближайшего другого (сом или месяцы); null — отмечать нечего */
+  lead: number | null
+  /** «главное» (цена, рассрочка, гарантия, наличие, бренд) или характеристика 1С */
+  group: 'main' | 'specs'
 }
 
 export type CompareWords = {
@@ -53,9 +57,9 @@ const specKey = (label: string) => {
   return SYNONYMS[key] ?? key
 }
 
-function row(key: string, label: string, values: (string | null)[]): CompareRow {
+function row(key: string, label: string, values: (string | null)[], group: CompareRow['group'] = 'main'): CompareRow {
   const seen = new Set(values.map(same))
-  return { key, label, values, differ: seen.size > 1, best: [] }
+  return { key, label, values, differ: seen.size > 1, best: [], lead: null, group }
 }
 
 /**
@@ -70,8 +74,21 @@ export function bestOf(numbers: (number | null)[], lower: boolean): number[] {
   return numbers.flatMap((n, i) => (n === top ? [i] : []))
 }
 
+/**
+ * Разница между лучшим и ближайшим к нему значением: «дешевле на 6 600 сом» верно против каждого
+ * из остальных товаров. Лучшего нет — null.
+ */
+export function leadOf(numbers: (number | null)[], lower: boolean): number | null {
+  const best = bestOf(numbers, lower)
+  if (!best.length) return null
+  const top = numbers[best[0]] as number
+  const rest = numbers.filter((n): n is number => n !== null && n > 0 && n !== top)
+  const next = lower ? Math.min(...rest) : Math.max(...rest)
+  return Math.abs(next - top)
+}
+
 function withBest(r: CompareRow, numbers: (number | null)[], lower: boolean): CompareRow {
-  return { ...r, best: bestOf(numbers, lower) }
+  return { ...r, best: bestOf(numbers, lower), lead: leadOf(numbers, lower) }
 }
 
 export function compareRows(list: Product[], lang: 'ru' | 'ky', w: CompareWords): CompareRow[] {
@@ -122,7 +139,21 @@ export function compareRows(list: Product[], lang: 'ru' | 'ky', w: CompareWords)
       const value = s ? (lang === 'ky' ? s.valueKy || s.valueRu : s.valueRu).trim() : ''
       return value || null
     })
-    rows.push(row(`spec:${key}`, label, values))
+    rows.push(row(`spec:${key}`, label, values, 'specs'))
   }
-  return rows
+  // у всех пусто (например, гарантия в 1С не указана ни у кого) — строка ничего не говорит
+  return rows.filter((r) => r.values.some((v) => v !== null))
+}
+
+/**
+ * Короткие названия для тесных мест («Коротко», прилипающая полоска): общие слова в начале у всех
+ * товаров («Стиральная машина») убираем — остаётся то, чем товары отличаются: «LG F2V3PS6J…».
+ * Только целые слова; если у кого-то ничего не осталось — названия как есть.
+ */
+export function shortNames(names: string[]): string[] {
+  if (names.length < 2) return names
+  const words = names.map((n) => n.trim().split(/\s+/))
+  let common = 0
+  while (words.every((w) => common < w.length - 1 && same(w[common]) === same(words[0][common]))) common++
+  return common ? words.map((w) => w.slice(common).join(' ')) : names
 }
