@@ -3953,3 +3953,63 @@ html.dialog-open {
     flex-wrap: wrap;
   }
 }
+
+/* Рассрочка банка (src/lib/installment.ts, владелец 06.10): строка под ценой карточки и плашка на странице товара */
+.card__installment {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--color-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card__installment b {
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.installment-badge {
+  margin-top: 10px;
+}
+.installment-badge__how {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-primary, #2563eb);
+  cursor: pointer;
+  align-self: flex-start;
+}
+.installment-badge__how[aria-expanded='true'] svg { transform: rotate(180deg); }
+.installment-how {
+  max-width: 440px;
+  margin-top: 8px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-tile, 14px);
+  background: #fff;
+}
+.installment-how__logo { display: block; height: 22px; width: auto; }
+.installment-how__steps {
+  margin: 12px 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--color-ink);
+}
+.installment-how__steps a { font-weight: 700; }
+.installment-how__stores {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--color-muted);
+  text-align: center;
+}

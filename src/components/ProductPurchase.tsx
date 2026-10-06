@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { phones, whatsappHref } from '@/data/contacts'
 import { SITE_URL } from '@/lib/seo'
@@ -8,6 +9,7 @@ import { ShareButton } from './ShareButton'
 import type { Product, ProductVariant } from '@/data/products'
 import { unitPrice } from '@/lib/cart/logic'
 import { formatSom } from '@/lib/format'
+import { ADAL_APP_LINK, adalMonthly, INSTALLMENT, MBANK_STORES, mbankFits } from '@/lib/installment'
 import { suggestCombos, variantLabel } from '@/lib/cart/sku'
 import { categoryName } from '@/data/categories'
 import { AddToCartButton } from './AddToCartButton'
@@ -92,6 +94,73 @@ function WarrantyBadge({ months }: { months: number }) {
   )
 }
 
+/**
+ * «Бөлүп төлөө: айына 5 975 сом × 4 ай» (владелец 06.10: самое частое в чатах — «кымбат»). До 40 000 —
+ * «Адал рассрочка» MIslamic: сумма в месяц точная, без переплаты. Дороже, до 200 000 — «МРассрочка» MBANK
+ * без суммы: там переплата, её считает банк. Рассрочку даёт банк — так и подписано.
+ */
+function InstallmentBadge({ price, name }: { price: number; name: string }) {
+  const { t } = useI18n()
+  const [open, setOpen] = useState(false)
+  const monthly = adalMonthly(price)
+  if (!monthly && !mbankFits(price)) return null
+  return (
+    <>
+    <div className="warranty-badge installment-badge">
+      <span className="warranty-badge__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="5" width="18" height="16" rx="2" />
+          <path d="M3 10h18M8 3v4M16 3v4" />
+        </svg>
+      </span>
+      <span className="warranty-badge__text">
+        {monthly ? (
+          <strong>
+            {t.product.installmentLine.replace('{sum}', formatSom(monthly)).replace('{n}', String(INSTALLMENT.adal.months))}
+          </strong>
+        ) : (
+          <strong>{t.product.installmentLong}</strong>
+        )}
+        <span>{monthly ? t.product.installmentNote : t.product.installmentLongNote}</span>
+        {/* Владелец 06.10: «Адал рассрочкани қандай олишни одамлар билмаяпти» — три шага и кнопка прямо в MBANK */}
+        {monthly && (
+          <button type="button" className="installment-badge__how" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+            {t.product.installmentHow}
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
+        )}
+      </span>
+    </div>
+    {monthly && open && (
+      <div className="installment-how">
+        <img className="installment-how__logo" src="/brand/mislamic.svg" alt="MIslamic" width="120" height="26" />
+        <ol className="installment-how__steps">
+          <li>{t.product.installmentStep1}</li>
+          <li>{t.product.installmentStep2}</li>
+          <li>
+            {t.product.installmentStep3}{' '}
+            <a href={whatsappHref(phones[0], `${t.contactWidget.askAbout} ${name} — Адал рассрочка`)} target="_blank" rel="noopener noreferrer">
+              WhatsApp
+            </a>
+          </li>
+        </ol>
+        <a className="btn btn--outline btn--block installment-how__connect" href={ADAL_APP_LINK} target="_blank" rel="noopener noreferrer">
+          {t.product.installmentConnect}
+        </a>
+        <p className="installment-how__stores">
+          {t.product.installmentNoApp}{' '}
+          <a href={MBANK_STORES.ios} target="_blank" rel="noopener noreferrer">App Store</a>
+          {' · '}
+          <a href={MBANK_STORES.android} target="_blank" rel="noopener noreferrer">Google Play</a>
+        </p>
+      </div>
+    )}
+    </>
+  )
+}
+
 export function ProductPurchase({
   product,
   variant,
@@ -148,6 +217,7 @@ export function ProductPurchase({
         <div>
           <StockLine stock={variant.stock} hidden={product.stockHidden} preorder={product.preorder} />
           <p className="stock-note">{product.preorder ? t.product.preorderNote : t.product.stockNote}</p>
+          {price !== null && price > 0 && product.price > 0 && <InstallmentBadge price={price} name={name} />}
           <WarrantyBadge months={product.warrantyMonths} />
         </div>
       ) : (

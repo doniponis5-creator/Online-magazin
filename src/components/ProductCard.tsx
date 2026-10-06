@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { categoryName } from '@/data/categories'
 import { formatSom } from '@/lib/format'
+import { adalMonthly } from '@/lib/installment'
 import { phones, whatsappHref } from '@/data/contacts'
 import { SITE_URL } from '@/lib/seo'
 import type { Product } from '@/data/products'
@@ -27,6 +28,7 @@ export function ProductCard({ product }: { product: Product }) {
   const href = `/${lang}/product/${product.id}`
   // Цена есть, а товара нет — фото приглушаем: статус виден до того, как дочитали до кнопки.
   const soldOut = product.price > 0 && !inStock
+  const monthly = adalMonthly(product.price)
 
   // если товар уже в корзине — кнопка превращается в количество
   const line = cart.lines.find(
@@ -79,6 +81,12 @@ export function ProductCard({ product }: { product: Product }) {
             <span className="card__price card__price--request">{t.catalog.priceOnRequest}</span>
           )}
         </div>
+        {/* «Рассрочка: 5 975 сом/мес» — до 40 000, «Адал рассрочка» без переплаты (src/lib/installment.ts) */}
+        {monthly && (
+          <span className="card__installment">
+            {t.product.installmentShort}: <b>{formatSom(monthly)}/{t.product.installmentCard}</b>
+          </span>
+        )}
         <div className="card__actions" ref={actions} tabIndex={-1} aria-label={`${t.cart.quantity}: ${name}`}>
           {product.price <= 0 ? (
             // Цена по запросу: вместо мёртвой кнопки с тем же текстом — вопрос в WhatsApp,
