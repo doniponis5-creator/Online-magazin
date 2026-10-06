@@ -432,6 +432,62 @@ class AutoStory(Base):
         self.assertNotIn(f"wa:status:{post._today()}:{ITEM['code']}", redis.data)  # не вышел — можно повторить
 
 
+ROUND_TIME = datetime(2026, 10, 5, 5, 10, tzinfo=timezone.utc)    # 11:10 по Бишкеку — не час метки
+
+
+class RoundStory(Base):
+    def setUp(self):
+        super().setUp()
+        SETTINGS["SITE_IG_AUTO_ALL"] = "1"
+
+    def tearDown(self):
+        SETTINGS.pop("SITE_IG_AUTO_ALL", None)
+        super().tearDown()
+
+    def test_pick_order(self):
+        a, b, c = ({**ITEM, "code": k} for k in ("a", "b", "c"))
+        no_photo = {**ITEM, "code": "a2", "photos": []}
+        items = [c, no_photo, a, b]
+        self.assertEqual(post.pick_round(items, "", set()), (a, False))       # первый раз — с начала
+        self.assertEqual(post.pick_round(items, "a", set()), (b, False))      # без фото пропускаем
+        self.assertEqual(post.pick_round(items, "b", {"c"}), (a, True))       # c сегодня был — круг замкнулся
+        self.assertEqual(post.pick_round(items, "c", set()), (a, True))       # дошли до конца — сначала
+        self.assertEqual(post.pick_round(items, "a1", set()), (b, False))     # прежний товар ушёл из каталога
+        self.assertEqual(post.pick_round(items, "a", {"a", "b", "c"}), (None, False))
+        self.assertEqual(post.pick_round([], "", set()), (None, False))
+
+    def test_hourly(self):
+        self.use(Meta())
+        CATALOG[:] = [{**ITEM, "code": "ЦБ-1"}, {**ITEM, "code": "ЦБ-2", "name": "Второй"}]
+        SETTINGS["SITE_IG_AUTO_STORY"] = "0"
+        self.assertIsNone(run(post.round_story(datetime(2026, 10, 5, 15, 0, tzinfo=timezone.utc))))  # 21:00 — поздно
+        first = run(post.round_story(ROUND_TIME))
+        self.assertEqual(first["status"], "done")
+        self.assertEqual(redis.data["ig:round:last"], "ЦБ-1")
+        self.assertIsNone(run(post.round_story(ROUND_TIME + timedelta(minutes=1))))  # тот же час — уже был
+        self.assertEqual(SENT, [])                                                     # удачу владельцу не пишем
+        second = run(post.round_story(ROUND_TIME + timedelta(hours=1)))
+        self.assertEqual(second["status"], "done")
+        self.assertEqual(redis.data["ig:round:last"], "ЦБ-2")
+
+    def test_lap_tells_owner(self):
+        self.use(Meta())
+        CATALOG[:] = [{**ITEM, "code": "ЦБ-1"}]
+        SETTINGS["SITE_IG_AUTO_STORY"] = "0"
+        redis.data["ig:round:last"] = "ЦБ-1"
+        self.assertEqual(run(post.round_story(ROUND_TIME))["status"], "done")
+        self.assertIn("показаны все 1 товаров", SENT[0])
+
+    def test_slot_hour_left_to_auto_story(self):
+        CATALOG[:] = [ITEM]
+        self.assertEqual(run(post.round_story(DEAL_TIME))["note"], "slot")  # 10:30 — час «Товара дня»
+        self.assertNotIn("ig:round:last", redis.data)
+
+    def test_switched_off(self):
+        SETTINGS["SITE_IG_AUTO_ALL"] = "0"
+        self.assertIsNone(run(post.round_story(ROUND_TIME)))
+
+
 class WeekStats(Base):
     """Недельная статистика: Instagram отдаёт цифры, робот — свои счётчики."""
 

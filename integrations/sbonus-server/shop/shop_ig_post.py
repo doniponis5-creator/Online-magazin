@@ -647,6 +647,108 @@ async def auto_story(now: datetime | None = None) -> dict | None:
     return {**result, "mark": mark, "wa": status["status"]}
 
 
+# ── Все товары по очереди (галочка «Все товары в истории…» в 1С, 06.10) ─────────
+
+ROUND_HOURS = range(10, 21)          # 10:00, 11:00 … 20:00 по Бишкеку — 11 историй в день; пропущенный час не догоняем
+
+
+def round_order(items: list[dict]) -> list[dict]:
+    """Порядок обхода: всё, что можно заказать и у чего есть фото, — по коду 1С (стабильно, новинки встают на место)."""
+    from . import shop_promo_rules as promo
+    fits = [i for i in items or [] if promo.sellable(i) and str(i.get("code") or "") and request_for("plain", i)["photo"]]
+    return sorted(fits, key=lambda i: str(i.get("code") or ""))
+
+
+def pick_round(items: list[dict], last: str, taken: set[str]) -> tuple[dict | None, bool]:
+    """
+    Следующий после `last` товар обхода (сегодня ещё не показанный — taken), по кругу.
+    Возвращает (товар, круг замкнулся) — второе, когда начали сначала: владельцу скажем «все показаны».
+    """
+    order = round_order(items)
+    if not order:
+        return None, False
+    codes = [str(i.get("code") or "") for i in order]
+    start = 0
+    if last:
+        # last мог уйти из каталога — берём первый код больше него
+        start = next((n for n, c in enumerate(codes) if c > last), len(codes))
+    for step in range(len(order)):
+        n = (start + step) % len(order)
+        if codes[n] not in taken:
+            return order[n], bool(last) and (start + step) >= len(order)
+    return None, False
+
+
+async def round_story(now: datetime | None = None) -> dict | None:
+    """
+    Зовёт cron робота Instagram раз в минуту. Каждый час 10:00–20:00 — история со следующим товаром каталога,
+    по кругу (курсор ig:round:last). Галочка в 1С — SITE_IG_AUTO_ALL. Владельцу пишем только о неудаче и о
+    замкнутом круге — одиннадцать «вышло» в день были бы шумом.
+    """
+    from . import shop_promo_rules as promo
+    from app.core.database import async_session
+    from .shop_admin import _values
+    from .shop_router import catalog_items
+
+    now = now or datetime.now(timezone.utc)
+    here = promo.local(now)
+    if here.hour not in ROUND_HOURS:
+        return None
+    day = here.date().isoformat()
+    hour_key = f"ig:round:{day}:{here.hour}"
+    if await redis_client.get(hour_key):
+        return None
+    async with async_session() as db:
+        values = await _values(db)
+        if values.get("SITE_IG_AUTO_ALL", "0") != "1":
+            return None
+        items = await catalog_items(db)
+    # Час занимаем до публикации: следующая минута cron не выпустит вторую.
+    if not await redis_client.set(hour_key, "1", ex=2 * 24 * 3600, nx=True):
+        return None
+    # В час метки при включённой «Авто-истории» выходит её история — вторую не добавляем.
+    if values.get("SITE_IG_AUTO_STORY", "0") == "1" and any(h == here.hour for h, _ in AUTO_SLOTS):
+        return {"status": "skipped", "note": "slot"}
+    taken = set(await redis_client.smembers(f"ig:autostory:{day}:codes") or [])
+    last = str(await redis_client.get("ig:round:last") or "")
+    item, lapped = pick_round(items, last, taken)
+    if item is None:
+        logger.info(f"ig round story {here.hour}:00: нечего показать")
+        return {"status": "skipped"}
+    code = str(item.get("code") or "")
+    name = promo.clean_text(item.get("name"))
+    kind = "plain"
+    if await blocked_reason(kind, code, item, "story"):
+        # Не этот товар (сегодня уже был, нет фото) — курсор всё равно двигаем, иначе встанем на нём.
+        await redis_client.set("ig:round:last", code)
+        return {"status": "skipped"}
+    v = await prepare(kind, item, "story")
+    entry_id, reason = await start(kind, code, name, v, "story", auto=True)
+    if entry_id is None:
+        return {"status": "skipped", "note": reason}
+    result = await publish(entry_id, v, "", "story", story_info(item))
+    await redis_client.set("ig:round:last", code)
+    if result["status"] == "done":
+        await redis_client.sadd(f"ig:autostory:{day}:codes", code)
+        await redis_client.expire(f"ig:autostory:{day}:codes", 2 * 24 * 3600)
+        status = await wa_status(kind, item)
+        if lapped:
+            await _tell_round_done(len(round_order(items)))
+        return {**result, "wa": status["status"]}
+    await _tell_owner(name, item, result, "Все товары по очереди")
+    return result
+
+
+async def _tell_round_done(total: int) -> None:
+    from .shop_router import _admin_phone
+    from .shop_wa_bot import _send_text as send_whatsapp
+    try:
+        await send_whatsapp(_admin_phone(), f"🔁 Истории «все товары по очереди»: показаны все {total} товаров — начали сначала."
+                                            "\nВыключить: 1С → «Панель сайта» → «Настройки сайта».")
+    except Exception as error:
+        logger.warning(f"ig round story: владельцу не отправлено ({type(error).__name__})")
+
+
 async def _tell_owner(name: str, item: dict, result: dict, label: str = "", wa: dict | None = None) -> None:
     from . import shop_promo_rules as promo
     from .shop_router import _admin_phone

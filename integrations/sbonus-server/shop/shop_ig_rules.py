@@ -292,7 +292,8 @@ def window_open(last_user_ts: float, at: float) -> bool:
 CAPTION_MAX = 2200                # предел Instagram
 HASHTAGS_MAX = 30                 # больше Instagram не опубликует
 POSTS_PER_DAY = 10                # наш предел: лента из десяти скидок в день — уже спам
-STORIES_PER_DAY = 10              # историй — столько же (у Instagram общий предел 100 в сутки)
+# 06.10: «все товары по очереди» — 11 историй в день (10:00–20:00) плюс 4 по меткам; у Instagram предел 100 в сутки
+STORIES_PER_DAY = 20
 # Тот же номер, что первый в src/data/contacts.ts (подвал сайта и картинка поста).
 SHOP_PHONE = "+996 557 100 505"
 

@@ -458,6 +458,12 @@ async def poll_once() -> dict:
         await auto_story()
     except Exception as error:
         logger.warning(f"ig auto story: {type(error).__name__}: {error}")
+    # Все товары по очереди (галочка в 1С SITE_IG_AUTO_ALL) — каждый час 10:00–20:00.
+    try:
+        from .shop_ig_post import round_story
+        await round_story()
+    except Exception as error:
+        logger.warning(f"ig round story: {type(error).__name__}: {error}")
     # Цифры живых историй — раз в час: через сутки Instagram их не отдаст, а отчёт — в понедельник.
     try:
         from .shop_ig_stats import collect_stories
