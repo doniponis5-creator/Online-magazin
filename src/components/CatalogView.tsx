@@ -8,6 +8,7 @@ import { useI18n } from '@/lib/i18n/I18nProvider'
 import { buildCatalogHref } from '@/lib/links'
 import { formatSom } from '@/lib/format'
 import { adalMonthly } from '@/lib/installment'
+import { FACETS, facetOptions, facetsFor, parseFacet } from '@/lib/catalogFacets'
 import { ProductCard } from '@/components/ProductCard'
 import { FilterSelect } from '@/components/FilterSelect'
 import { IconClose, IconFilter, IconSearch } from '@/components/Icons'
@@ -69,6 +70,14 @@ function CatalogViewInner() {
   )
   const brandKey = selectedBrands.join(',')
   const badgeKey = selectedBadges.join(',')
+  // Характеристики раздела (?diag=43,55, ?wtype=semi …) — только у выбранного раздела.
+  const facets = facetsFor(cat)
+  const facetKey = facets.map((f) => `${f.id}=${searchParams.get(f.id) ?? ''}`).join('&')
+  const chosenFacets = useMemo(
+    () => facets.map((f) => ({ facet: f, values: parseFacet(searchParams.get(f.id)) })).filter((c) => c.values.length),
+    // facetKey — стабильный ключ выбранных значений из URL
+    [facetKey],
+  )
 
   // Локальные значения полей — только для ввода; в URL уходят с задержкой.
   const [input, setInput] = useState(q)
@@ -140,9 +149,14 @@ function CatalogViewInner() {
 
   /** Все фильтры, кроме указанного, — чтобы счётчики у брендов были честными. */
   const matches = useCallback(
-    (p: Product, skip?: 'brand') => {
+    (p: Product, skip?: string) => {
       if (cat !== 'all' && p.categoryId !== cat) return false
       if (skip !== 'brand' && selectedBrands.length && !selectedBrands.includes(p.brand)) return false
+      for (const { facet, values } of chosenFacets) {
+        if (skip === facet.id) continue
+        const v = facet.value(p)
+        if (v === null || !values.includes(v)) return false
+      }
       if (minPrice && p.price < minPrice) return false
       if (maxPrice && p.price > maxPrice) return false
       if (stockOnly && !inStock(p)) return false
@@ -157,7 +171,7 @@ function CatalogViewInner() {
       return true
     },
     // brandKey/badgeKey — стабильные ключи массивов из URL
-    [q, cat, brandKey, minPrice, maxPrice, stockOnly, saleOnly, instOnly, badgeKey],
+    [q, cat, brandKey, minPrice, maxPrice, stockOnly, saleOnly, instOnly, badgeKey, chosenFacets],
   )
 
   const filtered = useMemo(() => {
@@ -186,6 +200,20 @@ function CatalogViewInner() {
     return prices.length ? { min: Math.min(...prices), max: Math.max(...prices) } : null
   }, [cat])
 
+  // Значения характеристик со счётчиками: по товарам, прошедшим все прочие фильтры.
+  // Один вариант на весь раздел выбирать не из чего — такой фильтр не показываем.
+  const facetLists = useMemo(
+    () =>
+      facets
+        .map((facet) => {
+          const values = parseFacet(searchParams.get(facet.id))
+          const options = facetOptions(facet, products.filter((p) => matches(p, facet.id)))
+          return { facet, values, options }
+        })
+        .filter((f) => f.options.length > 1 || f.values.length > 0),
+    [cat, facetKey, matches],
+  )
+
   // Бренды без товаров при текущих фильтрах скрыты; выбранные видны всегда
   const availableBrands = brands.filter((b) => (brandCounts.get(b) ?? 0) > 0 || selectedBrands.includes(b))
   const visibleBrands = allBrands
@@ -198,7 +226,8 @@ function CatalogViewInner() {
     (stockOnly ? 1 : 0) +
     (saleOnly ? 1 : 0) +
     (instOnly ? 1 : 0) +
-    selectedBadges.length
+    selectedBadges.length +
+    chosenFacets.reduce((sum, c) => sum + c.values.length, 0)
 
   const hasFilters = Boolean(q) || cat !== 'all' || sort !== 'popular' || activeCount > 0
 
@@ -215,8 +244,11 @@ function CatalogViewInner() {
   const resetPanel = () => {
     setMinInput('')
     setMaxInput('')
-    update({ brand: null, min: null, max: null, stock: null, sale: null, inst: null, badge: null })
+    update({ brand: null, min: null, max: null, stock: null, sale: null, inst: null, badge: null, ...noFacets })
   }
+
+  // Другой раздел — характеристики прежнего в адресе не нужны.
+  const noFacets = Object.fromEntries(FACETS.map((f) => [f.id, null]))
 
   const badgeLabel: Record<Badge, string> = { hit: t.catalog.badgeHit, new: t.catalog.badgeNew }
 
@@ -249,7 +281,7 @@ function CatalogViewInner() {
               type="button"
               className="chip"
               aria-pressed={cat === 'all'}
-              onClick={() => update({ cat: null })}
+              onClick={() => update({ cat: null, ...noFacets })}
             >
               {t.catalog.allCategories}
             </button>
@@ -259,7 +291,7 @@ function CatalogViewInner() {
                 type="button"
                 className="chip"
                 aria-pressed={cat === c.id}
-                onClick={() => update({ cat: c.id })}
+                onClick={() => update({ cat: c.id, ...noFacets })}
               >
                 {lang === 'ky' ? c.nameKy : c.nameRu}
               </button>
@@ -326,6 +358,25 @@ function CatalogViewInner() {
               </p>
             )}
           </fieldset>
+
+          {facetLists.map(({ facet, values, options }) => (
+            <fieldset key={facet.id} className="filter-group">
+              <legend className="filter-group__title">{facet.title[lang]}</legend>
+              <div className="check-list">
+                {options.map(({ value, count }) => (
+                  <label key={value} className="check">
+                    <input
+                      type="checkbox"
+                      checked={values.includes(value)}
+                      onChange={() => update({ [facet.id]: toggleIn(values, value).join(',') || null })}
+                    />
+                    <span className="check__label">{facet.label(value, lang)}</span>
+                    <span className="check__count">{count}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          ))}
 
           <fieldset className="filter-group">
             <legend className="filter-group__title">{t.catalog.brand}</legend>
