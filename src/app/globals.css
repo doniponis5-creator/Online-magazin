@@ -3956,21 +3956,44 @@ html.dialog-open {
 
 /* Рассрочка банка (src/lib/installment.ts, владелец 06.10): строка под ценой карточки и плашка на странице товара */
 .card__installment {
-  display: block;
-  margin-top: 4px;
-  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  max-width: 100%;
+  margin-top: 6px;
+  padding: 3px 11px 3px 3px;
+  border-radius: 999px;
+  background: #fff3c4;
+  font-size: 12.5px;
   line-height: 1.3;
-  color: var(--color-muted);
+  color: #3a3320;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.card__installment > span { overflow: hidden; text-overflow: ellipsis; }
 .card__installment b {
   font-weight: 700;
-  color: var(--color-ink);
+  color: #1f1f1f;
+}
+.card__installment-mark {
+  flex: none;
+  box-sizing: content-box;
+  width: 15px;
+  height: 16px;
+  padding: 3px 4px;
+  border-radius: 50%;
+  background: #fff;
 }
 .installment-badge {
   margin-top: 10px;
+  background: #fffbea;
+  border-color: #f3e3a6;
+}
+.installment-badge__icon {
+  background: #fff;
+  box-shadow: inset 0 0 0 1px #f3e3a6;
 }
 .installment-badge__how {
   display: inline-flex;

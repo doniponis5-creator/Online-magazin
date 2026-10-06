@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { MARK } from '@/components/Brand'
 import { phones } from '@/data/contacts'
 import { formatSom } from '@/lib/format'
+import { adalMonthly, INSTALLMENT } from '@/lib/installment'
 
 /**
  * Картинка поста Instagram «Скидка» / «Новинка» — в оформлении smarket.kg (DESIGN.md):
@@ -55,6 +56,7 @@ const C = {
   mist: '#e3e8ee',
   success: '#1e9e5a',
   mark: '#fef102',
+  mbank: '#fedd2e',
 }
 
 type Badge = { text: string; bg: string; fg: string }
@@ -224,6 +226,28 @@ export function PostCard({ data }: { data: PostData }) {
           </div>
         ) : null}
       </div>
+
+      {/* «Айына 5 975 сомдон · 4 ай пайызсыз» (владелец 06.10: «кымбат» — частый ответ под постами).
+          Только в лимите «Адал рассрочки» MIslamic (src/lib/installment.ts); дороже — строки нет. */}
+      {adalMonthly(data.price) ? (
+        <div
+          style={{
+            display: 'flex',
+            alignSelf: 'flex-start',
+            marginTop: 22,
+            padding: '12px 22px',
+            borderRadius: 16,
+            // в стиле MBANK (владелец 06.10): их жёлтый #FEDD2E и тёмный текст, как кнопка «Оформить покупку»
+            background: C.mbank,
+            color: '#1f1f1f',
+            fontSize: 34,
+            fontWeight: 800,
+            letterSpacing: '-0.01em',
+          }}
+        >
+          Айына {formatSom(adalMonthly(data.price)!)}дон · {INSTALLMENT.adal.months} ай пайызсыз
+        </div>
+      ) : null}
 
       {/* Подвал: наличие (зелёный — только настоящий статус) и куда писать. */}
       <div

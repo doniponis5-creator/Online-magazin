@@ -82,9 +82,13 @@ export function ProductCard({ product }: { product: Product }) {
           )}
         </div>
         {/* «Рассрочка: 5 975 сом/мес» — до 40 000, «Адал рассрочка» без переплаты (src/lib/installment.ts) */}
+        {/* Пилюля как у MMarket (владелец 06.10): знак MIslamic, «Адал · 3 475 сом/мес» */}
         {monthly && (
-          <span className="card__installment">
-            {t.product.installmentShort}: <b>{formatSom(monthly)}/{t.product.installmentCard}</b>
+          <span className="card__installment" title={t.product.installmentNote}>
+            <img className="card__installment-mark" src="/brand/mislamic-mark.svg" alt="" width="15" height="16" />
+            <span>
+              Адал · <b>{formatSom(monthly)}/{t.product.installmentCard}</b>
+            </span>
           </span>
         )}
         <div className="card__actions" ref={actions} tabIndex={-1} aria-label={`${t.cart.quantity}: ${name}`}>
