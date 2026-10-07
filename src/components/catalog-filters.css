@@ -75,3 +75,12 @@
 @media (max-width: 900px) {
   .price-range__field input { font-size: 16px; }
 }
+
+/* Поиск: точного совпадения нет — похожие товары; пусто — подсказка раздела (аудит 07.10) */
+.catalog-similar { margin: 0 0 12px; font-size: 14px; color: var(--color-ink-soft); }
+.catalog-suggest { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin: 4px 0 16px; font-size: 14px; color: var(--color-ink-soft); }
+
+/* Телефон: поиск уже в шапке прямо над каталогом — второе такое же поле съедало пол-экрана до товаров */
+@media (max-width: 900px) {
+  .catalog-layout .filters > .search { display: none; }
+}

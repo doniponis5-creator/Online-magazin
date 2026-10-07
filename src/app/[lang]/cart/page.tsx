@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useRef } from 'react'
 import { useCart } from '@/lib/cart/CartProvider'
 import { unitPrice } from '@/lib/cart/logic'
 import { getProduct } from '@/data/products'
@@ -11,10 +12,12 @@ import { ProductImage } from '@/components/ProductImage'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { QuantityStepper } from '@/components/QuantityStepper'
 import { IconCart, IconTrash } from '@/components/Icons'
+import { StickyBar } from '@/components/BuyBar'
 
 export default function CartPage() {
   const { t, lang } = useI18n()
   const cart = useCart()
+  const checkout = useRef<HTMLAnchorElement>(null)
 
   if (!cart.hydrated) {
     return (
@@ -70,7 +73,6 @@ export default function CartPage() {
         <h1 className="page-head__title">
           {t.cart.title} · {cart.itemsCount}
         </h1>
-        <p className="page-head__sub">{t.cart.demoNote}</p>
       </div>
 
       {noticeBlock}
@@ -159,10 +161,20 @@ export default function CartPage() {
             </p>
           )}
           <p className="summary-card__note">{t.cart.totalNote}</p>
-          <Link href={`/${lang}/checkout`} className="btn btn--primary btn--block">
+          <Link ref={checkout} href={`/${lang}/checkout`} className="btn btn--primary btn--block">
             {t.cart.checkout}
           </Link>
         </aside>
+        {/* телефон: итог внизу экрана, пока кнопка «Оформить заказ» за краем (аудит 07.10) */}
+        <StickyBar target={checkout} label={t.cart.total}>
+          <span className="buybar__prices">
+            <span className="buybar__label">{t.cart.total}</span>
+            <b>{formatSom(cart.subtotal)}</b>
+          </span>
+          <Link href={`/${lang}/checkout`} className="btn btn--primary btn--sm">
+            {t.cart.checkout}
+          </Link>
+        </StickyBar>
       </div>
     </div>
   )

@@ -110,6 +110,8 @@ input, textarea { caret-color: var(--color-primary); }
 .subnav__link { position: relative; flex: none; white-space: nowrap; padding: 8px 10px; font-size: 12px; color: var(--color-ink); font-weight: 600; }
 .subnav__link:focus-visible { outline-offset: -2px; }
 .subnav__link--kitchen { color: var(--color-primary); font-weight: 700; }
+.subnav__link--out { display: inline-flex; align-items: center; gap: 3px; }
+
 /* Открытый раздел — лимонный штрих под названием, как в нижней навигации.
    Открытый раздел спрятан в «Ещё» — штрих под «Ещё». */
 .subnav__link[aria-current='page'], .subnav__more-btn[data-current] { font-weight: 750; }

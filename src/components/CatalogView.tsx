@@ -9,6 +9,8 @@ import { buildCatalogHref } from '@/lib/links'
 import { formatSom } from '@/lib/format'
 import { adalMonthly } from '@/lib/installment'
 import { FACETS, facetOptions, facetsFor, parseFacet } from '@/lib/catalogFacets'
+import { indexOf, looseScore, normalize, parseQuery, score, type SearchIndex } from '@/lib/search'
+import { popularOrder } from '@/lib/catalogOrder'
 import { ProductCard } from '@/components/ProductCard'
 import { FilterSelect } from '@/components/FilterSelect'
 import { CompareLink } from '@/components/CompareButton'
@@ -39,10 +41,6 @@ function parseList(value: string | null): string[] {
 function parsePrice(value: string | null): number | null {
   const n = Number(value)
   return value && Number.isFinite(n) && n > 0 ? Math.round(n) : null
-}
-
-function normalize(s: string): string {
-  return s.toLowerCase().replace(/ё/g, 'е').trim()
 }
 
 // Предзаказ купить можно, но на складе его нет — «Только в наличии» его не показывает.
@@ -148,6 +146,14 @@ function CatalogViewInner() {
     return () => clearTimeout(timer)
   }, [minInput, maxInput, minPrice, maxPrice, update])
 
+  // Поиск как пишет покупатель: по словам, с опечатками, по-кыргызски, «рассрочка» — фильтр (src/lib/search.ts)
+  const query = useMemo(() => parseQuery(q), [q])
+  const searchIndex = useMemo(() => {
+    const names = new Map(categories.map((c) => [c.id, [c.nameRu, c.nameKy]]))
+    return new Map(products.map((p) => [p.id, indexOf(p, names.get(p.categoryId) ?? [])]))
+  }, [])
+  const weight = useCallback((p: Product) => score(query, searchIndex.get(p.id) as SearchIndex), [query, searchIndex])
+
   /** Все фильтры, кроме указанного, — чтобы счётчики у брендов были честными. */
   const matches = useCallback(
     (p: Product, skip?: string) => {
@@ -164,15 +170,14 @@ function CatalogViewInner() {
       if (saleOnly && !onSale(p)) return false
       if (instOnly && !adalMonthly(p.price)) return false
       if (selectedBadges.length && !(p.badge && selectedBadges.includes(p.badge))) return false
-      const needle = normalize(q)
-      if (needle) {
-        const haystack = normalize(`${p.nameRu} ${p.nameKy} ${p.brand} ${p.descRu} ${p.descKy}`)
-        if (!haystack.includes(needle)) return false
+      if (skip !== 'q') {
+        if (query.installment && !adalMonthly(p.price)) return false
+        if (query.words.length && !weight(p)) return false
       }
       return true
     },
     // brandKey/badgeKey — стабильные ключи массивов из URL
-    [q, cat, brandKey, minPrice, maxPrice, stockOnly, saleOnly, instOnly, badgeKey, chosenFacets],
+    [query, weight, cat, brandKey, minPrice, maxPrice, stockOnly, saleOnly, instOnly, badgeKey, chosenFacets],
   )
 
   const filtered = useMemo(() => {
@@ -181,13 +186,33 @@ function CatalogViewInner() {
     const priceKey = (p: Product, dir: 1 | -1) => (p.price > 0 ? p.price * dir : Number.MAX_SAFE_INTEGER)
     if (sort === 'price-asc') list = [...list].sort((a, b) => priceKey(a, 1) - priceKey(b, 1))
     else if (sort === 'price-desc') list = [...list].sort((a, b) => priceKey(a, -1) - priceKey(b, -1))
-    else
-      list = [...list].sort((a, b) => {
-        const rank = (badge?: string) => (badge === 'hit' ? 0 : badge === 'new' ? 1 : 2)
-        return rank(a.badge) - rank(b.badge)
-      })
+    else {
+      list = popularOrder(list)
+      // есть запрос — сначала то, что совпало в названии, потом в разделе, потом в описании (сортировка устойчивая)
+      if (query.words.length) {
+        const w = new Map(list.map((p) => [p.id, weight(p)]))
+        list = [...list].sort((a, b) => (w.get(b.id) ?? 0) - (w.get(a.id) ?? 0))
+      }
+    }
     return list
-  }, [matches, sort])
+  }, [matches, sort, query, weight])
+
+  // По всем словам ничего — показываем товары, где нашлась хотя бы часть слов («холодильник lg» → холодильники и LG)
+  const similar = useMemo(() => {
+    if (filtered.length || query.words.length < 2) return []
+    const idx = (p: Product) => searchIndex.get(p.id) as SearchIndex
+    const pool = popularOrder(products.filter((p) => matches(p, 'q') && looseScore(query, idx(p)) > 0))
+    return [...pool].sort((a, b) => looseScore(query, idx(b)) - looseScore(query, idx(a))).slice(0, 24)
+  }, [filtered.length, query, matches, searchIndex])
+
+  // Пусто — подсказать раздел, если запрос похож на его название
+  const suggestCats = useMemo(() => {
+    if (filtered.length || similar.length || !query.words.length) return []
+    return categories.filter((c) => {
+      const words = normalize(`${c.nameRu} ${c.nameKy}`).split(' ')
+      return query.words.some((w) => score({ words: [w], installment: false }, { name: [], brand: [], category: words, text: [] }) > 0)
+    })
+  }, [filtered.length, similar.length, query])
 
   const brandCounts = useMemo(() => {
     const counts = new Map<string, number>()
@@ -507,6 +532,15 @@ function CatalogViewInner() {
                 <ProductCard key={p.id} product={p} />
               ))}
             </div>
+          ) : similar.length > 0 ? (
+            <>
+              <p className="catalog-similar">{t.catalog.similarNote}</p>
+              <div className="product-grid">
+                {similar.map((p) => (
+                  <ProductCard key={p.id} product={p} />
+                ))}
+              </div>
+            </>
           ) : (
             <div className="empty">
               <span className="empty__icon">
@@ -514,6 +548,16 @@ function CatalogViewInner() {
               </span>
               <div className="empty__title">{t.catalog.empty}</div>
               <p className="empty__hint">{t.catalog.emptyHint}</p>
+              {suggestCats.length > 0 && (
+                <div className="catalog-suggest">
+                  <span>{t.catalog.tryCategory}</span>
+                  {suggestCats.map((c) => (
+                    <button key={c.id} type="button" className="chip" onClick={() => update({ q: null, cat: c.id, ...noFacets })}>
+                      {lang === 'ky' ? c.nameKy : c.nameRu}
+                    </button>
+                  ))}
+                </div>
+              )}
               <button type="button" className="btn btn--secondary empty__cta" onClick={reset}>
                 {t.catalog.reset}
               </button>

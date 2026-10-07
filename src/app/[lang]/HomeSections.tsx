@@ -18,6 +18,7 @@ import type { HeroVariant } from '@/lib/hero'
 import type { SaleCard } from '@/lib/hero-sale'
 import { Brand } from '@/components/Brand'
 import { ProductArt } from '@/components/ProductArt'
+import { PromoCarousel } from '@/components/PromoCarousel'
 import { ProductCard } from '@/components/ProductCard'
 import { BonusPromo } from '@/components/BonusPromo'
 import { CustomerReviews } from '@/components/CustomerReviews'
@@ -190,26 +191,31 @@ function InfoStrip() {
   )
 }
 
-/** Верх главной: витрина, категории и промо 3D-кухни. */
+/** Верх главной: витрина, категории и рекламный баннер. */
 export function HomeTop({ hero, sale }: { hero: HeroVariant; sale: SaleCard[] }) {
   return (
     <>
       <StorefrontHero variant={hero} sale={sale} />
       <CategoryTiles />
-      {/* баннер «Готовые кухни в 3D» уже зовёт в конструктор — второй раз не повторяем */}
-      {hero !== 'kitchens' && <KitchenPromo />}
+      {/* реклама: товар дня, новинка, хит и наш магазин парфюмерии (владелец 07.10) */}
+      <PromoCarousel />
     </>
   )
 }
 
-/** Всё, что ниже «Готовых кухонь в 3D». */
-export function HomeRest() {
+/**
+ * Всё, что ниже рекламного баннера. 3D-кухня — после первых товарных блоков (владелец 07.10): раньше она стояла
+ * сразу под баннером, и на телефоне два больших промо подряд занимали почти два экрана до первого товара.
+ */
+export function HomeRest({ hero }: { hero: HeroVariant }) {
   const shuffle = useShuffle()
   return (
     <>
       <DailySelection />
       <CampaignBanner />
       <HitMosaic />
+      {/* баннер «Готовые кухни в 3D» уже зовёт в конструктор — второй раз не повторяем */}
+      {hero !== 'kitchens' && <KitchenPromo />}
       <ReelsEntry />
       <BrandStrip />
       <SaleSection />

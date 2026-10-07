@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { phones, whatsappHref } from '@/data/contacts'
 import { SITE_URL } from '@/lib/seo'
@@ -16,6 +16,7 @@ import { AddToCartButton } from './AddToCartButton'
 import { FavoriteButton } from './FavoriteButton'
 import { CompareButton, CompareLink } from './CompareButton'
 import { PromoCountdown } from './PromoCountdown'
+import { BuyBar } from './BuyBar'
 
 function StockLine({ stock, hidden, preorder }: { stock: number; hidden?: boolean; preorder?: boolean }) {
   const { t } = useI18n()
@@ -187,6 +188,7 @@ export function ProductPurchase({
   const suggestions = variant ? [] : suggestCombos(product, colorKey, memoryKey)
   const chosenColorLabel = colorOptions.find((c) => c.key === colorKey)
   const chosenMemoryLabel = memoryOptions.find((m) => m.key === memoryKey)
+  const actions = useRef<HTMLDivElement>(null)
 
   return (
     <div className="purchase">
@@ -299,7 +301,7 @@ export function ProductPurchase({
         </div>
       )}
 
-      <div className="purchase__actions">
+      <div className="purchase__actions" ref={actions}>
         {variant ? (
           <AddToCartButton
             productId={product.id}
@@ -315,6 +317,16 @@ export function ProductPurchase({
         <FavoriteButton productId={product.id} variant="floating" />
         <CompareButton productId={product.id} />
       </div>
+      {variant && variant.stock > 0 && price !== null && price > 0 && product.price > 0 && (
+        <BuyBar
+          target={actions}
+          label={`${t.catalog.addToCart}: ${name}`}
+          productId={product.id}
+          variantId={variant.id}
+          price={price}
+          oldPrice={product.oldPrice}
+        />
+      )}
       <CompareLink className="purchase__compare" />
 
       <span className="bonus-hint">{t.checkout.sbonusNote}</span>

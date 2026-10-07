@@ -5,7 +5,8 @@ import { useEffect, useRef, useState } from 'react'
 import { categories } from '@/data/categories'
 import { buildCatalogHref } from '@/lib/links'
 import { useI18n } from '@/lib/i18n/I18nProvider'
-import { IconChevronDown } from './Icons'
+import { IconArrowUpRight, IconChevronDown } from './Icons'
+import { PERFUME } from '@/lib/partners'
 
 /**
  * Строка разделов под шапкой (только компьютер).
@@ -135,6 +136,11 @@ export function HeaderSubnav({
       <Link href={`/${lang}/kitchen/gallery`} className="subnav__link subnav__link--kitchen" aria-current={galleryCurrent}>
         {t.nav.kitchenGallery}
       </Link>
+      {/* Наш магазин парфюмерии — другой сайт, открывается в новой вкладке (владелец 07.10) */}
+      <a href={PERFUME.url} className="subnav__link subnav__link--kitchen subnav__link--out" target="_blank" rel="noopener">
+        {t.nav.perfume}
+        <IconArrowUpRight size={14} />
+      </a>
     </nav>
   )
 }

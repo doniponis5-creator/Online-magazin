@@ -4068,3 +4068,40 @@ html.dialog-open {
   font-weight: 400;
   color: var(--color-muted);
 }
+
+/* Телефон, страница товара: «цена + В корзину» внизу, пока основная кнопка не на экране (BuyBar, аудит 07.10).
+   Место и вид — как у напоминания о корзине (.cart-bar): оно на это время прячется, «Спросить» встаёт выше. */
+.buybar { display: none; }
+@media (max-width: 900px) {
+  .buybar {
+    position: fixed;
+    z-index: 118;
+    left: 12px;
+    right: 12px;
+    bottom: calc(var(--bottomnav-h) + 10px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 8px 8px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.97);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 10px 32px rgb(38 50 68 / 12%);
+    animation: cart-bar-in 220ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  }
+  .buybar__prices { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
+  .buybar__prices b { font-size: 19px; font-weight: 800; letter-spacing: -0.02em; color: var(--color-ink); }
+  .buybar__prices s { font-size: 12px; color: var(--color-muted); }
+  .buybar__label { font-size: 12px; color: var(--color-muted); }
+  .buybar .btn { flex: none; min-width: 148px; }
+  html.buybar-on .cart-bar { display: none; }
+  html.buybar-on .assistant { bottom: calc(var(--bottomnav-h) + 86px + env(safe-area-inset-bottom, 0px)); }
+  /* напоминание о корзине прячет «Спросить» (.cart-bar ~ .assistant); пока его место заняла полоса — «Спросить» снова виден */
+  html.buybar-on .cart-bar ~ .assistant { display: flex; }
+}
+@media (max-width: 900px) and (prefers-reduced-motion: reduce) {
+  .buybar { animation: none; }
+}

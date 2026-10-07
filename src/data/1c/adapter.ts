@@ -69,8 +69,9 @@ export function slugFromCode(code: string): string {
     .replace(/^-+|-+$/g, '')
 }
 
+/** Звёздочки — пометки сотрудников в 1С («Холодильник* AVANGARD»): покупателю они ничего не говорят (аудит 07.10). */
 function cleanName(name: string): string {
-  return name.replace(/\s+/g, ' ').trim()
+  return name.replace(/\*+/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
 /**

@@ -1,0 +1,92 @@
+/* Рекламный баннер под разделами (PromoCarousel, классы adband: .promo уже занят блоком бонусов). DESIGN.md: плоские плитки 16px, тонкая граница, Manrope;
+   фон у каждого слайда свой из палитры — лимон только мягкий (lemon-soft), крупных тёмных полотен нет. */
+
+.adband { position: relative; }
+.adband__track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  border-radius: 16px;
+  overscroll-behavior-x: contain;
+}
+.adband__track::-webkit-scrollbar { display: none; }
+
+.adband__slide {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr);
+  align-items: center;
+  gap: 24px;
+  min-height: 240px;
+  padding: 28px 32px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: #f7f9fc;
+  color: var(--color-ink);
+  text-decoration: none;
+}
+.adband__slide:focus-visible { outline: 3px solid var(--color-primary); outline-offset: -3px; }
+.adband__slide--sale { background: #f9fbdc; }
+.adband__slide--new { background: #eaf3ff; }
+.adband__slide--hit { background: #f7f9fc; }
+.adband__slide--perfume { background: #f3f2ed; }
+
+.adband__text { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; min-width: 0; }
+.adband__chip {
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--color-ink);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+.adband__slide--sale .adband__chip { background: var(--color-danger, #d33b2e); color: #fff; }
+.adband__title { font-size: clamp(22px, 2.4vw, 32px); font-weight: 800; line-height: 1.15; letter-spacing: -0.025em; }
+.adband__title--name {
+  font-size: clamp(18px, 1.9vw, 26px);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.adband__sub { font-size: 16px; color: #435064; line-height: 1.45; }
+.adband__price { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; }
+.adband__price b { font-size: clamp(22px, 2.2vw, 30px); font-weight: 800; letter-spacing: -0.02em; }
+.adband__price s { font-size: 14px; color: var(--color-muted); }
+.adband__cta { margin-top: 4px; pointer-events: none; }
+
+.adband__media { display: grid; place-items: center; height: 100%; min-height: 0; }
+.adband__media img { width: 100%; height: 100%; max-height: 220px; object-fit: contain; mix-blend-mode: multiply; }
+.adband__media--logo img { width: auto; max-width: 160px; height: auto; border-radius: 22px; mix-blend-mode: normal; }
+
+.adband__dots { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
+.adband__dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-border-strong, #c4cdd8);
+  cursor: pointer;
+  transition: width 200ms, background-color 200ms;
+}
+/* попасть пальцем проще: невидимая зона 24 px вокруг точки */
+.adband__dot { position: relative; }
+.adband__dot::after { content: ''; position: absolute; inset: -8px; }
+.adband__dot[aria-current] { width: 22px; background: var(--color-primary); }
+
+@media (max-width: 540px) {
+  .adband__slide { grid-template-columns: minmax(0, 1fr) 38%; gap: 10px; min-height: 190px; padding: 16px 14px 16px 16px; }
+  .adband__text { gap: 7px; }
+  .adband__sub { font-size: 13px; }
+  .adband__price s { font-size: 12px; }
+  .adband__media img { max-height: 150px; }
+  .adband__media--logo img { max-width: 104px; border-radius: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adband__dot { transition: none; }
+}
