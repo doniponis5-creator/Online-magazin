@@ -71,8 +71,8 @@
 - Коммитим по просьбе владельца. Не коммитим: `.env.local`,
   `smartcentr-site.tar.gz`, `review/_tmp-*`, папки агентов
   (`.agent/ .agents/ .claude/ .codex/ .cursor/ .gemini/ .zcode/`).
-  Одно исключение: `.claude/skills/caveman/` **коммитим** — этот навык
-  общий, его должны видеть и PC, и MacBook.
+  Исключения — навыки `.claude/skills/caveman/`, `banner/`, `smartcentr-product-card/`
+  **коммитим**: они общие, их должны видеть и PC, и MacBook (владелец 07.10).
 
 ## Где что лежит
 
@@ -198,7 +198,10 @@ storyreply|comments:<день>` пишет `shop_ig_bot._stat`; право `inst
 — своё фото, `--bg`, `--badge`, `--mark`); на сайт — `scripts/banners/upload_banner.py <имя> --title … --link …` (рабочая 1С
 по COM: список уходит целиком — прежние баннеры с датами сохраняются; тот же `--title` — только замена картинок;
 `--list`/`--off`/`--on`/`--remove ID`; `--test` смотрит на тот же боевой сервер). Всё это по шагам — навык `/banner`
-(`~/.claude/skills/banner/SKILL.md`, только на PC: 1С есть только там). Что сейчас на сайте — комментарий над `BANNERS`.
+(`.claude/skills/banner/SKILL.md`; ставить на сайт — только на PC: 1С есть только там).
+Карточка товара под ключ (текст, характеристики, 3 фото → рабочая 1С → сайт) — навык `/smartcentr-product-card`
+(`.claude/skills/smartcentr-product-card/`, перенесён из Codex): фото без генерации; чужой фон убирает `scripts/clean_bg.py`
+на rembg из `~/.claude/venvs/rembg` (не в git, ставится двумя командами из SKILL.md); сайт берёт каталог сам за 10–15 мин. Что сейчас на сайте — комментарий над `BANNERS`.
 Сайт держит ответ сервера 60 с (`revalidate`): после замены картинок до минуты видны старые, сбой запроса — до минуты
 автоматические слайды вместо баннеров (07.10 так было один раз, вернулось само).
 

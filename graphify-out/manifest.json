@@ -954,9 +954,9 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1791376441.4574003,
-    "seen": 1791376469.0571187,
-    "ast_hash": "accdc770ed1f8ecbfd4411e98ee08749",
+    "mtime": 1791377754.2437017,
+    "seen": 1791377778.1373522,
+    "ast_hash": "1077ffacfceea2e932998d8fc1377600",
     "semantic_hash": ""
   },
   "DESIGN.md": {
@@ -8007,6 +8007,48 @@
     "mtime": 1791376421.9839754,
     "seen": 1791376469.191064,
     "ast_hash": "ef1e25d45e9edc78799e89991c2c93e0",
+    "semantic_hash": ""
+  },
+  ".claude/skills/smartcentr-product-card/scripts/_onec.py": {
+    "mtime": 1791377739.5783207,
+    "seen": 1791377778.0776844,
+    "ast_hash": "446f49a98fedcc32f7c093fcc148b396",
+    "semantic_hash": ""
+  },
+  ".claude/skills/smartcentr-product-card/scripts/clean_bg.py": {
+    "mtime": 1791377741.0524108,
+    "seen": 1791377778.0776863,
+    "ast_hash": "15727d33f7f0c0ea9e24fcd40b380eb5",
+    "semantic_hash": ""
+  },
+  ".claude/skills/smartcentr-product-card/scripts/find_product.py": {
+    "mtime": 1791377739.5840182,
+    "seen": 1791377778.0776877,
+    "ast_hash": "df56bb5ce0cf55cbf555dd951e3b7700",
+    "semantic_hash": ""
+  },
+  ".claude/skills/smartcentr-product-card/scripts/publish_catalog.py": {
+    "mtime": 1791377739.591003,
+    "seen": 1791377778.0776892,
+    "ast_hash": "c63979717998735c843de0902bcdd928",
+    "semantic_hash": ""
+  },
+  ".claude/skills/smartcentr-product-card/scripts/set_photos.py": {
+    "mtime": 1791377739.591003,
+    "seen": 1791377778.0776904,
+    "ast_hash": "7dd3c7d766ffc1b1eee7e6dcaafff864",
+    "semantic_hash": ""
+  },
+  ".claude/skills/banner/SKILL.md": {
+    "mtime": 1791377739.535414,
+    "seen": 1791377778.136912,
+    "ast_hash": "4e701a497120703f0909482328caa7c9",
+    "semantic_hash": ""
+  },
+  ".claude/skills/smartcentr-product-card/SKILL.md": {
+    "mtime": 1791377741.0524108,
+    "seen": 1791377778.1370037,
+    "ast_hash": "85a3a2402a159ba2783349aa38501284",
     "semantic_hash": ""
   }
 }
