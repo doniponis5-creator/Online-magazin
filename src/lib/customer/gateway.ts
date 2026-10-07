@@ -10,6 +10,7 @@
 import 'server-only'
 import { callServer, mockOrdersOf, paymentMode } from '@/lib/orders/gateway'
 import { resolveHero, type HeroVariant } from '@/lib/hero'
+import { cleanBanners, type HomeBanner } from '@/lib/banners'
 
 export type BonusHistoryItem = { type: string; amount: number; note: string; date: string | null }
 export type CustomerOrderItem = {
@@ -219,6 +220,22 @@ export async function getHeroVariant(): Promise<HeroVariant> {
   } catch (error) {
     console.error('[settings] не удалось узнать анимацию баннера:', error)
     return resolveHero(undefined)
+  }
+}
+
+/**
+ * Баннеры главной из 1С («Панель сайта» → «Баннеры»): что показывать сегодня. Ответ живёт минуту, как и
+ * анимация баннера. Сервер молчит или баннеров нет — пустой список: главная покажет свой баннер (PromoCarousel).
+ */
+export async function getHomeBanners(): Promise<HomeBanner[]> {
+  if (paymentMode() === 'mock') return []
+  try {
+    const data = await callServer<{ banners?: unknown }>('/api/v1/webhook/site/banners', { method: 'GET', revalidate: 60 })
+    return cleanBanners(data.banners)
+  } catch (error) {
+    // 404 — сервер ещё без баннеров (обновится позже): это не поломка, журнал не засоряем
+    if ((error as { status?: number }).status !== 404) console.error('[banners] не удалось получить баннеры:', error)
+    return []
   }
 }
 

@@ -1,11 +1,13 @@
 'use client'
 
 import Link from 'next/link'
+import { getImageProps } from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { products, type Product } from '@/data/products'
 import { formatSom } from '@/lib/format'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { PERFUME } from '@/lib/partners'
+import { bannerHref, type HomeBanner } from '@/lib/banners'
 import { IconArrowUpRight, IconChevronRight } from './Icons'
 import './ad-band.css'
 
@@ -16,7 +18,10 @@ import './ad-band.css'
  * в настройках телефона останавливают. Лента — обычная прокрутка вбок с привязкой: палец на телефоне работает сам.
  */
 type Mark = 'sale' | 'new' | 'hit'
-export type PromoSlide = { kind: 'product'; mark: Mark; product: Product } | { kind: 'perfume' }
+export type PromoSlide =
+  | { kind: 'product'; mark: Mark; product: Product }
+  | { kind: 'perfume' }
+  | { kind: 'banner'; banner: HomeBanner }
 
 const purchasable = (p: Product) => p.price > 0 && Boolean(p.image) && p.variants.some((v) => v.stock > 0)
 
@@ -49,10 +54,13 @@ const WORDS = {
     perfumeChip: 'Биздин дүкөн', perfumeTitle: 'Kemal Usman парфюмериясы', perfumeText: 'Түп нуска жыттар, куюп сатылат', perfumeCta: 'Сайтка өтүү' },
 }
 
-export function PromoCarousel() {
+export function PromoCarousel({ banners = [] }: { banners?: HomeBanner[] }) {
   const { lang } = useI18n()
   const w = WORDS[lang === 'ky' ? 'ky' : 'ru']
-  const [slides] = useState(() => promoSlides(products))
+  // Баннеры из 1С («Панель сайта» → «Баннеры») — вместо автоматических слайдов; их нет — автоматические.
+  const [slides] = useState<PromoSlide[]>(() =>
+    banners.length ? banners.map((banner) => ({ kind: 'banner', banner })) : promoSlides(products),
+  )
   const track = useRef<HTMLDivElement>(null)
   const [active, setActive] = useState(0)
   const hold = useRef(false)
@@ -96,6 +104,7 @@ export function PromoCarousel() {
       <div className="adband__track" ref={track}>
         {slides.map((s, i) => {
           const label = `${w.slide} ${i + 1} / ${slides.length}`
+          if (s.kind === 'banner') return <BannerSlide key={`b${s.banner.id}`} banner={s.banner} label={label} eager={i === 0} />
           if (s.kind === 'perfume') {
             return (
               <a key="perfume" className="adband__slide adband__slide--perfume" href={PERFUME.url} target="_blank" rel="noopener"
@@ -136,11 +145,55 @@ export function PromoCarousel() {
       {slides.length > 1 && (
         <div className="adband__dots">
           {slides.map((s, i) => (
-            <button key={s.kind === 'perfume' ? 'perfume' : s.product.id} type="button" className="adband__dot"
+            <button key={s.kind === 'perfume' ? 'perfume' : s.kind === 'banner' ? `b${s.banner.id}` : s.product.id} type="button" className="adband__dot"
               aria-label={`${w.slide} ${i + 1}`} aria-current={i === active || undefined} onClick={() => go(i)} />
           ))}
         </div>
       )}
     </section>
+  )
+}
+
+/**
+ * Баннер из 1С — готовая картинка дизайнера на весь слайд. Телефону (до 600 px) — своя квадратная, если владелец
+ * её положил; иначе — та же широкая. next/image отдаёт каждому экрану картинку его размера (качество 90): тонкий
+ * текст на баннере не мылится, а телефон не качает 2400 px.
+ */
+function BannerSlide({ banner, label, eager }: { banner: HomeBanner; label: string; eager: boolean }) {
+  const { lang } = useI18n()
+  const { href, external } = bannerHref(banner.link, lang === 'ky' ? 'ky' : 'ru')
+  const alt = banner.title || label
+  const common = { alt, quality: 90, loading: eager ? ('eager' as const) : ('lazy' as const) }
+  const desktop = getImageProps({ ...common, src: banner.desktop.url, width: banner.desktop.w, height: banner.desktop.h, sizes: '(max-width: 1360px) 100vw, 1328px' }).props
+  const mobile = banner.mobile
+    ? getImageProps({ ...common, src: banner.mobile.url, width: banner.mobile.w, height: banner.mobile.h, sizes: '100vw' }).props
+    : null
+  const ratio = (img: { w: number; h: number }) => `${img.w} / ${img.h}`
+  const style = {
+    ['--adb-ratio' as string]: ratio(banner.desktop),
+    ['--adb-ratio-m' as string]: ratio(banner.mobile ?? banner.desktop),
+  }
+  const picture = (
+    <picture className="adband__picture">
+      {mobile && <source media="(max-width: 600px)" srcSet={mobile.srcSet} sizes={mobile.sizes} />}
+      <img {...desktop} alt={alt} className="adband__img" />
+    </picture>
+  )
+  if (!href) {
+    return (
+      <div className="adband__slide adband__slide--image" style={style} aria-roledescription="slide" aria-label={label}>
+        {picture}
+      </div>
+    )
+  }
+  return external ? (
+    <a className="adband__slide adband__slide--image" style={style} href={href} target="_blank" rel="noopener"
+      aria-roledescription="slide" aria-label={`${label}: ${alt}`}>
+      {picture}
+    </a>
+  ) : (
+    <Link className="adband__slide adband__slide--image" style={style} href={href} aria-roledescription="slide" aria-label={`${label}: ${alt}`}>
+      {picture}
+    </Link>
   )
 }

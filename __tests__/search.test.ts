@@ -128,10 +128,38 @@ describe('рекламный баннер (07.10)', () => {
       item('n', 'Новинка', { badge: 'new' }),
       item('h', 'Хит', { badge: 'hit' }),
     ]
-    const slides = promoSlides(list).map((s) => (s.kind === 'perfume' ? 'perfume' : `${s.mark}:${s.product.id}`))
+    const slides = promoSlides(list).map((s) => (s.kind === 'product' ? `${s.mark}:${s.product.id}` : s.kind))
     expect(slides).toEqual(['new:n', 'perfume', 'hit:h'])
     // хита нет — самая большая скидка
     const noHit = promoSlides([item('n', 'Новинка', { badge: 'new' }), item('s', 'Скидка', { oldPrice: 20000 })])
-    expect(noHit.map((s) => (s.kind === 'perfume' ? 'perfume' : `${s.mark}:${s.product.id}`))).toEqual(['new:n', 'perfume', 'sale:s'])
+    expect(noHit.map((s) => (s.kind === 'product' ? `${s.mark}:${s.product.id}` : s.kind))).toEqual(['new:n', 'perfume', 'sale:s'])
+  })
+})
+
+describe('баннеры из 1С (src/lib/banners.ts)', () => {
+  it('ссылка 1С → адрес сайта на языке покупателя; чужое — без ссылки', async () => {
+    const { bannerHref } = await import('@/lib/banners')
+    expect(bannerHref('cat:tv', 'ky')).toEqual({ href: '/ky/catalog?cat=tv', external: false })
+    expect(bannerHref('cat:Холодильники', 'ru')).toEqual({ href: '/ru/catalog?cat=fridges', external: false })
+    expect(bannerHref('cat:Нет такого', 'ru').href).toBeNull()
+    expect(bannerHref('product:ЦБ-00001882', 'ru').href).toMatch(/^\/ru\/product\/[a-z0-9-]+$/)
+    expect(bannerHref('/ru/catalog?sale=1', 'ky')).toEqual({ href: '/ky/catalog?sale=1', external: false })
+    expect(bannerHref('https://kemalusman.kg/', 'ru')).toEqual({ href: 'https://kemalusman.kg/', external: true })
+    expect(bannerHref('javascript:alert(1)', 'ru').href).toBeNull()
+    expect(bannerHref('//evil.com', 'ru').href).toBeNull()
+    expect(bannerHref('', 'ru').href).toBeNull()
+  })
+
+  it('картинка — только с нашего сервера; без картинки для компьютера баннер не показываем', async () => {
+    const { cleanBanners } = await import('@/lib/banners')
+    const ok = { url: 'https://api.smartcentr.store/api/v1/shop/photos/banner/1-desktop-' + 'a'.repeat(32) + '.jpg', w: 2400, h: 1000 }
+    const list = cleanBanners([
+      { id: 1, title: 'Скидки', link: 'cat:tv', desktop: ok, mobile: null },
+      { id: 2, title: 'Чужая', link: '', desktop: { ...ok, url: 'https://evil.com/x.jpg' } },
+      { id: 3, title: 'Без картинки', link: '' },
+      'мусор',
+    ])
+    expect(list.map((b) => b.id)).toEqual([1])
+    expect(cleanBanners(null)).toEqual([])
   })
 })

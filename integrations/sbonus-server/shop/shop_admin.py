@@ -24,6 +24,10 @@
   POST /webhook/1c/shop/promo/ig-preview  подпись 1С картинка и текст поста Instagram (ничего не публикует)
   POST /webhook/1c/shop/promo/ig-post     подпись 1С опубликовать пост в Instagram (в фоне)
   GET  /webhook/1c/shop/promo/ig-history  ключ 1С    последние 20 постов
+  GET  /webhook/1c/shop/banners          ключ 1С    баннеры главной: поля, картинки (адрес, размер)
+  POST /webhook/1c/shop/banners          подпись 1С сохранить список (порядок, поля; кого нет — удалить)
+  POST /webhook/1c/shop/banners/{id}/{desktop|mobile}  подпись 1С  картинка баннера (тело — файл; пусто — убрать)
+  GET  /webhook/site/banners             подпись сайта  баннеры, которые показывать сегодня
 
 Настройки лежат в таблице settings SBonus и действуют сразу, без перезапуска.
 Значения проверяются здесь: из 1С может прийти что угодно, а в базе должно
@@ -798,6 +802,141 @@ async def ig_history(_=Depends(_verify_1c_key)):
     from . import shop_ig_post as post
 
     return {"ok": True, "items": await post.history()}
+
+
+# ── Баннеры главной (владелец 07.10) ──────────────────────────────────────────
+# Картинки — готовые от дизайнера, лежат в базе как есть (shop_banners). Правила — shop_banners_rules.py.
+
+BANNER_PATH = "/api/v1/shop/photos/banner/{id}-{kind}-{md5}.{ext}"
+
+
+def _banner_url(row, kind: str) -> dict | None:
+    md5, mime = row[f"{kind}_md5"], row[f"{kind}_mime"]
+    if not md5:
+        return None
+    from . import shop_banners_rules as br
+    ext = next((e for m, e in br.TYPES.values() if m == mime), "jpg")
+    base = _cfg("shop_public_api_base", "https://api.smartcentr.store").rstrip("/")
+    return {
+        "url": base + BANNER_PATH.format(id=row["id"], kind=kind, md5=md5, ext=ext),
+        "w": row[f"{kind}_w"],
+        "h": row[f"{kind}_h"],
+    }
+
+
+async def _banners(db: AsyncSession) -> list[dict]:
+    rows = (await db.execute(text(
+        "SELECT id, sort, title, link, active, starts, ends, desktop_md5, desktop_mime, desktop_w, desktop_h, "
+        "mobile_md5, mobile_mime, mobile_w, mobile_h FROM shop_banners ORDER BY sort, id"
+    ))).mappings().all()
+    return [
+        {
+            "id": r["id"], "title": r["title"], "link": r["link"], "active": r["active"],
+            "starts": r["starts"].isoformat() if r["starts"] else None,
+            "ends": r["ends"].isoformat() if r["ends"] else None,
+            "desktop": _banner_url(r, "desktop"), "mobile": _banner_url(r, "mobile"),
+        }
+        for r in rows
+    ]
+
+
+def _banner_limits() -> dict:
+    from . import shop_banners_rules as br
+    return {
+        "max": br.MAX_BANNERS, "titleMax": br.TITLE_MAX, "linkMax": br.LINK_MAX, "bytesMax": br.MAX_IMAGE_BYTES,
+        "desktop": br.KINDS["desktop"]["advice"], "mobile": br.KINDS["mobile"]["advice"],
+    }
+
+
+@router_1c_admin.get("/banners")
+async def read_banners(_=Depends(_verify_1c_key), db: AsyncSession = Depends(get_db)):
+    return {"ok": True, "banners": await _banners(db), "limits": _banner_limits()}
+
+
+class SaveBanners(BaseModel):
+    banners: list[dict] = []
+
+
+@router_1c_admin.post("/banners")
+async def save_banners(request: Request, db: AsyncSession = Depends(get_db)):
+    """Весь список разом: порядок — как прислали; кого нет в списке — удалён; без id — новый."""
+    from . import shop_banners_rules as br
+
+    payload = SaveBanners.parse_raw(await _verify_1c_body(request))
+    if len(payload.banners) > br.MAX_BANNERS:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"баннеров не больше {br.MAX_BANNERS}")
+    try:
+        items = [br.clean_banner(b) for b in payload.banners]
+    except ValueError as error:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(error))
+    existing = {row[0] for row in (await db.execute(text("SELECT id FROM shop_banners"))).all()}
+    keep = {b["id"] for b in items if b["id"] in existing}
+    gone = existing - keep
+    if gone:
+        await db.execute(text("DELETE FROM shop_banners WHERE id = ANY(:ids)"), {"ids": list(gone)})
+    for sort, b in enumerate(items):
+        fields = {"sort": sort, "title": b["title"], "link": b["link"], "active": b["active"],
+                  "starts": b["starts"], "ends": b["ends"]}
+        if b["id"] in keep:
+            await db.execute(text(
+                "UPDATE shop_banners SET sort = :sort, title = :title, link = :link, active = :active, "
+                "starts = :starts, ends = :ends, updated_at = NOW() AT TIME ZONE 'UTC' WHERE id = :id"
+            ), {**fields, "id": b["id"]})
+        else:
+            await db.execute(text(
+                "INSERT INTO shop_banners (sort, title, link, active, starts, ends) "
+                "VALUES (:sort, :title, :link, :active, :starts, :ends)"
+            ), fields)
+    await db.commit()
+    logger.info(f"banners saved: {len(items)}, removed {len(gone)}")
+    return {"ok": True, "banners": await _banners(db), "limits": _banner_limits()}
+
+
+@router_1c_admin.post("/banners/{banner_id}/{kind}")
+async def save_banner_image(banner_id: int, kind: str, request: Request, db: AsyncSession = Depends(get_db)):
+    """Тело — файл картинки как есть; пустое тело — убрать картинку (для телефона сайт возьмёт компьютерную)."""
+    from . import shop_banners_rules as br
+
+    body = await _verify_1c_body(request)
+    if kind not in br.KINDS:
+        raise HTTPException(404)
+    if not (await db.execute(text("SELECT 1 FROM shop_banners WHERE id = :id"), {"id": banner_id})).first():
+        raise HTTPException(404, "баннер не найден — сначала сохраните список")
+    if not body:
+        await db.execute(text(
+            f"UPDATE shop_banners SET {kind} = NULL, {kind}_mime = NULL, {kind}_md5 = NULL, {kind}_w = NULL, "
+            f"{kind}_h = NULL, updated_at = NOW() AT TIME ZONE 'UTC' WHERE id = :id"
+        ), {"id": banner_id})
+        await db.commit()
+        return {"ok": True, "banners": await _banners(db)}
+    problem = br.image_problem(kind, body)
+    if problem:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, problem)
+    info = br.image_info(body)
+    await db.execute(text(
+        f"UPDATE shop_banners SET {kind} = :content, {kind}_mime = :mime, {kind}_md5 = :md5, {kind}_w = :w, "
+        f"{kind}_h = :h, updated_at = NOW() AT TIME ZONE 'UTC' WHERE id = :id"
+    ), {"content": body, "mime": info["mime"], "md5": hashlib.md5(body).hexdigest(), "w": info["w"],
+        "h": info["h"], "id": banner_id})
+    await db.commit()
+    logger.info(f"banner {banner_id} {kind}: {info['w']}x{info['h']} {len(body)} bytes")
+    return {"ok": True, "banners": await _banners(db)}
+
+
+@router_site_admin.get("/banners")
+async def site_banners(request: Request, db: AsyncSession = Depends(get_db)):
+    """Что показать на главной сегодня (по Бишкеку): включён, есть картинка для компьютера, сегодня в сроке."""
+    from . import shop_banners_rules as br
+
+    _verify_site_path(request)
+    today = (datetime.now(timezone.utc) + SHOP_OFFSET).date()
+    shown = [
+        {"id": b["id"], "title": b["title"], "link": b["link"], "desktop": b["desktop"], "mobile": b["mobile"]}
+        for b in await _banners(db)
+        if br.showing_today(b["active"], date.fromisoformat(b["starts"]) if b["starts"] else None,
+                            date.fromisoformat(b["ends"]) if b["ends"] else None, today, bool(b["desktop"]))
+    ]
+    return {"ok": True, "banners": shown}
 
 
 @router_site_admin.post("/visit")

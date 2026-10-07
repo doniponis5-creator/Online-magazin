@@ -10,6 +10,7 @@
 Публично:
   GET  /api/v1/shop/photos/{key}.jpg               фото товара (кэш на год: ключ меняется вместе с фото)
   GET  /api/v1/shop/photos/ig/{v}.jpg              картинка поста Instagram (её забирает Meta; shop_ig_post.py)
+  GET  /api/v1/shop/photos/banner/{id}-{kind}-{md5}.{ext}  картинка баннера главной (shop_admin.py, кэш на год)
 Только для чата (на сайте не показываются):
   POST /api/v1/webhook/1c/shop/chat-extra          (HMAC тела)  товары со склада, которых нет на сайте, с ценой из 1С
   GET  /api/v1/webhook/site/chat-extra             (HMAC пути)  те же товары для чата
@@ -217,6 +218,25 @@ async def instagram_post_image(v: str):
     if not body:
         raise HTTPException(404)
     return Response(content=body, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=86400"})
+
+
+BANNER_RE = re.compile(r"^(\d{1,9})-(desktop|mobile)-([0-9a-f]{32})\.(jpg|png|webp)$")
+
+
+# Картинка баннера: md5 в адресе — новая картинка получает новый адрес, поэтому кэш на год.
+@router_public_photos.get("/banner/{name}")
+async def banner_image(name: str, db: AsyncSession = Depends(get_db)):
+    m = BANNER_RE.match(name)
+    if not m:
+        raise HTTPException(404)
+    banner_id, kind, md5 = int(m.group(1)), m.group(2), m.group(3)
+    row = (await db.execute(
+        text(f"SELECT {kind}, {kind}_mime, {kind}_md5 FROM shop_banners WHERE id = :id"), {"id": banner_id}
+    )).first()
+    if not row or not row[0] or row[2] != md5:
+        raise HTTPException(404)
+    return Response(content=bytes(row[0]), media_type=row[1] or "image/jpeg",
+                    headers={"Cache-Control": "public, max-age=31536000, immutable"})
 
 
 @router_public_photos.get("/{key}.jpg")

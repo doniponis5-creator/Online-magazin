@@ -182,6 +182,15 @@ storyreply|comments:<день>` пишет `shop_ig_bot._stat`; право `inst
 (`/app/data/reviews/`), не в SBonus. Владелец скрывает плохие на
 `/panel/reviews?key=…`. Подробности — `docs/HANDOFF.md` §2.1a.
 
+**Баннеры главной из 1С (07.10.2026).** 1С «Панель сайта» → вкладка «Баннеры» (`ПанельСайтаМодуль.bsl`
+`#Область Баннеры`, запросы — `ЗаказыСайтаСервер.bsl` `БаннерыСайта`/`СохранитьБаннерыСайта`/`ЗагрузитьКартинкуБаннера`)
+→ `webhook/1c/shop/banners` в `shop_admin.py` (правила без импортов приложения — `shop_banners_rules.py`: ≤ 10 баннеров,
+картинка ≤ 5 МБ, компьютер 2400×1000 (от 1200 px, 1,6–4 : 1), телефон 1080×1080 (от 600 px, 0,6–1,5 : 1); миграция `012`,
+картинки в базе) → сайт `GET webhook/site/banners` → `getHomeBanners()` (`gateway.ts`) → `src/lib/banners.ts` → `PromoCarousel`:
+есть хоть один баннер — показываются они, нет — автоматические слайды как раньше. Картинки — `/api/v1/shop/photos/banner/<имя>`
+(`shop_catalog.py`, кэш год, имя меняется с картинкой). «Куда ведёт»: код товара, название раздела, `/ru/…` или `https://…`
+(в 1С превращается в `product:`/`cat:`). Цен на картинках не рисуем — цена меняется, картинка нет.
+
 ## graphify
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.

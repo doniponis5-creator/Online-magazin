@@ -19,6 +19,7 @@ import type { SaleCard } from '@/lib/hero-sale'
 import { Brand } from '@/components/Brand'
 import { ProductArt } from '@/components/ProductArt'
 import { PromoCarousel } from '@/components/PromoCarousel'
+import type { HomeBanner } from '@/lib/banners'
 import { ProductCard } from '@/components/ProductCard'
 import { BonusPromo } from '@/components/BonusPromo'
 import { CustomerReviews } from '@/components/CustomerReviews'
@@ -192,13 +193,13 @@ function InfoStrip() {
 }
 
 /** Верх главной: витрина, категории и рекламный баннер. */
-export function HomeTop({ hero, sale }: { hero: HeroVariant; sale: SaleCard[] }) {
+export function HomeTop({ hero, sale, banners }: { hero: HeroVariant; sale: SaleCard[]; banners: HomeBanner[] }) {
   return (
     <>
       <StorefrontHero variant={hero} sale={sale} />
       <CategoryTiles />
-      {/* реклама: товар дня, новинка, хит и наш магазин парфюмерии (владелец 07.10) */}
-      <PromoCarousel />
+      {/* реклама: баннеры из 1С; их нет — новинка, наш магазин парфюмерии, хит (владелец 07.10) */}
+      <PromoCarousel banners={banners} />
     </>
   )
 }
