@@ -954,9 +954,9 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1791375943.4357772,
-    "seen": 1791375974.8723655,
-    "ast_hash": "194a031f85f8ed3efecb80be55a51a6d",
+    "mtime": 1791376441.4574003,
+    "seen": 1791376469.0571187,
+    "ast_hash": "accdc770ed1f8ecbfd4411e98ee08749",
     "semantic_hash": ""
   },
   "DESIGN.md": {
@@ -7566,9 +7566,9 @@
     "semantic_hash": ""
   },
   "scripts/banners/make_banners.py": {
-    "mtime": 1791375915.2511091,
-    "seen": 1791375974.8720367,
-    "ast_hash": "e212baf698176576a33d4865d0824264",
+    "mtime": 1791376138.105502,
+    "seen": 1791376468.9340155,
+    "ast_hash": "4e0acad4d18a30d0ca5e0c1e2dcb9469",
     "semantic_hash": ""
   },
   "src/components/BuyBar.tsx": {
@@ -7698,50 +7698,50 @@
     "semantic_hash": ""
   },
   "review/banners/1-rassrochka-desktop.jpg": {
-    "mtime": 1791375917.6156788,
-    "seen": 1791375974.8727248,
+    "mtime": 1791376138.3987482,
+    "seen": 1791376469.1898627,
     "ast_hash": "e599070796f32162b6766d4ef0c3fc86",
     "semantic_hash": ""
   },
   "review/banners/1-rassrochka-phone.jpg": {
-    "mtime": 1791375917.671602,
-    "seen": 1791375974.8727255,
+    "mtime": 1791376138.4429078,
+    "seen": 1791376469.189865,
     "ast_hash": "0710a941227d5dbd6a876182fe5fec03",
     "semantic_hash": ""
   },
   "review/banners/2-zima-ups-desktop.jpg": {
-    "mtime": 1791375919.5818856,
-    "seen": 1791375974.872726,
+    "mtime": 1791376138.492794,
+    "seen": 1791376469.1898673,
     "ast_hash": "cb755565d2a8e913a9624999d1c77238",
     "semantic_hash": ""
   },
   "review/banners/2-zima-ups-phone.jpg": {
-    "mtime": 1791375919.6436615,
-    "seen": 1791375974.8727267,
+    "mtime": 1791376138.5344644,
+    "seen": 1791376469.1898704,
     "ast_hash": "367d1d42c2325703bef07f1fe9129fa2",
     "semantic_hash": ""
   },
   "review/banners/3-kemal-usman-desktop.jpg": {
-    "mtime": 1791375919.7233372,
-    "seen": 1791375974.8727276,
+    "mtime": 1791376138.5765488,
+    "seen": 1791376469.1898727,
     "ast_hash": "49105c9166d2891dfd4445ee15bbaa43",
     "semantic_hash": ""
   },
   "review/banners/3-kemal-usman-phone.jpg": {
-    "mtime": 1791375919.783127,
-    "seen": 1791375974.872728,
+    "mtime": 1791376138.6119933,
+    "seen": 1791376469.1898751,
     "ast_hash": "d4b6361d50d4a651af850ce8b2bdec7d",
     "semantic_hash": ""
   },
   "review/banners/4-skidki-desktop.jpg": {
-    "mtime": 1791375921.5112329,
-    "seen": 1791375974.8727286,
+    "mtime": 1791376138.6631634,
+    "seen": 1791376469.1898775,
     "ast_hash": "e070e9f7d5724eade9083415aa2570f0",
     "semantic_hash": ""
   },
   "review/banners/4-skidki-phone.jpg": {
-    "mtime": 1791375921.5627406,
-    "seen": 1791375974.872729,
+    "mtime": 1791376138.7049813,
+    "seen": 1791376469.1898792,
     "ast_hash": "813618e77c68a44ee187576281207b82",
     "semantic_hash": ""
   },
@@ -7983,6 +7983,30 @@
     "mtime": 1791375904.193707,
     "seen": 1791375974.8728158,
     "ast_hash": "9a3eadcb01ae719ba5dfb0f3abbd108a",
+    "semantic_hash": ""
+  },
+  "scripts/banners/upload_banner.py": {
+    "mtime": 1791376383.3016226,
+    "seen": 1791376468.9340215,
+    "ast_hash": "58ca15e39bb36f9717d8bf04326eca7a",
+    "semantic_hash": ""
+  },
+  "review/banners/_photos/cb-00002129.jpg": {
+    "mtime": 1791376420.925174,
+    "seen": 1791376469.1906087,
+    "ast_hash": "57b51e82be0516cea32a3a20c282d4ab",
+    "semantic_hash": ""
+  },
+  "review/banners/_photos/cb-00002230.jpg": {
+    "mtime": 1791376421.4963858,
+    "seen": 1791376469.1906114,
+    "ast_hash": "fee68df043b01d63823d5034b5d7addb",
+    "semantic_hash": ""
+  },
+  "review/banners/_photos/cb-00002320.jpg": {
+    "mtime": 1791376421.9839754,
+    "seen": 1791376469.191064,
+    "ast_hash": "ef1e25d45e9edc78799e89991c2c93e0",
     "semantic_hash": ""
   }
 }

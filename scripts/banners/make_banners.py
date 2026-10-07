@@ -40,7 +40,7 @@ DANGER = (211, 59, 46)
 # как slugFromCode в src/data/1c/adapter.ts: «ЦБ-00001234» → «cb-00001234»
 TRANSLIT = dict(zip("абвгдеёзийклмнопрстуфхцыэңөү", "abvgdeezijklmnoprstufhcyenou"))
 TRANSLIT.update({"ж": "zh", "ч": "ch", "ш": "sh", "щ": "sch", "ю": "yu", "я": "ya", "ъ": "", "ь": "", "й": "y"})
-_photos = {}
+_catalog = []
 
 
 def fetch(url):
@@ -53,17 +53,38 @@ def slug(code):
     return "-".join(p for p in "".join(ch if ch.isascii() and ch.isalnum() else "-" for ch in raw).split("-") if p)
 
 
+def catalog():
+    """Товары сайта: id (= slug кода 1С), n — название, c — раздел, p — цена, o — старая цена, s — остаток, img."""
+    if not _catalog:
+        with fetch(SNAPSHOT) as r:
+            _catalog.extend(json.load(r)["items"])
+    return _catalog
+
+
+def code_of(item_id):
+    return "ЦБ-" + item_id[3:] if item_id.startswith("cb-") else item_id
+
+
+def find(query, limit=12):
+    """Товары, в названии или разделе которых есть все слова запроса: в наличии и со скидкой — первыми."""
+    words = query.lower().split()
+    hits = [i for i in catalog() if i.get("img") and all(w in f"{i['n']} {i['c']} {i.get('b', '')}".lower() for w in words)]
+    hits.sort(key=lambda i: (-(i.get("s", 0) > 0), -bool(i.get("o")), -i["p"]))
+    for i in hits[:limit]:
+        old = f" (было {i['o']})" if i.get("o") else ""
+        print(f"{code_of(i['id'])}  {i['n']}  · {i['c']} · {i['p']} сом{old} · остаток {i.get('s', 0)}")
+    if not hits:
+        print("ничего не нашлось — попробуйте другое слово")
+
+
 def photo(code):
-    """Главное фото товара по коду 1С; скачанное лежит в review/banners/_photos."""
+    """Главное фото товара по коду 1С (или slug «cb-…»); скачанное лежит в review/banners/_photos."""
     CACHE.mkdir(parents=True, exist_ok=True)
     cache = CACHE / f"{slug(code)}.jpg"
     if not cache.exists():
-        if not _photos:
-            with fetch(SNAPSHOT) as r:
-                _photos.update({i["id"]: i.get("img") for i in json.load(r)["items"]})
-        url = _photos.get(slug(code))
+        url = next((i.get("img") for i in catalog() if i["id"] == slug(code)), None)
         if not url:
-            sys.exit(f"товара {code} нет на сайте или у него нет фото — замените код в BANNERS")
+            sys.exit(f"товара {code} нет на сайте или у него нет фото — возьмите другой код (--find)")
         with fetch(url) as r:
             cache.write_bytes(r.read())
     return Image.open(cache).convert("RGB")
@@ -157,8 +178,9 @@ def banner(name, bg, chip, title, ky, cta, visual, w, h):
             break
         f_title = font(F800, int(f_title.size * 0.92))
     y = int(h * 0.15) if wide else 72
-    _, y2 = pill(d, (pad, y), chip, f_chip, WHITE, INK, int(30 * (k if wide else 1)), int(14 * (k if wide else 1)))
-    y = y2 + int(44 * (k if wide else 0.8))
+    if chip.strip():  # плашки может не быть — тогда заголовок сразу сверху
+        _, y2 = pill(d, (pad, y), chip, f_chip, WHITE, INK, int(30 * (k if wide else 1)), int(14 * (k if wide else 1)))
+        y = y2 + int(44 * (k if wide else 0.8))
     for line in wrap(d, title, f_title, text_w):
         d.text((pad, y), line, font=f_title, fill=INK)
         y += int(f_title.size * 1.12)
@@ -247,7 +269,7 @@ class PhotoVisual:
         self.file, self.phone_top = file, phone_top
 
     def __call__(self, img, wide, w, h, pad):
-        src = Image.open(ASSETS / self.file).convert("RGB")
+        src = Image.open(ASSETS / self.file).convert("RGB")  # абсолютный путь ASSETS / не меняет
         cw = w - pad - 1100
         c = photo_card(src, (0, 0, src.width, src.height), (cw, int(cw * src.height / src.width)), 44)
         img.paste(c, (1100, (h - c.height) // 2), c)
@@ -299,12 +321,52 @@ BANNERS = [
      "", "Все скидки  ›", products(["ЦБ-00002467", "ЦБ-00002468", "ЦБ-00002355"], badge="−%")),
 ]
 
-if __name__ == "__main__":
-    sys.stdout.reconfigure(encoding="utf-8")
-    only = sys.argv[1:]
-    for name, bg, chip, title, ky, cta, visual in BANNERS:
-        if only and name not in only:
-            continue
+BACKGROUNDS = {"lemon": (249, 251, 220), "blue": (234, 243, 255), "cream": (246, 236, 226),
+               "grey": (247, 249, 252), "mint": (232, 246, 238), "rose": (250, 236, 238)}
+
+
+def draw_all(items):
+    for name, bg, chip, title, ky, cta, visual in items:
         for w, h in ((2400, 1000), (1080, 1080)):
             p = banner(name, bg, chip, title, ky, cta, visual, w, h)
             print(p.relative_to(ROOT), round(p.stat().st_size / 1024), "КБ")
+
+
+if __name__ == "__main__":
+    import argparse
+
+    sys.stdout.reconfigure(encoding="utf-8")
+    ap = argparse.ArgumentParser(description="Баннеры главной: без ключей — все из BANNERS; имена — только они; "
+                                             "--title … — новый баннер одной командой; --find — подобрать товары.")
+    ap.add_argument("names", nargs="*", help="имена из BANNERS (1-rassrochka …)")
+    ap.add_argument("--find", help="показать товары сайта по словам: «холодильник», «samsung телевизор»")
+    ap.add_argument("--name", help="имя файла нового баннера (латиница): 5-holodilniki")
+    ap.add_argument("--bg", default="grey", choices=sorted(BACKGROUNDS), help="фон")
+    ap.add_argument("--chip", default="", help="плашка над заголовком: «Скидки недели»")
+    ap.add_argument("--title", help="заголовок; «|» — перенос, «~» — пробел без переноса")
+    ap.add_argument("--cta", help="текст кнопки (стрелка › добавится сама)")
+    ap.add_argument("--codes", help="три кода 1С через запятую, первый — крупнее: ЦБ-00002385,ЦБ-00002233,ЦБ-00002232")
+    ap.add_argument("--badge", default=None, help="наклейка на главном товаре: «−%%», «Хит», «Новинка»")
+    ap.add_argument("--photo", help="своё фото (≈ 3:2) вместо товаров — путь к файлу")
+    ap.add_argument("--phone-top", type=int, default=40, help="для --photo: с какой высоты фото резать полосу на телефоне")
+    ap.add_argument("--mark", help="знак партнёра из scripts/banners/assets/ (mislamic.png)")
+    a = ap.parse_args()
+    if a.find:
+        find(a.find)
+    elif a.title:
+        if not (a.name and a.cta and (a.codes or a.photo)):
+            ap.error("для нового баннера нужны --name, --title, --cta и --codes или --photo")
+        if a.photo:
+            visual = photo_visual(str(Path(a.photo).resolve()), a.phone_top)
+        else:
+            codes = [c.strip() for c in a.codes.split(",") if c.strip()]
+            if len(codes) != 3:
+                ap.error("--codes: нужно ровно три кода")
+            visual = products(codes, badge=a.badge)
+        if a.mark:
+            if a.photo:
+                ap.error("--mark только вместе с --codes")
+            visual = with_mark(visual, a.mark)
+        draw_all([(a.name, BACKGROUNDS[a.bg], a.chip, a.title, "", f"{a.cta.rstrip(' ›')}  ›", visual)])
+    else:
+        draw_all([b for b in BANNERS if not a.names or b[0] in a.names])
