@@ -2986,6 +2986,14 @@ main#content {
   letter-spacing: 0.02em;
 }
 
+/* сотые доли секунды — чуть тише основных цифр, чтобы мелькание не спорило с ценой */
+.promo-timer__ms {
+  display: inline-block;
+  min-width: 2.4ch;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
 .promo-timer--inline {
   padding: 5px 12px;
   font-size: 13px;

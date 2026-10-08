@@ -35,15 +35,36 @@ export function PromoCountdown({
   const { t } = useI18n()
   const [left, setLeft] = useState<number | null>(null)
 
+  // Сотые доли секунды бегут только у крупного таймера (страница товара, главная — владелец 08.10): у карточек
+  // каталога их десятки, и телефон тратил бы кадры. «Меньше движения» в настройках телефона — без них.
+  const [fast, setFast] = useState(false)
+  useEffect(() => {
+    setFast(variant === 'inline' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+  }, [variant])
+
   useEffect(() => {
     if (!until) return setLeft(null)
     // Считаем после монтирования: на сервере и на клиенте «сейчас» разное,
     // и React ругался бы на расхождение разметки.
     const tick = () => setLeft(msLeft(until))
     tick()
-    const id = setInterval(tick, 1000)
-    return () => clearInterval(id)
-  }, [until])
+    if (!fast) {
+      const id = setInterval(tick, 1000)
+      return () => clearInterval(id)
+    }
+    // ~25 раз в секунду, и только пока вкладка видна (requestAnimationFrame сам засыпает в фоне)
+    let frame = 0
+    let last = 0
+    const loop = (now: number) => {
+      if (now - last >= 40) {
+        last = now
+        tick()
+      }
+      frame = requestAnimationFrame(loop)
+    }
+    frame = requestAnimationFrame(loop)
+    return () => cancelAnimationFrame(frame)
+  }, [until, fast])
 
   if (left === null || left <= 0) return null
 
@@ -52,6 +73,7 @@ export function PromoCountdown({
   const hours = Math.floor((total % 86400) / 3600)
   const minutes = Math.floor((total % 3600) / 60)
   const seconds = total % 60
+  const hundredths = Math.floor((left % 1000) / 10)
 
   const soon = left < 3600_000
 
@@ -70,6 +92,7 @@ export function PromoCountdown({
       <strong className="promo-timer__value">
         {days > 0 && `${days} ${t.promo.days} `}
         {two(hours)}:{two(minutes)}:{two(seconds)}
+        {fast && <span className="promo-timer__ms">.{two(hundredths)}</span>}
       </strong>
     </span>
   )

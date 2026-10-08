@@ -125,12 +125,16 @@ def card(img, size, radius):
     return c
 
 
-def pill(draw, xy, text, fnt, fill, color, pad_x, pad_y):
+def pill(draw, xy, text, fnt, fill, color, pad_x, pad_y, radius=None, border=0):
+    """Капсула (плашка) или кнопка: radius задан — прямоугольник со скруглением, как .btn на сайте (12 px)."""
     x, y = xy
     w = draw.textlength(text, font=fnt)
     asc, desc = fnt.getmetrics()
     h = asc + desc
-    draw.rounded_rectangle((x, y, x + w + 2 * pad_x, y + h + 2 * pad_y), (h + 2 * pad_y) // 2, fill=fill)
+    r = (h + 2 * pad_y) // 2 if radius is None else radius
+    # border — белая рамка вокруг кнопки (владелец 08.10: лимон на светлом фоне «как кнопка» только с ней)
+    draw.rounded_rectangle((x, y, x + w + 2 * pad_x, y + h + 2 * pad_y), r, fill=fill,
+                           outline=WHITE if border else None, width=border or 1)
     draw.text((x + pad_x, y + pad_y), text, font=fnt, fill=color)
     return x + w + 2 * pad_x, y + h + 2 * pad_y
 
@@ -165,9 +169,13 @@ def banner(name, bg, chip, title, ky, cta, visual, w, h):
     k = w / 2400 if wide else w / 1080
     pad = int((140 if wide else 72) * (1 if wide else k))
     text_w = int(w * 0.44) if wide else w - 2 * pad
-    f_chip, f_title, f_ky, f_cta = (font(F600, int(46 * k)), font(F800, int(118 * k)), font(F600, int(58 * k)),
-                                    font(F800, int(52 * k))) if wide else (
-        font(F600, 38), font(F800, 86), font(F600, 44), font(F800, 44))
+    if wide and isinstance(visual, PhotoVisual):
+        text_w = 1100 - pad - 60  # фото встаёт с x=1100: заголовок не должен уйти под него («парфюмы» обрезались)
+    # Размеры — как на сайте (DESIGN.md, владелец 08.10: «шрифт катта, стилимизга мос қил»). Баннер на компьютере
+    # показывается ~1260 px из 2400 (×0,53): заголовок ~42 px, кнопка — 16 px текст, 50 px высота, скругление 12 px.
+    f_chip, f_title, f_ky, f_cta = (font(F600, int(30 * k)), font(F800, int(80 * k)), font(F600, int(40 * k)),
+                                    font(F800, int(32 * k))) if wide else (
+        font(F600, 34), font(F800, 76), font(F600, 40), font(F800, 40))
     # длинный заголовок не должен столкнуть кнопку за край: уменьшаем, пока всё влезает
     while True:
         need = (len(wrap(d, title, f_title, text_w)) * f_title.size * 1.12
@@ -179,8 +187,8 @@ def banner(name, bg, chip, title, ky, cta, visual, w, h):
         f_title = font(F800, int(f_title.size * 0.92))
     y = int(h * 0.15) if wide else 72
     if chip.strip():  # плашки может не быть — тогда заголовок сразу сверху
-        _, y2 = pill(d, (pad, y), chip, f_chip, WHITE, INK, int(30 * (k if wide else 1)), int(14 * (k if wide else 1)))
-        y = y2 + int(44 * (k if wide else 0.8))
+        _, y2 = pill(d, (pad, y), chip, f_chip, WHITE, INK, int(30 * (k if wide else 1)), int(17 * (k if wide else 1)))
+        y = y2 + int(40 * (k if wide else 0.8))
     for line in wrap(d, title, f_title, text_w):
         d.text((pad, y), line, font=f_title, fill=INK)
         y += int(f_title.size * 1.12)
@@ -189,8 +197,19 @@ def banner(name, bg, chip, title, ky, cta, visual, w, h):
         for line in wrap(d, ky, f_ky, text_w):
             d.text((pad, y), line, font=f_ky, fill=SOFT)
             y += int(f_ky.size * 1.3)
-    y += int(46 * (k if wide else 0.7))
-    _, cta_bottom = pill(d, (pad, y), cta, f_cta, LEMON, INK, int(46 * (k if wide else 0.9)), int(24 * (k if wide else 0.9)))
+    y += int(52 * (k if wide else 0.7))
+    # кнопка как .btn сайта: прямоугольник со скруглением 12 px (на компьютере ×1/0,53 ≈ 23, на телефоне ×3 ≈ 36)
+    _, cta_bottom = pill(d, (pad, y), cta, f_cta, LEMON, INK, int(46 * (k if wide else 0.9)), int(26 * (k if wide else 0.9)),
+                         radius=int(23 * k) if wide else 36, border=int(6 * k) if wide else 6)
+    if wide:
+        # текст с кнопкой — посередине по высоте, как товары справа (раньше прижат к верху, внизу пусто)
+        top = int(h * 0.15)
+        dy = (h - (cta_bottom - top)) // 2 - top
+        if dy > 0:
+            left = img.crop((0, 0, pad + text_w + 20, h - dy))
+            img.paste(Image.new("RGB", left.size, bg), (0, 0))
+            img.paste(left, (0, dy))
+            y, cta_bottom = y + dy, cta_bottom + dy
     LAYOUT.update(cta_top=y, cta_bottom=cta_bottom, bottom=cta_bottom)
     visual(img, wide, w, h, pad)
     if not wide:
@@ -284,12 +303,12 @@ class PhotoVisual:
         c = photo_card(src, (0, self.phone_top, src.width, self.phone_top + crop_h), (card_w, card_h), 32)
         img.paste(c, (72, 72), c)
         # каждая часть заголовка (до «|») — одной строкой: три строки сталкивали кнопку за нижний край
-        size = 86
+        size = 76
         while size > 56 and max(d.textlength(p.replace("~", " "), font=font(F800, size))
                                 for p in title.split("|")) > w - 144:
             size -= 2
         title = "|".join(p.replace(" ", "~") for p in title.split("|"))
-        f_title, f_ky, f_cta = font(F800, size), font(F600, 44), font(F800, 44)
+        f_title, f_ky, f_cta = font(F800, size), font(F600, 40), font(F800, 40)
         y = 72 + card_h + 44
         for line in wrap(d, title, f_title, w - 144):
             d.text((72, y), line, font=f_title, fill=INK)
@@ -299,7 +318,7 @@ class PhotoVisual:
             d.text((72, y), ky, font=f_ky, fill=SOFT)
             y += int(f_ky.size * 1.3)
         y += 30
-        _, bottom = pill(d, (72, y), cta, f_cta, LEMON, INK, 41, 22)
+        _, bottom = pill(d, (72, y), cta, f_cta, LEMON, INK, 41, 24, radius=36, border=6)
         return save(centered(img, bg, 72, bottom), name, False)
 
 
@@ -310,7 +329,7 @@ def photo_visual(file, phone_top=40):
 # Что стоит на сайте с 07.10.2026 (тот же порядок, что в 1С). «Куда ведёт» в 1С:
 # 1 → /ru/catalog?inst=1 · 2 → Энергоснабжение (cat:power) · 3 → https://kemalusman.kg · 4 → /ru/catalog?sale=1
 BANNERS = [
-    ("1-rassrochka", (249, 251, 220), "Рассрочка «Адал» · MIslamic", "Техника в рассрочку без переплаты",
+    ("1-rassrochka", (249, 251, 220), "Рассрочка «Адал» · MIslamic", "Техника в рассрочку|без~переплаты",
      "", "Выбрать технику  ›", with_mark(products(["ЦБ-00002385", "ЦБ-00002233", "ЦБ-00002232"]), "mislamic.png")),
     ("2-zima-ups", (234, 243, 255), "К зиме", "Свет~отключили~—|дома светло",
      "", "Инверторы и UPS  ›", products(["ЦБ-00002043", "ЦБ-00002055", "ЦБ-00002104"])),

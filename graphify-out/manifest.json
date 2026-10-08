@@ -780,8 +780,8 @@
     "semantic_hash": ""
   },
   "src/data/1c/catalog.json": {
-    "mtime": 1791366025.106901,
-    "seen": 1791375974.8721879,
+    "mtime": 1791463206.1968198,
+    "seen": 1791463419.460671,
     "ast_hash": "81adc17fc4264e6125f8227414510a69",
     "semantic_hash": ""
   },
@@ -3882,9 +3882,9 @@
     "semantic_hash": ""
   },
   "src/components/PromoCountdown.tsx": {
-    "mtime": 1791007494.1146145,
-    "seen": 1791375974.8721588,
-    "ast_hash": "8320cf00a93db02d6dacc6987b7d990c",
+    "mtime": 1791463143.7557576,
+    "seen": 1791463419.456041,
+    "ast_hash": "d6b2fa2cc56a5c2de55a6f996a14c312",
     "semantic_hash": ""
   },
   "public/brands/artel.webp": {
@@ -7566,9 +7566,9 @@
     "semantic_hash": ""
   },
   "scripts/banners/make_banners.py": {
-    "mtime": 1791376138.105502,
-    "seen": 1791376468.9340155,
-    "ast_hash": "4e0acad4d18a30d0ca5e0c1e2dcb9469",
+    "mtime": 1791462259.0213141,
+    "seen": 1791463419.4373279,
+    "ast_hash": "b11635b7596025fa960237ad82f2d3b9",
     "semantic_hash": ""
   },
   "src/components/BuyBar.tsx": {
@@ -7698,51 +7698,51 @@
     "semantic_hash": ""
   },
   "review/banners/1-rassrochka-desktop.jpg": {
-    "mtime": 1791376138.3987482,
-    "seen": 1791376469.1898627,
-    "ast_hash": "e599070796f32162b6766d4ef0c3fc86",
+    "mtime": 1791462259.2830904,
+    "seen": 1791463419.5530381,
+    "ast_hash": "ce4e1260098e7cdc89e2d6c5502db2c8",
     "semantic_hash": ""
   },
   "review/banners/1-rassrochka-phone.jpg": {
-    "mtime": 1791376138.4429078,
-    "seen": 1791376469.189865,
-    "ast_hash": "0710a941227d5dbd6a876182fe5fec03",
+    "mtime": 1791462259.325436,
+    "seen": 1791463419.5530398,
+    "ast_hash": "9bca95aa43b624c9af333e7d81412280",
     "semantic_hash": ""
   },
   "review/banners/2-zima-ups-desktop.jpg": {
-    "mtime": 1791376138.492794,
-    "seen": 1791376469.1898673,
-    "ast_hash": "cb755565d2a8e913a9624999d1c77238",
+    "mtime": 1791462259.373773,
+    "seen": 1791463419.5530417,
+    "ast_hash": "be6dc2829e9a2eab97e1df61be307311",
     "semantic_hash": ""
   },
   "review/banners/2-zima-ups-phone.jpg": {
-    "mtime": 1791376138.5344644,
-    "seen": 1791376469.1898704,
-    "ast_hash": "367d1d42c2325703bef07f1fe9129fa2",
+    "mtime": 1791462259.4142873,
+    "seen": 1791463419.5530431,
+    "ast_hash": "cf6a981b8942c8be0f3559097404dcb6",
     "semantic_hash": ""
   },
   "review/banners/3-kemal-usman-desktop.jpg": {
-    "mtime": 1791376138.5765488,
-    "seen": 1791376469.1898727,
-    "ast_hash": "49105c9166d2891dfd4445ee15bbaa43",
+    "mtime": 1791462259.4564803,
+    "seen": 1791463419.5530446,
+    "ast_hash": "f5348cc425d32d379a5c31517d4a0d7d",
     "semantic_hash": ""
   },
   "review/banners/3-kemal-usman-phone.jpg": {
-    "mtime": 1791376138.6119933,
-    "seen": 1791376469.1898751,
-    "ast_hash": "d4b6361d50d4a651af850ce8b2bdec7d",
+    "mtime": 1791462259.489342,
+    "seen": 1791463419.5530457,
+    "ast_hash": "279d71cfa2d589050748013f40c3ee63",
     "semantic_hash": ""
   },
   "review/banners/4-skidki-desktop.jpg": {
-    "mtime": 1791376138.6631634,
-    "seen": 1791376469.1898775,
-    "ast_hash": "e070e9f7d5724eade9083415aa2570f0",
+    "mtime": 1791462259.5376694,
+    "seen": 1791463419.5530467,
+    "ast_hash": "ea6ece7fc4a3c0ce92f3adb233da6a00",
     "semantic_hash": ""
   },
   "review/banners/4-skidki-phone.jpg": {
-    "mtime": 1791376138.7049813,
-    "seen": 1791376469.1898792,
-    "ast_hash": "813618e77c68a44ee187576281207b82",
+    "mtime": 1791462259.5781226,
+    "seen": 1791463419.553048,
+    "ast_hash": "148881ac99a9e6f8fba8b5d212c9d227",
     "semantic_hash": ""
   },
   "review/banners/_photos/cb-00002043.jpg": {
@@ -8151,6 +8151,18 @@
     "mtime": 1791457139.6722162,
     "seen": 1791457318.0829449,
     "ast_hash": "bc94bc05cc81e6a41d9d290e19a6fb08",
+    "semantic_hash": ""
+  },
+  "review/banners/_btn-zoom-phone.png": {
+    "mtime": 1791462265.36035,
+    "seen": 1791463419.5530488,
+    "ast_hash": "44b299609ea55949b611c98939dee7f7",
+    "semantic_hash": ""
+  },
+  "review/banners/_btn-zoom.png": {
+    "mtime": 1791462265.35535,
+    "seen": 1791463419.5530505,
+    "ast_hash": "708a2d81302cb20ab51fd7cea68dbec5",
     "semantic_hash": ""
   }
 }
