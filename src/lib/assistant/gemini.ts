@@ -117,8 +117,11 @@ export async function askGemini(system: string, turns: ChatTurn[], channel = 'si
   const key = process.env.GEMINI_API_KEY
   if (!key) throw new GeminiError('no-key', 500)
 
+  // Сколько ждать Google. Сайт — 12 с: человек смотрит на крутилку. WhatsApp и Instagram — 22 с: бот ждёт сайт 40 с,
+  // а длинный вопрос («а если откажусь — деньги вернёте?», 08.10) модель думает дольше 12 с и дважды не успевала.
+  const wait = channel === 'site' ? 12_000 : 22_000
   try {
-    return await once(key, system, turns, channel)
+    return await once(key, system, turns, channel, wait)
   } catch (error) {
     // 429 и 503 — «сейчас много народу» у самого Google. Это проходит за
     // секунду-другую, поэтому один раз пробуем ещё. Остальные ошибки
@@ -129,18 +132,19 @@ export async function askGemini(system: string, turns: ChatTurn[], channel = 'si
     const slow = isTimeout(error) && channel !== 'site'
     if (status !== 429 && status !== 503 && !slow) throw error
     await new Promise((resolve) => setTimeout(resolve, 1500))
-    return await once(key, system, turns, channel)
+    // второй раз — 12 с: 22 + 1,5 + 12 и разбор Jev укладываются в 40 с ожидания бота
+    return await once(key, system, turns, channel, 12_000)
   }
 }
 
-async function once(key: string, system: string, turns: ChatTurn[], channel: string): Promise<string> {
+async function once(key: string, system: string, turns: ChatTurn[], channel: string, wait = 12_000): Promise<string> {
   const model = process.env.GEMINI_MODEL || DEFAULT_MODEL
   const at = system.indexOf(NOW_MARK)
   const name = at > 0 ? await cacheFor(key, model, system.slice(0, at)) : null
-  if (!name) return await request(key, model, { systemInstruction: { parts: [{ text: system }] } }, turns, '', channel)
+  if (!name) return await request(key, model, { systemInstruction: { parts: [{ text: system }] } }, turns, '', channel, wait)
   try {
     // Постоянная часть — из кэша; «СЕЙЧАС…» (канал, язык, покупатель, товары) — первой частью разговора.
-    return await request(key, model, { cachedContent: name }, turns, system.slice(at), channel)
+    return await request(key, model, { cachedContent: name }, turns, system.slice(at), channel, wait)
   } catch (error) {
     // Кэш пропал раньше срока (удалили, истёк) — забываем его и отвечаем без кэша.
     const status = error instanceof GeminiError ? error.status : 0
@@ -148,19 +152,19 @@ async function once(key: string, system: string, turns: ChatTurn[], channel: str
     // И 10 минут не создаём новый: если модель кэш не принимает вовсе (сменили GEMINI_MODEL), каждый
     // ответ создавал бы платный кэш и всё равно шёл бы без него — дороже, чем без кэша (ревью 04.10).
     if (cache.name === name) Object.assign(cache, { name: '', until: 0, failedUntil: Date.now() + 10 * 60_000 })
-    return await request(key, model, { systemInstruction: { parts: [{ text: system }] } }, turns, '', channel)
+    return await request(key, model, { systemInstruction: { parts: [{ text: system }] } }, turns, '', channel, wait)
   }
 }
 
 /** Первая реплика «от покупателя», когда разговор начал магазин. */
 const OPENED_BY_SHOP = '[Переписку начал магазин — дальше его сообщение и ответ покупателя]'
 
-async function request(key: string, model: string, head: Record<string, unknown>, turns: ChatTurn[], now = '', channel = 'site'): Promise<string> {
+async function request(key: string, model: string, head: Record<string, unknown>, turns: ChatTurn[], now = '', channel = 'site', wait = 12_000): Promise<string> {
 
   // 12 секунд — предел ожидания. Обычный ответ приходит за одну-две секунды;
   // если Google молчит дольше, он, скорее всего, не ответит вовсе, и лучше
   // показать запасной ответ с телефоном, чем крутилку.
-  const abort = AbortSignal.timeout(12_000)
+  const abort = AbortSignal.timeout(wait)
 
   const response = await fetch(`${ENDPOINT}/${encodeURIComponent(model)}:generateContent`, {
     method: 'POST',
@@ -195,6 +199,10 @@ async function request(key: string, model: string, head: Record<string, unknown>
               type: 'STRING',
               enum: ['customer', 'staff', 'personal'],
               description: 'кому адресовано сообщение: customer — покупатель спрашивает магазин; staff — покупатель говорит с сотрудником (передать); personal — не про магазин (молчать)',
+            },
+            deposit: {
+              type: 'INTEGER',
+              description: 'заклад в сомах — ТОЛЬКО когда покупатель сам согласился платить закладом и назвал сумму (не меньше 1000); иначе не заполняй',
             },
           },
           required: ['reply', 'audience'],

@@ -12,7 +12,7 @@ import 'server-only'
 import type { Lang } from '@/lib/i18n/config'
 import { answer, talkLang } from './reply'
 import { cleanName } from './talk'
-import { AFFIRM, BUY_INTENT, CALL_OFFER, DEFER, FULL_ADDRESS, OFFER, PAY_ASIDE, cancel, hasDraft, looksLikeQuestion, start, step } from '@/lib/telegram/order'
+import { AFFIRM, BUY_INTENT, CALL_OFFER, DEFER, FULL_ADDRESS, FULL_PAY, OFFER, PAY_ASIDE, cancel, forgetDeposit, hasDraft, looksLikeQuestion, rememberDeposit, start, step } from '@/lib/telegram/order'
 import { CALL_INTENT, cancelLead, hasLead, leadContext, leadStep, notifyOwner, startLead } from './leads'
 import { decide, paidAmount, triage } from './triage'
 import { durableMap } from '@/lib/durable'
@@ -114,6 +114,9 @@ export async function respond(
   const intent = hint.intent ?? null
   const talked = Array.isArray(shown) ? shown.filter((x): x is string => typeof x === 'string').slice(0, 5) : []
   const raw = await answer(turns, lang, customer, page, channel.known.name, Boolean(channel.known.phone), objectionNote(intent), talked, channel.leadChannel)
+  // Согласился на заклад и назвал сумму — заказ, который начнётся на «да», пойдёт с ним
+  if (raw.deposit) rememberDeposit(channel.key, raw.deposit)
+  else if (FULL_PAY.test(turns[turns.length - 1]?.text ?? '')) forgetDeposit(channel.key)
   const first = { ...raw, text: withoutRepeatGreeting(withoutEarlyOffer(raw.text, turns), turns) }
   const said = declined(turns) || intent?.kind === 'decline' ? { ...first, text: withoutCallOffer(first.text) } : first
   const later = followAfter(intent)
@@ -414,6 +417,8 @@ async function salesFlow(
   // «[Ответ на сообщение: …Кайда жеткирели?] Учкун айылына жеткирип бериң» — в цитате наш
   // вопрос со знаком «?», и анкета решала, что это вопрос покупателя, и начиналась заново.
   const text = withoutQuote(turns[turns.length - 1]?.text ?? '')
+  // «Всё сразу оплачу» — заказ на всю сумму: названный раньше заклад забываем ДО анкеты (её «оформ…» сюда и ведёт)
+  if (FULL_PAY.test(text)) forgetDeposit(key)
   // Среди сообщений очереди есть вопрос («Акчасын алып келгенде берсем болобу?» + «Оа») —
   // сначала ответ на него, «оа» согласием на заказ не считаем.
   const askedToo = sinceBot(turns).slice(0, -1).some((t) => asks(withoutQuote(t)))

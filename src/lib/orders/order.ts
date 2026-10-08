@@ -42,6 +42,8 @@ export type ValidatedOrder = {
   /** бонусы SBonus, целые сомы; деньгами платится total − bonus */
   bonus: number
   lang: 'ru' | 'ky'
+  /** заклад: сколько платит сразу (≥ 1 000 сом), остаток — когда товар погрузят в такси; нет — платит всё */
+  deposit?: number
 }
 
 export type OrderError =

@@ -36,9 +36,16 @@ export type PublicOrder = {
   createdAt: string
   /** номер заказа клиента в 1С, когда магазин его создал */
   number1c?: string | null
+  /** заклад (первая оплата); остаток — по второй ссылке, когда товар погрузили в такси */
+  deposit?: number | null
+  restAmount?: number | null
+  restPayUrl?: string | null
+  restPaid?: boolean | null
+  taxi?: { car: string; driver_phone: string } | null
 }
 
-type CreateResult = { orderId: string; token: string; payUrl: string; mock: boolean }
+/** deposit — заклад, который сервер принял (null — ссылка на всю сумму) */
+type CreateResult = { orderId: string; token: string; payUrl: string; mock: boolean; deposit: number | null }
 
 const API_URL = process.env.SHOP_API_URL?.replace(/\/+$/, '')
 const API_SECRET = process.env.SHOP_API_SECRET
@@ -112,13 +119,13 @@ export async function createOrder(order: ValidatedOrder): Promise<CreateResult> 
     const orderId = `TEST-${Date.now().toString(36).toUpperCase()}`
     const token = randomBytes(16).toString('hex')
     mockOrders.set(orderId, { token, order, status: 'awaiting_payment', createdAt: new Date().toISOString() })
-    return { orderId, token, payUrl: `/${order.lang}/order/${orderId}?token=${token}`, mock: true }
+    return { orderId, token, payUrl: `/${order.lang}/order/${orderId}?token=${token}`, mock: true, deposit: order.deposit ?? null }
   }
-  const result = await callServer<{ order_id: string; token: string; pay_url: string }>(
+  const result = await callServer<{ order_id: string; token: string; pay_url: string; deposit?: number | null }>(
     '/api/v1/webhook/site/orders',
     { method: 'POST', body: { ...order, source: 'site' } },
   )
-  return { orderId: result.order_id, token: result.token, payUrl: result.pay_url, mock: false }
+  return { orderId: result.order_id, token: result.token, payUrl: result.pay_url, mock: false, deposit: result.deposit ?? null }
 }
 
 export async function getOrder(orderId: string, token: string): Promise<PublicOrder | null> {

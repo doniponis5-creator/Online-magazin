@@ -31,8 +31,10 @@ export type { TalkLang }
 export type Audience = 'customer' | 'staff' | 'personal'
 /** Строка в ответе модели с адресатом (см. answer-json.ts). */
 export const AUDIENCE_MARKER = 'KIMGA:'
+/** Заклад, который назвал покупатель (answer-json.ts) */
+export const DEPOSIT_MARKER = 'ZAKLAD:'
 
-export type Answer = { text: string; productIds: string[]; audience?: Audience }
+export type Answer = { text: string; productIds: string[]; audience?: Audience; deposit?: number }
 
 type Say = { ru: string; ky: string; uz: string }
 
@@ -57,8 +59,14 @@ export function parseAnswer(raw: string): Answer {
   const kept: string[] = []
 
   let audience: Audience = 'customer'
+  let deposit: number | undefined
   for (const line of lines) {
     const trimmed = line.trim()
+    if (trimmed.startsWith(DEPOSIT_MARKER)) {
+      const value = Number(trimmed.slice(DEPOSIT_MARKER.length).trim())
+      if (Number.isFinite(value) && value >= 1000) deposit = Math.floor(value)
+      continue
+    }
     if (trimmed.startsWith(AUDIENCE_MARKER)) {
       const value = trimmed.slice(AUDIENCE_MARKER.length).trim()
       if (value === 'staff' || value === 'personal') audience = value
@@ -80,6 +88,7 @@ export function parseAnswer(raw: string): Answer {
     text: kept.join('\n').trim(),
     productIds: [...new Set(productIds)].slice(0, 3),
     audience,
+    ...(deposit ? { deposit } : {}),
   }
 }
 

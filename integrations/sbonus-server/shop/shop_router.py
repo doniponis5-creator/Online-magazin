@@ -42,6 +42,7 @@ from app.payments import obank_service as obank  # type: ignore
 from app.payments import payments_greenapi as wa  # type: ignore
 
 from .shop_models import ShopOrder, ShopOrderEvent
+from . import shop_deposit_rules as deposit_rules
 
 logger = logging.getLogger("sbonus.shop")
 settings = get_settings()
@@ -156,6 +157,7 @@ class SiteOrderCreate(BaseModel):
     total: float
     bonus: int = 0          # сколько бонусов SBonus клиент списывает (целые сомы)
     lang: str = "ru"
+    deposit: int = 0        # заклад: сколько платит сразу (≥ 1 000); 0 — всё сразу (shop_deposit_rules)
 
 
 def _check_site_order(order: SiteOrderCreate) -> None:
@@ -275,9 +277,14 @@ async def site_create_order(request: Request, db: AsyncSession = Depends(get_db)
         pay_amount=Decimal(str(payload.total)) - bonus,
         lang="ky" if payload.lang == "ky" else "ru",
     )
+    try:
+        order.deposit = deposit_rules.check_deposit(payload.deposit, order.pay_amount)
+    except ValueError as error:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"заказ не прошёл проверку: {error}")
     db.add(order)
     await db.commit()
-    await _log(db, order, "created", {"total": payload.total, "bonus": payload.bonus}, _client_ip(request))
+    await _log(db, order, "created", {"total": payload.total, "bonus": payload.bonus,
+                                      "deposit": float(order.deposit) if order.deposit else None}, _client_ip(request))
 
     try:
         data = {
@@ -308,7 +315,9 @@ async def site_create_order(request: Request, db: AsyncSession = Depends(get_db)
         await _log(db, order, "invoice_failed", {"error": str(error)})
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, "O!Деньги недоступны")
 
-    answer = {"order_id": order.order_id, "token": order.token, "pay_url": order.pay_url}
+    answer = {"order_id": order.order_id, "token": order.token, "pay_url": order.pay_url,
+              # бот пишет покупателю заклад только если сервер его принял (старый сервер поле не знал)
+              "deposit": float(order.deposit) if order.deposit else None, "amount": float(order.money_amount())}
     # Заказ оформлен — напоминать о корзине этого номера больше не о чем.
     # Ответ собран заранее: откат ниже сбрасывает загруженные поля заказа.
     # Сбой здесь заказу не мешает: задача напоминаний и так пропускает тех,
@@ -333,6 +342,8 @@ async def site_order_status(order_id: str, request: Request, token: str = "", db
     # Покупатель вернулся со страницы оплаты раньше колбэка — перепроверим сами.
     if order.status == "awaiting_payment" and obank.is_api_mode():
         await _check_and_confirm(db, order, by="status_poll")
+    if order.deposit and order.rest_ref and not order.rest_paid and obank.is_api_mode():
+        await _check_rest(db, order, by="status_poll")
     return order.to_site_dict()
 
 
@@ -419,8 +430,12 @@ async def _check_and_confirm(db: AsyncSession, order: ShopOrder, by: str, raw: d
             order.note = f"⚠ бонусы не списаны: {error}"[:1000]
             await db.commit()
             await _log(db, order, "bonus_failed", {"error": str(error)})
-    await _push(db, order, "Заказ оплачен",
-                f"Заказ {order.order_id} оплачен. Мы свяжемся с вами.")
+    if order.deposit:
+        await _push(db, order, "Заклад получен",
+                    f"Заклад по заказу {order.order_id} получен. Остаток — когда товар погрузим в машину.")
+    else:
+        await _push(db, order, "Заказ оплачен",
+                    f"Заказ {order.order_id} оплачен. Мы свяжемся с вами.")
     _notify_paid(order)
     return True
 
@@ -450,19 +465,25 @@ def _notify_paid(order: ShopOrder) -> None:
     # Ссылку на заказ показываем кнопкой: длинный адрес с токеном читать
     # неудобно. Кнопка не прошла — уйдёт обычным текстом, как раньше.
     order_url = f"{_site_base_url()}/{order.lang}/order/{order.order_id}?token={order.token}"
+    if order.deposit:
+        # Заклад: покупателю — про остаток и такси; владельцу — что грузить и где нажать (ниже)
+        client_text = (deposit_rules.deposit_paid_text(order.lang, order.customer_name, order.order_id,
+                                                       order.deposit, order.rest_amount()) + f"\n\n{lines}\n{how}")
+        money = (f"ЗАКЛАД {_money(order.deposit)} из {_money(order.full_amount())} (O!Деньги)"
+                 + (f" + {_money(spent)} бонусами" if spent > 0 else "")
+                 + f"\n⏳ Остаток {_money(order.rest_amount())} — после погрузки: 1С → Панель сайта → «Заклад» → "
+                   f"впишите машину и телефон водителя → «Таксига юкландим», "
+                 + deposit_rules.taxi_hint(order.order_id))
+    else:
+        client_text = (
+            f"Здравствуйте, {order.customer_name.split()[0]}!\n"
+            f"Оплата заказа {order.order_id} получена ✅\n💵 {money}\n\n"
+            f"{lines}\n{how}\n\n"
+            f"С вами свяжется руководство Smart Centr."
+        )
     try:
         from .shop_whatsapp import send_with_button
-        send_with_button(
-            order.customer_phone,
-            (
-                f"Здравствуйте, {order.customer_name.split()[0]}!\n"
-                f"Оплата заказа {order.order_id} получена ✅\n💵 {money}\n\n"
-                f"{lines}\n{how}\n\n"
-                f"С вами свяжется руководство Smart Centr."
-            ),
-            "Статус заказа",
-            order_url,
-        )
+        send_with_button(order.customer_phone, client_text, "Статус заказа", order_url)
     except Exception as error:
         logger.error(f"shop client notify failed {order.order_id}: {error}")
     try:
@@ -499,11 +520,23 @@ async def obank_shop_callback(request: Request, db: AsyncSession = Depends(get_d
     if not obank.verify_callback(raw, params, dict(request.headers)):
         return JSONResponse(obank.callback_ack(False), status_code=400)
     info = obank.parse_callback(params)
-    res = await db.execute(select(ShopOrder).where(ShopOrder.order_id == info.get("ref")))
+    res = await db.execute(select(ShopOrder).where(ShopOrder.order_id == str(info.get("ref") or "")))
     order = res.scalar_one_or_none()
+    is_rest = False
+    if not order:
+        base_id, is_rest = deposit_rules.parse_ref(info.get("ref"))
+        if is_rest:
+            res = await db.execute(select(ShopOrder).where(ShopOrder.order_id == base_id))
+            order = res.scalar_one_or_none()
     if not order:
         logger.warning(f"shop callback: заказ {info.get('ref')} не найден")
         return JSONResponse(obank.callback_ack(False), status_code=404)
+
+    if is_rest:
+        await _log(db, order, "rest_callback", {"info": info}, _client_ip(request))
+        if info.get("success"):
+            await _check_rest(db, order, by="obank_callback", ref=info.get("ref"))
+        return JSONResponse(obank.callback_ack(True))
 
     order.obank_status = info.get("status")
     await db.commit()
@@ -541,6 +574,285 @@ async def _get_order(db: AsyncSession, order_id: str) -> ShopOrder:
     return order
 
 
+def _create_rest_invoice(order: ShopOrder) -> None:
+    """Ссылка O!Деньги на остаток после заклада («-R», перевыпуск — «-R2»…). Номер order.rest_ref уже выбран."""
+    data = {
+        "order_id": order.rest_ref,
+        "desc": f"Остаток по заказу {order.order_id} — Smart Centr"[:1000],
+        "amount": obank._to_kopecks(order.rest_amount()),
+        "currency": "KGS",
+        "test": int(_cfg("obank_test", "0") or "0"),
+        "long_term": 0,
+        "send_push": 0,
+        "send_sms": 0,
+        # товар уже в дороге: ссылка живёт неделю (повторное «Таксига юкландим» шлёт её же, новую не делает)
+        "date_life": (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S"),
+        "result_url": _shop_callback_url(),
+    }
+    answer = obank._request("createInvoice", data)
+    url = answer.get(_cfg("obank_link_field", "paylink_url")) or answer.get("paylink_url") or answer.get("site_pay") or answer.get("qr") or ""
+    if not url:
+        raise ValueError(f"createInvoice без ссылки: {answer}")
+    order.rest_invoice_id = str(answer.get("invoice_id") or "")
+    order.rest_pay_url = url
+    order.rest_link_at = datetime.utcnow()
+
+
+async def _check_rest(db: AsyncSession, order: ShopOrder, by: str, ref: str | None = None) -> bool:
+    """Перепроверка оплаты остатка у O!Деньги. Идемпотентно: строка заказа заблокирована, колбэк и опрос
+    страницы одновременно не отметят оплату дважды. ref — какая ссылка оплачена (из колбэка); нет — текущая."""
+    await db.refresh(order, with_for_update=True)
+    if order.rest_paid and ref:
+        await _rest_paid_twice(db, order, ref)
+        return False
+    if order.rest_paid or not order.rest_ref:
+        await db.commit()
+        return False
+    ref = ref or order.rest_ref
+    st = obank.check_status(order_id=ref, invoice_id=order.rest_invoice_id if ref == order.rest_ref else "")
+    if not st.get("approved"):
+        await db.commit()
+        return False
+    paid_amount = Decimal(str(st.get("amount") or 0))
+    if paid_amount and paid_amount + Decimal("1") < Decimal(str(order.rest_amount())):
+        told = (order.note or "").startswith("⚠ остаток: оплачено")
+        order.note = f"⚠ остаток: оплачено {paid_amount} меньше {order.rest_amount()}"
+        await db.commit()
+        await _log(db, order, "rest_amount_mismatch", {"paid": float(paid_amount)})
+        if told:  # страницу заказа открывают много раз — владельцу пишем один раз
+            return False
+        try:
+            wa.send_text(_admin_phone(), f"⚠ Заказ {order.order_id}: по ссылке на остаток пришло {_money(paid_amount)} "
+                                         f"вместо {_money(order.rest_amount())}. Проверьте в O!Деньги.")
+        except Exception as error:
+            logger.warning(f"shop: тревога о недоплате не ушла {order.order_id}: {error}")
+        return False
+    order.rest_paid = True
+    order.rest_paid_at = datetime.utcnow()
+    order.rest_trans_id = str(st.get("trans_id") or ref)[:64]
+    cancelled = order.status == "cancelled"
+    if cancelled:
+        order.note = "⚠ остаток оплачен по ОТМЕНЁННОМУ заказу — верните деньги или восстановите заказ"
+    await db.commit()
+    if cancelled:
+        try:
+            wa.send_text(_admin_phone(), f"⚠ Заказ {order.order_id} отменён, а покупатель оплатил остаток "
+                                         f"{_money(order.rest_amount())}. Верните деньги или восстановите заказ.")
+        except Exception as error:
+            logger.warning(f"shop: тревога об оплате после отмены не ушла {order.order_id}: {error}")
+    await _log(db, order, "rest_paid", {"by": by, "trans_id": order.rest_trans_id})
+    await _push(db, order, "Заказ оплачен", deposit_rules.rest_paid_text("ru", order.order_id))
+    try:
+        wa.send_text(order.customer_phone, deposit_rules.rest_paid_text(order.lang, order.order_id))
+        wa.send_text(_admin_phone(), f"💵 Остаток {_money(order.rest_amount())} по заказу {order.order_id} "
+                                     f"({order.customer_name}) оплачен. 1С проведёт второй ПКО сама.")
+    except Exception as error:
+        logger.warning(f"shop: сообщение об остатке не ушло {order.order_id}: {error}")
+    return True
+
+
+async def _rest_paid_twice(db: AsyncSession, order: ShopOrder, ref: str) -> None:
+    """Остаток уже засчитан (по ссылке или наличными), а пришла ещё оплата: старая ссылка, наличные водителю
+    и ссылка из WhatsApp. Владельцу — вернуть деньги, один раз на платёж. Строка заказа уже заблокирована."""
+    st = obank.check_status(order_id=ref, invoice_id=order.rest_invoice_id if ref == order.rest_ref else "")
+    key = str(st.get("trans_id") or ref)[:64]
+    if not st.get("approved") or key == order.rest_trans_id or key in (order.note or ""):
+        await db.commit()
+        return
+    amount = Decimal(str(st.get("amount") or order.rest_amount()))
+    order.note = f"⚠ остаток оплачен ВТОРОЙ раз ({key}) — верните {amount}"
+    await db.commit()
+    await _log(db, order, "rest_paid_twice", {"ref": ref, "key": key, "amount": float(amount)})
+    try:
+        wa.send_text(_admin_phone(), f"⚠ Заказ {order.order_id}: остаток уже был оплачен, а пришла ещё оплата "
+                                     f"{_money(amount)} ({ref}). Верните покупателю {order.customer_phone}.")
+    except Exception as error:
+        logger.warning(f"shop: тревога о двойной оплате не ушла {order.order_id}: {error}")
+
+
+class TaxiInfo(BaseModel):
+    car: str = ""
+    driver_phone: str = ""
+
+
+class RestDone(BaseModel):
+    pko_number_1c: str = ""
+
+
+def _deposit_row(o: ShopOrder) -> dict:
+    return {
+        "order_id": o.order_id,
+        "order_number_1c": o.order_number_1c or "",
+        "customer_name": o.customer_name,
+        "customer_phone": o.customer_phone,
+        "city": (o.delivery or {}).get("city", ""),
+        "goods": "; ".join(f"{l.get('name')} × {l.get('qty')}" for l in (o.lines or []))[:300],
+        "full_amount": float(o.full_amount()),
+        "deposit": float(o.deposit or 0),
+        "rest_amount": float(o.rest_amount()),
+        "paid_at": o.paid_at.isoformat() if o.paid_at else None,
+        "taxi": o.taxi or None,
+        "shipped_at": o.shipped_at.isoformat() if o.shipped_at else None,
+        "rest_paid": bool(o.rest_paid),
+        "rest_paid_at": o.rest_paid_at.isoformat() if o.rest_paid_at else None,
+        "rest_trans_id": o.rest_trans_id or "",
+    }
+
+
+@router_1c_shop.get("/deposits")
+async def deposits_for_1c(_=Depends(_verify_1c_key), db: AsyncSession = Depends(get_db)):
+    """Заказы с закладом, остаток по которым ещё не оплачен: их грузят в такси (кнопка в 1С)."""
+    res = await db.execute(
+        select(ShopOrder)
+        .where(and_(ShopOrder.deposit.isnot(None), ShopOrder.paid == True,  # noqa: E712
+                    ShopOrder.rest_paid != True, ShopOrder.status != "cancelled"))  # noqa: E712
+        .order_by(ShopOrder.paid_at.desc())
+        .limit(100)
+    )
+    return {"ok": True, "orders": [_deposit_row(o) for o in res.scalars().all()]}
+
+
+@router_1c_shop.get("/rest-pending")
+async def rest_pending_for_1c(_=Depends(_verify_1c_key), db: AsyncSession = Depends(get_db)):
+    """Остаток оплачен, а второго ПКО в 1С ещё нет."""
+    res = await db.execute(
+        select(ShopOrder)
+        .where(and_(ShopOrder.rest_paid == True, ShopOrder.rest_pko_1c.is_(None),  # noqa: E712
+                    ShopOrder.order_number_1c.isnot(None), ShopOrder.order_number_1c != "",
+                    ShopOrder.status.in_(("in_1c", "cancelled"))))
+        .order_by(ShopOrder.rest_paid_at.asc())
+        .limit(100)
+    )
+    return {"ok": True, "orders": [_deposit_row(o) for o in res.scalars().all()]}
+
+
+@router_1c_shop.post("/{order_id}/taxi")
+async def order_taxi(order_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    """Сотрудник погрузил товар в такси: вторая ссылка на остаток и сообщение покупателю с машиной и водителем."""
+    body = await _verify_1c_body(request)
+    payload = TaxiInfo.parse_raw(body)
+    return await ship_by_taxi(db, order_id, payload.car, payload.driver_phone)
+
+
+async def find_deposit_order(db: AsyncSession, code: str) -> str | None:
+    """Конец номера заказа (5 знаков, из WhatsApp-команды владельца) → номер заказа с закладом."""
+    res = await db.execute(
+        select(ShopOrder.order_id)
+        .where(and_(ShopOrder.order_id.like(f"SC-%-{code.upper()}"), ShopOrder.deposit.isnot(None)))
+        .order_by(ShopOrder.created_at.desc()).limit(2)
+    )
+    found = [row[0] for row in res.all()]
+    return found[0] if len(found) == 1 else None
+
+
+async def taxi_waiting(db: AsyncSession) -> list[ShopOrder]:
+    """
+    К кому может относиться «такси …» без номера заказа: заклад оплачен, остаток нет, не отменён, и такси ещё не
+    отправляли или отправили за последние сутки (владелец поправляет машину). Один такой — он; больше — спросить.
+    """
+    res = await db.execute(
+        select(ShopOrder)
+        .where(and_(ShopOrder.deposit.isnot(None), ShopOrder.paid == True,  # noqa: E712
+                    ShopOrder.rest_paid != True, ShopOrder.status != "cancelled",  # noqa: E712
+                    or_(ShopOrder.shipped_at.is_(None), ShopOrder.shipped_at > datetime.utcnow() - timedelta(days=1))))
+        .order_by(ShopOrder.paid_at)
+    )
+    return list(res.scalars().all())
+
+
+async def ship_by_taxi(db: AsyncSession, order_id: str, car: str, driver_phone: str) -> dict:
+    """Одна логика для кнопки 1С и для команды «такси …» владельца в WhatsApp (shop_wa_bot)."""
+    res = await db.execute(select(ShopOrder).where(ShopOrder.order_id == order_id).with_for_update())
+    order = res.scalar_one_or_none()
+    if not order:
+        raise HTTPException(404, "заказ не найден")
+    if not order.deposit or not order.paid:
+        raise HTTPException(status.HTTP_409_CONFLICT, "у заказа нет оплаченного заклада")
+    if order.status == "cancelled":
+        raise HTTPException(status.HTTP_409_CONFLICT, "заказ отменён")
+    if order.rest_paid:
+        raise HTTPException(status.HTTP_409_CONFLICT, "остаток уже оплачен")
+    try:
+        taxi = deposit_rules.clean_taxi(car, driver_phone)
+    except ValueError as error:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(error))
+    # ссылка живёт 7 дней: нет или вот-вот истечёт — новая, с новым номером (-R2…)
+    stale = order.rest_link_at is None or datetime.utcnow() - order.rest_link_at > timedelta(days=6, hours=23)
+    if order.rest_ref and order.rest_pay_url and stale:
+        # Старую ссылку могли оплатить, а колбэк потеряться: тогда новая — вторая оплата. Сначала спрашиваем.
+        old = obank.check_status(order_id=order.rest_ref, invoice_id=order.rest_invoice_id or "")
+        if old.get("approved"):
+            await db.commit()
+            await _check_rest(db, order, "taxi")
+            raise HTTPException(status.HTTP_409_CONFLICT, "по прежней ссылке остаток уже оплачен — новую не выпускаем, "
+                                                          "проверьте заказ")
+    if not order.rest_pay_url or stale:
+        # Новый номер ссылки. Строка заказа заблокирована до конца запроса: второе нажатие (двойной щелчок, два
+        # сотрудника) ждёт и шлёт ту же ссылку, а не выпускает вторую — иначе покупатель мог оплатить обе.
+        order.rest_ref = deposit_rules.next_rest_ref(order.order_id, order.rest_ref)
+        try:
+            _create_rest_invoice(order)
+        except Exception as error:
+            logger.error(f"shop rest invoice failed {order.order_id}: {error}")
+            # номер сохраняем и при ошибке: запрос оборвался, а счёт у O!Деньги мог создаться — повтор возьмёт следующий
+            await db.commit()
+            raise HTTPException(status.HTTP_502_BAD_GATEWAY, "O!Деньги недоступны — ссылка на остаток не создана, нажмите ещё раз")
+    # «отгружен» — только когда ссылка есть: иначе повтор команды «такси» без номера заказа его уже не найдёт
+    order.taxi = taxi
+    order.shipped_at = datetime.utcnow()
+    await db.commit()
+    await _log(db, order, "taxi", {"taxi": taxi, "rest_invoice_id": order.rest_invoice_id})
+    sent = True
+    try:
+        wa.send_text(order.customer_phone, deposit_rules.taxi_text(order.lang, order.order_id, taxi,
+                                                                  order.rest_amount(), order.rest_pay_url))
+    except Exception as error:
+        sent = False
+        logger.warning(f"shop: сообщение о такси не ушло {order.order_id}: {error}")
+    await _push(db, order, "Товар в пути", f"Заказ {order.order_id} погружен в машину {taxi['car']}.")
+    return {"ok": True, "sent": sent, "rest_amount": float(order.rest_amount()), "rest_pay_url": order.rest_pay_url,
+            "customer": f"{order.customer_name}, {(order.delivery or {}).get('city', '')}".strip(", ")}
+
+
+class RestManual(BaseModel):
+    note: str = ""
+
+
+@router_1c_shop.post("/{order_id}/rest-manual")
+async def order_rest_manual(order_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    """Остаток получили не по ссылке (наличными) — ПКО сотрудник делает сам; ссылка больше не нужна."""
+    body = await _verify_1c_body(request)
+    payload = RestManual.parse_raw(body)
+    res = await db.execute(select(ShopOrder).where(ShopOrder.order_id == order_id).with_for_update())
+    order = res.scalar_one_or_none()
+    if not order:
+        raise HTTPException(404, "заказ не найден")
+    if not order.deposit:
+        raise HTTPException(status.HTTP_409_CONFLICT, "у заказа нет заклада")
+    if order.rest_paid:
+        raise HTTPException(status.HTTP_409_CONFLICT, "остаток уже отмечен оплаченным")
+    order.rest_paid = True
+    order.rest_paid_at = datetime.utcnow()
+    order.rest_trans_id = "вручную"
+    order.rest_pko_1c = "вручную"
+    order.rest_pay_url = None
+    await db.commit()
+    await _log(db, order, "rest_manual", {"note": payload.note[:300]})
+    return {"ok": True}
+
+
+@router_1c_shop.post("/{order_id}/rest-done")
+async def order_rest_done(order_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    """1С провела второй ПКО (остаток)."""
+    body = await _verify_1c_body(request)
+    payload = RestDone.parse_raw(body)
+    order = await _get_order(db, order_id)
+    order.rest_pko_1c = (payload.pko_number_1c or "-")[:32]
+    await db.commit()
+    await _log(db, order, "rest_in_1c", {"pko": order.rest_pko_1c})
+    return {"ok": True}
+
+
 @router_1c_shop.post("/{order_id}/mark-done")
 async def mark_done(order_id: str, request: Request, db: AsyncSession = Depends(get_db)):
     body = await _verify_1c_body(request)
@@ -563,6 +875,24 @@ async def mark_done(order_id: str, request: Request, db: AsyncSession = Depends(
     await db.commit()
     await _log(db, order, "synced", payload.dict())
 
+    if order.deposit and (first_time or became_shipped):
+        # заклад: реализация — только после оплаты остатка; товар уже уехал на такси, «ждём в магазине» — неправда
+        earned = Decimal(str(order.bonus_earned or 0))
+        if became_shipped:
+            await _push(db, order, "Заказ оформлен", f"Заказ {order.order_id} оформлен полностью. Спасибо за покупку!"
+                        + (f" Начислено бонусов: {earned:.0f}" if earned > 0 else ""))
+        try:
+            state = ("✅ Остаток оплачен — реализация проведена" if payload.realized else
+                     f"⏳ Заклад: реализация — после оплаты остатка {_money(order.rest_amount())} "
+                     f"(Панель сайта → «Заклад» → «Таксига юкландим»)")
+            wa.send_text(_admin_phone(), (
+                f"📦 Заказ {order.order_id} создан в 1С\n"
+                f"Заказ клиента: {payload.order_number_1c}\nПКО заклада: {payload.pko_number_1c}\n"
+                f"{('Реализация: ' + payload.rtu_number_1c) if payload.rtu_number_1c else ''}\n{state}"
+            ))
+        except Exception as error:
+            logger.error(f"shop 1c notify failed {order.order_id}: {error}")
+        return {"ok": True}
     if first_time or became_shipped:
         earned = Decimal(str(order.bonus_earned or 0))
         await _push(db, order,
@@ -604,7 +934,10 @@ async def awaiting_shipment(_=Depends(_verify_1c_key), db: AsyncSession = Depend
     )
     orders = res.scalars().all()
     return {"ok": True, "count": len(orders), "orders": [
-        {"order_id": o.order_id, "customer_phone": o.customer_phone} for o in orders
+        {"order_id": o.order_id, "customer_phone": o.customer_phone,
+         # заклад без оплаченного остатка: реализацию и бонус не делать, только следить, не закрыли ли заказ
+         # реализация — когда остаток оплачен И второй ПКО уже в 1С (иначе реализация раньше ПКО)
+         "deposit_waiting": bool(o.deposit) and not (bool(o.rest_paid) and bool(o.rest_pko_1c))} for o in orders
     ]}
 
 

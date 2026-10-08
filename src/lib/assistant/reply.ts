@@ -29,6 +29,8 @@ export type AssistantReply = {
   why?: DownWhy
   /** кому адресовано сообщение покупателя — решает модель (WhatsApp) */
   audience?: Audience
+  /** заклад, который покупатель согласился заплатить (сом) — его возьмёт оформление заказа */
+  deposit?: number
 }
 
 export async function answer(
@@ -68,7 +70,8 @@ export async function answer(
       const raw = await askGemini(systemInstruction(lang, customer, talkLang(turns, lang), list, recent, notes, ceiling, viewing, knownName, knownPhone, talked, where) + note, turns, where)
       const parsed = parseAnswer(raw)
       const talk = talkLang(turns, lang)
-      return { text: houseStyle(parsed.text, talk), products: hits(parsed.productIds, lang, list), source: 'gemini', audience: parsed.audience }
+      return { text: houseStyle(parsed.text, talk), products: hits(parsed.productIds, lang, list), source: 'gemini', audience: parsed.audience,
+        ...(parsed.deposit ? { deposit: parsed.deposit } : {}) }
     } catch (error) {
       // Ошибку пишем в журнал сервера, покупателю её не показываем.
       console.error('[assistant] gemini:', error instanceof Error ? error.message : error)

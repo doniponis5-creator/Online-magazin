@@ -108,6 +108,31 @@ function OrderView() {
   const bonusSpend = order.bonusSpend ?? 0
   const payAmount = order.payAmount ?? order.total
   const isTest = orderId.startsWith('TEST-')
+  // Заклад (08.10): первая оплата — часть, остаток — по второй ссылке, когда товар погрузили в такси
+  const deposit = order.deposit ?? 0
+  const rest = order.restAmount ?? 0
+  const depositBox = deposit > 0 && (
+    <div className="order-deposit">
+      {order.restPaid ? (
+        <p className="order-page__note">{t.order.restPaid}</p>
+      ) : (
+        <p className="order-page__note">{(paid ? t.order.depositPaid : t.order.depositWait).replace('{rest}', formatSom(rest))}</p>
+      )}
+      {order.taxi && (
+        <p className="order-deposit__taxi">
+          {t.order.taxiCar}: <strong>{order.taxi.car}</strong> · {t.order.taxiDriver}:{' '}
+          <a href={`tel:${order.taxi.driver_phone}`}>{order.taxi.driver_phone}</a>
+        </p>
+      )}
+      {order.restPayUrl && (
+        <div className="order-page__actions">
+          <a href={order.restPayUrl} className="btn btn--primary">
+            {t.order.payRest} {formatSom(rest)}
+          </a>
+        </div>
+      )}
+    </div>
+  )
   // «Хочу отменить заказ …» — в WhatsApp магазина, если сами отменить не можем
   const writeUs = (
     <a className="order-cancel__wa" href={whatsappHref(phones[0], t.order.cancelWa.replace('{id}', order.orderId))} target="_blank" rel="noopener noreferrer">
@@ -131,7 +156,7 @@ function OrderView() {
         <div className="form-card">
           {paid ? (
             <>
-              <p className="order-page__note">{t.order.paidNote}</p>
+              {depositBox || <p className="order-page__note">{t.order.paidNote}</p>}
               <p className="order-cancel__help">
                 {t.order.paidHelp} {writeUs}
               </p>
@@ -140,6 +165,7 @@ function OrderView() {
             <p className="order-page__note">{t.order.cancelledNote}</p>
           ) : order.status === 'awaiting_payment' ? (
             <>
+              {depositBox}
               <p className="order-page__note">{t.order.waitNote}</p>
               <div className="order-page__actions">
                 {order.payUrl && (
@@ -222,9 +248,21 @@ function OrderView() {
               <strong>−{formatSom(bonusSpend)}</strong>
             </div>
           )}
+          {deposit > 0 && (
+            <>
+              <div className="order-row">
+                <span>{t.order.deposit}</span>
+                <strong>{formatSom(deposit)}</strong>
+              </div>
+              <div className="order-row">
+                <span>{t.order.rest}</span>
+                <strong>{order.restPaid ? '✅ ' : ''}{formatSom(rest)}</strong>
+              </div>
+            </>
+          )}
           <div className="summary-card__total">
             <span>{paid ? t.order.moneyPaid : order.status === 'awaiting_payment' ? t.checkout.total : t.order.sum}</span>
-            <span>{formatSom(payAmount)}</span>
+            <span>{formatSom(deposit > 0 && order.restPaid ? deposit + rest : payAmount)}</span>
           </div>
           {(order.bonusEarned ?? 0) > 0 && (
             <div className="order-row order-row--bonus">

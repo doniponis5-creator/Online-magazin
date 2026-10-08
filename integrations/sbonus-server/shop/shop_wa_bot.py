@@ -243,6 +243,9 @@ async def poll_once() -> dict:
     # Сначала ответы людей: написал сотрудник — робот в этом чате молчит.
     for message in await _journal("lastOutgoingMessages"):
         chat = str(message.get("chatId") or "")
+        if chat == own and own and not message.get("sendByApi"):
+            await _owner_command(message, own)   # владелец пишет в чат магазина с самим собой
+            continue
         if not chat.endswith("@c.us") or chat == own:
             continue
         if not await _first_time(str(message.get("idMessage"))):
@@ -272,6 +275,9 @@ async def poll_once() -> dict:
     # Новые сообщения покупателей — в разговор и в очередь ожидания.
     for message in sorted(await _journal("lastIncomingMessages"), key=lambda m: m.get("timestamp") or 0):
         chat = str(message.get("chatId") or "")
+        if chat.endswith("@c.us") and chat != own and chat.removesuffix("@c.us") in _owner_phones():
+            if await _owner_command(message, own, reply_to=chat.removesuffix("@c.us")):
+                continue
         if not chat.endswith("@c.us") or chat == own:
             continue
         text = _journal_text(message).strip()
@@ -345,6 +351,74 @@ async def poll_once() -> dict:
             answered += 1
     nudged = await _nudge_silent()
     return {"enabled": True, "answered": answered, "nudged": nudged}
+
+
+def _owner_phones() -> set[str]:
+    """Номера, с которых принимаем команды: куда приходят тревоги (admin_notify_phone) и SHOP_OWNER_PHONES=996555…,996700….
+    Чат магазина с самим собой — всегда (он и есть номер тревог по умолчанию)."""
+    import os
+    from .shop_router import _admin_phone
+    raw = os.environ.get("SHOP_OWNER_PHONES", "") + "," + _admin_phone()
+    return {p for p in re.sub(r"[^\d,]", "", raw).split(",") if len(p) >= 9}
+
+
+async def _owner_command(message: dict, own: str, reply_to: str = "") -> bool:
+    """
+    «такси 7K3QF 01KG123ABC 0555123456» — то же, что «Таксига юкландим» в 1С (владелец 08.10: не у компьютера).
+    Ответ — в тот же чат магазина с самим собой. Не команда — False, сообщение идёт своей дорогой.
+    """
+    from . import shop_deposit_rules as rules
+    text = _journal_text(message).strip()
+    parsed = rules.parse_taxi_command(text)
+    # «такси …» одной строкой, но не разобралось (нет машины, телефон короче) — подсказываем, а не молчим
+    near = not parsed and "\n" not in text and re.match(r"(?i)(такси|taksi|taxi)\s+\S", text)
+    if not (parsed or near):
+        return False
+    if not await _first_time("cmd:" + str(message.get("idMessage"))):
+        return True            # журнал отдаёт те же 15 минут на каждом опросе — команда уже выполнена
+    from .shop_router import _admin_phone, _money, find_deposit_order, ship_by_taxi
+    to = reply_to or _admin_phone()
+    if not parsed:
+        await _send_text(to, "❌ Не понял. Одной строкой: такси, номер машины, телефон водителя "
+                                         "(0555… или +996…).\nНапример: такси 01KG123ABC 0555123456")
+        return True
+    from fastapi import HTTPException
+    from app.core.database import async_session
+    from .shop_router import taxi_waiting
+    code, car, phone = parsed["code"], parsed["car"], parsed["phone"]
+    lines: list[str] = []
+    try:
+        async with async_session() as db:
+            order_id = await find_deposit_order(db, code) if code else None
+            if not order_id:
+                waiting = await taxi_waiting(db)
+                if code is None and len(waiting) == 1:
+                    order_id = waiting[0].order_id      # номера нет, такси ждёт один заказ — он
+                elif not waiting:
+                    reply = "❌ Такси сейчас не ждёт ни один заказ с закладом." + (f" Заказа {code} нет." if code else "")
+                else:
+                    # Написан номер, а такого нет (опечатка), или ждут несколько: не угадываем — спрашиваем.
+                    # Каждая строка — отдельным сообщением: её копируют и отправляют как есть.
+                    car = parsed["car"] if code else parsed["body"]
+                    reply = ((f"❓ Заказа {code} нет. " if code else "❓ ")
+                             + "Какой заказ? Скопируйте нужную строку ниже и отправьте:\n"
+                             + "\n".join(f"{o.order_id[-5:]} — {o.customer_name}, {(o.delivery or {}).get('city', '')}"
+                                          + (" (такси уже отправляли)" if o.shipped_at else "") for o in waiting[:6]))
+                    lines = [f"такси {o.order_id[-5:]} {car} {phone}" for o in waiting[:6]]
+            if order_id:
+                done = await ship_by_taxi(db, order_id, car, phone)
+                name = done.get("customer") or ""
+                reply = (f"✅ {order_id} ({name}): покупателю ушли машина {car}, телефон водителя и ссылка на остаток "
+                         f"{_money(done['rest_amount'])}." + ("" if done.get("sent") else " ⚠ WhatsApp покупателю не ушёл — позвоните."))
+    except HTTPException as error:
+        reply = f"❌ такси: {error.detail}"
+    except Exception as error:
+        logger.error(f"wa owner taxi {code}: {error}")
+        reply = "❌ такси: ошибка сервера, нажмите «Таксига юкландим» в 1С."
+    await _send_text(to, reply)
+    for line in lines:
+        await _send_text(to, line)   # sendByApi — в исходящих их не исполняем, во входящих своего чата не ждём
+    return True
 
 
 VOICE_TYPES = ("audioMessage", "voiceMessage", "pttMessage")

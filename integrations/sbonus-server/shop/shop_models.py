@@ -60,14 +60,39 @@ class ShopOrder(Base):
     sync_attempts = Column(Integer, default=0)
     note = Column(Text)
 
+    # Заклад (013, 08.10): платит часть сразу, остаток — по второй ссылке, когда товар погрузили в такси
+    deposit = Column(Numeric(14, 2))                    # NULL — платит всё сразу, как раньше
+    taxi = Column(JSONB)                                # {car, driver_phone}
+    shipped_at = Column(DateTime)
+    rest_invoice_id = Column(String(64))
+    rest_pay_url = Column(Text)
+    rest_paid = Column(Boolean, default=False)
+    rest_paid_at = Column(DateTime)
+    rest_trans_id = Column(String(64))
+    rest_pko_1c = Column(String(32))
+    rest_ref = Column(String(32))                       # <номер>-R, -R2… — текущая ссылка на остаток
+    rest_link_at = Column(DateTime)                     # когда она выпущена
+
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     events = relationship("ShopOrderEvent", back_populates="order", cascade="all, delete-orphan")
 
-    def money_amount(self):
-        """Сколько клиент платит деньгами (для старых заказов без бонусов — total)."""
+    def full_amount(self):
+        """Сколько клиент платит деньгами за весь заказ (для старых заказов без бонусов — total)."""
         return self.pay_amount if self.pay_amount is not None else self.total
+
+    def money_amount(self):
+        """Первая оплата: заклад, если он есть, иначе вся сумма. Это же сумма первого ПКО в 1С."""
+        return self.deposit if self.deposit else self.full_amount()
+
+    def rest_amount(self):
+        """Остаток после заклада; без заклада — 0. После оплаты заклада бонусы уже списаны — считаем от
+        фактически списанных: списалось меньше задуманного — разницу доплачивают остатком, а не теряет магазин."""
+        if not self.deposit:
+            return 0
+        bonus = self.bonus_spent if (self.paid and self.bonus_spend) else self.bonus_spend
+        return max(self.total - (bonus or 0) - self.deposit, 0)
 
     def to_site_dict(self) -> dict:
         """Для страницы заказа на сайте: без телефона и адреса."""
@@ -87,6 +112,12 @@ class ShopOrder(Base):
                 for l in (self.lines or [])
             ],
             "payUrl": self.pay_url if self.status == "awaiting_payment" else None,
+            "deposit": float(self.deposit) if self.deposit else None,
+            "restAmount": float(self.rest_amount()) if self.deposit else None,
+            "restPayUrl": (self.rest_pay_url if self.deposit and self.rest_pay_url and not self.rest_paid
+                           and self.status != "cancelled" else None),
+            "restPaid": bool(self.rest_paid) if self.deposit else None,
+            "taxi": self.taxi if self.deposit else None,
             "createdAt": self.created_at.isoformat() if self.created_at else None,
             "number1c": self.order_number_1c,
         }
@@ -105,7 +136,9 @@ class ShopOrder(Base):
             "goods_total": float(self.goods_total),
             "total": float(self.total),
             "bonus_spent": float(self.bonus_spent or 0),   # скидка по строкам товаров в 1С
-            "pay_amount": float(self.money_amount()),      # сумма ПКО
+            "pay_amount": float(self.money_amount()),      # сумма ПКО (при закладе — заклад)
+            "deposit": bool(self.deposit),                 # остаток придёт вторым ПКО (rest-pending)
+            "full_amount": float(self.full_amount()),
             "obank_trans_id": self.obank_trans_id or "",
         }
 

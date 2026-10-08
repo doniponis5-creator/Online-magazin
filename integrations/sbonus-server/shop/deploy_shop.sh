@@ -25,8 +25,8 @@ SRC="$(cd "$(dirname "$0")" && pwd)"
 API=sbonus_api
 DB=sbonus_db
 TS=$(date +%Y%m%d_%H%M%S)
-FILES="__init__.py shop_models.py shop_router.py shop_catalog.py shop_telegram.py shop_customers.py shop_admin.py shop_push.py shop_push_fcm.py shop_cart_rules.py shop_cart_remind.py shop_promo_rules.py shop_promo.py shop_banners_rules.py shop_whatsapp.py shop_installments_calc.py shop_installments.py shop_stock.py shop_wa_bot.py shop_ig_rules.py shop_ig_bot.py shop_ig_post.py shop_ig_stats.py"
-MIGRATIONS="001_shop_orders_migration.sql 002_shop_catalog_migration.sql 003_shop_bonus_migration.sql 004_shop_stats_migration.sql 005_shop_push_migration.sql 006_shop_installments_migration.sql 007_shop_notes_migration.sql 008_shop_chat_extra_migration.sql 009_shop_push_token_len_migration.sql 010_shop_cart_reminders_migration.sql 011_shop_promo_migration.sql 012_shop_banners_migration.sql"
+FILES="__init__.py shop_models.py shop_router.py shop_catalog.py shop_telegram.py shop_customers.py shop_admin.py shop_push.py shop_push_fcm.py shop_cart_rules.py shop_cart_remind.py shop_promo_rules.py shop_promo.py shop_banners_rules.py shop_deposit_rules.py shop_whatsapp.py shop_installments_calc.py shop_installments.py shop_stock.py shop_wa_bot.py shop_ig_rules.py shop_ig_bot.py shop_ig_post.py shop_ig_stats.py"
+MIGRATIONS="001_shop_orders_migration.sql 002_shop_catalog_migration.sql 003_shop_bonus_migration.sql 004_shop_stats_migration.sql 005_shop_push_migration.sql 006_shop_installments_migration.sql 007_shop_notes_migration.sql 008_shop_chat_extra_migration.sql 009_shop_push_token_len_migration.sql 010_shop_cart_reminders_migration.sql 011_shop_promo_migration.sql 012_shop_banners_migration.sql 013_shop_deposit_migration.sql"
 
 echo "=== Деплой: интернет-магазин (заказы + каталог + вход и бонусы) ==="
 
@@ -83,6 +83,11 @@ assert cart_rules.reminder_text(['A'], 1)[0] and callable(cart.run_once) and cal
 assert cart.clean_phone('+996555000000') and cart.clean_snapshot([], 0, 0) == ([], 0, 0)
 import app.shop_precheck.shop_promo_rules as promo_rules
 import app.shop_precheck.shop_banners_rules as banner_rules
+import app.shop_precheck.shop_deposit_rules as deposit_rules
+assert deposit_rules.check_deposit(3000, 21400) == 3000 and deposit_rules.parse_ref('SC-261008-7K3QF-R') == ('SC-261008-7K3QF', True)
+assert deposit_rules.parse_taxi_command('такси 7K3QF 01KG123 0555123456')['code'] == '7K3QF' and deposit_rules.parse_taxi_command('такси 01KG123ABC 0555123456')['car'] == '01KG123ABC'
+assert callable(r.ship_by_taxi) and callable(r.find_deposit_order) and callable(r.taxi_waiting) and callable(wabot._owner_command)
+assert {'/{order_id}/taxi', '/deposits', '/rest-pending', '/{order_id}/rest-done', '/{order_id}/rest-manual'} <= {x.path.replace('/webhook/1c/shop', '') for x in r.router_1c_shop.routes}
 assert banner_rules.clean_link('cat:tv') == 'cat:tv' and banner_rules.clean_link('javascript:x') is None
 assert {'/banners', '/banners/{banner_id}/{kind}'} <= {x.path.replace('/webhook/1c/shop', '') for x in ad.router_1c_admin.routes}
 assert '/webhook/site/banners' in {x.path for x in ad.router_site_admin.routes} and '/shop/photos/banner/{name}' in {x.path for x in c.router_public_photos.routes}
@@ -341,6 +346,10 @@ docker cp "$SRC/012_shop_banners_migration.sql" "$DB:/tmp/012_shop_banners_migra
 docker exec "$DB" psql -U sbonus -d sbonus_db -v ON_ERROR_STOP=1 -f /tmp/012_shop_banners_migration.sql \
     && echo "✓ Таблица shop_banners (баннеры главной из 1С)" \
     || { echo "❌ Миграция баннеров не прошла — стоп (код не пересобран)"; exit 1; }
+docker cp "$SRC/013_shop_deposit_migration.sql" "$DB:/tmp/013_shop_deposit_migration.sql"
+docker exec "$DB" psql -U sbonus -d sbonus_db -v ON_ERROR_STOP=1 -f /tmp/013_shop_deposit_migration.sql \
+    && echo "✓ Колонки заклада в shop_orders (оплата частями, такси)" \
+    || { echo "❌ Миграция заклада не прошла — стоп (код не пересобран)"; exit 1; }
 
 # ── 6. Секрет сайта в .env (создаётся один раз) ──────────────────────────────
 if grep -q '^SHOP_SITE_SECRET=' "$ENV_FILE" 2>/dev/null; then

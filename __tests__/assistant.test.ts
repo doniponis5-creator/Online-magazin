@@ -241,7 +241,9 @@ describe('правила магазина в голове консультант
     expect(text).toContain('ПРАВИЛА МАГАЗИНА')
     expect(text).toMatch(/с 9:00 до 18:00/)
     expect(text).toContain('Кызыл-Кия')
-    expect(text).toMatch(/Оплаты при получении нет/)
+    // 08.10: всей суммы при получении нет, но боится или хочет платить при получении — заклад от 1 000 сом
+    expect(text).toMatch(/Всей суммы при получении нет/)
+    expect(text).toMatch(/ЗАКЛАД[\s\S]*от 1 000 сом[\s\S]*Канча заклад бересиз/)
     expect(text).toContain('Адал рассрочка')
     expect(text).toMatch(/самое большее 5%/)
     expect(text).toContain('[Голосовое]')

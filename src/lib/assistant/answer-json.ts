@@ -10,7 +10,7 @@ export function fromJson(raw: string): string {
   } catch {
     return withoutIds(raw)
   }
-  const row = data as { reply?: unknown; productIds?: unknown; audience?: unknown }
+  const row = data as { reply?: unknown; productIds?: unknown; audience?: unknown; deposit?: unknown }
   if (typeof row.reply !== 'string' || !row.reply.trim()) throw new Error('empty-reply')
   const reply = withoutIds(row.reply)
   const ids = Array.isArray(row.productIds) ? row.productIds.filter((id): id is string => typeof id === 'string') : []
@@ -18,6 +18,9 @@ export function fromJson(raw: string): string {
   if (ids.length > 0) lines.push(`TOVAR: ${ids.slice(0, 3).join(', ')}`)
   // Кому адресовано: покупатель, сотрудник или вовсе не магазин — см. parseAnswer.
   if (row.audience === 'staff' || row.audience === 'personal') lines.push(`KIMGA: ${row.audience}`)
+  // Заклад: покупатель согласился платить частью и назвал сумму (shop_deposit_rules на сервере).
+  const deposit = typeof row.deposit === 'number' ? Math.floor(row.deposit) : 0
+  if (deposit >= 1000) lines.push(`ZAKLAD: ${deposit}`)
   return lines.join('\n')
 }
 
@@ -30,7 +33,7 @@ export function withoutIds(text: string): string {
   return text
     .split('\n')
     .map((line) =>
-      line.startsWith('TOVAR:') || line.startsWith('KIMGA:')
+      line.startsWith('TOVAR:') || line.startsWith('KIMGA:') || line.startsWith('ZAKLAD:')
         ? line
         : line
             .replace(/\s*\[?\bid=[^\s\]|,]+\]?/gi, '')

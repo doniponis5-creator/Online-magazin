@@ -42,10 +42,53 @@ type Draft = {
   city?: string
   /** сколько штук; 1, если не сказали */
   qty: number
+  /** заклад, на который покупатель согласился прямо перед оформлением */
+  deposit?: number
+  /** когда согласился: заклад живёт 2 часа и в черновике — к товару через сутки не пристанет */
+  depositAt?: number
 }
 
 // Переживает перезапуск сайта: обновили сайт посреди заказа — покупатель не начинает заново.
 const drafts = durableMap<ChatKey, Draft>('order-drafts', 24 * 3600 * 1000)
+// Заклад, на который покупатель согласился в разговоре (модель, поле deposit) — берёт оформление заказа.
+// Живёт 2 часа: «да» на «Оформляем?» приходит сразу; вчерашний заклад к сегодняшнему товару не пристанет.
+const deposits = durableMap<ChatKey, { amount: number; at: number }>('order-deposits', 2 * 3600 * 1000)
+
+/** Покупатель согласился платить закладом и назвал сумму (владелец 08.10: от 1 000 сом, сумму выбирает сам). */
+export function rememberDeposit(chatId: ChatKey, amount: number): void {
+  if (Number.isFinite(amount) && amount >= 1000) deposits.set(chatId, { amount: Math.floor(amount), at: Date.now() })
+}
+
+/** «Всё сразу оплачу» после разговора о закладе — заказ на всю сумму, прежний заклад забываем. */
+export const FULL_PAY =
+  /(?:толук|толугу|бардыгын|баарын|бүтүн|всю сумму|вс[её] сразу|сразу вс[её]|полностью|целиком|to'?liq|tulik|тулик|хаммасини|hammasini)(?:\s+\S+){0,2}?\s+(?:төл|толо|оплач|оплат|заплач|тула|tola|to'la)|(?:төл|толо|оплач|оплат|заплач|тула|tola|to'la)\S*(?:\s+\S+){0,2}?\s+(?:толук|толугу|полностью|целиком|всю сумму|вс[её] сразу|to'?liq|тулик|хаммасини)/i
+
+export function forgetDeposit(chatId: ChatKey): void {
+  deposits.delete(chatId)
+  const draft = drafts.get(chatId)
+  if (draft?.deposit) drafts.set(chatId, { ...draft, deposit: undefined })
+}
+
+const DEPOSIT_TTL = 2 * 3600 * 1000
+
+/**
+ * Заклад переходит в черновик заказа один раз — дальше живёт с ним (отмена черновика стирает и его).
+ * Анкета ещё открыта (покупатель спросил посреди шагов и снова сказал «да») — берём из неё, если не старше 2 часов.
+ */
+function takeDeposit(chatId: ChatKey): { amount: number; at: number } | undefined {
+  const saved = deposits.get(chatId)
+  deposits.delete(chatId)
+  const old = drafts.get(chatId)
+  const fromDraft = old?.deposit && old.depositAt ? { amount: old.deposit, at: old.depositAt } : undefined
+  const found = saved ?? fromDraft
+  return found && Date.now() - found.at < DEPOSIT_TTL ? found : undefined
+}
+
+const DEPOSIT_LINE: Record<TalkLang, (sum: string) => string> = {
+  ru: (sum) => `\nЗаклад: ${sum} — остаток, когда погрузим товар в такси.`,
+  ky: (sum) => `\nЗаклад: ${sum} — калганы товар таксиге жүктөлгөндө.`,
+  uz: (sum) => `\nЗаклад: ${sum} — колгани товар таксига юкланганда.`,
+}
 
 type Say = { ru: string; ky: string; uz: string }
 const pick = (say: Say, lang: TalkLang) => say[lang]
@@ -54,8 +97,16 @@ export function hasDraft(chatId: ChatKey): boolean {
   return drafts.has(chatId)
 }
 
+/** Анкета прервалась вопросом или «потом» — заклад не теряем: вернётся к «да» ещё 2 часа. «Отмена» — cancel(). */
+function dropDraft(chatId: ChatKey): void {
+  const draft = drafts.get(chatId)
+  drafts.delete(chatId)
+  if (draft?.deposit) deposits.set(chatId, { amount: draft.deposit, at: draft.depositAt ?? Date.now() })
+}
+
 export function cancel(chatId: ChatKey): void {
   drafts.delete(chatId)
+  deposits.delete(chatId)
 }
 
 /** Покупатель собрался брать. Слова из трёх языков, включая «куда платить». */
@@ -177,16 +228,21 @@ export async function start(
     phone: prefill.phone?.replace(/\D/g, '') || undefined,
   }
 
+  const agreed = takeDeposit(chatId)
+  const deposit = agreed?.amount
+  const depositAt = agreed?.at
+  // Покупатель видит заклад в первом же шаге оформления — не согласен, скажет сразу
+  const depositLine = deposit ? DEPOSIT_LINE[lang](formatSom(deposit)) : ''
   if (found.length === 1) {
-    const draft: Draft = { step: 'name', source, options: [], productId: found[0].id, qty, ...known }
+    const draft: Draft = { step: 'name', source, options: [], productId: found[0].id, qty, deposit, depositAt, ...known }
     drafts.set(chatId, draft)
     const count = qty > 1 ? ` × ${qty}` : ''
-    return `${shortName(found[0].nameRu)} — ${formatSom(found[0].price)}${count}. ${nextQuestion(draft, lang)}`
+    return `${shortName(found[0].nameRu)} — ${formatSom(found[0].price)}${count}.${depositLine} ${nextQuestion(draft, lang)}`
   }
 
-  drafts.set(chatId, { step: 'pick', source, options: found.map((p) => p.id), qty, ...known })
+  drafts.set(chatId, { step: 'pick', source, options: found.map((p) => p.id), qty, deposit, depositAt, ...known })
   const list = found.map((p, i) => `${i + 1}. ${shortName(p.nameRu)} — ${formatSom(p.price)}`).join('\n')
-  return `${list}\n\n${pick(ASK_PICK, lang)}`
+  return `${list}${depositLine}\n\n${pick(ASK_PICK, lang)}`
 }
 
 /**
@@ -304,7 +360,7 @@ async function advance(chatId: ChatKey, text: string, lang: TalkLang, siteLang: 
   const value = text.replace(/https?:\/\/\S+/gi, ' ').replace(/\s+/g, ' ').trim()
 
   if (DEFER.test(value)) {
-    drafts.delete(chatId)
+    dropDraft(chatId)
     return null
   }
 
@@ -320,7 +376,7 @@ async function advance(chatId: ChatKey, text: string, lang: TalkLang, siteLang: 
     if (PAY_ASIDE.test(value)) return `${pick(PAY_LATER, lang)} ${draft.step === 'where' ? pick(ASK_WHERE, lang) : pick(ASK_ADDRESS, lang)}`
     // «Кызыл-кыя шаарына даставка кылып берсениздер» — слово «доставка», но назван город: это ответ.
     if (value.includes('?') || (NOT_AN_ANSWER.test(value) && !PLACE.test(value))) {
-      drafts.delete(chatId)
+      dropDraft(chatId)
       return null
     }
   } else if (looksLikeQuestion(value)) return null
@@ -334,7 +390,7 @@ async function advance(chatId: ChatKey, text: string, lang: TalkLang, siteLang: 
       : ordinal !== undefined ? draft.options[ordinal] : await pickByWords(draft.options, value)
     if (!id) {
       // Написал не номер — значит, выбирать пока не готов. Выходим из заказа.
-      drafts.delete(chatId)
+      dropDraft(chatId)
       return null
     }
     draft.productId = id
@@ -415,10 +471,16 @@ async function finish(
     return pick(FAILED, lang) + phoneLine()
   }
 
+  // Заклад меньше суммы к оплате — платит часть; больше или равен — обычный заказ
+  const toPay = result.order.total - result.order.bonus
+  const deposit = draft.deposit && draft.deposit < toPay ? draft.deposit : undefined
   try {
-    const created = await createOrder(result.order)
+    const created = await createOrder(deposit ? { ...result.order, deposit } : result.order)
     const payUrl = created.payUrl.startsWith('http') ? created.payUrl : `${SITE_URL}${created.payUrl}`
-    return done(result.order.total, created.orderId, payUrl, lang)
+    // Сумму заклада берём из ответа сервера: не принял его (старый сервер) — ссылка на всю сумму, так и пишем
+    return created.deposit
+      ? doneDeposit(toPay, created.deposit, created.orderId, payUrl, lang)
+      : done(result.order.total, created.orderId, payUrl, lang)
   } catch (error) {
     console.error('[telegram] сервер заказов:', error instanceof Error ? error.message : error)
     return pick(FAILED, lang) + phoneLine()
@@ -427,6 +489,18 @@ async function finish(
 
 function phoneLine(): string {
   return '+996 557 100 505'
+}
+
+function doneDeposit(total: number, deposit: number, orderId: string, payUrl: string, lang: TalkLang): string {
+  const sum = formatSom(total)
+  const dep = formatSom(deposit)
+  const rest = formatSom(total - deposit)
+  const say: Say = {
+    ru: `Спасибо! ✅ Заказ ${orderId}, ${sum}.\nЗаклад ${dep} — оплата: ${payUrl}\nОстаток ${rest} — когда погрузим товар в машину: пришлём номер машины, телефон водителя и ссылку на оплату. Такси оплачиваете водителю сами.`,
+    ky: `Рахмат! ✅ Заказ ${orderId}, ${sum}.\nЗаклад ${dep} — төлөө: ${payUrl}\nКалганы ${rest} — товарды машинага жүктөгөндө: машинанын номерин, айдоочунун телефонун жана төлөм шилтемесин жөнөтөбүз. Таксини айдоочуга өзүңүз төлөйсүз.`,
+    uz: `Рахмат! ✅ Буюртма ${orderId}, ${sum}.\nЗаклад ${dep} — тулов: ${payUrl}\nКолгани ${rest} — товарни машинага юклаганда: машина ракамини, хайдовчи телефонини ва тулов хаволасини юборамиз. Таксини хайдовчига узингиз тулайсиз.`,
+  }
+  return pick(say, lang)
 }
 
 function done(total: number, orderId: string, payUrl: string, lang: TalkLang): string {

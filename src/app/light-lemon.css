@@ -543,6 +543,10 @@ input, textarea { caret-color: var(--color-primary); }
 .order-cancel__text { margin: 6px 0 14px; font-size: 14px; line-height: 1.55; color: var(--color-ink-soft); }
 .order-cancel__ask .order-page__actions { margin-bottom: 0; }
 .order-cancel__help { margin: -6px 0 16px; font-size: 14px; line-height: 1.55; color: var(--color-ink-soft); }
+/* Заклад (08.10): часть оплачена, остаток — когда товар в такси */
+.order-deposit { margin-bottom: 16px; }
+.order-deposit__taxi { margin: 0 0 12px; font-size: 15px; line-height: 1.5; color: var(--color-ink); }
+.order-deposit__taxi a { color: inherit; font-weight: 600; }
 .order-cancel__error { margin: 0 0 16px; line-height: 1.55; }
 .order-cancel__wa { font-weight: 700; color: var(--color-primary); text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
 .checkout-pay { white-space: normal; text-align: center; line-height: 1.3; min-height: 52px; }
