@@ -3083,7 +3083,13 @@ main#content {
 }
 
 @media (max-width: 560px) {
+  /* подпись «До конца акции» на телефоне остаётся (08.10): без неё «6 д 05:09:35» непонятно, что это */
   .promo-timer--inline .promo-timer__label {
+    font-weight: 600;
+  }
+
+  /* в полосе распродажи на главной колонка текста узкая — там без подписи, как раньше */
+  .campaign-band .promo-timer__label {
     display: none;
   }
 
@@ -3094,7 +3100,19 @@ main#content {
   .promo-timer--card {
     left: 8px;
     bottom: 8px;
-    padding: 5px 9px;
+    padding: 5px 8px;
+    gap: 5px;
+    max-width: calc(100% - 16px);
+  }
+
+  /* телефон: сотые доли мельче и без разрядки — наклейка не упирается в край узкой карточки (320 px) */
+  .promo-timer--card .promo-timer__value {
+    letter-spacing: 0;
+  }
+
+  .promo-timer__ms {
+    min-width: 2.1ch;
+    font-size: 0.85em;
   }
 }
 

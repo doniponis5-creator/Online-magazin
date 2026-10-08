@@ -780,8 +780,8 @@
     "semantic_hash": ""
   },
   "src/data/1c/catalog.json": {
-    "mtime": 1791463206.1968198,
-    "seen": 1791463419.460671,
+    "mtime": 1791463890.8446825,
+    "seen": 1791464080.1783128,
     "ast_hash": "81adc17fc4264e6125f8227414510a69",
     "semantic_hash": ""
   },
@@ -3882,9 +3882,9 @@
     "semantic_hash": ""
   },
   "src/components/PromoCountdown.tsx": {
-    "mtime": 1791463143.7557576,
-    "seen": 1791463419.456041,
-    "ast_hash": "d6b2fa2cc56a5c2de55a6f996a14c312",
+    "mtime": 1791463657.240514,
+    "seen": 1791464080.1749299,
+    "ast_hash": "09a66d59595c1f14dd29da01821835bf",
     "semantic_hash": ""
   },
   "public/brands/artel.webp": {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { IconClock } from './Icons'
 
@@ -24,6 +24,29 @@ function msLeft(until: string): number {
 
 const two = (n: number) => String(n).padStart(2, '0')
 
+/**
+ * Один общий «часовой механизм» на всю страницу: ~20 раз в секунду, пока есть кого обновлять. Каталог с десятком
+ * таймеров — всё равно один цикл, а не десять (владелец 08.10: сотые доли и у карточек). requestAnimationFrame сам
+ * засыпает, когда вкладка в фоне.
+ */
+const subscribers = new Set<() => void>()
+let frame = 0
+let last = 0
+function loop(now: number) {
+  if (now - last >= 50) {
+    last = now
+    subscribers.forEach((tick) => tick())
+  }
+  frame = subscribers.size > 0 ? requestAnimationFrame(loop) : 0
+}
+function subscribe(tick: () => void): () => void {
+  subscribers.add(tick)
+  if (!frame) frame = requestAnimationFrame(loop)
+  return () => {
+    subscribers.delete(tick)
+  }
+}
+
 export function PromoCountdown({
   until,
   variant = 'inline',
@@ -35,12 +58,22 @@ export function PromoCountdown({
   const { t } = useI18n()
   const [left, setLeft] = useState<number | null>(null)
 
-  // Сотые доли секунды бегут только у крупного таймера (страница товара, главная — владелец 08.10): у карточек
-  // каталога их десятки, и телефон тратил бы кадры. «Меньше движения» в настройках телефона — без них.
+  // Сотые доли секунды — у всех таймеров (владелец 08.10), но быстро обновляется только тот, что сейчас на экране;
+  // остальные — раз в секунду. «Меньше движения» в настройках телефона — без сотых.
   const [fast, setFast] = useState(false)
+  const [visible, setVisible] = useState(false)
+  const box = useRef<HTMLSpanElement>(null)
   useEffect(() => {
-    setFast(variant === 'inline' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches)
-  }, [variant])
+    setFast(!window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+  }, [])
+  const shown = left !== null && left > 0
+  useEffect(() => {
+    const node = box.current
+    if (!node || typeof IntersectionObserver === 'undefined') return setVisible(true)
+    const io = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting))
+    io.observe(node)
+    return () => io.disconnect()
+  }, [shown])
 
   useEffect(() => {
     if (!until) return setLeft(null)
@@ -48,23 +81,10 @@ export function PromoCountdown({
     // и React ругался бы на расхождение разметки.
     const tick = () => setLeft(msLeft(until))
     tick()
-    if (!fast) {
-      const id = setInterval(tick, 1000)
-      return () => clearInterval(id)
-    }
-    // ~25 раз в секунду, и только пока вкладка видна (requestAnimationFrame сам засыпает в фоне)
-    let frame = 0
-    let last = 0
-    const loop = (now: number) => {
-      if (now - last >= 40) {
-        last = now
-        tick()
-      }
-      frame = requestAnimationFrame(loop)
-    }
-    frame = requestAnimationFrame(loop)
-    return () => cancelAnimationFrame(frame)
-  }, [until, fast])
+    if (fast && visible) return subscribe(tick)
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [until, fast, visible])
 
   if (left === null || left <= 0) return null
 
@@ -79,6 +99,7 @@ export function PromoCountdown({
 
   return (
     <span
+      ref={box}
       className={`promo-timer promo-timer--${variant}${soon ? ' is-soon' : ''}`}
       role="timer"
       title={t.promo.endsIn}
