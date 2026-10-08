@@ -247,10 +247,11 @@ describe('аудит 08.10 вечер', () => {
 // модель сама собрала имя и номер и пообещала ссылку; заказа не было.
 describe('товар назван словами, без карточки', () => {
   it('«флагман» кириллицей узнаётся как FLAGMAN', async () => {
-    const { bestNameMatch } = await import('@/lib/assistant/knowledge')
+    const { chatProductGuess } = await import('@/lib/assistant/knowledge')
     const base = products.find((p) => p.variants.some((v) => v.stock > 0))!
     const flagman = { ...base, id: 'cb-flag', nameRu: 'Стиральная машина FLAGMAN AV-80MXLB(BG)', nameKy: 'Кир жуугуч FLAGMAN AV-80MXLB(BG)', brand: 'FLAGMAN', price: 21400 }
-    expect(bestNameMatch('Салом флагман омохчиман 21400 сомликдан заклад таше', [flagman, ...products])?.id).toBe('cb-flag')
+    const flagman10 = { ...base, id: 'cb-flag10', nameRu: 'Стиральная машина FLAGMAN AV-100MXLB 10 кг', nameKy: 'Кир жуугуч FLAGMAN AV-100MXLB', brand: 'FLAGMAN', price: 27400 }
+    expect(chatProductGuess('Салом флагман омохчиман 21400 сомликдан заклад таше', [flagman, flagman10, ...products])?.id).toBe('cb-flag')
   })
 
   it('«хада» после «Расмийлаштирайликми?» — форма заказа с FLAGMAN и закладом 1 000', async () => {
@@ -271,7 +272,8 @@ describe('товар назван словами, без карточки', () =
     const site = { key: `web:flag-${Math.random()}`, orderSource: 'Заказ из чата на сайте', leadChannel: 'site' as const, known: {} }
     const u = (text: string) => ({ role: 'user' as const, text })
     const b = (text: string) => ({ role: 'assistant' as const, text })
-    const t1 = [u('Салом флагман омохчиман 21400 сомликдан заклад таше'), b('Флагман 21 400 сомдук модели боюнча заклад 1 000 сомдон баштап кабыл алынат. Канча заклад бересиз?'), u('1000')]
+    // жонли сайтда «флагман» был в первой реплике, а «хада» — седьмой: окно в 6 реплик его теряло
+    const t1 = [u('Салом флагман омохчиман 21400 сомликдан заклад таше'), b('Понимаю. С закладом делаем так… Сколько готовы внести закладом?'), u('1000')]
     await respond(site, t1, 'ky', null)
     const r = await respond(site, [...t1, b('Макул, заклад 1 000 сом.'), u('каерга толеман'), b('Буюртмани расмийлаштирганимиздан кейин тулов сахифаси очилади. Расмийлаштирайликми?'), u('хада')], 'ky', null)
     vi.doUnmock('@/lib/assistant/live')
@@ -280,5 +282,51 @@ describe('товар назван словами, без карточки', () =
     expect(r.source).toBe('flow')
     expect(r.text).toContain('FLAGMAN')
     expect(r.text).toMatch(/Заклад: 1\s000/)
+  })
+})
+
+describe('язык', () => {
+  it('«Салом флагман омохчиман 21400 сомликдан заклад таше» — узбекский, не русский', async () => {
+    const { talkLang } = await import('@/lib/assistant/reply')
+    expect(talkLang([{ role: 'user', text: 'Салом флагман омохчиман 21400 сомликдан заклад таше' }], 'ky')).toBe('uz')
+    expect(talkLang([{ role: 'user', text: 'Флагман 21400 сомдук алгым келет' }], 'ky')).toBe('ky')
+  })
+})
+
+describe('угадывание товара без карточки — аудит 08.10', () => {
+  const stock = () => products.filter((p) => p.price > 5000 && !p.sale && !(p.oldPrice && p.oldPrice > p.price) && p.variants.some((v) => v.stock > 0))
+  it('«хит», «бекор» — не марки; «самсунг» — Samsung', async () => {
+    const { chatProductGuess: bestNameMatch } = await import('@/lib/assistant/knowledge')
+    const [a, b, c] = stock()
+    const list = [
+      { ...a, id: 'x-hit', nameRu: 'Пылесос HITACHI CV-950F', nameKy: 'Чаң соргуч HITACHI CV-950F', brand: 'HITACHI', price: 9900 },
+      { ...b, id: 'x-beko', nameRu: 'Стиральная машина BEKO RSPE78612W', nameKy: 'Кир жуугуч BEKO RSPE78612W', brand: 'BEKO', price: 31000 },
+      { ...c, id: 'x-sam', nameRu: 'Телевизор SAMSUNG UE43', nameKy: 'Телевизор SAMSUNG UE43', brand: 'SAMSUNG', price: 25000 },
+    ]
+    expect(bestNameMatch('азыр бул хит модель', list)).toBeNull()
+    expect(bestNameMatch('заказды бекор кылабыз', list)).toBeNull()
+    expect(bestNameMatch('самсунг телевизор барбы', list)?.id).toBe('x-sam')
+    expect(bestNameMatch('Беко кир машина канча', list)?.id).toBe('x-beko')
+  })
+
+  it('BEKO в старой реплике, «оба» на предложение LG — форма для LG', async () => {
+    const [a, b] = stock()
+    const beko = { ...a, nameRu: 'Стиральная машина BEKO RSPE78612W', nameKy: 'Кир жуугуч BEKO RSPE78612W', brand: 'BEKO', price: 31000 }
+    const lg = { ...b, nameRu: 'Пылесос LG VC99999TEST', nameKy: 'Чаң соргуч LG VC99999TEST', brand: 'LG', price: 13600 }
+    const list = [beko, lg, ...products.filter((p) => p.id !== a.id && p.id !== b.id)]
+    vi.resetModules()
+    vi.doMock('@/lib/assistant/live', async (orig) => ({ ...(await orig<typeof import('@/lib/assistant/live')>()), salesCatalogNow: async () => list, catalogNow: async () => list }))
+    const { respond } = await import('@/lib/assistant/respond')
+    const site = { key: `web:lg-${Math.random()}`, orderSource: 'Заказ из чата на сайте', leadChannel: 'site' as const, known: {} }
+    const r = await respond(site, [
+      { role: 'user', text: 'Беко кир машина канча' }, { role: 'assistant', text: 'BEKO RSPE78612W — 31 000 сом.' },
+      { role: 'user', text: 'а LG пылесос?' }, { role: 'assistant', text: 'LG VC99999TEST — 13 600 сом. Алсаңыз, ушул жерден тариздеп берем?' },
+      { role: 'user', text: 'оба' },
+    ], 'ky', null)
+    vi.doUnmock('@/lib/assistant/live')
+    vi.resetModules()
+    expect(r.source).toBe('flow')
+    expect(r.text).toContain('LG')
+    expect(r.text).not.toContain('BEKO')
   })
 })

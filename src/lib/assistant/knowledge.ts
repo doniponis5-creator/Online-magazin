@@ -212,9 +212,7 @@ export function bestNameMatch(text: string, list: Product[]): Product | null {
   // Цена «15900» в названия не входит и очков не даёт.
   // «Мини посудомойка» (рилс 05.10) — у товара «Посудомоечная машина MIDEA…»: слово «посудомойка» с названием
   // не сходилось, и в Direct уходило «какой товар?». dishwasherWords приводит его к «посудомоечная».
-  const plain = dishwasherWords(splitWords(text).filter((w) => w.length >= 3 && !POST_NOISE.has(w)))
-  // «флагман» кириллицей — это FLAGMAN латиницей (сайт 08.10: товар не узнан, анкета не началась)
-  const words = [...new Set([...plain, ...plain.filter((w) => /[а-яёңөүўқғҳ]/.test(w)).map(toLatin)])]
+  const words = [...new Set(dishwasherWords(splitWords(text).filter((w) => w.length >= 3 && !POST_NOISE.has(w))))]
   if (words.length === 0) return null
   const names = list.map((p) => splitWords(`${p.nameRu} ${p.nameKy} ${p.brand}`))
   const scores = list.map(() => 0)
@@ -282,6 +280,34 @@ const LATIN: Record<string, string> = {
 /** Марка, написанная кириллицей: «флагман» → «flagman», «самсунг» → «samsung», «мидеа» → «midea». */
 export function toLatin(word: string): string {
   return [...word].map((ch) => LATIN[ch] ?? ch).join('')
+}
+
+/**
+ * Товар разговора в чате, когда карточки не было (сайт 08.10: «флагман 21400 сомликдан» → анкета не началась).
+ * Строже, чем подпись поста: только марка или модель ЦЕЛЫМ словом названия (латиница; кириллица марки —
+ * через toLatin, от 4 букв: «хит» ≠ HITACHI, «бекор» ≠ BEKO) и цена. Слово есть у одного товара — он; у
+ * нескольких — решает названная цена; иначе null: угадывать нельзя.
+ */
+export function chatProductGuess(text: string, list: Product[]): Product | null {
+  const words = normalize(text).split(' ').filter(Boolean)
+  const latin = [...new Set([
+    ...words.filter((w) => /[a-z]/.test(w) && w.length >= 3),
+    ...words.filter((w) => /^[а-яңөү]{4,}$/.test(w)).map(toLatin),
+  ])]
+  const nameWords = list.map((p) => new Set(normalize(`${p.nameRu} ${p.brand}`).split(' ')))
+  // слово, которое есть у многих товаров («stiralnaya» не бывает, но «inverter», «smart» бывают) — не марка
+  const hits = latin
+    .map((w) => list.filter((_, i) => nameWords[i].has(w)))
+    .filter((found) => found.length > 0 && found.length <= 6)
+  if (hits.length === 0) return null
+  const candidates = [...new Set(hits.flat())]
+  const prices = [...text.matchAll(/(?<![\d.,])(\d{1,3}(?:[  .,]\d{3})+|\d{4,7})(?![\d])/g)].map((m) => Number(m[1].replace(/\D/g, '')))
+  const byPrice = candidates.filter((p) => prices.some((x) => x === p.price))
+  if (byPrice.length === 1) return byPrice[0]
+  // модель («vc73189nhtr») сужает до одного — он
+  const narrow = hits.filter((found) => found.length === 1).map((found) => found[0])
+  if (new Set(narrow).size === 1) return narrow[0]
+  return candidates.length === 1 ? candidates[0] : null
 }
 
 /** Слово покупателя + его синонимы из таблицы выше. */

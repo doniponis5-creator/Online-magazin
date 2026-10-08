@@ -19,7 +19,7 @@ import { durableMap } from '@/lib/durable'
 import { lookupIn, salesCatalogNow } from './live'
 import { type Intent, followAfter, isSureYes, jevConfigured, objectionNote, readAnswer } from './jev'
 import type { ChatTurn, DownWhy } from './gemini'
-import { bestNameMatch, type CustomerBrief, type ProductHit } from './knowledge'
+import { chatProductGuess, type CustomerBrief, type ProductHit } from './knowledge'
 import { getInstallment, getProfile } from '@/lib/customer/gateway'
 import { phones } from '@/data/contacts'
 
@@ -88,6 +88,11 @@ export async function respond(
   if (!turns) return { text: '', products: [], source: 'flow', silent: true }
   // Jev читает ответ на наш вопрос «Оформляем?» / «Позвонить?» — salesFlow кладёт его сюда.
   const hint: { intent?: Intent | null } = {}
+  // Карточек не было, а товар назван словами — узнаём его (форма заказа, торг, «идёт продажа»)
+  if (!Array.isArray(shown) || shown.length === 0) {
+    const guessed = await guessShown(turns)
+    if (guessed.length > 0) shown = guessed
+  }
   const flow = await salesFlow(channel, turns, lang, customer, buy, shown, page, hint)
   if (flow) return flow
   // WhatsApp и Instagram — переписка с магазином: пишут не только покупатели.
@@ -409,6 +414,24 @@ const WHATSAPP_LINE = {
 const pick = (say: Record<'ru' | 'ky' | 'uz', string>, lang: 'ru' | 'ky' | 'uz') => say[lang]
 
 /**
+ * Товар, о котором идёт речь, когда карточек не было («флагман 21400 сомликдан», сайт 08.10): сначала последнее
+ * предложение бота вместе с ответом покупателя («LG … 13 600 сом. Тариздейлиби?» — «оба» → LG, а не BEKO из
+ * старой реплики), потом реплики покупателя от свежей к старой. Не уверен — пусто: угадывать нельзя.
+ */
+async function guessShown(turns: ChatTurn[]): Promise<string[]> {
+  const list = await salesCatalogNow()
+  const lastBot = [...turns].reverse().find((t) => t.role === 'assistant')?.text ?? ''
+  const lastUser = turns[turns.length - 1]?.text ?? ''
+  const now = chatProductGuess(`${withoutQuote(lastBot)}\n${withoutQuote(lastUser)}`, list)
+  if (now) return [now.id]
+  for (const t of turns.filter((x) => x.role === 'user').slice(-10).reverse()) {
+    const said = chatProductGuess(withoutQuote(t.text), list)
+    if (said) return [said.id]
+  }
+  return []
+}
+
+/**
  * Продавец доводит до покупки: «Заказать» у карточки, «беру», «да» на
  * «оформим?» — и заказ оформляется прямо в разговоре; «перезвоните» — номер
  * уходит сотруднику. null — это обычный вопрос, отвечает консультант.
@@ -464,10 +487,7 @@ async function salesFlow(
   if (shown.length === 0 && page && find(page)) shown = [page]
   // Товар назван словами, а карточки не было («флагман 21400 сомликдан», сайт 08.10) — узнаём его из разговора,
   // иначе «да» и номер телефона шли мимо формы заказа, и покупатель оставался без ссылки
-  if (shown.length === 0) {
-    const guess = bestNameMatch(turns.slice(-6).map((t) => withoutQuote(t.text)).join('\n'), await salesCatalogNow())
-    if (guess) shown = [guess.id]
-  }
+  // (товар, названный словами без карточки, уже узнан в respond — guessShown)
   const shownNames = shown.map((id) => find(id)?.nameRu).filter((x): x is string => Boolean(x))
 
   if (typeof buy === 'string' && find(buy)) {

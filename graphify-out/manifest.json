@@ -954,9 +954,9 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1791460621.5482297,
-    "seen": 1791460636.4121346,
-    "ast_hash": "ec75cc8fae4d2ebd71bd7bc6d85f1641",
+    "mtime": 1791461352.9143994,
+    "seen": 1791461367.316631,
+    "ast_hash": "b2cb74a243e688aadbb71fa8f6a6e17f",
     "semantic_hash": ""
   },
   "DESIGN.md": {
@@ -3936,9 +3936,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/knowledge.ts": {
-    "mtime": 1791460508.0579321,
-    "seen": 1791460636.3922703,
-    "ast_hash": "92bf7d474681a6059664b801d7d3d593",
+    "mtime": 1791461201.8881965,
+    "seen": 1791461367.2977855,
+    "ast_hash": "1e35842a171aca3109703a64df8532df",
     "semantic_hash": ""
   },
   "__tests__/assistant.test.ts": {
@@ -3990,9 +3990,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/talk.ts": {
-    "mtime": 1791202216.1741483,
-    "seen": 1791375974.8722138,
-    "ast_hash": "467b5e8a4fbe0c3a335931c35a6d2294",
+    "mtime": 1791461007.1693192,
+    "seen": 1791461367.298907,
+    "ast_hash": "c6b07cb989b538a92ccec0a97638eec7",
     "semantic_hash": ""
   },
   "review/appstore-screenshots/01-home.png": {
@@ -4356,9 +4356,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/respond.ts": {
-    "mtime": 1791460547.2842312,
-    "seen": 1791460636.3933647,
-    "ast_hash": "e3ec224f37fa153a805c188f86990177",
+    "mtime": 1791461227.3045044,
+    "seen": 1791461367.298906,
+    "ast_hash": "17b3c34e933f9a13d9f81b5da3aeed8a",
     "semantic_hash": ""
   },
   "docs/PC_2026-09-21.md": {
@@ -4494,9 +4494,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/policy.ts": {
-    "mtime": 1791453955.3484883,
-    "seen": 1791454004.99419,
-    "ast_hash": "879b831e9e65e9b7079e71495b29f839",
+    "mtime": 1791461304.695007,
+    "seen": 1791461367.29866,
+    "ast_hash": "8a2a5519954dfce21f35fd9acf068b43",
     "semantic_hash": ""
   },
   "scripts/exam/questions.txt": {
@@ -8100,9 +8100,9 @@
     "semantic_hash": ""
   },
   "__tests__/deposit.test.ts": {
-    "mtime": 1791460568.5784094,
-    "seen": 1791460636.356658,
-    "ast_hash": "4131ec470da8181ba8383699173cbfb2",
+    "mtime": 1791461278.4800303,
+    "seen": 1791461367.2619064,
+    "ast_hash": "257f898c9c760df10077ab9b0c63d7ad",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/shop_deposit_rules.py": {
