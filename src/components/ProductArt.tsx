@@ -34,6 +34,7 @@ export function ProductArt({
       {kind === 'battery' && <BatteryArt color={color} />}
       {kind === 'bike' && <BikeArt color={color} />}
       {kind === 'sewing' && <SewingArt color={color} />}
+      {kind === 'bottle' && <BottleArt color={color} />}
       {kind === 'box' && <BoxArt color={color} />}
     </svg>
   )
@@ -306,6 +307,19 @@ function SewingArt({ color }: { color: string }) {
       <path d="M56 104v22" stroke={color} strokeWidth="3.5" strokeLinecap="round" />
       <rect x="47" y="126" width="20" height="6" rx="3" fill={color} opacity="0.7" />
       <path d="M84 148h52" stroke={edge} strokeWidth="3" strokeLinecap="round" />
+    </g>
+  )
+}
+
+/** Флакон геля для стирки — значок «Бытовой химии» и плитка товара без фото */
+function BottleArt({ color }: { color: string }) {
+  return (
+    <g>
+      <rect x="84" y="26" width="32" height="18" rx="4" fill={color} />
+      <path d="M76 52h48l10 22v92a10 10 0 0 1-10 10H76a10 10 0 0 1-10-10V74Z" fill="#FDFEFF" stroke={edge} strokeWidth="2" strokeLinejoin="round" />
+      <rect x="80" y="44" width="40" height="10" rx="3" fill={color} opacity="0.8" />
+      <rect x="78" y="96" width="44" height="44" rx="8" fill={color} opacity="0.18" />
+      <path d="M100 106c8 10 12 16 12 21a12 12 0 0 1-24 0c0-5 4-11 12-21Z" fill={color} />
     </g>
   )
 }

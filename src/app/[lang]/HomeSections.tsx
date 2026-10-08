@@ -92,7 +92,8 @@ function CategoryTiles() {
           «Весь каталог»: 11 разделов + 1 закрывают ряды ровно. Число товаров не
           пишем — владелец против: «5 товаров» в разделе выглядит бедно. */}
       <ul className="cat-icons">
-        {categories.map((c) => (
+        {/* «Бытовая химия» (08.10) — расходники: на главной сетка 11 + 1 ровная, раздел — в каталоге и меню */}
+        {categories.filter((c) => c.id !== 'chemistry').map((c) => (
           <li key={c.id}>
             <Link href={`/${lang}/catalog?cat=${c.id}`} className="cat-icon">
               <CategoryMedia id={c.id} art={c.art} />

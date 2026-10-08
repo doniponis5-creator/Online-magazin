@@ -17,10 +17,61 @@ import { IconCamera, IconClose, IconInstagram, IconPhone, IconTelegram, IconWhat
  * порядок в ней задан намеренно: сперва чат — он отвечает сразу и ночью, —
  * а телефоны и мессенджеры спрятаны в строку внизу и открываются нажатием.
  *
- * Разговор живёт только в этой вкладке. Ничего не сохраняется ни на сервере,
- * ни в телефоне: консультант не должен становиться ещё одним местом, где
- * лежат чужие переписки.
+ * Разговор хранится только в этом браузере (localStorage, 24 часа, без фото): покупатель ушёл
+ * платить в приложение банка или обновил страницу — вернулся, а разговор и начатый заказ на месте
+ * (владелец 08.10: «чиқиб яна кирса диалог ўчиб кетяпти»). На сервере переписка не копится.
  */
+
+const SAVE_KEY = 'sc-chat'
+const SAVE_TTL = 24 * 3600 * 1000
+const SAVE_MAX = 40
+
+/** Сохранённый разговор; битая, чужая или старше суток запись — как будто её нет. */
+function loadChat(): { sid: string; messages: Msg[] } | null {
+  try {
+    const raw = window.localStorage.getItem(SAVE_KEY)
+    if (!raw) return null
+    const saved = JSON.parse(raw) as { v?: unknown; at?: unknown; sid?: unknown; messages?: unknown }
+    const fresh = saved?.v === 1 && typeof saved.at === 'number' && Date.now() - saved.at < SAVE_TTL
+    if (!fresh || typeof saved.sid !== 'string' || !Array.isArray(saved.messages)) {
+      window.localStorage.removeItem(SAVE_KEY)
+      return null
+    }
+    const messages = saved.messages.filter(isMsg).slice(-SAVE_MAX).map((m) => ({
+      role: m.role,
+      text: m.text,
+      ...(typeof m.caption === 'string' ? { caption: m.caption } : {}),
+      ...(m.photo === true ? { photo: true } : {}),
+      ...(Array.isArray(m.products) ? { products: m.products.filter(isHit).slice(0, 3) } : {}),
+    }))
+    return messages.length > 0 ? { sid: saved.sid.slice(0, 64), messages } : null
+  } catch {
+    return null
+  }
+}
+
+function saveChat(sid: string, messages: Msg[]) {
+  try {
+    // Фото не храним: превью — сотни килобайт, а место в браузере маленькое
+    const light = messages.slice(-SAVE_MAX).map(({ image, ...rest }) => (image ? { ...rest, photo: true } : rest))
+    window.localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, at: Date.now(), sid, messages: light }))
+  } catch {
+    // приватный режим или нет места — разговор просто не переживёт перезагрузку
+  }
+}
+
+function isMsg(m: unknown): m is Msg {
+  const x = m as Msg
+  return Boolean(x) && (x.role === 'user' || x.role === 'assistant') && typeof x.text === 'string'
+}
+
+function isHit(h: unknown): h is Hit {
+  const x = h as Hit
+  // ссылка — только своя («/ru/product/…»): запись в localStorage мог подменить кто угодно в этом браузере
+  return Boolean(x) && typeof x.id === 'string' && typeof x.name === 'string' && typeof x.price === 'number'
+    && typeof x.priceLabel === 'string' && typeof x.href === 'string'
+    && (x.href === '' || (x.href.startsWith('/') && !x.href.startsWith('//')))
+}
 
 type Hit = {
   id: string
@@ -41,6 +92,8 @@ type Msg = {
   image?: string
   /** подпись покупателя к фото */
   caption?: string
+  /** было фото (сам снимок не сохраняем) — после возврата показываем «Фото», а не описание сервера */
+  photo?: boolean
 }
 
 /** Фото, которое уходит на сервер. */
@@ -62,11 +115,27 @@ export function AssistantChat() {
   const field = useRef<HTMLTextAreaElement>(null)
   const fileInput = useRef<HTMLInputElement>(null)
   const box = useRef<HTMLDivElement>(null)
-  // Ключ вкладки для оформления заказа по шагам. Живёт, пока открыта вкладка,
-  // никуда не сохраняется — как и сам разговор.
+  // Ключ разговора для оформления заказа по шагам — хранится вместе с разговором (loadChat)
   const sid = useRef('')
+  const restored = useRef(false)
 
   const close = useCallback(() => setOpen(false), [])
+
+  // Вернулся на сайт — прежний разговор и тот же ключ: анкета заказа продолжается с того же шага
+  useEffect(() => {
+    const saved = loadChat()
+    if (saved) {
+      sid.current = saved.sid
+      setMessages(saved.messages)
+    }
+    restored.current = true
+  }, [])
+
+  useEffect(() => {
+    // до восстановления не пишем: пустой список затёр бы сохранённый разговор
+    if (!restored.current || !sid.current || !messages.some((m) => m.role === 'user')) return
+    saveChat(sid.current, messages)
+  }, [messages])
 
   // Первое сообщение пишем при открытии, а не при загрузке страницы: пока
   // окно закрыто, приветствие никому не нужно.
@@ -267,6 +336,8 @@ export function AssistantChat() {
                       <img className="assistant__img" src={msg.image} alt={a.photo} />
                       {msg.caption ? <div>{msg.caption}</div> : null}
                     </>
+                  ) : msg.photo ? (
+                    <div>{msg.caption ? `📷 ${msg.caption}` : `📷 ${a.photo}`}</div>
                   ) : (
                     withLinks(msg.text, a.payLink)
                   )}

@@ -3,6 +3,7 @@ vi.mock('server-only', () => ({}))
 process.env.SHOP_PAYMENT_MODE = 'mock'
 
 import { products } from '@/data/products'
+import { formatSom } from '@/lib/format'
 import { fromJson } from '@/lib/assistant/answer-json'
 import { parseAnswer } from '@/lib/assistant/local'
 import { FULL_PAY, cancel, forgetDeposit, rememberDeposit, start, step } from '@/lib/telegram/order'
@@ -96,5 +97,148 @@ describe('заклад', () => {
       expect(FULL_PAY.test(t), t).toBe(true)
     for (const t of ['толук маалымат бериңизчи', 'полностью автомат?', 'заклад 2000 берем', 'кийин толойм'])
       expect(FULL_PAY.test(t), t).toBe(false)
+  })
+})
+
+// 08.10, сайт, Баткен: бот уступил 4% и согласился на заклад 1 000 («1000 оа»), а ссылка ушла на 23 900 — на всю цену.
+describe('скидка и заклад из разговора — в ссылке на оплату', () => {
+  const plain = () => products.find((p) => p.price > 5000 && !p.sale && !(p.oldPrice && p.oldPrice > p.price) && p.variants.some((v) => v.stock > 0))!
+
+  it('сумма заклада из ответа покупателя и «да» на наш вопрос', async () => {
+    const { depositFromReply } = await import('@/lib/telegram/order')
+    const bot = 'Заклад 1 000 сомдон башталат. 1 000 сом бере аласызбы?'
+    expect(depositFromReply('1000 оа', bot)).toBe(1000)
+    expect(depositFromReply('оа', bot)).toBe(1000)
+    expect(depositFromReply('2 000 берем', 'Канча заклад бересиз?')).toBe(2000)
+    expect(depositFromReply('900 сом берем пока что', 'Канча заклад бересиз?')).toBeUndefined()
+    expect(depositFromReply('0555 123 456', bot)).toBeUndefined()          // телефон — не сумма
+    expect(depositFromReply('1000 оа', 'Тариздейлиби?')).toBeUndefined()  // разговор не о закладе
+  })
+
+  it('скидка из текста бота и цена «вниз до 10 сом»', async () => {
+    const { discountFromText, discounted } = await import('@/lib/telegram/order')
+    expect(discountFromText('Ооба, 4% арзандатуу менен 22 940 сом болот.')).toBe(4)
+    expect(discountFromText('Сизга 2% чегирма килиб беришимиз мумкин, 23 420 сом булади.')).toBe(2)
+    expect(discountFromText('Больше 5% скидку дать не можем.')).toBeUndefined()   // отказ без суммы — не скидка
+    expect(discountFromText('Скидка 10% невозможна')).toBeUndefined()        // больше 5% не берём
+    expect(discountFromText('Кепилдик 3 жыл, 100% оригинал')).toBeUndefined()
+    expect(discounted(23900, 4)).toBe(22940)
+  })
+
+  it('разговор целиком: «5 килип бер» → 4%, «1000 оа» → заклад; ссылка — 22 940 и заклад 1 000', async () => {
+    const p = plain()
+    vi.resetModules()
+    vi.doMock('@/lib/assistant/reply', async (orig) => ({
+      ...(await orig<typeof import('@/lib/assistant/reply')>()),
+      answer: async () => ({ text: 'Ооба, 4% арзандатуу менен болот. Тариздейлиби?', products: [], source: 'gemini' as const, audience: 'customer' as const, discount: 4 }),
+    }))
+    const { respond } = await import('@/lib/assistant/respond')
+    const flow = await import('@/lib/telegram/order')
+    const site = { key: `web:batken-${Math.random()}`, orderSource: 'Заказ из чата на сайте', leadChannel: 'site' as const, known: {} }
+    const u = (text: string) => ({ role: 'user' as const, text })
+    const b = (text: string) => ({ role: 'assistant' as const, text })
+    await respond(site, [u('идиш жуугуч канча'), b(`${p.nameRu} — ${p.price} сом`), u('5 килип бер')], 'ky', null, undefined, [p.id])
+    const first = await respond(site, [u('5 килип бер'), b('Ооба, 4% арзандатуу менен болот. Тариздейлиби?'), u('заклад берип турам болобу'),
+      b('Заклад 1 000 сомдон башталат. 1 000 сом бере аласызбы?'), u('1000 оа')], 'ky', null, undefined, [p.id])
+    vi.doUnmock('@/lib/assistant/reply')
+    const price = flow.discounted(p.price, 4)
+    expect(first.text).toContain(formatSom(price))
+    expect(first.text).toMatch(/Заклад: 1\s000/)
+    await flow.step(site.key, 'Дони', 'ky', 'ky')
+    await flow.step(site.key, '0555123456', 'ky', 'ky')
+    const done = String(await flow.step(site.key, 'өзүм алам', 'ky', 'ky'))
+    vi.resetModules()
+    expect(done).toContain(formatSom(price))          // заказ на цену со скидкой
+    expect(done).toMatch(/Заклад 1\s000/)             // и ссылка — на заклад
+    expect(done).toContain(formatSom(price - 1000))   // остаток считается от цены со скидкой
+  })
+
+  it('на товар со скидкой или акцией торговая скидка не ложится', async () => {
+    const { discountable } = await import('@/lib/telegram/order')
+    const sale = products.find((p) => p.oldPrice && p.oldPrice > p.price)
+    if (sale) expect(discountable(sale)).toBe(false)
+    expect(discountable(plain())).toBe(true)
+  })
+})
+
+// 08.10, сайт, сушилка KEREMET 3 000: бот «Майли, 2 900 сом килиб бераман», а ссылка ушла на 2 910 (3 % вниз до 10);
+// «2900 га берилар» на шаге имени стало именем.
+describe('договорная цена из торга', () => {
+  const plain = () => products.find((p) => p.price > 5000 && !p.sale && !(p.oldPrice && p.oldPrice > p.price) && p.variants.some((v) => v.stock > 0))!
+
+  it('договорная цена точнее процента, но не дешевле −5 %', async () => {
+    const { bargainPrice } = await import('@/lib/telegram/order')
+    const p = { ...plain(), price: 3000 }
+    expect(bargainPrice(p, { pct: 3, price: 2900 })).toBe(2900)
+    expect(bargainPrice(p, { pct: 3 })).toBe(2910)
+    expect(bargainPrice(p, { price: 2500 })).toBe(3000)            // −17 % — не берём
+    expect(bargainPrice(p, { price: 3000 })).toBe(3000)            // «цена» без уступки — ничего не меняет
+    expect(bargainPrice({ ...p, oldPrice: 3500 }, { price: 2900 })).toBe(3000) // товар со скидкой — цена сайта
+  })
+
+  it('«2900 га берилар» и «боладими» на шаге имени — не имя', async () => {
+    const flow = await import('@/lib/telegram/order')
+    await flow.start(91, [plain().id], 'uz')
+    expect(await flow.step(91, '2900 га берилар', 'uz', 'ru')).toBeNull()
+    expect(await flow.step(91, 'боладими', 'uz', 'ru')).toBeNull()
+    expect(String(await flow.step(91, 'Дони', 'uz', 'ru'))).toMatch(/[Тт]елефон/)
+    flow.cancel(91)
+  })
+
+  it('поле price ответа → анкета и итог на договорную цену', async () => {
+    const p = plain()
+    const deal = Math.ceil(p.price * 0.97 / 100) * 100 - 100   // «круглая» цена в пределах −5 %
+    vi.resetModules()
+    vi.doMock('@/lib/assistant/reply', async (orig) => ({
+      ...(await orig<typeof import('@/lib/assistant/reply')>()),
+      answer: async () => ({ text: `Майли, ${deal} сом килиб бераман.`, products: [], source: 'gemini' as const, audience: 'customer' as const, price: deal }),
+    }))
+    const { respond } = await import('@/lib/assistant/respond')
+    const flow = await import('@/lib/telegram/order')
+    const site = { key: `web:dryer-${Math.random()}`, orderSource: 'Заказ из чата на сайте', leadChannel: 'site' as const, known: {} }
+    await respond(site, [{ role: 'user', text: `${deal} га берилар` }], 'ru', null, undefined, [p.id])
+    vi.doUnmock('@/lib/assistant/reply')
+    const first = await flow.start(site.key, [p.id], 'uz')
+    expect(first).toContain(formatSom(deal))
+    await flow.step(site.key, 'Дони', 'uz', 'ru')
+    await flow.step(site.key, '0555123456', 'uz', 'ru')
+    const done = String(await flow.step(site.key, 'узим оламан', 'uz', 'ru'))
+    vi.resetModules()
+    expect(done).toContain(formatSom(deal))
+  })
+})
+
+describe('вопрос посреди анкеты — в конце спрашиваем шаг анкеты', () => {
+  it('модель просила имя, анкета ждёт телефон — покупатель видит вопрос анкеты', async () => {
+    const { withPending } = await import('@/lib/telegram/order')
+    expect(withPending('Оплата по ссылке из банка. Исмингизни ёзинг?', 'Телефон ракамингиз?')).toBe('Оплата по ссылке из банка. Телефон ракамингиз?')
+    expect(withPending('Майли, 2 900 сом килиб бераман.', 'Телефон ракамингиз?')).toBe('Майли, 2 900 сом килиб бераман. Телефон ракамингиз?')
+    expect(withPending('Заклад 1 000 сомдон. Канча заклад бересиз?', 'Телефон?')).toBe('Заклад 1 000 сомдон. Канча заклад бересиз?')
+  })
+})
+
+describe('аудит 08.10 вечер', () => {
+  const plain = () => products.find((p) => p.price > 5000 && !p.sale && !(p.oldPrice && p.oldPrice > p.price) && p.variants.some((v) => v.stock > 0))!
+  it('номер дома в адресе — не заклад', async () => {
+    const { depositFromReply } = await import('@/lib/telegram/order')
+    const bot = 'MIDEA — 23 900 сом.\nЗаклад: 1 000 сом — калганы товар таксиге жүктөлгөндө. Кайда жеткирели?'
+    expect(depositFromReply('Араван, Ош-3000 көчөсү 12', bot, true)).toBeUndefined()
+    expect(depositFromReply('2000', 'Түшүнөм. Канча заклад бересиз?', true)).toBe(2000)
+  })
+  it('скидка на товар A к товару B не переходит', async () => {
+    const flow = await import('@/lib/telegram/order')
+    const [a, b] = products.filter((p) => p.price > 5000 && flow.discountable(p) && p.variants.some((v) => v.stock > 0))
+    flow.rememberDiscount(95, 4, undefined, { productId: a.id })
+    const first = await flow.start(95, [b.id], 'ru')
+    expect(first).toContain(formatSom(b.price))
+    expect(first).not.toContain('со скидкой')
+    flow.cancel(95)
+  })
+  it('«алып бериңиз» на шаге адреса — адрес, заказ не теряется', async () => {
+    const flow = await import('@/lib/telegram/order')
+    await flow.start(96, [plain().id], 'ky', 'Заказ', { name: 'Азамат', phone: '+996555123456' })
+    const answer = await flow.step(96, 'Кара-Суу, алып бериңиз', 'ky', 'ky')
+    expect(answer).not.toBeNull()
+    flow.cancel(96)
   })
 })

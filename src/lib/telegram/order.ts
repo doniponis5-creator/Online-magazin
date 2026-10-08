@@ -46,6 +46,13 @@ type Draft = {
   deposit?: number
   /** когда согласился: заклад живёт 2 часа и в черновике — к товару через сутки не пристанет */
   depositAt?: number
+  /** скидка в %, которую бот уступил в торге (1–5, policy «СКИДКИ»); ссылка на оплату — уже со скидкой */
+  discount?: number
+  discountAt?: number
+  /** цена за штуку, о которой договорились в торге («2 900 бераман») — точнее процента */
+  dealPrice?: number
+  /** товар, о котором торговались; другой товар скидку не получает */
+  dealProductId?: string
 }
 
 // Переживает перезапуск сайта: обновили сайт посреди заказа — покупатель не начинает заново.
@@ -56,7 +63,113 @@ const deposits = durableMap<ChatKey, { amount: number; at: number }>('order-depo
 
 /** Покупатель согласился платить закладом и назвал сумму (владелец 08.10: от 1 000 сом, сумму выбирает сам). */
 export function rememberDeposit(chatId: ChatKey, amount: number): void {
-  if (Number.isFinite(amount) && amount >= 1000) deposits.set(chatId, { amount: Math.floor(amount), at: Date.now() })
+  if (!Number.isFinite(amount) || amount < 1000) return
+  const at = Date.now()
+  deposits.set(chatId, { amount: Math.floor(amount), at })
+  // анкета уже идёт — сумма меняется и в ней
+  const draft = drafts.get(chatId)
+  if (draft) drafts.set(chatId, { ...draft, deposit: Math.floor(amount), depositAt: at })
+}
+
+const DEPOSIT_WORD = /заклад|закалат|задат|аванс|zaklad|zakalat/i
+const numbersIn = (text: string): number[] =>
+  [...text.replace(/(\d)[\s\u00a0\u202f](?=\d{3}(?!\d))/g, '$1').matchAll(/(?<!\d)\d{3,6}(?!\d)/g)].map((m) => Number(m[0]))
+
+/**
+ * Сумма заклада прямо из ответа покупателя, без модели: на «Заклад 1 000 сомдон башталат. 1 000 сом бере аласызбы?»
+ * пришло «1000 оа» — анкета начиналась сразу, модель не отвечала, и заказ уходил на всю сумму (08.10, Баткен).
+ * Покупатель назвал число ≥ 1 000, а разговор о закладе — оно; сказал «да» на наш вопрос с одной суммой — она.
+ */
+export function depositFromReply(user: string, bot: string, draftOpen = false): number | undefined {
+  const sentences = bot.split(/(?<=[.!?])\s+/)
+  const asked = sentences.filter((s) => s.includes('?'))
+  // Анкета открыта: «…Заклад: 1 000 сом. Кайда жеткирели?» — ответ «Ош-3000 көчөсү 12» про адрес, не про заклад
+  // (аудит 08.10: заклад становился 3 000). Берём, только если последний вопрос — о закладе.
+  const lastQuestion = asked.at(-1) ?? ''
+  const about = draftOpen
+    ? DEPOSIT_WORD.test(lastQuestion) || DEPOSIT_WORD.test(user)
+    : DEPOSIT_WORD.test(sentences.slice(-2).join(' ')) || DEPOSIT_WORD.test(user)
+  if (!about) return undefined
+  const mine = numbersIn(user).filter((n) => n >= 1000)
+  if (mine.length > 0) return mine[0]
+  if (!AFFIRM.test(user.trim())) return undefined
+  const theirs = [...new Set(numbersIn(lastQuestion).filter((n) => n >= 1000))]
+  return theirs.length === 1 ? theirs[0] : undefined
+}
+
+/** productId — товар, о котором торговались: 4 % на A к B не переходят (аудит 08.10) */
+type Bargain = { pct?: number; price?: number; at: number; productId?: string }
+const discounts = durableMap<ChatKey, Bargain>('order-discounts', 2 * 3600 * 1000)
+/** Самое большее, что бот уступает в торге (policy «СКИДКИ»); больше не примем, даже если модель написала. */
+export const DISCOUNT_MAX = 5
+
+/**
+ * Бот уступил в торге — ссылка на оплату пойдёт со скидкой. pct — процент (поле discount или «4%» в его тексте),
+ * price — цена за штуку, которую он назвал («Майли, 2 900 сом килиб бераман», поле price): она точнее процента.
+ */
+export function rememberDiscount(
+  chatId: ChatKey,
+  pct?: number,
+  price?: number,
+  opts: { productId?: string; fromText?: boolean } = {},
+): void {
+  const okPct = pct !== undefined && Number.isInteger(pct) && pct >= 1 && pct <= DISCOUNT_MAX ? pct : undefined
+  const okPrice = price !== undefined && Number.isFinite(price) && price > 0 ? Math.round(price) : undefined
+  if (okPct === undefined && okPrice === undefined) return
+  const at = Date.now()
+  const prevSaved = discounts.get(chatId)
+  const draft = drafts.get(chatId)
+  const prev = prevSaved ?? (draft ? { pct: draft.discount, price: draft.dealPrice, at, productId: draft.dealProductId } : undefined)
+  const productId = opts.productId ?? prev?.productId
+  // Торг о другом товаре — прежний уговор не в счёт
+  const same = !opts.productId || !prev?.productId || prev.productId === opts.productId
+  // новый процент из поля без цены — прежняя цена уже не та; процент из текста цену не стирает
+  const keepPrice = same && (okPct === undefined || opts.fromText)
+  const next: Bargain = { pct: okPct ?? (same ? prev?.pct : undefined), price: okPrice ?? (keepPrice ? prev?.price : undefined), at, productId }
+  discounts.set(chatId, next)
+  if (draft) drafts.set(chatId, { ...draft, discount: next.pct, dealPrice: next.price, dealProductId: next.productId, discountAt: at })
+}
+
+/**
+ * Цена за штуку после торга: договорная цена, если она в пределах правила (не дешевле −5 % и ниже цены сайта),
+ * иначе процент (вниз до 10 сом); товар со скидкой или акцией — цена сайта.
+ */
+export function bargainPrice(product: Product, deal: { pct?: number; price?: number }): number {
+  if (!discountable(product)) return product.price
+  const floor = Math.ceil((product.price * (100 - DISCOUNT_MAX)) / 100)
+  if (deal.price && deal.price >= floor && deal.price < product.price) return deal.price
+  if (deal.pct && deal.pct >= 1 && deal.pct <= DISCOUNT_MAX) return discounted(product.price, deal.pct)
+  return product.price
+}
+
+/** «4% арзандатуу менен 22 940 сом» в ответе бота → 4. Нет слова скидки рядом с процентом — undefined. */
+export function discountFromText(text: string): number | undefined {
+  if (!/скидк|чегирм|арзандат|арзонлат|chegirm/i.test(text)) return undefined
+  // «4% … 22 940 сом» — уступка; «Больше 5% скидку дать не можем» — суммы нет, это отказ (аудит 08.10)
+  const granted = text.split(/(?<=[.!?])\s+/).filter((s) => numbersIn(s).some((n) => n >= 1000))
+  const found = [...granted.join(' ').matchAll(/(?<![\d.,])(\d)\s?%/g)].map((m) => Number(m[1]))
+  const pct = found.at(-1)
+  return pct && pct >= 1 && pct <= DISCOUNT_MAX ? pct : undefined
+}
+
+/** Товар со скидкой или акцией — цена окончательная (policy), торговая скидка к нему не применяется. */
+export function discountable(product: Product): boolean {
+  return !product.sale && !(product.oldPrice && product.oldPrice > product.price)
+}
+
+/** Цена со скидкой: вниз до 10 сом — как бот считает в разговоре (23 900 − 4% = 22 940). */
+export function discounted(price: number, pct: number): number {
+  return Math.floor((price * (100 - pct)) / 100 / 10) * 10
+}
+
+function takeDiscount(chatId: ChatKey): Bargain | undefined {
+  const saved = discounts.get(chatId)
+  discounts.delete(chatId)
+  const old = drafts.get(chatId)
+  const fromDraft = (old?.discount || old?.dealPrice) && old.discountAt
+    ? { pct: old.discount, price: old.dealPrice, at: old.discountAt, productId: old.dealProductId } : undefined
+  const found = saved ?? fromDraft
+  return found && Date.now() - found.at < DEPOSIT_TTL ? found : undefined
 }
 
 /** «Всё сразу оплачу» после разговора о закладе — заказ на всю сумму, прежний заклад забываем. */
@@ -84,6 +197,8 @@ function takeDeposit(chatId: ChatKey): { amount: number; at: number } | undefine
   return found && Date.now() - found.at < DEPOSIT_TTL ? found : undefined
 }
 
+const DISCOUNT_WORD: Record<TalkLang, string> = { ru: 'со скидкой', ky: 'арзандатуу', uz: 'чегирма' }
+
 const DEPOSIT_LINE: Record<TalkLang, (sum: string) => string> = {
   ru: (sum) => `\nЗаклад: ${sum} — остаток, когда погрузим товар в такси.`,
   ky: (sum) => `\nЗаклад: ${sum} — калганы товар таксиге жүктөлгөндө.`,
@@ -102,11 +217,15 @@ function dropDraft(chatId: ChatKey): void {
   const draft = drafts.get(chatId)
   drafts.delete(chatId)
   if (draft?.deposit) deposits.set(chatId, { amount: draft.deposit, at: draft.depositAt ?? Date.now() })
+  if (draft?.discount || draft?.dealPrice) {
+    discounts.set(chatId, { pct: draft.discount, price: draft.dealPrice, at: draft.discountAt ?? Date.now(), productId: draft.dealProductId })
+  }
 }
 
 export function cancel(chatId: ChatKey): void {
   drafts.delete(chatId)
   deposits.delete(chatId)
+  discounts.delete(chatId)
 }
 
 /** Покупатель собрался брать. Слова из трёх языков, включая «куда платить». */
@@ -231,16 +350,26 @@ export async function start(
   const agreed = takeDeposit(chatId)
   const deposit = agreed?.amount
   const depositAt = agreed?.at
+  const taken = takeDiscount(chatId)
+  // Торговались о другом товаре — к этому скидка не пристаёт
+  const bargain = taken && (!taken.productId || found.some((p) => p.id === taken.productId)) ? taken : undefined
+  const discount = bargain?.pct
+  const dealPrice = bargain?.price
+  const dealProductId = bargain?.productId
+  const discountAt = bargain?.at
   // Покупатель видит заклад в первом же шаге оформления — не согласен, скажет сразу
   const depositLine = deposit ? DEPOSIT_LINE[lang](formatSom(deposit)) : ''
   if (found.length === 1) {
-    const draft: Draft = { step: 'name', source, options: [], productId: found[0].id, qty, deposit, depositAt, ...known }
+    const draft: Draft = { step: 'name', source, options: [], productId: found[0].id, qty, deposit, depositAt, discount, dealPrice, dealProductId, discountAt, ...known }
     drafts.set(chatId, draft)
     const count = qty > 1 ? ` × ${qty}` : ''
-    return `${shortName(found[0].nameRu)} — ${formatSom(found[0].price)}${count}.${depositLine} ${nextQuestion(draft, lang)}`
+    // Уступили в торге — покупатель сразу видит цену со скидкой: ссылка будет на неё
+    const deal = bargainPrice(found[0], { pct: discount, price: dealPrice })
+    const price = deal < found[0].price ? `${formatSom(deal)} (${DISCOUNT_WORD[lang]})` : formatSom(found[0].price)
+    return `${shortName(found[0].nameRu)} — ${price}${count}.${depositLine} ${nextQuestion(draft, lang)}`
   }
 
-  drafts.set(chatId, { step: 'pick', source, options: found.map((p) => p.id), qty, deposit, depositAt, ...known })
+  drafts.set(chatId, { step: 'pick', source, options: found.map((p) => p.id), qty, deposit, depositAt, discount, dealPrice, dealProductId, discountAt, ...known })
   const list = found.map((p, i) => `${i + 1}. ${shortName(p.nameRu)} — ${formatSom(p.price)}`).join('\n')
   return `${list}${depositLine}\n\n${pick(ASK_PICK, lang)}`
 }
@@ -265,6 +394,31 @@ function nextQuestion(draft: Draft, lang: TalkLang): string {
   }
   draft.step = 'where'
   return pick(ASK_WHERE, lang)
+}
+
+/**
+ * Анкета открыта, а покупатель спросил о своём (скидка, оплата) — на вопрос отвечает модель, но спросить в конце
+ * она должна то, чего ждёт анкета: 08.10 модель просила имя, а анкета ждала телефон. null — анкеты нет.
+ */
+export function pendingQuestion(chatId: ChatKey, lang: TalkLang): string | null {
+  const draft = drafts.get(chatId)
+  if (!draft) return null
+  if (draft.step === 'pick') return pick(ASK_PICK, lang)
+  if (draft.step === 'name') return pick(ASK_NAME, lang)
+  if (draft.step === 'phone') return pick(ASK_PHONE, lang)
+  if (draft.step === 'where') return pick(ASK_WHERE, lang)
+  if (draft.step === 'address') return pick(ASK_ADDRESS, lang)
+  return null
+}
+
+/** Ответ модели + вопрос анкеты: её последний вопрос убираем, чтобы покупатель не получил два разных. */
+export function withPending(text: string, question: string): string {
+  const sentences = text.trim().split(/(?<=[.!?…])\s+/)
+  const last = sentences[sentences.length - 1].replace(/[\p{Extended_Pictographic}\uFE0F\s]+$/u, '').trim()
+  // «Канча заклад бересиз?» — на него покупатель и ответит суммой (depositFromReply); анкету спросим следом
+  if (last.endsWith('?') && DEPOSIT_WORD.test(last)) return text.trim()
+  if (sentences.length > 1 && last.endsWith('?')) sentences.pop()
+  return `${sentences.join(' ')} ${question}`.trim()
 }
 
 /** «первый», «второй», «биринчиси», «экинчи», «иккинчиси» → индекс в списке. */
@@ -313,6 +467,8 @@ export function looksLikeQuestion(text: string): boolean {
 // не узнавалось — становилось адресом, и уходил заказ.
 const NOT_AN_ANSWER_STEM =
   /(?<![\p{L}])(скидк|цен[аыу]|стоит|сколько|доставк|даставк|гаранти|кепилдик|кафолат|рассрочк|расрочк|бонус|дорого|дешевле|нужн|чегирм|арзан|арзон|кымбат|баасы|нарх|жеткир|етказ|акци|подума|ойлон|уйлаб|хоч|посмотр|смотр|отправ|покаж|показ|ссылк|шилтеме|сайт|наличи|каталог|фото|сурет|сүрөт|суроот|расм|корсот|көрсөт|жибер|ташла|друг|отмен|передума|айтып|айтыңыз|айткыла|койгула|объём|объем|размер|өлчөм|олчом|узун|бийик)/iu
+/** На шаге имени ещё и торг: «2900 га берилар», «боладими» — не имя (на шагах адреса «алып бериңиз» — адрес) */
+const NOT_A_NAME = /(?<![\p{L}])(болад|бўлад|булад|болоб|майлими|бераман|берасиз|бересиз|берил|бериңиз|беринг)/iu
 /** Короткие слова — только целиком: «бар» внутри «барабан» — не вопрос. */
 const NOT_AN_ANSWER_WORD =
   /(?<![\p{L}])(есть|можно|бар|барбы|борми|бор|канча|канчага|керек|керак|понял|поняла|не так|дагы|яна|башка|бошка|ещё|еще|не надо)(?![\p{L}])/iu
@@ -401,6 +557,8 @@ async function advance(chatId: ChatKey, text: string, lang: TalkLang, siteLang: 
     if (value.length < 2) return pick(ASK_NAME, lang)
     // Имя — одно-два слова. Длинная фраза — это вопрос или просьба.
     if (value.split(/\s+/).length > 3) return null
+    // В имени нет цифр: «2900 га берилар» — торг, а не имя; пусть ответит консультант, анкета ждёт имя
+    if (/\d/.test(value) || NOT_A_NAME.test(value)) return null
     draft.name = value.slice(0, 60)
     return nextQuestion(draft, lang)
   }
@@ -469,6 +627,21 @@ async function finish(
   if (!result.ok) {
     console.error('[telegram] заказ не прошёл проверку:', result.errors)
     return pick(FAILED, lang) + phoneLine()
+  }
+  // Скидка из торга — в цене строки: ссылка O!Деньги, сумма и 1С (берёт цену из строки) — одна цифра (08.10)
+  const ours = !draft.dealProductId || draft.dealProductId === product.id
+  const deal = ours ? bargainPrice(product, { pct: draft.discount, price: draft.dealPrice }) : product.price
+  if (deal < product.price) {
+    const order = result.order
+    const lines = order.lines.map((l) => ({ ...l, price: deal, sum: deal * l.qty }))
+    const goodsTotal = lines.reduce((s, l) => s + l.sum, 0)
+    result.order = {
+      ...order,
+      lines,
+      goodsTotal,
+      total: goodsTotal + order.delivery.price,
+      comment: `${order.comment} · уступили в чате: ${formatSom(product.price)} → ${formatSom(deal)}`.slice(0, 500),
+    }
   }
 
   // Заклад меньше суммы к оплате — платит часть; больше или равен — обычный заказ

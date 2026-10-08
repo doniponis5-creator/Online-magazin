@@ -150,9 +150,9 @@
     "semantic_hash": ""
   },
   "integrations/1c-online-shop/build_extension.py": {
-    "mtime": 1791445163.7420661,
-    "seen": 1791445430.2353837,
-    "ast_hash": "80a6f924931faa8d2fc66093576bbcc3",
+    "mtime": 1791452794.0779903,
+    "seen": 1791452888.4950123,
+    "ast_hash": "8ecb33a7d894167c104e76439d6cb126",
     "semantic_hash": ""
   },
   "integrations/1c-online-shop/manage.py": {
@@ -726,9 +726,9 @@
     "semantic_hash": ""
   },
   "src/components/ProductArt.tsx": {
-    "mtime": 1791007494.113616,
-    "seen": 1791375974.872154,
-    "ast_hash": "f01c0216bd157b437f6475a2a8552c87",
+    "mtime": 1791452758.5948493,
+    "seen": 1791452888.5145295,
+    "ast_hash": "0f7ca1e408693cdc9fb4a13f572a0ddd",
     "semantic_hash": ""
   },
   "src/components/ProductCard.tsx": {
@@ -786,9 +786,9 @@
     "semantic_hash": ""
   },
   "src/data/1c/categories.ts": {
-    "mtime": 1791007494.1270828,
-    "seen": 1791375974.8721886,
-    "ast_hash": "c126a53779cffc7b08ae134616ccb663",
+    "mtime": 1791453955.347488,
+    "seen": 1791454004.9916115,
+    "ast_hash": "d653c90e3269342220493bb2a051bcb9",
     "semantic_hash": ""
   },
   "src/data/brand-logos.json": {
@@ -810,9 +810,9 @@
     "semantic_hash": ""
   },
   "src/data/products.ts": {
-    "mtime": 1791007494.1270828,
-    "seen": 1791375974.872196,
-    "ast_hash": "7f0d3b55c63e6c8000ce987828e6ae3e",
+    "mtime": 1791452758.5938447,
+    "seen": 1791452888.5191987,
+    "ast_hash": "60979341adae58dd8a3407e40721294b",
     "semantic_hash": ""
   },
   "src/data/storefront.ts": {
@@ -954,9 +954,9 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1791444781.7926004,
-    "seen": 1791445430.358646,
-    "ast_hash": "d79178d4bd28bd92eff9e595084cee37",
+    "mtime": 1791453991.0955675,
+    "seen": 1791454005.012656,
+    "ast_hash": "8752f315d367302f0bfccfb3f795d09f",
     "semantic_hash": ""
   },
   "DESIGN.md": {
@@ -3954,21 +3954,21 @@
     "semantic_hash": ""
   },
   "src/components/AssistantChat.tsx": {
-    "mtime": 1791007494.108614,
-    "seen": 1791375974.872132,
-    "ast_hash": "aaf89af602ae06ce4241a449871575e7",
+    "mtime": 1791453955.347488,
+    "seen": 1791454004.9848752,
+    "ast_hash": "e670feaa9cfbbb71d31b795eac21022e",
     "semantic_hash": ""
   },
   "src/lib/assistant/gemini.ts": {
-    "mtime": 1791443304.5004702,
-    "seen": 1791445430.3053062,
-    "ast_hash": "d0b6b7629bd1103942af9fc555141e9e",
+    "mtime": 1791453301.991978,
+    "seen": 1791453432.4043412,
+    "ast_hash": "fa3e64c6382eddbbbffaad9d351dd85e",
     "semantic_hash": ""
   },
   "src/lib/assistant/local.ts": {
-    "mtime": 1791443304.5024743,
-    "seen": 1791445430.3064406,
-    "ast_hash": "4f54a2f04a9fe317c5b67c112f9b77ec",
+    "mtime": 1791453301.991978,
+    "seen": 1791453432.4048548,
+    "ast_hash": "3f350a214abcca4f86f9650d7a191fe6",
     "semantic_hash": ""
   },
   "src/lib/assistant/orders.ts": {
@@ -3984,9 +3984,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/reply.ts": {
-    "mtime": 1791443304.5024743,
-    "seen": 1791445430.3079917,
-    "ast_hash": "31ad787074d2cb252e2d7d9f9baf6d72",
+    "mtime": 1791453301.991978,
+    "seen": 1791453432.405529,
+    "ast_hash": "7960116c3a51e8d30b375ec845e4ff61",
     "semantic_hash": ""
   },
   "src/lib/assistant/talk.ts": {
@@ -4050,9 +4050,9 @@
     "semantic_hash": ""
   },
   "src/lib/telegram/order.ts": {
-    "mtime": 1791445134.7338738,
-    "seen": 1791445430.325808,
-    "ast_hash": "169b13874de83b6af100ea4b1d26e5f8",
+    "mtime": 1791453845.203612,
+    "seen": 1791454005.001125,
+    "ast_hash": "3e5dd3957d79ad0767ede258c0e0171c",
     "semantic_hash": ""
   },
   "review/appstore-screenshots/02-catalog.png": {
@@ -4296,9 +4296,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/answer-json.ts": {
-    "mtime": 1791443304.5004702,
-    "seen": 1791445430.3044121,
-    "ast_hash": "730ce609835a0f71134c06341855693f",
+    "mtime": 1791453301.991978,
+    "seen": 1791453432.4038656,
+    "ast_hash": "21e306926391f4cfba1e15dc70fd1b6c",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/shop_stock.py": {
@@ -4356,9 +4356,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/respond.ts": {
-    "mtime": 1791443304.5024743,
-    "seen": 1791445430.3079941,
-    "ast_hash": "0bfb7c0efae9d8b78eed0cd99ae53911",
+    "mtime": 1791453845.203612,
+    "seen": 1791454004.9944413,
+    "ast_hash": "107f3828241acf9c28f46e6b0a68bfba",
     "semantic_hash": ""
   },
   "docs/PC_2026-09-21.md": {
@@ -4494,9 +4494,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/policy.ts": {
-    "mtime": 1791443314.4940724,
-    "seen": 1791445430.307763,
-    "ast_hash": "697d61f0ae4ef3759b95c11cc39e9a71",
+    "mtime": 1791453955.3484883,
+    "seen": 1791454004.99419,
+    "ast_hash": "879b831e9e65e9b7079e71495b29f839",
     "semantic_hash": ""
   },
   "scripts/exam/questions.txt": {
@@ -6288,9 +6288,9 @@
     "semantic_hash": ""
   },
   "__tests__/site-sections.test.ts": {
-    "mtime": 1791007493.3959343,
-    "seen": 1791375974.8719392,
-    "ast_hash": "8c39f61f79c138cc2b5311b53123381b",
+    "mtime": 1791453955.3734884,
+    "seen": 1791454004.9635065,
+    "ast_hash": "6a1aedb6d90a69a94655c666e53c2a59",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/shop_cart_remind.py": {
@@ -6366,9 +6366,9 @@
     "semantic_hash": ""
   },
   "src/app/[lang]/HomeSections.tsx": {
-    "mtime": 1791366810.6056688,
-    "seen": 1791375974.8720694,
-    "ast_hash": "ae85bc3615ea9faa0cb01dbb9911fe6b",
+    "mtime": 1791453955.3484883,
+    "seen": 1791454004.9779236,
+    "ast_hash": "ed7860a4ac626f790529a4b5af603854",
     "semantic_hash": ""
   },
   "src/app/api/push/cart/route.ts": {
@@ -7590,9 +7590,9 @@
     "semantic_hash": ""
   },
   "src/lib/catalogOrder.ts": {
-    "mtime": 1791363312.5603423,
-    "seen": 1791375974.8722198,
-    "ast_hash": "ff4e0a28169f07e4512eb777d7a01269",
+    "mtime": 1791452758.5948493,
+    "seen": 1791452888.5220041,
+    "ast_hash": "fa3df8d7a237c4d7c47f135c33b0c617",
     "semantic_hash": ""
   },
   "src/lib/partners.ts": {
@@ -8100,9 +8100,9 @@
     "semantic_hash": ""
   },
   "__tests__/deposit.test.ts": {
-    "mtime": 1791445142.3219144,
-    "seen": 1791445430.205611,
-    "ast_hash": "bf9033ce200744918b41e839ead722e1",
+    "mtime": 1791453897.1624935,
+    "seen": 1791454004.9579248,
+    "ast_hash": "3460fe0e70f538a7f8aca3f6fb9fbf06",
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/shop_deposit_rules.py": {

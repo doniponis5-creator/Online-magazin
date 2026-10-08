@@ -12,7 +12,7 @@ export type OneCCategory = {
   nameRu: string
   nameKy: string
   /** иконка раздела и плейсхолдер товара без фото */
-  art: 'fridge' | 'washer' | 'tv' | 'stove' | 'coffee' | 'robot' | 'fan' | 'battery' | 'bike' | 'sewing' | 'box'
+  art: 'fridge' | 'washer' | 'tv' | 'stove' | 'coffee' | 'robot' | 'fan' | 'battery' | 'bike' | 'sewing' | 'bottle' | 'box'
 }
 
 export const oneCCategories: OneCCategory[] = [
@@ -22,6 +22,9 @@ export const oneCCategories: OneCCategory[] = [
   { id: 'kitchen', nameRu: 'Кухонная техника', nameKy: 'Ашкана техникасы', art: 'stove' },
   { id: 'small-kitchen', nameRu: 'Мелкая техника', nameKy: 'Майда техника', art: 'coffee' },
   { id: 'care', nameRu: 'Уборка и уход', nameKy: 'Тазалоо жана кам көрүү', art: 'robot' },
+  // Гели для стирки, порошки, средства для посудомоечных машин (AXMA, 08.10.2026): расходники, не техника —
+  // в «Уборке и уходе» они мешались с пылесосами.
+  { id: 'chemistry', nameRu: 'Бытовая химия', nameKy: 'Тиричилик химиясы', art: 'bottle' },
   { id: 'climate', nameRu: 'Климат', nameKy: 'Климат', art: 'fan' },
   { id: 'power', nameRu: 'Энергоснабжение', nameKy: 'Энергия менен камсыздоо', art: 'battery' },
   // Швейные машины и оверлоки: 10 моделей (28.09.2026) — больше, чем в «Климате».
@@ -36,6 +39,8 @@ export const FALLBACK_CATEGORY = 'home'
 
 /** Группа 1С (нижний регистр, подстрока) → раздел сайта */
 const GROUP_RULES: [string, string][] = [
+  ['бытовая хим', 'chemistry'],
+  ['химия', 'chemistry'],
   ['холодил', 'fridges'],
   ['морозил', 'fridges'],
   ['стиральн', 'washers'],
@@ -103,6 +108,14 @@ const NAME_RULES: [RegExp, string][] = [
  * Проверяются раньше групп. Сюда — только то, что по названию не спутать.
  */
 const STRONG_NAME_RULES: [RegExp, string][] = [
+  // «Средство для посудомоечных машин» — не посудомойка, «Гель для стирки» — не стиральная машина
+  [
+    new RegExp(
+      `^\\s*(?:гел\\S*\\s+для\\s+стирк|капсул\\S*\\s+для\\s+стирк|стиральн\\S*\\s+порош|порош\\S*\\s+для|средств\\S*\\s+для|` +
+        `таблетк\\S*\\s+для\\s+посудомо|ополаскивател|кондиционер\\S*\\s+для\\s+бел|отбеливател|пятновывод|моющ\\S*\\s+средств|чистящ\\S*\\s+средств)|${W}axma`,
+    ),
+    'chemistry',
+  ],
   [/ледогенер/, 'small-kitchen'],
   [/швейн|оверлок|overlo[ck]/, 'sewing'],
   [/сушилк\S*\s+напольн|напольн\S*\s+сушилк|сушилк.*для\s+бел/, 'home'],

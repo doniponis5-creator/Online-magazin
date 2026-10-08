@@ -33,8 +33,12 @@ export type Audience = 'customer' | 'staff' | 'personal'
 export const AUDIENCE_MARKER = 'KIMGA:'
 /** Заклад, который назвал покупатель (answer-json.ts) */
 export const DEPOSIT_MARKER = 'ZAKLAD:'
+/** Скидка в %, которую бот уступил в торге (answer-json.ts) */
+export const DISCOUNT_MARKER = 'SKIDKA:'
+/** Цена за штуку, о которой договорились в торге (answer-json.ts) */
+export const PRICE_MARKER = 'NARX:'
 
-export type Answer = { text: string; productIds: string[]; audience?: Audience; deposit?: number }
+export type Answer = { text: string; productIds: string[]; audience?: Audience; deposit?: number; discount?: number; price?: number }
 
 type Say = { ru: string; ky: string; uz: string }
 
@@ -60,8 +64,20 @@ export function parseAnswer(raw: string): Answer {
 
   let audience: Audience = 'customer'
   let deposit: number | undefined
+  let discount: number | undefined
+  let price: number | undefined
   for (const line of lines) {
     const trimmed = line.trim()
+    if (trimmed.startsWith(PRICE_MARKER)) {
+      const value = Number(trimmed.slice(PRICE_MARKER.length).trim())
+      if (Number.isFinite(value) && value > 0) price = Math.round(value)
+      continue
+    }
+    if (trimmed.startsWith(DISCOUNT_MARKER)) {
+      const value = Number(trimmed.slice(DISCOUNT_MARKER.length).trim())
+      if (Number.isInteger(value) && value >= 1 && value <= 5) discount = value
+      continue
+    }
     if (trimmed.startsWith(DEPOSIT_MARKER)) {
       const value = Number(trimmed.slice(DEPOSIT_MARKER.length).trim())
       if (Number.isFinite(value) && value >= 1000) deposit = Math.floor(value)
@@ -89,6 +105,8 @@ export function parseAnswer(raw: string): Answer {
     productIds: [...new Set(productIds)].slice(0, 3),
     audience,
     ...(deposit ? { deposit } : {}),
+    ...(discount ? { discount } : {}),
+    ...(price ? { price } : {}),
   }
 }
 

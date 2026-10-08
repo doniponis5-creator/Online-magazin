@@ -33,6 +33,7 @@ export type ArtKind =
   | 'battery'
   | 'bike'
   | 'sewing'
+  | 'bottle'
   | 'box'
 
 export type ColorOption = { key: string; labelRu: string; labelKy: string; hex: string }
@@ -590,6 +591,7 @@ const CATEGORY_COVERS: Record<string, string[]> = {
   climate: ['cb-00002472', 'cb-00002113'],
   power: ['cb-00002043', 'cb-00002055'],
   sewing: ['cb-00000456', 'cb-00000849'],
+  chemistry: [],
   sport: ['cb-00002422', 'cb-00002461'],
   home: ['cb-00001771', 'cb-00001765'],
 }

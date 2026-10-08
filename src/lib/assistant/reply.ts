@@ -31,6 +31,10 @@ export type AssistantReply = {
   audience?: Audience
   /** заклад, который покупатель согласился заплатить (сом) — его возьмёт оформление заказа */
   deposit?: number
+  /** скидка в %, которую бот уступил в торге — её возьмёт оформление заказа */
+  discount?: number
+  /** цена за штуку, о которой бот договорился в торге */
+  price?: number
 }
 
 export async function answer(
@@ -71,7 +75,8 @@ export async function answer(
       const parsed = parseAnswer(raw)
       const talk = talkLang(turns, lang)
       return { text: houseStyle(parsed.text, talk), products: hits(parsed.productIds, lang, list), source: 'gemini', audience: parsed.audience,
-        ...(parsed.deposit ? { deposit: parsed.deposit } : {}) }
+        ...(parsed.deposit ? { deposit: parsed.deposit } : {}), ...(parsed.discount ? { discount: parsed.discount } : {}),
+        ...(parsed.price ? { price: parsed.price } : {}) }
     } catch (error) {
       // Ошибку пишем в журнал сервера, покупателю её не показываем.
       console.error('[assistant] gemini:', error instanceof Error ? error.message : error)

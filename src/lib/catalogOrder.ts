@@ -12,7 +12,7 @@
 import type { Product } from '@/data/products'
 
 /** Какие разделы показывать первыми, когда разделы чередуются. Остальные — после, в порядке появления. */
-export const CATEGORY_PRIORITY = ['fridges', 'washers', 'tv', 'kitchen', 'small-kitchen', 'care', 'climate', 'power', 'sewing', 'sport', 'home']
+export const CATEGORY_PRIORITY = ['fridges', 'washers', 'tv', 'kitchen', 'small-kitchen', 'care', 'climate', 'power', 'sewing', 'sport', 'home', 'chemistry']
 
 const onSale = (p: Product) => Boolean(p.oldPrice && p.oldPrice > p.price)
 const available = (p: Product) => !p.preorder && p.variants.some((v) => v.stock > 0)
