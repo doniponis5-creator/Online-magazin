@@ -1,0 +1,9 @@
+[out:json][timeout:600];
+area["ISO3166-1"="KG"][admin_level=2]->.kg;
+node(area.kg)[place~"^(city|town|village)$"]->.p;
+foreach.p->.n(
+  .n out tags;
+  .n is_in->.a;
+  area.a[admin_level~"^(4|6)$"][boundary=administrative]->.adm;
+  .adm out tags;
+);

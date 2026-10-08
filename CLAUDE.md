@@ -177,6 +177,9 @@ storyreply|comments:<день>` пишет `shop_ig_bot._stat`; право `inst
 Нужен ключ с правом `instagram_business_content_publish` (старый ключ — 403). В Manrope нет «ң» — её дорисовывает
 `scripts/instagram-fonts.py` в статичные срезы.
 
+**Доставка и сёла (08.10.2026).** Бот узнаёт село → район → область по справочнику `src/lib/assistant/placesData.ts` (1 224 сёл и городов из OpenStreetMap, пересборка — `scripts/places/build_places.py`, запрос `kg-places.overpass`) и получает подсказку `placeBlock` после `NOW_MARK` (кэш Gemini не трогает): бесплатно до центра (`FREE_DELIVERY_POINTS` в `policy.ts` + районы в `places.ts FREE_BY_DISTRICT`), Араван — рядом с магазином, Токмок, Кара-Балта, Таласская и Нарынская области — своей машины нет, предлагаем бесплатно до Бишкека (`NO_CAR_*`), остальное — цену скажет руководство. Майлуу-Суу — бесплатно (владелец 08.10). Сёла-тёзки → «спроси район»; обычные слова-названия («Алма», «Достук») — в `STOP` скрипта. Тесты — `__tests__/places.test.ts`.
+Разбор качества бота: `scripts/fetch-assistant-log.ps1` (журнал вопросов-ответов всех каналов + `ASSISTANT_LOG_KEY` в `.env.local`) и `scripts/fetch-wa-dialogs.ps1` (переписка WhatsApp из журнала Green API, кто писал: робот или продавец) → `review/` (в git нет). Запускает владелец (нужен его ssh). 429 «monthly spending cap» от Gemini — `downWhy` = `money` (поднять предел: ai.studio/spend; 08.10 — $60).
+
 **Отзывы покупателей.** Пишет только купивший на сайте (оплаченный заказ),
 один отзыв на заказ, до 5 фото. На главной — 20 последних. Хранятся на сайте
 (`/app/data/reviews/`), не в SBonus. Владелец скрывает плохие на

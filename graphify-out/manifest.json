@@ -954,9 +954,9 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1791377754.2437017,
-    "seen": 1791377778.1373522,
-    "ast_hash": "1077ffacfceea2e932998d8fc1377600",
+    "mtime": 1791438592.1180942,
+    "seen": 1791438622.1009595,
+    "ast_hash": "0d7959d89bd2106a9d7b33cdb7346507",
     "semantic_hash": ""
   },
   "DESIGN.md": {
@@ -3960,15 +3960,15 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/gemini.ts": {
-    "mtime": 1791260613.1937816,
-    "seen": 1791375974.8722012,
-    "ast_hash": "653bcd9ce90c2ee325fa7f815f5b1c21",
+    "mtime": 1791435622.6077552,
+    "seen": 1791438622.0816112,
+    "ast_hash": "86c02ef337f4f87596139e93fc99703f",
     "semantic_hash": ""
   },
   "src/lib/assistant/local.ts": {
-    "mtime": 1791013974.4853313,
-    "seen": 1791375974.8722064,
-    "ast_hash": "5cc1abc718fb0f332e0135dfa2a23ea0",
+    "mtime": 1791434361.6565504,
+    "seen": 1791438622.0820978,
+    "ast_hash": "597fbe6e2bd8e180877bbd586eba1571",
     "semantic_hash": ""
   },
   "src/lib/assistant/orders.ts": {
@@ -3978,9 +3978,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/prompt.ts": {
-    "mtime": 1791117920.5468564,
-    "seen": 1791375974.8722112,
-    "ast_hash": "d23bc8563a0bb56eeaf8a41372d8e5e4",
+    "mtime": 1791437371.7434387,
+    "seen": 1791438622.0824404,
+    "ast_hash": "67eba210825415258f184fc5fa3ef493",
     "semantic_hash": ""
   },
   "src/lib/assistant/reply.ts": {
@@ -4344,9 +4344,9 @@
     "semantic_hash": ""
   },
   "integrations/sbonus-server/shop/shop_wa_bot.py": {
-    "mtime": 1791188484.843688,
-    "seen": 1791375974.872009,
-    "ast_hash": "6e80d3dfcb17544f430bf7cbac726bd4",
+    "mtime": 1791435622.6181676,
+    "seen": 1791438622.0317419,
+    "ast_hash": "1c173c7dcb8c15df399a1ebd38c21304",
     "semantic_hash": ""
   },
   "src/app/api/channel/whatsapp/route.ts": {
@@ -4494,9 +4494,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/policy.ts": {
-    "mtime": 1791273889.8484955,
-    "seen": 1791375974.8722103,
-    "ast_hash": "6ba9705a693cdcdc8a8eff33064ac6ef",
+    "mtime": 1791438513.9643974,
+    "seen": 1791438622.0824394,
+    "ast_hash": "532a1adcdcc1f536acc90bc19c3cc40e",
     "semantic_hash": ""
   },
   "scripts/exam/questions.txt": {
@@ -4626,9 +4626,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/followup.ts": {
-    "mtime": 1791202207.6982212,
-    "seen": 1791375974.8722,
-    "ast_hash": "b4379b5afa231f96cbe269727e4e1875",
+    "mtime": 1791434361.6565504,
+    "seen": 1791438622.0816102,
+    "ast_hash": "a501f17a435a1c0fd33ab6c136015cb9",
     "semantic_hash": ""
   },
   "docs/MAC_2026-09-21.md": {
@@ -7428,9 +7428,9 @@
     "semantic_hash": ""
   },
   "__tests__/gemini-retry.test.ts": {
-    "mtime": 1791260613.2561345,
-    "seen": 1791375974.8718793,
-    "ast_hash": "efc4a4beb3f516a512247980c64fe513",
+    "mtime": 1791435622.6181676,
+    "seen": 1791438622.0010276,
+    "ast_hash": "ae3c28196c4e1b74408fee4756b1cc61",
     "semantic_hash": ""
   },
   "scripts/deploy-all.ps1": {
@@ -8049,6 +8049,54 @@
     "mtime": 1791377741.0524108,
     "seen": 1791377778.1370037,
     "ast_hash": "85a3a2402a159ba2783349aa38501284",
+    "semantic_hash": ""
+  },
+  "__tests__/places.test.ts": {
+    "mtime": 1791438513.9758704,
+    "seen": 1791438622.0108302,
+    "ast_hash": "33f7bc50cd34802721c88f72ec7d41d6",
+    "semantic_hash": ""
+  },
+  "review/wa-dialogs/dialogs.json": {
+    "mtime": 1791437182.363994,
+    "seen": 1791438622.0377843,
+    "ast_hash": "ec83d97b2c64f7f292b515258702fa15",
+    "semantic_hash": ""
+  },
+  "scripts/fetch-assistant-log.ps1": {
+    "mtime": 1791435372.1077871,
+    "seen": 1791438622.0414405,
+    "ast_hash": "5be39062039fa817751b250d054a0996",
+    "semantic_hash": ""
+  },
+  "scripts/fetch-wa-dialogs.ps1": {
+    "mtime": 1791437122.4440124,
+    "seen": 1791438622.0416615,
+    "ast_hash": "24c0afcc7ef7e372e4d5d938e9a5949a",
+    "semantic_hash": ""
+  },
+  "scripts/places/build_places.py": {
+    "mtime": 1791434017.514249,
+    "seen": 1791438622.0437727,
+    "ast_hash": "14410e783612a490e5faa78e0f1843b2",
+    "semantic_hash": ""
+  },
+  "src/lib/assistant/places.ts": {
+    "mtime": 1791438513.9758704,
+    "seen": 1791438622.0824368,
+    "ast_hash": "1f2644290021c19b88c23bb5b4bdaa56",
+    "semantic_hash": ""
+  },
+  "src/lib/assistant/placesData.ts": {
+    "mtime": 1791434018.1668408,
+    "seen": 1791438622.0824382,
+    "ast_hash": "fc208266a2e38baf794620b14864c6d6",
+    "semantic_hash": ""
+  },
+  "review/wa-dialogs/_sales.txt": {
+    "mtime": 1791437226.2887187,
+    "seen": 1791438622.1108763,
+    "ast_hash": "5c315b2342f167db16c24c2937f9fb10",
     "semantic_hash": ""
   }
 }

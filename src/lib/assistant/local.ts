@@ -275,10 +275,10 @@ const topics: Topic[] = [
   {
     match: /достав|жеткир|yetkaz|курьер|отправ|pochta/i,
     say: {
-      // Бесплатно — только до центра городов из списка (policy.ts FREE_DELIVERY_POINTS); Талас, Нарын — цену скажет руководство.
-      ru: `Возим по всему Кыргызстану. До центра этих городов и районов — бесплатно: ${FREE_DELIVERY_POINTS.join(', ')}. В другие места стоимость скажем после оформления. Как оплатите заказ, мы свяжемся и договоримся, когда привезти.`,
-      ky: `Кыргызстандын бардык жерине жеткиребиз. Бул шаар-райондордун борборуна чейин акысыз: ${FREE_DELIVERY_POINTS.join(', ')}. Башка жерге баасын заказдан кийин айтабыз. Төлөгөндөн кийин байланышып, качан жеткирерин келишебиз.`,
-      uz: `Butun Qirg'iziston bo'ylab olib boramiz. Bu shahar va rayonlar markazigacha — bepul: ${FREE_DELIVERY_POINTS.join(', ')}. Boshqa joylarga narxini buyurtmadan keyin aytamiz. To'laganingizdan keyin bog'lanib, qachon yetkazishni kelishamiz.`,
+      // Бесплатно — только до центра городов из списка (policy.ts FREE_DELIVERY_POINTS); Токмок, Кара-Балта, Талас, Нарын — машины нет (08.10), до Бишкека.
+      ru: `Возим по всему Кыргызстану. До центра этих городов и районов — бесплатно: ${FREE_DELIVERY_POINTS.join(', ')}. В Токмок, Кара-Балту, Талас и Нарын своей машины нет — довезём бесплатно до Бишкека, оттуда заберёте сами. В другие места стоимость скажем после оформления. Как оплатите заказ, мы свяжемся и договоримся, когда привезти.`,
+      ky: `Кыргызстандын бардык жерине жеткиребиз. Бул шаар-райондордун борборуна чейин акысыз: ${FREE_DELIVERY_POINTS.join(', ')}. Токмок, Кара-Балта, Талас, Нарынга өз машинабыз барбайт — Бишкекке чейин акысыз жеткиребиз, ошол жерден алып кетесиз. Башка жерге баасын заказдан кийин айтабыз. Төлөгөндөн кийин байланышып, качан жеткирерин келишебиз.`,
+      uz: `Butun Qirg'iziston bo'ylab olib boramiz. Bu shahar va rayonlar markazigacha — bepul: ${FREE_DELIVERY_POINTS.join(', ')}. Tokmok, Kara-Balta, Talas va Naringa o'z mashinamiz bormaydi — Bishkekkacha bepul olib boramiz, o'sha yerdan olib ketasiz. Boshqa joylarga narxini buyurtmadan keyin aytamiz. To'laganingizdan keyin bog'lanib, qachon yetkazishni kelishamiz.`,
     },
   },
   {

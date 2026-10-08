@@ -99,7 +99,9 @@ export function downWhy(error: unknown): DownWhy {
   // «prepayment credits are depleted» — у ключа кончились деньги или квота: само не пройдёт, пополнять.
   const text = error instanceof Error ? error.message : ''
   // 402 «Your prepayment credits are depleted» (06.10: так Google и сообщил, что деньги кончились) — всегда деньги.
-  if (status === 402 || ((status === 429 || status === 403 || status === 400) && /billing|prepa|credits|payment/i.test(text))) return 'money'
+  // 429 «Your project has exceeded its monthly spending cap» (08.10) — упёрлись в месячный предел в AI Studio:
+  // само до конца месяца не пройдёт, а считали «Google занят» и владельцу писали не то.
+  if (status === 402 || ((status === 429 || status === 403 || status === 400) && /billing|prepa|credits|payment|spending cap|spend/i.test(text))) return 'money'
   if (status === 429 || status === 503 || status === 500) return 'busy'
   // 400 — чаще наш кривой запрос, а не ключ (05.10: «Requests ending with a model turn»).
   if (status === 401 || status === 403 || (status === 400 && /api.?key/i.test((error as Error).message))) return 'key'
