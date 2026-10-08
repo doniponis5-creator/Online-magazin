@@ -90,6 +90,7 @@ assert callable(r.ship_by_taxi) and callable(r.find_deposit_order) and callable(
 assert {'/{order_id}/taxi', '/deposits', '/rest-pending', '/{order_id}/rest-done', '/{order_id}/rest-manual'} <= {x.path.replace('/webhook/1c/shop', '') for x in r.router_1c_shop.routes}
 assert banner_rules.clean_link('cat:tv') == 'cat:tv' and banner_rules.clean_link('javascript:x') is None
 assert {'/banners', '/banners/{banner_id}/{kind}'} <= {x.path.replace('/webhook/1c/shop', '') for x in ad.router_1c_admin.routes}
+assert '/webhook/site/visits' in {x.path for x in ad.router_site_admin.routes}
 assert '/webhook/site/banners' in {x.path for x in ad.router_site_admin.routes} and '/shop/photos/banner/{name}' in {x.path for x in c.router_public_photos.routes}
 import app.shop_precheck.shop_promo as promo
 assert promo_rules.template('new', {'name': 'A'})[0] == 'Новинка: A' and callable(promo.deliver)

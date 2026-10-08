@@ -14,6 +14,7 @@
   GET  /webhook/site/notes          подпись сайта    тот же текст для чата на сайте
   POST /webhook/site/lead           подпись сайта    «перезвоните мне» из чата → WhatsApp владельцу
   POST /webhook/site/visit          подпись сайта    отметка о посещении страницы
+  POST /webhook/site/visits         подпись сайта    пачка отметок (до 500) — сайт шлёт раз в 5 с
   POST /webhook/site/push-cart      подпись сайта    снимок корзины для напоминаний
   POST /webhook/site/cart-consent   подпись сайта    согласие на напоминания: записать / прочитать
   POST /webhook/site/promo-consent  подпись сайта    согласие на «Новинки и скидки»: записать / прочитать
@@ -380,6 +381,10 @@ async def site_lead(request: Request):
 class Visit(BaseModel):
     visitor: str = ""
     path: str = "/"
+
+
+class Visits(BaseModel):
+    items: list[Visit] = []
 
 class PushDevice(BaseModel):
     token: str
@@ -964,6 +969,36 @@ async def visit(request: Request, db: AsyncSession = Depends(get_db)):
         logger.warning(f"visit не записан: {error}")
         return {"ok": True, "counted": False}
     return {"ok": True, "counted": True}
+
+
+@router_site_admin.post("/visits")
+async def visits(request: Request, db: AsyncSession = Depends(get_db)):
+    """
+    Пачка отметок за ~5 с одним запросом (08.10, нагрузка перед рекламой): по одному запросу на каждый открытый
+    экран сайт упирался в общий предел SBonus 200 запросов за 10 с с одного адреса. Правила те же, что у /visit.
+    """
+    payload = Visits.parse_raw(await _verify_site_body(request))
+    counted = 0
+    for item in payload.items[:500]:
+        if not item.visitor:
+            continue
+        fingerprint = hashlib.sha256(f"{_site_secret()}:{item.visitor}".encode()).hexdigest()[:32]
+        path = (item.path or "/")[:200]
+        try:
+            if not await redis_client.set(f"shop_visit:{fingerprint}:{path}", "1", ex=600, nx=True):
+                continue
+        except Exception as error:
+            logger.warning(f"visits: redis {error}")
+            continue
+        db.add(ShopVisit(visitor=fingerprint, path=path))
+        counted += 1
+    if counted:
+        try:
+            await db.commit()
+        except Exception as error:
+            logger.warning(f"visits не записаны: {error}")
+            return {"ok": True, "counted": 0}
+    return {"ok": True, "counted": counted}
 
 
 # ── Сводка ───────────────────────────────────────────────────────────────────

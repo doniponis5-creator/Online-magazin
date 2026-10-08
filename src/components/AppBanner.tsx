@@ -1,5 +1,6 @@
 'use client'
 
+import { markGuest, mayBeSignedIn } from '@/lib/customer/loginHint'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useI18n } from '@/lib/i18n/I18nProvider'
@@ -28,10 +29,14 @@ export function AppBanner() {
   useEffect(() => {
     if (!appBarWanted(inNativeApp())) return
     setShow(true)
-    // Вошёл и есть бонусы — скажем сумму. Не вошёл — 401, просто без суммы.
+    // Вошёл и есть бонусы — скажем сумму. Не вошёл — 401, просто без суммы; гостя сервер не спрашиваем (loginHint).
+    if (!mayBeSignedIn()) return
     let cancelled = false
     fetch('/api/customer/me')
-      .then((r) => (r.ok ? r.json() : null))
+      .then((r) => {
+        if (r.status === 401) markGuest()
+        return r.ok ? r.json() : null
+      })
       .then((data) => {
         if (!cancelled) setBonus(Number(data?.customer?.balance ?? 0))
       })

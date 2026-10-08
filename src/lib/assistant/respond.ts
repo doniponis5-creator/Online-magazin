@@ -19,7 +19,7 @@ import { durableMap } from '@/lib/durable'
 import { lookupIn, salesCatalogNow } from './live'
 import { type Intent, followAfter, isSureYes, jevConfigured, objectionNote, readAnswer } from './jev'
 import type { ChatTurn, DownWhy } from './gemini'
-import type { CustomerBrief, ProductHit } from './knowledge'
+import { bestNameMatch, type CustomerBrief, type ProductHit } from './knowledge'
 import { getInstallment, getProfile } from '@/lib/customer/gateway'
 import { phones } from '@/data/contacts'
 
@@ -462,6 +462,12 @@ async function salesFlow(
   let shown = Array.isArray(shownRaw) ? shownRaw.filter((x): x is string => typeof x === 'string').slice(0, 3) : []
   // Консультант ещё ничего не показывал, но открыта страница товара — «беру» про него.
   if (shown.length === 0 && page && find(page)) shown = [page]
+  // Товар назван словами, а карточки не было («флагман 21400 сомликдан», сайт 08.10) — узнаём его из разговора,
+  // иначе «да» и номер телефона шли мимо формы заказа, и покупатель оставался без ссылки
+  if (shown.length === 0) {
+    const guess = bestNameMatch(turns.slice(-6).map((t) => withoutQuote(t.text)).join('\n'), await salesCatalogNow())
+    if (guess) shown = [guess.id]
+  }
   const shownNames = shown.map((id) => find(id)?.nameRu).filter((x): x is string => Boolean(x))
 
   if (typeof buy === 'string' && find(buy)) {

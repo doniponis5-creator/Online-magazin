@@ -8,7 +8,10 @@ export async function GET(request: NextRequest) {
   // можно ли вообще заказывать без входа, и на всякий случай запрещает.
   const guestCheckout = (await getSiteSettings()).guestCheckout
   const session = await currentSession()
-  if (!session) return Response.json({ ok: false, error: 'login', guestCheckout }, { status: 401 })
+  if (!session) {
+    await endSession() // снять подсказку «здесь входили», если кука входа истекла
+    return Response.json({ ok: false, error: 'login', guestCheckout }, { status: 401 })
+  }
   const amount = Number(request.nextUrl.searchParams.get('amount') ?? 0)
   const full = request.nextUrl.searchParams.get('full') === '1'
   try {

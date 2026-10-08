@@ -190,19 +190,47 @@ const SITE_SETTINGS_FALLBACK: SiteSettings = {
   welcomeBonus: 1000,
 }
 
+/**
+ * Настройки сайта живут минуту в памяти сайта (08.10, нагрузка перед рекламой). Раньше каждый открытый экран
+ * (`/api/customer/me` зовёт его и для гостя) спрашивал SBonus — а SBonus пускает с одного адреса 200 запросов
+ * за 10 с, и уже при ~250 посетителях сразу сайт получал «слишком много» и терял вход, бонусы и заказы.
+ * Один запрос на всех: пока он идёт, остальные ждут его же ответ. Сервер не ответил — последнее хорошее
+ * значение (до 10 мин), и только если его нет — запасное.
+ */
+const SETTINGS_TTL = 60_000
+const SETTINGS_STALE = 10 * 60_000
+const settingsCache = ((globalThis as { __scSiteSettings?: { value?: SiteSettings; at: number; pending?: Promise<SiteSettings> } })
+  .__scSiteSettings ??= { at: 0 })
+
+async function fetchSiteSettings(): Promise<SiteSettings> {
+  const data = await call<Partial<SiteSettings>>('/api/v1/webhook/site/settings', { method: 'GET' })
+  return {
+    guestCheckout: data.guestCheckout !== false,
+    bonusMaxPct: Number(data.bonusMaxPct ?? SITE_SETTINGS_FALLBACK.bonusMaxPct),
+    bonusMaxOrder: Number(data.bonusMaxOrder ?? 0) || 0,
+    welcomeBonus: Number(data.welcomeBonus ?? SITE_SETTINGS_FALLBACK.welcomeBonus),
+  }
+}
+
 export async function getSiteSettings(): Promise<SiteSettings> {
   if (paymentMode() === 'mock') return SITE_SETTINGS_FALLBACK
+  const now = Date.now()
+  if (settingsCache.value && now - settingsCache.at < SETTINGS_TTL) return settingsCache.value
+  settingsCache.pending ??= fetchSiteSettings()
+    .then((value) => {
+      settingsCache.value = value
+      settingsCache.at = Date.now()
+      return value
+    })
+    .finally(() => {
+      settingsCache.pending = undefined
+    })
   try {
-    const data = await call<Partial<SiteSettings>>('/api/v1/webhook/site/settings', { method: 'GET' })
-    return {
-      guestCheckout: data.guestCheckout !== false,
-      bonusMaxPct: Number(data.bonusMaxPct ?? SITE_SETTINGS_FALLBACK.bonusMaxPct),
-      bonusMaxOrder: Number(data.bonusMaxOrder ?? 0) || 0,
-      welcomeBonus: Number(data.welcomeBonus ?? SITE_SETTINGS_FALLBACK.welcomeBonus),
-    }
+    return await settingsCache.pending
   } catch (error) {
     // Сервер не ответил — не запираем магазин: заказ важнее настройки
     console.error('[settings] не удалось получить настройки сайта:', error)
+    if (settingsCache.value && now - settingsCache.at < SETTINGS_STALE) return settingsCache.value
     return SITE_SETTINGS_FALLBACK
   }
 }
@@ -332,9 +360,52 @@ export async function setPromoConsent(phone: string, consent: boolean): Promise<
 }
 
 /** Отметка о посещении страницы — для счётчика людей в «Панели сайта». */
+/**
+ * Отметки посещений копятся в памяти сайта и уходят в SBonus одной пачкой раз в 5 с (08.10, нагрузка перед
+ * рекламой): раньше каждый открытый экран был отдельным запросом к SBonus, а он пускает с одного адреса 200
+ * запросов за 10 с — на рекламе счётчик сам отнял бы у покупателей вход, бонусы и заказы. Тот же человек на
+ * той же странице чаще раза в 10 мин не считается (как и на сервере). Счётчик — не деньги: сбой пачку теряет.
+ */
+type VisitQueue = { items: { visitor: string; path: string }[]; seen: Map<string, number>; timer?: ReturnType<typeof setTimeout>; single?: boolean }
+const visits: VisitQueue = ((globalThis as { __scVisits?: VisitQueue }).__scVisits ??= { items: [], seen: new Map<string, number>() } as VisitQueue)
+const VISIT_FLUSH_MS = 5_000
+const VISIT_BATCH = 500
+const VISIT_REPEAT_MS = 10 * 60_000
+
 export async function recordVisit(visitor: string, path: string): Promise<void> {
   if (paymentMode() === 'mock') return
-  await call('/api/v1/webhook/site/visit', { method: 'POST', body: { visitor, path } })
+  const key = `${visitor}|${path}`
+  const now = Date.now()
+  const last = visits.seen.get(key)
+  if (last && now - last < VISIT_REPEAT_MS) return
+  visits.seen.set(key, now)
+  if (visits.seen.size > 50_000) {
+    for (const [k, at] of visits.seen) if (now - at >= VISIT_REPEAT_MS) visits.seen.delete(k)
+    if (visits.seen.size > 50_000) visits.seen.clear()
+  }
+  if (visits.items.length >= VISIT_BATCH * 4) return // SBonus долго молчит — не копим бесконечно
+  visits.items.push({ visitor, path })
+  visits.timer ??= setTimeout(() => void flushVisits(), VISIT_FLUSH_MS)
+}
+
+async function flushVisits(): Promise<void> {
+  visits.timer = undefined
+  const batch = visits.items.splice(0, VISIT_BATCH)
+  if (visits.items.length > 0) visits.timer = setTimeout(() => void flushVisits(), VISIT_FLUSH_MS)
+  if (batch.length === 0) return
+  try {
+    if (!visits.single) {
+      await call('/api/v1/webhook/site/visits', { method: 'POST', body: { items: batch } })
+      return
+    }
+  } catch (error) {
+    // Сервер ещё без пачек (404) — по одной, но не больше 20 за раз: остальное — не страшно потерять
+    if ((error as { status?: number }).status === 404) visits.single = true
+    else return
+  }
+  for (const item of batch.slice(0, 20)) {
+    await call('/api/v1/webhook/site/visit', { method: 'POST', body: item }).catch(() => undefined)
+  }
 }
 
 /**

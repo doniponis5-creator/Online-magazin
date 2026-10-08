@@ -1,5 +1,6 @@
 'use client'
 
+import { photoSrc } from '@/lib/photoSrc'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { brands, products, getDailyProduct, getHits, getRecommended, getSale } from '@/data/products'
@@ -167,7 +168,7 @@ export function ReelsEntry() {
     {shown.length === 3 && <Link ref={stack} href={`/${lang}/reels`} className="reels-entry__stack" aria-hidden="true" tabIndex={-1} onClick={fresh}>
       {shown.map(p => <span key={p.id} className="reels-entry__card">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={p.image} alt="" loading="lazy" data-id={p.id} onError={() => markBroken(p.id)} />
+        <img src={photoSrc(p.image)} alt="" loading="lazy" data-id={p.id} onError={() => markBroken(p.id)} />
       </span>)}
     </Link>}
   </section>

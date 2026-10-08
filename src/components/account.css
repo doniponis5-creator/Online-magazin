@@ -408,6 +408,11 @@
 .cab-menu__item:hover .cab-menu__go { color: var(--color-ink); transform: translateX(2px); }
 .cab-menu__logout { display: block; width: 100%; min-height: 48px; margin-top: 2px; padding: 12px; border: 0; border-top: 1px solid var(--color-border); border-radius: 0 0 12px 12px; background: none; color: var(--color-ink-soft); font: inherit; font-weight: 650; cursor: pointer; }
 .cab-menu__logout:hover { color: var(--color-danger); }
+/* «Выйти из кабинета?» — вопрос на месте кнопки (08.10): одно касание больше не выкидывает */
+.cab-menu__leave { margin-top: 2px; padding: 12px; border-top: 1px solid var(--color-border); text-align: center; }
+.cab-menu__leave p { margin: 0 0 10px; font-weight: 650; color: var(--color-ink); }
+.cab-menu__leave-actions { display: flex; gap: 8px; }
+.cab-menu__leave-actions .btn { flex: 1; min-height: 44px; }
 
 .cab__back { display: none; }
 .cab-section { padding: 24px; border: 1px solid var(--color-border); border-radius: 18px; background: #fff; }

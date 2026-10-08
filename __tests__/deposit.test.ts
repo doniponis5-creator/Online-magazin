@@ -242,3 +242,43 @@ describe('аудит 08.10 вечер', () => {
     flow.cancel(96)
   })
 })
+
+// 08.10, сайт: «флагман 21400 сомликдан заклад» — карточки не было, «хада» и телефон шли мимо формы,
+// модель сама собрала имя и номер и пообещала ссылку; заказа не было.
+describe('товар назван словами, без карточки', () => {
+  it('«флагман» кириллицей узнаётся как FLAGMAN', async () => {
+    const { bestNameMatch } = await import('@/lib/assistant/knowledge')
+    const base = products.find((p) => p.variants.some((v) => v.stock > 0))!
+    const flagman = { ...base, id: 'cb-flag', nameRu: 'Стиральная машина FLAGMAN AV-80MXLB(BG)', nameKy: 'Кир жуугуч FLAGMAN AV-80MXLB(BG)', brand: 'FLAGMAN', price: 21400 }
+    expect(bestNameMatch('Салом флагман омохчиман 21400 сомликдан заклад таше', [flagman, ...products])?.id).toBe('cb-flag')
+  })
+
+  it('«хада» после «Расмийлаштирайликми?» — форма заказа с FLAGMAN и закладом 1 000', async () => {
+    const base = products.find((p) => p.price > 5000 && !p.sale && !(p.oldPrice && p.oldPrice > p.price) && p.variants.some((v) => v.stock > 0))!
+    const flagman = { ...base, id: base.id, nameRu: 'Стиральная машина FLAGMAN AV-80MXLB(BG)', nameKy: 'Кир жуугуч FLAGMAN AV-80MXLB(BG)', brand: 'FLAGMAN', price: 21400 }
+    const list = [flagman, ...products.filter((p) => p.id !== base.id)]
+    vi.resetModules()
+    vi.doMock('@/lib/assistant/live', async (orig) => ({
+      ...(await orig<typeof import('@/lib/assistant/live')>()),
+      salesCatalogNow: async () => list,
+      catalogNow: async () => list,
+    }))
+    vi.doMock('@/lib/assistant/reply', async (orig) => ({
+      ...(await orig<typeof import('@/lib/assistant/reply')>()),
+      answer: async () => ({ text: 'Макул, заклад 1 000 сом.', products: [], source: 'gemini' as const, audience: 'customer' as const, deposit: 1000 }),
+    }))
+    const { respond } = await import('@/lib/assistant/respond')
+    const site = { key: `web:flag-${Math.random()}`, orderSource: 'Заказ из чата на сайте', leadChannel: 'site' as const, known: {} }
+    const u = (text: string) => ({ role: 'user' as const, text })
+    const b = (text: string) => ({ role: 'assistant' as const, text })
+    const t1 = [u('Салом флагман омохчиман 21400 сомликдан заклад таше'), b('Флагман 21 400 сомдук модели боюнча заклад 1 000 сомдон баштап кабыл алынат. Канча заклад бересиз?'), u('1000')]
+    await respond(site, t1, 'ky', null)
+    const r = await respond(site, [...t1, b('Макул, заклад 1 000 сом.'), u('каерга толеман'), b('Буюртмани расмийлаштирганимиздан кейин тулов сахифаси очилади. Расмийлаштирайликми?'), u('хада')], 'ky', null)
+    vi.doUnmock('@/lib/assistant/live')
+    vi.doUnmock('@/lib/assistant/reply')
+    vi.resetModules()
+    expect(r.source).toBe('flow')
+    expect(r.text).toContain('FLAGMAN')
+    expect(r.text).toMatch(/Заклад: 1\s000/)
+  })
+})

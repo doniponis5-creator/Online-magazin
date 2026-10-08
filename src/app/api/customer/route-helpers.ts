@@ -1,6 +1,7 @@
 import 'server-only'
 import { cookies } from 'next/headers'
 import { CustomerApiError } from '@/lib/customer/gateway'
+import { LOGIN_HINT } from '@/lib/customer/loginHint'
 import { SESSION_COOKIE, decodeSession, encodeSession, sessionCookieOptions } from '@/lib/customer/session'
 
 /** IP покупателя (nginx передаёт X-Forwarded-For) — для ограничения частоты кодов на сервере. */
@@ -17,11 +18,14 @@ export async function currentSession() {
 export async function startSession(phone: string, name: string) {
   const store = await cookies()
   store.set(SESSION_COOKIE, encodeSession(phone, name), sessionCookieOptions)
+  // подсказка для скриптов страницы (в ней ничего нет, кроме «здесь входили») — см. loginHint.ts
+  store.set(LOGIN_HINT, '1', { ...sessionCookieOptions, httpOnly: false })
 }
 
 export async function endSession() {
   const store = await cookies()
   store.delete(SESSION_COOKIE)
+  store.delete(LOGIN_HINT)
 }
 
 export function errorResponse(error: unknown) {

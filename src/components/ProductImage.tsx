@@ -1,5 +1,6 @@
 'use client'
 
+import { photoSrc } from '@/lib/photoSrc'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import type { ArtKind } from '@/data/products'
 import { ProductArt } from './ProductArt'
@@ -37,7 +38,7 @@ export function ProductImage({
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={image}
+          src={photoSrc(image)}
           alt={alt || ''}
           className="product-image-photo"
           style={{

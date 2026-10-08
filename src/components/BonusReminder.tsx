@@ -1,5 +1,6 @@
 'use client'
 
+import { markGuest, mayBeSignedIn } from '@/lib/customer/loginHint'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -64,7 +65,10 @@ export function BonusReminder() {
       } catch {
         // без кэша — просто спросим сервер
       }
+      // гость — сервер не спрашиваем на каждой странице (loginHint, нагрузка с рекламы)
+      if (!mayBeSignedIn()) return
       const response = await fetch('/api/customer/me').catch(() => null)
+      if (response?.status === 401) markGuest()
       const data = response && response.ok ? await response.json().catch(() => null) : null
       if (cancelled) return
       // Не вошёл — ничего не запоминаем: после входа полоска должна появиться сразу.

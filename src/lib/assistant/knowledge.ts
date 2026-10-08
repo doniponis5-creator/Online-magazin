@@ -212,7 +212,9 @@ export function bestNameMatch(text: string, list: Product[]): Product | null {
   // Цена «15900» в названия не входит и очков не даёт.
   // «Мини посудомойка» (рилс 05.10) — у товара «Посудомоечная машина MIDEA…»: слово «посудомойка» с названием
   // не сходилось, и в Direct уходило «какой товар?». dishwasherWords приводит его к «посудомоечная».
-  const words = [...new Set(dishwasherWords(splitWords(text).filter((w) => w.length >= 3 && !POST_NOISE.has(w))))]
+  const plain = dishwasherWords(splitWords(text).filter((w) => w.length >= 3 && !POST_NOISE.has(w)))
+  // «флагман» кириллицей — это FLAGMAN латиницей (сайт 08.10: товар не узнан, анкета не началась)
+  const words = [...new Set([...plain, ...plain.filter((w) => /[а-яёңөүўқғҳ]/.test(w)).map(toLatin)])]
   if (words.length === 0) return null
   const names = list.map((p) => splitWords(`${p.nameRu} ${p.nameKy} ${p.brand}`))
   const scores = list.map(() => 0)
@@ -270,6 +272,16 @@ export function postChoices(caption: string, list: Product[], limit = 3): Produc
   if (groups.size !== 1) return []
   const [only] = [...groups.values()]
   return [...only].sort((a, b) => a.price - b.price).slice(0, limit)
+}
+
+const LATIN: Record<string, string> = {
+  а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z', и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n',
+  о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'h', ц: 'ts', ч: 'ch', ш: 'sh', щ: 'sh', ъ: '', ы: 'y', ь: '',
+  э: 'e', ю: 'yu', я: 'ya', ң: 'n', ө: 'o', ү: 'u', ў: 'u', қ: 'k', ғ: 'g', ҳ: 'h',
+}
+/** Марка, написанная кириллицей: «флагман» → «flagman», «самсунг» → «samsung», «мидеа» → «midea». */
+export function toLatin(word: string): string {
+  return [...word].map((ch) => LATIN[ch] ?? ch).join('')
 }
 
 /** Слово покупателя + его синонимы из таблицы выше. */

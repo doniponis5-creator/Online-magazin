@@ -417,6 +417,8 @@ export function AccountView() {
     })
   }, [customer, lang, refreshLock])
 
+  // «Выйти» — сначала вопрос: одно случайное касание выкидывало из кабинета (владелец 08.10)
+  const [askLeave, setAskLeave] = useState(false)
   const leave = useCallback(async () => {
     await clearBonusCard()
     await forgetFaceId()
@@ -620,7 +622,17 @@ export function AccountView() {
                 )
               })}
             </ul>
-            <button type="button" className="cab-menu__logout" onClick={leave}>{a.logout}</button>
+            {askLeave ? (
+              <div className="cab-menu__leave" role="group" aria-labelledby="cab-leave-ask">
+                <p id="cab-leave-ask" role="status">{a.logoutAsk}</p>
+                <div className="cab-menu__leave-actions">
+                  <button type="button" className="btn btn--outline" onClick={leave}>{a.logoutYes}</button>
+                  <button type="button" className="btn btn--ghost" onClick={() => setAskLeave(false)} autoFocus>{a.logoutNo}</button>
+                </div>
+              </div>
+            ) : (
+              <button type="button" className="cab-menu__logout" onClick={() => setAskLeave(true)}>{a.logout}</button>
+            )}
           </nav>
         </aside>
 

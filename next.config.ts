@@ -17,6 +17,12 @@ const SECURITY_HEADERS = [
   { key: 'X-Content-Type-Options', value: 'nosniff' },
 ]
 
+/**
+ * Для Cloudflare (не для браузера): сколько держать страницу у себя. Next.js ставит своим страницам
+ * `s-maxage=31536000` — по нему Cloudflare хранил бы старую цену год; этот заголовок Cloudflare читает раньше.
+ */
+const CDN_PAGE = [{ key: 'Cloudflare-CDN-Cache-Control', value: 'max-age=30' }]
+
 const nextConfig: NextConfig = {
   experimental: { globalNotFound: true },
   // Только для `npm run dev`: приложение для телефона открывает сайт не по «localhost»,
@@ -37,11 +43,26 @@ const nextConfig: NextConfig = {
   },
   // Страницы «Источники фото» больше нет: её фото давно не показываются.
   // Старые ссылки и поисковики ведём на главную, а не на 404.
+  /** Фото товаров через сайт — их кэширует Cloudflare, SBonus отдаёт каждое один раз (src/lib/photoSrc.ts). */
+  rewrites() {
+    return Promise.resolve({
+      beforeFiles: [{ source: '/p/:path*', destination: 'https://api.smartcentr.store/api/v1/shop/photos/:path*' }],
+      afterFiles: [],
+      fallback: [],
+    })
+  },
   redirects() {
     return Promise.resolve([{ source: '/:lang(ru|ky)/sources', destination: '/:lang', permanent: true }])
   },
   headers() {
-    return Promise.resolve([{ source: '/:path*', headers: SECURITY_HEADERS }])
+    return Promise.resolve([
+      { source: '/:path*', headers: SECURITY_HEADERS },
+      // Страницы одинаковые для всех (что видит вошедший — подгружается отдельно, из /api): Cloudflare держит
+      // их 30 с у себя, и наплыв с рекламы до сервера сайта не доходит (08.10; правило кэша в Cloudflare — см.
+      // docs/LOAD_UZ.md). Заказ (ссылка с токеном), галерея («мои»), служебное — мимо: там свой ответ каждому.
+      { source: '/:lang(ru|ky)', headers: CDN_PAGE },
+      { source: '/:lang(ru|ky)/:path((?!order|kitchen/gallery|dev).*)', headers: CDN_PAGE },
+    ])
   },
 }
 

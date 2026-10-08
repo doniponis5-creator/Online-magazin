@@ -1,5 +1,6 @@
 'use client'
 
+import { photoSrc } from '@/lib/photoSrc'
 import Link from 'next/link'
 import { getImageProps } from 'next/image'
 import { useEffect, useRef, useState } from 'react'
@@ -136,7 +137,7 @@ export function PromoCarousel({ banners = [] }: { banners?: HomeBanner[] }) {
                 <span className="btn btn--primary btn--sm adband__cta">{w.more}<IconChevronRight size={16} /></span>
               </span>
               <span className="adband__media" aria-hidden="true">
-                <img src={p.image} alt="" loading={i < 2 ? 'eager' : 'lazy'} decoding="async" />
+                <img src={photoSrc(p.image)} alt="" loading={i < 2 ? 'eager' : 'lazy'} decoding="async" />
               </span>
             </Link>
           )
