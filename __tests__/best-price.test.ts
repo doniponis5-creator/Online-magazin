@@ -23,6 +23,9 @@ describe('«Лучшая цена» — галочка из 1С (09.10)', () => 
       item('best-gone', 5_000, { bestPrice: true, variants: [{ id: 'y', stock: 0 }] } as Partial<Product>),
     ]
     expect(bestPriceProducts(list).map((p) => p.id)).toEqual(['tv', 'kettle', 'sale-1'])
+    // главная перемешивает на заход (как «Специально для вас»): отмеченные всё равно впереди скидок
+    const reverse = <T,>(items: T[]) => [...items].reverse()
+    expect(bestPriceProducts(list, reverse).map((p) => p.id)).toEqual(['kettle', 'tv', 'sale-1'])
     expect(inBestPrice(list[0])).toBe(true)
     expect(inBestPrice(list[3])).toBe(false)
     expect(inBestPrice(list[5])).toBe(false)

@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { photoSrc } from '@/lib/photoSrc'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import type { ArtKind } from '@/data/products'
@@ -29,8 +30,11 @@ export function ProductImage({
   eager?: boolean
 }) {
   const { t } = useI18n()
+  // Фото удалили на сервере, а каталог ещё ссылается (аудит 09.10: 404 у товара в каталоге) —
+  // вместо значка «битая картинка» показываем заглушку «Фото скоро появится».
+  const [broken, setBroken] = useState<string | null>(null)
 
-  if (image) {
+  if (image && broken !== image) {
     return (
       <div
         className={
@@ -52,6 +56,11 @@ export function ProductImage({
             maxHeight: variant === 'gallery' ? '460px' : '100%',
           }}
           loading={eager ? 'eager' : 'lazy'}
+          onError={() => setBroken(image)}
+          // ошибка могла случиться до того, как React подключил onError
+          ref={(el) => {
+            if (el && el.complete && el.naturalWidth === 0 && el.currentSrc) setBroken(image)
+          }}
         />
       </div>
     )

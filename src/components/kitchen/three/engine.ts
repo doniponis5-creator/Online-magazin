@@ -511,13 +511,25 @@ export class KitchenEngine {
   private async compileFirst() {
     const r = this.renderer
     const on = this.sun.castShadow
+    // Шейдер зависит от того, куда рисуем: на холст — с тонированием и sRGB, в цель
+    // (композер, снимок комнаты) — без них. Кадры идут только в цель композера, поэтому
+    // и собираем вариант для цели. Раньше собирался вариант для холста, а нужный собирался
+    // на первом кадре и снимке комнаты — страница стояла 2–3 с дважды (аудит 09.10).
+    // compileAsync создаёт программы сразу (при той цели, что стоит сейчас), а ждёт уже в фоне.
+    const compile = () => {
+      const prev = r.getRenderTarget()
+      r.setRenderTarget(this.composer.renderTarget1)
+      const ready = r.compileAsync(this.scene, this.camera)
+      r.setRenderTarget(prev)
+      return ready
+    }
     try {
       if (on) {
         this.sun.castShadow = false
-        await r.compileAsync(this.scene, this.camera)
+        await compile()
         this.sun.castShadow = true
       }
-      await r.compileAsync(this.scene, this.camera)
+      await compile()
     } catch {
       // не вышло — соберутся на первом кадре
     } finally {

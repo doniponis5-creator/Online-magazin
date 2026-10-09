@@ -62,6 +62,16 @@ describe('поиск как пишет покупатель (аудит 07.10: �
     expect(found('лж')).toEqual(['w1'])
   })
 
+  it('пишут, как слышат: «а» вместо «о» и без «ь» — не ошибка (аудит 09.10: «халадилник» давал 0)', () => {
+    expect(found('халадилник')).toEqual(['f1', 'dear'])
+    expect(found('халадилники')).toEqual(['f1', 'dear'])
+    expect(found('тилевизор')).toEqual(['t1', 't2'])
+    expect(found('кандиционер')).toEqual(['c1'])
+    // лишнего не находим
+    expect(found('халадилник lg')).toEqual([])
+    expect(found('газавая')).toEqual(['g1'])
+  })
+
   it('несколько слов — каждое должно найтись; число — целым', () => {
     expect(found('телевизор 43')).toEqual(['t1'])
     expect(found('телевизор 4')).toEqual([])

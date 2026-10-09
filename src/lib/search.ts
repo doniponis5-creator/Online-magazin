@@ -162,6 +162,9 @@ export function typos(a: string, b: string): number {
   return d[a.length][b.length]
 }
 
+/** Слово «как слышится»: о → а, без ь и ъ. Только для сравнения с опечаткой. */
+const spoken = (w: string) => w.replace(/о/g, 'а').replace(/[ьъ]/g, '')
+
 /** Подходит ли слово запроса к слову товара. typo — прощать опечатку (только в названии, бренде и разделе:
  * в описании слов много, и «кондей» с опечаткой находил «конденсат» у кофемашины). */
 function wordFits(q: string, t: string, typo: boolean): boolean {
@@ -177,7 +180,13 @@ function wordFits(q: string, t: string, typo: boolean): boolean {
   // опечатка: длинное слово — до двух, среднее — одна; сравниваем с началом слова товара той же длины
   if (typo && q.length >= 5 && t.length >= q.length - 1) {
     const limit = q.length >= 8 ? 2 : 1
-    return typos(q, t.slice(0, q.length)) <= limit
+    if (typos(q, t.slice(0, q.length)) <= limit) return true
+    // пишут, как слышат: «а» вместо безударной «о», без «ь» — «халадилник» (аудит 09.10).
+    // Это не считаем ошибкой: сравниваем слова, где о → а и нет ь/ъ.
+    const fq = spoken(q)
+    const ft = spoken(t)
+    if (fq.length >= 5 && ft.startsWith(fq.slice(0, Math.max(4, fq.length - 2)))) return true
+    return fq.length >= 5 && typos(fq, ft.slice(0, fq.length)) <= limit
   }
   return false
 }

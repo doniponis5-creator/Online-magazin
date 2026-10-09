@@ -293,7 +293,8 @@ export function SaleSection() {
 export function BestPriceSection() {
   const { lang } = useI18n()
   const ky = lang === 'ky'
-  const all = bestPriceProducts(products)
+  const shuffle = useShuffle()
+  const all = bestPriceProducts(products, shuffle)
   if (all.length < 4) return null
   const shown = all.slice(0, 8)
   const count = ky ? `${all.length} товар` : countWithNoun(all.length, 'товар', 'товара', 'товаров')

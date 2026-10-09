@@ -12,10 +12,12 @@ import { IconCart, IconClose, IconGrid, IconHeart, IconMapPin, IconSearch, IconU
 import { Brand } from './Brand'
 import { HeaderSubnav } from './HeaderSubnav'
 
-function HeaderInner() {
+type Params = { get(name: string): string | null; toString(): string }
+const NO_PARAMS: Params = new URLSearchParams()
+
+function HeaderInner({ searchParams }: { searchParams: Params }) {
   const { t, lang } = useI18n()
   const pathname = usePathname() || `/${lang}`
-  const searchParams = useSearchParams()
   const router = useRouter()
   const cart = useCart()
   const fav = useFavorites()
@@ -229,10 +231,21 @@ function HeaderInner() {
   )
 }
 
+function HeaderWithParams() {
+  return <HeaderInner searchParams={useSearchParams()} />
+}
+
+/*
+ * useSearchParams на статичной странице сервер не рисует — рисует запасной вариант Suspense.
+ * Раньше запасным был пустой div: шапка появлялась только после загрузки скриптов и
+ * сдвигала всю страницу вниз на свою высоту (152 px на компьютере, аудит 09.10).
+ * Теперь запасной — та же шапка без параметров адреса: сервер рисует её сразу,
+ * после загрузки подставляются поиск ?q= и раздел ?cat=.
+ */
 export function Header() {
   return (
-    <Suspense fallback={<div className="header" aria-hidden="true" />}>
-      <HeaderInner />
+    <Suspense fallback={<HeaderInner searchParams={NO_PARAMS} />}>
+      <HeaderWithParams />
     </Suspense>
   )
 }

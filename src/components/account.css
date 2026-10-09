@@ -103,6 +103,9 @@
 /* Оформление заказа */
 /* Вход при оформлении заказа — сворачиваемое предложение: заказать можно и без него */
 .checkout-login { margin-bottom: 24px; }
+/* Свёрнутый блок — без пустой полосы под заголовком (отступ заголовка и промежуток flex, аудит 09.10) */
+.checkout-login:not([open]) { display: block; }
+.checkout-login:not([open]) summary { margin-bottom: 0; }
 .checkout-login[open] { display: grid; gap: 12px; }
 .checkout-login summary { cursor: pointer; }
 .checkout-login summary::marker { color: var(--color-ink-soft); }

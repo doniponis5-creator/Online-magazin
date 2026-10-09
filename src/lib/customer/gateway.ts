@@ -244,26 +244,48 @@ export async function getHeroVariant(): Promise<HeroVariant> {
   if (paymentMode() === 'mock') return resolveHero(process.env.SITE_HERO_VARIANT)
   try {
     const data = await callServer<{ heroVariant?: unknown }>('/api/v1/webhook/site/settings', { method: 'GET', revalidate: 60 })
-    return resolveHero(data.heroVariant)
+    return remember(lastHero, resolveHero(data.heroVariant))
   } catch (error) {
     console.error('[settings] не удалось узнать анимацию баннера:', error)
-    return resolveHero(undefined)
+    return recall(lastHero) ?? resolveHero(undefined)
   }
+}
+
+/*
+ * Последний удачный ответ сервера для главной (09.10). Сервер на секунды не ответил (502 при выкладке,
+ * «слишком много запросов») — главная до 10 минут показывает то, что было, а не автоматические слайды
+ * вместо баннеров владельца. Пустой список баннеров от сервера — тоже ответ: его и запоминаем.
+ */
+const HOME_STALE = 10 * 60_000
+type Last<T> = { value?: T; at: number }
+const lastHero = ((globalThis as { __scLastHero?: Last<HeroVariant> }).__scLastHero ??= { at: 0 })
+const lastBanners = ((globalThis as { __scLastBanners?: Last<HomeBanner[]> }).__scLastBanners ??= { at: 0 })
+
+function remember<T>(last: Last<T>, value: T): T {
+  last.value = value
+  last.at = Date.now()
+  return value
+}
+
+function recall<T>(last: Last<T>): T | undefined {
+  return last.value !== undefined && Date.now() - last.at < HOME_STALE ? last.value : undefined
 }
 
 /**
  * Баннеры главной из 1С («Панель сайта» → «Баннеры»): что показывать сегодня. Ответ живёт минуту, как и
- * анимация баннера. Сервер молчит или баннеров нет — пустой список: главная покажет свой баннер (PromoCarousel).
+ * анимация баннера. Баннеров нет — пустой список: главная покажет свой баннер (PromoCarousel). Сервер молчит —
+ * последние полученные баннеры (до 10 мин), и только если их нет — пустой список.
  */
 export async function getHomeBanners(): Promise<HomeBanner[]> {
   if (paymentMode() === 'mock') return []
   try {
     const data = await callServer<{ banners?: unknown }>('/api/v1/webhook/site/banners', { method: 'GET', revalidate: 60 })
-    return cleanBanners(data.banners)
+    return remember(lastBanners, cleanBanners(data.banners))
   } catch (error) {
     // 404 — сервер ещё без баннеров (обновится позже): это не поломка, журнал не засоряем
-    if ((error as { status?: number }).status !== 404) console.error('[banners] не удалось получить баннеры:', error)
-    return []
+    if ((error as { status?: number }).status === 404) return []
+    console.error('[banners] не удалось получить баннеры:', error)
+    return recall(lastBanners) ?? []
   }
 }
 

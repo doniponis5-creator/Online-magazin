@@ -16,13 +16,15 @@ const onSale = (p: Product) => Boolean(p.price > 0 && (p.sale || (p.oldPrice && 
 const inStock = (p: Product) => p.variants.some((v) => v.stock > 0)
 
 /**
- * Раздел «Лучшая цена»: сначала отмеченные в 1С (дорогие вперёд — телевизор и стиральная заметнее чайника),
- * потом товары со скидкой. Только то, что можно купить сейчас: без цены и без остатка — не показываем.
+ * Раздел «Лучшая цена»: сначала отмеченные в 1С, потом товары со скидкой. Только то, что можно купить сейчас:
+ * без цены и без остатка — не показываем. Без `order` — дорогие вперёд (телевизор заметнее чайника); главная
+ * передаёт перемешивание на заход (`useShuffle`, как «Специально для вас», владелец 09.10): на главной 8 мест,
+ * отмеченных больше — с каждым заходом выходят другие, внутри захода порядок держится.
  */
-export function bestPriceProducts(all: Product[]): Product[] {
-  const best = all.filter((p) => isBestPrice(p) && inStock(p)).sort((a, b) => b.price - a.price)
+export function bestPriceProducts(all: Product[], order: <T>(items: T[]) => T[] = (items) => items): Product[] {
+  const best = order(all.filter((p) => isBestPrice(p) && inStock(p)).sort((a, b) => b.price - a.price))
   const taken = new Set(best.map((p) => p.id))
-  const sale = all.filter((p) => !taken.has(p.id) && onSale(p) && inStock(p))
+  const sale = order(all.filter((p) => !taken.has(p.id) && onSale(p) && inStock(p)))
   return [...best, ...sale]
 }
 

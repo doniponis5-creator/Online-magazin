@@ -84,3 +84,7 @@
 @media (max-width: 900px) {
   .catalog-layout .filters > .search { display: none; }
 }
+
+/* Весь каталог — сотни карточек: карточки за экраном браузер не рисует, пока до них не долистали.
+   Телефон ×4 медленнее (аудит 09.10): кадр прокрутки 19 → 10 мс. auto — запоминает настоящую высоту. */
+.catalog-results .product-grid > .card { content-visibility: auto; contain-intrinsic-size: auto 380px; }
