@@ -18,12 +18,15 @@ export function ProductImage({
   variant = 'card',
   image,
   alt,
+  eager,
 }: {
   kind: ArtKind
   /** card — квадратная зона в карточке/корзине, gallery — крупная зона товара */
   variant?: 'card' | 'gallery'
   image?: string
   alt?: string
+  /** грузить сразу: соседнее фото в ленте галереи должно быть готово до свайпа */
+  eager?: boolean
 }) {
   const { t } = useI18n()
 
@@ -48,7 +51,7 @@ export function ProductImage({
             padding: variant === 'gallery' ? '1rem' : '0.5rem',
             maxHeight: variant === 'gallery' ? '460px' : '100%',
           }}
-          loading="lazy"
+          loading={eager ? 'eager' : 'lazy'}
         />
       </div>
     )

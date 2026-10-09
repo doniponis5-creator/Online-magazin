@@ -5,27 +5,18 @@ import { useEffect, useRef, type ReactNode } from 'react'
 /**
  * Приближение фото двумя пальцами прямо на странице — как в галерее iPhone.
  *
- * Пока фото не приближено, один палец листает страницу как обычно
- * (touch-action: pan-y), а щипок ловим сами через pointer-события.
- * Приближено — один палец двигает фото, страница стоит. Двойное нажатие
+ * Пока фото не приближено, один палец листает как обычно (touch-action: pan-x pan-y):
+ * вверх-вниз — страницу, вбок — ленту фото в Gallery (её листает сам браузер,
+ * поэтому плавно и с разгоном). Щипок ловим сами через pointer-события.
+ * Приближено — один палец двигает фото, страница и лента стоят. Двойное нажатие
  * приближает в 2,5 раза к этой точке, ещё раз — возвращает.
- * Не приближено — палец влево/вправо листает фото (onSwipe), как в Instagram (владелец 09.10).
  * На компьютере компонент ничего не делает: там мышь и лупа.
  */
 const MAX = 4
 
-const SWIPE = 50
+const PAN = 'pan-x pan-y'
 
-export function PinchZoom({
-  children,
-  className,
-  onSwipe,
-}: {
-  children: ReactNode
-  className?: string
-  /** 1 — следующее фото, -1 — прошлое */
-  onSwipe?: (dir: 1 | -1) => void
-}) {
+export function PinchZoom({ children, className }: { children: ReactNode; className?: string }) {
   const box = useRef<HTMLSpanElement>(null)
   const inner = useRef<HTMLSpanElement>(null)
   const pointers = useRef(new Map<number, { x: number; y: number }>())
@@ -36,8 +27,6 @@ export function PinchZoom({
   // был ли в этом жесте щипок: отпустили пальцы — фото плавно возвращается,
   // как в Instagram. Двойное нажатие держит приближение до следующего.
   const didPinch = useRef(false)
-  // листание одним пальцем: где начали и сколько уехали по горизонтали
-  const swipe = useRef<{ x: number; y: number; dx: number; on: boolean } | null>(null)
 
   // Щипок браузер забирал себе (прокрутка, масштаб страницы) и присылал pointercancel — фото возвращалось,
   // хотя пальцы ещё на экране (владелец 09.10). Два пальца или приближенное фото — жест наш, не браузера.
@@ -70,7 +59,7 @@ export function PinchZoom({
     s.ty = Math.min(0, Math.max(h - h * s.scale, s.ty))
     el.style.transition = animated ? 'transform 180ms ease-out' : 'none'
     el.style.transform = `translate(${s.tx}px, ${s.ty}px) scale(${s.scale})`
-    wrap.style.touchAction = s.scale > 1.01 ? 'none' : 'pan-y'
+    wrap.style.touchAction = s.scale > 1.01 ? 'none' : PAN
   }
 
   const reset = () => {
@@ -111,9 +100,7 @@ export function PinchZoom({
       last.current = null
     } else if (pts.length === 1) {
       last.current = { x: e.clientX, y: e.clientY }
-      swipe.current = state.current.scale <= 1.01 && onSwipe ? { x: e.clientX, y: e.clientY, dx: 0, on: false } : null
     }
-    if (pts.length >= 2) swipe.current = null
   }
 
   const onPointerMove = (e: React.PointerEvent) => {
@@ -140,16 +127,6 @@ export function PinchZoom({
       s.ty += e.clientY - last.current.y
       last.current = { x: e.clientX, y: e.clientY }
       apply()
-    } else if (pts.length === 1 && swipe.current && inner.current) {
-      const w = swipe.current
-      w.dx = e.clientX - w.x
-      const dy = e.clientY - w.y
-      if (!w.on && Math.abs(w.dx) > 10 && Math.abs(w.dx) > Math.abs(dy) * 1.5) w.on = true
-      // фото едет за пальцем — видно, что листается
-      if (w.on) {
-        inner.current.style.transition = 'none'
-        inner.current.style.transform = `translateX(${w.dx * 0.6}px)`
-      }
     }
   }
 
@@ -159,15 +136,6 @@ export function PinchZoom({
     pointers.current.delete(e.pointerId)
     if (pointers.current.size < 2) pinch.current = null
     if (pointers.current.size === 0) {
-      const w = swipe.current
-      swipe.current = null
-      if (w?.on) {
-        last.current = null
-        lastTap.current = 0
-        if (Math.abs(w.dx) >= SWIPE) onSwipe?.(w.dx < 0 ? 1 : -1)
-        reset()
-        return
-      }
       last.current = null
       if (didPinch.current) {
         didPinch.current = false
@@ -193,7 +161,7 @@ export function PinchZoom({
     <span
       ref={box}
       className={className}
-      style={{ display: 'block', overflow: 'hidden', touchAction: 'pan-y', userSelect: 'none' }}
+      style={{ display: 'block', overflow: 'hidden', touchAction: PAN, userSelect: 'none' }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}

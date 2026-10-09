@@ -85,6 +85,8 @@ export type Product = {
   dealOfDay?: boolean
   /** отметка «Специально для вас» из 1С */
   forYou?: boolean
+  /** галочка «Лучшая цена» из 1С: метка у цены и раздел на главной */
+  bestPrice?: boolean
   /** стоимость доставки товара, сом (0 или нет — бесплатно) */
   deliveryPrice?: number
   /**

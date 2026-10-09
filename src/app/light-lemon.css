@@ -550,3 +550,9 @@ input, textarea { caret-color: var(--color-primary); }
 .order-cancel__error { margin: 0 0 16px; line-height: 1.55; }
 .order-cancel__wa { font-weight: 700; color: var(--color-primary); text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
 .checkout-pay { white-space: normal; text-align: center; line-height: 1.3; min-height: 52px; }
+/* Лента фото товара (2+ снимка): листает браузер — плавно, с разгоном, по одному фото за свайп (владелец 09.10). */
+.gallery__main--slides { display: block; }
+.gallery__track { display: flex; width: 100%; height: 100%; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none; }
+.gallery__track::-webkit-scrollbar { display: none; }
+.gallery__slide { flex: 0 0 100%; height: 100%; scroll-snap-align: center; scroll-snap-stop: always; border: 0; padding: 0; background: transparent; display: flex; align-items: center; justify-content: center; }
+.gallery__count { position: absolute; left: 14px; bottom: 14px; padding: 4px 10px; border-radius: 999px; background: rgba(38, 50, 68, .72); color: #fff; font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; pointer-events: none; }

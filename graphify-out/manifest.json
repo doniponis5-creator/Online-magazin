@@ -150,9 +150,9 @@
     "semantic_hash": ""
   },
   "integrations/1c-online-shop/build_extension.py": {
-    "mtime": 1791452794.0779903,
-    "seen": 1791452888.4950123,
-    "ast_hash": "8ecb33a7d894167c104e76439d6cb126",
+    "mtime": 1791538332.310846,
+    "seen": 1791540338.560366,
+    "ast_hash": "8c3fa081e13860fd349c925c827e11f8",
     "semantic_hash": ""
   },
   "integrations/1c-online-shop/manage.py": {
@@ -672,9 +672,9 @@
     "semantic_hash": ""
   },
   "src/components/Gallery.tsx": {
-    "mtime": 1791529737.6517031,
-    "seen": 1791530041.6764495,
-    "ast_hash": "ac0f6989d0893668f1aaaac3465eff8b",
+    "mtime": 1791540029.9185605,
+    "seen": 1791540338.5795813,
+    "ast_hash": "21694f32797184d6a60813a6b1b5f3c8",
     "semantic_hash": ""
   },
   "src/components/Header.tsx": {
@@ -690,9 +690,9 @@
     "semantic_hash": ""
   },
   "src/components/HomeMerchandising.tsx": {
-    "mtime": 1791533739.7362542,
-    "seen": 1791537265.571904,
-    "ast_hash": "122fb38f6680b85903f9b76807a3cc62",
+    "mtime": 1791538500.4439833,
+    "seen": 1791540338.5798838,
+    "ast_hash": "52b7b74c023d3394df9c18f7fe666a8c",
     "semantic_hash": ""
   },
   "src/components/HomeStory.tsx": {
@@ -744,9 +744,9 @@
     "semantic_hash": ""
   },
   "src/components/ProductImage.tsx": {
-    "mtime": 1791457139.7932,
-    "seen": 1791457318.0694647,
-    "ast_hash": "7c76116d4eea0c5d9d0a455f22c9b398",
+    "mtime": 1791540029.9185605,
+    "seen": 1791540338.5809743,
+    "ast_hash": "748294d25b831e3b19f71dcc4692898d",
     "semantic_hash": ""
   },
   "src/components/ProductPurchase.tsx": {
@@ -774,9 +774,9 @@
     "semantic_hash": ""
   },
   "src/data/1c/adapter.ts": {
-    "mtime": 1791363397.4419417,
-    "seen": 1791375974.8721874,
-    "ast_hash": "393cb1b70b0b90439b23d2bdb89f051d",
+    "mtime": 1791538469.6166315,
+    "seen": 1791540338.5846846,
+    "ast_hash": "d06a10bf96f01f51d0e5f65162726274",
     "semantic_hash": ""
   },
   "src/data/1c/catalog.json": {
@@ -810,9 +810,9 @@
     "semantic_hash": ""
   },
   "src/data/products.ts": {
-    "mtime": 1791452758.5938447,
-    "seen": 1791452888.5191987,
-    "ast_hash": "60979341adae58dd8a3407e40721294b",
+    "mtime": 1791538469.617635,
+    "seen": 1791540338.5855865,
+    "ast_hash": "b452adf0e474c46b760437975e315aca",
     "semantic_hash": ""
   },
   "src/data/storefront.ts": {
@@ -4770,9 +4770,9 @@
     "semantic_hash": ""
   },
   "src/components/PinchZoom.tsx": {
-    "mtime": 1791529730.5194511,
-    "seen": 1791530041.6775937,
-    "ast_hash": "894ab86d1abb20b605dddc902dce7909",
+    "mtime": 1791540010.2445507,
+    "seen": 1791540338.5807142,
+    "ast_hash": "be7bd35692cf01c2ec21e86b19bdf776",
     "semantic_hash": ""
   },
   "__tests__/kitchen.test.ts": {
@@ -8178,9 +8178,9 @@
     "semantic_hash": ""
   },
   "__tests__/best-price.test.ts": {
-    "mtime": 1791533905.6821487,
-    "seen": 1791537265.541947,
-    "ast_hash": "1ddcf85c4866ee1135469c840832a23b",
+    "mtime": 1791538500.8333414,
+    "seen": 1791540338.5488021,
+    "ast_hash": "f1a374dd155ef39f74932e1286e1c72a",
     "semantic_hash": ""
   },
   "review/_tmp-shot-best.mjs": {
@@ -8208,9 +8208,9 @@
     "semantic_hash": ""
   },
   "src/data/best-price.ts": {
-    "mtime": 1791533683.4826257,
-    "seen": 1791537265.5767853,
-    "ast_hash": "9a445524f7428988351e903b070d6723",
+    "mtime": 1791538484.57397,
+    "seen": 1791540338.584851,
+    "ast_hash": "5e7235261bd91779a0afa0fb0539997c",
     "semantic_hash": ""
   },
   "review/align-best.png": {
@@ -8259,6 +8259,18 @@
     "mtime": 1791533853.657579,
     "seen": 1791537265.6430411,
     "ast_hash": "78d541210965d951645d17115af2aaf9",
+    "semantic_hash": ""
+  },
+  "scripts/set_best_price.py": {
+    "mtime": 1791538429.8442311,
+    "seen": 1791540338.5695136,
+    "ast_hash": "25687ca7cc8f776f5450ccca22b341fd",
+    "semantic_hash": ""
+  },
+  "scripts/set_site_prices.py": {
+    "mtime": 1791537452.9060488,
+    "seen": 1791540338.5695148,
+    "ast_hash": "164ab72df0df2b487b45322108fdc14c",
     "semantic_hash": ""
   }
 }

@@ -39,6 +39,8 @@ export type OneCItem = {
   forYou?: boolean
   hit?: boolean
   isNew?: boolean
+  /** галочка «Лучшая цена» из 1С (09.10) */
+  bestPrice?: boolean
   photos?: string[]
   /** стоимость доставки, сом; 0 — бесплатно */
   deliveryPrice?: number
@@ -173,6 +175,7 @@ export function productFromOneC(item: OneCItem): Product {
     sale: Boolean(item.sale),
     dealOfDay: Boolean(item.dealOfDay),
     forYou: Boolean(item.forYou),
+    bestPrice: Boolean(item.bestPrice) || undefined,
     deliveryPrice: Math.max(0, Math.round(item.deliveryPrice || 0)),
     stockHidden: item.availability === 'В наличии' || isPreorder(item),
     preorder: isPreorder(item) || undefined,

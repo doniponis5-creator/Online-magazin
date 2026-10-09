@@ -47,6 +47,31 @@ export function Gallery({
   const openerRef = useRef<HTMLButtonElement>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
 
+  // Лента фото (2+ снимка): листает сам браузер (scroll-snap) — палец ведёт фото 1:1,
+  // отпустил — доезжает с разгоном, соседнее фото уже загружено (владелец 09.10:
+  // «чапга скролл қилса плавный эмас» — раньше фото ползло за пальцем и менялось скачком).
+  const trackRef = useRef<HTMLDivElement>(null)
+  const slides = !photo && images.length > 1
+  const onTrackScroll = () => {
+    const el = trackRef.current
+    if (!el || !el.clientWidth) return
+    const i = Math.round(el.scrollLeft / el.clientWidth)
+    if (i !== imageIndex && i >= 0 && i < images.length) setImageIndex(i)
+  }
+  const showImage = (i: number) => {
+    setImageIndex(i)
+    const el = trackRef.current
+    if (!el) return
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    el.scrollTo({ left: i * el.clientWidth, behavior: reduce ? 'auto' : 'smooth' })
+  }
+  const openZoom = () => {
+    // На телефоне окно не открываем: там фото приближают двумя пальцами
+    // прямо на странице (PinchZoom), а лупа спрятана стилями.
+    if (window.matchMedia('(hover: none) and (pointer: coarse)').matches) return
+    setZoomOpen(true)
+  }
+
   const name = lang === 'ky' ? product.nameKy : product.nameRu
   const alt = lang === 'ky' ? (photo?.altKy ?? name) : (photo?.altRu ?? name)
 
@@ -89,26 +114,43 @@ export function Gallery({
 
   return (
     <div className="gallery">
-      {canZoom ? (
+      {slides ? (
+        <div className="gallery__main gallery__main--slides">
+          <div className="gallery__track" ref={trackRef} onScroll={onTrackScroll} key={product.id}>
+            {images.map((src, i) => (
+              <button
+                key={src}
+                type="button"
+                ref={i === imageIndex ? openerRef : undefined}
+                className="gallery__slide gallery__main--zoom"
+                onClick={() => {
+                  setImageIndex(i)
+                  openZoom()
+                }}
+                aria-label={`${t.product.zoomOpen}: ${name}, ${i + 1} / ${images.length}`}
+                title={t.product.zoomOpen}
+              >
+                <PinchZoom className="gallery__pinch">
+                  <ProductImage kind={product.art} variant="gallery" image={src} alt={name} eager={i <= imageIndex + 1} />
+                </PinchZoom>
+              </button>
+            ))}
+          </div>
+          <span className="gallery__zoom-hint" aria-hidden="true">
+            <IconSearch size={18} />
+          </span>
+          <span className="gallery__count" aria-hidden="true">{imageIndex + 1} / {images.length}</span>
+        </div>
+      ) : canZoom ? (
         <button
           type="button"
           ref={openerRef}
           className="gallery__main gallery__main--zoom"
-          onClick={() => {
-            // На телефоне окно не открываем: там фото приближают двумя пальцами
-            // прямо на странице (PinchZoom), а лупа спрятана стилями.
-            if (window.matchMedia('(hover: none) and (pointer: coarse)').matches) return
-            setZoomOpen(true)
-          }}
+          onClick={openZoom}
           aria-label={`${t.product.zoomOpen}: ${name}`}
           title={t.product.zoomOpen}
         >
-          <PinchZoom
-            className="gallery__pinch"
-            onSwipe={images.length > 1 ? (dir) => setImageIndex((i) => (i + dir + images.length) % images.length) : undefined}
-          >
-            {mainView}
-          </PinchZoom>
+          <PinchZoom className="gallery__pinch">{mainView}</PinchZoom>
           {/* лупа в углу — подсказка, что фото можно увеличить (только с мышью) */}
           <span className="gallery__zoom-hint" aria-hidden="true">
             <IconSearch size={18} />
@@ -127,7 +169,7 @@ export function Gallery({
               className="gallery__thumb gallery__thumb--photo"
               aria-pressed={i === imageIndex}
               aria-label={`${name}: ${i + 1} / ${images.length}`}
-              onClick={() => setImageIndex(i)}
+              onClick={() => showImage(i)}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={src} alt="" loading="lazy" />

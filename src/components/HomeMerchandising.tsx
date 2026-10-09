@@ -4,7 +4,7 @@ import { photoSrc } from '@/lib/photoSrc'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { brands, products, getDailyProduct, getHits, getRecommended, getSale } from '@/data/products'
-import { BEST_PRICE_CHECKED, bestPriceProducts, isBestPrice } from '@/data/best-price'
+import { bestPriceProducts, isBestPrice } from '@/data/best-price'
 import { categories } from '@/data/categories'
 import { storefront } from '@/data/storefront'
 import { useI18n } from '@/lib/i18n/I18nProvider'
@@ -296,16 +296,16 @@ export function BestPriceSection() {
   const all = bestPriceProducts(products)
   if (all.length < 4) return null
   const shown = all.slice(0, 8)
-  const day = Number(BEST_PRICE_CHECKED.slice(8, 10))
   const count = ky ? `${all.length} товар` : countWithNoun(all.length, 'товар', 'товара', 'товаров')
   return <section className="section best-price" aria-labelledby="best-price-title">
     <div className="best-price__head">
       <div>
         <span className="best-price__kicker">{ky ? 'Салыштырып көрүңүз' : 'Сравните сами'}</span>
         <h2 className="section__title" id="best-price-title">{ky ? 'Эң жакшы баа' : 'Лучшая цена'}</h2>
+        {/* Без даты сверки: отмечает владелец в 1С, дата устарела бы молча */}
         <p className="best-price__lead">{ky
-          ? `Белгилүү моделдер башка дүкөндөрдөгүдөн арзан. Бааларды ${day}-октябрда текшердик.`
-          : `Известные модели дешевле, чем в других магазинах. Цены сверили ${day} октября.`}</p>
+          ? 'Белгилүү моделдер башка дүкөндөрдөгүдөн арзан.'
+          : 'Известные модели дешевле, чем в других магазинах.'}</p>
       </div>
       <Link className="section__cta" href={`/${lang}/catalog?best=1`}>{ky ? `Баары — ${count}` : `Все ${count}`}<IconChevronRight size={16} /></Link>
     </div>
