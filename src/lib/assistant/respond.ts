@@ -291,10 +291,22 @@ function declined(turns: ChatTurn[]): boolean {
   return last?.role === 'user' && last.text.trim().length <= 40 && DECLINE.test(last.text)
 }
 
+/** От ответа осталось одно приветствие — «Ассаламу алейкум, Клара.» (аудит 09.10: цена пропала, ушло только оно). */
+export function onlyGreeting(text: string): boolean {
+  const greeting = /ассал[ао]му?\s+ал[еа]йкум|здравствуйте|салам(атсызбы)?/giu
+  if (!greeting.test(text)) return false
+  return (
+    text
+      .replace(greeting, '')
+      .replace(/^[\s\p{P}]*(\p{L}+)?[\s\p{P}]*$/u, '')
+      .trim().length === 0
+  )
+}
+
 /** После отказа второй раз «позвонить вам?» не предлагаем — достаточно короткого прощания. */
 function withoutCallOffer(text: string): string {
   const kept = text.split(/(?<=[.!?])\s+/).filter((sentence) => !CALL_OFFER.test(sentence))
-  return kept.length > 0 ? kept.join(' ') : text
+  return kept.length > 0 && !onlyGreeting(kept.join(' ')) ? kept.join(' ') : text
 }
 
 /** Короткое «понял/спасибо» на трёх языках, эмодзи и знаки — без единого вопроса. */
@@ -342,9 +354,9 @@ function withoutEarlyOffer(text: string, turns: ChatTurn[]): string {
   const recently = ours.slice(-3).some((t) => OFFER.test(t.text))
   if (ours.length > 0 && !recently && (ready || ripe)) return text
   const kept = text.split(/(?<=[.!?])\s+/).filter((sentence) => !OFFER.test(sentence))
-  // Остался один «Ассаламу алейкум.» — значит, вырезали сам ответ: лучше не трогать.
+  // Остался один «Ассаламу алейкум.» (или с именем) — значит, вырезали сам ответ: лучше не трогать.
   const rest = kept.join(' ')
-  return rest.replace(/ассал[ао]му?\s+ал[еа]йкум\.?/giu, '').trim().length > 0 ? rest : text
+  return onlyGreeting(rest) ? text : rest
 }
 
 /** Наличные: «наличка», «накталай», «нахт» — про оплату, не про покупку. */

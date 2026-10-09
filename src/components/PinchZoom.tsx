@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 
 /**
  * Приближение фото двумя пальцами прямо на странице — как в галерее iPhone.
@@ -9,11 +9,23 @@ import { useRef, type ReactNode } from 'react'
  * (touch-action: pan-y), а щипок ловим сами через pointer-события.
  * Приближено — один палец двигает фото, страница стоит. Двойное нажатие
  * приближает в 2,5 раза к этой точке, ещё раз — возвращает.
+ * Не приближено — палец влево/вправо листает фото (onSwipe), как в Instagram (владелец 09.10).
  * На компьютере компонент ничего не делает: там мышь и лупа.
  */
 const MAX = 4
 
-export function PinchZoom({ children, className }: { children: ReactNode; className?: string }) {
+const SWIPE = 50
+
+export function PinchZoom({
+  children,
+  className,
+  onSwipe,
+}: {
+  children: ReactNode
+  className?: string
+  /** 1 — следующее фото, -1 — прошлое */
+  onSwipe?: (dir: 1 | -1) => void
+}) {
   const box = useRef<HTMLSpanElement>(null)
   const inner = useRef<HTMLSpanElement>(null)
   const pointers = useRef(new Map<number, { x: number; y: number }>())
@@ -24,6 +36,27 @@ export function PinchZoom({ children, className }: { children: ReactNode; classN
   // был ли в этом жесте щипок: отпустили пальцы — фото плавно возвращается,
   // как в Instagram. Двойное нажатие держит приближение до следующего.
   const didPinch = useRef(false)
+  // листание одним пальцем: где начали и сколько уехали по горизонтали
+  const swipe = useRef<{ x: number; y: number; dx: number; on: boolean } | null>(null)
+
+  // Щипок браузер забирал себе (прокрутка, масштаб страницы) и присылал pointercancel — фото возвращалось,
+  // хотя пальцы ещё на экране (владелец 09.10). Два пальца или приближенное фото — жест наш, не браузера.
+  useEffect(() => {
+    const el = box.current
+    if (!el) return
+    const hold = (e: TouchEvent) => {
+      if (e.cancelable && (e.touches.length >= 2 || state.current.scale > 1.01)) e.preventDefault()
+    }
+    const gesture = (e: Event) => e.preventDefault()
+    el.addEventListener('touchmove', hold, { passive: false })
+    el.addEventListener('touchstart', hold, { passive: false })
+    el.addEventListener('gesturestart', gesture)
+    return () => {
+      el.removeEventListener('touchmove', hold)
+      el.removeEventListener('touchstart', hold)
+      el.removeEventListener('gesturestart', gesture)
+    }
+  }, [])
 
   const apply = (animated = false) => {
     const el = inner.current
@@ -78,7 +111,9 @@ export function PinchZoom({ children, className }: { children: ReactNode; classN
       last.current = null
     } else if (pts.length === 1) {
       last.current = { x: e.clientX, y: e.clientY }
+      swipe.current = state.current.scale <= 1.01 && onSwipe ? { x: e.clientX, y: e.clientY, dx: 0, on: false } : null
     }
+    if (pts.length >= 2) swipe.current = null
   }
 
   const onPointerMove = (e: React.PointerEvent) => {
@@ -105,6 +140,16 @@ export function PinchZoom({ children, className }: { children: ReactNode; classN
       s.ty += e.clientY - last.current.y
       last.current = { x: e.clientX, y: e.clientY }
       apply()
+    } else if (pts.length === 1 && swipe.current && inner.current) {
+      const w = swipe.current
+      w.dx = e.clientX - w.x
+      const dy = e.clientY - w.y
+      if (!w.on && Math.abs(w.dx) > 10 && Math.abs(w.dx) > Math.abs(dy) * 1.5) w.on = true
+      // фото едет за пальцем — видно, что листается
+      if (w.on) {
+        inner.current.style.transition = 'none'
+        inner.current.style.transform = `translateX(${w.dx * 0.6}px)`
+      }
     }
   }
 
@@ -114,6 +159,15 @@ export function PinchZoom({ children, className }: { children: ReactNode; classN
     pointers.current.delete(e.pointerId)
     if (pointers.current.size < 2) pinch.current = null
     if (pointers.current.size === 0) {
+      const w = swipe.current
+      swipe.current = null
+      if (w?.on) {
+        last.current = null
+        lastTap.current = 0
+        if (Math.abs(w.dx) >= SWIPE) onSwipe?.(w.dx < 0 ? 1 : -1)
+        reset()
+        return
+      }
       last.current = null
       if (didPinch.current) {
         didPinch.current = false

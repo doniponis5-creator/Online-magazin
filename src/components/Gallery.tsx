@@ -103,7 +103,12 @@ export function Gallery({
           aria-label={`${t.product.zoomOpen}: ${name}`}
           title={t.product.zoomOpen}
         >
-          <PinchZoom className="gallery__pinch">{mainView}</PinchZoom>
+          <PinchZoom
+            className="gallery__pinch"
+            onSwipe={images.length > 1 ? (dir) => setImageIndex((i) => (i + dir + images.length) % images.length) : undefined}
+          >
+            {mainView}
+          </PinchZoom>
           {/* лупа в углу — подсказка, что фото можно увеличить (только с мышью) */}
           <span className="gallery__zoom-hint" aria-hidden="true">
             <IconSearch size={18} />

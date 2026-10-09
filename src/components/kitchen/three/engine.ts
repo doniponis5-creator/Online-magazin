@@ -420,6 +420,9 @@ export class KitchenEngine {
     c.maxAzimuthAngle = 1.25
     c.rotateSpeed = ROTATE_SPEED
     c.zoomSpeed = 0.8
+    // Щипок и колесо приближают туда, где пальцы/мышь, а не к центру (владелец 09.10: «факат центрга зуум»).
+    // Точку вращения после этого держит keepTarget — из комнаты она не уходит.
+    c.zoomToCursor = true
     // Левой кнопкой мыши шкафы переставляют, поэтому вращать можно и правой —
     // она работает всегда, даже если под мышью шкаф.
     c.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE }
