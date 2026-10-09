@@ -9,11 +9,12 @@ import { adalMonthly } from '@/lib/installment'
 import { phones, whatsappHref } from '@/data/contacts'
 import { SITE_URL } from '@/lib/seo'
 import type { Product } from '@/data/products'
+import { isBestPrice } from '@/data/best-price'
 import { useCart } from '@/lib/cart/CartProvider'
 import { AddToCartButton } from './AddToCartButton'
 import { FavoriteButton } from './FavoriteButton'
 import { CompareButton } from './CompareButton'
-import { IconWhatsApp } from './Icons'
+import { IconCheck, IconWhatsApp } from './Icons'
 import { ProductImage } from './ProductImage'
 import { PromoCountdown } from './PromoCountdown'
 import { QuantityStepper } from './QuantityStepper'
@@ -74,6 +75,13 @@ export function ProductCard({ product }: { product: Product }) {
             На телефоне места нет, и описание там только мешало бы. */}
         {desc && <p className="card__desc">{desc}</p>}
         <div className="card__prices">
+          {/* «Лучшая цена» — у цены, а не на фото: там уже «Хит»/«Новинка», две метки закрывали товар (владелец 09.10).
+              Горит, только пока мы не дороже других магазинов (src/data/best-price.ts) */}
+          {isBestPrice(product) && (
+            <span className="card__best-row">
+              <span className="card__best"><IconCheck size={12} />{t.catalog.badgeBest}</span>
+            </span>
+          )}
           {product.price > 0 ? (
             <>
               <span className={`card__price${product.oldPrice ? ' card__price--sale' : ''}`}>{formatSom(product.price)}</span>
@@ -85,13 +93,16 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
         {/* «Рассрочка: 5 975 сом/мес» — до 40 000, «Адал рассрочка» без переплаты (src/lib/installment.ts) */}
         {/* Пилюля как у MMarket (владелец 06.10): знак MIslamic, «Адал · 3 475 сом/мес» */}
-        {monthly && (
+        {monthly ? (
           <span className="card__installment" title={t.product.installmentNote}>
             <img className="card__installment-mark" src="/brand/mislamic-mark.svg" alt="" width="15" height="16" />
             <span>
               Адал · <b>{formatSom(monthly)}/{t.product.installmentCard}</b>
             </span>
           </span>
+        ) : (
+          // Рассрочки нет (дороже 40 000) — пустое место той же высоты: цены в ряду стоят на одной линии (владелец 09.10)
+          <span className="card__installment card__installment--none" aria-hidden="true" />
         )}
         <div className="card__actions" ref={actions} tabIndex={-1} aria-label={`${t.cart.quantity}: ${name}`}>
           {product.price <= 0 ? (

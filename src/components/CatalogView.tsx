@@ -15,6 +15,7 @@ import { ProductCard } from '@/components/ProductCard'
 import { FilterSelect } from '@/components/FilterSelect'
 import { CompareLink } from '@/components/CompareButton'
 import { IconClose, IconFilter, IconSearch } from '@/components/Icons'
+import { inBestPrice } from '@/data/best-price'
 import './catalog-filters.css'
 
 type SortKey = 'popular' | 'price-asc' | 'price-desc'
@@ -62,6 +63,8 @@ function CatalogViewInner() {
   const maxPrice = parsePrice(searchParams.get('max'))
   const stockOnly = searchParams.get('stock') === '1'
   const saleOnly = searchParams.get('sale') === '1'
+  // ?best=1 — «Лучшая цена и скидки» (раздел на главной, 09.10)
+  const bestOnly = searchParams.get('best') === '1'
   // ?inst=1 — «Бөлүп төлөөгө»: цена в лимите «Адал рассрочки» (владелец 06.10)
   const instOnly = searchParams.get('inst') === '1'
   const selectedBadges = parseList(searchParams.get('badge')).filter((b): b is Badge =>
@@ -168,6 +171,7 @@ function CatalogViewInner() {
       if (maxPrice && p.price > maxPrice) return false
       if (stockOnly && !inStock(p)) return false
       if (saleOnly && !onSale(p)) return false
+      if (bestOnly && !inBestPrice(p)) return false
       if (instOnly && !adalMonthly(p.price)) return false
       if (selectedBadges.length && !(p.badge && selectedBadges.includes(p.badge))) return false
       if (skip !== 'q') {
@@ -177,7 +181,7 @@ function CatalogViewInner() {
       return true
     },
     // brandKey/badgeKey — стабильные ключи массивов из URL
-    [query, weight, cat, brandKey, minPrice, maxPrice, stockOnly, saleOnly, instOnly, badgeKey, chosenFacets],
+    [query, weight, cat, brandKey, minPrice, maxPrice, stockOnly, saleOnly, bestOnly, instOnly, badgeKey, chosenFacets],
   )
 
   const filtered = useMemo(() => {
@@ -251,6 +255,7 @@ function CatalogViewInner() {
     (minPrice || maxPrice ? 1 : 0) +
     (stockOnly ? 1 : 0) +
     (saleOnly ? 1 : 0) +
+    (bestOnly ? 1 : 0) +
     (instOnly ? 1 : 0) +
     selectedBadges.length +
     chosenFacets.reduce((sum, c) => sum + c.values.length, 0)
@@ -452,6 +457,14 @@ function CatalogViewInner() {
           <fieldset className="filter-group">
             <legend className="filter-group__title">{t.catalog.offers}</legend>
             <div className="check-list">
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={bestOnly}
+                  onChange={() => update({ best: bestOnly ? null : '1' })}
+                />
+                <span className="check__label">{t.catalog.bestOnly}</span>
+              </label>
               <label className="check">
                 <input
                   type="checkbox"

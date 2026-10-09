@@ -12,7 +12,7 @@ import categoryIcons from '@/data/category-icons.json'
 import { categoryCover, getNew, getPopular, type ArtKind } from '@/data/products'
 import { useI18n } from '@/lib/i18n/I18nProvider'
 import { useShuffle } from '@/lib/useShuffle'
-import { DailySelection, CampaignBanner, HitMosaic, ReelsEntry, BrandStrip, SaleSection, SocialAndAccount } from '@/components/HomeMerchandising'
+import { BestPriceSection, DailySelection, CampaignBanner, HitMosaic, ReelsEntry, BrandStrip, SocialAndAccount } from '@/components/HomeMerchandising'
 import { StorefrontHero } from '@/components/StorefrontHero'
 import type { HeroVariant } from '@/lib/hero'
 import type { SaleCard } from '@/lib/hero-sale'
@@ -213,6 +213,9 @@ export function HomeRest({ hero }: { hero: HeroVariant }) {
   const shuffle = useShuffle()
   return (
     <>
+      {/* «Лучшая цена» — первый товарный блок (владелец 09.10, реклама): покупатель сразу видит, что здесь дёшево.
+          Товары со скидкой теперь здесь же, отдельной «Распродажи» ниже нет */}
+      <BestPriceSection />
       <DailySelection />
       <CampaignBanner />
       <HitMosaic />
@@ -220,7 +223,6 @@ export function HomeRest({ hero }: { hero: HeroVariant }) {
       {hero !== 'kitchens' && <KitchenPromo />}
       <ReelsEntry />
       <BrandStrip />
-      <SaleSection />
       <BonusPromo />
       <NightBanner />
       <ProductSection titleKey="newList" ctaKey="newCta" products={getNew(shuffle)} />

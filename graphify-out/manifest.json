@@ -642,9 +642,9 @@
     "semantic_hash": ""
   },
   "src/components/CatalogView.tsx": {
-    "mtime": 1791363361.8616233,
-    "seen": 1791375974.8721378,
-    "ast_hash": "5294761686546af2c17f55e9f83c8c90",
+    "mtime": 1791533768.447551,
+    "seen": 1791537265.5710156,
+    "ast_hash": "d799946ec7bd258dfdf409c10e74d048",
     "semantic_hash": ""
   },
   "src/components/CustomerLogin.tsx": {
@@ -690,9 +690,9 @@
     "semantic_hash": ""
   },
   "src/components/HomeMerchandising.tsx": {
-    "mtime": 1791457139.7942,
-    "seen": 1791457318.0681963,
-    "ast_hash": "6cc8b875dd8a3ca31ff2bd2b8cd542a4",
+    "mtime": 1791533739.7362542,
+    "seen": 1791537265.571904,
+    "ast_hash": "122fb38f6680b85903f9b76807a3cc62",
     "semantic_hash": ""
   },
   "src/components/HomeStory.tsx": {
@@ -732,9 +732,9 @@
     "semantic_hash": ""
   },
   "src/components/ProductCard.tsx": {
-    "mtime": 1791284376.681208,
-    "seen": 1791375974.872155,
-    "ast_hash": "a6dd58c007c38b4cc36fde569521d6c7",
+    "mtime": 1791536949.795052,
+    "seen": 1791537265.5728743,
+    "ast_hash": "b7c868a0481eb7f14a108d75335c760d",
     "semantic_hash": ""
   },
   "src/components/ProductDetail.tsx": {
@@ -780,8 +780,8 @@
     "semantic_hash": ""
   },
   "src/data/1c/catalog.json": {
-    "mtime": 1791463890.8446825,
-    "seen": 1791464080.1783128,
+    "mtime": 1791537251.1916137,
+    "seen": 1791537265.5767033,
     "ast_hash": "81adc17fc4264e6125f8227414510a69",
     "semantic_hash": ""
   },
@@ -876,9 +876,9 @@
     "semantic_hash": ""
   },
   "src/lib/i18n/dictionaries.ts": {
-    "mtime": 1791455407.347164,
-    "seen": 1791456814.288321,
-    "ast_hash": "3d5529da4c27d0d0fdb8c56c45e051dc",
+    "mtime": 1791533696.4119208,
+    "seen": 1791537265.5824618,
+    "ast_hash": "351672664535090e1ec87e0cec58baef",
     "semantic_hash": ""
   },
   "src/lib/links.ts": {
@@ -6366,9 +6366,9 @@
     "semantic_hash": ""
   },
   "src/app/[lang]/HomeSections.tsx": {
-    "mtime": 1791453955.3484883,
-    "seen": 1791454004.9779236,
-    "ast_hash": "ed7860a4ac626f790529a4b5af603854",
+    "mtime": 1791533763.1658144,
+    "seen": 1791537265.5633135,
+    "ast_hash": "118975ee62a87c79033884ffcb75c4ad",
     "semantic_hash": ""
   },
   "src/app/api/push/cart/route.ts": {
@@ -8175,6 +8175,90 @@
     "mtime": 1791528292.9824572,
     "seen": 1791530041.709408,
     "ast_hash": "c604d5cc925c860361a4613e290beaef",
+    "semantic_hash": ""
+  },
+  "__tests__/best-price.test.ts": {
+    "mtime": 1791533905.6821487,
+    "seen": 1791537265.541947,
+    "ast_hash": "1ddcf85c4866ee1135469c840832a23b",
+    "semantic_hash": ""
+  },
+  "review/_tmp-shot-best.mjs": {
+    "mtime": 1791533848.9325082,
+    "seen": 1791537265.5581696,
+    "ast_hash": "ce5a42b335114626c9874b2117478a3a",
+    "semantic_hash": ""
+  },
+  "review/_tmp-shot-best2.mjs": {
+    "mtime": 1791533874.407969,
+    "seen": 1791537265.5581708,
+    "ast_hash": "e76302565b3b3a2bc279abe2aec064ac",
+    "semantic_hash": ""
+  },
+  "review/_tmp-shot-best3.mjs": {
+    "mtime": 1791536790.2148402,
+    "seen": 1791537265.5582006,
+    "ast_hash": "b54e07c7da2b4da7f900e784dbdc9559",
+    "semantic_hash": ""
+  },
+  "review/_tmp-shot-best4.mjs": {
+    "mtime": 1791536959.5925627,
+    "seen": 1791537265.5582016,
+    "ast_hash": "3ab0f1a4d6e59b266b00a3f32ebc944f",
+    "semantic_hash": ""
+  },
+  "src/data/best-price.ts": {
+    "mtime": 1791533683.4826257,
+    "seen": 1791537265.5767853,
+    "ast_hash": "9a445524f7428988351e903b070d6723",
+    "semantic_hash": ""
+  },
+  "review/align-best.png": {
+    "mtime": 1791536966.5963957,
+    "seen": 1791537265.6395915,
+    "ast_hash": "bc4814ddee62f99bb4ae6d8ca8add6ac",
+    "semantic_hash": ""
+  },
+  "review/align-washers.png": {
+    "mtime": 1791536963.716113,
+    "seen": 1791537265.6395931,
+    "ast_hash": "ae9e187b5543da1c73a4c247e3640c86",
+    "semantic_hash": ""
+  },
+  "review/best-card-desktop.png": {
+    "mtime": 1791536794.5268672,
+    "seen": 1791537265.6430366,
+    "ast_hash": "1b64d798d3a253b5eb118a430d1d4a4b",
+    "semantic_hash": ""
+  },
+  "review/best-desktop-ky.png": {
+    "mtime": 1791533878.1997845,
+    "seen": 1791537265.643038,
+    "ast_hash": "570d05a7162953374848a043cf611ee5",
+    "semantic_hash": ""
+  },
+  "review/best-desktop.png": {
+    "mtime": 1791533857.6357691,
+    "seen": 1791537265.6430387,
+    "ast_hash": "a9aeca79ff18d28ec090114f2b318e51",
+    "semantic_hash": ""
+  },
+  "review/best-grid-phone.png": {
+    "mtime": 1791536798.1308906,
+    "seen": 1791537265.6430397,
+    "ast_hash": "db9dc180b6dbe9c4b1fa17ffa0bd67d0",
+    "semantic_hash": ""
+  },
+  "review/best-phone-ky.png": {
+    "mtime": 1791533861.3236895,
+    "seen": 1791537265.6430404,
+    "ast_hash": "9a6b15ee2e75d47ba5794489cc5f8ce3",
+    "semantic_hash": ""
+  },
+  "review/best-phone.png": {
+    "mtime": 1791533853.657579,
+    "seen": 1791537265.6430411,
+    "ast_hash": "78d541210965d951645d17115af2aaf9",
     "semantic_hash": ""
   }
 }

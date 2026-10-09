@@ -1099,9 +1099,30 @@ main#content {
 
 .card__prices {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 8px;
+  gap: 6px 8px;
   margin-top: auto;
+}
+
+/* «Лучшая цена» над ценой (09.10): графит с лимонным текстом — не спорит с лимонной кнопкой «В корзину» */
+.card__best-row {
+  flex: 0 0 100%;
+  display: flex;
+}
+
+.card__best {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: var(--color-ink);
+  color: #eaf500;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1px;
 }
 
 .card__price {
@@ -3999,6 +4020,7 @@ html.dialog-open {
   text-overflow: ellipsis;
 }
 .card__installment > span { overflow: hidden; text-overflow: ellipsis; }
+.card__installment--none { visibility: hidden; height: 28px; padding: 0; }
 .card__installment b {
   font-weight: 700;
   color: #1f1f1f;

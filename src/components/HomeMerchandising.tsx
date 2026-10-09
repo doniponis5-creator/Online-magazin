@@ -4,6 +4,7 @@ import { photoSrc } from '@/lib/photoSrc'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { brands, products, getDailyProduct, getHits, getRecommended, getSale } from '@/data/products'
+import { BEST_PRICE_CHECKED, bestPriceProducts, isBestPrice } from '@/data/best-price'
 import { categories } from '@/data/categories'
 import { storefront } from '@/data/storefront'
 import { useI18n } from '@/lib/i18n/I18nProvider'
@@ -280,6 +281,42 @@ export function SaleSection() {
       </span>
       <ProductCard product={product} />
     </div>)}</div>
+  </section>
+}
+
+/**
+ * «Лучшая цена» (владелец 09.10, перед рекламой): первый товарный блок после баннеров. Известные модели, у которых мы
+ * не дороже магазинов Бишкека, и товары со скидкой из 1С — покупатель с рекламы сразу видит, что здесь дёшево.
+ * Конкурентов не называем: «сравните сами» убеждает сильнее (владелец 09.10). На главной 8 карточек
+ * (на телефоне и планшете 6 — ровные ряды), остальные — в каталоге по фильтру ?best=1.
+ */
+export function BestPriceSection() {
+  const { lang } = useI18n()
+  const ky = lang === 'ky'
+  const all = bestPriceProducts(products)
+  if (all.length < 4) return null
+  const shown = all.slice(0, 8)
+  const day = Number(BEST_PRICE_CHECKED.slice(8, 10))
+  const count = ky ? `${all.length} товар` : countWithNoun(all.length, 'товар', 'товара', 'товаров')
+  return <section className="section best-price" aria-labelledby="best-price-title">
+    <div className="best-price__head">
+      <div>
+        <span className="best-price__kicker">{ky ? 'Салыштырып көрүңүз' : 'Сравните сами'}</span>
+        <h2 className="section__title" id="best-price-title">{ky ? 'Эң жакшы баа' : 'Лучшая цена'}</h2>
+        <p className="best-price__lead">{ky
+          ? `Белгилүү моделдер башка дүкөндөрдөгүдөн арзан. Бааларды ${day}-октябрда текшердик.`
+          : `Известные модели дешевле, чем в других магазинах. Цены сверили ${day} октября.`}</p>
+      </div>
+      <Link className="section__cta" href={`/${lang}/catalog?best=1`}>{ky ? `Баары — ${count}` : `Все ${count}`}<IconChevronRight size={16} /></Link>
+    </div>
+    <div className="product-grid best-price__grid">{shown.map((product) => {
+      const off = product.oldPrice && product.oldPrice > product.price ? Math.round((1 - product.price / product.oldPrice) * 100) : 0
+      return <div key={product.id} className={`best-price__item${off && !isBestPrice(product) ? ' best-price__item--sale' : ''}`}>
+        {/* Товар со скидкой: вместо меток карточки — «−N%», как в «Распродаже» */}
+        {off > 0 && !isBestPrice(product) && <span className="best-price__discount" aria-hidden="true">−{off}%</span>}
+        <ProductCard product={product} />
+      </div>
+    })}</div>
   </section>
 }
 

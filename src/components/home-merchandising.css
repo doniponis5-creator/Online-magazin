@@ -281,3 +281,19 @@
  .sale-section .card__media { height: 100%; aspect-ratio: auto; min-height: 240px; }
 }
 .daily-selection h2, .hits-section h2 { scroll-margin-top: 90px; }
+
+/* «Лучшая цена» (09.10): первый товарный блок после баннеров */
+.best-price__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; margin-bottom: 20px; }
+.best-price__kicker { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; margin-bottom: 8px; border-radius: 6px; background: #eaf500; color: var(--color-ink); font-size: 12px; font-weight: 700; letter-spacing: .01em; }
+.best-price__lead { margin: 6px 0 0; max-width: 560px; color: #4b5b70; font-size: 15px; line-height: 1.5; }
+.best-price__item { position: relative; }
+.best-price__item .card { height: 100%; }
+.best-price__item--sale .card__badges { display: none; }
+.best-price__discount { position: absolute; top: 16px; left: 14px; z-index: 3; background: var(--color-danger); color: #fff; border-radius: 6px; padding: 5px 9px; font-weight: 800; font-size: 13px; letter-spacing: .01em; pointer-events: none; }
+/* ровные ряды: 4 × 2 на компьютере, 3 × 2 на планшете и 2 × 3 на телефоне */
+@media (max-width: 959px) { .best-price__grid > :nth-child(n + 7) { display: none; } }
+@media (max-width: 560px) {
+  .best-price__head { margin-bottom: 14px; }
+  .best-price__lead { font-size: 14px; }
+  .best-price__discount { top: 10px; left: 10px; padding: 4px 7px; font-size: 12px; }
+}
