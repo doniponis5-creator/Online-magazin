@@ -39,12 +39,25 @@ const QUESTIONS = {
   spam: { type: 'noul', instructions: `${CONTEXT} Это спам: реклама чужого магазина или услуги, ссылки, ставки, казино, заработок, оскорбления или мат?` },
 } as const
 
+/**
+ * «+» под постом — «сколько стоит?»: и «++», «+ 🔥», «➕», «＋», «плюс» (владелец 09.10: «плюсни ҳам шу қаторга қўш»;
+ * раньше узнавался только одинокий «+»). Эмодзи и знаки препинания вокруг не мешают.
+ */
+export function isPlus(text: string): boolean {
+  const t = text
+    .toLowerCase()
+    .replace(/[➕＋]/gu, '+')
+    .replace(/[\p{Extended_Pictographic}\u{1F3FB}-\u{1F3FF}\uFE0F\u200D]/gu, '')
+    .replace(/[\s.,!?()]+/gu, '')
+  return /^(?:\++|плюс|плус|plus|pilus)$/u.test(t)
+}
+
 /** Вопрос о цене — такой комментарий не скрываем, даже если Jev счёл спамом. «Пиши в директ» — частый спам, его тут нет. */
-const PRICE_WORDS = /(^\s*\+\s*$|цена|сколько|почём|почем|канча|баасы|нарх|qancha|narx|price)/iu
+const PRICE_WORDS = /(цена|сколько|почём|почем|канча|баасы|нарх|qancha|narx|price)/iu
 
 /** Слова интереса — запасной путь без Jev и страховка от его ошибки: «+» под рекламой — это всегда «сколько?». */
 const ASK_WORDS =
-  /(^\s*\+\s*$|цена|сколько|почём|почем|стоимост|канча|баасы|нарх|qancha|narx|price|барбы|бар бы|борми|bormi|директ|direct|(?<![\p{L}])(?:в\s)?лс(?![\p{L}])|жеткир|доставк|yetkaz|етказ)/iu
+  /(цена|сколько|почём|почем|стоимост|канча|баасы|нарх|qancha|narx|price|барбы|бар бы|борми|bormi|директ|direct|(?<![\p{L}])(?:в\s)?лс(?![\p{L}])|жеткир|доставк|yetkaz|етказ)/iu
 
 export async function scoreComment(text: string, caption: string): Promise<CommentScores | null> {
   if (!jevConfigured()) return null
@@ -155,7 +168,8 @@ export function planComment(text: string, scores: CommentScores | null, product:
   // Наш же ответ «Директке жаздык 📩» вернулся webhook'ом: в нём «директ» — без этой проверки
   // робот отвечал бы сам себе по кругу. Сервер ещё и помнит id своих ответов — это вторая защита.
   if (OWN_REPLIES.has(text.trim())) return plan('skip')
-  const wordsAsk = ASK_WORDS.test(text)
+  const plus = isPlus(text)
+  const wordsAsk = plus || ASK_WORDS.test(text)
   const s = scores ?? { ask: wordsAsk ? 1 : 0, praise: 0, complaint: 0, spam: 0 }
 
   // «Кымбат, Москвада 5 мин рубль», «алдайсыңар, 5–7 мин сом турат» (05.10) — спор о цене, а не жалоба:
@@ -169,7 +183,7 @@ export function planComment(text: string, scores: CommentScores | null, product:
   // Жалоба — всегда владельцу, даже с матом (ревью 04.10: злой покупатель с матом уходил в «спам» и
   // молча скрывался). Скрываем только спам без жалобы и без интереса к товару.
   if (s.complaint >= 0.6) return plan('alert', PUBLIC_SORRY[shown], SORRY_DM[lang])
-  if (s.spam >= 0.8 && s.ask < 0.3 && !PRICE_WORDS.test(text)) return plan('hide')
+  if (s.spam >= 0.8 && s.ask < 0.3 && !plus && !PRICE_WORDS.test(text)) return plan('hide')
   if (s.ask >= 0.5 || wordsAsk) {
     if (!product && choices.length > 0) {
       const lines = choices.map((p) => `• ${p.nameRu.replace(/\*+/g, '').replace(/\s+/g, ' ').trim().slice(0, 70)} — ${formatSom(p.price)}`).join('\n')

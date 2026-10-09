@@ -129,6 +129,8 @@ const SYNONYMS: Record<string, string[]> = {
   кир: ['стиральная'],
   мото: ['мотоцикл', 'мототцикл', 'эндуро'],
   moto: ['мотоцикл', 'мототцикл', 'эндуро'],
+  // «мотор» — двигатель («DD Motor» у стиральной LEVO), не мотоцикл: см. NOT_PREFIX
+  мотор: ['motor'],
   велик: ['велосипед', 'велик'],
   велосипед: ['велик'],
   velosiped: ['велик', 'велосипед'],
@@ -212,22 +214,28 @@ export function bestNameMatch(text: string, list: Product[]): Product | null {
   // Цена «15900» в названия не входит и очков не даёт.
   // «Мини посудомойка» (рилс 05.10) — у товара «Посудомоечная машина MIDEA…»: слово «посудомойка» с названием
   // не сходилось, и в Direct уходило «какой товар?». dishwasherWords приводит его к «посудомоечная».
-  const words = [...new Set(dishwasherWords(splitWords(text).filter((w) => w.length >= 3 && !POST_NOISE.has(w))))]
+  // Цена в подписи. Число — тысячи группами по три («13 900», «13.900») или подряд («13900»);
+  // «ZL-940 13 900 сом» — 13 900, не 94013900. Из слов цену убираем: «31 900 сом» давал слово «900»,
+  // и «Средство AXMA (900 гр)» обгоняло стиральную LEVO (Instagram 09.10).
+  const priceRe = /(?<![\d.,])(\d{1,3}(?:[  .,]\d{3})+|\d{3,7})\s*(?:сом|som|с(?![\p{L}]))/giu
+  const prices = [...text.matchAll(priceRe)].map((m) => Number(m[1].replace(/\D/g, '')))
+  const words = [...new Set(dishwasherWords(splitWords(text.replace(priceRe, ' ')).filter((w) => w.length >= 3 && !POST_NOISE.has(w))))]
   if (words.length === 0) return null
   const names = list.map((p) => splitWords(`${p.nameRu} ${p.nameKy} ${p.brand}`))
+  // Марка в подписи — товар только этой марки («Кир жуугуч машина LEVO 8кг» давал LG 8кг, Instagram 09.10)
+  const brands = new Set(list.map((p) => normalize(p.brand)).filter((b) => b.length >= 2))
+  const named = words.filter((w) => brands.has(w))
+  const brandOk = (i: number) => named.length === 0 || named.some((b) => normalize(list[i].brand) === b || names[i].includes(b))
   const scores = list.map(() => 0)
   const score = (word: string, among: (i: number) => boolean) => {
     const forms = expand([word])
-    const hits = names.map((name, i) => (among(i) && forms.some((f) => startsAny(name, f)) ? i : -1)).filter((i) => i >= 0)
+    const hits = names.map((name, i) => (among(i) && brandOk(i) && forms.some((f) => startsAny(name, f)) ? i : -1)).filter((i) => i >= 0)
     for (const i of hits) scores[i] += 1 / hits.length
   }
   // Сначала слова, потом числа — и числа только среди тех, кого уже нашли по словам: «322 литр»
   // у холодильника AVEST иначе дал «Духовку UAKEEN UK-322» (замер 04.10).
   for (const word of words.filter((w) => !/^\d+$/.test(w))) score(word, () => true)
   for (const word of words.filter((w) => /^\d+$/.test(w))) score(word, (i) => scores[i] > 0)
-  // Цена в подписи. Число — тысячи группами по три («13 900», «13.900») или подряд («13900»);
-  // «ZL-940 13 900 сом» — 13 900, не 94013900.
-  const prices = [...text.matchAll(/(?<![\d.,])(\d{1,3}(?:[  .,]\d{3})+|\d{3,7})\s*(?:сом|som|с(?![\p{L}]))/giu)].map((m) => Number(m[1].replace(/\D/g, '')))
   const near = (p: Product) => prices.some((x) => Math.abs(x - p.price) <= p.price * 0.03)
   // «Мини посудомойка 23 900 сом»: по словам подходят все посудомойки, по цене — одна. Она и есть.
   const byPrice = list.filter((p, i) => scores[i] > 0 && near(p))
@@ -310,6 +318,12 @@ export function chatProductGuess(text: string, list: Product[]): Product | null 
   return candidates.length === 1 ? candidates[0] : null
 }
 
+/**
+ * Начало слова, которое ещё не синоним: «мотор» начинается с «мото», но это двигатель. Instagram 09.10:
+ * под постом стиральной «LEVO … DD Motor» бот назвал цену «Мототцикл спорт».
+ */
+const NOT_PREFIX: Record<string, RegExp> = { мото: /^мотор/, moto: /^motor/ }
+
 /** Слово покупателя + его синонимы из таблицы выше. */
 function expand(words: string[]): string[] {
   const out = new Set<string>()
@@ -318,7 +332,8 @@ function expand(words: string[]): string[] {
     // С окончанием тоже: «стиралкаларды», «муздаткычтар», «пилисоска» — по началу слова.
     for (const [key, aliases] of Object.entries(SYNONYMS)) {
       // «мошинага батабы» — это про автомобиль, не про стиральную: «мошина» только целым словом.
-      if (word === key || (key.length >= 4 && key !== 'мошина' && word.startsWith(key))) for (const alias of aliases) out.add(alias)
+      const prefix = key.length >= 4 && key !== 'мошина' && word.startsWith(key) && !NOT_PREFIX[key]?.test(word)
+      if (word === key || prefix) for (const alias of aliases) out.add(alias)
     }
   }
   return [...out]

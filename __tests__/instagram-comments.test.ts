@@ -1,7 +1,7 @@
 import { createHmac } from 'node:crypto'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 vi.mock('server-only', () => ({}))
-import { choicesOfPost, commentLang, installmentLine, planComment, productOfPost, type CommentScores } from '@/lib/assistant/comments'
+import { choicesOfPost, commentLang, installmentLine, isPlus, planComment, productOfPost, type CommentScores } from '@/lib/assistant/comments'
 import { bestNameMatch } from '@/lib/assistant/knowledge'
 import { products } from '@/data/products'
 import type { Product } from '@/data/products'
@@ -46,6 +46,25 @@ describe('товар по подписи поста — без чужой цен
     expect(bestNameMatch('Пылесос UAKEEN ZL-940 13 900 сом', LIST)?.id).toBe('vac')
     // Одно слово, но цена та же — он.
     expect(bestNameMatch('Эндура 15 900 сом гана!', LIST)?.id).toBe('enduro')
+  })
+  it('Instagram 09.10: пост стиральной «LEVO … DD Motor» — не «Мототцикл спорт», цена из подписи не модель', () => {
+    const levo = [
+      ...LIST,
+      { ...item('levo80', 'Стиральная машина LEVO LV-80LUX-T DD Motor (черный)', 31900), brand: 'LEVO' },
+      { ...item('levo70', 'Стиральная машина LEVO LV-70DG2T', 24800), brand: 'LEVO' },
+      { ...item('lg8', 'Стиральная машина LG F2V3PS6W 8кг белый', 29900), brand: 'LG' },
+      item('axma', 'Средство для посудомоечных машин AXMA (900 гр) порошок', 900),
+    ]
+    for (const caption of [
+      'Стиральная машина LEVO LV-80LUX-T DD Motor (черный)\n31 900 сом',
+      'LEVO 8 кг DD Motor инвертор 31900 сом',
+      'Кир жуугуч машина LEVO 8кг DD мотор арзандатуу',
+      'Стиральная машина DD Motor',
+    ]) expect(productOfPost(caption, levo)?.id).toBe('levo80')
+    // «мотор» — двигатель, не мотоцикл; а «мото», «мотоцикл» — по-прежнему мотоцикл
+    expect(productOfPost('Мотор DD 8 кг', levo)).toBeNull()
+    expect(choicesOfPost('Мотор DD 8 кг', levo).map((p) => p.id)).not.toContain('moto')
+    expect(bestNameMatch('Спорт мотоцикл чоңдор үчүн', levo)?.id).toBe('moto')
   })
   it('хэштеги и отметки не считаются', () => {
     expect(productOfPost('#эндуро @smartcentrr', LIST)).toBeNull()
@@ -93,6 +112,16 @@ describe('что делать с комментарием', () => {
       expect(plan).toMatchObject({ action: 'answer', public: 'Директке жаздык 📩', productId: 'enduro', lang: 'ky' })
       expect(plan.private).toMatch(/^Ассаламу алейкум! Электро Эндуро WN-A10 — 15\s900 сом\. Кайсы шаардан болосуз\?$/u)
     }
+  })
+  it('«+» в любом виде — как «баасы»: в Direct товар и цена (владелец 09.10)', () => {
+    for (const text of ['+', '++', '+++', ' + ', '+!', '+ 🔥', '🔥+', '➕', '＋', 'Плюс', 'плюс 👍', '+😍😍']) {
+      expect(isPlus(text)).toBe(true)
+      // Jev мог счесть «+» похвалой или спамом — всё равно ответ с ценой
+      const plan = planComment(text, s({ praise: 0.9, spam: 0.85 }), enduro)
+      expect(plan.action).toBe('answer')
+      expect(plan.private).toMatch(/Электро Эндуро WN-A10 — 15\s900 сом/u)
+    }
+    for (const text of ['1+1 акция бар', 'Плюсы и минусы?', '🔥', 'супер', '+996 555 12 34 56']) expect(isPlus(text)).toBe(false)
   })
   it('по-русски — по-русски; товара не узнали — «какой товар?»', () => {
     const plan = planComment('Цена в лс', s({ ask: 0.94 }), null)

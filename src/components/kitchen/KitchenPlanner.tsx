@@ -187,6 +187,8 @@ const PLACE_KEY: Partial<Record<SlotKind, FixedItem>> = { fridge: 'fridge', dish
 /** Что сейчас переставляют: предмет (техника, мойка, свой шкаф) или обычный шкаф. */
 /** Подсказку по жестам видели: она показывается до первого удачного перемещения, снова — по «?». */
 const HINT_SEEN = 'kp-hint-seen'
+/** Сколько подсказка жестов стоит над 3D (владелец 09.10: закрывала низ кухни). Последние 0,4 с — тает (kitchen.css). */
+const HINT_MS = 6000
 
 type MoveSel = { key: ItemKey } | { cab: CabInfo; w: number; wall: WallId; center: number }
 
@@ -2463,6 +2465,15 @@ export function KitchenPlanner({
     return () => document.documentElement.classList.remove('kp-picking')
   }, [sheetOpen])
 
+  // Подсказка жестов уходит сама через HINT_MS — до следующего захода или кнопки «?». Насовсем
+  // (kp-hint-seen) — только после первого удачного переноса (markHintSeen), как раньше.
+  const hintShown = engineState === 'ready' && built && hint && !photo && !sheetOpen
+  useEffect(() => {
+    if (!hintShown) return
+    const id = window.setTimeout(() => setHint(false), HINT_MS)
+    return () => window.clearTimeout(id)
+  }, [hintShown])
+
   /*
     Карточка выбранного на компьютере, планшете и телефоне боком стоит над 3D.
     Раньше — всегда слева сверху, и у верхних шкафов закрывала тот самый
@@ -4341,7 +4352,7 @@ export function KitchenPlanner({
             </div>
           )}
 
-          {engineState === 'ready' && built && hint && !photo && !sheetOpen && (
+          {hintShown && (
             <p className="kp-hint">
               <span className="kp-hint__long">
                 {t.hint}

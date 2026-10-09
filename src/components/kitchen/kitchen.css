@@ -635,7 +635,14 @@ html:has(.kp-photo) .assistant {
   font: 600 13px/1.35 var(--font);
   text-align: center;
   pointer-events: none;
-  animation: kp-rise 420ms var(--ease-out) both;
+  /* появляется и через 5,6 с тает — на 6-й секунде экран её убирает (HINT_MS в KitchenPlanner.tsx) */
+  animation: kp-rise 420ms var(--ease-out) both, kp-hint-out 400ms 5600ms var(--ease-out) forwards;
+}
+
+@keyframes kp-hint-out {
+  to {
+    opacity: 0;
+  }
 }
 
 @keyframes kp-rise {
