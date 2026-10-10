@@ -10,6 +10,7 @@
 import 'server-only'
 import { askJev } from './jev'
 import type { ChatTurn } from './gemini'
+import { chatOf } from './hot'
 
 export type Outcome = 'ordered' | 'later' | 'left' | 'not_customer' | 'unclear'
 export type Reason = 'price' | 'money' | 'no_product' | 'delivery' | 'trust' | 'bot_error' | 'waited' | 'other'
@@ -49,13 +50,12 @@ const QUESTIONS = {
 
 type Answer = { choice?: unknown; noul?: unknown }
 
-/** Переписка → строка для Jev: последние реплики, коротко. */
+/**
+ * Переписка → строка для Jev: последние реплики, коротко. Та же, что у «Кому позвонить» (hot.ts chatOf): без
+ * номеров и без ответов на «как вас зовут / улица и дом» — раньше в недельный отчёт уходили телефоны и адреса из анкет.
+ */
 export function chatText(turns: ChatTurn[]): string {
-  return turns
-    .slice(-12)
-    .map((t) => `${t.role === 'user' ? 'К' : 'Б'}: ${t.text.replace(/\s+/g, ' ').slice(0, 300)}`)
-    .join('\n')
-    .slice(-3500)
+  return chatOf(turns)
 }
 
 export function parseRating(data: unknown, phone: string, last: string): Rated | null {

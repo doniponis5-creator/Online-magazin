@@ -71,7 +71,7 @@ export async function answer(
     try {
       const lastAnswer = [...turns].reverse().find((t) => t.role === 'assistant')?.text ?? ''
       const ceiling = cheaperThan(lastQuestion, lastAnswer)
-      const raw = await askGemini(systemInstruction(lang, customer, talkLang(turns, lang), list, recent, notes, ceiling, viewing, knownName, knownPhone, talked, where) + note, turns, where)
+      const raw = await askGemini(systemInstruction(lang, customer, talkLang(turns, lang), list, recent, notes, ceiling, viewing, knownName, knownPhone, talked, where, lastQuestion) + note, turns, where)
       const parsed = parseAnswer(raw)
       const talk = talkLang(turns, lang)
       return { text: houseStyle(parsed.text, talk), products: hits(parsed.productIds, lang, list), source: 'gemini', audience: parsed.audience,
@@ -84,7 +84,7 @@ export async function answer(
     }
   }
 
-  const fallback = localAnswer(lastQuestion, lang, customer, list)
+  const fallback = localAnswer(lastQuestion, lang, customer, list, talkLang(turns, lang))
   return { text: fallback.text, products: hits(fallback.productIds, lang, list), source: 'local', why }
 }
 
@@ -218,6 +218,8 @@ export function houseStyle(text: string, talk: TalkLang): string {
     .replace(/\s*(с удовольствием|с радостью|мамнуният билан|кубануу менен)\s*/giu, ' ')
     .replace(/[ \t]{2,}/g, ' ')
     .trim()
+  // «Оформляйбызбы?» — русский глагол с кыргызским хвостом, так не говорят (аудит 10.10: 8 раз за двое суток)
+  out = out.replace(/(?<![\p{L}])оформля(?:йбызбы|йлыбы|йбыз бы|йлыкпы|йбызба)(?![\p{L}])/giu, (m) => keepCase(m, 'тариздейлиби'))
   // «руководствимиз», «руководствомиз» — модель склоняет по-узбекски, так не говорят.
   out = out.replace(/(?<![\p{L}])руководств[а-яё]*миз(?![\p{L}])/giu, (m) => keepCase(m, 'руководство'))
   // «наш сотрудник» → «наш руководство» — так не говорят.

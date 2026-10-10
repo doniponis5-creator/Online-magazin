@@ -73,7 +73,9 @@ export function parseTriage(data: unknown): Triage | null {
   if (!answers) return null
   const out = {} as Triage
   for (const kind of Object.keys(QUESTIONS) as Sort[]) {
-    const p = Number(answers[kind]?.noul)
+    // Только число: Number(null) и Number('') — 0, и пустой ответ Jev выглядел бы уверенным «нет» (ревью 10.10)
+    const raw = answers[kind]?.noul
+    const p = typeof raw === 'number' ? raw : typeof raw === 'string' && raw.trim() !== '' ? Number(raw) : NaN
     if (!Number.isFinite(p)) return null
     out[kind] = Math.min(1, Math.max(0, p))
   }
@@ -84,6 +86,10 @@ export function parseTriage(data: unknown): Triage | null {
 const BROKEN =
   /(сломал|слома|не работ|не включ|не гре|не мо[ею]т|не крут|брак|бузул|бузук|сынып|сынык|сынд|синд|синиб|синик|иштебе|ишлама|бузил|не прив[её]з|не достав|не приш[её]л|келбе|келген жок|кечик|опозда|верн|возврат|кайтар|алмаштыр|замен|груб|орой|обидел|хамил|жалоб|арыз)/iu
 const CHEAT = /(алда|обман|обдира|aldad|алдад)/iu
+/** Купленное сломалось, не привезли, верните — дело руководства, а не вопрос о товаре (respond). */
+export function brokenWords(text: string): boolean {
+  return BROKEN.test(text)
+}
 const COMPLAINT_CUE = new RegExp(`${BROKEN.source}|${CHEAT.source}|(плох|жаман|ёмон|ужас|кошмар|позор|уят|уял|недовол|нарааз|норози)`, 'iu')
 // Спор о цене: «кымбат», «в Москве 5 тысяч рублей», «5 минден 7 мин сомго эле турат».
 const PRICE_OBJECTION =

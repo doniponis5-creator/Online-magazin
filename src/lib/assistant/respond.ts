@@ -12,14 +12,15 @@ import 'server-only'
 import type { Lang } from '@/lib/i18n/config'
 import { answer, talkLang } from './reply'
 import { cleanName } from './talk'
-import { AFFIRM, BUY_INTENT, CALL_OFFER, DEFER, FULL_ADDRESS, FULL_PAY, OFFER, PAY_ASIDE, cancel, depositFromReply, discountFromText, forgetDeposit, hasDraft, looksLikeQuestion, pendingQuestion, rememberDeposit, rememberDiscount, start, step, withPending } from '@/lib/telegram/order'
+import { AFFIRM, BUY_INTENT, CALL_OFFER, DEFER, FULL_ADDRESS, FULL_PAY, OFFER, PAY_ASIDE, cancel, depositFromReply, discountFromText, forgetDeposit, grantedDiscount, hasDraft, looksLikeQuestion, pendingQuestion, rememberDeposit, rememberDiscount, start, step, withPending } from '@/lib/telegram/order'
 import { CALL_INTENT, cancelLead, hasLead, leadContext, leadStep, notifyOwner, startLead } from './leads'
-import { decide, paidAmount, triage } from './triage'
+import { type Triage, brokenWords, decide, paidAmount, triage, withoutNames } from './triage'
 import { durableMap } from '@/lib/durable'
 import { lookupIn, salesCatalogNow } from './live'
 import { type Intent, followAfter, isSureYes, jevConfigured, objectionNote, readAnswer } from './jev'
 import type { ChatTurn, DownWhy } from './gemini'
-import { chatProductGuess, type CustomerBrief, type ProductHit } from './knowledge'
+import { hideDigits } from './log'
+import { bestNameMatch, chatProductGuess, type CustomerBrief, type ProductHit } from './knowledge'
 import { getInstallment, getProfile } from '@/lib/customer/gateway'
 import { phones } from '@/data/contacts'
 
@@ -41,6 +42,8 @@ export type Reply = {
   mute?: boolean
   /** покупатель отложил («после зарплаты», «завтра») — напомнить через столько секунд, а не через 2 часа */
   followAfter?: number
+  /** что решил Jev до Gemini — для журнала (log.ts `jev`) */
+  jev?: string
 }
 
 export type Channel = {
@@ -74,6 +77,9 @@ export function endWithCustomer(turns: ChatTurn[]): ChatTurn[] | null {
   return [...turns.slice(0, end - 1), ...tail, turns[end - 1]]
 }
 
+/** Что увидел и решил Jev в этом ответе: scores нет — до Jev не дошли, null — Jev молчал. */
+type JevSeen = { scores?: Triage | null; kind?: string }
+
 export async function respond(
   channel: Channel,
   given: ChatTurn[],
@@ -83,6 +89,23 @@ export async function respond(
   shown?: unknown,
   /** id товара, страница которого открыта у покупателя (чат на сайте) */
   page?: string,
+): Promise<Reply> {
+  const jev: JevSeen = {}
+  const reply = await respondTo(channel, given, lang, customer, buy, shown, page, jev)
+  // В журнал — работает ли Jev: решение, «down» (не ответил) или «off» (ключа нет)
+  const label = jev.scores === undefined ? undefined : !jevConfigured() ? 'off' : jev.scores === null && !jev.kind ? 'down' : jev.kind
+  return label ? { ...reply, jev: label } : reply
+}
+
+async function respondTo(
+  channel: Channel,
+  given: ChatTurn[],
+  lang: Lang,
+  customer: CustomerBrief | null,
+  buy: unknown,
+  shown: unknown,
+  page: string | undefined,
+  jev: JevSeen,
 ): Promise<Reply> {
   const turns = endWithCustomer(given)
   if (!turns) return { text: '', products: [], source: 'flow', silent: true }
@@ -113,12 +136,31 @@ export async function respond(
   // «Эртең Nova 7 сатсам…» у покупателя из Таласа модель сочла личным и замолчала.
   const selling = Array.isArray(shown) && shown.length > 0
   if (messenger) {
-    const sorted = await sortByJev(channel, turns, lang, customer, selling)
+    const sorted = await sortByJev(channel, turns, lang, customer, selling, jev)
     if (sorted) return sorted
   }
   const intent = hint.intent ?? null
   const talked = Array.isArray(shown) ? shown.filter((x): x is string => typeof x === 'string').slice(0, 5) : []
-  const raw = await answer(turns, lang, customer, page, channel.known.name, Boolean(channel.known.phone), objectionNote(intent), talked, channel.leadChannel)
+  const ask = (note = '') =>
+    answer(turns, lang, customer, page, channel.known.name, Boolean(channel.known.phone), objectionNote(intent) + note, talked, channel.leadChannel)
+  let raw = await ask()
+  const theirs = sinceBot(turns).join('\n')
+  // Модель подтвердила оплату («Төлөмүңүз түштү», чек в Instagram, аудит 10.10) — она не видит счёт магазина, и
+  // поддельный чек услышал бы «деньги пришли». Говорим, что руководство проверит, и владелец получает 💳.
+  if (raw.source === 'gemini' && PAID_CLAIM.test(raw.text)) return await paidReply(channel, turns, lang, customer, theirs)
+  // Скидку без просьбы не даём: «Канча идиш батат?» → «дагы 3% арзандатуу» (аудит 10.10, 5 раз за двое суток).
+  // Спрашиваем модель второй раз с прямым запретом — уступка остаётся только там, где покупатель торговался.
+  const offered = raw.discount ?? (raw.price === undefined ? discountFromText(raw.text) : undefined)
+  if (raw.source === 'gemini' && offered && offered > grantedDiscount(channel.key) && !BARGAIN.test(theirs)) {
+    const again = await ask(NO_DISCOUNT_NOTE)
+    if (again.source === 'gemini') raw = again
+  }
+  // «Уточню у руководства» на обычный вопрос о товаре («Гарантия канча?», «Фотолору барбы», «LG 8 кг барбы?») — 26 раз,
+  // и в 9 из них продавец так и не ответил (аудит 10.10). Это вопрос покупателя — модель отвечает сама по каталогу.
+  if (messenger && raw.source === 'gemini' && raw.audience === 'staff' && productQuestion(theirs, jev.scores)) {
+    const again = await ask(CUSTOMER_NOTE)
+    if (again.source === 'gemini' && again.audience !== 'staff' && !PAID_CLAIM.test(again.text)) raw = again
+  }
   // Согласился на заклад и назвал сумму — заказ, который начнётся на «да», пойдёт с ним
   if (raw.deposit) rememberDeposit(channel.key, raw.deposit)
   else if (FULL_PAY.test(turns[turns.length - 1]?.text ?? '')) forgetDeposit(channel.key)
@@ -139,7 +181,9 @@ export async function respond(
   // Сайт — там только покупатели. В WhatsApp и Instagram модель ещё смотрит, кому адресовано.
   if (!messenger) return reply
   if (reply.audience === 'personal' && !selling) {
-    return { text: '', products: [], source: reply.source, silent: true, mute: true }
+    // Первое сообщение нового номера не глушим на 12 часов: ошибся — потеряли бы покупателя (ревью 10.10).
+    // Записанные в телефоне магазина (родные, рабочие) до сайта не доходят — их глушит сервер.
+    return { text: '', products: [], source: reply.source, silent: true, mute: talkedBefore(turns) }
   }
   if (reply.audience === 'personal') return reply
   // Модель пообещала звонок («руководство сизге жакын арада чалат») — значит, заявка
@@ -190,13 +234,26 @@ function whoOf(channel: Channel, turns: ChatTurn[], customer: CustomerBrief | nu
  * обычно, отвечает Gemini. Пороги высокие: сомнение — всегда к модели, потерять покупателя хуже,
  * чем потратить один ответ. Идёт продажа — «не покупатель» не бывает, но чек и жалоба — бывают.
  */
-async function sortByJev(channel: Channel, turns: ChatTurn[], lang: Lang, customer: CustomerBrief | null, selling: boolean): Promise<Reply | null> {
+async function sortByJev(
+  channel: Channel,
+  turns: ChatTurn[],
+  lang: Lang,
+  customer: CustomerBrief | null,
+  selling: boolean,
+  /** оценки и решение Jev — respond по ним решает, звать ли руководство вместо ответа модели; ещё — в журнал */
+  seen: JevSeen = {},
+): Promise<Reply | null> {
   const who = whoOf(channel, turns, customer)
+  const own = sinceBot(turns).join('\n')
   // Имена — не в Jev: «Азамат, …» в ответе бота и в словах покупателя станет «Имя».
   const scores = await triage(turns, [who.name, customer?.name, nameFromTurns(turns)])
-  if (!scores) return null
-  const own = sinceBot(turns).join('\n')
-  const { kind, alarm } = decide(scores, selling, own)
+  seen.scores = scores
+  // «Акча котордум», «to'lab qo'ydim», фото чека — оплата и без Jev: Jev молчал или не дотягивал до порога, и чек
+  // уходил модели («Төлөмүңүз түштү») или руководству звонком 📞 вместо 💳 (аудит 10.10).
+  const paidWords = paidInWords(own)
+  if (!scores && !paidWords) return null
+  const { kind, alarm } = scores ? decide(scores, selling, own) : { kind: 'shop' as const, alarm: false }
+  seen.kind = paidWords ? 'payment' : scores ? kind : undefined
   const label = channel.label ? { ...who, name: `${channel.label}${who.name ? `, ${who.name}` : ''}` } : who
   const talk = talkLang(turns, lang)
   const day = new Date(Date.now() + 6 * 3600_000).toISOString().slice(0, 10)
@@ -210,13 +267,10 @@ async function sortByJev(channel: Channel, turns: ChatTurn[], lang: Lang, custom
     }
   }
   // «Төлөдүмбү? Карызым канча?» — вопрос про рассрочку, а не чек: на него ответит модель по данным 1С.
-  if (kind === 'payment' && !asksAboutPayment(own)) {
-    const sum = paidAmount(own)
-    const text = `${sum ? `Сумма: ${sum} сом (по словам или чеку покупателя)\n` : ''}Написал:\n${own.slice(0, 700)}`
-    await notifyOwner('payment', text, label, channel.leadChannel, channel.key)
-    return { text: pick(PAID_ACK, talk), products: [], source: 'flow', handoff: true }
-  }
-  if (kind === 'personal') return { text: '', products: [], source: 'flow', silent: true, mute: true }
+  // Сказал «оплатил» словами — это сообщение об оплате, даже если следом спросил «текшердиңерби?».
+  if (paidWords || (kind === 'payment' && !asksAboutPayment(own))) return await paidReply(channel, turns, lang, customer, own)
+  // Первое сообщение нового номера на 12 часов не глушим (см. respond)
+  if (kind === 'personal') return { text: '', products: [], source: 'flow', silent: true, mute: talkedBefore(turns) }
   if (kind === 'staff') return await toStaff(channel, turns, lang, customer, 'flow')
   return null
 }
@@ -235,6 +289,55 @@ function asksAboutPayment(text: string): boolean {
   return own.includes('?') || /[\p{L}]{2,}(бы|бу|пы|пу|би|бү|пү|ми|мы)(?![\p{L}])/iu.test(own)
 }
 
+/** Покупатель сообщил об оплате: «рахмат, руководство проверит» и 💳 владельцу с суммой. */
+async function paidReply(channel: Channel, turns: ChatTurn[], lang: Lang, customer: CustomerBrief | null, own: string): Promise<Reply> {
+  const who = whoOf(channel, turns, customer)
+  const label = channel.label ? { ...who, name: `${channel.label}${who.name ? `, ${who.name}` : ''}` } : who
+  const sum = paidAmount(own)
+  const text = `${sum ? `Сумма: ${sum} сом (по словам или чеку покупателя)\n` : ''}Написал:\n${own.slice(0, 700)}`
+  await notifyOwner('payment', text, label, channel.leadChannel, channel.key)
+  return { text: pick(PAID_ACK, talkLang(turns, lang)), products: [], source: 'flow', handoff: true }
+}
+
+/**
+ * «Акча котордум», «төлөп койдум», «to'lab qo'ydim, 10 100», «оплатил» — уже заплатил (прошедшее время, не вопрос:
+ * «төлөдүмбү?» сюда не попадает). Или фото чека: модель-описатель пишет «чек … об успешной оплате … на сумму».
+ */
+const PAID_SAID =
+  /(?<![\p{L}])(котордум|которуп (койдум|жибердим|бердим)|которгом|төлөдүм|толодум|төлөп (койдум|бердим)|толоп (койдум|бердим)|оплатил[аи]?|перевел[аи]?|перевёл|to.?lab qo.?ydim|to.?ladim|tuladim|туладим|тулаб куйдим|утказдим|o.?tkazdim|ўтказдим)(?!(бы|бу|бү|ми|мы|пы|пу|ли|мисиз|бызбы|сызбы))(?![\p{L}])/iu
+const RECEIPT = /\[Фото\][^\n]*(чек|квитанц|скриншот перевод|перевод[ау]? )[^\n]*(оплат|перевод|сумм|получател|KGS|сом)/iu
+function paidInWords(own: string): boolean {
+  return PAID_SAID.test(own) || RECEIPT.test(own)
+}
+
+/** Модель сама «подтвердила» оплату — так нельзя: счёт она не видит. */
+const PAID_CLAIM =
+  /(төлөм(үңүз|үнүз|ңүз)?\s+(түштү|тушту|келди|кабыл алынды)|акча(ңыз|ныз)?\s+(түштү|тушту|келди)|оплат[аы]\s+(пришла|поступила|прошла|получена)|деньги\s+(пришли|поступили|получены)|получили (вашу )?(оплату|деньги)|тулов(ингиз)?\s+(тушди|келди)|пул(ингиз)?\s+(тушди|келди)|pul tushdi|to.?lov tushdi)/iu
+
+/** Покупатель торгуется сам: «кымбат», «скидка барбы», «2900 га бер», «канчага бересиз». */
+const BARGAIN =
+  /(кымбат|қымбат|дорог|скидк|скитк|чегирм|арзан|арзон|түшүр|тушур|тушир|уступ|последн|акыркы баа|qimmat|киммат|chegirma|arzon|канчага бер|канчадан бер|нечтага бер|qanchaga ber|(\d|миң|мин|минг)\s*(га|ка|ге|ке|ga)\s*(бер|ber)|дешевл|торг)/iu
+const NO_DISCOUNT_NOTE =
+  '\n\nВАЖНО ДЛЯ ЭТОГО ОТВЕТА: покупатель НЕ просил скидку и не говорил «дорого». Новую скидку, процент и новую цену не называй — ответь только на его вопрос.'
+
+/** Вопрос о товаре, а не разговор с работником: фото, наличие, цена, гарантия, размер. Или так считает Jev. */
+const PRODUCT_ASK =
+  /(фото|сүрөт|сурот|сурет|(?<![\p{L}])расм|видео|гарант|кепил|кафолат|барбы|бар бы|борми|бор ми|канча|баасы|нарх|цена|сколько|есть ли|размер|өлчөм|олчом|(?<![\p{L}])(литр|кг|түс|тус|ранг|цвет)|персон|модел|марка|доставк|жеткир|етказ|адрес|дарек|манзил)/iu
+/** Своё дело к руководству: долг по рассрочке, сломалось купленное — это и правда руководству. */
+const OWN_MATTER = /(карыз|карз|қарз|qarz|долг|задолж|просроч)/iu
+function productQuestion(theirs: string, scores: Triage | null | undefined): boolean {
+  if (paidInWords(theirs) || OWN_MATTER.test(theirs) || brokenWords(theirs)) return false
+  if (scores && (scores.staff >= 0.7 || scores.complaint >= 0.6)) return false
+  return Boolean(scores && scores.shop >= 0.5 && scores.staff < 0.5) || PRODUCT_ASK.test(theirs)
+}
+const CUSTOMER_NOTE =
+  '\n\nВАЖНО ДЛЯ ЭТОГО ОТВЕТА: это вопрос ПОКУПАТЕЛЯ о товаре — audience = customer, руководству не передавай. Ответь сам по КАТАЛОГУ и ПРАВИЛАМ: просят фото — назови товар с ценой и положи id в productIds (фото придёт само); наличие, цена, гарантия, размер — из каталога. Факта правда нет в тексте — честно скажи одной фразой и предложи: «Позвонить вам?».'
+
+/** Магазин уже отвечал в этом чате — значит, это не первое сообщение нового номера. */
+function talkedBefore(turns: ChatTurn[]): boolean {
+  return turns.some((t) => t.role === 'assistant')
+}
+
 /** Одно предупреждение о жалобе на чат в день: на «синди», «ишлебей атат», «качан?» — не три тревоги. */
 const alerted = durableMap<string, string>('owner-alerts', 2 * 24 * 3600 * 1000)
 
@@ -246,7 +349,7 @@ const PAID_ACK = {
 
 /** Слова приветствия на трёх языках (и как их пишут с ошибками), обращения «ака», «уко». */
 const GREET_WORD =
-  '(салам|саламатсызбы|саламатсыңарбы|саламатсынарбы|салом|ассалому|ассалом|ассаламу|ассалам|асалому|асаламу|алейкум|алайкум|алекум|алейкум|ваалейкум|валейкум|assalomu|assalom|assalamu|salom|salam|alaykum|aleykum|привет|здравствуйте|здраствуйте|добрый|день|вечер|утро|кандайсыз|кандайсыз|яхшимисиз|йахшимисиз|жакшысызбы|ало|алло|ака|ука|уко|уков|укам|эже|опа|ассалом|ва|рахматуллахи|ва|баракатух)'
+  '(салам|саламатсызбы|саламатсыңарбы|саламатсынарбы|салом|ассалому|ассолому|асолому|ассалом|ассаламу|ассалам|асалому|асаламу|алейкум|алайкум|алекум|алейкум|ваалейкум|валейкум|assalomu|assalom|assalamu|salom|salam|alaykum|aleykum|привет|здравствуйте|здраствуйте|добрый|день|вечер|утро|кандайсыз|кандайсыз|яхшимисиз|йахшимисиз|жакшысызбы|ало|алло|ака|ука|уко|уков|укам|эже|опа|ассалом|ва|рахматуллахи|ва|баракатух)'
 const GREETING = new RegExp(`^[\\s\\p{P}\\p{S}]*(?:${GREET_WORD}[\\s\\p{P}\\p{S}]*){1,6}$`, 'iu')
 const GREET_REPLY = {
   ru: 'Ассаламу алейкум. Слушаю вас — что подобрать?',
@@ -261,7 +364,7 @@ function greetingOnly(turns: ChatTurn[], lang: Lang): string | null {
   if (own.length === 0 || !own.every((t) => t.length <= 60 && GREETING.test(t))) return null
   const all = own.join(' ').toLowerCase()
   // По самому приветствию язык виден лучше, чем по общему правилу: «Ассалому» — узбек, «Саламатсызбы» — кыргыз.
-  const talk = /(ассалому|асалому|салом|яхшимисиз|йахшимисиз|уко|assalomu|salom)/.test(all)
+  const talk = /(ассалому|асалому|ассолому|асолому|салом|яхшимисиз|йахшимисиз|уко|assalomu|salom)/.test(all)
     ? 'uz'
     : /(саламатсы|жакшысызбы|кандайсыз|эже)/.test(all)
       ? 'ky'
@@ -317,7 +420,7 @@ const ACK = new RegExp(`^[\\s\\p{P}\\p{S}]*(?:${ACK_WORD}[\\s\\p{P}\\p{S}]*){0,3
 
 /** Автоответ чужого WhatsApp Business или наша же фраза, пришедшая назад. */
 const OTHER_BOT =
-  /(спасибо за (ваше )?обращение|благодарим за (ваше )?(обращение|сообщение)|добро пожаловать!|мы (скоро )?(ответим|свяжемся)|сейчас (мы )?не на связи|автоответ|in the office|we are (currently )?away|thanks for (contacting|your message)|successfully connected|business portfolio|facebook page|whatsapp business account|кайрылганыңыз үчүн рахмат|murojaatingiz uchun rahmat)/i
+  /(спасибо за (ваше )?обращение|благодарим за (ваше )?(обращение|сообщение)|добро пожаловать!|мы (скоро )?(ответим|свяжемся)|сейчас (мы )?не на связи|автоответ|in the office|we are (currently )?away|thanks for (contacting|your message)|successfully connected|business portfolio|facebook page|whatsapp business account|кайрылганыңыз үчүн рахмат|murojaatingiz uchun rahmat|номер вашего (запроса|обращения)|я здесь, чтобы помочь|закроем (эту )?заявку|ваша заявка (принята|закрыта)|служба поддержки whatsapp)/i
 
 function isOtherBot(turns: ChatTurn[]): boolean {
   const last = turns[turns.length - 1]
@@ -493,10 +596,17 @@ async function salesFlow(
   const ongoing = await step(key, stepText, talk, lang)
   if (ongoing) return only(ongoing)
 
-  const find = lookupIn(await salesCatalogNow())
+  const list = await salesCatalogNow()
+  const find = lookupIn(list)
   let shown = Array.isArray(shownRaw) ? shownRaw.filter((x): x is string => typeof x === 'string').slice(0, 3) : []
   // Консультант ещё ничего не показывал, но открыта страница товара — «беру» про него.
   if (shown.length === 0 && page && find(page)) shown = [page]
+  // «Эндуро заказ кылалы дедим эле» без карточки — товар по названию, если он один такой (как у подписи поста;
+  // не уверен — null). Иначе модель отвечала ценой, а заказ не начинался (аудит 10.10).
+  if (shown.length === 0 && BUY_INTENT.test(text) && !DEFER.test(text)) {
+    const named = bestNameMatch(text, list)
+    if (named) shown = [named.id]
+  }
   // Товар назван словами, а карточки не было («флагман 21400 сомликдан», сайт 08.10) — узнаём его из разговора,
   // иначе «да» и номер телефона шли мимо формы заказа, и покупатель оставался без ссылки
   // (товар, названный словами без карточки, уже узнан в respond — guessShown)
@@ -512,8 +622,12 @@ async function salesFlow(
   const offeredCall = CALL_OFFER.test(botAsked)
   // На наш вопрос ответ короткий — его смысл читает Jev: списки слов не знали «Ладно давайте»,
   // «Жарайт, берип коюңуз», «Апама айтып көрөйүн». Нет ключа или Jev молчит — работают списки.
-  if ((offeredCall || OFFER.test(botAsked)) && text.length <= 160 && jevConfigured()) hint.intent = await readAnswer(botAsked, text)
-  const jevYes = isSureYes(hint.intent ?? null, text)
+  // В Jev — без имён и номеров («Азамат, … Оформляем?» — «0700441154 ооба»), как в triage (ревью 10.10)
+  const names = [who.name, customer?.name, nameFromTurns(turns)]
+  const hidden = (s: string) => hideDigits(withoutNames(s, names))
+  if ((offeredCall || OFFER.test(botAsked)) && text.length <= 160 && jevConfigured()) hint.intent = await readAnswer(hidden(botAsked), hidden(text))
+  // Уверенное «да» Jev не перебивает «потом» в словах: «Ооба, бирок акча жок» — не заказ (ревью 10.10)
+  const jevYes = isSureYes(hint.intent ?? null, text) && !DEFER.test(text)
   // Jev уверенно слышит «потом» / «нет» / вопрос — «макул» из списка согласием не считаем.
   const jevNo = Boolean(hint.intent && ['later', 'decline', 'question'].includes(hint.intent.kind) && hint.intent.confidence >= 0.8)
   // «Макул, мен 9 жаштамын, чоңдору барбы?» — не согласие на звонок, а новый вопрос: на него отвечает модель.
@@ -547,7 +661,13 @@ async function salesFlow(
   // «1000 оа» на «1 000 сом бере аласызбы?» — назвал сумму заклада: это тоже «да»
   const agreed = OFFER.test(lastAnswer) && (((AFFIRM.test(text) || Boolean(saidDeposit)) && !looksLikeQuestion(text) && !DEFER.test(text) && !jevNo) || jevYes) && !askedToo
   if (shown.length > 0 && (wantsToBuy || agreed)) {
-    const first = await start(key, shown, talk, orderSource, who, wantedQty(text))
+    // Назвал другой товар («LG алам» после FLAGMAN) — оформляем названный
+    const named = chatProductGuess(text, list)
+    const picked = named && !shown.includes(named.id) ? [named.id] : shown
+    // «Автамат алам», а показан полуавтомат ARTEL (аудит 10.10: заказ ушёл не на тот товар) — пусть ответит модель
+    const fits = picked.filter((id) => !otherKind(text, find(id)?.nameRu ?? ''))
+    if (fits.length === 0) return null
+    const first = await start(key, fits, talk, orderSource, who, wantedQty(text))
     // «улица Эркин-Эл, 20 Бишкек» вместо «да» — адрес уже есть, второй раз «Кайда жеткирели?» не спрашиваем.
     if (FULL_ADDRESS.test(text) && /\d/.test(text.replace(/https?:\/\/\S+/gi, ''))) {
       const done = await step(key, text, talk, lang)
@@ -574,6 +694,21 @@ function phoneIn(text: string): string | undefined {
   if (!m) return undefined
   const digits = m[0].replace(/\D/g, '')
   return digits.length >= 9 && digits.length <= 12 ? m[0] : undefined
+}
+
+/**
+ * Покупатель просит другой вид, чем показанный товар: «автомат» против полуавтомата («п/а») и наоборот.
+ * Тогда анкету не начинаем — модель подберёт нужный (аудит 10.10: «Автамат алам» → заказ на ARTEL TG 70 п/а).
+ */
+const SEMI = /(п\/а|полуавтомат|полу-автомат|полу автомат|жарым ?автомат|жарым ?афтомат|ярим ?автомат|yarim ?avtomat)/iu
+const AUTO = /(автомат|афтомат|автамат|афтамат|avtomat|avtamat)/iu
+export function otherKind(text: string, name: string): boolean {
+  if (!name) return false
+  const semi = SEMI.test(name)
+  const washer = /стирал|кир жуу/iu.test(name)
+  if (SEMI.test(text)) return washer && !semi
+  if (AUTO.test(text)) return semi
+  return false
 }
 
 /** Едет в магазин сам — не заказ. */

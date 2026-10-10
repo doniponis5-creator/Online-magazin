@@ -263,9 +263,11 @@ async def _on_echo(event: dict) -> None:
     # Мгновенный ответ Instagram уходит «от магазина», но это не человек.
     if text and await _auto_reply(user, text):
         return
-    await redis_client.set(f"ig:human:{user}", "1", ex=HUMAN_QUIET)
+    from .shop_wa_bot import HUMAN_STAFF
+    await redis_client.set(f"ig:human:{user}", HUMAN_STAFF, ex=HUMAN_QUIET)
     await redis_client.delete(f"ig:botactive:{user}")
     await redis_client.hdel("ig:pending", user)
+    await redis_client.hdel("ig:late", user)      # сотрудник ответил — никто не ждёт
     if text:
         await _remember(user, "assistant", text)
 
@@ -308,7 +310,10 @@ async def _on_message(event: dict) -> None:
         await _remember(user, "user", text)
     await redis_client.set(f"ig:lastin:{user}", str(event.get("ts") or time.time()), ex=2 * 24 * 3600)
     await redis_client.delete(f"ig:nudge:{user}")
-    await redis_client.hset("ig:pending", user, json.dumps({"ts": event.get("ts") or time.time(), "voice": voice}))
+    # Одна запись на чат: сообщения склеиваются, когда начал ждать и попытки — из прежней (как в WhatsApp).
+    from .shop_wa_bot import queue_entry
+    entry = queue_entry(await redis_client.hget("ig:pending", user), {"ts": event.get("ts") or time.time(), "voice": voice})
+    await redis_client.hset("ig:pending", user, json.dumps(entry))
 
 
 async def _seen_story(story_id: str, url: str) -> str:
@@ -498,37 +503,34 @@ async def poll_once() -> dict:
         await redis_client.delete("ig:pending", "ig:comments")
         return {"enabled": False}
 
-    answered = 0
-    now = time.time()
-    for user, raw in (await redis_client.hgetall("ig:pending")).items():
-        try:
-            pending = json.loads(raw)
-        except Exception:
-            await redis_client.hdel("ig:pending", user)
-            continue
-        if await redis_client.get(f"ig:human:{user}"):
-            await redis_client.hdel("ig:pending", user)
-            continue
-        # Сервер лежал несколько часов — на старое не отвечаем: «Есть!» через полдня
-        # выглядит хуже молчания, а такие чаты сотрудник увидит в сводке «Ждут ответа».
-        if now - float(pending.get("ts") or now) > STALE_AFTER:
-            await redis_client.hdel("ig:pending", user)
-            continue
-        wait = 0 if await redis_client.get(f"ig:botactive:{user}") else delay * 60
-        if now - float(pending.get("ts") or now) < wait:
-            continue
-        await redis_client.hdel("ig:pending", user)
-        if pending.get("voice"):
-            if await _ask_for_text(user):
-                answered += 1
-        elif await _story_reply(user):
-            answered += 1
-        elif await _answer(user, pending):
-            answered += 1
+    # Очередь — та же, что в WhatsApp (shop_wa_bot.answer_queue): консультант не ответил — вопрос держим
+    # до 6 часов и спрашиваем снова; передали руководству — час копим, потом отвечает робот.
+    # Сервер лежал несколько часов — на старое не отвечаем (STALE_AFTER): «Есть!» через полдня
+    # выглядит хуже молчания, а такие чаты сотрудник увидит в сводке «Ждут ответа».
+    from .shop_wa_bot import answer_queue, late_check
+    answered = await answer_queue("ig", "Instagram", delay * 60, _reply_one, stale=STALE_AFTER)
+    await late_check("ig", _ig_label)
     nudged = await _nudge_silent()
     # Комментарии — последними: сначала люди, которые уже пишут в Direct.
     commented = await _handle_comments()
     return {"enabled": True, "answered": answered, "nudged": nudged, "comments": commented}
+
+
+async def _reply_one(user: str, pending: dict, down: str) -> str:
+    """Один чат из очереди: голосовое, ответ на историю (без сайта) или консультант. down — сайт уже не ответил."""
+    from .shop_wa_bot import DOWN, NO, OK
+    if pending.get("voice"):
+        return OK if await _ask_for_text(user) else NO
+    if await _story_reply(user):
+        return OK
+    if down:
+        return DOWN + down
+    return await _answer(user)
+
+
+async def _ig_label(user: str) -> str:
+    username = (await _profile(user, fetch=False)).get("username")
+    return f"Instagram @{username}" if username else f"Instagram id {user}"
 
 
 # ── Комментарии под постами (04.10) ──────────────────────────────────────────
@@ -540,6 +542,7 @@ async def poll_once() -> dict:
 COMMENTS_PER_RUN = 30            # за один запуск cron: под рекламой их бывает сотни
 COMMENTS_PER_USER = 3            # одному человеку в день: «+», «+», «+» — один ответ, не десять
 COMMENT_STALE = 24 * 3600        # старше суток не отвечаем: «Директке жаздык» через два дня — странно
+COMMENT_TRIES = 60               # сайт не ответил — комментарий снова в очередь, не больше стольких раз
 
 
 async def _caption(media: str) -> str:
@@ -583,6 +586,8 @@ async def _plan_comment(event: dict, caption: str) -> dict:
             content=payload.encode("utf-8"),
             headers={"Content-Type": "application/json", "X-Signature": signature},
         )
+    if response.status_code == 400:
+        return {"action": "skip"}   # сайт не принял комментарий — повторять бесполезно
     data = response.json() if response.status_code == 200 else {}
     return data if data.get("ok") else {}
 
@@ -658,11 +663,22 @@ async def _handle_comments(budget: float = 20.0) -> int:
             continue
         try:
             caption = await _caption(media)
-            plan = await _plan_comment(event, caption)
+            try:
+                plan = await _plan_comment(event, caption)
+            except Exception as error:
+                logger.warning(f"ig comment ...{cid[-4:]}: сайт не ответил ({type(error).__name__})")
+                plan = None
             if not plan:
-                from .shop_wa_bot import alert_brain_down
-                await alert_brain_down("Instagram", "сайт не ответил на комментарий")
-                continue
+                # Сайт не ответил — комментарий не бросаем: в конец очереди, разберём в следующую минуту
+                # (раньше пропадал). Остальные в этот раз не спрашиваем: сайт, скорее всего, лежит.
+                tries = int(event.get("tries") or 0) + 1
+                if tries <= COMMENT_TRIES:
+                    await redis_client.delete(f"ig:seen:{event.get('mid')}")
+                    await redis_client.rpush("ig:comments", json.dumps({**event, "tries": tries}, ensure_ascii=False))
+                if tries >= 10:
+                    from .shop_wa_bot import alert_brain_down
+                    await alert_brain_down("Instagram", "сайт не ответил на комментарий")
+                break
             action = plan.get("action")
             if action == "hide":
                 await _graph_post(cid, params={"hide": "true"})
@@ -741,36 +757,29 @@ async def _ask_for_text(user: str) -> bool:
         return False
 
 
-async def _answer(user: str, pending: dict | None = None) -> bool:
-    # Как в WhatsApp: ошибка после ответа сайта — это отправка в Instagram (окно 24 часа, ключ), не консультант.
+async def _answer(user: str) -> str:
+    """Как в WhatsApp (shop_wa_bot._answer): OK, NO или DOWN+почему — консультант не ответил, вопрос держать."""
+    from .shop_wa_bot import DOWN, HUMAN_HANDOFF, HUMAN_MUTE, HUMAN_STAFF, NO, OK, site_failure
+    # Ошибка после ответа сайта — это отправка в Instagram (окно 24 часа, ключ), не консультант: не держим,
+    # иначе покупатель получил бы второй ответ.
     answered_by_site = False
     try:
         count_key = f"ig:count:{user}:{_today()}"
         count = int(await redis_client.get(count_key) or 0)
         if count >= DAILY_LIMIT:
-            return False
+            return NO
         asked = await _turns(user)
         reply = await _ask_site(user, asked)
         answered_by_site = bool(reply)
         if reply and reply.get("silent"):
             if reply.get("mute"):
-                await redis_client.set(f"ig:human:{user}", "1", ex=HUMAN_QUIET)
-            return False
-        from .shop_wa_bot import alert_brain_down
-        if not reply:
-            await alert_brain_down("Instagram", "сайт не ответил")
-            return False
-        if not reply.get("text"):
-            return False
-        # Модель недоступна — шаблон в Instagram не шлём, пусть ответит сотрудник.
+                await redis_client.set(f"ig:human:{user}", HUMAN_MUTE, ex=HUMAN_QUIET)
+            return NO
+        if not reply or not reply.get("text"):
+            return NO   # 400: сайту нечего спрашивать — держать бесполезно
+        # Модель недоступна — шаблон в Instagram не шлём: держим вопрос и спросим снова.
         if reply.get("source") == "local":
-            from .shop_wa_bot import brain_why, retry_later
-            if await retry_later("ig:pending", user, pending, reply.get("why")):
-                logger.warning(f"ig bot: Google занят — спрошу снова через минуту ...{user[-4:]}")
-                return False
-            logger.warning("ig bot: модель недоступна — отвечать оставляю сотруднику")
-            await alert_brain_down("Instagram", brain_why(reply.get("why")))
-            return False
+            return DOWN + str(reply.get("why") or "error")
         text = str(reply["text"])
         if count + 1 >= DAILY_LIMIT:
             text += "\n\nДальше вам ответит руководство магазина."
@@ -789,20 +798,19 @@ async def _answer(user: str, pending: dict | None = None) -> bool:
         if later > 0:
             last_in = float(await redis_client.get(f"ig:lastin:{user}") or 0)
             if rules.window_open(last_in, time.time() + later):
-                await redis_client.set(f"ig:nudge:{user}", json.dumps({"ts": time.time() + later - NUDGE_AFTER}), ex=24 * 3600)
+                # planned — срок назвал покупатель: флаг «напоминали за 3 дня» его не глушит.
+                await redis_client.set(f"ig:nudge:{user}", json.dumps({"ts": time.time() + later - NUDGE_AFTER, "planned": True}), ex=24 * 3600)
             else:
                 await redis_client.delete(f"ig:nudge:{user}")
         if count + 1 >= DAILY_LIMIT:
-            await redis_client.set(f"ig:human:{user}", "1", ex=HUMAN_QUIET)
+            await redis_client.set(f"ig:human:{user}", HUMAN_STAFF, ex=HUMAN_QUIET)
         elif reply.get("handoff"):
-            await redis_client.set(f"ig:human:{user}", "1", ex=HANDOFF_QUIET)
-        return True
+            # Передали руководству: час молчим и копим вопросы; не ответил сотрудник — ответит робот.
+            await redis_client.set(f"ig:human:{user}", HUMAN_HANDOFF, ex=HANDOFF_QUIET)
+        return OK
     except Exception as error:
-        logger.error(f"ig bot ...{user[-4:]}: {error}")
-        if not answered_by_site:
-            from .shop_wa_bot import alert_brain_down
-            await alert_brain_down("Instagram", "сайт не ответил вовремя, подробности в журнале сервера")
-        return False
+        logger.error(f"ig bot ...{user[-4:]}: {type(error).__name__}: {error}")
+        return NO if answered_by_site else DOWN + site_failure(error)
 
 
 async def _ask_site(user: str, asked: list[dict]) -> dict | None:
@@ -818,17 +826,14 @@ async def _ask_site(user: str, asked: list[dict]) -> dict | None:
         "shown": json.loads(shown_raw) if shown_raw else [],
     }, ensure_ascii=False)
     signature = hmac.new(_site_secret().encode(), payload.encode("utf-8"), hashlib.sha256).hexdigest()
-    async with httpx.AsyncClient(timeout=40) as client:
+    from .shop_wa_bot import SITE_TIMEOUT, site_reply
+    async with httpx.AsyncClient(timeout=SITE_TIMEOUT) as client:
         response = await client.post(
             f"{_site_base_url()}/api/channel/instagram",
             content=payload.encode("utf-8"),
             headers={"Content-Type": "application/json", "X-Signature": signature},
         )
-    if response.status_code != 200:
-        logger.error(f"ig bot: сайт ответил {response.status_code}")
-        return None
-    data = response.json()
-    return data if data.get("ok") else None
+    return site_reply(response.status_code, response.json() if response.status_code == 200 else None, "ig bot")
 
 
 # ── Отправка ─────────────────────────────────────────────────────────────────
@@ -910,7 +915,9 @@ async def _nudge_silent() -> int:
             continue
         if not rules.window_open(float(await redis_client.get(f"ig:lastin:{user}") or 0), time.time()):
             continue
-        if not await redis_client.set(f"ig:nudged:{user}", "1", ex=NUDGE_QUIET, nx=True):
+        from .shop_wa_bot import nudge_flag
+        flag, quiet = nudge_flag("ig", user, pending)
+        if not await redis_client.set(flag, "1", ex=quiet, nx=True):
             continue
         profile = await _profile(user)
         shown_raw = await redis_client.get(f"ig:shown:{user}")
@@ -934,6 +941,7 @@ async def _nudge_silent() -> int:
             await _send_text(user, text)
             await _remember(user, "assistant", text)
             await redis_client.set(f"ig:botactive:{user}", "1", ex=30 * 60)
+            await redis_client.set(f"ig:nudged:{user}", "1", ex=NUDGE_QUIET)
             sent += 1
         except Exception as error:
             logger.error(f"ig bot nudge ...{user[-4:]}: {error}")
@@ -951,8 +959,7 @@ async def waiting_chats(days: set[str]) -> list[tuple[str, list[dict]]]:
             continue
         user = parts[2]
         seen.add(user)
-        username = (await _profile(user, fetch=False)).get("username")
-        chats.append((f"Instagram @{username}" if username else f"Instagram id {user}", await _turns(user)))
+        chats.append((await _ig_label(user), await _turns(user)))
     return chats
 
 

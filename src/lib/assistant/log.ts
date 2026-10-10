@@ -33,6 +33,11 @@ export type LogRow = {
   source: string
   /** откуда пришёл вопрос: сайт или Telegram. Старые записи — с сайта. */
   ch?: 'site' | 'telegram' | 'whatsapp' | 'instagram'
+  /**
+   * Что решил Jev до Gemini (WhatsApp, Instagram): shop / staff / personal / payment; down — не ответил за 2,5 с;
+   * off — ключа нет. Нет поля — до Jev не дошло (анкета, «ок», приветствие). Без этого не видно, работает ли Jev (10.10).
+   */
+  jev?: string
 }
 
 /** Папка журнала. На сервере это подключённая папка, переживающая обновление сайта. */
@@ -65,6 +70,7 @@ export async function logQuestion(row: Omit<LogRow, 'at'>): Promise<void> {
       found: row.found,
       source: row.source,
       ch: row.ch ?? 'site',
+      ...(row.jev ? { jev: row.jev } : {}),
     }
     await appendFile(fileFor(new Date()), JSON.stringify(line) + '\n', 'utf8')
   } catch (error) {
@@ -94,6 +100,20 @@ export async function readRows(months = 2): Promise<LogRow[]> {
     }
   }
   return rows.sort((a, b) => (a.at < b.at ? 1 : -1))
+}
+
+/**
+ * Журнал для еженедельной проверки бота (`/panel/questions?key=…&format=jsonl&since=2026-10-03`): строки с `since`
+ * по порядку времени, по одной JSON на строку. Раньше журнал брали только по ssh владельца — теперь задача по
+ * расписанию на его компьютере берёт его по ключу страницы (аудит 10.10). Телефоны в журнале уже спрятаны.
+ */
+export function exportRows(rows: LogRow[], since = ''): string {
+  const from = /^\d{4}-\d{2}-\d{2}/.test(since) ? since.slice(0, 10) : ''
+  return [...rows]
+    .filter((r) => !from || r.at.slice(0, 10) >= from)
+    .sort((a, b) => (a.at < b.at ? -1 : 1))
+    .map((r) => JSON.stringify(r))
+    .join('\n')
 }
 
 export type Summary = {

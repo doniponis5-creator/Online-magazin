@@ -72,6 +72,7 @@ export async function POST(request: Request) {
     found: reply.products.length > 0,
     source: reply.source,
     ch: 'instagram',
+    jev: reply.jev,
   })
 
   return Response.json({

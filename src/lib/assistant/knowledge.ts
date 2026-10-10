@@ -166,7 +166,10 @@ export function dishwasherWords(words: string[]): string[] {
 }
 
 export function searchProducts(query: string, lang: Lang, limit = 6, list: Product[] = products): Product[] {
-  const words = expand(dishwasherWords(splitWords(query).filter((w) => w.length >= 3)))
+  const base = expand(dishwasherWords(splitWords(query).filter((w) => w.length >= 3)))
+  // Марка кириллицей — ещё и латиницей: «Авангард» не находил AVANGARD ATG-72-708, и бот трижды сказал
+  // «Авангард маркасы жок» (аудит 10.10). От 4 букв, как у chatProductGuess.
+  const words = [...new Set([...base, ...base.filter((w) => /^[а-яңөү]{4,}$/.test(w)).map(toLatin)])]
   if (words.length === 0) return []
 
   const scored = list.map((product) => {

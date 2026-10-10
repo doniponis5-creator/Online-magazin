@@ -18,7 +18,12 @@ Green API). Отвечают там живые люди. Робот вступа
   • покупатель посмотрел товар и замолчал на 2 часа — робот один раз спрашивает
     «ещё актуально?» (в рабочее время, не чаще раза в 3 дня на чат);
   • каждое утро в 9:05 владелец получает сводку за вчера: где робот сдался и
-    чего не нашёл (текст готовит сайт, /api/assistant/digest).
+    чего не нашёл (текст готовит сайт, /api/assistant/digest);
+  • консультант не ответил (Gemini, деньги, сайт) — вопрос остаётся в очереди и
+    спрашивается снова с растущей паузой до 6 часов; ждёт > 10 минут — тревога
+    владельцу (answer_queue, аудит 10.10);
+  • робот передал руководству — час копит вопросы; сотрудник так и не написал —
+    отвечает робот. Сотрудник ответил и пропал на час — владельцу сразу (late_check).
 
 Голосовое робот расшифровывает, фото — описывает (сайт спрашивает модель:
 POST /api/channel/media), и дальше это обычная реплика покупателя. Не разобрал —
@@ -50,7 +55,7 @@ from fastapi import APIRouter
 from app.core.redis import redis_client
 
 from .shop_customers import WA_LOGIN_RE, wa_login_message
-from .shop_ig_rules import busy_retry, place_answer
+from .shop_ig_rules import place_answer
 
 logger = logging.getLogger("sbonus.shop.wa_bot")
 
@@ -72,6 +77,27 @@ NUDGE_AFTER = 2 * 3600           # покупатель молчит столь�
 NUDGE_QUIET = 3 * 24 * 3600      # не чаще раза в столько на один чат
 WORK_HOURS = range(9, 18)        # напоминаем только в рабочее время (Бишкек)
 ALERT_QUIET = 3 * 3600           # о сбое консультанта владельцу пишем не чаще раза в столько
+SITE_TIMEOUT = 50                # сколько ждём сайт: Jev 2,5 с ×2 + Gemini 22 с + повтор — бывает дольше 40 с
+
+# Консультант не ответил (Gemini молчит, перегружен, кончились деньги, сайт лежит) — вопрос не бросаем
+# (аудит 01–10.10: 05.10 и 08.10 без ответа остались 85 вопросов в Instagram и 20 в WhatsApp). Держим
+# в очереди и спрашиваем снова со всё большей паузой, пока не заработает, но не дольше HOLD_MAX.
+HOLD_MAX = 6 * 3600              # дольше не держим: такие чаты владелец увидит в «Ждут ответа»
+HOLD_PAUSES = (60, 60, 120, 180, 300, 600, 900)   # паузы между попытками, дальше — последняя
+HOLD_ALERT = 10 * 60             # покупатель ждёт столько — владельцу «консультант не отвечает»
+RUN_BUDGET = 180                 # секунд на ответы за один запуск: журнал Green API помнит 15 минут
+
+# Что лежит в wa:human / ig:human — почему робот в чате молчит.
+HUMAN_STAFF = "1"                # написал сотрудник (и 30 ответов за день): робот молчит 12 часов
+HUMAN_HANDOFF = "handoff"        # робот сам передал руководству: молчит час, вопросы копит
+HUMAN_MUTE = "mute"              # пишет не покупатель (рабочие, родные): молчим, никого не зовём
+
+# Сотрудник ответил и пропал: покупатель ждёт дольше LATE_AFTER — сразу владельцу, не ждать сводки.
+LATE_AFTER = 3600
+LATE_HOURS = range(8, 22)        # ночью не будим: утром список придёт сам
+
+# Что вернул _answer: OK — ответили, NO — отвечать не нужно, DOWN + почему — держать вопрос.
+OK, NO, DOWN = "ok", "no", "down:"
 
 
 def _bishkek_now() -> datetime:
@@ -265,9 +291,10 @@ async def poll_once() -> dict:
         # но это не человек. Без этой проверки он глушил робота в каждом чате.
         if await _auto_reply(digits, _journal_text(message)):
             continue
-        await redis_client.set(f"wa:human:{digits}", "1", ex=HUMAN_QUIET)
+        await redis_client.set(f"wa:human:{digits}", HUMAN_STAFF, ex=HUMAN_QUIET)
         await redis_client.delete(f"wa:botactive:{digits}")
         await redis_client.hdel("wa:pending", digits)
+        await redis_client.hdel("wa:late", digits)     # сотрудник ответил — никто не ждёт
         text = _journal_text(message).strip()
         if text:
             await _remember(digits, "assistant", text)
@@ -315,42 +342,242 @@ async def poll_once() -> dict:
             await _remember(digits, "user", text)
         # Покупатель написал сам — напоминать не о чем.
         await redis_client.delete(f"wa:nudge:{digits}")
-        await redis_client.hset("wa:pending", digits, json.dumps({
+        # Сообщения одного покупателя склеиваются: в очереди одна запись на чат, а сайту уходит
+        # весь разговор. Когда покупатель начал ждать и сколько раз уже спрашивали — сохраняем.
+        await redis_client.hset("wa:pending", digits, json.dumps(queue_entry(await redis_client.hget("wa:pending", digits), {
             "ts": int(message.get("timestamp") or time.time()),
             # Имя из телефона владельца (senderContactName) важнее имени профиля WhatsApp:
             # так покупателя зовут в магазине, и робот не переспрашивает.
             "name": str(message.get("senderContactName") or message.get("senderName") or "")[:60],
             "voice": voice,
-        }, ensure_ascii=False))
+        }), ensure_ascii=False))
 
     # Кто ждёт дольше, чем договорились, и кому не ответил человек — отвечаем.
-    answered = 0
-    now = time.time()
-    for digits, raw in (await redis_client.hgetall("wa:pending")).items():
-        try:
-            pending = json.loads(raw)
-        except Exception:
-            await redis_client.hdel("wa:pending", digits)
-            continue
-        if await redis_client.get(f"wa:saved:{digits}"):
-            await redis_client.hdel("wa:pending", digits)
-            continue
-        if await redis_client.get(f"wa:human:{digits}"):
-            await redis_client.hdel("wa:pending", digits)
-            continue
-        # Робот уже ведёт этот разговор (сотрудник не вмешался) — следующий ответ
-        # сразу, на ближайшем запуске: ждать 5 минут на каждое «а доставка есть?» — долго.
-        wait = 0 if await redis_client.get(f"wa:botactive:{digits}") else delay * 60
-        if now - float(pending.get("ts") or now) < wait:
-            continue
-        await redis_client.hdel("wa:pending", digits)
-        if pending.get("voice"):
-            if await _ask_for_text(digits):
-                answered += 1
-        elif await _answer(digits, str(pending.get("name") or ""), pending):
-            answered += 1
+    answered = await answer_queue("wa", "WhatsApp", delay * 60, _reply_one)
+    await late_check("wa", _wa_label)
     nudged = await _nudge_silent()
     return {"enabled": True, "answered": answered, "nudged": nudged}
+
+
+async def _reply_one(digits: str, pending: dict, down: str) -> str:
+    """Один чат из очереди. down — консультант в этом запуске уже не ответил: сайт не спрашиваем."""
+    if pending.get("voice"):
+        return OK if await _ask_for_text(digits) else NO
+    if down:
+        return DOWN + down
+    return await _answer(digits, str(pending.get("name") or ""))
+
+
+async def _wa_label(digits: str) -> str:
+    return f"+{digits}"
+
+
+# ── Очередь ответов: общая для WhatsApp и Instagram ──────────────────────────
+# Решения — чистые функции (queue_entry, pending_step, hold, late_step): их проверяет
+# test_shop_wa_bot.py без Redis и сервера.
+
+def _plain(value) -> str:
+    """Значение из Redis строкой (клиент может отдать bytes)."""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", "replace")
+    return str(value or "")
+
+
+def _load(raw) -> dict | None:
+    try:
+        value = json.loads(raw) if raw else None
+    except Exception:
+        return None
+    return value if isinstance(value, dict) else None
+
+
+def _first(pending: dict, now: float) -> float:
+    """С какого момента покупатель ждёт ответа."""
+    for field in ("first", "ts"):
+        try:
+            return float(pending[field])
+        except (KeyError, TypeError, ValueError):
+            continue
+    return now
+
+
+def queue_entry(old_raw, new: dict) -> dict:
+    """
+    Новое сообщение покупателя → запись очереди. Время, имя, голосовое — из нового сообщения
+    (ответ на всё сразу: сайту уходит весь разговор). Когда начал ждать, сколько раз спрашивали
+    консультанта и когда снова — из прежней записи: иначе каждое «алло?» сбрасывало бы паузу.
+    """
+    old = _load(old_raw) or {}
+    entry = {**new}
+    entry["first"] = _first(old, _first(new, time.time()))
+    for field in ("tries", "next", "why"):
+        if field in old:
+            entry[field] = old[field]
+    return entry
+
+
+def pending_step(pending: dict, now: float, human: str, wait: float, stale: float | None = None) -> str:
+    """
+    Что делать с записью очереди сейчас:
+      answer — спросить консультанта;  keep — оставить, рано;
+      human  — чат ведёт сотрудник: убрать из очереди, но следить, не забыли ли покупателя;
+      drop   — убрать (не покупатель, или держали 6 часов, или старое).
+    """
+    if human == HUMAN_HANDOFF:
+        # Робот передал руководству и молчит час. Вопросы не выбрасываем: если за час сотрудник так
+        # и не написал, робот ответит на всё накопленное (аудит: вопрос в этот час терялся навсегда).
+        return "keep"
+    if human == HUMAN_MUTE:
+        return "drop"
+    if human:
+        return "human"
+    if pending.get("tries"):
+        if now - _first(pending, now) > HOLD_MAX:
+            return "drop"
+    elif stale is not None and now - float(pending.get("ts") or now) > stale:
+        return "drop"
+    if now < float(pending.get("next") or 0):
+        return "keep"
+    if now - float(pending.get("ts") or now) < wait:
+        return "keep"
+    return "answer"
+
+
+def hold(pending: dict, now: float, why: str) -> dict | None:
+    """Консультант не ответил: запись для следующей попытки (пауза растёт) или None — держали HOLD_MAX."""
+    first = _first(pending, now)
+    if now - first > HOLD_MAX:
+        return None
+    tries = int(pending.get("tries") or 0) + 1
+    pause = HOLD_PAUSES[min(tries, len(HOLD_PAUSES)) - 1]
+    return {**pending, "first": first, "tries": tries, "next": now + pause, "why": str(why or "error")}
+
+
+def hold_alert(held: dict, now: float) -> bool:
+    """Пора ли сказать владельцу «консультант не отвечает»: деньги — сразу (сами не появятся), иначе — через 10 минут."""
+    return held.get("why") == "money" or now - _first(held, now) >= HOLD_ALERT
+
+
+async def answer_queue(prefix: str, channel: str, wait: float, reply, stale: float | None = None) -> int:
+    """
+    Очередь {prefix}:pending — кто ждёт ответа. reply(key, pending, down) → OK / NO / DOWN+почему.
+    Запись убираем только после ответа: упал запуск посреди вопроса — вопрос остался в очереди.
+    Консультант не ответил одному — остальных в этом запуске не спрашиваем (50 с на каждого —
+    час на очередь), а откладываем с той же паузой. Ответ уходит один раз: «держать» — только
+    когда сайт ответа не дал.
+    """
+    queue = f"{prefix}:pending"
+    now = time.time()
+    started = time.monotonic()
+    items = []
+    for key, raw in (await redis_client.hgetall(queue)).items():
+        pending = _load(raw)
+        if pending is None:
+            await redis_client.hdel(queue, key)
+            continue
+        items.append((_plain(key), pending))
+    items.sort(key=lambda item: _first(item[1], now))   # кто дольше ждёт — первым
+
+    answered, down = 0, ""
+    for key, pending in items:
+        if time.monotonic() - started > RUN_BUDGET:
+            break   # остальных — в следующую минуту: иначе журнал Green API (15 минут) уйдёт без нас
+        if await redis_client.get(f"{prefix}:saved:{key}"):
+            await redis_client.hdel(queue, key)
+            continue
+        human = _plain(await redis_client.get(f"{prefix}:human:{key}"))
+        # Робот уже ведёт этот разговор (сотрудник не вмешался) — следующий ответ
+        # сразу, на ближайшем запуске: ждать 5 минут на каждое «а доставка есть?» — долго.
+        active = await redis_client.get(f"{prefix}:botactive:{key}")
+        step = pending_step(pending, now, human, 0 if active else wait, stale)
+        if step == "keep":
+            continue
+        if step != "answer":
+            await redis_client.hdel(queue, key)
+            if step == "human":
+                await redis_client.hsetnx(f"{prefix}:late", key, json.dumps({"first": _first(pending, now)}))
+            elif pending.get("tries"):
+                logger.warning(f"{channel}: консультант не вернулся за 6 часов — вопрос ...{key[-4:]} в «Ждут ответа»")
+            continue
+        result = await reply(key, pending, down)
+        if not result.startswith(DOWN):
+            await redis_client.hdel(queue, key)
+            answered += result == OK
+            continue
+        why = result[len(DOWN):] or "error"
+        down = why
+        held = hold(pending, now, why)
+        if held is None:
+            await redis_client.hdel(queue, key)
+            logger.warning(f"{channel}: консультант не вернулся за 6 часов — вопрос ...{key[-4:]} в «Ждут ответа»")
+            continue
+        await redis_client.hset(queue, key, json.dumps(held, ensure_ascii=False))
+        if held["tries"] == 1:
+            logger.warning(f"{channel}: консультант не ответил ({why}) — держу вопрос ...{key[-4:]}, спрошу снова")
+        if hold_alert(held, now):
+            await alert_brain_down(channel, brain_why(why), kind="money" if why == "money" else "")
+    return answered
+
+
+def late_step(entry: dict, now: float, human: str, hour: int) -> str:
+    """
+    Чат ведёт сотрудник, а покупатель ждёт: drop — следить больше не нужно (сотрудника нет —
+    отвечает робот), keep — ещё рано, ночь или владельцу уже сказали, alert — сказать владельцу.
+    """
+    if not human or human in (HUMAN_HANDOFF, HUMAN_MUTE):
+        return "drop"
+    if entry.get("alerted") or now - _first(entry, now) < LATE_AFTER or hour not in LATE_HOURS:
+        return "keep"
+    return "alert"
+
+
+def _said(turns: list[dict]) -> str:
+    asked = [str(t.get("text") or "") for t in turns if t.get("role") == "user"]
+    said = re.sub(r"^\[[^\]]*\]\s*", "", asked[-1] if asked else "").replace("\n", " ").strip()
+    return said[:80] + ("…" if len(said) > 80 else "")
+
+
+def late_text(rows: list[str]) -> str:
+    return ("⏳ Ждут ответа больше часа — сотрудник ответил и пропал:\n" + "\n".join(rows)
+            + "\nОтветьте им: после ответа сотрудника робот в этих чатах молчит 12 часов.")
+
+
+async def late_check(prefix: str, label) -> int:
+    """
+    Сотрудник ответил раз и пропал, покупатель ждёт больше часа — владельцу сразу, один раз на чат
+    (раньше — только в сводке 9:05 / 13:05 / 17:05). Записи {prefix}:late кладёт answer_queue,
+    убирает ответ сотрудника. Ошибка здесь ответам покупателям не мешает.
+    """
+    try:
+        late = await redis_client.hgetall(f"{prefix}:late")
+        if not late:
+            return 0
+        now, hour = time.time(), _bishkek_now().hour
+        rows, marks = [], []
+        for key, raw in late.items():
+            key = _plain(key)
+            entry = _load(raw)
+            human = _plain(await redis_client.get(f"{prefix}:human:{key}"))
+            step = "drop" if entry is None else late_step(entry, now, human, hour)
+            if step == "drop":
+                await redis_client.hdel(f"{prefix}:late", key)
+            elif step == "alert":
+                try:
+                    turns = json.loads(await redis_client.get(f"{prefix}:turns:{key}") or "[]")
+                except Exception:
+                    turns = []
+                rows.append(f"• {await label(key)} — «{_said(turns if isinstance(turns, list) else [])}»")
+                marks.append((key, entry))
+        if not rows:
+            return 0
+        from .shop_router import _admin_phone
+        await _send_text(_admin_phone(), late_text(rows[:12] + ([f"…и ещё {len(rows) - 12}"] if len(rows) > 12 else [])))
+        for key, entry in marks:
+            await redis_client.hset(f"{prefix}:late", key, json.dumps({**entry, "alerted": True}))
+        return len(rows)
+    except Exception as error:
+        logger.warning(f"{prefix} late: {type(error).__name__}")
+        return 0
 
 
 def _owner_phones() -> set[str]:
@@ -512,50 +739,46 @@ ASK_FOR_TEXT = "Извините, голосовое не получилось �
 # «кончилась дневная норма», и было непонятно, что делать).
 BRAIN_WHY = {
     "timeout": "Google Gemini не ответил за 12 секунд дважды подряд — обычно это сбой у Google на несколько минут",
-    "busy": "Google Gemini перегружен — ждали 5 минут, не прошло",
+    "busy": "Google Gemini перегружен",
     "money": "у ключа Gemini кончились деньги или месячный предел расходов. Пополните счёт или поднимите предел: ai.studio/spend",
     "limit": "кончилась дневная норма ответов сайта (ASSISTANT_DAILY_LIMIT)",
     "key": "ключ Gemini не принят или не вписан",
+    "site": "сайт smarket.kg не отвечает серверу",
+    "slow": "сайт не ответил за 50 секунд",
 }
 
 
-async def retry_later(queue: str, key: str, pending: dict | None, why) -> bool:
-    """
-    True — вопрос снова в очереди `queue` (ig:pending / wa:pending), тревогу владельцу не шлём.
-    Когда — решает shop_ig_rules.busy_retry.
-    """
-    again = busy_retry(pending, why)
-    if again is None:
-        return False
-    # hsetnx: покупатель успел написать ещё — его новая запись в очереди важнее, она и так ответится.
-    await redis_client.hsetnx(queue, key, json.dumps(again, ensure_ascii=False))
-    return True
+class SiteDown(Exception):
+    """Сайт ответил не 200 и не 400 (лежит, 502 от nginx, 404 — не сошлась подпись): вопрос держим."""
 
 
 def brain_why(why) -> str:
     return BRAIN_WHY.get(str(why or ""), "не отвечает Gemini — ошибка связи")
 
 
-async def alert_brain_down(channel: str, why: str) -> None:
+async def alert_brain_down(channel: str, why: str, kind: str = "") -> None:
     """
-    Консультант не может ответить (Gemini молчит, сайт лежит) — покупатели в WhatsApp и
-    Instagram ждут, пока напишет сотрудник. Владелец узнаёт сразу, а не из утренней сводки
-    (аудит 03.10). Cron повторяет попытку каждую минуту — пишем не чаще раза в 3 часа.
+    Консультант не может ответить (Gemini молчит, сайт лежит). Вопросы покупателей робот держит
+    в очереди (answer_queue) и ответит, когда заработает; владелец узнаёт, когда покупатель ждёт
+    дольше HOLD_ALERT (аудит 03.10 и 10.10). Пишем не чаще раза в 3 часа; «кончились деньги» —
+    своим флагом (kind="money"): его не должна проглотить тревога о таймауте.
     Текст ошибки не пересылаем: в нём бывает адрес Green API с ключом.
     """
     from .shop_router import _admin_phone
+    flag = "bot:alerted" + (f":{kind}" if kind else "")
     try:
-        if not await redis_client.set("bot:alerted", "1", ex=ALERT_QUIET, nx=True):
+        if not await redis_client.set(flag, "1", ex=ALERT_QUIET, nx=True):
             return
         await _send_text(_admin_phone(), (
             f"⚠️ Онлайн-консультант сейчас не отвечает покупателям ({channel}): {why}.\n"
-            f"Пока не заработает, отвечайте в {channel} сами. Следующее такое сообщение — не раньше чем через 3 часа."
+            f"Вопросы робот не бросает: держит до 6 часов и ответит сам, когда заработает. Можете ответить "
+            f"в {channel} сами — тогда робот в этом чате промолчит. Следующее такое сообщение — не раньше чем через 3 часа."
         ))
     except Exception as error:
         # Не дошло — следующая попытка через минуту, а не через 3 часа. Redis лежит — тоже не падаем.
         logger.error(f"wa bot alert: {type(error).__name__}")
         try:
-            await redis_client.delete("bot:alerted")
+            await redis_client.delete(flag)
         except Exception:
             pass
 
@@ -574,15 +797,22 @@ async def _ask_for_text(digits: str) -> bool:
         return False
 
 
-async def _answer(digits: str, name: str, pending: dict | None = None) -> bool:
-    # Сайт ответил — дальше ошибки уже про отправку покупателю (Green API), «консультант
-    # не отвечает» владельцу тогда не пишем: консультант как раз ответил.
+def site_failure(error: Exception) -> str:
+    """Почему не дошли до консультанта — слово для BRAIN_WHY: таймаут или сайт не отвечает."""
+    timeout = getattr(httpx, "TimeoutException", None)
+    return "slow" if timeout and isinstance(error, timeout) else "site"
+
+
+async def _answer(digits: str, name: str) -> str:
+    """OK — ответили; NO — отвечать не нужно или нельзя; DOWN+почему — консультант не ответил, вопрос держать."""
+    # Сайт ответил — дальше ошибки уже про отправку покупателю (Green API): вопрос не держим,
+    # иначе на следующей попытке покупатель получил бы второй ответ.
     answered_by_site = False
     try:
         count_key = f"wa:count:{digits}:{_today()}"
         count = int(await redis_client.get(count_key) or 0)
         if count >= DAILY_LIMIT:
-            return False
+            return NO
 
         asked = await _turns(digits)
         reply = await _ask_site(digits, name, asked)
@@ -591,23 +821,15 @@ async def _answer(digits: str, name: str, pending: dict | None = None) -> bool:
             # Не покупатель (рабочие, родные, чужой бот) — робот в этом чате молчит 12 часов.
             # «Ок» и «{{SWE001}}» чат не глушат: следом идёт настоящий вопрос.
             if reply.get("mute"):
-                await redis_client.set(f"wa:human:{digits}", "1", ex=HUMAN_QUIET)
+                await redis_client.set(f"wa:human:{digits}", HUMAN_MUTE, ex=HUMAN_QUIET)
                 logger.info(f"wa bot: не для магазина, молчу ...{digits[-4:]}")
-            return False
-        if not reply:
-            await alert_brain_down("WhatsApp", "сайт не ответил")
-            return False
-        if not reply.get("text"):
-            return False
-        # Модель недоступна (кончился лимит Gemini) — шаблонный ответ в WhatsApp не шлём:
-        # человек написал живым людям, пусть ответит сотрудник.
+            return NO
+        if not reply or not reply.get("text"):
+            return NO   # сайт сказал «нечего спрашивать» (400: пустой разговор) — держать бесполезно
+        # Модель недоступна (Gemini молчит, перегружен, кончились деньги) — шаблонный ответ в WhatsApp
+        # не шлём: держим вопрос и спросим снова (answer_queue), владельцу — если ждёт долго.
         if reply.get("source") == "local":
-            if await retry_later("wa:pending", digits, pending, reply.get("why")):
-                logger.warning(f"wa bot: Google занят — спрошу снова через минуту ...{digits[-4:]}")
-                return False
-            logger.warning("wa bot: модель недоступна — отвечать оставляю сотруднику")
-            await alert_brain_down("WhatsApp", brain_why(reply.get("why")))
-            return False
+            return DOWN + str(reply.get("why") or "error")
         text = str(reply["text"])
         if count + 1 >= DAILY_LIMIT:
             text += "\n\nДальше вам ответит руководство магазина."
@@ -627,19 +849,19 @@ async def _answer(digits: str, name: str, pending: dict | None = None) -> bool:
         later = int(reply.get("followAfter") or 0)
         if later > 0:
             keep = later + 2 * 24 * 3600
-            await redis_client.set(f"wa:nudge:{digits}", json.dumps({"ts": time.time() + later - NUDGE_AFTER, "name": name}), ex=keep)
+            # planned: покупатель сам назвал срок — флаг «напоминали за 3 дня» это напоминание не глушит.
+            await redis_client.set(f"wa:nudge:{digits}", json.dumps({"ts": time.time() + later - NUDGE_AFTER, "name": name, "planned": True}), ex=keep)
             await redis_client.expire(f"wa:turns:{digits}", max(keep, TURNS_TTL))
             await redis_client.expire(f"wa:shown:{digits}", max(keep, TURNS_TTL))
         if count + 1 >= DAILY_LIMIT:
-            await redis_client.set(f"wa:human:{digits}", "1", ex=HUMAN_QUIET)
+            await redis_client.set(f"wa:human:{digits}", HUMAN_STAFF, ex=HUMAN_QUIET)
         elif reply.get("handoff"):
-            await redis_client.set(f"wa:human:{digits}", "1", ex=HANDOFF_QUIET)
-        return True
+            # Передали руководству: час молчим и копим вопросы; не написал сотрудник — ответит робот.
+            await redis_client.set(f"wa:human:{digits}", HUMAN_HANDOFF, ex=HANDOFF_QUIET)
+        return OK
     except Exception as error:
-        logger.error(f"wa bot {digits[-4:]}: {error}")
-        if not answered_by_site:
-            await alert_brain_down("WhatsApp", "сайт не ответил вовремя, подробности в журнале сервера")
-        return False
+        logger.error(f"wa bot {digits[-4:]}: {type(error).__name__}: {error}")
+        return NO if answered_by_site else DOWN + site_failure(error)
 
 
 async def _ask_site(digits: str, name: str, asked: list[dict]) -> dict | None:
@@ -652,16 +874,23 @@ async def _ask_site(digits: str, name: str, asked: list[dict]) -> dict | None:
         "shown": json.loads(shown_raw) if shown_raw else [],
     }, ensure_ascii=False)
     signature = hmac.new(_site_secret().encode(), payload.encode("utf-8"), hashlib.sha256).hexdigest()
-    async with httpx.AsyncClient(timeout=40) as client:
+    async with httpx.AsyncClient(timeout=SITE_TIMEOUT) as client:
         response = await client.post(
             f"{_site_base_url()}/api/channel/whatsapp",
             content=payload.encode("utf-8"),
             headers={"Content-Type": "application/json", "X-Signature": signature},
         )
-    if response.status_code != 200:
-        logger.error(f"wa bot: сайт ответил {response.status_code}")
+    return site_reply(response.status_code, response.json() if response.status_code == 200 else None, "wa bot")
+
+
+def site_reply(status: int, data, who: str) -> dict | None:
+    """Ответ сайта → dict; 400 (нечего спрашивать) → None; лежит / не та подпись → SiteDown (вопрос держим)."""
+    if status == 400:
+        logger.warning(f"{who}: сайт не принял разговор (400)")
         return None
-    data = response.json()
+    if status != 200 or not isinstance(data, dict):
+        logger.error(f"{who}: сайт ответил {status}")
+        raise SiteDown(str(status))
     return data if data.get("ok") else None
 
 
@@ -733,7 +962,8 @@ async def _nudge_silent() -> int:
         await redis_client.delete(key)
         if await redis_client.get(f"wa:human:{digits}") or await redis_client.get(f"wa:saved:{digits}"):
             continue
-        if not await redis_client.set(f"wa:nudged:{digits}", "1", ex=NUDGE_QUIET, nx=True):
+        flag, quiet = nudge_flag("wa", digits, pending)
+        if not await redis_client.set(flag, "1", ex=quiet, nx=True):
             continue
         shown_raw = await redis_client.get(f"wa:shown:{digits}")
         payload = json.dumps({
@@ -756,10 +986,22 @@ async def _nudge_silent() -> int:
             await _send_text(digits, text)
             await _remember(digits, "assistant", text)
             await redis_client.set(f"wa:botactive:{digits}", "1", ex=30 * 60)
+            await redis_client.set(f"wa:nudged:{digits}", "1", ex=NUDGE_QUIET)   # после «завтра» — не напоминать ещё и через 2 часа
             sent += 1
         except Exception as error:
             logger.error(f"wa bot nudge {digits[-4:]}: {error}")
     return sent
+
+
+def nudge_flag(prefix: str, who: str, pending: dict) -> tuple[str, int]:
+    """
+    Флаг «уже напоминали» и на сколько. Обычное «ещё актуально?» — раз в 3 дня. Напоминание в срок,
+    который назвал сам покупатель («эртең», «после зарплаты», Jev → followAfter), раньше глушил этот
+    флаг, и оно терялось; теперь у него свой флаг — не чаще одного в сутки на чат.
+    """
+    if pending.get("planned"):
+        return f"{prefix}:plannednudge:{who}", 24 * 3600
+    return f"{prefix}:nudged:{who}", NUDGE_QUIET
 
 
 async def send_digest(day: str = "") -> bool:

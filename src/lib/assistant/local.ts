@@ -344,7 +344,8 @@ const topics: Topic[] = [
 
 // Без \b на конце: в JavaScript граница слова знает только латиницу, и после
 // кириллической «м» в «Салам» её нет — приветствие переставало узнаваться.
-const greeting = /^(привет|салам|здрав|саламат|ассалом|assalom|salom|hello|hi\b)/i
+// «Салом», «Ассаламу алейкум» на сайте получали «Тут я подсказать не смогу» (аудит 10.10) — их тоже сюда
+const greeting = /^(привет|салам|салом|здрав|саламат|ассалом|ассалам|асалам|асалом|ваалейкум|валейкум|уалейкум|алейкум|алайкум|assalom|salom|hello|hi\b)/i
 const installment = /рассрочк|расрочк|бөлүп төлө|bo.?lib to.?lash|muddatli|nasiya|кредит|qarz|қарз|оy qoldi|ой қолди/i
 const orderAsk = /зака[зс]|буюртма|buyurtma|посылк|где мой|qani mening|статус/i
 const bonusAsk = /бонус|sbonus|балл/i
@@ -376,9 +377,11 @@ export function localAnswer(
   siteLang: Lang,
   customer: CustomerBrief | null = null,
   list?: Product[],
+  /** язык всего разговора (talkLang): по одному «Салом» язык не узнать — отвечали по-русски кыргызу */
+  talkOf?: TalkLang,
 ): Answer {
   const text = question.trim()
-  const talk = detectLang(text, siteLang)
+  const talk = talkOf ?? detectLang(text, siteLang)
 
   // Только приветствие — здороваемся. «Салам, пылесос есть?» — это уже вопрос,
   // отвечаем на него, а не одним «Ассаламу алейкум».

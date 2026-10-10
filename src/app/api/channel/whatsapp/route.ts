@@ -22,6 +22,12 @@ export const dynamic = 'force-dynamic'
 
 const PHONE = /^\+(?:996\d{9}|7\d{10})$/
 
+/** Ключ разговора для номера вне KG/RU: только цифры номера; нет номера — общий «unknown», как раньше. */
+function waKey(phone: unknown): string {
+  const digits = typeof phone === 'string' ? phone.replace(/\D/g, '') : ''
+  return digits.length >= 7 && digits.length <= 15 ? `+${digits}` : 'unknown'
+}
+
 export async function POST(request: Request) {
   const secret = process.env.SHOP_API_SECRET ?? ''
   const body = await request.text()
@@ -52,7 +58,9 @@ export async function POST(request: Request) {
 
   const reply = await respond(
     {
-      key: `wa:${phone ?? 'unknown'}`,
+      // Ключ разговора — номер всегда, и иностранный: все +998/+992 жили в одном «wa:unknown» и делили чужую
+      // анкету, заклад и скидку (ревью 10.10). Профиль, бонусы и заказы — по-прежнему только по `phone`.
+      key: `wa:${phone ?? waKey(raw.phone)}`,
       orderSource: 'Заказ из WhatsApp',
       leadChannel: 'whatsapp',
       known: { name: customer?.name ?? name, phone },
@@ -71,6 +79,7 @@ export async function POST(request: Request) {
     found: reply.products.length > 0,
     source: reply.source,
     ch: 'whatsapp',
+    jev: reply.jev,
   })
 
   return Response.json({

@@ -17,7 +17,7 @@ import 'server-only'
  */
 
 import { askJev, jevConfigured } from './jev'
-import { isPriceObjection } from './triage'
+import { complaintInWords, isPriceObjection } from './triage'
 import { INSTALLMENT } from './policy'
 import { hideDigits } from './log'
 import { detectLangScored, type TalkLang } from './talk'
@@ -182,7 +182,9 @@ export function planComment(text: string, scores: CommentScores | null, product:
   }
   // Жалоба — всегда владельцу, даже с матом (ревью 04.10: злой покупатель с матом уходил в «спам» и
   // молча скрывался). Скрываем только спам без жалобы и без интереса к товару.
-  if (s.complaint >= 0.6) return plan('alert', PUBLIC_SORRY[shown], SORRY_DM[lang])
+  // Как в WhatsApp (triage 05.10): тревога, только если в словах есть жалоба — «Идиш жууган аппарат» Jev счёл жалобой,
+  // и под постом повисло бы «Кечиресиз!» (ревью 10.10)
+  if (s.complaint >= 0.6 && complaintInWords(text)) return plan('alert', PUBLIC_SORRY[shown], SORRY_DM[lang])
   if (s.spam >= 0.8 && s.ask < 0.3 && !plus && !PRICE_WORDS.test(text)) return plan('hide')
   if (s.ask >= 0.5 || wordsAsk) {
     if (!product && choices.length > 0) {

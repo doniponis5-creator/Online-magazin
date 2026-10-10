@@ -1,4 +1,4 @@
-import { readRows, summarize, type LogRow } from '@/lib/assistant/log'
+import { exportRows, readRows, summarize, type LogRow } from '@/lib/assistant/log'
 
 /**
  * Страница «О чём спрашивают» — для владельца.
@@ -20,6 +20,13 @@ export async function GET(request: Request) {
   }
 
   const rows = await readRows()
+  // Для еженедельной проверки бота (задача по расписанию на компьютере владельца) — сам журнал, не страница
+  const params = new URL(request.url).searchParams
+  if (params.get('format') === 'jsonl') {
+    return new Response(exportRows(rows, params.get('since') ?? ''), {
+      headers: { 'content-type': 'application/x-ndjson; charset=utf-8', 'cache-control': 'no-store' },
+    })
+  }
   const sum = summarize(rows)
 
   return new Response(page(sum), {

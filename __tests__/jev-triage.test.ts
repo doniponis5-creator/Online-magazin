@@ -93,6 +93,22 @@ describe('respond: Jev сортирует WhatsApp до модели', () => {
   it('не про магазин и не идёт продажа — молчим, модель не зовём', async () => {
     const { respond, calls } = await setup(scores({ personal: 0.92, shop: 0.1 }))
     const r = await respond(wa('t:pers'), [{ role: 'user', text: 'Даниярбек, кымыз ала барам эртең' }], 'ky', null)
+    // Первое сообщение нового номера — молчим, но чат на 12 часов не глушим: Jev мог ошибиться (ревью 10.10)
+    expect(r).toMatchObject({ silent: true, mute: false })
+    expect(calls()).toBe(0)
+  })
+  it('не про магазин посреди переписки — молчим и глушим', async () => {
+    const { respond, calls } = await setup(scores({ personal: 0.92, shop: 0.1 }))
+    const r = await respond(
+      wa('t:pers3'),
+      [
+        { role: 'user', text: 'Салам' },
+        { role: 'assistant', text: 'Ассаламу алейкум. Угуп жатам, кандай техника керек?' },
+        { role: 'user', text: 'Даниярбек, кымыз ала барам эртең' },
+      ],
+      'ky',
+      null,
+    )
     expect(r).toMatchObject({ silent: true, mute: true })
     expect(calls()).toBe(0)
   })
