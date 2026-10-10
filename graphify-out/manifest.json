@@ -954,9 +954,9 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1791617270.0623176,
-    "seen": 1791617296.3552182,
-    "ast_hash": "63430e443044e881941821e3c6b8a653",
+    "mtime": 1791618404.829769,
+    "seen": 1791618460.5960312,
+    "ast_hash": "c8aa898cec8e1ae0a8033cb8670a919d",
     "semantic_hash": ""
   },
   "DESIGN.md": {
@@ -3984,9 +3984,9 @@
     "semantic_hash": ""
   },
   "src/lib/assistant/reply.ts": {
-    "mtime": 1791605466.8355703,
-    "seen": 1791605834.0315452,
-    "ast_hash": "599b7080a30c3369f1c8ae9ac55508fc",
+    "mtime": 1791618326.0478632,
+    "seen": 1791618460.5778832,
+    "ast_hash": "61d752564fc757354bf1260327800f13",
     "semantic_hash": ""
   },
   "src/lib/assistant/talk.ts": {
@@ -4032,9 +4032,9 @@
     "semantic_hash": ""
   },
   "src/app/panel/questions/route.ts": {
-    "mtime": 1791614126.925803,
-    "seen": 1791614242.5097294,
-    "ast_hash": "78221ead822f7040bdb5f3618d279d8e",
+    "mtime": 1791618326.242102,
+    "seen": 1791618460.5676837,
+    "ast_hash": "dc97c17f6293ca447e4d8cc466d35f02",
     "semantic_hash": ""
   },
   "src/lib/assistant/log.ts": {
@@ -8655,6 +8655,18 @@
     "mtime": 1791605700.634159,
     "seen": 1791605833.9655073,
     "ast_hash": "a4cdfc0d1f013d9420dda9090e9b82af",
+    "semantic_hash": ""
+  },
+  "__tests__/prompt-meter.test.ts": {
+    "mtime": 1791618363.2541673,
+    "seen": 1791618460.5426617,
+    "ast_hash": "06b97ba0da13ffc6d700575d7514f768",
+    "semantic_hash": ""
+  },
+  "src/lib/assistant/meter.ts": {
+    "mtime": 1791618314.3251922,
+    "seen": 1791618460.5773036,
+    "ast_hash": "45ecef0c7799c8b10ed2c95758eb025a",
     "semantic_hash": ""
   }
 }

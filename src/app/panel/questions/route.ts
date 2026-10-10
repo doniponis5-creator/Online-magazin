@@ -1,4 +1,6 @@
 import { exportRows, readRows, summarize, type LogRow } from '@/lib/assistant/log'
+import { bishkekToday, usageOf } from '@/lib/assistant/usage'
+import { meterOf } from '@/lib/assistant/meter'
 
 /**
  * Страница «О чём спрашивают» — для владельца.
@@ -19,9 +21,15 @@ export async function GET(request: Request) {
     return new Response('Not found', { status: 404 })
   }
 
+  const params = new URL(request.url).searchParams
+  // Расход Gemini и из чего состоит промпт по дням (meter.ts) — для решения, что можно урезать без потери качества
+  if (params.get('format') === 'cost') {
+    const list = Array.from({ length: 14 }, (_, i) => bishkekToday(new Date(Date.now() - i * 24 * 3600_000)))
+    const out = list.map((day) => ({ day, usage: usageOf(day), meter: meterOf(day) })).filter((d) => d.usage.calls > 0 || d.meter)
+    return Response.json(out, { headers: { 'cache-control': 'no-store' } })
+  }
   const rows = await readRows()
   // Для еженедельной проверки бота (задача по расписанию на компьютере владельца) — сам журнал, не страница
-  const params = new URL(request.url).searchParams
   if (params.get('format') === 'jsonl') {
     return new Response(exportRows(rows, params.get('since') ?? ''), {
       headers: { 'content-type': 'application/x-ndjson; charset=utf-8', 'cache-control': 'no-store' },

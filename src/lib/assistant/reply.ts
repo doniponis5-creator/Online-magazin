@@ -19,6 +19,7 @@ import { toHit, type CustomerBrief, type ProductHit } from './knowledge'
 import { localAnswer, parseAnswer, type Audience } from './local'
 import { detectLang, detectLangScored, type TalkLang } from './talk'
 import { systemInstruction, type Where } from './prompt'
+import { recordMeter } from './meter'
 
 export type AssistantReply = {
   text: string
@@ -71,8 +72,11 @@ export async function answer(
     try {
       const lastAnswer = [...turns].reverse().find((t) => t.role === 'assistant')?.text ?? ''
       const ceiling = cheaperThan(lastQuestion, lastAnswer)
-      const raw = await askGemini(systemInstruction(lang, customer, talkLang(turns, lang), list, recent, notes, ceiling, viewing, knownName, knownPhone, talked, where, lastQuestion) + note, turns, where)
+      const system = systemInstruction(lang, customer, talkLang(turns, lang), list, recent, notes, ceiling, viewing, knownName, knownPhone, talked, where, lastQuestion) + note
+      const raw = await askGemini(system, turns, where)
       const parsed = parseAnswer(raw)
+      // Счётчик частей промпта (10.10): что дорого и что модель берёт — прежде чем урезать
+      recordMeter(system, turns, parsed.productIds, talked)
       const talk = talkLang(turns, lang)
       return { text: houseStyle(parsed.text, talk), products: hits(parsed.productIds, lang, list), source: 'gemini', audience: parsed.audience,
         ...(parsed.deposit ? { deposit: parsed.deposit } : {}), ...(parsed.discount ? { discount: parsed.discount } : {}),
